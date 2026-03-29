@@ -59,20 +59,6 @@
 #define FTIMER_H
 
 
-/*
-**	The "bool" integral type was defined by the C++ committee in
-**	November of '94. Until the compiler supports this, use the following
-**	definition.
-*/
-#ifndef __BORLANDC__
-#ifndef TRUE_FALSE_DEFINED
-#define TRUE_FALSE_DEFINED
-enum {false=0,true=1};
-typedef int bool;
-#endif
-#endif
-
-
 /**********************************************************************
 **	This class is solely used as a parameter to a constructor that does
 **	absolutely no initialization to the object being constructed. By using
@@ -82,13 +68,7 @@ typedef int bool;
 **	rest of the constructor doesn't initialize any data members. After loading
 **	into a class object, simply perform an in-place new operation.
 */
-#ifndef NOINITCLASS
-#define NOINITCLASS
-struct NoInitClass {
-	public:
-		void operator () (void) const {};
-};
-#endif
+#include "NOINIT.H"
 
 
 /*
@@ -317,7 +297,7 @@ template<class T>
 inline unsigned long TTimerClass<T>::Value(void) const
 {
 	unsigned long value = Accumulated;
-	if (Started != 0xFFFFFFFFU) {
+	if (this->Started != 0xFFFFFFFFU) {
 		value += BasicTimerClass<T>::Value();
 	}
 	return(value);
@@ -345,7 +325,7 @@ template<class T>
 inline TTimerClass<T>::operator unsigned long(void) const
 {
 	unsigned long value = Accumulated;
-	if (Started != 0xFFFFFFFFU) {
+	if (this->Started != 0xFFFFFFFFU) {
 		value += BasicTimerClass<T>::Value();
 	}
 	return(value);
@@ -373,11 +353,22 @@ template<class T>
 inline unsigned long TTimerClass<T>::operator () (void) const
 {
 	unsigned long value = Accumulated;
-	if (Started != 0xFFFFFFFFU) {
+	if (this->Started != 0xFFFFFFFFU) {
 		value += BasicTimerClass<T>::Value();
 	}
 	return(value);
 }
+
+#ifndef FRAME_TIMER_CLASS_DEFINED
+#define FRAME_TIMER_CLASS_DEFINED
+extern long Frame;
+class FrameTimerClass
+{
+	public:
+		long operator () (void) const {return(Frame);};
+		operator long (void) const {return(Frame);};
+};
+#endif
 
 
 /***********************************************************************************************
@@ -399,9 +390,9 @@ inline unsigned long TTimerClass<T>::operator () (void) const
 template<class T>
 void TTimerClass<T>::Stop(void)
 {
-	if (Started != 0xFFFFFFFFU) {
+	if (this->Started != 0xFFFFFFFFU) {
 		Accumulated += BasicTimerClass<T>::operator unsigned long();
-		Started = 0xFFFFFFFFU;
+		this->Started = 0xFFFFFFFFU;
 	}
 }
 
@@ -423,8 +414,8 @@ void TTimerClass<T>::Stop(void)
 template<class T>
 void TTimerClass<T>::Start(void)
 {
-	if (Started == 0xFFFFFFFFU) {
-		Started = Timer();
+	if (this->Started == 0xFFFFFFFFU) {
+		this->Started = this->operator()();
 	}
 }
 
@@ -448,7 +439,7 @@ void TTimerClass<T>::Start(void)
 template<class T>
 inline bool TTimerClass<T>::Is_Active(void) const
 {
-	return(Started != 0xFFFFFFFFU);
+	return(this->Started != 0xFFFFFFFFU);
 }
 
 

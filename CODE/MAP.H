@@ -41,6 +41,8 @@
 #include	"gscreen.h"
 #include	"crate.h"
 
+CELL Coord_Cell(COORDINATE coord);
+
 class MapClass: public GScreenClass
 {
 	public:

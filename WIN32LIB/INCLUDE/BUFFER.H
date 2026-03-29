@@ -61,22 +61,22 @@ class BufferClass {
 		/*===================================================================*/
 		/* Define the base constructor and destructors for the class			*/
 		/*===================================================================*/
-		BufferClass(void *ptr, long size);
-		BufferClass(long size);
+		BufferClass(void *ptr, LONG size);
+		BufferClass(LONG size);
 		BufferClass();
 		~BufferClass();
 		/*===================================================================*/
 		/* Define functions which work with the buffer class.						*/
 		/*===================================================================*/
-		long To_Page(GraphicViewPortClass &view);
-		long To_Page(int w, int h, GraphicViewPortClass &view);
-		long To_Page(int x, int y, int w, int h, GraphicViewPortClass &view);
+		LONG To_Page(GraphicViewPortClass &view);
+		LONG To_Page(int w, int h, GraphicViewPortClass &view);
+		LONG To_Page(int x, int y, int w, int h, GraphicViewPortClass &view);
 
 		/*===================================================================*/
 		/* define functions to get at the protected data members					*/
 		/*===================================================================*/
 		void	*Get_Buffer(void);
-		long	Get_Size(void);
+		LONG	Get_Size(void);
 
 	private:
 		/*===================================================================*/
@@ -90,7 +90,7 @@ class BufferClass {
 
 	protected:
 		void	*Buffer;
-		long	Size;
+		LONG	Size;
 		BOOL	Allocated;
 };
 /***************************************************************************
@@ -103,7 +103,7 @@ class BufferClass {
  * HISTORY:                                                                *
  *   06/01/1994 PWG : Created.                                             *
  *=========================================================================*/
-inline long BufferClass::Get_Size(void)
+inline LONG BufferClass::Get_Size(void)
 {
 	return(Size);
 }

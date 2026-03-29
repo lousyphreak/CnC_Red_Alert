@@ -38,9 +38,15 @@
 #ifndef CELL_H
 #define CELL_H
 
+#include	"defines.h"
+#include	"ccptr.h"
 #include	"building.h"
+#include	"pipe.h"
+#include	"straw.h"
 #include	"unit.h"
 #include	"template.h"
+
+class TriggerClass;
 
 
 /****************************************************************************

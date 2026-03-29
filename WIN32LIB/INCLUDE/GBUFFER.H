@@ -369,7 +369,7 @@ class GraphicBufferClass : public GraphicViewPortClass, public BufferClass {
 		void DD_Init(GBC_Enum flags);
 		void Init(int w, int h, void *buffer, long size, GBC_Enum flags);
 		void Un_Init(void);
-		void GraphicBufferClass::Attach_DD_Surface (GraphicBufferClass * attach_buffer);
+			void Attach_DD_Surface (GraphicBufferClass * attach_buffer);
 		BOOL Lock(void);
 		BOOL Unlock(void);
 
@@ -1281,9 +1281,9 @@ inline int GraphicViewPortClass::Get_Pitch(void)
  * HISTORY:                                                                *
  *   01/12/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline long Buffer_To_Page(int x, int y, int w, int h, void *Buffer, GraphicViewPortClass &view)
+inline LONG Buffer_To_Page(int x, int y, int w, int h, void *Buffer, GraphicViewPortClass &view)
 {
-	long	return_code=0;
+	LONG	return_code=0;
 	if (view.Lock()){
 		return_code = (Buffer_To_Page(x, y, w, h, Buffer, &view));
 	}
@@ -1306,9 +1306,9 @@ inline long Buffer_To_Page(int x, int y, int w, int h, void *Buffer, GraphicView
  * HISTORY:                                                                *
  *   07/01/1994 PWG : Created.                                             *
  *=========================================================================*/
-inline long BufferClass::To_Page(int w, int h, GraphicViewPortClass &view)
+inline LONG BufferClass::To_Page(int w, int h, GraphicViewPortClass &view)
 {
-	long	return_code=0;
+	LONG	return_code=0;
 	if (view.Lock()){
 		return_code = (Buffer_To_Page(0, 0, w, h, Buffer, &view));
 	}
@@ -1329,9 +1329,9 @@ inline long BufferClass::To_Page(int w, int h, GraphicViewPortClass &view)
  * HISTORY:                                                                *
  *   07/01/1994 PWG : Created.                                             *
  *=========================================================================*/
-inline long BufferClass::To_Page(GraphicViewPortClass &view)
+inline LONG BufferClass::To_Page(GraphicViewPortClass &view)
 {
-	long	return_code=0;
+	LONG	return_code=0;
 	if (view.Lock()){
 		return_code = (Buffer_To_Page(0, 0, view.Get_Width(), view.Get_Height(), Buffer, &view));
 	}
@@ -1352,9 +1352,9 @@ inline long BufferClass::To_Page(GraphicViewPortClass &view)
  * HISTORY:                                                                *
  *   07/01/1994 PWG : Created.                                             *
  *=========================================================================*/
-inline long BufferClass::To_Page(int x, int y, int w, int h, GraphicViewPortClass &view)
+inline LONG BufferClass::To_Page(int x, int y, int w, int h, GraphicViewPortClass &view)
 {
-	long	return_code=0;
+	LONG	return_code=0;
 	if (view.Lock()){
 		return_code = (Buffer_To_Page(x, y, w, h, Buffer, &view));
 	}

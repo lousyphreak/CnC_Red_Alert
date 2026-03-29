@@ -36,8 +36,8 @@
  *                                                                         *
  *                                                                         *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-
+#ifndef UTRACKER_H
+#define UTRACKER_H
 
 /*
 ** UnitTracker Class
@@ -69,18 +69,4 @@ class	UnitTrackerClass {
 
 };
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#endif

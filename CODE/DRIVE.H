@@ -38,6 +38,7 @@
 #ifndef DRIVE_H
 #define DRIVE_H
 
+#include	"ftimer.h"
 #include	"foot.h"
 
 /****************************************************************************

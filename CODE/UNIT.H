@@ -38,6 +38,7 @@
 #ifndef UNIT_H
 #define UNIT_H
 
+#include "facing.h"
 #include "drive.h"
 #include "radio.h"
 #include "cargo.h"

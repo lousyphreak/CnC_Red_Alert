@@ -46,6 +46,7 @@
 #include <mono.h>
 #include <tile.h>
 #include <wwmem.h>
+
 #include <keyboard.h>
 #include <mouse.h>
 #include <file.h>
@@ -64,5 +65,3 @@
 
 
 #endif // WWLIB32_H
-
-

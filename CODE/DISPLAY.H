@@ -38,6 +38,9 @@
 #ifndef DISPLAY_H
 #define DISPLAY_H
 
+#include	"ccini.h"
+#include	"face.h"
+#include	"gadget.h"
 #include	"map.h"
 #include	"layer.h"
 

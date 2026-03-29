@@ -42,6 +42,7 @@ DirType Direction(CELL cell1, CELL cell2);
 DirType Direction(COORDINATE coord1, COORDINATE coord2);
 int Distance(COORDINATE coord1, COORDINATE coord2);
 COORDINATE As_Coord(TARGET target);
+CELL Coord_Cell(COORDINATE coord);
 
 class AbstractTypeClass;
 

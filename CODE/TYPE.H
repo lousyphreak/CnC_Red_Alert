@@ -38,7 +38,10 @@
 #ifndef TYPE_H
 #define TYPE_H
 
+#include <direct.h>
+
 #include	"mission.h"
+#include	"rect.h"
 #include	"target.h"
 
 class MapEditClass;

@@ -22,26 +22,13 @@
 #define MIXFILE_H
 
 
-/*
-**	The "bool" integral type was defined by the C++ committee in
-**	November of '94. Until the compiler supports this, use the following
-**	definition.
-*/
-#ifndef __BORLANDC__
-#ifndef TRUE_FALSE_DEFINED
-#define TRUE_FALSE_DEFINED
-enum {false=0,true=1};
-typedef int bool;
-#endif
-#endif
-
 #include	<stdlib.h>
 #include	"listnode.h"
 #include	"pk.h"
 #include "buff.h"
 
 template<class T>
-class MixFileClass : public Node<MixFileClass>
+class MixFileClass : public Node<MixFileClass<T>>
 {
 	public:
 		char const * Filename;			// Filename of mixfile.
@@ -54,7 +41,7 @@ class MixFileClass : public Node<MixFileClass>
 		void Free(void);
 		bool Cache(Buffer const * buffer = NULL);
 		static bool Cache(char const *filename, Buffer const * buffer=NULL);
-		static bool Offset(char const *filename, void ** realptr = 0, MixFileClass ** mixfile = 0, long * offset = 0, long * size = 0);
+		static bool Offset(char const *filename, void ** realptr = 0, MixFileClass<T> ** mixfile = 0, long * offset = 0, long * size = 0);
 		static void const * Retrieve(char const *filename);
 
 		struct SubBlock {
@@ -68,7 +55,7 @@ class MixFileClass : public Node<MixFileClass>
 		};
 
 	private:
-		static MixFileClass * Finder(char const * filename);
+		static MixFileClass<T> * Finder(char const * filename);
 		long Offset(long crc, long * size = 0) const;
 
 		/*
@@ -127,7 +114,7 @@ class MixFileClass : public Node<MixFileClass>
 		*/
 		void * Data;						// Pointer to raw data.
 
-		static List<MixFileClass> List;
+		static List<MixFileClass<T>> List;
 };
 
 #endif

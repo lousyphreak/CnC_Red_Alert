@@ -38,7 +38,9 @@
 #ifndef FACTORY_H
 #define FACTORY_H
 
+#include	"TYPE.H"
 #include	"stage.h"
+
 
 class FactoryClass : private StageClass
 {

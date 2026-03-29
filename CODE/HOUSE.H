@@ -38,6 +38,10 @@
 #ifndef HOUSE_H
 #define HOUSE_H
 
+#include "HEAP.H"
+#include "SUPER.H"
+#include "UTRACKER.H"
+
 #include	"type.h"
 #include	"region.h"
 #include	"vector.h"

@@ -45,7 +45,7 @@
 #include <dos.h>
 
 #include "wwstd.h"
-#include "playcd.h"
+#include "PLAYCD.H"
 #include "wwmem.h"
 
 

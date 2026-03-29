@@ -69,20 +69,20 @@ extern	void Colour_Debug (int call_number);
 #include	"dsound.h"
 
 #include	<mem.h>
-#include	<wwmem.h>
-#include	"soundint.h"
+#include	<WWMEM.H>
+#include	"SOUNDINT.H"
 #include	<stdio.h>
 #include	<string.h>
 #include	<direct.h>
 #include	<stdlib.h>
 #include <process.h>
-#include	<keyboard.h>
-#include	<file.h>
+#include	<KEYBOARD.H>
+#include	<FILE.H>
 #include	<bios.h>
-#include	<timer.h>
+#include	<TIMER.H>
 #include	<math.h>
 #pragma		pack(1)
-#include	"audio.h"
+#include	"AUDIO.H"
 #pragma		pack(4)
 
 LPDIRECTSOUNDBUFFER	DumpBuffer;
@@ -435,7 +435,8 @@ void File_Stream_Preload(int handle)
     /*
     ** Loop through the blocks and load up the number we need.
     */
-    for (int index = st->FilePending; index < num; index++) {
+	int index;
+    for (index = st->FilePending; index < num; index++) {
 		long s = Read_File(fh, Add_Long_To_Pointer(buffer, (long)index * (long)LockedData.StreamBufferSize), LockedData.StreamBufferSize);
        if (s) {
          	st->FilePendingSize = s;

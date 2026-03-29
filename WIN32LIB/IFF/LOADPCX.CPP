@@ -36,7 +36,7 @@
  * int Get_PCX_Palette (char * name, void& palette )								*
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include  <wwlib32.h>
+#include  <WWSTD.H>
 #include "filepcx.h"
 
 /***************************************************************************

@@ -131,9 +131,9 @@ BOOL Optimize_Video_Memory_Cache (void)
 		** Sort drawn icons into order
 		*/
 		if (total_cache_hits > 1){
-			for (i = 0 ; i<total_cache_hits ; i++){
+			for (int i = 0 ; i<total_cache_hits ; i++){
 				swapped=FALSE;
-				for (j=0 ; j<total_cache_hits-1 ; j++){
+				for (int j=0 ; j<total_cache_hits-1 ; j++){
 
 					if (CachedIcons[cache_hits[j]].TimesDrawn > CachedIcons[cache_hits[j+1]].TimesDrawn){
 						temp=cache_hits[j];
@@ -223,7 +223,7 @@ void Invalidate_Cached_Icons (void)
 
 	memset (&IconCacheLookup[0] , -1 ,MAX_LOOKUP_ENTRIES*sizeof(IconCacheLookup[0]));
 
-	for (i=0 ; i<MAX_ICON_SETS ; i++){
+	for (int i=0 ; i<MAX_ICON_SETS ; i++){
 		IconSetList[i].IconSetPtr=NULL;
 	}
 
@@ -291,8 +291,8 @@ void Register_Icon_Set (void *icon_data , BOOL pre_cache)
 			}
 
 			if (pre_cache){
-				for (i=0 ; i<256 ; i++){
-					Is_Icon_Cached(icon_data,i);
+				for (int j=0 ; j<256 ; j++){
+					Is_Icon_Cached(icon_data,j);
 				}
 			}
 			return;

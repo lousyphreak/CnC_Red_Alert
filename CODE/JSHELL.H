@@ -40,11 +40,15 @@
 
 
 #include	<assert.h>
+#include	"KEY.H"
+#include	"MOUSE.H"
+#include	"SHAPE.H"
+#include	"TIMER.H"
 
 #ifdef WIN32
 //#define getch	Get_Key_Num
 //#define kbhit	Check_Key_Num
-#include	"key.h"
+#include	"KEY.H"
 #else
 #include	<conio.h>
 #endif
@@ -96,8 +100,8 @@ struct KeyboardClass
 	int Down(KeyNumType key) {return(WWKeyboardClass::Down(key));};
 #endif
 
-	int Mouse_X(void) {return(Get_Mouse_X());};
-	int Mouse_Y(void) {return(Get_Mouse_Y());};
+	int Mouse_X(void) {return(Get_Global_Mouse_X());};
+	int Mouse_Y(void) {return(Get_Global_Mouse_Y());};
 };
 
 
@@ -334,12 +338,15 @@ extern void outport(int port, unsigned short data);
 **	the type of timer they are.
 */
 extern long Frame;
+#ifndef FRAME_TIMER_CLASS_DEFINED
+#define FRAME_TIMER_CLASS_DEFINED
 class FrameTimerClass
 {
 	public:
 		long operator () (void) const {return(Frame);};
 		operator long (void) const {return(Frame);};
 };
+#endif
 
 
 #ifndef WIN32

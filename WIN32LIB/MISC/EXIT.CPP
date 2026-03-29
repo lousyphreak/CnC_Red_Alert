@@ -84,7 +84,7 @@ void randomize	( void )
 }
 
 #if(0)
-unsigned long	random ( unsigned long mod )
+unsigned long	Random_Mod ( unsigned long mod )
 {
   return rand () * mod / RAND_MAX ;
 }

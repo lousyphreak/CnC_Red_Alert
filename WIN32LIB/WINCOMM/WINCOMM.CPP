@@ -53,8 +53,8 @@
 #include	"keyboard.h"
 #include	"misc.h"
 #include <io.h>
-#include <sys\types.h>
-#include <sys\stat.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 
 
@@ -298,7 +298,7 @@ BOOL Get_Modem_Name_From_Registry(char *buffer, int buffer_len)
 	}
 
 	RegCloseKey(key);
-	memcpy (buffer, modem_name, min(buffer_len, modem_name_size));
+	memcpy (buffer, modem_name, MIN(buffer_len, modem_name_size));
 	return (TRUE);
 }
 
@@ -871,7 +871,7 @@ BOOL WinModemClass::Read_Serial_Chars (void)
 			if (CE_TXFULL & error)  OutBufferOverflows++;
 			bytes_to_read = 0;
 		}else{
-			bytes_to_read = min(status.cbInQue, SIZE_OF_WINDOWS_SERIAL_BUFFER);
+			bytes_to_read = MIN(status.cbInQue, SIZE_OF_WINDOWS_SERIAL_BUFFER);
 		}
 	}
 

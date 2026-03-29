@@ -56,7 +56,9 @@
 /*
 ********************************** Globals **********************************
 */
-extern "C" extern unsigned char  CurrentPalette[];		/* in pal.asm */
+extern "C" {
+extern unsigned char CurrentPalette[];		/* in pal.asm */
+}
 
 /*
 ******************************** Prototypes *********************************
@@ -379,4 +381,3 @@ void (*cb_ptr)(void);	// callback function pointer
 /**************************** End of palette.cpp ***************************/
 
 
-

@@ -40,7 +40,7 @@
 #ifdef WIN32
 #include "ccdde.h"
 #else	//WIN32
-#include	<sys\timeb.h>
+#include	<sys/timeb.h>
 #endif
 
 /*****************************

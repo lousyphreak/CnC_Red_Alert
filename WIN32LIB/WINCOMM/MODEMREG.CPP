@@ -85,11 +85,11 @@ HKEY Search_Registry_Key (HKEY key_in, char *value_name, char *search_string)
 
 
 	char				*subkey_name = new char [256];			// Area to contain result of key enumeration
-	unsigned long	subkey_name_length = 256;					// Length of enumeration result area
+	DWORD				subkey_name_length = 256;					// Length of enumeration result area
 	FILETIME			filetime;										// Time key was last touched. Not used.
-	unsigned long	value_type;										// Type of data that is contained in a key.
+	DWORD				value_type;								// Type of data that is contained in a key.
 	unsigned char	*key_value = new unsigned char [256];	// Area to return key values into
-	unsigned long	key_value_length = 256;						// Length of key value area
+	DWORD				key_value_length = 256;						// Length of key value area
 
 	/*
 	** Scan through and enumerate all subkeys of this key. Exit the loop when there are

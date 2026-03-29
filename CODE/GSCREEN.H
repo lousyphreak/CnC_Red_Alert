@@ -38,6 +38,8 @@
 #ifndef GSCREEN_H
 #define GSCREEN_H
 
+#include	"gadget.h"
+#include	"gbuffer.h"
 #include	"function.h"
 #include	"cell.h"
 

@@ -41,9 +41,9 @@
  *   Check_Key -- compatability routine for old 32 bit library             *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include "keyboard.h"
-#include "timer.h"
-#include "mono.h"
+#include "KEYBOARD.H"
+#include "TIMER.H"
+#include "MONO.H"
 
 void Message_Loop(void);
 
@@ -83,7 +83,7 @@ WWKeyboardClass::WWKeyboardClass(void)
 	// the num lock.
 	//
 	memset(ToggleKeys, 0, 256);
-	for (lp = 0; lp < 255; lp++ ) {
+	for (short lp = 0; lp < 255; lp++ ) {
 		if (isalpha(lp) && isupper(lp)) {
 			ToggleKeys[lp] = 1;
 		}
@@ -233,7 +233,7 @@ BOOL WWKeyboardClass::Put(int key)
  * HISTORY:                                                                                    *
  *   10/16/1995 PWG : Created.                                                                 *
  *=============================================================================================*/
-WWKeyboardClass::Put_Key_Message(UINT vk_key, BOOL release, BOOL dbl)
+BOOL WWKeyboardClass::Put_Key_Message(UINT vk_key, BOOL release, BOOL dbl)
 {
 	int bits = 0;
 	//
@@ -290,7 +290,7 @@ int WWKeyboardClass::To_ASCII(int key)
 	return(key);
 }
 
-WWKeyboardClass::Down(int key)
+int WWKeyboardClass::Down(int key)
 {
 	return(GetAsyncKeyState(key&0xFF));
 }

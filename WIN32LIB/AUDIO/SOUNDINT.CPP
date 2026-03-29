@@ -62,12 +62,12 @@
 #include	<windows.h>
 #include	<windowsx.h>
 #include	"dsound.h"
-#include	<wwstd.h>
-#include "soundint.h"
-#include "memflag.h"
-#include "audio.h"
+#include	<WWSTD.H>
+#include "SOUNDINT.H"
+#include "MEMFLAG.H"
+#include "AUDIO.H"
 
-extern	DebugBuffer[];
+extern	char DebugBuffer[];
 
 /***************************************************************************
 ** All routines past this point must be locked for the sound driver to	  **
@@ -90,11 +90,11 @@ extern	DebugBuffer[];
  * HISTORY:                                                                *
  *   06/23/1995 PWG : Created.                                             *
  *=========================================================================*/
-long Simple_Copy(void ** source, long * ssize, void ** alternate, long * altsize, void **dest, long size)
+LONG Simple_Copy(void ** source, LONG * ssize, void ** alternate, LONG * altsize, void **dest, LONG size)
 {
 
 
-	long	out = 0;		// Number of bytes copied to the destination.
+	LONG	out = 0;		// Number of bytes copied to the destination.
 
 	/*
 	**	It could happen that entering this routine, the source buffer
@@ -109,7 +109,7 @@ long Simple_Copy(void ** source, long * ssize, void ** alternate, long * altsize
 	}
 
 	if (*source && *ssize) {
-		long	s;				// Scratch length var.
+		LONG	s;				// Scratch length var.
 
 		/*
 		**	Copy as much as possible from the primary source, but no
@@ -162,11 +162,11 @@ long Simple_Copy(void ** source, long * ssize, void ** alternate, long * altsize
  *   09/04/1994 JLB : Revamped entirely.                                                       *
  *=============================================================================================*/
 #pragma argsused
-long Sample_Copy(SampleTrackerType *st, void ** source, long * ssize, void ** alternate, long * altsize, void * dest, long size, SCompressType scomp, void * , short int *)
+LONG Sample_Copy(SampleTrackerType *st, void ** source, LONG * ssize, void ** alternate, LONG * altsize, void * dest, LONG size, SCompressType scomp, void * , short int *)
 {
 
-	long	s;
-	long	datasize = 0;		// Output bytes.
+	LONG	s;
+	LONG	datasize = 0;		// Output bytes.
 
 	switch (scomp) {
 		default:

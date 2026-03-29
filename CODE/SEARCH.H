@@ -54,18 +54,6 @@
 #ifndef SEARCH_H
 #define SEARCH_H
 
-/*
-**	The "bool" integral type was defined by the C++ committee in
-**	November of '94. Until the compiler supports this, use the following
-**	definition.
-*/
-#ifndef __BORLANDC__
-#ifndef TRUE_FALSE_DEFINED
-#define TRUE_FALSE_DEFINED
-enum {false=0,true=1};
-typedef int bool;
-#endif
-#endif
 
 #ifndef __BORLANDC__
 #define	_USERENTRY
@@ -656,7 +644,7 @@ static int _USERENTRY IndexClass<T>::search_compfunc(void const * ptr1, void con
  *   11/02/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
 template<class T>
-IndexClass<T>::NodeElement const * IndexClass<T>::Search_For_Node(int id) const
+typename IndexClass<T>::NodeElement const * IndexClass<T>::Search_For_Node(int id) const
 {
 	/*
 	**	If there are no elements in the list, then it certainly can't find any matches.

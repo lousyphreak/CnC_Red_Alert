@@ -38,6 +38,7 @@
 #ifndef BUILDING_H
 #define BUILDING_H
 
+#include	"ftimer.h"
 #include	"radio.h"
 #include	"cargo.h"
 #include	"mission.h"

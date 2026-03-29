@@ -75,7 +75,7 @@
 #include	<conio.h>
 #include	<dos.h>
 #ifndef WIN32
-#include	<sys\timeb.h>
+#include	<sys/timeb.h>
 #endif
 #include  "ccdde.h"
 

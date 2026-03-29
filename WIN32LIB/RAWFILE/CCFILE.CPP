@@ -47,7 +47,9 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#include	"function.h"
+#include	<WWSTD.H>
+#include	<MEMFLAG.H>
+#include	<FILETEMP.H>
 #include	<direct.h>
 #include	<fcntl.h>
 #include	<io.h>
@@ -55,6 +57,10 @@
 #include	<errno.h>
 #include	<share.h>
 #include	"ccfile.h"
+
+extern int RequiredCD;
+bool Force_CD_Available(int cd);
+void * Load_Alloc_Data(FileClass &file);
 
 
 /***********************************************************************************************
@@ -324,7 +330,7 @@ long CCFileClass::Size(void)
  *=============================================================================================*/
 int CCFileClass::Is_Available(int )
 {
-	if (MixFileClass::Offset(File_Name())) {
+	if (MixFileClass<CDFileClass>::Offset(File_Name())) {
 		return(true);
 	}
 	return(CDFileClass::Is_Available());
@@ -420,8 +426,8 @@ int CCFileClass::Open(int rights)
 	**	Check to see if file is part of a mixfile and that mixfile is currently loaded
 	**	into RAM.
 	*/
-	MixFileClass *mixfile = 0;
-	if (MixFileClass::Offset(File_Name(), &Pointer, &mixfile, &Start, &Length)) {
+	MixFileClass<CDFileClass> *mixfile = 0;
+	if (MixFileClass<CDFileClass>::Offset(File_Name(), &Pointer, &mixfile, &Start, &Length)) {
 
 		/*
 		**	If the mixfile is located on disk, then fake out the file system to read from
@@ -478,25 +484,25 @@ WORD __cdecl Open_File(BYTE const *file_name, WORD mode)
 {
 	for (int index = 0; index < sizeof(Handles)/sizeof(Handles[0]); index++) {
 		if (!Handles[index].Is_Open()) {
-			if (Handles[index].Open(file_name, mode)) {
+			if (Handles[index].Open(reinterpret_cast<char const *>(file_name), mode)) {
 				return(index);
 			}
 			break;
 		}
 	}
-	return(ERROR);
+	return(WWERROR);
 }
 
 VOID __cdecl Close_File(WORD handle)
 {
-	if (handle != ERROR && Handles[handle].Is_Open()) {
+	if (handle != WWERROR && Handles[handle].Is_Open()) {
 		Handles[handle].Close();
 	}
 }
 
 LONG __cdecl Read_File(WORD handle, VOID *buf, ULONG bytes)
 {
-	if (handle != ERROR && Handles[handle].Is_Open()) {
+	if (handle != WWERROR && Handles[handle].Is_Open()) {
 		return(Handles[handle].Read(buf, bytes));
 	}
 	return(0);
@@ -504,7 +510,7 @@ LONG __cdecl Read_File(WORD handle, VOID *buf, ULONG bytes)
 
 LONG __cdecl Write_File(WORD handle, VOID const *buf, ULONG bytes)
 {
-	if (handle != ERROR && Handles[handle].Is_Open()) {
+	if (handle != WWERROR && Handles[handle].Is_Open()) {
 		return(Handles[handle].Write(buf, bytes));
 	}
 	return(0);
@@ -512,7 +518,7 @@ LONG __cdecl Write_File(WORD handle, VOID const *buf, ULONG bytes)
 
 WORD __cdecl Find_File(BYTE const *file_name)
 {
-	CCFileClass file(file_name);
+	CCFileClass file(reinterpret_cast<char const *>(file_name));
 	return(file.Is_Available());
 }
 
@@ -535,14 +541,14 @@ ULONG __cdecl Load_Data(BYTE const *name, VOID *ptr, ULONG size)
 
 VOID * __cdecl Load_Alloc_Data(BYTE const *name, WORD )
 {
-	CCFileClass file(name);
+	CCFileClass file(reinterpret_cast<char const *>(name));
 
 	return(Load_Alloc_Data(file));
 }
 
 ULONG __cdecl File_Size(WORD handle)
 {
-	if (handle != ERROR && Handles[handle].Is_Open()) {
+	if (handle != WWERROR && Handles[handle].Is_Open()) {
 		return(Handles[handle].Size());
 	}
 	return(0);
@@ -557,7 +563,7 @@ ULONG __cdecl Write_Data(BYTE const *name, VOID const *ptr, ULONG size)
 
 ULONG __cdecl Seek_File(WORD handle, LONG offset, WORD starting)
 {
-	if (handle != ERROR && Handles[handle].Is_Open()) {
+	if (handle != WWERROR && Handles[handle].Is_Open()) {
 		return(Handles[handle].Seek(offset, starting));
 	}
 	return(0);

@@ -38,6 +38,7 @@
 #ifndef MOUSE_H
 #define MOUSE_H
 
+#include	"defines.h"
 #include	"stage.h"
 #include	"scroll.h"
 

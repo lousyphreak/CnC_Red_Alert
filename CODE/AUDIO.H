@@ -38,7 +38,11 @@
 #ifndef AUDIO_H
 #define AUDIO_H
 
-#include	"memory.h"
+#include <cstdlib>
+#include <string.h>
+
+#include	"MEMORY.H"
+#include	"FUNCTION.H"
 
 class AudioClass {
 		char const * Name;	// Name of audio asset.
@@ -87,8 +91,8 @@ inline AudioClass::AudioClass(char const *name, MemoryClass &mem)
 inline AudioClass::~AudioClass(void)
 {
 	if (GameActive) {
-		if (Name) free(Name);
-		if (Data) Mem->Free(Data);
+		if (Name) std::free(const_cast<char*>(Name));
+		if (Data && Mem) Mem->Free(Data);
 		Name = 0;
 		Data = 0;
 		Handle = -1;

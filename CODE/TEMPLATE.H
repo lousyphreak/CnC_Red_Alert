@@ -38,7 +38,11 @@
 #ifndef TEMPLATE_H
 #define TEMPLATE_H
 
+#include	"defines.h"
+#include	"ccptr.h"
 #include	"object.h"
+#include	"pipe.h"
+#include	"straw.h"
 #include	"type.h"
 
 

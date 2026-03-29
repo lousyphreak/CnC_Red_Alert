@@ -35,7 +35,7 @@
  * int Save_PCX_File (char* name, GraphicViewPortClass& pic, char* palette)*
  *= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =*/
 
-#include  <wwlib32.h>
+#include  <WWSTD.H>
 #include "filepcx.h"
 #include <wwmem.h>
 static void Write_Pcx_ScanLine ( int file_handle , int scansize , char * ptr );
@@ -75,7 +75,7 @@ int Write_PCX_File (char* name, GraphicViewPortClass& pic, unsigned char* palett
 
 	// Open file name
 	file_handle = Open_File ( name , WRITE ) ;
-	if ( file_handle == ERROR ) return FALSE ;
+	if ( file_handle == WW_ERROR ) return FALSE ;
 
 
 	header.width  = pic.Get_Width() - 1 ;
@@ -176,6 +176,6 @@ void Write_Pcx_ScanLine ( int file_handle , int scansize , char * ptr )
 		}
 	}
 
-	Write_File ( file_handle, pool , ( int ) file_ptr - ( int ) pool ) ;
+	Write_File(file_handle, pool, static_cast<int>(file_ptr - pool));
 }
 

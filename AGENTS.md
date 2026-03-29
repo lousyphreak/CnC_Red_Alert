@@ -4,7 +4,7 @@ current progress is in `docs/PORTING_PROGRESS.md`, use it as reference, and keep
 
 ## Porting rules
 
-- fix include directives in all source files to match correct casing of file names
+- fix include directives in all source files to match correct casing of file names, no symlinks, no "forwarding" headers, just direct includes with correct casing. this is important for case-sensitive filesystems and to avoid confusion later on.
 - no functionality change, we want to preserve the original behavior as much as possible, so no refactoring or code cleanup, just a straight port
 - use correct size types (e.g. `uint32_t` instead of `unsigned int`) and correct format specifiers (e.g. `%u` for `uint32_t`) in all source files. be aware that the original code is for 32
 - use SDL3 for all platform-specific functionality, including file reading, window management, input handling, audio, and rendering. do not use any platform-specific APIs directly.

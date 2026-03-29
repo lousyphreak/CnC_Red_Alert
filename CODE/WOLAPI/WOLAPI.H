@@ -419,7 +419,7 @@ void __RPC_STUB IRTPatcherEvent_OnTermination_Stub(
 
 
 //typedef long time_t;
-#include <sys\types.h>
+#include <sys/types.h>
 
 struct  Ladder
     {

@@ -18,6 +18,8 @@
 
 /* $Header: /CounterStrike/VECTOR.H 1     3/03/97 10:26a Joe_bostic $ */
 /***********************************************************************************************
+
+#include "NOINIT.H"
  ***              C O N F I D E N T I A L  ---  W E S T W O O D  S T U D I O S               ***
  ***********************************************************************************************
  *                                                                                             *
@@ -64,9 +66,6 @@
 
 #include	<stdlib.h>
 #include	<stddef.h>
-
-inline void * operator new(size_t , void * pointer) {return(pointer);}
-inline void * operator new[](size_t , void * pointer) {return(pointer);}
 
 
 /**************************************************************************

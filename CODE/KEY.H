@@ -42,19 +42,6 @@
 
 #include	<windows.h>
 
-/*
-**	The "bool" integral type was defined by the C++ comittee in
-**	November of '94. Until the compiler supports this, use the following
-**	definition.
-*/
-#ifndef __BORLANDC__
-#ifndef TRUE_FALSE_DEFINED
-#define TRUE_FALSE_DEFINED
-enum {false=0,true=1};
-typedef int bool;
-#endif
-#endif
-
 
 typedef enum {
 	WWKEY_SHIFT_BIT	= 0x100,
@@ -83,6 +70,8 @@ class WWKeyboardClass
 
 		/* Define the main hook for the message processing loop.					*/
 		bool Message_Handler(HWND hwnd, UINT message, UINT wParam, LONG lParam);
+		int Get_Mouse_X(void) const {return MouseQX;}
+		int Get_Mouse_Y(void) const {return MouseQY;}
 
 		/* Define the public access variables which are used with the			*/
 		/*   Keyboard Class.																	*/
@@ -122,6 +111,11 @@ class WWKeyboardClass
 		int Head;
 		int Tail;
 };
+
+int Get_Mouse_X(void);
+int Get_Mouse_Y(void);
+int Get_Global_Mouse_X(void);
+int Get_Global_Mouse_Y(void);
 
 
 #define	VK_NONE				  0x00

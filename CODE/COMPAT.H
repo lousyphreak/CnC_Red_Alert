@@ -38,6 +38,8 @@
 #ifndef COMPAT_H
 #define COMPAT_H
 
+#include "FIXED.H"
+
 
 #define	BuffType		BufferClass
 //#define movmem(a,b,c) memmove(b,a,c)

@@ -38,7 +38,10 @@
 #ifndef EXTERNS_H
 #define EXTERNS_H
 
+#include	<dsound.h>
 #include	"cell.h"
+#include	"key.h"
+#include	"mouse.h"
 
 #ifdef SCENARIO_EDITOR
 #include	"mapedit.h"
@@ -63,6 +66,7 @@ void _PRO(void);
 **	easier entry into the code and less clutter.
 */
 typedef MixFileClass<CCFileClass>	MFCD;
+typedef MouseClass WWMouseClass;
 
 extern bool IsVQ640;
 extern unsigned long GameVersion;

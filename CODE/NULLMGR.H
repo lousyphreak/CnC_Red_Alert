@@ -40,6 +40,8 @@
 #ifndef NULLMODEM_H
 #define NULLMODEM_H
 
+struct PORT;
+
 
 /*
 ********************************* Includes **********************************

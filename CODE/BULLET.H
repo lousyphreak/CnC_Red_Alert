@@ -38,9 +38,12 @@
 #ifndef BULLET_H
 #define BULLET_H
 
+#include "TYPE.H"
 #include "object.h"
+#include "facing.h"
 #include	"fly.h"
 #include	"fuse.h"
+
 
 
 class BulletClass :	public ObjectClass,
