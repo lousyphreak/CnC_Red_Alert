@@ -1,0 +1,143 @@
+#ifndef RA_MMSYSTEM_WRAPPER_H
+#define RA_MMSYSTEM_WRAPPER_H
+
+#include "windows.h"
+
+#define TIME_ONESHOT 0x0000
+#define TIME_PERIODIC 0x0001
+
+#define WAVE_FORMAT_PCM 1
+
+#define MCI_WAIT 0x00000002L
+#define MCI_OPEN 0x0803
+#define MCI_CLOSE 0x0804
+#define MCI_PLAY 0x0806
+#define MCI_PAUSE 0x0809
+#define MCI_BREAK 0x0845
+#define MCI_INFO 0x080A
+#define MCI_SYSINFO 0x0810
+#define MCI_GETDEVCAPS 0x080B
+#define MCI_WHERE 0x0843
+#define MCI_PUT 0x0842
+#define MCI_WINDOW 0x0841
+
+#define MCI_SYSINFO_QUANTITY 0x00000100L
+#define MCI_SYSINFO_NAME 0x00000400L
+#define MCI_INFO_PRODUCT 0x00000100L
+#define MCI_OPEN_TYPE 0x00002000L
+#define MCI_OPEN_ELEMENT 0x00000200L
+#define MCI_GETDEVCAPS_ITEM 0x00000100L
+#define MCI_DGV_WHERE_SOURCE 0x00020000L
+#define MCI_BREAK_HWND 0x00000200L
+#define MCI_BREAK_KEY 0x00000100L
+#define MCI_DGV_RECT 0x00010000L
+#define MCI_DGV_PUT_DESTINATION 0x00040000L
+#define MCI_DGV_WINDOW_HWND 0x00010000L
+#define MCI_DGV_WINDOW_STATE 0x00040000L
+
+#define MCI_ALL_DEVICE_ID 0xFFFFFFFFu
+#define MCI_DEVTYPE_ANIMATION 519
+#define MCI_DEVTYPE_CD_AUDIO 516
+#define MCI_DEVTYPE_DAT 513
+#define MCI_DEVTYPE_DIGITAL_VIDEO 520
+#define MCI_DEVTYPE_OTHER 521
+#define MCI_DEVTYPE_OVERLAY 515
+#define MCI_DEVTYPE_SCANNER 518
+#define MCI_DEVTYPE_SEQUENCER 523
+#define MCI_DEVTYPE_VCR 513
+#define MCI_DEVTYPE_VIDEODISC 514
+#define MCI_DEVTYPE_WAVEFORM_AUDIO 522
+
+#define MCI_GETDEVCAPS_DEVICE_TYPE 0x00000004L
+#define MCI_GETDEVCAPS_CAN_EJECT 0x00000009L
+#define MCI_GETDEVCAPS_CAN_PLAY 0x00000008L
+#define MCI_GETDEVCAPS_CAN_RECORD 0x00000001L
+#define MCI_GETDEVCAPS_CAN_SAVE 0x00000002L
+#define MCI_GETDEVCAPS_COMPOUND_DEVICE 0x00000005L
+#define MCI_GETDEVCAPS_HAS_AUDIO 0x00000006L
+#define MCI_GETDEVCAPS_HAS_VIDEO 0x00000007L
+#define MCI_GETDEVCAPS_USES_FILES 0x00000003L
+
+using MCIERROR = DWORD;
+using LPTIMECALLBACK = void (CALLBACK*)(UINT, UINT, DWORD, DWORD, DWORD);
+
+struct WAVEFORMATEX {
+    WORD wFormatTag;
+    WORD nChannels;
+    DWORD nSamplesPerSec;
+    DWORD nAvgBytesPerSec;
+    WORD nBlockAlign;
+    WORD wBitsPerSample;
+    WORD cbSize;
+};
+using LPWAVEFORMATEX = WAVEFORMATEX*;
+
+struct MCI_GENERIC_PARMS {
+    DWORD dwCallback;
+};
+
+struct MCI_SYSINFO_PARMS {
+    DWORD dwCallback;
+    LPSTR lpstrReturn;
+    DWORD dwRetSize;
+    DWORD dwNumber;
+    UINT wDeviceType;
+};
+
+struct MCI_INFO_PARMS {
+    DWORD dwCallback;
+    LPSTR lpstrReturn;
+    DWORD dwRetSize;
+};
+
+struct MCI_OPEN_PARMS {
+    DWORD dwCallback;
+    MCIDEVICEID wDeviceID;
+    LPCSTR lpstrDeviceType;
+    LPCSTR lpstrElementName;
+    LPCSTR lpstrAlias;
+};
+
+struct MCI_PLAY_PARMS {
+    DWORD dwCallback;
+    DWORD dwFrom;
+    DWORD dwTo;
+};
+
+struct MCI_GETDEVCAPS_PARMS {
+    DWORD dwCallback;
+    DWORD dwReturn;
+    DWORD dwItem;
+};
+
+struct MCI_DGV_RECT_PARMS {
+    DWORD dwCallback;
+    RECT rc;
+};
+
+struct MCI_BREAK_PARMS {
+    DWORD dwCallback;
+    int nVirtKey;
+    HWND hwndBreak;
+};
+
+struct MCI_DGV_PUT_PARMS {
+    DWORD dwCallback;
+    RECT rc;
+};
+
+struct MCI_DGV_WINDOW_PARMS {
+    DWORD dwCallback;
+    HWND hwnd;
+    LPCSTR lpstrText;
+    int nCmdShow;
+    LPCSTR lpstrAlias;
+};
+
+extern "C" {
+MMRESULT timeSetEvent(UINT delay, UINT resolution, LPTIMECALLBACK callback, DWORD user, UINT event_type);
+MMRESULT timeKillEvent(UINT timer_id);
+MCIERROR mciSendCommand(MCIDEVICEID device_id, UINT message, DWORD flags, DWORD params);
+}
+
+#endif
