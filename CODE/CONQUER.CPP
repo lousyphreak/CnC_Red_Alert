@@ -85,15 +85,15 @@ B<A> test;
 
 
 
-#include	"function.h"
+#include	"FUNCTION.H"
 #ifdef WIN32
 #ifdef WINSOCK_IPX
-#include	"WSProto.h"
+#include	"WSPROTO.H"
 #else	//WINSOCK_IPX
-#include	"tcpip.h"
+#include	"TCPIP.H"
 #endif	//WINSOCK_IPX
 #else
-#include	"fakesock.h"
+#include	"FAKESOCK.H"
 TcpipManagerClass	Winsock;
 #endif
 #include	<stdlib.h>
@@ -104,22 +104,22 @@ TcpipManagerClass	Winsock;
 #include	<io.h>
 #include	<dos.h>
 #include	<share.h>
-#include	"ccdde.h"
-#include	"vortex.h"
+#include	"CCDDE.H"
+#include	"VORTEX.H"
 
 #ifdef WOLAPI_INTEGRATION
-//#include "WolDebug.h"
-#include "WolStrng.h"
-#include "WolapiOb.h"
+//#include "WOLDEBUG.H"
+#include "WOLSTRNG.H"
+#include "WOLAPIOB.H"
 extern WolapiObject* pWolapi;
 #define PAGE_RESPOND_KEY	KN_RETURN	//KN_COMMA
 #endif
 
 #ifdef MPEGMOVIE
 #ifdef MCIMPEG
-#include "mcimovie.h"
+#include "MCIMOVIE.H"
 #endif
-#include "movie.h"
+#include "MOVIE.H"
 MPG_RESPONSE far __stdcall MpegCallback(MPG_CMD cmd, LPVOID data, LPVOID user);
 #endif
 
@@ -3614,7 +3614,7 @@ Rect const Shape_Dimensions(void const * shapedata, int shapenum)
 	/*
 	**	Find bottom edge of the shape.
 	*/
-	for (y = ylimit; y >= rect.Y; y--) {
+	for (int y = ylimit; y >= rect.Y; y--) {
 		for (int x = xlimit; x >= 0; x--) {
 			if (shape[y*width + x] != 0) {
 				rect.Height = (y-rect.Y)+1;
@@ -3629,7 +3629,7 @@ Rect const Shape_Dimensions(void const * shapedata, int shapenum)
 	**	Find left edge of the shape.
 	*/
 	for (int x = 0; x < rect.X; x++) {
-		for (y = rect.Y; y < rect.Y+rect.Height; y++) {
+		for (int y = rect.Y; y < rect.Y+rect.Height; y++) {
 			if (shape[y*width + x] != 0) {
 				rect.X = x;
 				x = rect.X;
@@ -3641,8 +3641,8 @@ Rect const Shape_Dimensions(void const * shapedata, int shapenum)
 	/*
 	**	Find the right edge of the shape.
 	*/
-	for (x = width-1; x >= xlimit; x--) {
-		for (y = rect.Y; y < rect.Y+rect.Height; y++) {
+	for (int x = width-1; x >= xlimit; x--) {
+		for (int y = rect.Y; y < rect.Y+rect.Height; y++) {
 			if (shape[y*width + x] != 0) {
 				rect.Width = (x-rect.X)+1;
 				x = xlimit-1;
@@ -4157,8 +4157,8 @@ int Get_CD_Index (int cd_drive, int timeout)
 	{
 	char		volume_name[128];
 	char		buffer[128];
-	unsigned	filename_length;
-	unsigned	misc_dword;
+	DWORD		filename_length;
+	DWORD		misc_dword;
 	int		count = 0;
 
 	CountDownTimerClass timer;
@@ -4174,9 +4174,9 @@ int Get_CD_Index (int cd_drive, int timeout)
 		sprintf(buffer, "%c:\\", 'A' + cd_drive);
 
 		if (GetVolumeInformation ((char const *)buffer, &volume_name[0] ,
-				(unsigned long)sizeof(volume_name), (unsigned long *)NULL ,
-				(unsigned long *)&filename_length, (unsigned long *)&misc_dword,
-				(char *)NULL, (unsigned long)0))
+				static_cast<DWORD>(sizeof(volume_name)), static_cast<DWORD*>(NULL) ,
+				&filename_length, &misc_dword,
+				(char *)NULL, static_cast<DWORD>(0)))
 			{
 			/*
 			** Try opening 'movies.mix' to verify that the CD is really there and is what
@@ -4533,7 +4533,7 @@ bool Force_CD_Available( int cd_desired )				//	ajw
 			if( cd_desired == CD_DVD )
 			{
 				#ifdef FRENCH
-			   	sprintf(buffer, "InsŠrez le %s",  _cd_name[4]);
+			   	sprintf(buffer, "Insï¿½rez le %s",  _cd_name[4]);
 				#else
 				#ifdef GERMAN
 				sprintf(buffer, "Bitte %s",  _cd_name[4]);
@@ -4545,7 +4545,7 @@ bool Force_CD_Available( int cd_desired )				//	ajw
 			else if( cd_desired == CD_COUNTERSTRIKE || cd_desired == CD_AFTERMATH )
 			{
 				#ifdef FRENCH
-			   	sprintf(buffer, "InsŠrez le %s",  _cd_name[cd_desired]);
+			   	sprintf(buffer, "Insï¿½rez le %s",  _cd_name[cd_desired]);
 				#else
 				#ifdef GERMAN
 				sprintf(buffer, "Bitte %s",  _cd_name[cd_desired]);
@@ -4929,7 +4929,7 @@ bool Force_CD_Available(int cd)
 			#endif
 
 				#ifdef FRENCH
-			   	sprintf(buffer, "InsŠrez le %s",  _cd_name[cd]);
+			   	sprintf(buffer, "Insï¿½rez le %s",  _cd_name[cd]);
 				#else
 				#ifdef GERMAN
 				sprintf(buffer, "Bitte %s",  _cd_name[cd]);
@@ -4942,7 +4942,7 @@ bool Force_CD_Available(int cd)
 				{
 				#ifdef DVD
 				#ifdef FRENCH
-			   	sprintf(buffer, "InsŠrez le %s", _cd_name[4]);
+			   	sprintf(buffer, "Insï¿½rez le %s", _cd_name[4]);
 				#else
 				#ifdef GERMAN 
 				sprintf(buffer, "Bitte %s", _cd_name[4]);

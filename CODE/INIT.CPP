@@ -59,16 +59,17 @@
  *   Load_Prolog_Page -- Loads the special pre-prolog "please wait" page.                      *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-#include	"loaddlg.h"
+#include	"FUNCTION.H"
+#include	"LOADDLG.H"
+#include	<stdint.h>
 #ifdef WIN32
 #ifdef WINSOCK_IPX
-#include	"WSProto.h"
-#include	"WSPUDP.h"
-#include	"WSPIPX.h"
-#include	"internet.h"
+#include	"WSPROTO.H"
+#include	"WSPUDP.H"
+#include	"WSPIPX.H"
+#include	"INTERNET.H"
 #else	//WINSOCK_IPX
-#include	"tcpip.h"
+#include	"TCPIP.H"
 #endif	//WINSOCK_IPX
 
 #endif
@@ -77,7 +78,7 @@
 #ifndef WIN32
 #include	<sys/timeb.h>
 #endif
-#include  "ccdde.h"
+#include  "CCDDE.H"
 
 #include <time.h>
 
@@ -86,12 +87,12 @@
 #endif
 
 #ifdef MPEGMOVIE // Denzil 6/25/98
-#include "mpgset.h"
+#include "MPGSET.H"
 #endif
 
 RemapControlType SidebarScheme;
 
-#include "WolDebug.h"
+#include "WOLDEBUG.H"
 
 #ifdef CHEAT_KEYS
 extern bool bNoMovies;
@@ -118,7 +119,7 @@ static void Init_Keys(void);
 extern int UnitBuildPenalty;
 
 extern "C" {
-extern long RandNumb;
+extern uint32_t RandNumb;
 }
 #ifndef WIN32
 static int UsePageFaultHandler = 1;				// 1 = install PFH
@@ -134,7 +135,7 @@ bool Save_Recording_Values(CCFileClass & file);
 
 #ifdef WOLAPI_INTEGRATION
 extern int WOL_Main();
-#include "WolapiOb.h"
+#include "WOLAPIOB.H"
 extern WolapiObject* pWolapi;
 #endif
 
@@ -192,7 +193,7 @@ static void Load_Prolog_Page(void)
  * HISTORY:                                                                                    *
  *   10/07/1992 JLB : Created.                                                                 *
  *=============================================================================================*/
-#include	"sha.h"
+#include	"SHA.H"
 //#include    <locale.h>
 bool Init_Game(int , char * [])
 {
@@ -274,14 +275,16 @@ bool Init_Game(int , char * [])
 	/*
 	**	Find and process any rules for this game.
 	*/
-	if (RuleINI.Load(CCFileClass("RULES.INI"), false)) {
+	CCFileClass rules_file("RULES.INI");
+	if (RuleINI.Load(rules_file, false)) {
 		Rule.Process(RuleINI);
 	}
 #ifdef FIXIT_CSII	//	checked - ajw 9/28/98
 	//  Aftermath runtime change 9/29/98
 	//	This is safe to do, as only rules for aftermath units are included in this ini.
 	if (Is_Aftermath_Installed() == true) {
-		if (AftermathINI.Load(CCFileClass("AFTRMATH.INI"), false)) {
+		CCFileClass aftermath_file("AFTRMATH.INI");
+		if (AftermathINI.Load(aftermath_file, false)) {
 			Rule.Process(AftermathINI);
 		}
 	}
@@ -1435,6 +1438,7 @@ bool Select_Game(bool fade)
 			}
 //			debugprint( "Non Internet game: NewUnitsEnabled = %i\n", NewUnitsEnabled );
 			break;
+		#ifdef WOLAPI_INTEGRATION
 		case GAME_INTERNET:
 			if( !pWolapi )
 			{
@@ -1448,6 +1452,7 @@ bool Select_Game(bool fade)
 				NewUnitsEnabled = SecretUnitsEnabled = false;
 //			debugprint( "Internet game: NewUnitsEnabled = %i\n", NewUnitsEnabled );
 			break;
+		#endif
 		default:
 			break;
 	}
@@ -1569,7 +1574,7 @@ bool Select_Game(bool fade)
 						//ajw debugging only
 //						debugprint( "Debugging Session...\n" );
 //						debugprint( "Session.Players count is %i.\n", Session.Players.Count() );
-						for (i = 0; i < Session.Players.Count(); i++)
+						for (int i = 0; i < Session.Players.Count(); i++)
 						{
 							NetNumType net;
 							NetNodeType node;
@@ -2209,6 +2214,7 @@ long Obfuscate(char const * string)
 	strncpy(buffer, string, sizeof(buffer));
 	buffer[sizeof(buffer)-1] = '\0';
 	int length = strlen(buffer);
+	int index;
 
 	/*
 	**	Only upper case letters are significant.
@@ -2568,7 +2574,7 @@ static void Init_Color_Remaps(void)
 		for (int index = 0; index < 16; index++) {
 			ptr[HidPage.Get_Pixel(index, 0)] = HidPage.Get_Pixel(index, pcolor);
 		}
-		for (index = 0; index < 6; index++) {
+		for (int index = 0; index < 6; index++) {
 			ColorRemaps[pcolor].FontRemap[10+index] = HidPage.Get_Pixel(2+index, pcolor);
 		}
 		ColorRemaps[pcolor].BrightColor = WHITE;
@@ -3409,7 +3415,8 @@ static void Init_Bulk_Data(void)
 	**	Fetch the tutorial message data.
 	*/
 	INIClass ini;
-	ini.Load(CCFileClass("TUTORIAL.INI"));
+	CCFileClass tutorial_file("TUTORIAL.INI");
+	ini.Load(tutorial_file);
 	for (int index = 0; index < ARRAY_SIZE(TutorialText); index++) {
 		TutorialText[index] = NULL;
 

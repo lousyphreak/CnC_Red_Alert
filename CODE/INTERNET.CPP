@@ -52,9 +52,9 @@
 
 #ifdef WIN32
 
-#include "function.h"
-#include "tcpip.h"
-#include "ccdde.h"
+#include "FUNCTION.H"
+#include "TCPIP.H"
+#include "CCDDE.H"
 
 
 extern bool SpawnedFromWChat;
@@ -391,7 +391,7 @@ int Read_Game_Options(char *name)
 			** See if that scenario is available now. Its fatal if it isnt.
 			*/
 			Session.Options.ScenarioIndex = -1;
-			for (i = 0; i < Session.Scenarios.Count(); i++) {
+			for (int i = 0; i < Session.Scenarios.Count(); i++) {
 				if (!strcmp (Session.Scenarios[i]->Description(), Session.Options.ScenarioDescription) ){
 					Session.Options.ScenarioIndex = i;
 					break;
@@ -475,9 +475,9 @@ bool Is_User_WChat_Registered(char *buffer, int buffer_len)
 {
 	HKEY	key;
 	char	user_handle[256];
-	DWORD	user_handle_size = sizeof (user_handle);
+	LONG	user_handle_size = sizeof (user_handle);
 	char	user_pword[256];
-	DWORD	user_pword_size = sizeof (user_pword);
+	LONG	user_pword_size = sizeof (user_pword);
 
 
 	/*
@@ -489,9 +489,9 @@ bool Is_User_WChat_Registered(char *buffer, int buffer_len)
 		key = Get_Registry_Sub_Key (key, "Nick1", TRUE);
 		if (key){
 
-			if (RegQueryValue(key, "Nick", user_handle, (long*)&user_handle_size) == ERROR_SUCCESS){
+			if (RegQueryValue(key, "Nick", user_handle, &user_handle_size) == ERROR_SUCCESS){
 
-				if (RegQueryValue(key, "Pass", user_pword, (long*)&user_pword_size) == ERROR_SUCCESS){
+				if (RegQueryValue(key, "Pass", user_pword, &user_pword_size) == ERROR_SUCCESS){
 
 					/*
 					** If the first char of the users name is non-numberic and there is a password
@@ -530,7 +530,7 @@ bool Is_User_WChat_Registered(char *buffer, int buffer_len)
 	}
 
 	RegCloseKey(key);
-	memcpy (buffer, user_handle, min(buffer_len, user_handle_size));
+	memcpy (buffer, user_handle, min(buffer_len, (int)user_handle_size));
 
 	/*
 	** If the first char of the users name is non-numeric then return success

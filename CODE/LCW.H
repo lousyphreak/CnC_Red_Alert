@@ -39,6 +39,9 @@
 #ifndef LCW_H
 #define LCW_H
 
+#ifndef __cdecl
+#define __cdecl
+#endif
 
 int LCW_Uncomp(void const * source, void * dest, unsigned long length=0);
 

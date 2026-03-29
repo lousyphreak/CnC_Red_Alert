@@ -39,13 +39,13 @@
 *
 ****************************************************************************/
 
-#include <mem.h>
 #include <malloc.h>
-#include <vqm32\font.h>
-#include <vqm32\text.h>
-#include <vqm32\graphics.h>
-#include <vqm32\captoken.h>
-#include "caption.h"
+#include <string.h>
+#include <VQM32/FONT.H>
+#include <VQM32/TEXT.H>
+#include <VQM32/GRAPHICS.H>
+#include <VQM32/CAPTOKEN.H>
+#include "CAPTION.H"
 
 
 /*---------------------------------------------------------------------------
@@ -395,6 +395,3 @@ static void RemCaptionNode(CaptionList *list, CaptionNode *node)
 		list->TailPred = node;
 	}
 }
-
-
-

@@ -985,7 +985,7 @@ bool UnitClass::Unlimbo(COORDINATE coord, DirType dir)
  *   06/30/1995 JLB : Lasers do maximum damage against gunboat.                                *
  *   08/16/1995 JLB : Harvester crushing doesn't occur on early missions.                      *
  *=============================================================================================*/
-ResultType UnitClass::Take_Damage(int & damage, int distance, WarheadType warhead, TechnoClass * source, int forced)
+ResultType UnitClass::Take_Damage(int & damage, int distance, WarheadType warhead, TechnoClass * source, bool forced)
 {
 	assert(Units.ID(this) == ID);
 	assert(IsActive);
@@ -2615,14 +2615,13 @@ int UnitClass::Mission_Unload(void)
 							Mark(MARK_UP);
 							BuildingClass * building = new BuildingClass((House->ActLike == HOUSE_USSR || House->ActLike == HOUSE_UKRAINE || House->ActLike == HOUSE_BAD) ? STRUCT_APMINE : STRUCT_AVMINE, House->Class->House);
 							if (building != NULL) {
-								ScenarioInit = true;
+								ScenarioInit++;
 								if (building->Unlimbo(Coord)) {
 									Sound_Effect(VOC_MINELAY1, Coord);
-									ScenarioInit = false;
 									building->Revealed(House);
 									Ammo--;
 								}
-								ScenarioInit = false;
+								ScenarioInit--;
 							}
 							Status = CLOSING_DOOR;
 							Mark(MARK_DOWN);

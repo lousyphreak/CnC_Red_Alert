@@ -43,12 +43,12 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#include "function.h"
+#include "FUNCTION.H"
 
-//#include "WolDebug.h"
+//#include "WOLDEBUG.H"
 
 #ifdef WINSOCK_IPX
-#include "WSProto.h"
+#include "WSPROTO.H"
 #else
 
 #ifdef WIN32
@@ -70,7 +70,7 @@ extern bool Is_Mission_Aftermath (char *file_name);
 #define RESPONSE_TIMEOUT	60*60
 
 #ifdef WOLAPI_INTEGRATION
-#include "WolapiOb.h"
+#include "WOLAPIOB.H"
 extern WolapiObject* pWolapi;
 #endif
 

@@ -50,13 +50,15 @@
  *   NullModemClass::Hangup_Modem -- hangs up the modem                    *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include "function.h"
+#include "FUNCTION.H"
 #ifdef WIN32
-#include "wincomm.h"
-#include "modemreg.h"
+#include "WINCOMM.H"
+#include "MODEMREG.H"
 extern ModemRegistryEntryClass *ModemRegistry;
 #endif	//WIN32
-#include "i86.h"
+#ifndef WIN32
+#include <i86.h>
+#endif
 
 
 // Turn off "expression is not meaningful".
@@ -213,7 +215,9 @@ NullModemClass::~NullModemClass ()
  *=========================================================================*/
 int NullModemClass::Init (int port, int irq, char *dev_name, int baud, char parity, int wordlen, int stopbits, int flowcontrol)
 {
+#ifndef WIN32
 	int com;
+#endif
 
 #ifdef WIN32
 
@@ -281,6 +285,7 @@ int NullModemClass::Init (int port, int irq, char *dev_name, int baud, char pari
 	/*------------------------------------------------------------------------
 	This call allocates all necessary queue buffers
 	------------------------------------------------------------------------*/
+#ifndef WIN32
 	switch (port) {
 		case 0x3f8:
 			com = COM1;
@@ -302,6 +307,7 @@ int NullModemClass::Init (int port, int irq, char *dev_name, int baud, char pari
 			com = COM5;
 			break;
 	}
+#endif
 
 #ifdef WIN32
 	int	i;
@@ -1406,7 +1412,7 @@ void NullModemClass::Mono_Debug_Print(int,int refresh)
  *   06/02/1995 DRD : Created.                                             *
  *   8/2/96      ST : Added Win32 support                                  *
  *=========================================================================*/
-int NullModemClass::Detect_Modem( SerialSettingsType *settings, bool reconnect )
+int NullModemClass::Detect_Modem( SerialSettingsType *settings, int reconnect )
 {
 	/*------------------------------------------------------------------------
 	Button Enumerations
@@ -1416,6 +1422,7 @@ int NullModemClass::Detect_Modem( SerialSettingsType *settings, bool reconnect )
 
 	int x,y,width,height;					// dialog dimensions
 	char buffer[80*3];
+	RemapControlType *scheme = GadgetClass::Get_Color_Scheme();
 
 	/*
 	** Get resolution factor
@@ -1428,7 +1435,7 @@ int NullModemClass::Detect_Modem( SerialSettingsType *settings, bool reconnect )
 	------------------------------------------------------------------------*/
 	strcpy( buffer, Text_String( TXT_INITIALIZING_MODEM ) );
 
-	Fancy_Text_Print(TXT_NONE, 0, 0, TBLACK, TBLACK, TPF_TEXT);
+	Fancy_Text_Print(TXT_NONE, 0, 0, scheme, TBLACK, TPF_TEXT);
 	int lines = Format_Window_String(buffer, SeenBuff.Get_Height(), width, height);
 
 	width = max(width, 90 * RESFACTOR);
@@ -1463,7 +1470,9 @@ int NullModemClass::Detect_Modem( SerialSettingsType *settings, bool reconnect )
 	Show_Mouse();
 
 
+#ifndef WIN32
 	HMWaitForOK( 0, NULL );
+#endif	//WIN32
 
 
 	/*
@@ -1502,7 +1511,7 @@ int NullModemClass::Detect_Modem( SerialSettingsType *settings, bool reconnect )
 	*/
 	status = Send_Modem_Command( "AT", '\r', buffer, 81, DEFAULT_TIMEOUT, 2 );
 
-	if (status < ASSUCCESS) {
+	if (status < COMMSUCCESS) {
 #ifdef FIXIT_MULTI_SAVE
 		return(false);
 #else
@@ -1535,7 +1544,7 @@ int NullModemClass::Detect_Modem( SerialSettingsType *settings, bool reconnect )
 			/*
 			** Handle error case.
 			*/
-			if (status < ASSUCCESS) {
+			if (status < COMMSUCCESS) {
 				if (WWMessageBox().Process(TXT_ERROR_NO_INIT, TXT_IGNORE, TXT_CANCEL)) {
 					delete istr;
 					return( false );
@@ -1671,7 +1680,7 @@ int NullModemClass::Detect_Modem( SerialSettingsType *settings, bool reconnect )
  *   06/02/1995 DRD : Created.                                             *
  *   8/2/96      ST : Win32 support                                        *
  *=========================================================================*/
-DialStatusType NullModemClass::Dial_Modem( char *string, DialMethodType method, bool reconnect )
+DialStatusType NullModemClass::Dial_Modem( char *string, DialMethodType method, int reconnect )
 {
 	/*
 	** Get the resolution factor
@@ -1697,6 +1706,7 @@ DialStatusType NullModemClass::Dial_Modem( char *string, DialMethodType method, 
 
 	int x,y,width,height;					// dialog dimensions
 	char buffer[80*3];
+	RemapControlType *scheme = GadgetClass::Get_Color_Scheme();
 
 
 	/*------------------------------------------------------------------------
@@ -1709,7 +1719,7 @@ DialStatusType NullModemClass::Dial_Modem( char *string, DialMethodType method, 
 		strcpy( buffer, Text_String( TXT_DIALING ) );
 	}
 
-	Fancy_Text_Print(TXT_NONE,0,0,TBLACK,TBLACK,TPF_TEXT);
+	Fancy_Text_Print(TXT_NONE, 0, 0, scheme, TBLACK, TPF_TEXT);
 	Format_Window_String(buffer, SeenBuff.Get_Height(), width, height);
 
 	int text_width = width;
@@ -1863,7 +1873,7 @@ DialStatusType NullModemClass::Dial_Modem( char *string, DialMethodType method, 
  *   06/02/1995 DRD : Created.                                             *
  *   8/2/96      ST : Added Win32 support                                  *
  *=========================================================================*/
-DialStatusType NullModemClass::Answer_Modem( bool reconnect )
+DialStatusType NullModemClass::Answer_Modem( int reconnect )
 {
 	/*
 	** Get the resolution factor
@@ -1903,6 +1913,7 @@ DialStatusType NullModemClass::Answer_Modem( bool reconnect )
 	int text_width;
 	char text_buffer[80*3];
 	char comm_buffer[80*3];
+	RemapControlType *scheme = GadgetClass::Get_Color_Scheme();
 
 	/*------------------------------------------------------------------------
 	Determine the dimensions of the text to be used for the dialog box.
@@ -1914,7 +1925,7 @@ DialStatusType NullModemClass::Answer_Modem( bool reconnect )
 		strcpy( text_buffer, Text_String( TXT_WAITING_FOR_CALL ) );
 	}
 
-	Fancy_Text_Print(TXT_NONE, 0, 0, TBLACK, TBLACK, TPF_TEXT);
+	Fancy_Text_Print(TXT_NONE, 0, 0, scheme, TBLACK, TPF_TEXT);
 	Format_Window_String(text_buffer, SeenBuff.Get_Height(), width, height);
 
 	text_width = width;
@@ -2026,7 +2037,7 @@ DialStatusType NullModemClass::Answer_Modem( bool reconnect )
 
 				strcpy( text_buffer, Text_String( TXT_ANSWERING ) );
 
-				Fancy_Text_Print(TXT_NONE,0,0,TBLACK,TBLACK,TPF_TEXT);
+				Fancy_Text_Print(TXT_NONE, 0, 0, scheme, TBLACK, TPF_TEXT);
 				Format_Window_String(text_buffer, SeenBuff.Get_Height(), width, height);
 
 				text_width = width;
@@ -2118,7 +2129,7 @@ DialStatusType NullModemClass::Answer_Modem( bool reconnect )
  *   06/02/1995 DRD : Created.                                             *
  *   8/2/96         : Added Win32 support                                  *
  *=========================================================================*/
-bool NullModemClass::Hangup_Modem( void )
+int NullModemClass::Hangup_Modem( void )
 {
 	int status;
 	int delay;
@@ -2264,7 +2275,11 @@ void NullModemClass::Setup_Modem_Echo( void ( *func )( char c) )
 void NullModemClass::Remove_Modem_Echo( void )
 {
 //	Smart_Printf( "Remove Echo modem code\n" );
+#ifdef WIN32
+	SerialPort->Set_Echo_Function(NULL);
+#else	//WIN32
 	HMSetUpEchoRoutine( NULL );
+#endif	//WIN32
 
 }	/* end of Remove_Modem_Echo */
 
@@ -2357,10 +2372,18 @@ int NullModemClass::Abort_Modem( PORT * )
 	switch ( Input ) {
 		case (KN_ESC):
 		case (BUTTON_CANCEL | KN_BUTTON):
+#ifdef WIN32
+			return( COMMUSERABORT );
+#else	//WIN32
 			return( ASUSERABORT );
+#endif	//WIN32
 	}
 
+#ifdef WIN32
+	return( COMMSUCCESS );
+#else	//WIN32
 	return( ASSUCCESS );
+#endif	//WIN32
 
 }	/* end of Abort_Modem */
 
@@ -2452,7 +2475,7 @@ int NullModemClass::Change_IRQ_Priority( int irq )
 #ifdef WIN32
 
 	irq = irq;
-	return ( ASSUCCESS );
+	return ( COMMSUCCESS );
 
 #else	//WIN32
 
@@ -2617,4 +2640,3 @@ int NullModemClass::Verify_And_Convert_To_Int( char *buffer )
 }	/* end of Verify_And_Convert_To_Int */
 
 /*************************** end of nullmgr.cpp ****************************/
-

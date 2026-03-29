@@ -70,7 +70,7 @@ class StageClass {
 		void Set_Stage(int stage) {Stage = stage;};
 		void Set_Rate(int rate) {Timer = rate; Rate = rate;};
 		void AI(void) {};
-		bool About_To_Change(void) const {return(Timer == 0 && Rate != 0);}
+		bool About_To_Change(void) const {return(Timer.Value() == 0 && Rate != 0);}
 		bool Graphic_Logic(void) {
 			if (About_To_Change()) {
 				Stage++;

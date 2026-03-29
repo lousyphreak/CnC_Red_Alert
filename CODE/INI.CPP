@@ -69,16 +69,16 @@
 #include	<stddef.h>
 #include	<stdio.h>
 #include	<ctype.h>
-#include	"ini.h"
-#include	"readline.h"
-#include	"xpipe.h"
-#include	"b64pipe.h"
-#include	"xstraw.h"
-#include	"b64straw.h"
+#include	"INI.H"
+#include	"READLINE.H"
+#include	"XPIPE.H"
+#include	"B64PIPE.H"
+#include	"XSTRAW.H"
+#include	"B64STRAW.H"
 
 
 #ifdef FIXIT_FAST_LOAD
-#include	"cstraw.h"
+#include	"CSTRAW.H"
 #endif
 
 
@@ -178,7 +178,8 @@ bool INIClass::Clear(char const * section, char const * entry)
  *=============================================================================================*/
 bool INIClass::Load(FileClass & file)
 {
-	return(Load(FileStraw(file)));
+	FileStraw straw(file);
+	return(Load(straw));
 }
 
 
@@ -314,7 +315,8 @@ bool INIClass::Load(Straw & file)
  *=============================================================================================*/
 int INIClass::Save(FileClass & file) const
 {
-	return(Save(FilePipe(file)));
+	FilePipe pipe(file);
+	return(Save(pipe));
 }
 
 

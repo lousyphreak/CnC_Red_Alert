@@ -45,6 +45,8 @@
 #include	"straw.h"
 #include	"type.h"
 
+extern bool GameActive;
+
 
 /******************************************************************************
 **	This class controls the template object. Template objects function congruously

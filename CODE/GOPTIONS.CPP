@@ -47,7 +47,7 @@
 #include "descdlg.h"
 
 #ifdef FIXIT_VERSION_3		//	Stalemate games.
-#include "WolStrng.h"
+#include "WOLSTRNG.H"
 #endif
 
 bool RedrawOptionsMenu;

@@ -47,13 +47,13 @@
  *   EventClass::EventClass -- construct a variable-sized event                                *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include "function.h"
+#include "FUNCTION.H"
 #ifdef WIN32
-#include "ccdde.h"
+#include "CCDDE.H"
 #endif	//WIN32
 
 #ifdef FIXIT_VERSION_3		//	Stalemate games.
-#include "WolStrng.h"
+#include "WOLSTRNG.H"
 #endif
 
 /***************************************************************************
@@ -551,7 +551,7 @@ void EventClass::Execute(void)
 				Special = Data.Options.Data;
 				HouseClass * house = Houses.Raw_Ptr(ID);
 
-				sprintf(txt, Text_String(TXT_SPECIAL_WARNING), house->Name);
+				sprintf(txt, Text_String(TXT_SPECIAL_WARNING), house->Name());
 				Session.Messages.Add_Message(NULL, 0, txt,
 					house->RemapColor,
 					TPF_6PT_GRAD|TPF_USE_GRAD_PAL|TPF_FULLSHADOW, 1200);

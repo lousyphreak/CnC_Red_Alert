@@ -22,8 +22,8 @@
 //	ajw 10/12/98
 
 #include "function.h"
-#include "WolapiOb.h"
-#include "WolStrng.h"
+#include "WOLAPIOB.H"
+#include "WOLSTRNG.H"
 
 //***********************************************************************************************
 bool WOL_Download_Dialog( IDownload* pDownload, RADownloadEventSink* pDownloadSink, const char* szTitle )

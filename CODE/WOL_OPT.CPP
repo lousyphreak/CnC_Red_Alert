@@ -24,10 +24,10 @@
 #include "function.h"
 
 #include "IconList.h"
-#include "WolapiOb.h"
-#include "WolStrng.h"
+#include "WOLAPIOB.H"
+#include "WOLSTRNG.H"
 #include "BigCheck.h"
-//#include "WolDebug.h"
+//#include "WOLDEBUG.H"
 
 extern bool cancel_current_msgbox;
 

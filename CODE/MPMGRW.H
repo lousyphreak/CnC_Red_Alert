@@ -19,8 +19,7 @@
 #ifndef mpmgr_h
 #define mpmgr_h
 
-#include "connmgr.h"
-#include "mplayer.h"
+#include "CONNMGR.H"
 #include <windows.h>
 
 // maximum number of connections
@@ -85,4 +84,3 @@ private:
 };
 
 #endif // mpmgr_h
-

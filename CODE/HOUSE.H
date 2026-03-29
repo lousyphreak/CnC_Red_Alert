@@ -849,6 +849,7 @@ class HouseClass {
 		CDTimerClass<FrameTimerClass> SpeakMoneyDelay;
 		CDTimerClass<FrameTimerClass> SpeakMaxedDelay;
 
+	public:
 		/*
 		**	This structure is used to record a build request as determined by
 		**	the house AI processing. Higher priority build requests take precidence.
@@ -866,6 +867,7 @@ class HouseClass {
 			void Decode_Pointers(void) {};
 		};
 
+	private:
 		static TFixedIHeapClass<BuildChoiceClass> BuildChoice;
 
 
@@ -916,4 +918,3 @@ class HouseClass {
 };
 
 #endif
-

@@ -44,16 +44,17 @@
 
 
 #include	"straw.h"
+#include	<cstdint>
 #include	<stdlib.h>
 
 extern unsigned short primeTable[3511];
 
 
-#define	digit	unsigned long
-#define	signeddigit	signed long
+typedef uint32_t digit;
+typedef int32_t signeddigit;
 #define	LOG_UNITSIZE			5
 #define	UNITSIZE					32
-#define	UPPER_MOST_BIT			0x80000000L
+#define	UPPER_MOST_BIT			UINT32_C(0x80000000)
 #define	SEMI_UPPER_MOST_BIT	0x8000
 #define	SEMI_MASK				((unsigned short)~0)
 #define	MAX_BIT_PRECISION		2048
@@ -130,7 +131,7 @@ inline int XMP_Bits_To_Digits(int bits)
 inline digit XMP_Bits_To_Mask(int bits)
 {
 	if (!bits) return(0);
-	return(1 << ((bits-1) % UNITSIZE));
+	return(((digit)1) << ((bits-1) % UNITSIZE));
 }
 
 

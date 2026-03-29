@@ -73,13 +73,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <malloc.h>
-#include <conio.h>
-#include <dos.h>
-#include <mem.h>
-#include "vq.h"
-#include "unvq.h"
-#include "vqaplayp.h"
-#include <vqm32\all.h>
+#include <string.h>
+#include <VQ.H>
+#include <VQM32/PALETTE.H>
+#include "UNVQ.H"
+#include "VQAPLAYP.H"
+#include <VQM32/COMPRESS.H>
 
 /*---------------------------------------------------------------------------
  * PRIVATE DECLARATIONS
@@ -2244,4 +2243,3 @@ static void Mask_Pointers(VQAData *vqabuf)
 	}
 }
 #endif
-

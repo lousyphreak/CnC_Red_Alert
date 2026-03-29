@@ -41,6 +41,8 @@
 #include	"object.h"
 #include	"type.h"
 
+extern bool GameActive;
+
 
 /******************************************************************************
 **	This is the transitory form for smudges. They exist as independent objects

@@ -20,7 +20,7 @@
 #define MP_LOAD_DLL_DYNAMICALLY
 #endif
 
-#include "mpmgrw.h"
+#include "MPMGRW.H"
 
 extern "C" {
 #include <stdio.h>
@@ -295,4 +295,3 @@ int MPlayerManClass::Find_Num_Connections(void)
 void MPlayerManClass::Flush_All(void)
 {
 }
-

@@ -39,10 +39,10 @@
  *   RGBClass::operator HSVClass -- Conversion operator for RGB to HSV object.                 *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"watcom.h"
-#include "rgb.h"
-#include	"hsv.h"
-#include	"palette.h"
+#include	"WATCOM.H"
+#include	"RGB.H"
+#include	"HSV.H"
+#include	"PALETTEC.H"
 
 RGBClass const BlackColor(0, 0, 0);
 
@@ -246,4 +246,3 @@ void RGBClass::Set(int color) const
 
 	((RGBClass &)PaletteClass::CurrentPalette[color]) = *this;
 }
-

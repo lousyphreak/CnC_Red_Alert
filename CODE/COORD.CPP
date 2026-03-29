@@ -51,6 +51,29 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include	"function.h"
+#include	<stdint.h>
+
+
+unsigned Cardinal_To_Fixed(unsigned base, unsigned cardinal)
+{
+	if (!base) {
+		return(cardinal);
+	}
+
+	return((((uint32_t)cardinal) << 8) / (uint32_t)base);
+}
+
+
+unsigned Fixed_To_Cardinal(unsigned base, unsigned fixed)
+{
+	uint64_t value = ((uint64_t)base * (uint64_t)fixed) + 0x80ULL;
+
+	if (value > 0x00FFFFFFULL) {
+		value = 0x00FFFFFFULL;
+	}
+
+	return((unsigned)(value >> 8));
+}
 
 
 /***********************************************************************************************
@@ -402,30 +425,16 @@ COORDINATE Coord_Scatter(COORDINATE coord, unsigned distance, bool lock)
 	return(newcoord);
 }
 
-extern int calcx(signed short, short distance);
-#pragma aux calcx parm [ax] [bx] \
-	modify [eax dx] \
-	value [eax]		= 				\
-	"imul bx"						\
-	"shl	ax,1"						\
-	"rcl	dx,1"						\
-	"mov	al,ah"					\
-	"mov	ah,dl"					\
-	"cwd"								\
-//	"and	eax,0FFFFh";
+int calcx(signed short factor, short distance)
+{
+	return((int)(((int32_t)factor * (int32_t)distance) >> 7));
+}
 
-extern int calcy(signed short, short distance);
-#pragma aux calcy parm [ax] [bx] \
-	modify [eax dx] \
-	value [eax]		= 				\
-	"imul bx"						\
-	"shl	ax,1"						\
-	"rcl	dx,1"						\
-	"mov	al,ah"					\
-	"mov	ah,dl"					\
-	"cwd"								\
-	"neg	eax";
-//	"and	eax,0FFFFh"				\
+
+int calcy(signed short factor, short distance)
+{
+	return(-((int)(((int32_t)factor * (int32_t)distance) >> 7)));
+}
 
 void Move_Point(short &x, short &y, register DirType dir, unsigned short distance)
 {

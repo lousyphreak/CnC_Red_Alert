@@ -39,21 +39,23 @@
 #define EXTERNS_H
 
 #include	<dsound.h>
-#include	"cell.h"
-#include	"key.h"
-#include	"mouse.h"
+#include	"PALETTEC.H"
+#include	"../WIN32LIB/INCLUDE/AUDIO.H"
+#include	"CELL.H"
+#include	"KEY.H"
+#include	"MOUSE.H"
 
 #ifdef SCENARIO_EDITOR
-#include	"mapedit.h"
+#include	"MAPEDIT.H"
 #endif
-#include	"techno.h"
-#include	"type.h"
-#include	"building.h"
-#include	"unit.h"
-#include	"credits.h"
-#include	"goptions.h"
-#include	"options.h"
-#include	"infantry.H"
+#include	"TECHNO.H"
+#include	"TYPE.H"
+#include	"BUILDING.H"
+#include	"UNIT.H"
+#include	"CREDITS.H"
+#include	"GOPTIONS.H"
+#include	"OPTIONS.H"
+#include	"INFANTRY.H"
 
 
 extern char _staging_buffer[32000];
@@ -66,7 +68,9 @@ void _PRO(void);
 **	easier entry into the code and less clutter.
 */
 typedef MixFileClass<CCFileClass>	MFCD;
+#ifndef WIN32
 typedef MouseClass WWMouseClass;
+#endif
 
 extern bool IsVQ640;
 extern unsigned long GameVersion;
@@ -117,7 +121,7 @@ extern int NameIDOverride[25];
 #endif
 
 #ifdef WIN32
-extern bool					GameInFocus;
+extern BOOL					GameInFocus;
 extern unsigned char 	*InterpolatedPalettes[100];
 extern BOOL					PalettesRead;
 extern unsigned			PaletteCounter;
@@ -317,7 +321,7 @@ extern long							SidebarRedraws;
 extern DMonoType					MonoPage;
 extern bool							GameActive;
 extern bool							SpecialFlag;
-extern bool							ScenarioInit;
+extern int							ScenarioInit;
 extern HouseClass *				PlayerPtr;
 extern PaletteClass 				CCPalette;
 extern PaletteClass 				BlackPalette;
@@ -506,4 +510,3 @@ extern MPGSettings* MpgSettings;
 #endif
 
 #endif
-

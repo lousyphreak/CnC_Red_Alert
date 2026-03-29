@@ -69,13 +69,22 @@
 
 #include <stdio.h>
 #include <fcntl.h>
-#include <io.h>
 #include <malloc.h>
-#include <mem.h>
-#include <dos.h>
-#include "vq.h"
-#include "vqaplayp.h"
-#include <vqm32\all.h>
+#include <string.h>
+#if defined(_MSC_VER)
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
+#include <VQ.H>
+#include <VQM32/MEM.H>
+#include <VQM32/PALETTE.H>
+#include "VQAPLAYP.H"
+#include <VQM32/COMPRESS.H>
+
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
 
 /*---------------------------------------------------------------------------
  * PRIVATE DECLARATIONS
@@ -2829,4 +2838,3 @@ static void Load_AudFrame(VQAHandleP *vqap)
 }
 #endif /* VQAVOC_ON */
 #endif /* VQAAUDIO_ON */
-

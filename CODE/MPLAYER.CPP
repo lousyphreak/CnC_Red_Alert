@@ -47,7 +47,7 @@
 extern bool Is_Mission_Counterstrike (char *file_name);
 
 #ifdef WOLAPI_INTEGRATION
-#include "WolStrng.h"
+#include "WOLSTRNG.H"
 #endif
 
 /***********************************************************************************************

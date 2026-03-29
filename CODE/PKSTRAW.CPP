@@ -42,9 +42,11 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#include "pkstraw.h"
-#include	"rndstraw.h"
-#include	"blwstraw.h"
+#include <cstring>
+
+#include "PKSTRAW.H"
+#include	"RNDSTRAW.H"
+#include	"BLWSTRAW.H"
 
 
 /***********************************************************************************************

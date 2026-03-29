@@ -24,9 +24,9 @@
 #include "function.h"
 
 #include "IconList.h"
-#include "WolapiOb.h"
+#include "WOLAPIOB.H"
 #include "PassEdit.h"
-#include "WolStrng.h"
+#include "WOLSTRNG.H"
 #include "BigCheck.h"
 
 bool ReadSavedNicks( WolapiObject* pWO, IconListClass& NickList, char* szNameBuffer, char* szPassBuffer );
@@ -38,7 +38,7 @@ void DebugChatDef( HRESULT hRes );
 
 extern bool bTabKeyPressedHack;
 
-//#include "WolDebug.h"
+//#include "WOLDEBUG.H"
 
 //***********************************************************************************************
 int WOL_Login_Dialog( WolapiObject* pWO )

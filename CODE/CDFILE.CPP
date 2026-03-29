@@ -43,7 +43,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#include	"cdfile.h"
+#include	"CDFILE.H"
 #include	<stdio.h>
 #include	<string.h>
 

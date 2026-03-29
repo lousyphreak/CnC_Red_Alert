@@ -49,6 +49,17 @@
 #include "wwstd.h"
 #include	"shape.h"
 
+extern "C" {
+char * _ShapeBuffer = 0;
+long _ShapeBufferSize = 0;
+
+void __cdecl Set_Shape_Buffer(void const *buffer, int size)
+{
+	_ShapeBuffer = (char *)buffer;
+	_ShapeBufferSize = size;
+}
+}
+
 
 /***************************************************************************
  * Get_Shape_Size -- Fetch the size of the shape in memory.                *
@@ -200,7 +211,7 @@ VOID * cdecl Extract_Shape(VOID const *buffer, int shape)
 {
 	ShapeBlock_Type *block = (ShapeBlock_Type*) buffer;
 	int numshapes;		// Number of shapes
-	long offset;			// Offset of shape data, from start of block
+	int32_t offset;			// Offset of shape data, from start of block
 	char *bytebuf = (char*) buffer;
 
 	/*
@@ -359,4 +370,3 @@ int Get_Shape_Original_Height(VOID const *shape)
 
 
 /************************* end of getshape.cpp *****************************/
-

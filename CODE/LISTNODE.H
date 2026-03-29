@@ -154,6 +154,7 @@ class List : public GenericList {
 	public:
 		T * First(void) const {return((T*)GenericList::First());}
 		T * Last(void) const {return((T*)GenericList::Last());}
+		void Delete(void) {while (!GenericList::Is_Empty()) delete First();}
 };
 
 

@@ -49,8 +49,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "vqaplayp.h"
-#include <vqm32\all.h>
+#if !defined(_MSC_VER)
+#include <strings.h>
+#define stricmp strcasecmp
+#endif
+#include <VQM32/PROFILE.H>
+#include "VQAPLAYP.H"
 
 /*---------------------------------------------------------------------------
  * PRIVATE DECLARATIONS
@@ -497,7 +501,6 @@ void VQA_DefaultConfig(VQAConfig *config)
 {
 	memcpy(config, &_defaultconfig, sizeof(VQAConfig));
 }
-
 
 
 

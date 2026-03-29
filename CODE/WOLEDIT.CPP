@@ -27,7 +27,7 @@
 
 #include "WOLEdit.h"
 
-//#include "WolDebug.h"
+//#include "WOLDEBUG.H"
 
 bool bTabKeyPressedHack = false;
 

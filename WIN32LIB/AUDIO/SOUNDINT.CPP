@@ -518,7 +518,7 @@ VOID far __cdecl maintenance_callback(VOID)
  *   06/23/1995 PWG : Created.                                             *
  *=========================================================================*/
 
-void *Audio_Add_Long_To_Pointer(void const *ptr, long size)
+void *Audio_Add_Long_To_Pointer(void const *ptr, LONG size)
 {
 	return ((void *) ( (char const *) ptr + size));
 }

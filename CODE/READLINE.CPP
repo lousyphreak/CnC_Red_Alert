@@ -19,9 +19,9 @@
 
 #include	<ctype.h>
 #include	<string.h>
-#include	"wwfile.h"
-#include	"xstraw.h"
-#include	"readline.h"
+#include	"WWFILE.H"
+#include	"XSTRAW.H"
+#include	"READLINE.H"
 
 
 // Disable the "temporary object used to initialize a non-constant reference" warning.
@@ -36,22 +36,19 @@ void strtrim(char * buffer)
 		**	Strip leading white space from the string.
 		*/
 		char * source = buffer;
-		while (isspace(*source)) {
+		while (isspace(static_cast<unsigned char>(*source))) {
 			source++;
 		}
 		if (source != buffer) {
-			strcpy(buffer, source);
+			memmove(buffer, source, strlen(source) + 1);
 		}
 
 		/*
 		**	Clip trailing white space from the string.
 		*/
-		for (int index = strlen(buffer)-1; index >= 0; index--) {
-			if (isspace(buffer[index])) {
-				buffer[index] = '\0';
-			} else {
-				break;
-			}
+		int length = static_cast<int>(strlen(buffer));
+		while (length > 0 && isspace(static_cast<unsigned char>(buffer[length - 1]))) {
+			buffer[--length] = '\0';
 		}
 	}
 }
@@ -60,7 +57,8 @@ void strtrim(char * buffer)
 
 int Read_Line(FileClass & file, char * buffer, int len, bool & eof)
 {
-	return(Read_Line(FileStraw(file), buffer, len, eof));
+	FileStraw straw(file);
+	return(Read_Line(straw, buffer, len, eof));
 }
 
 

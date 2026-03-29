@@ -45,14 +45,14 @@
  *   IPXConnClass::Send_To -- sends the packet to the given address			*
  *   IPXConnClass::Broadcast -- broadcasts the given packet						*
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-#include "function.h"
+#include "FUNCTION.H"
 #include <stdio.h>
 #include <mem.h>
 #include <string.h>
 #include "ipxconn.h"
 
 #ifdef WINSOCK_IPX
-#include "WSProto.h"
+#include "WSPROTO.H"
 
 #else
 
@@ -874,4 +874,3 @@ int IPXConnClass::Broadcast(char *buf, int buflen)
 }	/* end of Broadcast */
 
 /************************** end of ipxconn.cpp *****************************/
-

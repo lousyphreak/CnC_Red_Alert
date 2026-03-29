@@ -91,7 +91,7 @@ class RadioClass : public MissionClass {
 		// Inherited from base class(es).
 		virtual RadioMessageType Receive_Message(RadioClass * from, RadioMessageType message, long & param);
 		virtual RadioMessageType Transmit_Message(RadioMessageType message, long & param, RadioClass * to=NULL);
-		virtual RadioMessageType Transmit_Message(RadioMessageType message, RadioClass * to);
+		virtual RadioMessageType Transmit_Message(RadioMessageType message, RadioClass * to=NULL);
 		#ifdef CHEAT_KEYS
 		virtual void Debug_Dump(MonoClass *mono) const;
 		#endif

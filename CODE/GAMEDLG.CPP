@@ -43,8 +43,8 @@
 #define GERMAN_OFFSET_Y   4      //VG
 
 #ifdef WOLAPI_INTEGRATION
-#include "WolStrng.h"
-#include "WolapiOb.h"
+#include "WOLSTRNG.H"
+#include "WOLAPIOB.H"
 extern WolapiObject* pWolapi;
 bool WOL_Options_Dialog( WolapiObject* pWO, bool bCalledFromGame );
 #endif

@@ -23,6 +23,7 @@
 
 
 #include	<stdlib.h>
+#include	<cstdint>
 #include	"listnode.h"
 #include	"pk.h"
 #include "buff.h"
@@ -45,9 +46,9 @@ class MixFileClass : public Node<MixFileClass<T>>
 		static void const * Retrieve(char const *filename);
 
 		struct SubBlock {
-			long CRC;				// CRC code for embedded file.
-			long Offset;			// Offset from start of data section.
-			long Size;				// Size of data subfile.
+			int32_t CRC;				// CRC code for embedded file.
+			int32_t Offset;			// Offset from start of data section.
+			int32_t Size;				// Size of data subfile.
 
 			int operator < (SubBlock & two) const {return (CRC < two.CRC);};
 			int operator > (SubBlock & two) const {return (CRC > two.CRC);};
@@ -82,10 +83,15 @@ class MixFileClass : public Node<MixFileClass<T>>
 		**	This is the initial file header. It tells how many files are embedded
 		**	within this mixfile and the total size of all embedded files.
 		*/
+#pragma pack(push, 1)
 		typedef struct {
-			short	count;
-			long	size;
+			int16_t	count;
+			int32_t	size;
 		} FileHeader;
+#pragma pack(pop)
+
+		static_assert(sizeof(SubBlock) == 12, "MixFileClass::SubBlock must stay 12 bytes");
+		static_assert(sizeof(FileHeader) == 6, "MixFileClass::FileHeader must stay 6 bytes");
 
 		/*
 		**	The number of files within the mixfile.

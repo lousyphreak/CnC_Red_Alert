@@ -323,6 +323,19 @@ class WinNullModemClass : public WinModemClass
 
 extern WinModemClass *SerialPort;
 
+#ifndef CTS_SET
+#define CTS_SET WinModemClass::CTS_SET
+#endif
+#ifndef DSR_SET
+#define DSR_SET WinModemClass::DSR_SET
+#endif
+#ifndef RI_SET
+#define RI_SET WinModemClass::RI_SET
+#endif
+#ifndef CD_SET
+#define CD_SET WinModemClass::CD_SET
+#endif
+
 
 
 
@@ -439,7 +452,6 @@ typedef struct _MODEMSETTINGS {
 #define MDM_V23_OVERRIDE     0x00000400
 
 #endif /* _MCX_H_ */
-
 
 
 

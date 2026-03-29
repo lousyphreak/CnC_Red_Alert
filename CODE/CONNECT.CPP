@@ -47,13 +47,13 @@
 
 
 
-#include	"function.h"
+#include	"FUNCTION.H"
 #include <stdio.h>
 #include <mem.h>
 #include <sys/timeb.h>
-#include "connect.h"
+#include "CONNECT.H"
 
-#include "WolDebug.h"
+#include "WOLDEBUG.H"
 
 /*
 ********************************* Globals ***********************************
@@ -834,5 +834,4 @@ char *ConnectionClass::Command_Name(int command)
 }	/* end of Command_Name */
 
 /************************** end of connect.cpp *****************************/
-
 

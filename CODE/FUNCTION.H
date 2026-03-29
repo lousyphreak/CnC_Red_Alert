@@ -238,8 +238,12 @@ typedef struct {
 #include	<stdarg.h>
 #include	<ctype.h>
 #include	<assert.h>
+#include	<algorithm>
 #include	<process.h>
 #include	<new.h>
+
+using std::max;
+using std::min;
 
 
 
@@ -995,17 +999,12 @@ extern CCPtr<TemplateTypeClass>	y24;
 extern CCPtr<TerrainTypeClass>	y25;
 extern CCPtr<OverlayTypeClass>	y26;
 extern CCPtr<SmudgeTypeClass>		y27;
-class DynamicVectorClass<CCPtr<TeamTypeClass> >;
+template<class T> class DynamicVectorClass;
 extern DynamicVectorClass<CCPtr<TeamTypeClass> > y002;
-class DynamicVectorClass<CCPtr<TriggerTypeClass> >;
 extern DynamicVectorClass<CCPtr<TriggerTypeClass> > y001;
-class DynamicVectorClass<TeamMissionClass *>;
 extern DynamicVectorClass<TeamMissionClass *> xxx1;
-class DynamicVectorClass<EventChoiceClass *>;
 extern DynamicVectorClass<EventChoiceClass *> xxx2;
-class DynamicVectorClass<ActionChoiceClass *>;
 extern DynamicVectorClass<ActionChoiceClass *> xxx3;
-class DynamicVectorClass<EgoClass *>;
 extern DynamicVectorClass<EgoClass *> whatever;
 
 #endif

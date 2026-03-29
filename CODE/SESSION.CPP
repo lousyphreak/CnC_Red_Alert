@@ -53,7 +53,7 @@
 #include <dos.h>			// for station ID computation
 #include <time.h>			// for station ID computation
 
-//#include "WolDebug.h"
+//#include "WOLDEBUG.H"
 
 /***************************** Globals *************************************/
 //---------------------------------------------------------------------------
@@ -737,13 +737,14 @@ void SessionClass::Read_MultiPlayer_Settings (void)
 
 	//	Clear the dialing entries
 	for (i = 0; i < PhoneBook.Count(); i++) {
-		delete[] PhoneBook[i];
+		delete PhoneBook[i];
 	}
 	PhoneBook.Clear();
 
 	//	Create filename and read the file.
 	INIClass ini;
-	if (ini.Load(RawFileClass(CONFIG_FILE_NAME))) {
+	RawFileClass config_file(CONFIG_FILE_NAME);
+	if (ini.Load(config_file)) {
 
 		//	Get the player's last-used Handle
 		ini.Get_String("MultiPlayer", "Handle", "Noname", Handle, sizeof(Handle));
@@ -829,6 +830,7 @@ void SessionClass::Read_MultiPlayer_Settings (void)
 
 		//	Read the entry names in
 		int phonecount = ini.Entry_Count("PhoneBook");
+		int index;
 		for (index = 0; index < phonecount; index++) {
 			//	Create a new phone book entry
 			phone = new PhoneEntryClass();

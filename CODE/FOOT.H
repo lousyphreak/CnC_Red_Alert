@@ -38,10 +38,10 @@
 #ifndef FOOT_H
 #define FOOT_H
 
-#include	"target.h"
-#include	"type.h"
-#include	"techno.h"
-#include	"ftimer.h"
+#include	"TARGET.H"
+#include	"TYPE.H"
+#include	"TECHNO.H"
+#include	"FTIMER.H"
 
 class UnitClass;
 class BuildingClass;
@@ -64,7 +64,7 @@ class FootClass :	public TechnoClass
 		**	toggle when path limiting is true, but there is not target found within
 		**	the limited range.
 		*/
-		unsigned IsScanLimited:1;
+		mutable unsigned IsScanLimited:1;
 
 		/*
 		**	If this unit has officially joined the team's group, then this flag is
@@ -379,5 +379,4 @@ class FootClass :	public TechnoClass
 };
 
 #endif
-
 

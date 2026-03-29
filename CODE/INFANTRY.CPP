@@ -84,7 +84,7 @@
  *   InfantryClass::~InfantryClass -- Default destructor for infantry units.                   *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
+#include	"FUNCTION.H"
 
 
 int const InfantryClass::HumanShape[32] = {0,0,7,7,7,7,6,6,6,6,5,5,5,5,5,4,4,4,3,3,3,3,2,2,2,2,1,1,1,1,1,0};
@@ -316,7 +316,7 @@ void InfantryClass::operator delete(void * ptr)
  *   11/22/1994 JLB : Shares base damage handler for techno objects.                           *
  *   03/31/1995 JLB : Revenge factor.                                                          *
  *=============================================================================================*/
-ResultType InfantryClass::Take_Damage(int & damage, int distance, WarheadType warhead, TechnoClass * source, int forced)
+ResultType InfantryClass::Take_Damage(int & damage, int distance, WarheadType warhead, TechnoClass * source, bool forced)
 {
 	assert(Infantry.ID(this) == ID);
 	assert(IsActive);
@@ -454,7 +454,7 @@ ResultType InfantryClass::Take_Damage(int & damage, int distance, WarheadType wa
 			int morefear = FEAR_ANXIOUS;
 			if (Health_Ratio() > Rule.ConditionRed) morefear /= 2;
 			if (Health_Ratio() > Rule.ConditionYellow) morefear /= 2;
-			Fear = FearType(min((int)Fear + morefear, FEAR_MAXIMUM));
+			Fear = FearType(min((int)Fear + morefear, (int)FEAR_MAXIMUM));
 		}
 	}
 	return(res);
@@ -490,7 +490,7 @@ int InfantryClass::Shape_Number(void) const
 	**	The infantry shape is always modulo the number of animation frames
 	**	of the action stage that the infantry is doing.
 	*/
-	int shapenum = Fetch_Stage() % max(Class->DoControls[doit].Count, 1);
+	int shapenum = Fetch_Stage() % max((int)Class->DoControls[doit].Count, 1);
 
 	/*
 	**	If facing makes a difference, then the shape number will be incremented
@@ -1901,7 +1901,8 @@ void InfantryClass::Scatter(COORDINATE threat, bool forced, bool nokidding)
 
 		CELL newcell = 0;
 		CELL altcell = 0;
-		for (FacingType face = FACING_N; face < FACING_COUNT; face++) {
+		FacingType face = FACING_N;
+		for (; face < FACING_COUNT; face++) {
 			FacingType newface = toface + face;
 			newcell = Adjacent_Cell(Coord_Cell(Coord), newface);
 
@@ -4011,7 +4012,7 @@ void InfantryClass::Movement_AI(void)
 				/*
 				**	Advance the infantry as far as it should go.
 				*/
-				MPHType maxspeed = MPHType(min(Class->MaxSpeed * SpeedBias * House->GroundspeedBias, MPH_LIGHT_SPEED));
+				MPHType maxspeed = MPHType(min((int)(Class->MaxSpeed * SpeedBias * House->GroundspeedBias), (int)MPH_LIGHT_SPEED));
 
 				if (IsFormationMove) maxspeed = FormationMaxSpeed;
 

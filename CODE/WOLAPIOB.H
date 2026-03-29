@@ -18,7 +18,7 @@
 
 #ifdef WOLAPI_INTEGRATION
 
-//	WolapiOb.h
+//	WOLAPIOB.H
 //	ajw 07/10/98
 
 //	Class WolapiObject is mainly a container so I can avoid globals and keep things clean.

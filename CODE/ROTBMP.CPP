@@ -36,11 +36,9 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 //#include	"function.h"
-#include	"watcom.h"
-#include "rotbmp.h"
-#define FILE_H
-#define WWMEM_H
-#include	<wwlib32.h>
+#include	"WATCOM.H"
+#include "ROTBMP.H"
+#include "../WIN32LIB/INCLUDE/GBUFFER.H"
 
 
 int Rotate_Bitmap(GraphicViewPortClass * srcvp, GraphicViewPortClass * destvp, int angle);
@@ -65,7 +63,7 @@ struct WPPOINT {
  * HISTORY:                                                                *
  *   01/02/1996  BP : Created.                                             *
  *=========================================================================*/
-Rotate_Bitmap(GraphicViewPortClass * srcvp, GraphicViewPortClass * destvp, int a)
+int Rotate_Bitmap(GraphicViewPortClass * srcvp, GraphicViewPortClass * destvp, int a)
 {
 	int shift = 7;
 	int fixpoint1 = 1 << shift; // this is a fixed point 1

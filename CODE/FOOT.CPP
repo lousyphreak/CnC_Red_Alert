@@ -81,7 +81,7 @@
  *   FootClass::Unlimbo -- Unlimbos object and performs special fixups.                        *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
+#include	"FUNCTION.H"
 
 
 /***********************************************************************************************
@@ -1086,7 +1086,7 @@ bool FootClass::Unlimbo(COORDINATE coord, DirType dir)
  * HISTORY:                                                                                    *
  *   12/30/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-ResultType FootClass::Take_Damage(int & damage, int distance, WarheadType warhead, TechnoClass * source, int forced)
+ResultType FootClass::Take_Damage(int & damage, int distance, WarheadType warhead, TechnoClass * source, bool forced)
 {
 	assert(IsActive);
 
@@ -1431,7 +1431,7 @@ void FootClass::Per_Cell_Process(PCPType why)
 			/*
 			**	Check for vertical trigger crossing.
 			*/
-			for (index = 0; index < Map.MapCellHeight; index++) {
+			for (int index = 0; index < Map.MapCellHeight; index++) {
 				trigger = Map[XY_Cell(x, index+Map.MapCellY)].Trigger;
 				if (trigger != NULL) {
 					if (trigger->Class->Event1.Event == TEVENT_CROSS_VERTICAL || (trigger->Class->EventControl != MULTI_ONLY && trigger->Class->Event2.Event == TEVENT_CROSS_VERTICAL)) {
@@ -2546,4 +2546,3 @@ int FootClass::Mission_Retreat(void)
 
 	return(MissionControl[Mission].Normal_Delay() + Random_Pick(0, 2));
 }
-

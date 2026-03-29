@@ -2169,5 +2169,4 @@ void MapEditClass::Write_INI(CCINIClass & ini)
 
 #endif
 
-#include	"mapedsel.cpp"
-
+#include	"MAPEDSEL.CPP"

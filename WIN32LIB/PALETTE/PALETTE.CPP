@@ -57,8 +57,10 @@
 ********************************** Globals **********************************
 */
 extern "C" {
-extern unsigned char CurrentPalette[];		/* in pal.asm */
+unsigned char CurrentPalette[768];
 }
+
+extern "C" void Set_DD_Palette(void *palette);
 
 /*
 ******************************** Prototypes *********************************
@@ -183,7 +185,7 @@ void Fade_Palette_To(void *palette1, unsigned int delay, void (*callback)() )
 	Determine_Bump_Rate(palette1, delay, &ticksper, &jump);
 
 	tickaccum = 0;							// init accumulated elapsed time
-	timer = TickCount.Time(); 				// timer = current time
+	timer = WWTickCount.Time(); 				// timer = current time
 	do {
 		changed = FALSE;
 
@@ -197,7 +199,7 @@ void Fade_Palette_To(void *palette1, unsigned int delay, void (*callback)() )
 		.................. Wait for time increment to elapse ..................
 		*/
 		if (changed) {
-			while (TickCount.Time() < timer) {
+			while (WWTickCount.Time() < timer) {
 				/*
 				................. Update callback while waiting .................
 				*/
@@ -379,5 +381,29 @@ PRIVATE BOOL __cdecl Bump_Palette(void *palette1, unsigned int step)
 void (*cb_ptr)(void);	// callback function pointer
 
 /**************************** End of palette.cpp ***************************/
+extern "C" void __cdecl Set_Palette_Range(void *palette)
+{
+	if (!palette) {
+		return;
+	}
 
+	memcpy(CurrentPalette, palette, 768);
+	Set_DD_Palette(CurrentPalette);
+}
+
+
+extern "C" void Set_Palette_Register(int number, int red, int green, int blue)
+{
+	unsigned char *entry;
+
+	if (number < 0 || number >= 256) {
+		return;
+	}
+
+	entry = &CurrentPalette[number * 3];
+	entry[0] = (unsigned char)MAX(0, MIN(red, 63));
+	entry[1] = (unsigned char)MAX(0, MIN(green, 63));
+	entry[2] = (unsigned char)MAX(0, MIN(blue, 63));
+	Set_DD_Palette(CurrentPalette);
+}
 

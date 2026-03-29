@@ -36,11 +36,10 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#include	"mp.h"
-#include "int.h"
+#include	"MP.H"
+#include "INT.H"
 
-int bignum::Error = 0;
-bool bignum::Carry = false;
-bool bignum::Borrow = false;
-bignum bignum::Remainder;
-
+template<> int Int<MAX_UNIT_PRECISION>::Error = 0;
+template<> bool Int<MAX_UNIT_PRECISION>::Carry = false;
+template<> bool Int<MAX_UNIT_PRECISION>::Borrow = false;
+template<> Int<MAX_UNIT_PRECISION> Int<MAX_UNIT_PRECISION>::Remainder = Int<MAX_UNIT_PRECISION>();

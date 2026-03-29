@@ -17,6 +17,8 @@
 */
 
 /* $Header: /CounterStrike/IOOBJ.CPP 1     3/03/97 10:24a Joe_bostic $ */
+
+#include <stdint.h>
 /***********************************************************************************************
  ***              C O N F I D E N T I A L  ---  W E S T W O O D  S T U D I O S               ***
  ***********************************************************************************************
@@ -342,7 +344,7 @@ void FactoryClass::Code_Pointers(void)
 		Object = (TechnoClass *)Object->As_Target();
 	}
 
-	((HouseClass *&)House) = (HouseClass *)House->Class->House;
+	((HouseClass *&)House) = reinterpret_cast<HouseClass*>(static_cast<uintptr_t>(House->Class->House));
 }
 
 
@@ -371,7 +373,7 @@ void FactoryClass::Decode_Pointers(void)
 		assert(Object != NULL);
 	}
 
-	((HouseClass *&)House) = HouseClass::As_Pointer((HousesType)House);
+	((HouseClass *&)House) = HouseClass::As_Pointer(static_cast<HousesType>(reinterpret_cast<uintptr_t>(House)));
 	assert(House != NULL);
 }
 
@@ -896,4 +898,3 @@ void ObjectClass::Decode_Pointers(void)
 		assert(Next != NULL);
 	}
 }
-

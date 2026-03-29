@@ -80,8 +80,8 @@
 #include	"function.h"
 
 #ifdef WOLAPI_INTEGRATION
-//#include "WolDebug.h"
-#include "WolapiOb.h"
+//#include "WOLDEBUG.H"
+#include "WOLAPIOB.H"
 extern WolapiObject* pWolapi;
 
 bool bReconnectDialogCancelled;
@@ -803,10 +803,12 @@ static void Queue_AI_Multiplayer(void)
 	//------------------------------------------------------------------------
 #ifdef FIXIT_VERSION_3
 	int iFramesyncTimeout;
+#ifdef WOLAPI_INTEGRATION
 	if( Session.Type == GAME_INTERNET && pWolapi && pWolapi->GameInfoCurrent.iPlayerCount > 2 )
 		//	Shortened resync timeout for non-2 player games.
 		iFramesyncTimeout = 5 * 60;		//	One minute.
 	else
+#endif
 		iFramesyncTimeout = FRAMESYNC_TIMEOUT;
 
 	rc = Wait_For_Players (0, net,
@@ -1340,15 +1342,15 @@ static void Generate_Timing_Event(ConnManClass *net, int my_sent)
 			//..................................................................
 			else {
 				if (Session.Type == GAME_MODEM || Session.Type == GAME_NULL_MODEM) {
-					ev.Data.FrameInfo.Delay = max( (resp_time / 8),
-						 MODEM_MIN_MAX_AHEAD );
+					ev.Data.FrameInfo.Delay = max(static_cast<unsigned long>(resp_time / 8),
+						 static_cast<unsigned long>(MODEM_MIN_MAX_AHEAD));
 				} else if (Session.Type == GAME_IPX || Session.Type == GAME_INTERNET) {
-					ev.Data.FrameInfo.Delay = max( (resp_time / 8),
-						 NETWORK_MIN_MAX_AHEAD );
+					ev.Data.FrameInfo.Delay = max(static_cast<unsigned long>(resp_time / 8),
+						 static_cast<unsigned long>(NETWORK_MIN_MAX_AHEAD));
 				}
 				else if (Session.Type == GAME_TEN || Session.Type == GAME_MPATH) {
-					ev.Data.FrameInfo.Delay = max( (resp_time / 8),
-						 MODEM_MIN_MAX_AHEAD );
+					ev.Data.FrameInfo.Delay = max(static_cast<unsigned long>(resp_time / 8),
+						 static_cast<unsigned long>(MODEM_MIN_MAX_AHEAD));
 				}
 			}
 			OutList.Add(ev);

@@ -174,7 +174,7 @@ extern	WinTimerClass	*WindowsTimer;
 //////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////// externs  //////////////////////////////////////////
 #ifndef FUNCTION_H
-extern TimerClass					TickCount;
+extern TimerClass					WWTickCount;
 #endif
 extern CountDownTimerClass		CountDown;
 
@@ -198,4 +198,3 @@ BOOL __cdecl Remove_Timer_System(VOID);
 
 
 #endif // TIMER_H
-

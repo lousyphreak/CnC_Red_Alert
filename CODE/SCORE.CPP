@@ -392,6 +392,7 @@ void ScoreClass::Presentation(void)
 	void *oldfont;
 	int oldfontxspacing = FontXSpacing;
 	int house = (PlayerPtr->Class->House == HOUSE_USSR || PlayerPtr->Class->House == HOUSE_UKRAINE);		// 0 or 1
+	int index;
 #ifdef WIN32
 	char inter_pal[15];
 	sprintf(inter_pal, "SCORPAL1.PAL");
@@ -1004,7 +1005,7 @@ void ScoreClass::Do_Nod_Buildings_Graph(void)
 /*BG		if (!Keyboard->Check()) */ Call_Back_Delay(1);
 	}
 
-	i = max(GBKilled, NBKilled);
+	int i = max(GBKilled, NBKilled);
 	for (int q = 0; q <= i; q++) {
 		Set_Font_Palette(_redpal);
 		Count_Up_Print( "%d", q, NBKilled, BUILDING_X + 16, BUILDING_Y + 10);

@@ -53,7 +53,8 @@
  *   CommQueueClass::~CommQueueClass -- class destructor                   *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include "function.h"
+#include "FUNCTION.H"
+#include "COMQUEUE.H"
 
 
 /***************************************************************************
@@ -732,31 +733,31 @@ void CommQueueClass::Mono_Debug_Print(int refresh)
 	*/
 	if (refresh) {
 		Mono_Clear_Screen ();
-		Mono_Printf("зддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©\n");
-		Mono_Printf("Ё                                                                             Ё\n");
-		Mono_Printf("Ё                                                                             Ё\n");
-		Mono_Printf("Ё                                                                             Ё\n");
-		Mono_Printf("цддддддддддддддддддддддддддддддддддддддбдддддддддддддддддддддддддддддддддддддд╢\n");
-		Mono_Printf("Ё              Send Queue              Ё             Receive Queue            Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё ID  Ct ACK   ID  Ct ACK    ID  Ct ACKЁ ID  Rd ACK    ID  Rd ACK   ID  Rd ACKЁ\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("юддддддддддддддддддддддддддддддддддддддадддддддддддддддддддддддддддддддддддддды");
+		Mono_Printf("О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫д©\n");
+		Mono_Printf("О©╫                                                                             О©╫\n");
+		Mono_Printf("О©╫                                                                             О©╫\n");
+		Mono_Printf("О©╫                                                                             О©╫\n");
+		Mono_Printf("О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫д╢\n");
+		Mono_Printf("О©╫              Send Queue              О©╫             Receive Queue            О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫ ID  Ct ACK   ID  Ct ACK    ID  Ct ACKО©╫ ID  Rd ACK    ID  Rd ACK   ID  Rd ACKО©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫");
 	}
 
 	/*
@@ -858,31 +859,31 @@ void CommQueueClass::Mono_Debug_Print2(int refresh)
 	*/
 	if (refresh) {
 		Mono_Clear_Screen ();
-		Mono_Printf("зддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©\n");
-		Mono_Printf("Ё                                                                             Ё\n");
-		Mono_Printf("Ё                                                                             Ё\n");
-		Mono_Printf("Ё                                                                             Ё\n");
-		Mono_Printf("цддддддддддддддддддддддддддддддддддддддбдддддддддддддддддддддддддддддддддддддд╢\n");
-		Mono_Printf("Ё              Send Queue              Ё             Receive Queue            Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё ID  Ct Type   Data  Name         ACK Ё ID  Rd Type   Data  Name         ACK Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("Ё                                      Ё                                      Ё\n");
-		Mono_Printf("юддддддддддддддддддддддддддддддддддддддадддддддддддддддддддддддддддддддддддддды");
+		Mono_Printf("О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫д©\n");
+		Mono_Printf("О©╫                                                                             О©╫\n");
+		Mono_Printf("О©╫                                                                             О©╫\n");
+		Mono_Printf("О©╫                                                                             О©╫\n");
+		Mono_Printf("О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫д╢\n");
+		Mono_Printf("О©╫              Send Queue              О©╫             Receive Queue            О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫ ID  Ct Type   Data  Name         ACK О©╫ ID  Rd Type   Data  Name         ACK О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫                                      О©╫                                      О©╫\n");
+		Mono_Printf("О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫");
 	}
 
 	/*
@@ -999,5 +1000,4 @@ void CommQueueClass::Mono_Debug_Print2(int refresh)
 	refresh = refresh;
 #endif	
 }
-
 

@@ -41,6 +41,8 @@
 #include	"object.h"
 #include	"type.h"
 
+extern bool GameActive;
+
 /******************************************************************************
 **	This class controls the overlay object. Overlay objects function congruously
 **	to carpet on a floor. They have no depth, but merely control the icon to be rendered

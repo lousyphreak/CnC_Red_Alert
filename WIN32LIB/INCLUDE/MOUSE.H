@@ -37,6 +37,12 @@
 
 #include <gbuffer.h>
 
+extern "C" {
+	 void __cdecl Mouse_Shadow_Buffer(void *thisptr, GraphicViewPortClass *srcdst, void *buffer, int x, int y, int hotx, int hoty, int store);
+	 void __cdecl Draw_Mouse(void *thisptr, GraphicViewPortClass *srcdst, int x, int y);
+	 void * __cdecl ASM_Set_Mouse_Cursor(void * thisptr, int hotspotx, int hotspoty, VOID *cursor);
+}
+
 class WWMouseClass {
 	public:
 		WWMouseClass(GraphicViewPortClass *scr, int mouse_max_width, int mouse_max_height);
@@ -106,12 +112,10 @@ class WWMouseClass {
 		CRITICAL_SECTION		MouseCriticalSection;  // Control for mouse re-enterancy
 		unsigned					TimerHandle;
 
-};
+		friend void __cdecl Mouse_Shadow_Buffer(void *thisptr, GraphicViewPortClass *srcdst, void *buffer, int x, int y, int hotx, int hoty, int store);
+		friend void __cdecl Draw_Mouse(void *thisptr, GraphicViewPortClass *srcdst, int x, int y);
+		friend void * __cdecl ASM_Set_Mouse_Cursor(void *thisptr, int hotspotx, int hotspoty, VOID *cursor);
 
-extern "C" {
-	 void __cdecl Mouse_Shadow_Buffer(void *thisptr, GraphicViewPortClass *srcdst, void *buffer, int x, int y, int hotx, int hoty, int store);
-	 void __cdecl Draw_Mouse(void *thisptr, GraphicViewPortClass *srcdst, int x, int y);
-	 void * __cdecl ASM_Set_Mouse_Cursor(void * thisptr, int hotspotx, int hotspoty, VOID *cursor);
 };
 
 void Hide_Mouse(void);

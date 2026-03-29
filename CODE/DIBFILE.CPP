@@ -56,7 +56,7 @@
 #include "dibutil.h"
 #include "dibapi.h"
 
-//#include "WolDebug.h"
+//#include "WOLDEBUG.H"
 
 /*
  * Dib Header Marker - used in writing DIBs to files

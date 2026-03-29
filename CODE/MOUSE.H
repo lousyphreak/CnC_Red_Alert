@@ -38,9 +38,18 @@
 #ifndef MOUSE_H
 #define MOUSE_H
 
-#include	"defines.h"
-#include	"stage.h"
-#include	"scroll.h"
+#include	"DEFINES.H"
+#include	"STAGE.H"
+#include	"SCROLL.H"
+
+void Hide_Mouse(void);
+void Show_Mouse(void);
+void Conditional_Hide_Mouse(int x1, int y1, int x2, int y2);
+void Conditional_Show_Mouse(void);
+int Get_Mouse_State(void);
+void * Set_Mouse_Cursor(int hotx, int hoty, void * cursor);
+int Get_Mouse_X(void);
+int Get_Mouse_Y(void);
 
 class MouseClass: public ScrollClass
 {
@@ -59,6 +68,8 @@ class MouseClass: public ScrollClass
 		virtual void Revert_Mouse_Shape(void);
 		virtual MouseType Get_Mouse_Shape(void) const {return NormalMouseShape;};
 		virtual void Mouse_Small(bool wsmall);
+		void Draw_Mouse(GraphicViewPortClass *scr);
+		void Erase_Mouse(GraphicViewPortClass *scr, int forced = FALSE);
 
 		/*
 		**	File I/O.

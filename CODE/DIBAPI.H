@@ -18,6 +18,8 @@
 
 #ifndef DIBAPI_H
 #define DIBAPI_H
+
+#include <windows.h>
 /*
  *  dibapi.h
  *
@@ -114,40 +116,14 @@ enum {
 
 
 
-/* Function prototypes */
+/* Function prototypes used by the game's WOL bitmap paths. */
 
-HDIB      FAR  BitmapToDIB (HBITMAP hBitmap, HPALETTE hPal);
-HDIB      FAR  ChangeBitmapFormat (HBITMAP  hBitmap,
-                                   WORD     wBitCount,
-                                   DWORD    dwCompression,
-                                   HPALETTE hPal);
-HDIB      FAR  ChangeDIBFormat (HDIB hDIB, WORD wBitCount,
-                                DWORD dwCompression);
-HBITMAP   FAR  CopyScreenToBitmap (LPRECT);
-HDIB      FAR  CopyScreenToDIB (LPRECT);
-HBITMAP   FAR  CopyWindowToBitmap (HWND, WORD);
-HDIB      FAR  CopyWindowToDIB (HWND, WORD);
-HPALETTE  FAR  CreateDIBPalette (HDIB hDIB);
-HDIB      FAR  CreateDIB(DWORD, DWORD, WORD);
 WORD      FAR  DestroyDIB (HDIB);
-void      FAR  DIBError (int ErrNo);
 DWORD     FAR  DIBHeight (LPCSTR lpDIB);
 WORD      FAR  DIBNumColors (LPCSTR lpDIB);
-HBITMAP   FAR  DIBToBitmap (HDIB hDIB, HPALETTE hPal);
 DWORD     FAR  DIBWidth (LPCSTR lpDIB);
 LPSTR     FAR  FindDIBBits (LPCSTR lpDIB);
-HPALETTE  FAR  GetSystemPalette (void);
-HDIB      FAR  LoadDIB (LPSTR);
-BOOL      FAR  PaintBitmap (HDC, LPRECT, HBITMAP, LPRECT, HPALETTE);
-BOOL      FAR  PaintDIB (HDC, LPRECT, HDIB, LPRECT, HPALETTE);
-int       FAR  PalEntriesOnDevice (HDC hDC);
 WORD      FAR  PaletteSize (LPCSTR lpDIB);
-WORD      FAR  PrintDIB (HDIB, WORD, WORD, WORD, LPSTR);
-WORD      FAR  PrintScreen (LPRECT, WORD, WORD, WORD, LPSTR);
-WORD      FAR  PrintWindow (HWND, WORD, WORD, WORD, WORD, LPSTR);
-WORD      FAR  SaveDIB (HDIB, LPSTR);
-
-//	ajw added
-HDIB	LoadDIB_FromMemory( const unsigned char* pData, DWORD dwBitsSize );
+HDIB             LoadDIB_FromMemory(const unsigned char* pData, DWORD dwBitsSize);
 
 #endif

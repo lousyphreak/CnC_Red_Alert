@@ -51,6 +51,9 @@
 #ifndef 	__DDE_H
 #define	__DDE_H
 
+#include <windows.h>
+#include <ddeml.h>
+
 #define	DDE_ADVISE_CONNECT		-1		// advisory "client has connected"
 #define	DDE_ADVISE_DISCONNECT	-2		// advisory "client has disconnected"
 
@@ -171,5 +174,3 @@ class	Instance_Class {
 };
 
 #endif
-
-

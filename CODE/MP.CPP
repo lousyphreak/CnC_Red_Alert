@@ -1976,7 +1976,7 @@ int XMP_Mod_Mult(digit * prod, const digit * multiplicand, const digit * multipl
 				*/
 				if (!(*dmph & SEMI_UPPER_MOST_BIT)) {
 					unsigned short * dmp = dmpl;
-					if (XMP_Sub((unsigned long *)dmp, (unsigned long *)dmp, _scratch_modulus, false, precision)) {
+					if (XMP_Sub((digit *)dmp, (digit *)dmp, _scratch_modulus, false, precision)) {
 						(*dmph)--;
 					}
 				}
@@ -2225,7 +2225,8 @@ bool XMP_Is_Small_Prime(const digit * candidate, int precision)
 	if (XMP_Significance(candidate, precision) > 1) return(false);
 	if (*candidate > primeTable[ARRAY_SIZE(primeTable)-1]) return false;
 
-	unsigned long * ptr = (unsigned long *)bsearch(&candidate, &primeTable[0], ARRAY_SIZE(primeTable), sizeof(primeTable[0]), pfunc);
+	unsigned short const * ptr =
+		(unsigned short const *)bsearch(candidate, &primeTable[0], ARRAY_SIZE(primeTable), sizeof(primeTable[0]), pfunc);
 	return(ptr != NULL);
 }
 

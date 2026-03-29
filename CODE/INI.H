@@ -40,13 +40,13 @@
 #define INI_H
 
 #include	<stdlib.h>
-#include	"listnode.h"
-#include	"pipe.h"
-#include	"wwfile.h"
-#include	"pk.h"
-#include	"fixed.h"
-#include	"crc.h"
-#include	"search.h"
+#include	"LISTNODE.H"
+#include	"PIPE.H"
+#include	"WWFILE.H"
+#include	"PK.H"
+#include	"FIXED.H"
+#include	"CRC.H"
+#include	"SEARCH.H"
 
 /*
 **	This is an INI database handler class. It handles a database with a disk format identical

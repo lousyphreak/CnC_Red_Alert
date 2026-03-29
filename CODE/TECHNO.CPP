@@ -158,7 +158,7 @@ const char* NewName[] = {
 	"Scout Ant",	  			"Kundschafter-Ameise",
 	"Warrior Ant",    		"Krieger-Ameise",
 	"Fire Ant",	  				"Feuer-Ameise",
-	"Queen Ant",	  			"Ameisenk”nigin",
+	"Queen Ant",	  			"Ameisenkï¿½nigin",
 	"ATS",						"Angriffs-U-Boot",
 	"Tesla Tank",	  			"Telsapanzer",
 	"Volkov",  					"Modell Volkov",
@@ -174,7 +174,7 @@ const char* NewName[] = {
 #ifdef FRENCH
 const char* NewName[] = {
 	"Scout Ant",	  			"Fourmi de Reconnaissance",
-	"Warrior Ant",    		"Fourmi GuerriŠre",
+	"Warrior Ant",    		"Fourmi Guerriï¿½re",
 	"Fire Ant",	  				"Fourmi Lance-Flammes",
 	"Queen Ant",	  			"Reine des Fourmis",
 	"ATS", 						"SMTA",
@@ -182,9 +182,9 @@ const char* NewName[] = {
 	"Volkov",  					"Volkov",
 	"Chitzkoi", 				"Cyber-Chien",
 	"Stavros",					"Stavros",
-	"F-A Longbow",				"HAA (H‚licoptŠre d'Assaut Avanc‚)",
-	"Civilian Specialist",	"Sp‚cialiste Civil",
-	"Alloy Facility",			"Usine M‚tallurgique",
+	"F-A Longbow",				"HAA (Hï¿½licoptï¿½re d'Assaut Avancï¿½)",
+	"Civilian Specialist",	"Spï¿½cialiste Civil",
+	"Alloy Facility",			"Usine Mï¿½tallurgique",
 	NULL,
 	};
 
@@ -3790,7 +3790,7 @@ bool TechnoClass::Captured(HouseClass * newowner)
  * HISTORY:                                                                                    *
  *   06/20/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-ResultType TechnoClass::Take_Damage(int & damage, int distance, WarheadType warhead, TechnoClass * source, int forced)
+ResultType TechnoClass::Take_Damage(int & damage, int distance, WarheadType warhead, TechnoClass * source, bool forced)
 {
 	assert(IsActive);
 
@@ -4770,7 +4770,7 @@ void TechnoClass::Base_Is_Attacked(TechnoClass const * enemy)
 	** Loop through the units looking for those who are capable of going
 	** on a rescue mission.
 	*/
-	for (index = 0; index < Units.Count() && desired > 0; index++) {
+	for (int index = 0; index < Units.Count() && desired > 0; index++) {
 	 	UnitClass * unit = Units.Ptr(index);
 		if (unit != NULL && unit->Owner() == Owner()) {
 
@@ -4872,7 +4872,7 @@ void TechnoClass::Base_Is_Attacked(TechnoClass const * enemy)
 			}
 		}
 
-		for (lp = 0; lp < count; lp ++) {
+		for (int lp = 0; lp < count; lp ++) {
 			if (Percent_Chance(50)) {
 				defender[lp]->Assign_Mission(MISSION_RESCUE);
 			} else {
@@ -5826,7 +5826,7 @@ int TechnoClass::Anti_Armor(void) const
 		WeaponTypeClass const * weapon = Techno_Type_Class()->PrimaryWeapon;
 		BulletTypeClass const * bullet = weapon->Bullet;
 		WarheadTypeClass const * warhead = weapon->WarheadPtr;
-		int mrange = min(weapon->Range, 0x0400);
+		int mrange = min((int)weapon->Range, 0x0400);
 
 		int value = ((weapon->Attack * warhead->Modifier[ARMOR_STEEL]) * mrange * warhead->SpreadFactor) / weapon->ROF;
 		if (Techno_Type_Class()->Is_Two_Shooter()) {
@@ -5867,7 +5867,7 @@ int TechnoClass::Anti_Infantry(void) const
 		WeaponTypeClass const * weapon = Techno_Type_Class()->PrimaryWeapon;
 		BulletTypeClass const * bullet = weapon->Bullet;
 		WarheadTypeClass const * warhead = weapon->WarheadPtr;
-		int mrange = min(weapon->Range, 0x0400);
+		int mrange = min((int)weapon->Range, 0x0400);
 
 		int value = ((weapon->Attack * warhead->Modifier[ARMOR_NONE]) * mrange * warhead->SpreadFactor) / weapon->ROF;
 		if (Techno_Type_Class()->Is_Two_Shooter()) {

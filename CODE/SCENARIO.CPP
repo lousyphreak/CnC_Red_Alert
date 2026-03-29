@@ -71,10 +71,10 @@ extern bool SpawnedFromWChat;
 #endif
 extern int PreserveVQAScreen;
 
-//#include "WolDebug.h"
+//#include "WOLDEBUG.H"
 
 #ifdef FIXIT_VERSION_3		//	Stalemate games.
-#include "WolStrng.h"
+#include "WOLSTRNG.H"
 #endif
 
 static void Remove_AI_Players(void);
@@ -472,7 +472,8 @@ bool Read_Scenario(char * name)
 		     	}
 			}
 			CCINIClass ini;
-			if (ini.Load(CCFileClass("MPLAYER.INI"), false)) {
+			CCFileClass mplayerini("MPLAYER.INI");
+			if (ini.Load(mplayerini, false)) {
 				Rule.General(ini);
 				Rule.Recharge(ini);
 				Rule.AI(ini);
@@ -557,6 +558,7 @@ void Fill_In_Data(void)
 	/*
 	**	Distribute the trigger pointers to the appropriate working lists.
 	*/
+	int index;
 	for (index = 0; index < TriggerTypes.Count(); index++) {
 		TriggerTypeClass * tp = TriggerTypes.Ptr(index);
 
@@ -1315,11 +1317,11 @@ bool Restate_Mission(char const * name, int button1, int button2)
 #define	BUTTON_2		2
 #define	BUTTON_3		3
 #define	BUTTON_FLAG	0x8000
-bool BGMessageBox(char const * msg, int btn1, int btn2)
+int BGMessageBox(char const * msg, int btn1, int btn2)
 {
 #define BUFFSIZE 511
 	char buffer[BUFFSIZE];
-	bool retval;
+	int retval = 0;
 	bool process;								// loop while true
 	KeyNumType input;							// user input
 	int selection;
@@ -1403,17 +1405,17 @@ bool BGMessageBox(char const * msg, int btn1, int btn2)
 		**	Build the button list.
 		*/
 		bheight = FontHeight + FontYSpacing + 2;
-		bwidth = max((String_Pixel_Width(b1txt) + 8), 80);
+		bwidth = max((int)(String_Pixel_Width(b1txt) + 8), 80);
 		if (b2txt) {
 			numbuttons = 2;
 			b2char = toupper(b2txt[0]);
-			bwidth = max((String_Pixel_Width( b2txt ) + 8), bwidth);
+			bwidth = max((int)(String_Pixel_Width( b2txt ) + 8), bwidth);
 //			b1x = x + 10;								// left side
 
 			if (b3txt) {
 				numbuttons = 3;
 				b3char = toupper(b3txt[0]);
-				bwidth = max((String_Pixel_Width( b3txt ) + 8), bwidth);
+				bwidth = max((int)(String_Pixel_Width( b3txt ) + 8), bwidth);
 			}
 
 		} else {
@@ -2349,7 +2351,8 @@ bool Read_Scenario_INI(char * fname, bool )
 	**	the mission.ini file.  VG 10/17/96
 	*/
 	INIClass mini;
-	mini.Load(CCFileClass("MISSION.INI"));
+	CCFileClass missionini("MISSION.INI");
+	mini.Load(missionini);
 	mini.Get_TextBlock(fname, Scen.BriefingText, sizeof(Scen.BriefingText));
 
 	/*
@@ -2463,7 +2466,8 @@ void Write_Scenario_INI(char * fname)
 	**	maintained entries.
 	*/
 	if (CCFileClass(fname).Is_Available()) {
-		ini.Load(CCFileClass(fname), true);
+		CCFileClass scenfile(fname);
+		ini.Load(scenfile, true);
 	}
 
 	static char const * const BASIC = "Basic";

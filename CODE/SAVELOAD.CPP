@@ -53,7 +53,7 @@
 #include "tcpip.h"
 #include "ccdde.h"
 
-//#include "WolDebug.h"
+//#include "WOLDEBUG.H"
 
 extern bool SpawnedFromWChat;
 #endif
@@ -196,6 +196,7 @@ static void Put_All(Pipe & pipe, int save_net)
 	if (!save_net) Call_Back();
 	count = LogicTriggers.Count();
 	pipe.Put(&count, sizeof(count));
+	int index;
 	for (index = 0; index < LogicTriggers.Count(); index++) {
 		TARGET target = LogicTriggers[index]->As_Target();
 		pipe.Put(&target, sizeof(target));
@@ -688,6 +689,7 @@ bool Load_Game(int id)
 
 	straw.Get(&count, sizeof(count));
 	LogicTriggers.Clear();
+	int index;
 	for (index = 0; index < count; index++) {
 		TARGET target;
 		straw.Get(&target, sizeof(target));
@@ -879,7 +881,8 @@ bool Load_Game(int id)
 	**	Rescan the scenario file for any rules updates.
 	*/
 	CCINIClass ini;
-	int result = ini.Load(CCFileClass(Scen.ScenarioName), true);
+	CCFileClass scenfile(Scen.ScenarioName);
+	int result = ini.Load(scenfile, true);
 
 	/*
 	**	Reset the rules values to their initial settings.
@@ -958,7 +961,8 @@ if(Special.IsFromWChat || SpawnedFromWChat) {
 		     	}
 			}
 			CCINIClass mpini;
-			if (mpini.Load(CCFileClass("MPLAYER.INI"), false)) {
+			CCFileClass mplayerini("MPLAYER.INI");
+			if (mpini.Load(mplayerini, false)) {
 				Rule.General(mpini);
 				Rule.Recharge(mpini);
 				Rule.AI(mpini);
@@ -1560,4 +1564,3 @@ void MPlayer_Save_Message(void)
 {
 	//char *txt = Text_String(
 }
-

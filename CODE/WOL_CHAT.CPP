@@ -23,12 +23,12 @@
 
 #include "function.h"
 #include "iconlist.h"
-#include "WolapiOb.h"
+#include "WOLAPIOB.H"
 #include "SEditDlg.h"
-#include "WolStrng.h"
-#include "ToolTip.h"
+#include "WOLSTRNG.H"
+#include "TOOLTIP.H"
 
-//#include "WolDebug.h"
+//#include "WOLDEBUG.H"
 
 void WOL_PrintMessage( IconListClass& ILTarget, const char* szText, PlayerColorType iColorRemap = PCOLOR_NONE );
 void WOL_PrintMessage( IconListClass& ILTarget, const char* szText, RemapControlType* pColorRemap );

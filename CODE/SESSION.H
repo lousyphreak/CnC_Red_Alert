@@ -243,6 +243,19 @@ typedef struct {
 	char ModemName [ MODEM_NAME_MAX ];
 } SerialSettingsType;
 
+class PhoneEntryClass
+{
+public:
+	enum {
+		PHONE_MAX_NAME = 32,
+		PHONE_MAX_NUM = 32
+	};
+
+	char Name[PHONE_MAX_NAME];
+	char Number[PHONE_MAX_NUM];
+	SerialSettingsType Settings;
+};
+
 //...........................................................................
 //	This is a "node", used for the lists of available games & players.  The
 //	'Game' structure is used for games; the 'Player' structure for players.

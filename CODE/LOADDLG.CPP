@@ -42,7 +42,7 @@
  *   LoadOptionsClass::Compare -- for qsort                                                    *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include "function.h"
+#include "FUNCTION.H"
 #include <io.h>				// for unlink
 
 
@@ -591,7 +591,7 @@ void LoadOptionsClass::Clear_List(ListClass * list)
 	/*
 	** Clear the array of game numbers
 	*/
-	for (i = 0; i < Files.Count(); i++) {
+	for (int i = 0; i < Files.Count(); i++) {
 		delete Files[i];
 	}
 	Files.Clear();
@@ -702,10 +702,11 @@ void LoadOptionsClass::Fill_List(ListClass * list)
 		** in the list; if any number isn't found, use that number; otherwise,
 		** use 'N + 1'.
 		*/
-		for (int i = 0; i < Files.Count(); i++) {		// i = the # we're searching for
+		int next_id;
+		for (next_id = 0; next_id < Files.Count(); next_id++) {		// i = the # we're searching for
 			id = -1;											// mark as 'not found'
 			for (int j = 0; j < Files.Count(); j++) {	// loop through all game ID's
-				if (Files[j]->Num==i) {					// if found, mark as found
+				if (Files[j]->Num==next_id) {					// if found, mark as found
 					id = j;
 					break;
 				}
@@ -713,7 +714,7 @@ void LoadOptionsClass::Fill_List(ListClass * list)
 			if (id == -1)	break;							// if ID not found, use this one
 		}
 
-		Files[0]->Num = i;								// set the empty slot's ID
+		Files[0]->Num = next_id;								// set the empty slot's ID
 	}
 
 	/*
@@ -781,4 +782,3 @@ int LoadOptionsClass::Compare(const void * p1, const void * p2)
 	if (fe1->DateTime < fe2->DateTime) return(1);
 	return(0);
 }
-

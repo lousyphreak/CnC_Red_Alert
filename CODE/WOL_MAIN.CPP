@@ -22,9 +22,9 @@
 //	ajw 07/16/98
 
 #include "function.h"
-#include "WolapiOb.h"
+#include "WOLAPIOB.H"
 #include "wol_gsup.h"
-#include "WolStrng.h"
+#include "WOLSTRNG.H"
 
 int WOL_Login_Dialog( WolapiObject* pWolapi );
 int WOL_Chat_Dialog( WolapiObject* pWolapi );
@@ -35,7 +35,7 @@ void HandleDLLFail();
 
 WolapiObject* pWolapi = NULL;
 
-#include "WolDebug.h"
+#include "WOLDEBUG.H"
 
 //***********************************************************************************************
 //	The first time through, pWolapi is NULL thus wolapi gets set up. WOL_Login_Dialog presents the user

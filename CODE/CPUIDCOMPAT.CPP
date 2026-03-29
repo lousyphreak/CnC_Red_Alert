@@ -16,10 +16,23 @@
 **	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+extern "C" {
+#if defined(__x86_64__) || defined(_M_X64)
+char CPUType = 6;
+#elif defined(__i386__) || defined(_M_IX86)
+char CPUType = 5;
+#else
+char CPUType = 0;
+#endif
 
-#include	"WWFILE.H"
-#include	"STRAW.H"
+char VendorID[17] = "Generic CPU";
 
-void strtrim(char * buffer);
-int Read_Line(FileClass & file, char * buffer, int len, bool & eof);
-int Read_Line(Straw & file, char * buffer, int len, bool & eof);
+bool __cdecl Detect_MMX_Availability(void)
+{
+#if defined(__MMX__) || defined(_M_IX86_FP) || defined(__x86_64__) || defined(_M_X64)
+	return(true);
+#else
+	return(false);
+#endif
+}
+}

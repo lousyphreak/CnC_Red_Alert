@@ -42,7 +42,8 @@
 #include <string.h>
 
 #include	"MEMORY.H"
-#include	"FUNCTION.H"
+
+extern bool GameActive;
 
 class AudioClass {
 		char const * Name;	// Name of audio asset.

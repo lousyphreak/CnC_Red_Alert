@@ -21,7 +21,7 @@ current progress is in `docs/PORTING_PROGRESS.md`, use it as reference, and keep
 - keep a state document (e.g. `PORTING_PROGRESS.md`) to track the progress of the port, and update it regularly with detailed notes on what has been done, what is left to do, and any issues or challenges encountered along the way.
 - keep a knowledge document (e.g. `PORTING_KNOWLEDGE.md`) to document any important information, insights, or discoveries made during the porting process, such as how certain systems work, any quirks or edge cases discovered, and any useful resources or references found.
 - if there is any decision to be made about how to implement something, or if there are any questions or uncertainties about how to proceed, use the `askQuestions` tool.
-
+- the file system code needs to deal with a case sensitive filesystem, so make sure that the lowest level does correct abstraction for both Windows and Linux, and that the upper levels of the code does not need to care.
 
 ## Technology used
 

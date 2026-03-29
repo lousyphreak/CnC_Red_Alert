@@ -59,12 +59,8 @@
 
 #include <stdio.h>
 #include <malloc.h>
-#include <dos.h>
-#include <mem.h>
-#include <conio.h>
-#include <sys\timeb.h>
-#include <vqm32\all.h>
-#include "vqaplayp.h"
+#include <string.h>
+#include "VQAPLAYP.H"
 
 
 /*---------------------------------------------------------------------------
@@ -555,4 +551,3 @@ long User_Update(VQAHandle *vqa)
 
 	return (rc);
 }
-

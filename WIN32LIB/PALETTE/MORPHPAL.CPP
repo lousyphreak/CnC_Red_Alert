@@ -80,7 +80,7 @@ void cdecl Morph_Palette (void *src_pal, void *dst_pal, unsigned int delay,
 	void (*callback) (void) )
 {
 	int	result;
-	unsigned long	pal_start = TickCount.Time();
+	unsigned long	pal_start = WWTickCount.Time();
 	extern void   (*cb_ptr) ( void ) ;	// callback function pointer
 
 //	(void *)cb_ptr = callback;
@@ -93,7 +93,7 @@ void cdecl Morph_Palette (void *src_pal, void *dst_pal, unsigned int delay,
 	while (1) {
 		if (src_pal && dst_pal) {
 			result = Palette_To_Palette (src_pal, dst_pal,
-				(TickCount.Time() - pal_start), (unsigned long)delay);
+				(WWTickCount.Time() - pal_start), (unsigned long)delay);
 			if (!result)
 				break;
 
@@ -172,4 +172,3 @@ PRIVATE int cdecl Palette_To_Palette(void *src_palette, void *dst_palette,
 
 
 /*************************** End of morphpal.cpp ***************************/
-

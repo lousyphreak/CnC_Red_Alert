@@ -46,6 +46,8 @@
 
 #ifdef WIN32
 
+#include <winsock.h>
+
 #ifndef WOLAPI_INTEGRATION
 extern bool Server;
 #endif

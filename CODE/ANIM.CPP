@@ -54,7 +54,7 @@
  *   Shorten_Attached_Anims -- Reduces attached animation durations.                           *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
+#include	"FUNCTION.H"
 #define   VIC   1
 
 /***********************************************************************************************
@@ -212,7 +212,7 @@ bool AnimClass::Render(bool forced) const
 
 	if (Delay) return(false);
 	if (Map[Center_Coord()].IsVisible) {
-		IsToDisplay = true;
+		const_cast<AnimClass *>(this)->IsToDisplay = true;
 	}
 #endif
 	return(ObjectClass::Render(forced));
@@ -536,8 +536,11 @@ IsTheaterShape = false;
 		Map.Sight_From(Coord_Cell(coord), Rule.DropZoneRadius / CELL_LEPTON_W, PlayerPtr, false);
 	}
 
-	Loops = (unsigned char)(max(loop, 1) * Class->Loops);
-	Loops = (unsigned char)max(Loops, 1);
+	int total_loops = ((loop > 0) ? loop : 1) * Class->Loops;
+	if (total_loops < 1) {
+		total_loops = 1;
+	}
+	Loops = (unsigned char)total_loops;
 
 	/*
 	**	If the animation starts immediately, then play the associated sound effect now.
@@ -590,7 +593,8 @@ AnimClass::~AnimClass(void)
 			**	this animation is attached to. If there are no others, then inform the
 			**	attached object of this fact.
 			*/
-			for (int index = 0; index < Anims.Count(); index++) {
+			int index;
+			for (index = 0; index < Anims.Count(); index++) {
 				if (Anims.Ptr(index) != this && Anims.Ptr(index)->xObject == xObject) break;
 			}
 
@@ -1104,5 +1108,4 @@ void AnimClass::Do_Atom_Damage(HousesType ownerhouse, CELL cell)
 	}
 #endif
 }
-
 

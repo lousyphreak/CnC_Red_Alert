@@ -62,6 +62,11 @@
 
 ////////////////////////////////////////////////////////////////////////////
 
+extern "C" void __cdecl Mem_Copy(void const *source, void *dest, unsigned long bytes_to_copy)
+{
+	memmove(dest, source, bytes_to_copy);
+}
+
 
 
 /*******************************************************************************
@@ -378,7 +383,7 @@ void Mem_Reference(void *node)
 	nodeptr = (MemChain_Type *) node;
 	nodeptr--;
 
-	nodeptr->Time = (unsigned short)(TickCount.Time() >> 4);
+	nodeptr->Time = (unsigned short)(WWTickCount.Time() >> 4);
 
 }
 
@@ -558,7 +563,7 @@ void *Mem_Find_Oldest(void *poolptr)
 	oldtime = 0;
 	node = ((MemPool_Type*) poolptr)->UsedChain;
 
-  basetime = (unsigned int)(TickCount.Time() >> 4);
+  basetime = (unsigned int)(WWTickCount.Time() >> 4);
 
 	while (node) {
 
@@ -976,7 +981,7 @@ PRIVATE void MemNode_Insert(MemPool_Type *pool, int freechain, MemChain_Type *no
 		node->Next = NULL;
 		node->Prev = NULL;
 		node->Size = size;
-		node->Time = (unsigned short)(TickCount.Time() >> 4);
+		node->Time = (unsigned short)(WWTickCount.Time() >> 4);
 		node->ID = id;
 		*chain = node;
 		return;
@@ -1077,12 +1082,10 @@ PRIVATE void MemNode_Insert(MemPool_Type *pool, int freechain, MemChain_Type *no
 		node->Prev = prev;
 		node->Next = next;
 		node->Size = size;
-		node->Time = (unsigned short)(TickCount.Time() >> 4);
+		node->Time = (unsigned short)(WWTickCount.Time() >> 4);
 		node->ID = id;
 	}
 }
-
-
 
 
 

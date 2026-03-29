@@ -52,7 +52,7 @@
  *   BulletClass::~BulletClass -- Destructor for bullet objects.                               *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
+#include	"FUNCTION.H"
 
 
 /***********************************************************************************************
@@ -716,14 +716,18 @@ bool BulletClass::Unlimbo(COORDINATE coord, DirType dir)
 			*/
 			if (/*Class->ROT != 0 ||*/ Class->IsArcing) {
 				int scatterdist = (::Distance(coord, tcoord)/16)-0x0040;
-				scatterdist = min(scatterdist, Rule.HomingScatter);
+				if (scatterdist > Rule.HomingScatter) {
+					scatterdist = Rule.HomingScatter;
+				}
 				scatterdist = max(scatterdist, 0);
 
 				dir = (DirType)((dir + (Random_Pick(0, 10)-5)) & 0x00FF);
 				tcoord = Coord_Scatter(tcoord, Random_Pick(0, scatterdist));
 			} else {
 				int scatterdist = (::Distance(coord, tcoord)/16)-0x0040;
-				scatterdist = min(scatterdist, Rule.BallisticScatter);
+				if (scatterdist > Rule.BallisticScatter) {
+					scatterdist = Rule.BallisticScatter;
+				}
 				scatterdist = max(scatterdist, 0);
 				tcoord = Coord_Move(tcoord, dir, Random_Pick(0, scatterdist));
 			}

@@ -21,14 +21,14 @@
 //	WolapiOb.cpp - Implementation of class WolapiObject.
 //	ajw 07/10/98
 
-#include "WolapiOb.h"
+#include "WOLAPIOB.H"
 #include "RAWolapi.h"
-#include "WolStrng.h"
+#include "WOLSTRNG.H"
 #include "SEditDlg.h"
-#include "ToolTip.h"
+#include "TOOLTIP.H"
 #include "Wol_GSup.h"
 
-#include "WolDebug.h"
+#include "WOLDEBUG.H"
 
 extern void WOL_PrintMessage( IconListClass& ILTarget, const char* szText, PlayerColorType iColorRemap = PCOLOR_NONE );
 extern void WOL_PrintMessage( IconListClass& ILTarget, const char* szText, RemapControlType* pColorRemap );
@@ -2148,8 +2148,8 @@ bool WolapiObject::SpawnBrowser( const char* szURL )
 								NULL,			//	Thread handle not inheritable.
 								FALSE,			//	Set handle inheritance to FALSE.
 								0,				//	No creation flags.
-								NULL,			//	Use parent’s environment block.
-								NULL,			//	Use parent’s starting directory.
+								NULL,			//	Use parentï¿½s environment block.
+								NULL,			//	Use parentï¿½s starting directory.
 								&si,			//	Pointer to STARTUPINFO structure.
 								&pi ) )			//	Pointer to PROCESS_INFORMATION structure.
 		{

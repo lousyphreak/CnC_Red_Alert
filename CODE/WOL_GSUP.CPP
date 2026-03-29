@@ -17,16 +17,36 @@
 */
 
 
+#include <cstring>
+
+#ifndef WOLAPI_INTEGRATION
+bool bSpecialAftermathScenario(const char* szScenarioDescription)
+{
+	if (!szScenarioDescription) {
+		return(false);
+	}
+
+	return(
+		strcmp(szScenarioDescription, "Booby Traps (Mega 8 players)") == 0 ||
+		strcmp(szScenarioDescription, "Central Conflict Extreme (Mega 8 players)") == 0 ||
+		strcmp(szScenarioDescription, "Circles of Death (Mega 8 players)") == 0 ||
+		strcmp(szScenarioDescription, "Holy Grounds (Mega 8 players)") == 0 ||
+		strcmp(szScenarioDescription, "Island Wars Extreme (Mega 8 players)") == 0 ||
+		strcmp(szScenarioDescription, "King of the Hills Extreme (Mega 8 players)") == 0 ||
+		strcmp(szScenarioDescription, "The Hills Have Eyes (Mega 8 players)") == 0);
+}
+#endif
+
 #ifdef WOLAPI_INTEGRATION			//	Now implies also WINSOCK_IPX, WIN32, and FIXIT_CSII must be true
 
-#include "wol_gsup.h"
-#include "function.h"
-#include "IconList.h"
+#include "WOL_GSUP.H"
+#include "FUNCTION.H"
+#include "ICONLIST.H"
 #include <time.h>
-#include "WolStrng.h"
-#include "wsproto.h"
-#include "BigCheck.h"
-#include "ToolTip.h"
+#include "WOLSTRNG.H"
+#include "WSPROTO.H"
+#include "BIGCHECK.H"
+#include "TOOLTIP.H"
 
 extern char const* EngMisStr[];
 
@@ -40,7 +60,7 @@ int ScenarioIndex_From_Filename( const char* szScenarioFilename );
 
 bool bSpecialAftermathScenario( const char* szScenarioDescription );
 
-#include "WolDebug.h"
+#include "WOLDEBUG.H"
 
 #define PARAMREFRESHWAIT	2000
 
@@ -272,6 +292,7 @@ void WOL_GameSetupDialog::Initialize()
 #else
 	d_options_w = 180;
 #endif
+
 	d_options_h = ((6 * 6) + 4)*RESFACTOR + 1;
 	d_options_x = d_dialog_x + d_dialog_w - d_options_w - d_margin1;
 	d_options_y = 127 - d_txt6_h + 2;
@@ -3469,8 +3490,6 @@ void WOL_GameSetupDialog::TriggerGameStart( char* szGoMessage )
 	*szTriggerGameStartInfo = 0;	//	This was set in order to trigger my coming here.
 }
 
-#endif
-
 //***********************************************************************************************
 bool bSpecialAftermathScenario( const char* szScenarioDescription )
 {
@@ -3498,3 +3517,5 @@ int ScenarioIndex_From_Filename( const char* szScenarioFilename )
 	}
 	return -1;
 }
+
+#endif

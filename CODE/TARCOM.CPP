@@ -38,7 +38,8 @@
  *   TarComClass::~TarComClass -- Destructor for turret object.                                *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
+#include	"FUNCTION.H"
+#include	"TARCOM.H"
 
 
 /***********************************************************************************************
@@ -195,5 +196,4 @@ void TarComClass::AI(void)
 		}
 	}
 }
-
 

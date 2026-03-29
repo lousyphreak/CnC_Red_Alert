@@ -40,6 +40,7 @@
 #define CCPTR_H
 
 #include	"NOINIT.H"
+#include	"HEAP.H"
 
 /*
 **	The CCPtr class is designed for a specific purpose. It functions like a pointer except that

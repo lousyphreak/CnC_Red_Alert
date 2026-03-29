@@ -486,8 +486,8 @@ void MixFileClass<T>::Free(void)
 
 int compfunc(void const * ptr1, void const * ptr2)
 {
-	if (*(long const *)ptr1 < *(long const *)ptr2) return(-1);
-	if (*(long const *)ptr1 > *(long const *)ptr2) return(1);
+	if (*(int32_t const *)ptr1 < *(int32_t const *)ptr2) return(-1);
+	if (*(int32_t const *)ptr1 > *(int32_t const *)ptr2) return(1);
 	return(0);
 }
 
@@ -523,7 +523,7 @@ int compfunc(void const * ptr1, void const * ptr2)
  *   10/17/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
 template<class T>
-bool MixFileClass<T>::Offset(char const * filename, void ** realptr, MixFileClass ** mixfile, long * offset, long * size) const
+bool MixFileClass<T>::Offset(char const * filename, void ** realptr, MixFileClass ** mixfile, long * offset, long * size)
 {
 	MixFileClass<T> * ptr;
 
@@ -535,7 +535,7 @@ assert(filename != NULL);//BG
 	/*
 	**	Create the key block that will be used to binary search for the file.
 	*/
-	long crc = Calculate_CRC(strupr((char *)filename), strlen(filename));
+	int32_t crc = static_cast<int32_t>(Calculate_CRC(strupr((char *)filename), strlen(filename)));
 	SubBlock key;
 	key.CRC = crc;
 
@@ -578,3 +578,5 @@ assert(1);//BG
 	return(false);
 }
 
+template class MixFileClass<CCFileClass>;
+template class MixFileClass<CDFileClass>;

@@ -49,13 +49,13 @@
  *   Test_Null_Modem -- Null-Modem test routine                            *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include "function.h"
+#include "FUNCTION.H"
 #ifdef FIXIT_RANDOM_GAME
 #include "time.h"
 #endif
 #ifdef WIN32
-#include "wincomm.h"
-#include "modemreg.h"
+#include "WINCOMM.H"
+#include "MODEMREG.H"
 ModemRegistryEntryClass *ModemRegistry = NULL;		//Ptr to modem registry data
 #endif	//WIN32
 
@@ -65,7 +65,7 @@ extern bool Is_Mission_Counterstrike (char *file_name);
 extern bool Is_Mission_Aftermath( char* file_name );
 #endif
 
-//#include "WolDebug.h"
+//#include "WOLDEBUG.H"
 
 //
 // how much time (ticks) to go by before thinking other system
@@ -286,7 +286,7 @@ int Test_Null_Modem( void )
 	**	These dimensions will control how the dialog box looks.
 	*/
 	strcpy( buffer, Text_String( TXT_WAITING_CONNECT ) );
-	Fancy_Text_Print(TXT_NONE,0,0,TBLACK,TBLACK,TPF_6PT_GRAD | TPF_NOSHADOW);
+	Fancy_Text_Print(TXT_NONE, 0, 0, scheme, TBLACK, TPF_6PT_GRAD | TPF_NOSHADOW);
 	Format_Window_String(buffer, SeenBuff.Get_Height(), width, height);
 
 	width = max(width, 50 * RESFACTOR);
@@ -619,7 +619,7 @@ static int Reconnect_Null_Modem( void )
 	**	These dimensions will control how the dialog box looks.
 	*/
 	strcpy( buffer, Text_String( TXT_NULL_CONNERR_CHECK_CABLES ) );
-	Fancy_Text_Print(TXT_NONE,0,0,TBLACK,TBLACK,TPF_6PT_GRAD | TPF_NOSHADOW);
+	Fancy_Text_Print(TXT_NONE, 0, 0, scheme, TBLACK, TPF_6PT_GRAD | TPF_NOSHADOW);
 	Format_Window_String(buffer, SeenBuff.Get_Height(), width, height);
 
 	width = max(width, 50 * RESFACTOR);
@@ -1575,35 +1575,35 @@ Advanced_Modem_Settings (SerialSettingsType *settings)
 /***************************************************************************
  * Com_Settings_Dialog -- Lets user select serial port settings            *
  *                                                                         *
- *  здддддддддддддддддддддддддддддддддддддддддддддддддддддд©               *
- *  Ё                    Settings                          Ё               *
- *  Ё                                                      Ё               *
- *  Ё     Port:____       IRQ:__        Baud:______        Ё               *
- *  Ё  здддддддддддд©  здддддддддддд©  здддддддддддд©      Ё               *
- *  Ё  Ё            Ё  Ё            Ё  Ё            Ё      Ё               *
- *  Ё  Ё            Ё  Ё            Ё  Ё            Ё      Ё               *
- *  Ё  Ё            Ё  Ё            Ё  Ё            Ё      Ё               *
- *  Ё  Ё            Ё  Ё            Ё  Ё            Ё      Ё               *
- *  Ё  юдддддддддддды  юдддддддддддды  юдддддддддддды      Ё               *
- *  Ё                                                      Ё               *
- *  Ё   Initialization:        [Add]   [Delete]            Ё               *
- *  Ё    _____________________________                     Ё               *
- *  Ё   здддддддддддддддддддддддддддддддддддддддддддд©     Ё               *
- *  Ё   Ё                                            Ё     Ё               *
- *  Ё   Ё                                            Ё     Ё               *
- *  Ё   Ё                                            Ё     Ё               *
- *  Ё   юдддддддддддддддддддддддддддддддддддддддддддды     Ё               *
- *  Ё                                                      Ё               *
- *  Ё   Call Waiting:                                      Ё               *
- *  Ё    _______________                                   Ё               *
- *  Ё   зддддддддддддддддд©          [Tone Dialing]        Ё               *
- *  Ё   Ё                 Ё                                Ё               *
- *  Ё   Ё                 Ё          [Pulse Dialing]       Ё               *
- *  Ё   Ё                 Ё                                Ё               *
- *  Ё   юддддддддддддддддды                                Ё               *
- *  Ё                                                      Ё               *
- *  Ё                   [OK]   [Cancel]                    Ё               *
- *  юдддддддддддддддддддддддддддддддддддддддддддддддддддддды               *
+ *  О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫д©               *
+ *  О©╫                    Settings                          О©╫               *
+ *  О©╫                                                      О©╫               *
+ *  О©╫     Port:____       IRQ:__        Baud:______        О©╫               *
+ *  О©╫  О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫д©  О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫д©  О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫д©      О©╫               *
+ *  О©╫  О©╫            О©╫  О©╫            О©╫  О©╫            О©╫      О©╫               *
+ *  О©╫  О©╫            О©╫  О©╫            О©╫  О©╫            О©╫      О©╫               *
+ *  О©╫  О©╫            О©╫  О©╫            О©╫  О©╫            О©╫      О©╫               *
+ *  О©╫  О©╫            О©╫  О©╫            О©╫  О©╫            О©╫      О©╫               *
+ *  О©╫  О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫  О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫  О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫      О©╫               *
+ *  О©╫                                                      О©╫               *
+ *  О©╫   Initialization:        [Add]   [Delete]            О©╫               *
+ *  О©╫    _____________________________                     О©╫               *
+ *  О©╫   О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫д©     О©╫               *
+ *  О©╫   О©╫                                            О©╫     О©╫               *
+ *  О©╫   О©╫                                            О©╫     О©╫               *
+ *  О©╫   О©╫                                            О©╫     О©╫               *
+ *  О©╫   О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫     О©╫               *
+ *  О©╫                                                      О©╫               *
+ *  О©╫   Call Waiting:                                      О©╫               *
+ *  О©╫    _______________                                   О©╫               *
+ *  О©╫   О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫д©          [Tone Dialing]        О©╫               *
+ *  О©╫   О©╫                 О©╫                                О©╫               *
+ *  О©╫   О©╫                 О©╫          [Pulse Dialing]       О©╫               *
+ *  О©╫   О©╫                 О©╫                                О©╫               *
+ *  О©╫   О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫                                О©╫               *
+ *  О©╫                                                      О©╫               *
+ *  О©╫                   [OK]   [Cancel]                    О©╫               *
+ *  О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫               *
  *                                                                         *
  * INPUT:                                                                  *
  *		settings		ptr to SerialSettingsType structure								*
@@ -2214,7 +2214,7 @@ static int Com_Settings_Dialog( SerialSettingsType *settings )
 
 				// init font variables
 
-				Fancy_Text_Print(TXT_NONE, 0, 0, TBLACK, TBLACK, TPF_CENTER | TPF_TEXT);
+				Fancy_Text_Print(TXT_NONE, 0, 0, scheme, TBLACK, TPF_CENTER | TPF_TEXT);
 
 				/*
 				** Dialog & Field labels
@@ -3312,6 +3312,7 @@ int Com_Scenario_Dialog(bool skirmish)
 	Init scenario description list box
 	........................................................................*/
 	for (i = 0; i < Session.Scenarios.Count(); i++) {
+		bool found = false;
 		for (int j = 0; EngMisStr[j] != NULL;  j++) {
 			if (!strcmp(Session.Scenarios[i]->Description(), EngMisStr[j])) {
 #ifdef FIXIT_CSII	//	ajw Added Aftermath installed checks (before, it was assumed).
@@ -3324,10 +3325,11 @@ int Com_Scenario_Dialog(bool skirmish)
 #else
 				scenariolist.Add_Item(EngMisStr[j]);
 #endif
+				found = true;
 				break;
 			}
 		}
-		if (EngMisStr[j] == NULL) {
+		if (!found) {
 #ifdef FIXIT_CSII	//	ajw Added Aftermath installed checks (before, it was assumed). Added officialness check.
 			//	Add mission if it's available to us.
 			if( !Session.Scenarios[i]->Get_Official() ||
@@ -3488,7 +3490,7 @@ oh_dear_its_a_label:
 
 				// init font variables
 
-				Fancy_Text_Print(TXT_NONE, 0, 0, TBLACK, TBLACK, TPF_CENTER | TPF_TEXT);
+				Fancy_Text_Print(TXT_NONE, 0, 0, scheme, TBLACK, TPF_CENTER | TPF_TEXT);
 
 				/*...............................................................
 				Dialog & Field labels
@@ -4464,8 +4466,8 @@ oh_dear_its_a_label:
 					Session.FrameSendRate), (Session.FrameSendRate * 2)
 											);
 			} else {
-				Session.MaxAhead = max( (SendPacket.ScenarioInfo.ResponseTime / 8),
-											  MODEM_MIN_MAX_AHEAD );
+				Session.MaxAhead = max(static_cast<unsigned long>(SendPacket.ScenarioInfo.ResponseTime / 8),
+						 static_cast<unsigned long>(MODEM_MIN_MAX_AHEAD));
 			}
 		}
 		SendPacket.ID = Session.ModemType;
@@ -4745,29 +4747,29 @@ bool Find_Local_Scenario (char *description, char *filename, unsigned int length
  * vector, and Chat vector aren't used at all by this routine.  The Game & Players				  *
  * list boxes are filled in manually in the processing loop.											  *
  *                                                                         						  *
- *    здддддддддддддддддддддддддддддддддддддддддддддддддддддддддддд©                      	  *
- *    Ё                        Serial Game                         Ё                       	  *
- *    Ё                                                            Ё                      	  *
- *    Ё                   Your Name: __________                    Ё     							  *
- *    Ё                       House: [GDI] [NOD]                   Ё									  *
- *    Ё               Desired Color: [ ][ ][ ][ ]                  Ё 	   						  *
- *    Ё                                                            Ё                    	 	  *
- *    Ё                     Opponent: Name                         Ё                    	 	  *
- *    Ё                     Scenario: Description                  Ё   								  *
- *    Ё                      Credits: xxxx                         Ё   								  *
- *    Ё                        Bases: ON                           Ё                   	 	  *
- *    Ё                       Crates: ON                           Ё                   	 	  *
- *    Ё                     Tiberium: ON                           Ё                   	 	  *
- *    Ё                       Ghosts: ON                           Ё                   	 	  *
- *    Ё                                                            Ё                   	 	  *
- *    Ё                         [Cancel]                           Ё                    	 	  *
- *    Ё                                                            Ё                   	 	  *
- *    Ё   здддддддддддддддддддддддддддддддддддддддддддддддддддд©   Ё                   	 	  *
- *    Ё   Ё                                                    Ё   Ё                   	 	  *
- *    Ё   Ё                                                    Ё   Ё                   	 	  *
- *    Ё   юдддддддддддддддддддддддддддддддддддддддддддддддддддды   Ё                   	 	  *
- *    Ё                       [Send Message]                       Ё                   	 	  *
- *    юдддддддддддддддддддддддддддддддддддддддддддддддддддддддддддды                      	  *
+ *    О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫д©                      	  *
+ *    О©╫                        Serial Game                         О©╫                       	  *
+ *    О©╫                                                            О©╫                      	  *
+ *    О©╫                   Your Name: __________                    О©╫     							  *
+ *    О©╫                       House: [GDI] [NOD]                   О©╫									  *
+ *    О©╫               Desired Color: [ ][ ][ ][ ]                  О©╫ 	   						  *
+ *    О©╫                                                            О©╫                    	 	  *
+ *    О©╫                     Opponent: Name                         О©╫                    	 	  *
+ *    О©╫                     Scenario: Description                  О©╫   								  *
+ *    О©╫                      Credits: xxxx                         О©╫   								  *
+ *    О©╫                        Bases: ON                           О©╫                   	 	  *
+ *    О©╫                       Crates: ON                           О©╫                   	 	  *
+ *    О©╫                     Tiberium: ON                           О©╫                   	 	  *
+ *    О©╫                       Ghosts: ON                           О©╫                   	 	  *
+ *    О©╫                                                            О©╫                   	 	  *
+ *    О©╫                         [Cancel]                           О©╫                    	 	  *
+ *    О©╫                                                            О©╫                   	 	  *
+ *    О©╫   О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫д©   О©╫                   	 	  *
+ *    О©╫   О©╫                                                    О©╫   О©╫                   	 	  *
+ *    О©╫   О©╫                                                    О©╫   О©╫                   	 	  *
+ *    О©╫   О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫   О©╫                   	 	  *
+ *    О©╫                       [Send Message]                       О©╫                   	 	  *
+ *    О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫                      	  *
  *                                                                         						  *
  * INPUT:                                                                  						  *
  *		none.																												  *
@@ -6087,8 +6089,8 @@ int Com_Show_Scenario_Dialog(void)
 								(Session.FrameSendRate - 1)) / Session.FrameSendRate) *
 								Session.FrameSendRate), (Session.FrameSendRate * 2) );
 						} else {
-							Session.MaxAhead = max( (ReceivePacket.ScenarioInfo.ResponseTime / 8),
-														  MODEM_MIN_MAX_AHEAD );
+							Session.MaxAhead = max(static_cast<unsigned long>(ReceivePacket.ScenarioInfo.ResponseTime / 8),
+									 static_cast<unsigned long>(MODEM_MIN_MAX_AHEAD));
 						}
 
 						process = false;
@@ -6409,6 +6411,7 @@ static int Phone_Dialog (void)
 	PhoneEntryClass *p_entry;				// for creating / editing phonebook entries
 	bool changed = false;					// 1 = save changes to INI file
 	bool firsttime = false;
+	RemapControlType * scheme = GadgetClass::Get_Color_Scheme();
 
 	/*........................................................................
 	Buttons
@@ -6483,7 +6486,7 @@ static int Phone_Dialog (void)
 
 				// init font variables
 
-				Fancy_Text_Print(TXT_NONE, 0, 0, TBLACK, TBLACK, TPF_CENTER | TPF_TEXT);
+				Fancy_Text_Print(TXT_NONE, 0, 0, scheme, TBLACK, TPF_CENTER | TPF_TEXT);
 
 				/*...............................................................
 				Dialog & Field labels
@@ -7587,7 +7590,7 @@ void Hex_Dump_Data( char *buffer, int length )
 			itoh(c, buff);
 
 			if (!(i & 0x3) && i) {
-				Smart_Printf("Ё ");
+				Smart_Printf("О©╫ ");
 			}
 
 			Smart_Printf("%s ", buff);
@@ -7621,7 +7624,7 @@ void Hex_Dump_Data( char *buffer, int length )
 				c = ptr[i];
 				itoh(c, buff);
 				if (!(i & 0x3) && i) {
-					Smart_Printf("Ё ");
+					Smart_Printf("О©╫ ");
 				}
 				Smart_Printf("%s ", buff);
 			} else {

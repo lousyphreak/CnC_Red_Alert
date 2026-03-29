@@ -71,6 +71,8 @@
 #define FIELD_MEMORY							"MEMO"
 #define FIELD_VIDEO_MEMORY						"VIDM"
 #define FIELD_SHADOW_REGROWS					"SHAD"
+#define FIELD_PLAYER1_IP						"ADR1"
+#define FIELD_PLAYER2_IP						"ADR2"
 
 #ifdef WOLAPI_INTEGRATION
 #define FIELD_HOSTORNOT							"SDFX"
@@ -80,8 +82,6 @@
 #define FIELD_DISCONNECT_PINGS					"PING"
 #define FIELD_COMPUTERTOOKOVER					"QUIT"
 //#define FIELD_HARDWARE_GUID					"GUID"
-#define FIELD_PLAYER1_IP						"ADR1"
-#define FIELD_PLAYER2_IP						"ADR2"
 #endif
 
 //	ajw The following were never used (thank god).
@@ -166,10 +166,10 @@ TimerClass	GameTimer;
 long			GameEndTime;
 void			*PacketLater = NULL;
 
-#include "WolDebug.h"
+#include "WOLDEBUG.H"
 
 #ifdef WOLAPI_INTEGRATION
-#include "WolapiOb.h"
+#include "WOLAPIOB.H"
 extern WolapiObject* pWolapi;
 
 extern bool bReconnectDialogCancelled;
@@ -857,6 +857,7 @@ void Send_Statistics_Packet(void)
 	/*
 	** Send it.....
 	*/
+#ifdef WOLAPI_INTEGRATION
 	const char* szGameResServer;
 	int iPort;
 	if( pWolapi->GameInfoCurrent.GameKind == CREATEGAMEINFO::AMGAME )
@@ -876,6 +877,7 @@ void Send_Statistics_Packet(void)
 			//debugprint( "RequestGameresSend( %s, %i ) failed!!!\n", szGameResServer, iPort );
 			;
 	}
+#endif
 
 	/*
 	** Save it to disk as well so I can see it

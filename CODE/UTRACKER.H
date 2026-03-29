@@ -39,6 +39,8 @@
 #ifndef UTRACKER_H
 #define UTRACKER_H
 
+#include <stdint.h>
+
 /*
 ** UnitTracker Class
 */
@@ -54,8 +56,8 @@ class	UnitTrackerClass {
 		void 	Decrement_Unit_Total (int unit_type);
 		void	Clear_Unit_Total(void);
 
-		int 	Get_Unit_Total (int unit_type);
-		long *Get_All_Totals (void);
+		int 	Get_Unit_Total (int unit_type) { return((int)UnitTotals[unit_type]); };
+		uint32_t *Get_All_Totals (void);
 		int	Get_Unit_Count (void){return (UnitCount);};
 
 		void	To_Network_Format(void);
@@ -63,7 +65,7 @@ class	UnitTrackerClass {
 
 	private:
 
-		long	*UnitTotals;
+		uint32_t *UnitTotals;
 		int	UnitCount;
 		int	InNetworkFormat;
 

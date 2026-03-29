@@ -41,14 +41,19 @@
  *   DynamicVectorClass<T>::Resize -- Changes size of a dynamic vector.    *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
+#include	"FUNCTION.H"
+#include	"ICONLIST.H"
+#include	"TACTION.H"
+#include	"TEVENT.H"
 #include "vector.h"
 #ifdef WINSOCK_IPX
-#include	"WSProto.h"
-#include	"WSPUDP.h"
+#include	"WSPROTO.H"
+#include	"WSPUDP.H"
 #endif	//WINSOCK_IPX
 #include	<mem.h>
 #include	<stdio.h>
+
+struct NodeNameTag;
 
 /***********************************************************************************************
  * DynamicVectorClass<T>::DynamicVectorClass -- Constructor for dynamic vector.                *
@@ -158,7 +163,7 @@ template<class T>
 int DynamicVectorClass<T>::Add(T const & object)
 {
 	if (ActiveCount >= Length()) {
-		if ((IsAllocated || !VectorMax) && GrowthStep > 0) {
+		if ((this->IsAllocated || !this->VectorMax) && GrowthStep > 0) {
 			if (!Resize(Length() + GrowthStep)) {
 
 				/*
@@ -204,7 +209,7 @@ template<class T>
 int DynamicVectorClass<T>::Add_Head(T const & object)
 {
 	if (ActiveCount >= Length()) {
-		if ((IsAllocated || !VectorMax) && GrowthStep > 0) {
+		if ((this->IsAllocated || !this->VectorMax) && GrowthStep > 0) {
 			if (!Resize(Length() + GrowthStep)) {
 
 				/*
@@ -295,5 +300,25 @@ int DynamicVectorClass<T>::Delete(int index)
 	}
 	return(false);
 }
+
+template class DynamicVectorClass<ActionChoiceClass>;
+template class DynamicVectorClass<ActionChoiceClass *>;
+template class DynamicVectorClass<BaseNodeClass>;
+template class DynamicVectorClass<CCPtr<TeamTypeClass>>;
+template class DynamicVectorClass<CCPtr<TriggerTypeClass>>;
+template class DynamicVectorClass<EgoClass *>;
+template class DynamicVectorClass<EventChoiceClass>;
+template class DynamicVectorClass<EventChoiceClass *>;
+template class DynamicVectorClass<FileEntryClass *>;
+template class DynamicVectorClass<MultiMission *>;
+template class DynamicVectorClass<ObjectClass *>;
+template class DynamicVectorClass<PhoneEntryClass *>;
+template class DynamicVectorClass<RemapControlType *>;
+template class DynamicVectorClass<TeamMissionClass *>;
+template class DynamicVectorClass<TriggerClass *>;
+template class DynamicVectorClass<NodeNameTag *>;
+template class DynamicVectorClass<char *>;
+template class DynamicVectorClass<char const *>;
+template class DynamicVectorClass<void *>;
 
 /************************** end of dynavec.cpp *****************************/
