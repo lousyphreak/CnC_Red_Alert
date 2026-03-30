@@ -38,6 +38,7 @@
 
 #include "font.h"
 #include <wwstd.h>
+#include <cstring>
 
 
 
@@ -72,9 +73,13 @@ void * __cdecl Set_Font(void const *fontptr)
 		/*
 		**	Inform the system about the new font.
 		*/
+		unsigned short width_block_offset;
+		unsigned short info_block_offset;
+		std::memcpy(&width_block_offset, (char*)fontptr + FONTWIDTHBLOCK, sizeof(width_block_offset));
+		std::memcpy(&info_block_offset, (char*)fontptr + FONTINFOBLOCK, sizeof(info_block_offset));
 
-		FontWidthBlockPtr = (char*)fontptr + *(unsigned short *)((char*)fontptr + FONTWIDTHBLOCK);
-		blockptr  = (char*)fontptr + *(unsigned short *)((char*)fontptr + FONTINFOBLOCK);
+		FontWidthBlockPtr = (char*)fontptr + width_block_offset;
+		blockptr  = (char*)fontptr + info_block_offset;
 		FontHeight = *(blockptr + FONTINFOMAXHEIGHT);
 		FontWidth  = *(blockptr + FONTINFOMAXWIDTH);
 		//Draw_Char_Setup();

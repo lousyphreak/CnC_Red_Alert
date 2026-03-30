@@ -37,7 +37,7 @@
  *   CRCEngine::operator() -- Submits an arbitrary data block to the CRC engine.               *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include "crc.h"
+#include "CRC.H"
 
 
 /***********************************************************************************************
@@ -60,11 +60,13 @@
  *=============================================================================================*/
 void CRCEngine::operator() (char datum)
 {
-	StagingBuffer.Buffer[Index++] = datum;
+	StagingBuffer[Index++] = datum;
 
-	if (Index == sizeof(long))  {
+	if (Index == static_cast<int>(sizeof(StagingBuffer)))  {
 		CRC = Value();
-		StagingBuffer.Composite = 0;
+		for (int index = 0; index < static_cast<int>(sizeof(StagingBuffer)); ++index) {
+			StagingBuffer[index] = 0;
+		}
 		Index = 0;
 	}
 }
@@ -88,7 +90,7 @@ void CRCEngine::operator() (char datum)
  * HISTORY:                                                                                    *
  *   03/02/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-long CRCEngine::operator() (void const * buffer, int length)
+int32_t CRCEngine::operator() (void const * buffer, int length)
 {
 	if (buffer != NULL && length > 0)  {
 		char const * dataptr = (char const *)buffer;
@@ -110,18 +112,21 @@ long CRCEngine::operator() (void const * buffer, int length)
 		**	Perform the fast 'bulk' processing by reading long word sized
 		**	data blocks.
 		*/
-		long const * longptr = (long const *)dataptr;
-		int longcount = bytes_left / sizeof(long);		// Whole 'long' elements remaining.
+		int longcount = bytes_left / static_cast<int>(sizeof(int32_t));		// Whole 'long' elements remaining.
 		while (longcount--) {
-			CRC = _lrotl(CRC, 1) + *longptr++;
-			bytes_left -= sizeof(long);
+			const uint32_t composite = static_cast<uint32_t>(static_cast<uint8_t>(dataptr[0]))
+				| (static_cast<uint32_t>(static_cast<uint8_t>(dataptr[1])) << 8)
+				| (static_cast<uint32_t>(static_cast<uint8_t>(dataptr[2])) << 16)
+				| (static_cast<uint32_t>(static_cast<uint8_t>(dataptr[3])) << 24);
+			CRC = static_cast<int32_t>(static_cast<uint32_t>(Rotate_Left(CRC, 1)) + composite);
+			dataptr += sizeof(int32_t);
+			bytes_left -= sizeof(int32_t);
 		}
 
 		/*
 		**	If there are remainder bytes, then process these by adding them
 		**	to the staging buffer.
 		*/
-		dataptr = (char const *)longptr;
 		while (bytes_left) {
 			operator()(*dataptr);
 			dataptr++;

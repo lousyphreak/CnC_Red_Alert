@@ -12,4 +12,14 @@ inline void CoUninitialize(void)
 {
 }
 
+inline HRESULT OleInitialize(LPVOID reserved)
+{
+    return CoInitialize(reserved);
+}
+
+inline void OleUninitialize(void)
+{
+    CoUninitialize();
+}
+
 #endif

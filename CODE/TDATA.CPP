@@ -674,7 +674,8 @@ void TerrainTypeClass::Init(TheaterType theater)
 {
 	if (theater != LastTheater) {
 
-		for (TerrainType index = TERRAIN_FIRST; index < TERRAIN_COUNT; index++) {
+		for (int value = TERRAIN_FIRST; value < TERRAIN_COUNT; ++value) {
+			TerrainType index = (TerrainType)value;
 			TerrainTypeClass const & terrain = As_Reference(index);
 			char	fullname[_MAX_FNAME+_MAX_EXT];
 
@@ -721,10 +722,9 @@ void TerrainTypeClass::Init(TheaterType theater)
  *=============================================================================================*/
 TerrainType TerrainTypeClass::From_Name(char const * name)
 {
-	TerrainType	index;
-
 	if (name != NULL) {
-		for (index = TERRAIN_FIRST; index < TERRAIN_COUNT; index++) {
+		for (int value = TERRAIN_FIRST; value < TERRAIN_COUNT; ++value) {
+			TerrainType index = (TerrainType)value;
 			if (stricmp(name, As_Reference(index).IniName) == 0) {
 				return(index);
 			}

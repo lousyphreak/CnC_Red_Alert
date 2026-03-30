@@ -50,9 +50,10 @@
 #define VQASTANDALONE 0  /* Stand alone player */
 #define VQAVOC_ON     0  /* Enable VOC file override */
 #define	VQAMONO_ON    0  /* Mono display output enable/disable */
+#define VQADIRECT_SOUND 0	/* Use windows direct sound system */
 #define VQAAUDIO_ON   1  /* Audio playback enable/disable */
 #define VQAVIDEO_ON   0  /* Video manager enable/disable */
-#define VQAMCGA_ON    1  /* MCGA enable/disable */
+#define VQAMCGA_ON    0  /* MCGA enable/disable */
 #define VQAXMODE_ON   0  /* Xmode enable/disable */
 #define VQAVESA_ON    0  /* VESA enable/disable */
 #define	VQABLOCK_2X2  0  /* 2x2 block decode enable/disable */
@@ -63,10 +64,11 @@
 #else
 #define VQASTANDALONE 0  /* Stand alone player */
 #define VQAVOC_ON     0  /* Enable VOC file override */
-#define	VQAMONO_ON    1  /* Mono display output enable/disable */
-#define VQAAUDIO_ON   0  /* Audio playback enable/disable */
+#define	VQAMONO_ON    0  /* Mono display output enable/disable */
+#define VQADIRECT_SOUND 0	/* Use windows direct sound system */
+#define VQAAUDIO_ON   1  /* Audio playback enable/disable */
 #define VQAVIDEO_ON   0  /* Video manager enable/disable */
-#define VQAMCGA_ON    1  /* MCGA enable/disable */
+#define VQAMCGA_ON    0  /* MCGA enable/disable */
 #define VQAXMODE_ON   0  /* Xmode enable/disable */
 #define VQAVESA_ON    0  /* VESA enable/disable */
 #define	VQABLOCK_2X2  0  /* 2x2 block decode enable/disable */
@@ -74,6 +76,20 @@
 #define	VQABLOCK_4X2  1  /* 4x2 block decode enable/disable */
 #define	VQABLOCK_4X4  0  /* 4x4 block decode enable/disable */
 #define VQAWOOFER_ON  0
+#endif
+
+
+#if (VQAAUDIO_ON && VQADIRECT_SOUND)
+#ifndef WIN32
+#define WIN32 1
+#ifndef _WIN32
+#define _WIN32
+#endif
+#endif
+#undef WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <windowsx.h>
+#include "dsound.h"
 #endif
 
 
@@ -142,6 +158,8 @@
  * OptionFlags    - Bits control various special misc options. (See below)
  * NumFrameBufs   - Desired number of frame buffers. (Default = 6)
  * NumCBBufs      - Desired number of codebook buffers. (Default = 3)
+ * SoundObject		- Ptr to callers Direct Sound Object (Default =NULL)
+ * PrimaryBufferPtr- Ptr to callers Primary Sound Buffer. (Default = NULL)
  * VocFile        - Name of VOC file to play instead of VQA audio track.
  * AudioBuf       - Pointer to audio buffer.
  * AudioBufSize   - Size of audio buffer. (Default = 32768)
@@ -175,6 +193,10 @@ typedef struct _VQAConfig {
 	long          OptionFlags;
 	long          NumFrameBufs;
 	long          NumCBBufs;
+#if (VQADIRECT_SOUND)
+	LPDIRECTSOUND			SoundObject;
+	LPDIRECTSOUNDBUFFER	PrimaryBufferPtr;
+#endif	//(VQADIRECT_SOUND)
 	char          *VocFile;
 	unsigned char *AudioBuf;
 	long          AudioBufSize;
@@ -318,4 +340,3 @@ char *VQA_Version(void);
 char *VQA_IDString(void);
 
 #endif /* VQAPLAY_H */
-

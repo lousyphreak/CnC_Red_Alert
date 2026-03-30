@@ -81,6 +81,17 @@
 
 #include	"FUNCTION.H"
 #include	"VORTEX.H"
+#include <stdio.h>
+#include <stdlib.h>
+
+static bool Cell_Trace_Enabled(void)
+{
+	static int enabled = -1;
+	if (enabled == -1) {
+		enabled = (getenv("RA_TRACE_STARTUP") != NULL) ? 1 : 0;
+	}
+	return(enabled != 0);
+}
 
 /***********************************************************************************************
  * CellClass::CellClass -- Constructor for cell objects.                                       *
@@ -99,7 +110,7 @@
  *   02/20/1996 JLB : Uses initializer list.                                                   *
  *=============================================================================================*/
 CellClass::CellClass(void) :
-	ID(Map.ID(this)),
+	ID(0),
 	IsPlot(false),
 	IsCursorHere(false),
 	IsMapped(false),
@@ -121,6 +132,13 @@ CellClass::CellClass(void) :
 	OccupierPtr(0),
 	Land(LAND_CLEAR)
 {
+	static unsigned constructed = 0;
+	++constructed;
+	if (Cell_Trace_Enabled() && (constructed == 1 || (constructed % 2048) == 0)) {
+		fprintf(stderr, "[cell] constructed=%u\n", constructed);
+		fflush(stderr);
+	}
+
 	for (int zone = MZONE_FIRST; zone < MZONE_COUNT; zone++) {
 		Zones[zone] = 0;
 	}

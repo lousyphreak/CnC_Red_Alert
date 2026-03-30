@@ -41,10 +41,42 @@
 
 #include "iff.h"
 #include "file.h"
+#include <cstddef>
+#include <cstring>
 #include <misc.h>
 #include <wwstd.h>
 #include <dos.h>
 #include <wwmem.h>
+
+namespace {
+
+uint16_t Read_Comp_Skip(void const* buffer)
+{
+	uint16_t value;
+	std::memcpy(&value, (char const*)buffer + offsetof(CompHeaderType, Skip), sizeof(value));
+	return value;
+}
+
+void Write_Comp_Skip(void* buffer, uint16_t value)
+{
+	std::memcpy((char*)buffer + offsetof(CompHeaderType, Skip), &value, sizeof(value));
+}
+
+uint32_t Read_Comp_Size(void const* buffer)
+{
+	uint32_t value;
+	std::memcpy(&value, (char const*)buffer + offsetof(CompHeaderType, Size), sizeof(value));
+	return value;
+}
+
+CompressionType Read_Comp_Method(void const* buffer)
+{
+	uint8_t value;
+	std::memcpy(&value, (char const*)buffer + offsetof(CompHeaderType, Method), sizeof(value));
+	return (CompressionType)value;
+}
+
+}
 
 
 /*=========================================================================*/
@@ -193,7 +225,7 @@ unsigned long __cdecl Load_Uncompress(char const *file, BufferClass& uncomp_buff
 	/* Check for and read in the skip data block.									*/
 	/*======================================================================*/
 
-	skipsize = *(((short *)uncomp_ptr) + 3);
+	skipsize = Read_Comp_Skip(uncomp_ptr);
 
 	if (reserved_data && skipsize) {
 		Read_File(fd, reserved_data, (unsigned long) skipsize);
@@ -201,7 +233,7 @@ unsigned long __cdecl Load_Uncompress(char const *file, BufferClass& uncomp_buff
 		Seek_File(fd, skipsize, SEEK_CUR);
 	}
 
-	*( ((short *)uncomp_ptr+3) )	 = 0;				// K/O any skip value.
+	Write_Comp_Skip(uncomp_ptr, 0);				// K/O any skip value.
 	isize 							-= skipsize;
 
 	/*======================================================================*/
@@ -342,15 +374,15 @@ unsigned long __cdecl Uncompress_Data(void const *src, void *dst)
 	**	Interpret the data block header structure to determine
 	**	compression method, size, and skip data amount.
 	*/
-	uncomp_size = ((CompHeaderType*)src)->Size;
+	uncomp_size = Read_Comp_Size(src);
 	#if(AMIGA)
 		uncomp_size = Reverse_Long(uncomp_size);
 	#endif
-	skip = ((CompHeaderType*)src)->Skip;
+	skip = Read_Comp_Skip(src);
 	#if(AMIGA)
 		skip = Reverse_Word(skip);
 	#endif
-	method = (CompressionType) ((CompHeaderType*)src)->Method;
+	method = Read_Comp_Method(src);
 	src = Add_Long_To_Pointer((void *)src, (long)sizeof(CompHeaderType) + (long)skip);
 
 	switch (method) {
@@ -374,5 +406,4 @@ unsigned long __cdecl Uncompress_Data(void const *src, void *dst)
 
 	return(uncomp_size);
 }
-
 

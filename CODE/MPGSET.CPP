@@ -500,7 +500,11 @@ void MPGSettings::Dialog(void)
 					Theme.Fade_Out();
 					Hide_Mouse();
 					VisiblePage.Clear();
+					#ifdef MPEGMOVIE
 					PlayMpegMovie("acrop");
+					#else
+					WWMessageBox().Process("MPEG playback is unavailable in this SDL3 build.\n");
+					#endif
 					Keyboard->Clear();
 					Show_Mouse();
 					Theme.Queue_Song(THEME_CRUS);

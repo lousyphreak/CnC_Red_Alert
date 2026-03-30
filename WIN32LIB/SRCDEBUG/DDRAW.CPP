@@ -723,19 +723,19 @@ void Set_DD_Palette ( void *palette )
 
 	int	j;
 	int	k;
-	char	*palette_get;
+		unsigned char const *palette_get;
 
 	if ( DirectDrawObject && PaletteSurface ){
 
 		k=0;
 
-		palette_get = (char*)palette;
+		palette_get = (unsigned char const*)palette;
 
 		for( j=0 ; j<768 ; j+=3 )
 		{
-			PaletteEntries[k].peRed = (unsigned char)((*palette_get++)<<2);
-			PaletteEntries[k].peGreen = (unsigned char)((*palette_get++)<<2);
-			PaletteEntries[k].peBlue = (unsigned char)((*palette_get++)<<2);
+			PaletteEntries[k].peRed = (unsigned char)((unsigned int)(*palette_get++) << 2);
+			PaletteEntries[k].peGreen = (unsigned char)((unsigned int)(*palette_get++) << 2);
+			PaletteEntries[k].peBlue = (unsigned char)((unsigned int)(*palette_get++) << 2);
 			k++;
 		}
 
@@ -997,4 +997,3 @@ void SurfaceMonitorClass::Release(void)
 	}
 
 }
-

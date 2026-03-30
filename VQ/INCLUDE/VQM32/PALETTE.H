@@ -37,7 +37,24 @@
 *     Febuary 3, 1995
 *
 ****************************************************************************/
-
+#ifndef far
+#define far
+#endif
+#ifndef near
+#define near
+#endif
+#ifndef huge
+#define huge
+#endif
+#ifndef interrupt
+#define interrupt
+#endif
+#ifndef __cdecl
+#define __cdecl
+#endif
+#ifndef cdecl
+#define cdecl __cdecl
+#endif
 /* Prototypes */
 
 #ifdef __cplusplus
@@ -56,4 +73,3 @@ void cdecl TranslatePalette(void *pal24, void *pal15, long numbytes);
 void SortPalette(unsigned char *pal, long numcolors);
 
 #endif /* VQMPALETTE_H */
-

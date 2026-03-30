@@ -126,6 +126,6 @@ BufferClass::BufferClass(VOID)
 BufferClass::~BufferClass(VOID)
 {
 	if (Allocated) {
-		delete[] Buffer;
+		delete[] (BYTE*)Buffer;
 	}
 }

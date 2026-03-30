@@ -55,6 +55,35 @@
 #include	"function.h"
 #include	"vortex.h"
 
+#include <cstdarg>
+#include <cstdio>
+#include <cstdlib>
+
+static bool Rules_Trace_Enabled(void)
+{
+	static int enabled = -1;
+	if (enabled == -1) {
+		char const* env = std::getenv("RA_TRACE_STARTUP");
+		enabled = (env != NULL && env[0] != '\0') ? 1 : 0;
+	}
+	return(enabled != 0);
+}
+
+static void Rules_Trace(char const* format, ...)
+{
+	if (!Rules_Trace_Enabled()) {
+		return;
+	}
+
+	va_list arguments;
+	va_start(arguments, format);
+	std::fputs("[rules] ", stderr);
+	std::vfprintf(stderr, format, arguments);
+	std::fputc('\n', stderr);
+	std::fflush(stderr);
+	va_end(arguments);
+}
+
 
 /***********************************************************************************************
  * _Scale_To_256 -- Scales a 1..100 number into a 1..255 number.                               *
@@ -347,17 +376,39 @@ bool RulesClass::Process(CCINIClass & ini)
 {
 	BStart(BENCH_RULES);
 
+	Rules_Trace("Process General start");
 	General(ini);
+	Rules_Trace("Process General complete");
+	Rules_Trace("Process MPlayer start");
 	MPlayer(ini);
+	Rules_Trace("Process MPlayer complete");
+	Rules_Trace("Process Recharge start");
 	Recharge(ini);
+	Rules_Trace("Process Recharge complete");
+	Rules_Trace("Process Heap_Maximums start");
 	Heap_Maximums(ini);
+	Rules_Trace("Process Heap_Maximums complete");
+	Rules_Trace("Process AI start");
 	AI(ini);
+	Rules_Trace("Process AI complete");
+	Rules_Trace("Process Powerups start");
 	Powerups(ini);
+	Rules_Trace("Process Powerups complete");
+	Rules_Trace("Process Land_Types start");
 	Land_Types(ini);
+	Rules_Trace("Process Land_Types complete");
+	Rules_Trace("Process Themes start");
 	Themes(ini);
+	Rules_Trace("Process Themes complete");
+	Rules_Trace("Process IQ start");
 	IQ(ini);
+	Rules_Trace("Process IQ complete");
+	Rules_Trace("Process Objects start");
 	Objects(ini);
+	Rules_Trace("Process Objects complete");
+	Rules_Trace("Process Difficulty start");
 	Difficulty(ini);
+	Rules_Trace("Process Difficulty complete");
 
 	BEnd(BENCH_RULES);
 
@@ -779,7 +830,8 @@ bool RulesClass::Powerups(CCINIClass & ini)
 {
 	static char const * const POWERUPS = "Powerups";
 	if (ini.Is_Present(POWERUPS)) {
-		for (CrateType crate = CRATE_FIRST; crate < CRATE_COUNT; crate++) {
+		for (int index = CRATE_FIRST; index < CRATE_COUNT; ++index) {
+			CrateType crate = (CrateType)index;
 			char buffer[128];
 			if (ini.Get_String(POWERUPS, CrateNames[crate], "0,NONE", buffer, sizeof(buffer))) {
 
@@ -840,7 +892,8 @@ bool RulesClass::Land_Types(CCINIClass & ini)
 	/*
 	**	Fetch the movement characteristic data for terrain types.
 	*/
-	for (LandType land = LAND_FIRST; land < LAND_COUNT; land++) {
+	for (int index = LAND_FIRST; index < LAND_COUNT; ++index) {
+		LandType land = (LandType)index;
 		static char const * _lands[LAND_COUNT] = {
 			"Clear",
 			"Road",
@@ -889,7 +942,8 @@ bool RulesClass::Themes(CCINIClass & ini)
 	static char const * const THEMECONTROL = "ThemeControl";
 
 	if (ini.Is_Present(THEMECONTROL)) {
-		for (ThemeType theme = THEME_FIRST; theme < THEME_COUNT; theme++) {
+		for (int index = THEME_FIRST; index < THEME_COUNT; ++index) {
+			ThemeType theme = (ThemeType)index;
 			if (ini.Is_Present(THEMECONTROL, Theme.Base_Name(theme))) {
 
 				char buffer[128];
@@ -974,53 +1028,75 @@ bool RulesClass::Objects(CCINIClass & ini)
 	/*
 	**	Fetch the game object values from the rules file.
 	*/
+	Rules_Trace("Objects warheads start");
 	for (int index = 0; index < Warheads.Count(); index++) {
 		Warheads.Ptr(index)->Read_INI(ini);
 	}
+	Rules_Trace("Objects warheads complete");
 
+	Rules_Trace("Objects bullets start");
 	for (int proj = 0; proj < BulletTypes.Count(); proj++) {
 		BulletTypes.Ptr(proj)->Read_INI(ini);
 	}
+	Rules_Trace("Objects bullets complete");
 
+	Rules_Trace("Objects weapons start");
 	for (int windex = 0; windex < Weapons.Count(); windex++) {
 		Weapons.Ptr(windex)->Read_INI(ini);
 	}
+	Rules_Trace("Objects weapons complete");
 
+	Rules_Trace("Objects units start");
 	for (int uindex = 0; uindex < UnitTypes.Count(); uindex++) {
 		UnitTypes.Ptr(uindex)->Read_INI(ini);
 	}
+	Rules_Trace("Objects units complete");
 
+	Rules_Trace("Objects infantry start");
 	for (int iindex = 0; iindex < InfantryTypes.Count(); iindex++) {
 		InfantryTypes.Ptr(iindex)->Read_INI(ini);
 	}
+	Rules_Trace("Objects infantry complete");
 
+	Rules_Trace("Objects vessels start");
 	for (int vindex = 0; vindex < VesselTypes.Count(); vindex++) {
 		VesselTypes.Ptr(vindex)->Read_INI(ini);
 	}
+	Rules_Trace("Objects vessels complete");
 
+	Rules_Trace("Objects aircraft start");
 	for (int aindex = 0; aindex < AircraftTypes.Count(); aindex++) {
 		AircraftTypes.Ptr(aindex)->Read_INI(ini);
 	}
+	Rules_Trace("Objects aircraft complete");
 
+	Rules_Trace("Objects buildings start");
 	for (int bindex = 0; bindex < BuildingTypes.Count(); bindex++) {
 		BuildingTypes.Ptr(bindex)->Read_INI(ini);
 	}
+	Rules_Trace("Objects buildings complete");
 
 	/*
 	**	Fetch the house attribute override values.
 	*/
-	for (HousesType house = HOUSE_FIRST; house < HOUSE_COUNT; house++) {
+	Rules_Trace("Objects houses start");
+	for (int index = HOUSE_FIRST; index < HOUSE_COUNT; ++index) {
+		HousesType house = (HousesType)index;
 		HouseTypeClass::As_Reference(house).Read_INI(ini);
 	}
+	Rules_Trace("Objects houses complete");
 
 	/*
 	**	Fetch the mission control values.
 	*/
-	for (MissionType mission = MISSION_FIRST; mission < MISSION_COUNT; mission++) {
+	Rules_Trace("Objects missions start");
+	for (int index = MISSION_FIRST; index < MISSION_COUNT; ++index) {
+		MissionType mission = (MissionType)index;
 		MissionControlClass * miss = &MissionControl[mission];
 		miss->Mission = mission;
 		miss->Read_INI(ini);
 	}
+	Rules_Trace("Objects missions complete");
 
 	return(true);
 }

@@ -19,12 +19,15 @@
 #define DSBSTATUS_PLAYING 0x00000001U
 #define DSBSTATUS_LOOPING 0x00000002U
 
+#pragma pack(push, 4)
 struct DSBUFFERDESC {
     DWORD dwSize;
     DWORD dwFlags;
     DWORD dwBufferBytes;
+    DWORD dwReserved;
     LPWAVEFORMATEX lpwfxFormat;
 };
+#pragma pack(pop)
 
 class IDirectSoundBuffer {
 public:

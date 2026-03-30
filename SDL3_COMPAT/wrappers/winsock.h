@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <sys/ioctl.h>
 #include <sys/select.h>
 #include <sys/socket.h>
@@ -56,6 +57,21 @@ using SOCKADDR_IN = struct sockaddr_in;
 using LPSOCKADDR_IN = struct sockaddr_in*;
 using SOCKADDR_IPX_T = SOCKADDR_IPX;
 using LPSOCKADDR_IPX = SOCKADDR_IPX*;
+using IN_ADDR = struct in_addr;
+using LPIN_ADDR = struct in_addr*;
+using LINGER = struct linger;
+
+#ifndef MAXGETHOSTSTRUCT
+#define MAXGETHOSTSTRUCT 1024
+#endif
+
+#ifndef WSAECONNRESET
+#define WSAECONNRESET ECONNRESET
+#endif
+
+#define WSAGETASYNCERROR(l_param) HIWORD(l_param)
+#define WSAGETSELECTERROR(l_param) HIWORD(l_param)
+#define WSAGETSELECTEVENT(l_param) LOWORD(l_param)
 
 inline int WSAStartup(WORD version, WSADATA* data)
 {
@@ -95,6 +111,16 @@ inline int WSAAsyncSelect(SOCKET, HWND, unsigned int, long)
 inline HANDLE WSAAsyncGetHostByName(HWND, unsigned int, const char*, char*, int)
 {
     return nullptr;
+}
+
+inline HANDLE WSAAsyncGetHostByAddr(HWND, unsigned int, const char*, int, int, char*, int)
+{
+    return nullptr;
+}
+
+inline int WSACancelAsyncRequest(HANDLE)
+{
+    return 0;
 }
 
 #endif

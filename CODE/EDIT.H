@@ -103,5 +103,17 @@ class EditClass : public ControlClass
 inline EditClass::EditStyle operator |(EditClass::EditStyle, EditClass::EditStyle);
 inline EditClass::EditStyle operator &(EditClass::EditStyle, EditClass::EditStyle);
 inline EditClass::EditStyle operator ~(EditClass::EditStyle);
+inline EditClass::EditStyle operator |(EditClass::EditStyle lhs, EditClass::EditStyle rhs)
+{
+	return (EditClass::EditStyle)((int)lhs | (int)rhs);
+}
+inline EditClass::EditStyle operator &(EditClass::EditStyle lhs, EditClass::EditStyle rhs)
+{
+	return (EditClass::EditStyle)((int)lhs & (int)rhs);
+}
+inline EditClass::EditStyle operator ~(EditClass::EditStyle value)
+{
+	return (EditClass::EditStyle)(~(int)value);
+}
 
 #endif

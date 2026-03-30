@@ -42,15 +42,33 @@
 *
 ****************************************************************************/
 
-#include <vqm32\video.h>
-#include <vqm32\soscomp.h>
-#include <vqm32\captoken.h>
-#include "vqafile.h"
-#include "vqaplay.h"
-#include "caption.h"
+#ifndef far
+#define far
+#endif
+#ifndef near
+#define near
+#endif
+#ifndef huge
+#define huge
+#endif
+#ifndef interrupt
+#define interrupt
+#endif
+#ifndef __cdecl
+#define __cdecl
+#endif
+#ifndef cdecl
+#define cdecl __cdecl
+#endif
+#include <VQM32/VIDEO.H>
+#include <VQM32/SOSCOMP.H>
+#include <VQM32/CAPTOKEN.H>
+#include "VQAFILE.H"
+#include "VQAPLAY.H"
+#include "CAPTION.H"
 
 #if(VQAAUDIO_ON)
-#include "sos.h"
+#include <SOS.H>
 #endif
 
 /*---------------------------------------------------------------------------
@@ -508,4 +526,3 @@ void VQA_InitMono(VQAHandleP *vqap);
 void VQA_UpdateMono(VQAHandleP *vqap);
 
 #endif /* VQAPLAYP_H */
-

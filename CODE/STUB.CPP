@@ -16,10 +16,40 @@
 **	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include	<stdlib.h>
-#include	<stdio.h>
+#if defined(__linux__) || defined(__unix__) || defined(__APPLE__)
 
-void main(void)
+#include <string>
+#include <vector>
+
+#include <windows.h>
+
+extern int PASCAL WinMain(HINSTANCE instance, HINSTANCE previous_instance, char* command_line, int command_show);
+
+namespace {
+
+std::string Build_Command_Line(int argc, char* argv[])
 {
-	printf("Run C&C.COM.\n");
+	std::string command_line;
+
+	for (int index = 1; index < argc; ++index) {
+		if (!command_line.empty()) {
+			command_line.push_back(' ');
+		}
+		command_line += argv[index];
+	}
+
+	return command_line;
 }
+
+} // namespace
+
+int main(int argc, char* argv[])
+{
+	std::string command_line = Build_Command_Line(argc, argv);
+	std::vector<char> command_buffer(command_line.begin(), command_line.end());
+	command_buffer.push_back('\0');
+
+	return WinMain(nullptr, nullptr, command_buffer.data(), SW_SHOWNORMAL);
+}
+
+#endif

@@ -78,7 +78,8 @@ AnimType Anim_From_Name(char const * name)
   #ifdef VIC
 	if (name == NULL) return(ANIM_NONE);
 
-	for (AnimType anim = ANIM_FIRST; anim < ANIM_COUNT; anim++) {
+	for (int index = ANIM_FIRST; index < ANIM_COUNT; ++index) {
+		AnimType anim = (AnimType)index;
 		if (stricmp(AnimTypeClass::As_Reference(anim).IniName, name) == 0) {
 			return(anim);
 		}
@@ -1108,4 +1109,3 @@ void AnimClass::Do_Atom_Damage(HousesType ownerhouse, CELL cell)
 	}
 #endif
 }
-

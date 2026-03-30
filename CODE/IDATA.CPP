@@ -1215,7 +1215,8 @@ void InfantryTypeClass::Prep_For_Add(void)
 InfantryType InfantryTypeClass::From_Name(char const * name)
 {
 	if (name != NULL) {
-		for (InfantryType classid = INFANTRY_FIRST; classid < INFANTRY_COUNT; classid++) {
+		for (int value = INFANTRY_FIRST; value < INFANTRY_COUNT; ++value) {
+			InfantryType classid = (InfantryType)value;
 			if (stricmp(As_Reference(classid).IniName, name) == 0) {
 				return(classid);
 			}
@@ -1242,7 +1243,8 @@ InfantryType InfantryTypeClass::From_Name(char const * name)
  *=============================================================================================*/
 void InfantryTypeClass::One_Time(void)
 {
-	for (InfantryType index = INFANTRY_FIRST; index < INFANTRY_COUNT; index++) {
+	for (int value = INFANTRY_FIRST; value < INFANTRY_COUNT; ++value) {
+		InfantryType index = (InfantryType)value;
 		char fullname[_MAX_FNAME+_MAX_EXT];
 		InfantryTypeClass	const * uclass;
 		CCFileClass	file;

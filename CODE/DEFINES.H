@@ -36,6 +36,9 @@
 #ifndef DEFINES_H
 #define DEFINES_H
 
+#include	"NOINIT.H"
+#include	"FIXED.H"
+
 /**********************************************************************
 **	Language control: define the desired language for this build.
 */
@@ -132,7 +135,8 @@
 // Define DVD to turn on RADVD additions/changes - Denzil
 #ifdef DVD
 //#define INTERNET_OFF
-#define MPEGMOVIE
+/* DirectShow/DirectDraw MPEG playback is Windows-only and not used in the SDL3 port. */
+/* #define MPEGMOVIE */
 //#define MCIMPEG
 #endif
 
@@ -532,7 +536,7 @@ typedef union {
 }	COORD_COMPOSITE;
 
 typedef signed short		CELL;
-#define	SLUFF_BITS	(sizeof(CELL)*CHAR_BIT)-(14)
+#define	SLUFF_BITS	2
 typedef union {
 	CELL Cell;
 	struct {
@@ -542,7 +546,7 @@ typedef union {
 		**	Unused upper bits will cause problems on a big-endian machine unless they
 		**	are deliberately accounted for.
 		*/
-		unsigned sluff:SLUF_BITS;
+		unsigned sluff:SLUFF_BITS;
 #endif
 		unsigned Y:7;
 		unsigned X:7;
@@ -916,6 +920,18 @@ typedef enum ThreatType {
 inline ThreatType operator |(ThreatType, ThreatType);
 inline ThreatType operator &(ThreatType, ThreatType);
 inline ThreatType operator ~(ThreatType);
+inline ThreatType operator |(ThreatType lhs, ThreatType rhs)
+{
+	return (ThreatType)((int)lhs | (int)rhs);
+}
+inline ThreatType operator &(ThreatType lhs, ThreatType rhs)
+{
+	return (ThreatType)((int)lhs & (int)rhs);
+}
+inline ThreatType operator ~(ThreatType value)
+{
+	return (ThreatType)(~(int)value);
+}
 
 #define THREAT_GROUND	(THREAT_VEHICLES|THREAT_BUILDINGS|THREAT_INFANTRY)
 
@@ -2817,6 +2833,18 @@ typedef enum TextPrintType {
 inline TextPrintType operator |(TextPrintType, TextPrintType);
 inline TextPrintType operator &(TextPrintType, TextPrintType);
 inline TextPrintType operator ~(TextPrintType);
+inline TextPrintType operator |(TextPrintType lhs, TextPrintType rhs)
+{
+	return (TextPrintType)((int)lhs | (int)rhs);
+}
+inline TextPrintType operator &(TextPrintType lhs, TextPrintType rhs)
+{
+	return (TextPrintType)((int)lhs & (int)rhs);
+}
+inline TextPrintType operator ~(TextPrintType value)
+{
+	return (TextPrintType)(~(int)value);
+}
 
 // Standard button text print flags.
 #define TPF_BUTTON	(TPF_CENTER|TPF_6PT_GRAD|TPF_NOSHADOW)
@@ -3003,6 +3031,121 @@ inline FacingType operator += (FacingType & f1, int f2)
 inline int operator * (FacingType f1, FacingType f2)
 {
 	return((int)f1 * (int)f2);
+}
+
+template<typename T>
+inline T Post_Increment_Enum(T & value, int count, T first)
+{
+	(void)first;
+	T old = value;
+	int next = (int)value + 1;
+	value = (next >= count) ? (T)count : (T)next;
+	return(old);
+}
+
+inline ThemeType operator++(ThemeType & value, int)
+{
+	return(Post_Increment_Enum(value, THEME_COUNT, THEME_FIRST));
+}
+
+inline HousesType operator++(HousesType & value, int)
+{
+	return(Post_Increment_Enum(value, HOUSE_COUNT, HOUSE_FIRST));
+}
+
+inline ScenarioPlayerType operator++(ScenarioPlayerType & value, int)
+{
+	return(Post_Increment_Enum(value, SCEN_PLAYER_COUNT, SCEN_PLAYER_FIRST));
+}
+
+inline ScenarioDirType operator++(ScenarioDirType & value, int)
+{
+	return(Post_Increment_Enum(value, SCEN_DIR_COUNT, SCEN_DIR_FIRST));
+}
+
+inline ScenarioVarType operator++(ScenarioVarType & value, int)
+{
+	return(Post_Increment_Enum(value, SCEN_VAR_COUNT, SCEN_VAR_FIRST));
+}
+
+inline LayerType operator++(LayerType & value, int)
+{
+	return(Post_Increment_Enum(value, LAYER_COUNT, LAYER_FIRST));
+}
+
+inline BulletType operator++(BulletType & value, int)
+{
+	return(Post_Increment_Enum(value, BULLET_COUNT, BULLET_FIRST));
+}
+
+inline StructType operator++(StructType & value, int)
+{
+	return(Post_Increment_Enum(value, STRUCT_COUNT, STRUCT_FIRST));
+}
+
+inline OverlayType operator++(OverlayType & value, int)
+{
+	return(Post_Increment_Enum(value, OVERLAY_COUNT, OVERLAY_FIRST));
+}
+
+inline InfantryType operator++(InfantryType & value, int)
+{
+	return(Post_Increment_Enum(value, INFANTRY_COUNT, INFANTRY_FIRST));
+}
+
+inline UnitType operator++(UnitType & value, int)
+{
+	return(Post_Increment_Enum(value, UNIT_COUNT, UNIT_FIRST));
+}
+
+inline VesselType operator++(VesselType & value, int)
+{
+	return(Post_Increment_Enum(value, VESSEL_COUNT, VESSEL_FIRST));
+}
+
+inline AircraftType operator++(AircraftType & value, int)
+{
+	return(Post_Increment_Enum(value, AIRCRAFT_COUNT, AIRCRAFT_FIRST));
+}
+
+inline TemplateType operator++(TemplateType & value, int)
+{
+	return(Post_Increment_Enum(value, TEMPLATE_COUNT, TEMPLATE_FIRST));
+}
+
+inline TerrainType operator++(TerrainType & value, int)
+{
+	return(Post_Increment_Enum(value, TERRAIN_COUNT, TERRAIN_FIRST));
+}
+
+inline SmudgeType operator++(SmudgeType & value, int)
+{
+	return(Post_Increment_Enum(value, SMUDGE_COUNT, SMUDGE_FIRST));
+}
+
+inline AnimType operator++(AnimType & value, int)
+{
+	return(Post_Increment_Enum(value, ANIM_COUNT, ANIM_FIRST));
+}
+
+inline DoType operator++(DoType & value, int)
+{
+	return(Post_Increment_Enum(value, DO_COUNT, DO_FIRST));
+}
+
+inline TheaterType operator++(TheaterType & value, int)
+{
+	return(Post_Increment_Enum(value, THEATER_COUNT, THEATER_FIRST));
+}
+
+inline BSizeType operator++(BSizeType & value, int)
+{
+	return(Post_Increment_Enum(value, BSIZE_COUNT, (BSizeType)0));
+}
+
+inline FacingType operator++(FacingType & value, int)
+{
+	return(Post_Increment_Enum(value, FACING_COUNT, FACING_FIRST));
 }
 
 

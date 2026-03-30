@@ -988,10 +988,12 @@ int INIClass::Get_String(char const * section, char const * entry, char const * 
 	/*
 	**	Verify that the parameters are nominally legal.
 	*/
-	if (buffer != NULL && size > 0) {
-		buffer[0] = '\0';
+	if (buffer == NULL || !size || section == NULL || entry == NULL) {
+		if (buffer != NULL && size > 0) {
+			buffer[0] = '\0';
+		}
+		return(0);
 	}
-	if (buffer == NULL || !size || section == NULL || entry == NULL) return(0);
 
 	/*
 	**	Fetch the entry string if it is present. If not, then the normal default
@@ -1011,8 +1013,12 @@ int INIClass::Get_String(char const * section, char const * entry, char const * 
 		buffer[0] = '\0';
 		return(0);
 	} else {
-		strncpy(buffer, defvalue, size);
-		buffer[size-1] = '\0';
+		size_t length = strlen(defvalue);
+		if (length >= (size_t)size) {
+			length = size - 1;
+		}
+		memmove(buffer, defvalue, length);
+		buffer[length] = '\0';
 		strtrim(buffer);
 		return(strlen(buffer));
 	}

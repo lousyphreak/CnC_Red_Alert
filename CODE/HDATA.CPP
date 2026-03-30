@@ -424,7 +424,8 @@ void HouseTypeClass::Init_Heap(void)
 HousesType HouseTypeClass::From_Name(char const * name)
 {
 	if (name != NULL) {
-		for (HousesType house = HOUSE_FIRST; house < HOUSE_COUNT; house++) {
+		for (int index = HOUSE_FIRST; index < HOUSE_COUNT; ++index) {
+			HousesType house = (HousesType)index;
 			if (stricmp(As_Reference(house).IniName, name) == 0) {
 //			if (stricmp(Pointers[house]->IniName, name) == 0) {
 				return(house);

@@ -43,9 +43,10 @@
  *   SequencedConnClass::Service_Receive_Queue -- services recieve queue	*
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include "function.h"
+#include "FUNCTION.H"
+#include "SEQCONN.H"
 
-#include "WolDebug.h"
+#include "WOLDEBUG.H"
 
 /***************************************************************************
  * SequencedConnClass::SequencedConnClass -- class constructor             *
@@ -73,7 +74,7 @@
 SequencedConnClass::SequencedConnClass (int numsend, int numreceive, 
 	int maxlen, unsigned short magicnum, unsigned long retry_delta,
 	unsigned long max_retries, unsigned long timeout) :
-	ConnectionClass (maxlen, magicnum, retry_delta, max_retries, timeout)
+	ConnectionClass(numsend, numreceive, maxlen, magicnum, retry_delta, max_retries, timeout)
 {
 	NumRecNoAck = 0;
 	NumRecAck = 0;
@@ -444,7 +445,7 @@ printf(">>>Unqueueing Receive packet #%d<<<\n",packet_hdr->PacketID);
 			/*
 			......................... Send the message .........................
 			*/
-			Send (send_entry->Buffer, send_entry->BufLen);
+			Send(send_entry->Buffer, send_entry->BufLen, NULL, 0);
 			/*
 			....................... Fill in Time fields ........................
 			*/
@@ -538,7 +539,7 @@ printf("Sending ACK (%d)\n",packet_hdr->PacketID);
 		ackpacket.Code = PACKET_ACK;
 		ackpacket.PacketID = packet_hdr->PacketID;
 
-		Send((char *)&ackpacket, sizeof(CommHeaderType));
+		Send((char *)&ackpacket, sizeof(CommHeaderType), NULL, 0);
 
 		rec_entry->IsACK = 1;
 	}
@@ -559,4 +560,3 @@ printf(">>>Unqueueing Send packet #%d<<<\n",packet_hdr->PacketID);
 
 	return(true);
 }
-

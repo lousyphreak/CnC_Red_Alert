@@ -105,6 +105,11 @@ void operator delete(void *ptr)
 	Free(ptr);
 }
 
+void operator delete(void *ptr, size_t)
+{
+	Free(ptr);
+}
+
 /***************************************************************************
  * OPERATOR DELETE[] -- Overides the array version of delete[]           	*
  *                                                                         *
@@ -124,5 +129,9 @@ void operator delete[](void *ptr)
 	Free(ptr);
 }
 
+void operator delete[](void *ptr, size_t)
+{
+	Free(ptr);
+}
 
 

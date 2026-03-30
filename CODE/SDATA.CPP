@@ -322,7 +322,8 @@ void SmudgeTypeClass::Init_Heap(void)
 SmudgeType SmudgeTypeClass::From_Name(char const * name)
 {
 	if (name != NULL) {
-		for (SmudgeType index = SMUDGE_FIRST; index < SMUDGE_COUNT; index++) {
+		for (int value = SMUDGE_FIRST; value < SMUDGE_COUNT; ++value) {
+			SmudgeType index = (SmudgeType)value;
 			if (stricmp(As_Reference(index).IniName, name) == 0) {
 				return(index);
 			}
@@ -382,7 +383,8 @@ short const * SmudgeTypeClass::Occupy_List(bool) const
 void SmudgeTypeClass::Init(TheaterType theater)
 {
 	if (theater != LastTheater) {
-		for (SmudgeType index = SMUDGE_FIRST; index < SMUDGE_COUNT; index++) {
+		for (int value = SMUDGE_FIRST; value < SMUDGE_COUNT; ++value) {
+			SmudgeType index = (SmudgeType)value;
 			SmudgeTypeClass const & smudge = As_Reference(index);
 			char fullname[_MAX_FNAME+_MAX_EXT];	// Fully constructed smudge data set name.
 

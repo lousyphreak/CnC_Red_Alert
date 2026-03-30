@@ -38,8 +38,42 @@
 #ifndef JSHELL_H
 #define JSHELL_H
 
+class SystemTimerClass
+{
+	public:
+		long operator () (void) const;
+		operator long (void) const;
+};
+struct NoInitClass;
 
 #include	<assert.h>
+
+template<class T>
+class SmartPtr
+{
+	public:
+		SmartPtr(NoInitClass const &) {}
+		SmartPtr(T * realptr = 0) : Pointer(realptr) {}
+		SmartPtr(SmartPtr const & rvalue) : Pointer(rvalue.Pointer) {}
+		~SmartPtr(void) {Pointer = 0;}
+
+		operator T * (void) const {return(Pointer);}
+
+		operator long (void) const {return((long)Pointer);}
+
+		SmartPtr<T> operator ++ (int) {assert(Pointer != 0);SmartPtr<T> temp = *this;++Pointer;return(temp);}
+		SmartPtr<T> & operator ++ (void) {assert(Pointer != 0);++Pointer;return(*this);}
+		SmartPtr<T> operator -- (int) {assert(Pointer != 0);SmartPtr<T> temp = *this;--Pointer;return(temp);}
+		SmartPtr<T> & operator -- (void) {assert(Pointer != 0);--Pointer;return(*this);}
+
+		SmartPtr & operator = (SmartPtr const & rvalue) {Pointer = rvalue.Pointer;return(*this);}
+		T * operator -> (void) const {assert(Pointer != 0);return(Pointer);}
+		T & operator * (void) const {assert(Pointer != 0);return(*Pointer);}
+
+	private:
+		T * Pointer;
+};
+
 #include	"KEY.H"
 #include	"MOUSE.H"
 #include	"SHAPE.H"
@@ -183,9 +217,18 @@ T Bound(T original, T minval, T maxval)
 	if (original > maxval) return(maxval);
 	return(original);
 };
-int Bound(signed int, signed int, signed int);
-unsigned Bound(unsigned, unsigned, unsigned);
-long Bound(long, long, long);
+inline int Bound(signed int original, signed int minval, signed int maxval)
+{
+	return Bound<signed int>(original, minval, maxval);
+}
+inline unsigned Bound(unsigned original, unsigned minval, unsigned maxval)
+{
+	return Bound<unsigned>(original, minval, maxval);
+}
+inline long Bound(long original, long minval, long maxval)
+{
+	return Bound<long>(original, minval, maxval);
+}
 
 template<class T>
 T _rotl(T X, int n)
@@ -206,9 +249,18 @@ T _rotl(T X, int n)
 **	The shape flags are likely to be "or"ed together and other such bitwise
 **	manipulations. These instatiated operator templates allow this.
 */
-inline ShapeFlags_Type operator |(ShapeFlags_Type, ShapeFlags_Type);
-inline ShapeFlags_Type operator &(ShapeFlags_Type, ShapeFlags_Type);
-inline ShapeFlags_Type operator ~(ShapeFlags_Type);
+inline ShapeFlags_Type operator |(ShapeFlags_Type lhs, ShapeFlags_Type rhs)
+{
+	return (ShapeFlags_Type)((int)lhs | (int)rhs);
+}
+inline ShapeFlags_Type operator &(ShapeFlags_Type lhs, ShapeFlags_Type rhs)
+{
+	return (ShapeFlags_Type)((int)lhs & (int)rhs);
+}
+inline ShapeFlags_Type operator ~(ShapeFlags_Type value)
+{
+	return (ShapeFlags_Type)(~(int)value);
+}
 
 
 void Set_Bit(void * array, int bit, int value);
@@ -361,19 +413,12 @@ bool Remove_Timer_System(void);
 extern WinTimerClass	*		WindowsTimer;
 #endif
 
-#ifndef SYSTEM_TIMER_CLASS
-#define SYSTEM_TIMER_CLASS
-class SystemTimerClass
-{
-	public:
-		#ifdef WIN32
-			long operator () (void) const {if (!WindowsTimer) return(0);return(WindowsTimer->Get_System_Tick_Count());};
-			operator long (void) const {if (!WindowsTimer) return(0);return(WindowsTimer->Get_System_Tick_Count());};
-		#else
-			long operator () (void) const {return(Get_System_Tick_Count());};
-			operator long (void) const {return(Get_System_Tick_Count());};
-		#endif
-};
+#ifdef WIN32
+inline long SystemTimerClass::operator () (void) const {if (!WindowsTimer) return(0);return(WindowsTimer->Get_System_Tick_Count());}
+inline SystemTimerClass::operator long (void) const {if (!WindowsTimer) return(0);return(WindowsTimer->Get_System_Tick_Count());}
+#else
+inline long SystemTimerClass::operator () (void) const {return(Get_System_Tick_Count());}
+inline SystemTimerClass::operator long (void) const {return(Get_System_Tick_Count());}
 #endif
 
 
@@ -449,32 +494,5 @@ void PNBubble_Sort(T * array, int count)
 		} while (swapflag);
 	}
 }
-
-template<class T>
-class SmartPtr
-{
-	public:
-		SmartPtr(NoInitClass const &) {}
-		SmartPtr(T * realptr = 0) : Pointer(realptr) {}
-		SmartPtr(SmartPtr const & rvalue) : Pointer(rvalue.Pointer) {}
-		~SmartPtr(void) {Pointer = 0;}
-
-		operator T * (void) const {return(Pointer);}
-
-		operator long (void) const {return((long)Pointer);}
-
-		SmartPtr<T> operator ++ (int) {assert(Pointer != 0);SmartPtr<T> temp = *this;++Pointer;return(temp);}
-		SmartPtr<T> & operator ++ (void) {assert(Pointer != 0);++Pointer;return(*this);}
-		SmartPtr<T> operator -- (int) {assert(Pointer != 0);SmartPtr<T> temp = *this;--Pointer;return(temp);}
-		SmartPtr<T> & operator -- (void) {assert(Pointer != 0);--Pointer;return(*this);}
-
-		SmartPtr & operator = (SmartPtr const & rvalue) {Pointer = rvalue.Pointer;return(*this);}
-		T * operator -> (void) const {assert(Pointer != 0);return(Pointer);}
-		T & operator * (void) const {assert(Pointer != 0);return(*Pointer);}
-
-	private:
-		T * Pointer;
-};
-
 
 #endif

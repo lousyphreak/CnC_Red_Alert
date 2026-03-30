@@ -3095,7 +3095,8 @@ void BuildingTypeClass::One_Time(void)
 		{STRUCT_TESLA,				BSTATE_ACTIVE,	0,	10,2},
 	};
 
-	for (StructType sindex = STRUCT_FIRST; sindex < STRUCT_COUNT; sindex++) {
+	for (int value = STRUCT_FIRST; value < STRUCT_COUNT; ++value) {
+		StructType sindex = (StructType)value;
 		char	fullname[_MAX_FNAME+_MAX_EXT];
 		char	buffer[_MAX_FNAME];
 		BuildingTypeClass const & building = As_Reference(sindex);
@@ -3175,7 +3176,8 @@ void BuildingTypeClass::One_Time(void)
 StructType BuildingTypeClass::From_Name(char const * name)
 {
 	if (name != NULL) {
-		for (StructType classid = STRUCT_FIRST; classid < STRUCT_COUNT; classid++) {
+		for (int value = STRUCT_FIRST; value < STRUCT_COUNT; ++value) {
+			StructType classid = (StructType)value;
 			if (stricmp(As_Reference(classid).IniName, name) == 0) {
 				return(classid);
 			}
@@ -3352,7 +3354,8 @@ void BuildingTypeClass::Init(TheaterType theater)
 	if (theater != LastTheater) {
 		char fullname[_MAX_FNAME+_MAX_EXT];
 
-		for (StructType sindex = STRUCT_FIRST; sindex < STRUCT_COUNT; sindex++) {
+		for (int value = STRUCT_FIRST; value < STRUCT_COUNT; ++value) {
+			StructType sindex = (StructType)value;
 			BuildingTypeClass const * classptr = &As_Reference(sindex);
 
 			if (classptr->IsTheater) {

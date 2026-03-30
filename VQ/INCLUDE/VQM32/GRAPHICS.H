@@ -37,7 +37,24 @@
 *     April 27, 1995
 *
 ****************************************************************************/
-
+#ifndef far
+#define far
+#endif
+#ifndef near
+#define near
+#endif
+#ifndef huge
+#define huge
+#endif
+#ifndef interrupt
+#define interrupt
+#endif
+#ifndef __cdecl
+#define __cdecl
+#endif
+#ifndef cdecl
+#define cdecl __cdecl
+#endif
 /* Prototypes */
 
 #ifdef __cplusplus
@@ -52,4 +69,3 @@ void cdecl Fill_Rect(long x1, long y1, long x2, long y2, long color);
 #endif
 
 #endif /* VQMGRAPHICS_H */
-

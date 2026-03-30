@@ -289,7 +289,8 @@ ArmorType Armor_From_Name(char const * name)
 {
 	if (!name) return(ARMOR_NONE);
 
-	for (ArmorType index = ARMOR_FIRST; index < ARMOR_COUNT; index++) {
+	for (int value = ARMOR_FIRST; value < ARMOR_COUNT; ++value) {
+		ArmorType index = (ArmorType)value;
 		if (stricmp(ArmorName[index], name) == 0) {
 			return(index);
 		}

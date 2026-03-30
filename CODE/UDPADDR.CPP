@@ -18,9 +18,9 @@
 
 
 
-#include "function.h"
+#include "FUNCTION.H"
 //#include "_WSProto.h"
-#include "WSPUDP.h"
+#include "WSPUDP.H"
 
 
 bool Get_Broadcast_Addresses (void)
@@ -87,7 +87,7 @@ bool Get_Broadcast_Addresses (void)
 
 	RemapControlType * scheme = GadgetClass::Get_Color_Scheme();
 
-	Fancy_Text_Print(TXT_NONE,0,0,TBLACK,TBLACK,TPF_6PT_GRAD | TPF_NOSHADOW);
+	Fancy_Text_Print(TXT_NONE,0,0,scheme,TBLACK,TPF_6PT_GRAD | TPF_NOSHADOW);
 	Format_Window_String("IP Addresses", SeenBuff.Get_Height(), width, height);
 
 
@@ -112,7 +112,8 @@ bool Get_Broadcast_Addresses (void)
 	CCINIClass ip_ini;
 	int res=0;
 
-	if (ip_ini.Load(CCFileClass("IP.INI"), false)) {
+	CCFileClass ip_file("IP.INI");
+	if (ip_ini.Load(ip_file, false)) {
 		int entry=0;
 		char entry_name[16];
 		do {

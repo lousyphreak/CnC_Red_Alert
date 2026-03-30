@@ -50,6 +50,10 @@
 #include	"buff.h"
 #include	"function.h"
 #include	<direct.h>
+#include	<cstdarg>
+#include	<cstring>
+#include	<cstdio>
+#include	<cstdlib>
 #include	<fcntl.h>
 #include	<io.h>
 #include	<dos.h>
@@ -59,6 +63,30 @@
 
 #include	"cdfile.h"
 extern MFCD temp;
+
+namespace
+{
+bool mix_trace_enabled()
+{
+	static const bool enabled = std::getenv("RA_TRACE_STARTUP") != NULL;
+	return enabled;
+}
+
+void mix_trace(const char* format, ...)
+{
+	if (!mix_trace_enabled()) {
+		return;
+	}
+
+	va_list arguments;
+	va_start(arguments, format);
+	std::fputs("[mixfile] ", stderr);
+	std::vfprintf(stderr, format, arguments);
+	std::fputc('\n', stderr);
+	std::fflush(stderr);
+	va_end(arguments);
+}
+}
 
 
 //template<class T> int Compare(T const *obj1, T const *obj2) {
@@ -232,6 +260,15 @@ MixFileClass<T>::MixFileClass(char const * filename, PKey const * key) :
 
 	Count = fileheader.count;
 	DataSize = fileheader.size;
+	mix_trace("%s alt=(%d,%d) count=%d datasize=%ld fileheader=%zu subblock=%zu encrypted=%d",
+		filename,
+		alternate.First,
+		alternate.Second,
+		Count,
+		DataSize,
+		sizeof(fileheader),
+		sizeof(SubBlock),
+		IsEncrypted);
 //BGMono_Printf("Mixfileclass %s DataSize: %08x   \n",filename,DataSize);Get_Key();
 	/*
 	**	Load up the offset control array. If RAM is exhausted, then the mixfile is invalid.
@@ -535,7 +572,11 @@ assert(filename != NULL);//BG
 	/*
 	**	Create the key block that will be used to binary search for the file.
 	*/
-	int32_t crc = static_cast<int32_t>(Calculate_CRC(strupr((char *)filename), strlen(filename)));
+	size_t filename_length = std::strlen(filename);
+	char* uppercase_filename = new char[filename_length + 1];
+	std::memcpy(uppercase_filename, filename, filename_length + 1);
+	int32_t crc = static_cast<int32_t>(Calculate_CRC(strupr(uppercase_filename), filename_length));
+	delete [] uppercase_filename;
 	SubBlock key;
 	key.CRC = crc;
 

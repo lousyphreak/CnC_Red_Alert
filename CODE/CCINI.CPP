@@ -732,7 +732,8 @@ WarheadType CCINIClass::Get_WarheadType(char const * section, char const * entry
 	char buffer[128];
 
 	if (Get_String(section, entry, "", buffer, sizeof(buffer))) {
-		for (WarheadType wh = WARHEAD_FIRST; wh < WARHEAD_COUNT; wh++) {
+		for (int index = WARHEAD_FIRST; index < WARHEAD_COUNT; ++index) {
+			WarheadType wh = (WarheadType)index;
 			if (stricmp(WarheadTypeClass::As_Pointer(wh)->Name(), buffer) == 0) {
 				return(wh);
 			}
@@ -849,7 +850,8 @@ BulletType CCINIClass::Get_BulletType(char const * section, char const * entry, 
 	char buffer[128];
 
 	if (Get_String(section, entry, "", buffer, sizeof(buffer))) {
-		for (BulletType proj = BULLET_FIRST; proj < BULLET_COUNT; proj++) {
+		for (int index = BULLET_FIRST; index < BULLET_COUNT; ++index) {
+			BulletType proj = (BulletType)index;
 			if (stricmp(BulletTypeClass::As_Reference(proj).Name(), buffer) == 0) {
 //			if (stricmp(ProjectileNames[proj], buffer) == 0) {
 				return(proj);

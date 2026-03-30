@@ -45,13 +45,16 @@
  *   Memory_Error_Handler -- Handle a possibly fatal failure to allocate memory                *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
+#include	"FUNCTION.H"
+#include	<cstdarg>
+#include	<cstdio>
+#include	<cstdlib>
 
 #ifdef WINSOCK_IPX
-#include "WSProto.h"
+#include "WSPROTO.H"
 #else	//WINSOCK_IPX
-#include "tcpip.h"
-#include "ipx95.h"
+#include "TCPIP.H"
+#include "IPX95.H"
 #endif	//WINSOCK_IPX
 
 void output(short,short)
@@ -61,8 +64,33 @@ void output(short,short)
 unsigned long CCFocusMessage = WM_USER+50;	//Private message for receiving application focus
 extern	void VQA_PauseAudio(void);
 extern	void VQA_ResumeAudio(void);
+extern BOOL BootstrapFocusSeen;
 
-//#include "WolDebug.h"
+//#include "WOLDEBUG.H"
+
+namespace
+{
+bool winstub_trace_enabled()
+{
+	static const bool enabled = std::getenv("RA_TRACE_STARTUP") != NULL;
+	return enabled;
+}
+
+void winstub_trace(const char* format, ...)
+{
+	if (!winstub_trace_enabled()) {
+		return;
+	}
+
+	va_list arguments;
+	va_start(arguments, format);
+	std::fputs("[winstub] ", stderr);
+	std::vfprintf(stderr, format, arguments);
+	std::fputc('\n', stderr);
+	std::fflush(stderr);
+	va_end(arguments);
+}
+}
 
 
 /***********************************************************************************************
@@ -161,7 +189,7 @@ void Check_For_Focus_Loss(void)
 
 
 
-extern BOOL InMovie;
+extern bool InMovie;
 
 long FAR PASCAL _export Windows_Procedure(HWND hwnd, UINT message, UINT wParam, LONG lParam)
 {
@@ -227,6 +255,7 @@ long FAR PASCAL _export Windows_Procedure(HWND hwnd, UINT message, UINT wParam, 
 			** Windoze message says we have to shut down. Try and do it cleanly.
 			*/
 		case WM_DESTROY:
+			winstub_trace("WM_DESTROY hwnd=%p ReadyToQuit=%d", hwnd, ReadyToQuit);
 			Prog_End();
 			Invalidate_Cached_Icons();
 			VisiblePage.Un_Init();
@@ -284,6 +313,10 @@ long FAR PASCAL _export Windows_Procedure(HWND hwnd, UINT message, UINT wParam, 
 			return(0);
 
 		case WM_ACTIVATEAPP:
+			winstub_trace("WM_ACTIVATEAPP hwnd=%p active=%u", hwnd, wParam);
+			if ((BOOL)wParam) {
+				BootstrapFocusSeen = TRUE;
+			}
 			GameInFocus=(BOOL)wParam;
 			if (!GameInFocus) Focus_Loss();
 			AllSurfaces.Set_Surface_Focus (GameInFocus);
@@ -305,14 +338,17 @@ long FAR PASCAL _export Windows_Procedure(HWND hwnd, UINT message, UINT wParam, 
 #endif	//NEVER
 
 
+		case WM_CLOSE:
+			winstub_trace("WM_CLOSE hwnd=%p", hwnd);
+			PostMessage(hwnd, WM_DESTROY, 0, 0);
+			return(0);
+
 		case WM_SYSCOMMAND:
 			switch ( wParam ) {
 
 				case SC_CLOSE:
-					/*
-					** Windows sent us a close message. Probably in response to Alt-F4. Ignore it by
-					** pretending to handle the message and returning true;
-					*/
+					winstub_trace("SC_CLOSE hwnd=%p", hwnd);
+					PostMessage(hwnd, WM_CLOSE, 0, 0);
 					return (0);
 
 				case SC_SCREENSAVE:
@@ -830,7 +866,7 @@ void Load_Title_Screen(char *name, GraphicViewPortClass *video_page, unsigned ch
 
 
 
-#include "filepcx.h"
+#include "FILEPCX.H"
 
 /***************************************************************************
  * READ_PCX_FILE -- read a pcx file into a Graphic Buffer                  *

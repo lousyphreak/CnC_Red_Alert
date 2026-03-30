@@ -37,8 +37,8 @@
  *   ConfirmationClass::Process -- Handles all the options graphic interface.                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-#include	"confdlg.h"
+#include	"FUNCTION.H"
+#include	"CONFDLG.H"
 
 
 bool ConfirmationClass::Process(int text)
@@ -80,7 +80,7 @@ bool ConfirmationClass::Process(char const * string)
 	**	Set up the window.  Window x-coords are in bytes not pixels.
 	*/
 	strcpy(buffer, string);
-	Fancy_Text_Print(TXT_NONE, 0, 0, TBLACK, TBLACK, TPF_6PT_GRAD | TPF_NOSHADOW);
+	Fancy_Text_Print(TXT_NONE, 0, 0, GadgetClass::Get_Color_Scheme(), TBLACK, TPF_6PT_GRAD | TPF_NOSHADOW);
 	Format_Window_String(buffer, 200, width, height);
 	width += 60;
 	height += 60;
@@ -93,7 +93,10 @@ bool ConfirmationClass::Process(char const * string)
 	**	Create Buttons.  Button coords are in pixels, but are window-relative.
 	*/
 	bheight = FontHeight + FontYSpacing + 2;
-	bwidth = max( (String_Pixel_Width( Text_String( TXT_YES ) ) + 8), 30);
+	bwidth = String_Pixel_Width(Text_String(TXT_YES)) + 8;
+	if (bwidth < 30) {
+		bwidth = 30;
+	}
 
 	TextButtonClass yesbtn(BUTTON_YES, TXT_YES,
 		TPF_6PT_GRAD | TPF_USE_GRAD_PAL | TPF_NOSHADOW,
@@ -155,7 +158,7 @@ bool ConfirmationClass::Process(char const * string)
 			**	Draw the background.
 			*/
 			Dialog_Box(x, y, width, height);
-			Draw_Caption(TXT_CONFIRMATION, x, y, width);
+			Draw_Caption(TXT_NONE, x, y, width);
 			Fancy_Text_Print(buffer, x+20, y+30, GadgetClass::Get_Color_Scheme(), TBLACK, TPF_6PT_GRAD|TPF_USE_GRAD_PAL|TPF_NOSHADOW);
 
 			/*

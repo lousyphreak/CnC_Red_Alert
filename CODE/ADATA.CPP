@@ -2260,7 +2260,8 @@ void AnimTypeClass::Init_Heap(void)
  *=============================================================================================*/
 void AnimTypeClass::One_Time(void)
 {
-	for (AnimType index = ANIM_FIRST; index < ANIM_COUNT; index++) {
+	for (int value = ANIM_FIRST; value < ANIM_COUNT; ++value) {
+		AnimType index = (AnimType)value;
 		char fullname[_MAX_FNAME+_MAX_EXT];
 
 		AnimTypeClass const & anim = As_Reference(index);
@@ -2302,7 +2303,8 @@ void AnimTypeClass::One_Time(void)
 void AnimTypeClass::Init(TheaterType theater)
 {
 	if (theater != LastTheater) {
-		for (AnimType index = ANIM_FIRST; index < ANIM_COUNT; index++) {
+		for (int value = ANIM_FIRST; value < ANIM_COUNT; ++value) {
+			AnimType index = (AnimType)value;
 			AnimTypeClass const & anim = As_Reference(index);
 
 			if (anim.IsTheater) {
@@ -2358,4 +2360,3 @@ AnimTypeClass & AnimTypeClass::As_Reference(AnimType type)
 {
 	return(* AnimTypes.Ptr(type));
 }
-

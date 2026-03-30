@@ -40,7 +40,24 @@
 *     Feburary 8, 1995
 *
 ****************************************************************************/
-
+#ifndef far
+#define far
+#endif
+#ifndef near
+#define near
+#endif
+#ifndef huge
+#define huge
+#endif
+#ifndef interrupt
+#define interrupt
+#endif
+#ifndef __cdecl
+#define __cdecl
+#endif
+#ifndef cdecl
+#define cdecl __cdecl
+#endif
 #ifdef PHARLAP_TNT
 #include <pltypes.h>
 #endif

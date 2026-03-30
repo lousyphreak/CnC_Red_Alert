@@ -38,6 +38,9 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include	"function.h"
+#include	<cstdarg>
+#include	<cstdio>
+#include	<cstdlib>
 #include	<conio.h>
 #include	<io.h>
 
@@ -51,12 +54,36 @@
 #endif
 
 #ifdef WOLAPI_INTEGRATION
-//#include "WolDebug.h"
+//#include "WOLDEBUG.H"
 #endif
 
 bool Read_Private_Config_Struct(FileClass & file, NewConfigType * config);
 void Print_Error_End_Exit(char * string);
 void Print_Error_Exit(char * string);
+
+namespace
+{
+bool startup_trace_enabled()
+{
+	static const bool enabled = std::getenv("RA_TRACE_STARTUP") != NULL;
+	return enabled;
+}
+
+void startup_trace(const char* format, ...)
+{
+	if (!startup_trace_enabled()) {
+		return;
+	}
+
+	va_list arguments;
+	va_start(arguments, format);
+	std::fputs("[startup] ", stderr);
+	std::vfprintf(stderr, format, arguments);
+	std::fputc('\n', stderr);
+	std::fflush(stderr);
+	va_end(arguments);
+}
+}
 
 #ifdef WIN32
 //WinTimerClass * WinTimer;
@@ -117,6 +144,8 @@ int main(int argc, char * argv[])
 	#ifndef MPEGMOVIE // Denzil 6/10/98
 	DDSCAPS	surface_capabilities;
 	#endif
+
+	startup_trace("WinMain entered command_line=\"%s\"", command_line ? command_line : "");
 
 	/*
 	** First thing to do is check if there is another instance of Red Alert already running
@@ -419,7 +448,9 @@ int main(int argc, char * argv[])
 			Read_Setup_Options( &cfile );
 
 			Create_Main_Window( instance , command_show , ScreenWidth , ScreenHeight );
+			startup_trace("Create_Main_Window complete hwnd=%p size=%dx%d", MainWindow, ScreenWidth, ScreenHeight);
 			SoundOn = Audio_Init ( MainWindow , 16 , false , 11025*2 , 0 );
+			startup_trace("Audio_Init complete SoundOn=%d", SoundOn);
 #else	//WIN32
 			if (!Debug_Quiet) {
 				Audio_Init(NewConfig.DigitCard,
@@ -470,6 +501,7 @@ int main(int argc, char * argv[])
 				//if (Palette) delete Palette;
 				return (EXIT_FAILURE);
 			}
+			startup_trace("Set_Video_Mode complete screen_height=%d", ScreenHeight);
 
 			if (ScreenWidth==320) {
 				VisiblePage.Init( ScreenWidth , ScreenHeight , NULL , 0 , (GBC_Enum)0);
@@ -626,7 +658,9 @@ int main(int argc, char * argv[])
 
 			Memory_Error_Exit = Print_Error_End_Exit;
 
+			startup_trace("Entering Main_Game argc=%d", argc);
 			Main_Game(argc, argv);
+			startup_trace("Main_Game returned ReadyToQuit=%d", ReadyToQuit);
 
 			#ifdef MPEGMOVIE // Denzil 6/15/98
 			if (MpgSettings != NULL)
@@ -656,6 +690,7 @@ int main(int argc, char * argv[])
 			/*
 			** Post a message to our message handler to tell it to clean up.
 			*/
+			startup_trace("Posting WM_DESTROY for clean shutdown");
 			PostMessage(MainWindow, WM_DESTROY, 0, 0);
 
 			/*
@@ -922,10 +957,11 @@ void Emergency_Exit ( int code )
 	*/
 	ReadyToQuit = 3;
 
-	/*
-	** Post a message to our message handler to tell it to clean up.
-	*/
-	PostMessage(MainWindow, WM_DESTROY, 0, 0);
+			/*
+			** Post a message to our message handler to tell it to clean up.
+			*/
+			startup_trace("Posting WM_DESTROY for clean shutdown");
+			PostMessage(MainWindow, WM_DESTROY, 0, 0);
 
 	/*
 	** Wait until the message handler has dealt with the message
@@ -1065,5 +1101,3 @@ void Get_OS_Version (void)
 
 
 #endif	//WIN32
-
-

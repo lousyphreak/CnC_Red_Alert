@@ -37,7 +37,27 @@
 *     March 9, 1995
 *
 ****************************************************************************/
-
+#ifndef far
+#define far
+#endif
+#ifndef near
+#define near
+#endif
+#ifndef huge
+#define huge
+#endif
+#ifndef interrupt
+#define interrupt
+#endif
+#ifndef __cdecl
+#define __cdecl
+#endif
+#ifndef cdecl
+#define cdecl __cdecl
+#endif
+#ifndef __saveregs
+#define __saveregs
+#endif
 /* Font: A Westwood style font.
  *
  * Size       - Size of font.
@@ -87,19 +107,10 @@ void *cdecl Load_Font(char const *name);
 void *cdecl Set_Font(void const *font);
 unsigned short cdecl String_Pixel_Width(char const *string);
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifdef __WATCOMC__
 long cdecl __saveregs Char_Pixel_Width(char chr);
 #else
 long cdecl Char_Pixel_Width(char chr);
 #endif
 
-#ifdef __cplusplus
-}
-#endif
-
 #endif /* VQMFONT_H */
-

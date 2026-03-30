@@ -36,7 +36,26 @@
 * DATE
 *     January 26, 1995
 *
-****************************************************************************/
+ ****************************************************************************/
+
+#ifndef far
+#define far
+#endif
+#ifndef near
+#define near
+#endif
+#ifndef huge
+#define huge
+#endif
+#ifndef interrupt
+#define interrupt
+#endif
+#ifndef __cdecl
+#define __cdecl
+#endif
+#ifndef cdecl
+#define cdecl __cdecl
+#endif
 
 /* Prototypes */
 
@@ -56,4 +75,3 @@ long cdecl AudioUnzap(void *source, void *dest, long);
 #endif
 
 #endif /* VQMCOMP_H */
-

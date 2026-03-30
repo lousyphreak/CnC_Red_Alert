@@ -53,14 +53,20 @@
  *   VectorClass<T>::~VectorClass -- Default destructor for vector class.                      *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
+#include	"FUNCTION.H"
+#include	"ICONLIST.H"
+#include	"TACTION.H"
+#include	"TEVENT.H"
 #ifdef WINSOCK_IPX
-#include	"WSProto.h"
-#include	"WSPUDP.h"
+#include	"WSPROTO.H"
+#include	"WSPUDP.H"
 #endif	//WINSOCK_IPX
 #include "vector.h"
+#include <stdint.h>
 #include	<mem.h>
 #include	<stdio.h>
+
+struct NodeNameTag;
 
 /*
 **	The following template function can be located here ONLY if all the instantiations are
@@ -246,7 +252,7 @@ int VectorClass<T>::operator == (VectorClass<T> const & vector) const
 template<class T>
 inline int VectorClass<T>::ID(T const * ptr)
 {
-	return(((unsigned long)ptr - (unsigned long)&(*this)[0]) / sizeof(T));
+	return((int)(((uintptr_t)ptr - (uintptr_t)&(*this)[0]) / sizeof(T)));
 }
 
 
@@ -657,7 +663,7 @@ void BooleanVectorClass::Fixup(int index) const
 		**	the boolean array accordingly.
 		*/
 		if (LastIndex != -1) {
-			Set_Bit((void*)&BitArray[0], LastIndex, Copy);
+			Write_Bit(LastIndex, Copy);
 		}
 
 		/*
@@ -665,7 +671,7 @@ void BooleanVectorClass::Fixup(int index) const
 		**	value with the appropriate data from the bit array.
 		*/
 		if (index != -1) {
-			((unsigned char&)Copy) = Get_Bit(&BitArray[0], index);
+			((unsigned char&)Copy) = Read_Bit(index);
 		}
 
 		((int &)LastIndex) = index;
@@ -673,3 +679,54 @@ void BooleanVectorClass::Fixup(int index) const
 }
 
 
+bool BooleanVectorClass::Read_Bit(int index) const
+{
+	return((BitArray[(unsigned)index >> 3] & (1U << (index & 7))) != 0);
+}
+
+
+void BooleanVectorClass::Write_Bit(int index, bool value) const
+{
+	unsigned char & byte = const_cast<unsigned char &>(BitArray[(unsigned)index >> 3]);
+	unsigned char mask = (unsigned char)(1U << (index & 7));
+
+	if (value) {
+		byte |= mask;
+	} else {
+		byte &= (unsigned char)~mask;
+	}
+}
+
+
+int BooleanVectorClass::Find_First_Bit(bool value) const
+{
+	for (int index = 0; index < BitCount; ++index) {
+		if (Read_Bit(index) == value) {
+			return(index);
+		}
+	}
+
+	return(-1);
+}
+
+template class VectorClass<ActionChoiceClass>;
+template class VectorClass<ActionChoiceClass *>;
+template class VectorClass<BaseNodeClass>;
+template class VectorClass<CCPtr<TeamTypeClass>>;
+template class VectorClass<CCPtr<TriggerTypeClass>>;
+template class VectorClass<CellClass>;
+template class VectorClass<EgoClass *>;
+template class VectorClass<EventChoiceClass>;
+template class VectorClass<EventChoiceClass *>;
+template class VectorClass<FileEntryClass *>;
+template class VectorClass<MultiMission *>;
+template class VectorClass<ObjectClass *>;
+template class VectorClass<PhoneEntryClass *>;
+template class VectorClass<RemapControlType *>;
+template class VectorClass<TeamMissionClass *>;
+template class VectorClass<TriggerClass *>;
+template class VectorClass<NodeNameTag *>;
+template class VectorClass<char *>;
+template class VectorClass<char const *>;
+template class VectorClass<unsigned char>;
+template class VectorClass<void *>;

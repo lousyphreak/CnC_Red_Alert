@@ -61,6 +61,9 @@
 
 #include	"FUNCTION.H"
 #include	"LOADDLG.H"
+#include	<cstdarg>
+#include	<cstdio>
+#include	<cstdlib>
 #include	<stdint.h>
 #ifdef WIN32
 #ifdef WINSOCK_IPX
@@ -75,6 +78,8 @@
 #endif
 #include	<conio.h>
 #include	<dos.h>
+
+extern BOOL BootstrapFocusSeen;
 #ifndef WIN32
 #include	<sys/timeb.h>
 #endif
@@ -85,6 +90,39 @@
 #ifdef DONGLE
 #include "cbn_.h"
 #endif
+
+namespace
+{
+bool init_trace_enabled()
+{
+	static const bool enabled = std::getenv("RA_TRACE_STARTUP") != NULL;
+	return enabled;
+}
+
+void init_trace(const char* format, ...)
+{
+	if (!init_trace_enabled()) {
+		return;
+	}
+
+	va_list arguments;
+	va_start(arguments, format);
+	std::fputs("[init] ", stderr);
+	std::vfprintf(stderr, format, arguments);
+	std::fputc('\n', stderr);
+	std::fflush(stderr);
+	va_end(arguments);
+}
+
+static bool Has_Local_Game_Data(void)
+{
+	const bool main_mix = CCFileClass("MAIN.MIX").Is_Available();
+	const bool conquer_mix = CCFileClass("CONQUER.MIX").Is_Available();
+	const bool general_mix = CCFileClass("GENERAL.MIX").Is_Available();
+	init_trace("Has_Local_Game_Data MAIN=%d CONQUER=%d GENERAL=%d", main_mix, conquer_mix, general_mix);
+	return main_mix && conquer_mix && general_mix;
+}
+}
 
 #ifdef MPEGMOVIE // Denzil 6/25/98
 #include "MPGSET.H"
@@ -218,18 +256,21 @@ bool Init_Game(int , char * [])
 	**	handler to function.
 	*/
 	Bootstrap();
+	init_trace("Init_Game bootstrap complete");
 
 	/*
 	**	Check for an initialize a working mouse pointer. Display error and bail if
 	**	no mouse driver is installed.
 	*/
 	Init_Mouse();
+	init_trace("Init_Game mouse init complete");
 
 	/*
 	**	Initialize access to the CD-ROM and ensure that the CD is inserted. This can, and
 	**	most likely will, result in a visible prompt.
 	*/
 	Init_CDROM_Access();
+	init_trace("Init_Game media init complete RequiredCD=%d search_drives=%d using_dvd=%d", RequiredCD, CCFileClass::Is_There_Search_Drives(), Using_DVD());
 
 	if (Special.IsFromInstall) {
 		Load_Prolog_Page();
@@ -239,6 +280,7 @@ bool Init_Game(int , char * [])
 	**	Register and cache any secondary mixfiles.
 	*/
 	Init_Secondary_Mixfiles();
+	init_trace("Init_Game secondary mixfiles ready");
 
 	/*
 	**	This is a special hack to initialize the heaps that must be in place before the
@@ -258,6 +300,7 @@ bool Init_Game(int , char * [])
 	TerrainTypes.Set_Heap(TERRAIN_COUNT);
 	OverlayTypes.Set_Heap(OVERLAY_COUNT);
 	SmudgeTypes.Set_Heap(SMUDGE_COUNT);
+	init_trace("Init_Game type heaps allocated");
 
 	HouseTypeClass::Init_Heap();
 	BuildingTypeClass::Init_Heap();
@@ -271,24 +314,34 @@ bool Init_Game(int , char * [])
 	TerrainTypeClass::Init_Heap();
 	OverlayTypeClass::Init_Heap();
 	SmudgeTypeClass::Init_Heap();
+	init_trace("Init_Game type classes initialized");
 
 	/*
 	**	Find and process any rules for this game.
 	*/
 	CCFileClass rules_file("RULES.INI");
+	init_trace("Init_Game RULES.INI load start");
 	if (RuleINI.Load(rules_file, false)) {
+		init_trace("Init_Game RULES.INI load complete");
+		init_trace("Init_Game Rule.Process start");
 		Rule.Process(RuleINI);
+		init_trace("Init_Game Rule.Process complete");
 	}
 #ifdef FIXIT_CSII	//	checked - ajw 9/28/98
 	//  Aftermath runtime change 9/29/98
 	//	This is safe to do, as only rules for aftermath units are included in this ini.
 	if (Is_Aftermath_Installed() == true) {
 		CCFileClass aftermath_file("AFTRMATH.INI");
+		init_trace("Init_Game AFTRMATH.INI load start");
 		if (AftermathINI.Load(aftermath_file, false)) {
+			init_trace("Init_Game AFTRMATH.INI load complete");
+			init_trace("Init_Game Aftermath Rule.Process start");
 			Rule.Process(AftermathINI);
+			init_trace("Init_Game Aftermath Rule.Process complete");
 		}
 	}
 #endif
+	init_trace("Init_Game rules processed");
 
 	Session.MaxPlayers = Rule.MaxPlayers;
 
@@ -296,11 +349,13 @@ bool Init_Game(int , char * [])
 	**	Initialize the game object heaps as well as other rules-dependant buffer allocations.
 	*/
 	Init_Heaps();
+	init_trace("Init_Game object heaps initialized");
 
 	/*
 	**	Initialize the animation system.
 	*/
 	Anim_Init();
+	init_trace("Init_Game animation system initialized");
 
 #ifndef FIXIT_VERSION_3			//	WChat eliminated.
 #ifdef WIN32
@@ -326,7 +381,9 @@ bool Init_Game(int , char * [])
 	if (!Special.IsFromInstall && !Special.IsFromWChat) {
 		VisiblePage.Clear();
 //		Mono_Printf("Playing Intro\n");
+		init_trace("Init_Game Play_Intro start");
 		Play_Intro();
+		init_trace("Init_Game Play_Intro complete");
 		memset(CurrentPalette, 0x01, 768);
 		WhitePalette.Set();
 	} else {
@@ -354,7 +411,9 @@ bool Init_Game(int , char * [])
 	**	page while the bulk data is cached.
 	*/
 	if (!Special.IsFromInstall) {
+		init_trace("Init_Game Load_Title_Page start");
 		Load_Title_Page(true);
+		init_trace("Init_Game Load_Title_Page complete");
 
 		Hide_Mouse();
 		Fancy_Text_Print(TXT_STAND_BY, 160*RESFACTOR, 120*RESFACTOR, &ColorRemaps[PCOLOR_DIALOG_BLUE], TBLACK, TPF_CENTER|TPF_TEXT|TPF_DROPSHADOW);
@@ -362,6 +421,7 @@ bool Init_Game(int , char * [])
 
 		CCPalette.Set(FADE_PALETTE_SLOW);
 		Call_Back();
+		init_trace("Init_Game title page shown");
 	}
 
 	/*
@@ -369,6 +429,7 @@ bool Init_Game(int , char * [])
 	**	before the regular game starts.
 	*/
 	Init_Bulk_Data();
+	init_trace("Init_Game bulk data initialized");
 
 	/*
 	**	Initialize the multiplayer score values
@@ -1626,7 +1687,14 @@ static void Play_Intro(bool sequenced)
 		VisiblePage.Clear();
 		Show_Mouse();
 #ifdef WIN32
-		Play_Movie(VQ_REDINTRO, THEME_NONE, false);
+		char fullname[_MAX_FNAME+_MAX_EXT];
+		_makepath(fullname, NULL, NULL, VQName[VQ_REDINTRO], ".VQA");
+		if (CCFileClass(fullname).Is_Available()) {
+			Play_Movie(VQ_REDINTRO, THEME_NONE, false);
+		} else {
+			init_trace("Play_Intro hi-res intro unavailable, falling back to %s", VQName[VQ_TITLE]);
+			Play_Movie(VQ_TITLE, THEME_NONE, false);
+		}
 #else
 		Play_Movie(VQ_TITLE, THEME_NONE, false);
 #endif
@@ -2771,26 +2839,65 @@ static void Init_Expansion_Files(void)
  *=============================================================================================*/
 static void Init_One_Time_Systems(void)
 {
+	init_trace("Init_One_Time_Systems start");
 	Call_Back();
+	init_trace("Init_One_Time_Systems Map.One_Time");
 	Map.One_Time();
+	init_trace("Init_One_Time_Systems Map.One_Time complete");
+	Call_Back();
+	init_trace("Init_One_Time_Systems Logic.One_Time");
 	Logic.One_Time();
+	Call_Back();
+	init_trace("Init_One_Time_Systems Options.One_Time");
 	Options.One_Time();
+	Call_Back();
+	init_trace("Init_One_Time_Systems Session.One_Time");
 	Session.One_Time();
+	Call_Back();
 
+	init_trace("Init_One_Time_Systems ObjectTypeClass::One_Time");
 	ObjectTypeClass::One_Time();
+	Call_Back();
+	init_trace("Init_One_Time_Systems BuildingTypeClass::One_Time");
 	BuildingTypeClass::One_Time();
+	Call_Back();
+	init_trace("Init_One_Time_Systems BulletTypeClass::One_Time");
 	BulletTypeClass::One_Time();
+	Call_Back();
+	init_trace("Init_One_Time_Systems HouseTypeClass::One_Time");
 	HouseTypeClass::One_Time();
+	Call_Back();
+	init_trace("Init_One_Time_Systems TemplateTypeClass::One_Time");
 	TemplateTypeClass::One_Time();
+	Call_Back();
+	init_trace("Init_One_Time_Systems OverlayTypeClass::One_Time");
 	OverlayTypeClass::One_Time();
+	Call_Back();
+	init_trace("Init_One_Time_Systems SmudgeTypeClass::One_Time");
 	SmudgeTypeClass::One_Time();
+	Call_Back();
+	init_trace("Init_One_Time_Systems TerrainTypeClass::One_Time");
 	TerrainTypeClass::One_Time();
+	Call_Back();
+	init_trace("Init_One_Time_Systems UnitTypeClass::One_Time");
 	UnitTypeClass::One_Time();
+	Call_Back();
+	init_trace("Init_One_Time_Systems VesselTypeClass::One_Time");
 	VesselTypeClass::One_Time();
+	Call_Back();
+	init_trace("Init_One_Time_Systems InfantryTypeClass::One_Time");
 	InfantryTypeClass::One_Time();
+	Call_Back();
+	init_trace("Init_One_Time_Systems AnimTypeClass::One_Time");
 	AnimTypeClass::One_Time();
+	Call_Back();
+	init_trace("Init_One_Time_Systems AircraftTypeClass::One_Time");
 	AircraftTypeClass::One_Time();
+	Call_Back();
+	init_trace("Init_One_Time_Systems HouseClass::One_Time");
 	HouseClass::One_Time();
+	Call_Back();
+	init_trace("Init_One_Time_Systems complete");
 }
 
 
@@ -2849,6 +2956,19 @@ static void Init_CDROM_Access(void)
 {
 	VisiblePage.Clear();
 	HidPage.Clear();
+	init_trace("Init_CDROM_Access start search_drives=%d RequiredCD=%d local_data=%d", CCFileClass::Is_There_Search_Drives(), RequiredCD, Has_Local_Game_Data());
+
+	if (!CCFileClass::Is_There_Search_Drives() && Has_Local_Game_Data()) {
+		char local_path[] = ".";
+		const int error = CCFileClass::Set_Search_Drives(local_path);
+		init_trace("Init_CDROM_Access local search path added error=%d", error);
+	}
+
+	if (CCFileClass::Is_There_Search_Drives()) {
+		RequiredCD = -2;
+		init_trace("Init_CDROM_Access using local search drives");
+		return;
+	}
 
 #ifdef FIXIT_VERSION_3
 	//	Determine if we're going to be running from a DVD.
@@ -3034,6 +3154,7 @@ static void Init_Secondary_Mixfiles(void)
 {
 	MainMix = new MFCD("MAIN.MIX", &FastKey);
 	assert(MainMix != NULL);
+	init_trace("Init_Secondary_Mixfiles MAIN.MIX ready");
 
 	//Denzil extract mixfile
 	#ifdef DENZIL_MIXEXTRACT
@@ -3070,9 +3191,11 @@ static void Init_Secondary_Mixfiles(void)
 	**	Inform the file system of the various MIX files.
 	*/
 	ConquerMix = new MFCD("CONQUER.MIX", &FastKey);			// Cached.
+	init_trace("Init_Secondary_Mixfiles CONQUER.MIX ready");
 //	new MFCD("TRANSIT.MIX", &FastKey);
 
 	if (GeneralMix == NULL) GeneralMix = new MFCD("GENERAL.MIX", &FastKey);			// Never cached.
+	init_trace("Init_Secondary_Mixfiles GENERAL.MIX ready");
 
 	if (CCFileClass("MOVIES1.MIX").Is_Available()) {
 		MoviesMix = new MFCD("MOVIES1.MIX", &FastKey);			// Never cached.
@@ -3080,22 +3203,30 @@ static void Init_Secondary_Mixfiles(void)
 		MoviesMix = new MFCD("MOVIES2.MIX", &FastKey);			// Never cached.
 	}
 	assert(MoviesMix != NULL);
+	init_trace("Init_Secondary_Mixfiles movies mix ready");
 
 	/*
 	**	Register the score mixfile.
 	*/
 	ScoresPresent = true;
 	ScoreMix = new MFCD("SCORES.MIX", &FastKey);
+	init_trace("Init_Secondary_Mixfiles SCORES.MIX ready");
+	init_trace("Init_Secondary_Mixfiles ThemeClass::Scan start");
 	ThemeClass::Scan();
+	init_trace("Init_Secondary_Mixfiles ThemeClass::Scan complete");
 
 	/*
 	**	These are sound card specific, but the install program would have
 	**	copied the correct versions to the hard drive.
 	*/
 	new MFCD("SPEECH.MIX", &FastKey);			// Never cached.
+	init_trace("Init_Secondary_Mixfiles SPEECH.MIX ready");
 	new MFCD("SOUNDS.MIX", &FastKey);			// Cached.
+	init_trace("Init_Secondary_Mixfiles SOUNDS.MIX ready");
 	new MFCD("RUSSIAN.MIX", &FastKey);			// Cached.
+	init_trace("Init_Secondary_Mixfiles RUSSIAN.MIX ready");
 	new MFCD("ALLIES.MIX", &FastKey);			// Cached.
+	init_trace("Init_Secondary_Mixfiles ALLIES.MIX ready");
 }
 
 
@@ -3132,9 +3263,11 @@ static void Bootstrap(void)
 	** the screen.
 	*/
 	#ifdef WIN32
+	init_trace("Bootstrap waiting for focus GameInFocus=%d seen=%d", GameInFocus, BootstrapFocusSeen);
 	do {
 		Keyboard->Check();
-	} while (!GameInFocus);
+	} while (!GameInFocus && !BootstrapFocusSeen);
+	init_trace("Bootstrap focus acquired GameInFocus=%d seen=%d", GameInFocus, BootstrapFocusSeen);
 	AllSurfaces.SurfacesRestored = false;
 	#endif
 
@@ -3596,7 +3729,9 @@ bool Determine_If_Using_DVD()
 {
 	//	Determines if the user has a DVD currently available. If they do, we'll use it throughout the
 	//	session. Else we won't check for it again and will always ask for CDs.
-	if( Is_DVD_Installed() )
+	const bool dvd_installed = Is_DVD_Installed();
+	init_trace("Determine_If_Using_DVD installed=%d", dvd_installed);
+	if( dvd_installed )
 	{
 		if( Force_CD_Available( 5 ) )
 		{
@@ -3611,6 +3746,8 @@ bool Determine_If_Using_DVD()
 	}
 	else
 		bUsingDVD = false;
+
+	init_trace("Determine_If_Using_DVD using_dvd=%d", bUsingDVD);
 	
 	return bUsingDVD;
 }

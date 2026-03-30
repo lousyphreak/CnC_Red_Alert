@@ -232,39 +232,26 @@ class BooleanVectorClass
 		// Quick check on boolean state.
 		bool Is_True(int index) const {
 			if (index == LastIndex) return(Copy);
-			return(Get_Bit(&BitArray[0], index));
+			return(Read_Bit(index));
 		};
 
 		// Find first index that is false.
 		int First_False(void) const {
 			if (LastIndex != -1) Fixup(-1);
-
-			int retval = First_False_Bit(&BitArray[0]);
-			if (retval < BitCount) return(retval);
-
-			/*
-			**	Failure to find a false boolean value in the vector. Return this
-			**	fact in the form of an invalid index number.
-			*/
-			return(-1);
+			return(Find_First_Bit(false));
 		}
 
 		// Find first index that is true.
 		int First_True(void) const {
 			if (LastIndex != -1) Fixup(-1);
-
-			int retval = First_True_Bit(&BitArray[0]);
-			if (retval < BitCount) return(retval);
-
-			/*
-			**	Failure to find a true boolean value in the vector. Return this
-			**	fact in the form of an invalid index number.
-			*/
-			return(-1);
+			return(Find_First_Bit(true));
 		}
 
 	private:
 		void Fixup(int index=-1) const;
+		bool Read_Bit(int index) const;
+		void Write_Bit(int index, bool value) const;
+		int Find_First_Bit(bool value) const;
 
 		/*
 		**	This is the number of boolean values in the vector. This value is

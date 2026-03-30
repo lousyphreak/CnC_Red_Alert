@@ -82,13 +82,15 @@ class CCFileClass : public CDFileClass
 		**	of the RAM image of the file.
 		*/
 		::Buffer Data;
-//		void * Pointer;
+		void * Pointer;
+		bool FromDisk;
 
 		/*
 		**	This is the size of the file if it was embedded in a mixfile. The size must be manually
 		**	kept track of because the DOS file size is invalid.
 		*/
-//		long Length;
+		long Length;
+		long Start;
 
 		/*
 		**	This is the current seek position of the file. It is duplicated here if the file is
@@ -102,6 +104,6 @@ class CCFileClass : public CDFileClass
 		CCFileClass (CCFileClass const & );
 };
 
-class MixFileClass<CDFileClass>;
+template<class T> class MixFileClass;
 
 #endif

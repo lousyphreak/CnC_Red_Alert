@@ -18,11 +18,13 @@
 
 //	ToolTip.cpp
 
-#include "function.h"
-#include "ToolTip.h"
-#include "IconList.h"
+#ifdef WOLAPI_INTEGRATION
 
-//#include "WolDebug.h"
+#include "FUNCTION.H"
+#include "TOOLTIP.H"
+#include "ICONLIST.H"
+
+//#include "WOLDEBUG.H"
 
 bool SaveSurfaceRect( int xRect, int yRect, int wRect, int hRect, char* pBits, WindowNumberType window );
 bool RestoreSurfaceRect( int xRect, int yRect, int wRect, int hRect, const char* pBits, WindowNumberType window );
@@ -45,7 +47,7 @@ ToolTipClass::ToolTipClass( GadgetClass* pGadget, const char* szText, int xShow,
 		*szTip = 0;
 
 	Set_Font( TypeFontPtr );
-	Fancy_Text_Print( TXT_NONE, 0, 0, TBLACK, TBLACK, TPF_TYPE );	//	Required before String_Pixel_Width() call, for god's sake.
+	Fancy_Text_Print( TXT_NONE, 0, 0, GadgetClass::Get_Color_Scheme(), TBLACK, TPF_TYPE );	//	Required before String_Pixel_Width() call, for god's sake.
 	wShow = String_Pixel_Width( szTip ) + 2;
 	hShow = 11;
 
@@ -138,7 +140,7 @@ void ToolTipClass::Show()
 				bLastShowNoText = true;
 				return;
 			}
-			Fancy_Text_Print( TXT_NONE, 0, 0, TBLACK, TBLACK, TPF_TYPE );	//	Required before String_Pixel_Width() call, for god's sake.
+			Fancy_Text_Print( TXT_NONE, 0, 0, GadgetClass::Get_Color_Scheme(), TBLACK, TPF_TYPE );	//	Required before String_Pixel_Width() call, for god's sake.
 			wShowUse = String_Pixel_Width( szTipUse ) + 2;
 			if( bRightAlign )
 				xShowUse -= wShowUse;
@@ -294,3 +296,5 @@ bool RestoreSurfaceRect( int xRect, int yRect, int wRect, int hRect, const char*
 		return false;
 	}
 }
+
+#endif

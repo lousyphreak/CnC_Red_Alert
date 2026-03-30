@@ -11,6 +11,7 @@ SDL_Renderer* g_renderer = nullptr;
 SDL_Texture* g_texture = nullptr;
 int g_texture_width = 0;
 int g_texture_height = 0;
+IDirectDrawSurface* g_primary_surface = nullptr;
 
 RAWindow* ensure_window(RAWindow* window, int width, int height)
 {
@@ -97,12 +98,24 @@ IDirectDrawPalette::IDirectDrawPalette() : ref_count_(1)
     std::fill(std::begin(entries_), std::end(entries_), PALETTEENTRY{0, 0, 0, 0});
 }
 
+HRESULT IDirectDrawPalette::GetEntries(DWORD, DWORD start, DWORD count, PALETTEENTRY* entries)
+{
+    if (!entries || start + count > 256) {
+        return DDERR_INVALIDPARAMS;
+    }
+    std::copy(entries_ + start, entries_ + start + count, entries);
+    return DD_OK;
+}
+
 HRESULT IDirectDrawPalette::SetEntries(DWORD, DWORD start, DWORD count, const PALETTEENTRY* entries)
 {
     if (!entries || start + count > 256) {
         return DDERR_INVALIDPARAMS;
     }
     std::copy(entries, entries + count, entries_ + start);
+    if (g_primary_surface && g_primary_surface->UsesPalette(this)) {
+        g_primary_surface->Present();
+    }
     return DD_OK;
 }
 
@@ -119,9 +132,12 @@ const PALETTEENTRY* IDirectDrawPalette::Entries() const
     return entries_;
 }
 
-IDirectDrawSurface::IDirectDrawSurface(int width, int height, bool primary, bool system_memory)
-    : width_(width), height_(height), primary_(primary), system_memory_(system_memory), ref_count_(1), palette_(nullptr), pixels_(static_cast<size_t>(width) * static_cast<size_t>(height), 0)
+IDirectDrawSurface::IDirectDrawSurface(int width, int height, bool primary, bool system_memory, HWND window)
+    : width_(width), height_(height), primary_(primary), system_memory_(system_memory), window_(window), ref_count_(1), palette_(nullptr), pixels_(static_cast<size_t>(width) * static_cast<size_t>(height), 0)
 {
+    if (primary_) {
+        g_primary_surface = this;
+    }
 }
 
 HRESULT IDirectDrawSurface::Lock(RECT*, DDSURFACEDESC* desc, DWORD, HANDLE)
@@ -141,6 +157,9 @@ HRESULT IDirectDrawSurface::Lock(RECT*, DDSURFACEDESC* desc, DWORD, HANDLE)
 
 HRESULT IDirectDrawSurface::Unlock(LPVOID)
 {
+    if (primary_) {
+        present_surface(this, window_);
+    }
     return DD_OK;
 }
 
@@ -180,6 +199,9 @@ HRESULT IDirectDrawSurface::Blt(RECT* dest_rect, IDirectDrawSurface* src_surface
             std::copy(src, src + copy_width, dst);
         }
     }
+    if (primary_) {
+        present_surface(this, window_);
+    }
     return DD_OK;
 }
 
@@ -196,6 +218,9 @@ HRESULT IDirectDrawSurface::Restore()
 HRESULT IDirectDrawSurface::Release()
 {
     if (--ref_count_ == 0) {
+        if (g_primary_surface == this) {
+            g_primary_surface = nullptr;
+        }
         delete this;
     }
     return DD_OK;
@@ -208,9 +233,33 @@ HRESULT IDirectDrawSurface::GetCaps(DDSCAPS* caps)
     return DD_OK;
 }
 
+HRESULT IDirectDrawSurface::GetPalette(IDirectDrawPalette** palette)
+{
+    if (!palette) {
+        return DDERR_INVALIDPARAMS;
+    }
+    if (!palette_) {
+        *palette = nullptr;
+        return DDERR_NOPALETTEATTACHED;
+    }
+
+    auto* copy = new IDirectDrawPalette();
+    if (copy->SetEntries(0, 0, 256, palette_->Entries()) != DD_OK) {
+        copy->Release();
+        *palette = nullptr;
+        return DDERR_GENERIC;
+    }
+
+    *palette = copy;
+    return DD_OK;
+}
+
 HRESULT IDirectDrawSurface::SetPalette(IDirectDrawPalette* palette)
 {
     palette_ = palette;
+    if (primary_) {
+        present_surface(this, window_);
+    }
     return DD_OK;
 }
 
@@ -224,6 +273,8 @@ int IDirectDrawSurface::Height() const { return height_; }
 uint8_t* IDirectDrawSurface::Pixels() { return pixels_.data(); }
 const PALETTEENTRY* IDirectDrawSurface::PaletteEntries() const { return palette_ ? palette_->Entries() : nullptr; }
 bool IDirectDrawSurface::IsPrimary() const { return primary_; }
+bool IDirectDrawSurface::UsesPalette(const IDirectDrawPalette* palette) const { return palette_ == palette; }
+void IDirectDrawSurface::Present() { present_surface(this, window_); }
 
 IDirectDraw::IDirectDraw() : width_(640), height_(480), bits_per_pixel_(8), window_(nullptr), ref_count_(1)
 {
@@ -270,7 +321,7 @@ HRESULT IDirectDraw::CreateSurface(DDSURFACEDESC* desc, IDirectDrawSurface** sur
     const bool system_memory = (desc->ddsCaps.dwCaps & DDSCAPS_SYSTEMMEMORY) != 0;
     const int width = primary ? width_ : static_cast<int>(desc->dwWidth);
     const int height = primary ? height_ : static_cast<int>(desc->dwHeight);
-    *surface = new IDirectDrawSurface(width > 0 ? width : width_, height > 0 ? height : height_, primary, system_memory);
+    *surface = new IDirectDrawSurface(width > 0 ? width : width_, height > 0 ? height : height_, primary, system_memory, window_);
     if (primary) {
         present_surface(*surface, window_);
     }
@@ -283,6 +334,7 @@ HRESULT IDirectDraw::GetCaps(DDCAPS* driver_caps, DDCAPS* hel_caps)
         if (!caps) return;
         caps->dwSize = sizeof(*caps);
         caps->dwCaps = DDCAPS_BLT | DDCAPS_BLTCOLORFILL | DDCAPS_CANBLTSYSMEM;
+        caps->dwVidMemTotal = 32 * 1024 * 1024;
         caps->dwVidMemFree = 32 * 1024 * 1024;
         caps->dwSVBCaps = DDCAPS_BLT;
         caps->dwVSBCaps = DDCAPS_BLT;

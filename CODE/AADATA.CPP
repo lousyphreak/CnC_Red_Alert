@@ -385,7 +385,8 @@ void AircraftTypeClass::Init_Heap(void)
 AircraftType AircraftTypeClass::From_Name(char const * name)
 {
 	if (name != NULL) {
-		for (AircraftType classid = AIRCRAFT_FIRST; classid < AIRCRAFT_COUNT; classid++) {
+		for (int value = AIRCRAFT_FIRST; value < AIRCRAFT_COUNT; ++value) {
+			AircraftType classid = (AircraftType)value;
 			if (stricmp(As_Reference(classid).IniName, name) == 0) {
 				return(classid);
 			}
@@ -412,7 +413,8 @@ AircraftType AircraftTypeClass::From_Name(char const * name)
  *=============================================================================================*/
 void AircraftTypeClass::One_Time(void)
 {
-	for (AircraftType index = AIRCRAFT_FIRST; index < AIRCRAFT_COUNT; index++) {
+	for (int value = AIRCRAFT_FIRST; value < AIRCRAFT_COUNT; ++value) {
+		AircraftType index = (AircraftType)value;
 		char fullname[_MAX_FNAME+_MAX_EXT];
 		AircraftTypeClass	const & uclass = As_Reference(index);
 

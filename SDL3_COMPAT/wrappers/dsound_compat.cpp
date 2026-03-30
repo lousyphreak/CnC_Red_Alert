@@ -166,7 +166,8 @@ HRESULT IDirectSound::CreateSoundBuffer(const DSBUFFERDESC* desc, IDirectSoundBu
         return DSERR_GENERIC;
     }
     const bool primary = (desc->dwFlags & DSBCAPS_PRIMARYBUFFER) != 0;
-    *buffer = new IDirectSoundBuffer(primary ? 4096 : desc->dwBufferBytes, desc->lpwfxFormat, primary);
+    const WAVEFORMATEX* format = primary ? nullptr : desc->lpwfxFormat;
+    *buffer = new IDirectSoundBuffer(primary ? 4096 : desc->dwBufferBytes, format, primary);
     return DS_OK;
 }
 

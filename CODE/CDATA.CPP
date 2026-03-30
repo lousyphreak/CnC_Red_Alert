@@ -3052,7 +3052,8 @@ LandType TemplateTypeClass::Land_Type(int icon) const
 TemplateType TemplateTypeClass::From_Name(char const * name)
 {
 	if (name != NULL) {
-		for (TemplateType index = TEMPLATE_FIRST; index < TEMPLATE_COUNT; index++) {
+		for (int value = TEMPLATE_FIRST; value < TEMPLATE_COUNT; ++value) {
+			TemplateType index = (TemplateType)value;
 			if (stricmp(As_Reference(index).IniName, name) == 0) {
 				return(index);
 			}
@@ -3124,7 +3125,8 @@ void TemplateTypeClass::Init(TheaterType theater)
 	char fullname[_MAX_FNAME+_MAX_EXT];	// Fully constructed iconset name.
 	void const * ptr;		// Working loaded iconset pointer.
 
-	for (TemplateType index = TEMPLATE_FIRST; index < TEMPLATE_COUNT; index++) {
+	for (int value = TEMPLATE_FIRST; value < TEMPLATE_COUNT; ++value) {
+		TemplateType index = (TemplateType)value;
 		TemplateTypeClass	const & tplate = As_Reference(index);
 
 		((void const *&)tplate.ImageData) = NULL;

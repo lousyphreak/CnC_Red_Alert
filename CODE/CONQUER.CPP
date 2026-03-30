@@ -123,6 +123,39 @@ extern WolapiObject* pWolapi;
 MPG_RESPONSE far __stdcall MpegCallback(MPG_CMD cmd, LPVOID data, LPVOID user);
 #endif
 
+static bool Conquer_Trace_Enabled(void)
+{
+	static int enabled = -1;
+	if (enabled == -1) {
+		enabled = (getenv("RA_TRACE_STARTUP") != NULL) ? 1 : 0;
+	}
+	return(enabled != 0);
+}
+
+static bool Conquer_Callback_Trace_Enabled(void)
+{
+	static int enabled = -1;
+	if (enabled == -1) {
+		enabled = (getenv("RA_TRACE_CALLBACK") != NULL) ? 1 : 0;
+	}
+	return(enabled != 0);
+}
+
+static void Conquer_Trace(char const * format, ...)
+{
+	if (!Conquer_Trace_Enabled()) {
+		return;
+	}
+
+	va_list args;
+	va_start(args, format);
+	fputs("[conquer] ", stderr);
+	vfprintf(stderr, format, args);
+	fputc('\n', stderr);
+	fflush(stderr);
+	va_end(args);
+}
+
 #define SHAPE_TRANS		0x40
 
 void * Get_Shape_Header_Data(void * ptr);
@@ -1615,27 +1648,42 @@ void Color_Cycle(void)
  *=============================================================================================*/
 void Call_Back(void)
 {
+	const bool trace_callback = Conquer_Callback_Trace_Enabled();
+	if (trace_callback) {
+		Conquer_Trace("Call_Back entry SampleType=%d SessionType=%d ModemService=%d", SampleType, Session.Type, Session.ModemService);
+	}
+
 	/*
 	**	Music and speech maintenance
 	*/
 	if (SampleType) {
+		if (trace_callback) Conquer_Trace("Call_Back Sound_Callback start");
 		Sound_Callback();
+		if (trace_callback) Conquer_Trace("Call_Back Sound_Callback complete");
+		if (trace_callback) Conquer_Trace("Call_Back Theme.AI start");
 		Theme.AI();
+		if (trace_callback) Conquer_Trace("Call_Back Theme.AI complete");
+		if (trace_callback) Conquer_Trace("Call_Back Speak_AI start");
 		Speak_AI();
+		if (trace_callback) Conquer_Trace("Call_Back Speak_AI complete");
 	}
 
 	/*
 	**	Network maintenance.
 	*/
 	if (Session.Type == GAME_IPX || Session.Type == GAME_INTERNET) {
+		if (trace_callback) Conquer_Trace("Call_Back IPX start");
 		IPX_Call_Back();
+		if (trace_callback) Conquer_Trace("Call_Back IPX complete");
 	}
 
 	/*
 	**	Serial game maintenance.
 	*/
 	if (Session.Type == GAME_NULL_MODEM || ((Session.Type == GAME_MODEM) && Session.ModemService)) {
+		if (trace_callback) Conquer_Trace("Call_Back NullModem start");
 		NullModem.Service();
+		if (trace_callback) Conquer_Trace("Call_Back NullModem complete");
 	}
 
 #ifdef WOLAPI_INTEGRATION
@@ -1677,15 +1725,23 @@ void Call_Back(void)
 
 #if(TEN)
 	if (Session.Type == GAME_TEN) {
+		if (trace_callback) Conquer_Trace("Call_Back TEN start");
 		TEN_Call_Back();
+		if (trace_callback) Conquer_Trace("Call_Back TEN complete");
 	}
 #endif	// TEN
 
 #if(MPATH)
 	if (Session.Type == GAME_MPATH) {
+		if (trace_callback) Conquer_Trace("Call_Back MPATH start");
 		MPATH_Call_Back();
+		if (trace_callback) Conquer_Trace("Call_Back MPATH complete");
 	}
 #endif	// MPATH
+
+	if (trace_callback) {
+		Conquer_Trace("Call_Back exit");
+	}
 }
 
 
@@ -5287,7 +5343,8 @@ void * Hires_Load(char * name)
 CrateType Crate_From_Name(char const * name)
 {
 	if (name != NULL) {
-		for (CrateType crate = CRATE_FIRST; crate < CRATE_COUNT; crate++) {
+		for (int index = CRATE_FIRST; index < CRATE_COUNT; ++index) {
+			CrateType crate = (CrateType)index;
 			if (stricmp(name, CrateNames[crate]) == 0) return(crate);
 		}
 	}

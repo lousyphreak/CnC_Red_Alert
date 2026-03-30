@@ -983,7 +983,8 @@ void UnitTypeClass::Init_Heap(void)
 UnitType UnitTypeClass::From_Name(char const * name)
 {
 	if (name != NULL) {
-		for (UnitType classid = UNIT_FIRST; classid < UNIT_COUNT; classid++) {
+		for (int index = UNIT_FIRST; index < UNIT_COUNT; ++index) {
+			UnitType classid = (UnitType)index;
 			if (stricmp(As_Reference(classid).IniName, name) == 0) {
 				return(classid);
 			}
@@ -1070,7 +1071,8 @@ void UnitTypeClass::Prep_For_Add(void)
  *=============================================================================================*/
 void UnitTypeClass::One_Time(void)
 {
-	for (UnitType index = UNIT_FIRST; index < UNIT_COUNT; index++) {
+	for (int value = UNIT_FIRST; value < UNIT_COUNT; ++value) {
+		UnitType index = (UnitType)value;
 		char	fullname[_MAX_FNAME+_MAX_EXT];
 		char	buffer[_MAX_FNAME];
 		UnitTypeClass const & uclass = As_Reference(index);

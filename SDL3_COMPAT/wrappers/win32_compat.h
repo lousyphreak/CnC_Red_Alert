@@ -17,6 +17,40 @@
 #ifndef stricmp
 #define stricmp SDL_strcasecmp
 #endif
+#ifndef _stricmp
+#define _stricmp SDL_strcasecmp
+#endif
+#ifndef strnicmp
+#define strnicmp SDL_strncasecmp
+#endif
+#ifndef strcmpi
+#define strcmpi SDL_strcasecmp
+#endif
+#ifndef _strnicmp
+#define _strnicmp SDL_strncasecmp
+#endif
+#ifndef memicmp
+#define memicmp SDL_strncasecmp
+#endif
+#ifndef strrev
+#define strrev SDL_strrev
+#endif
+#ifndef strupr
+#define strupr SDL_strupr
+#endif
+inline char* _strlwr(char* string)
+{
+    if (!string) {
+        return nullptr;
+    }
+    for (char* cursor = string; *cursor; ++cursor) {
+        *cursor = static_cast<char>(SDL_tolower(static_cast<unsigned char>(*cursor)));
+    }
+    return string;
+}
+#ifndef strlwr
+#define strlwr _strlwr
+#endif
 
 #ifndef WINAPI
 #define WINAPI
@@ -42,8 +76,17 @@
 #ifndef __cdecl
 #define __cdecl
 #endif
+#ifndef __stdcall
+#define __stdcall WINAPI
+#endif
 #ifndef cdecl
 #define cdecl __cdecl
+#endif
+#ifndef __declspec
+#define __declspec(x)
+#endif
+#ifndef _export
+#define _export
 #endif
 
 using BYTE = uint8_t;
@@ -74,6 +117,7 @@ using HGDIOBJ = void*;
 using HKEY = void*;
 using LPVOID = void*;
 using LPCVOID = const void*;
+using PBYTE = BYTE*;
 using LPBYTE = BYTE*;
 using LPCBYTE = const BYTE*;
 using LPSTR = char*;
@@ -84,10 +128,55 @@ using LPLONG = LONG*;
 using LPBOOL = BOOL*;
 using CHAR = char;
 using UCHAR = unsigned char;
+using TCHAR = char;
+using LPTSTR = char*;
+using LPCTSTR = const char*;
 using SHORT = int16_t;
 using USHORT = uint16_t;
 using SOCKET = int;
 using VOID = void;
+using INT_PTR = intptr_t;
+
+inline LPSTR lstrcpy(LPSTR destination, LPCSTR source)
+{
+    return std::strcpy(destination, source);
+}
+
+inline LPSTR lstrcat(LPSTR destination, LPCSTR source)
+{
+    return std::strcat(destination, source);
+}
+
+inline int lstrcmp(LPCSTR string1, LPCSTR string2)
+{
+    return std::strcmp(string1, string2);
+}
+
+inline int lstrcmpi(LPCSTR string1, LPCSTR string2)
+{
+    return SDL_strcasecmp(string1, string2);
+}
+
+inline int lstrlen(LPCSTR string)
+{
+    return string ? static_cast<int>(std::strlen(string)) : 0;
+}
+
+inline LPSTR lstrcpyn(LPSTR destination, LPCSTR source, int max_length)
+{
+    if (!destination || max_length <= 0) {
+        return destination;
+    }
+
+    if (!source) {
+        destination[0] = '\0';
+        return destination;
+    }
+
+    std::strncpy(destination, source, static_cast<size_t>(max_length) - 1);
+    destination[max_length - 1] = '\0';
+    return destination;
+}
 
 struct MEMORYSTATUS {
     DWORD dwLength;
@@ -100,6 +189,17 @@ struct MEMORYSTATUS {
     DWORD dwAvailVirtual;
 };
 
+struct SYSTEMTIME {
+    WORD wYear;
+    WORD wMonth;
+    WORD wDayOfWeek;
+    WORD wDay;
+    WORD wHour;
+    WORD wMinute;
+    WORD wSecond;
+    WORD wMilliseconds;
+};
+
 struct RAWindow;
 using HWND = RAWindow*;
 
@@ -110,7 +210,17 @@ using HWND = RAWindow*;
 #define FALSE 0
 #endif
 
+#ifndef SUCCEEDED
+#define SUCCEEDED(hr) (((HRESULT)(hr)) >= 0)
+#endif
+#ifndef FAILED
+#define FAILED(hr) (((HRESULT)(hr)) < 0)
+#endif
+
 #define MAX_PATH 260
+#ifndef _MAX_PATH
+#define _MAX_PATH MAX_PATH
+#endif
 #define INVALID_SOCKET (-1)
 #define SOCKET_ERROR (-1)
 #define INVALID_HANDLE_VALUE ((HANDLE)(intptr_t)-1)
@@ -120,6 +230,9 @@ using HWND = RAWindow*;
 #define MB_ICONQUESTION 0x00000020U
 #define MB_ICONEXCLAMATION 0x00000030U
 #define MB_YESNO 0x00000004U
+#define IDOK 1
+#define IDYES 6
+#define IDNO 7
 
 #define SW_HIDE 0
 #define SW_SHOWNORMAL 1
@@ -138,12 +251,22 @@ using HWND = RAWindow*;
 #define PM_REMOVE 0x0001
 #define PM_NOYIELD 0x0002
 
+#define CS_VREDRAW 0x0001
+#define CS_HREDRAW 0x0002
+
+#define WS_POPUP 0x80000000U
+#define WS_EX_TOPMOST 0x00000008U
+
+#define SM_CXSCREEN 0
+#define SM_CYSCREEN 1
+
 #define WM_NULL 0x0000
 #define WM_CREATE 0x0001
 #define WM_DESTROY 0x0002
 #define WM_MOVE 0x0003
 #define WM_SIZE 0x0005
 #define WM_ACTIVATE 0x0006
+#define WM_ACTIVATEAPP 0x001C
 #define WM_SETFOCUS 0x0007
 #define WM_KILLFOCUS 0x0008
 #define WM_PAINT 0x000F
@@ -151,9 +274,11 @@ using HWND = RAWindow*;
 #define WM_QUIT 0x0012
 #define WM_SHOWWINDOW 0x0018
 #define WM_SETCURSOR 0x0020
+#define WM_SYSCOMMAND 0x0112
 #define WM_KEYDOWN 0x0100
 #define WM_KEYUP 0x0101
 #define WM_CHAR 0x0102
+#define WM_INITDIALOG 0x0110
 #define WM_SYSKEYDOWN 0x0104
 #define WM_SYSKEYUP 0x0105
 #define WM_MOUSEMOVE 0x0200
@@ -179,12 +304,20 @@ using HWND = RAWindow*;
 #define VK_CONTROL 0x11
 #define VK_MENU 0x12
 #define VK_CAPITAL 0x14
+#define VK_BACK 0x08
+#define VK_TAB 0x09
+#define VK_RETURN 0x0D
+#define VK_ESCAPE 0x1B
+#define VK_SPACE 0x20
 #define VK_NUMLOCK 0x90
 
 #define WAIT_OBJECT_0 0x00000000L
 #define WAIT_TIMEOUT 0x00000102L
 #define WAIT_FAILED 0xFFFFFFFFU
 #define INFINITE 0xFFFFFFFFU
+
+#define SC_CLOSE 0xF060
+#define SC_SCREENSAVE 0xF140
 
 #define GENERIC_READ 0x80000000U
 #define GENERIC_WRITE 0x40000000U
@@ -195,7 +328,11 @@ using HWND = RAWindow*;
 #define OPEN_EXISTING 3U
 #define OPEN_ALWAYS 4U
 #define TRUNCATE_EXISTING 5U
+#define FILE_ATTRIBUTE_HIDDEN 0x00000002U
+#define FILE_ATTRIBUTE_SYSTEM 0x00000004U
+#define FILE_ATTRIBUTE_DIRECTORY 0x00000010U
 #define FILE_ATTRIBUTE_NORMAL 0x00000080U
+#define FILE_ATTRIBUTE_TEMPORARY 0x00000100U
 #define FILE_FLAG_OVERLAPPED 0x40000000U
 #define FILE_BEGIN 0U
 #define FILE_CURRENT 1U
@@ -226,6 +363,8 @@ using HWND = RAWindow*;
 #define CLRDTR 6U
 #define SETRTS 3U
 #define CLRRTS 4U
+#define SETBREAK 8U
+#define CLRBREAK 9U
 
 #define DTR_CONTROL_DISABLE 0U
 #define DTR_CONTROL_ENABLE 1U
@@ -252,20 +391,30 @@ using HWND = RAWindow*;
 
 #define ERROR_SUCCESS 0L
 #define ERROR_FILE_NOT_FOUND 2L
+#define ERROR_PATH_NOT_FOUND 3L
 #define ERROR_ACCESS_DENIED 5L
 #define ERROR_INVALID_HANDLE 6L
 #define ERROR_NOT_ENOUGH_MEMORY 8L
+#define ERROR_NO_MORE_FILES 18L
+#define ERROR_INVALID_PARAMETER 87L
 #define ERROR_IO_PENDING 997L
 #define ERROR_IO_INCOMPLETE 996L
+#define STILL_ACTIVE 259L
+
+#define SEM_FAILCRITICALERRORS 0x0001
+#define SEM_NOOPENFILEERRORBOX 0x8000
 
 #define KEY_READ 0x20019
 #define REG_SZ 1
+#define REG_DWORD 4
+#define HKEY_CLASSES_ROOT ((HKEY)(intptr_t)0x80000000)
 #define HKEY_LOCAL_MACHINE ((HKEY)(intptr_t)0x80000002)
 
 #define WSAEWOULDBLOCK 10035
 #define FD_WRITE 0x0002
 
 #define MAKEWORD(a, b) ((WORD)(((BYTE)((a) & 0xff)) | ((WORD)((BYTE)((b) & 0xff))) << 8))
+#define MAKEINTRESOURCE(i) ((LPCTSTR)(uintptr_t)((WORD)(i)))
 #ifndef MIN
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
@@ -308,11 +457,12 @@ struct tagMSG {
 };
 using MSG = tagMSG;
 
-struct CRITICAL_SECTION {
+struct alignas(void*) CRITICAL_SECTION {
     std::recursive_mutex* mutex;
 };
 
 using WNDPROC = LRESULT (CALLBACK*)(HWND, UINT, WPARAM, LPARAM);
+using DLGPROC = INT_PTR (CALLBACK*)(HWND, UINT, WPARAM, LPARAM);
 
 struct WNDCLASS {
     UINT style;
@@ -412,6 +562,19 @@ struct WIN32_FIND_DATA {
 };
 using LPWIN32_FIND_DATA = WIN32_FIND_DATA*;
 
+struct BY_HANDLE_FILE_INFORMATION {
+    DWORD dwFileAttributes;
+    FILETIME ftCreationTime;
+    FILETIME ftLastAccessTime;
+    FILETIME ftLastWriteTime;
+    DWORD dwVolumeSerialNumber;
+    DWORD nFileSizeHigh;
+    DWORD nFileSizeLow;
+    DWORD nNumberOfLinks;
+    DWORD nFileIndexHigh;
+    DWORD nFileIndexLow;
+};
+
 #pragma pack(push, 1)
 struct BITMAPFILEHEADER {
     WORD bfType;
@@ -464,6 +627,34 @@ struct LOGPALETTE {
 };
 using LPLOGPALETTE = LOGPALETTE*;
 
+struct STARTUPINFO {
+    DWORD cb;
+    LPSTR lpReserved;
+    LPSTR lpDesktop;
+    LPSTR lpTitle;
+    DWORD dwX;
+    DWORD dwY;
+    DWORD dwXSize;
+    DWORD dwYSize;
+    DWORD dwXCountChars;
+    DWORD dwYCountChars;
+    DWORD dwFillAttribute;
+    DWORD dwFlags;
+    WORD wShowWindow;
+    WORD cbReserved2;
+    LPBYTE lpReserved2;
+    HANDLE hStdInput;
+    HANDLE hStdOutput;
+    HANDLE hStdError;
+};
+
+struct PROCESS_INFORMATION {
+    HANDLE hProcess;
+    HANDLE hThread;
+    DWORD dwProcessId;
+    DWORD dwThreadId;
+};
+
 struct RAWindow {
     SDL_Window* sdl_window;
     std::string class_name;
@@ -479,8 +670,11 @@ ATOM RegisterClass(const WNDCLASS* wndclass);
 BOOL UnregisterClass(LPCSTR class_name, HINSTANCE instance);
 HWND CreateWindowEx(DWORD ex_style, LPCSTR class_name, LPCSTR window_name, DWORD style,
     INT x, INT y, INT width, INT height, HWND parent, HANDLE menu, HINSTANCE instance, LPVOID param);
+HWND FindWindow(LPCSTR class_name, LPCSTR window_name);
+BOOL IsWindow(HWND window);
 BOOL DestroyWindow(HWND window);
 BOOL ShowWindow(HWND window, INT command);
+BOOL SetForegroundWindow(HWND window);
 BOOL UpdateWindow(HWND window);
 LRESULT DefWindowProc(HWND window, UINT message, WPARAM w_param, LPARAM l_param);
 BOOL PeekMessage(MSG* message, HWND window, UINT min_filter, UINT max_filter, UINT remove_message);
@@ -490,18 +684,32 @@ LRESULT DispatchMessage(const MSG* message);
 void PostQuitMessage(INT exit_code);
 BOOL PostMessage(HWND window, UINT message, WPARAM w_param, LPARAM l_param);
 LRESULT SendMessage(HWND window, UINT message, WPARAM w_param, LPARAM l_param);
+UINT RegisterWindowMessage(LPCSTR string);
+int GetSystemMetrics(int index);
+HWND SetFocus(HWND window);
+HGDIOBJ LoadIcon(HINSTANCE instance, LPCSTR icon_name);
+HGDIOBJ LoadCursor(HINSTANCE instance, LPCSTR cursor_name);
+INT_PTR DialogBox(HINSTANCE instance, LPCTSTR template_name, HWND owner, DLGPROC dialog_proc);
+void ExitProcess(UINT exit_code);
 
 int MessageBox(HWND window, LPCSTR text, LPCSTR caption, UINT type);
 void OutputDebugString(LPCSTR text);
 DWORD GetLastError(void);
+DWORD GetVersion(void);
 void SetLastError(DWORD error_code);
+UINT SetErrorMode(UINT mode);
 void Sleep(DWORD milliseconds);
 DWORD GetTickCount(void);
+void GetSystemTime(SYSTEMTIME* system_time);
+void GetLocalTime(SYSTEMTIME* system_time);
 void GlobalMemoryStatus(MEMORYSTATUS* memory_status);
 SHORT GetKeyState(int virtual_key);
 SHORT GetAsyncKeyState(int virtual_key);
 SHORT VkKeyScan(unsigned char ch);
+UINT MapVirtualKey(UINT code, UINT map_type);
+int ToAscii(UINT virtual_key_code, UINT scan_code, PBYTE key_state, LPWORD translated_char, UINT flags);
 HANDLE SetCursor(HANDLE cursor);
+int ShowCursor(BOOL show);
 MMRESULT timeBeginPeriod(UINT period);
 MMRESULT timeEndPeriod(UINT period);
 BOOL ClipCursor(const RECT* rect);
@@ -515,6 +723,8 @@ BOOL SetThreadPriority(HANDLE thread, int priority);
 HANDLE CreateThread(LPVOID thread_attributes, size_t stack_size, DWORD (WINAPI *start_address)(LPVOID),
     LPVOID parameter, DWORD creation_flags, DWORD* thread_id);
 DWORD WaitForSingleObject(HANDLE handle, DWORD milliseconds);
+DWORD WaitForInputIdle(HANDLE handle, DWORD milliseconds);
+BOOL GetExitCodeProcess(HANDLE handle, LPDWORD exit_code);
 BOOL CloseHandle(HANDLE handle);
 HANDLE CreateMutex(LPVOID attributes, BOOL initial_owner, LPCSTR name);
 BOOL ReleaseMutex(HANDLE handle);
@@ -522,6 +732,9 @@ HANDLE CreateEvent(LPVOID attributes, BOOL manual_reset, BOOL initial_state, LPC
 HANDLE OpenEvent(DWORD desired_access, BOOL inherit_handle, LPCSTR name);
 BOOL SetEvent(HANDLE handle);
 BOOL ResetEvent(HANDLE handle);
+BOOL CreateProcess(LPCSTR application_name, LPSTR command_line, LPVOID process_attributes,
+    LPVOID thread_attributes, BOOL inherit_handles, DWORD creation_flags, LPVOID environment,
+    LPCSTR current_directory, STARTUPINFO* startup_info, PROCESS_INFORMATION* process_information);
 void InitializeCriticalSection(CRITICAL_SECTION* critical_section);
 void DeleteCriticalSection(CRITICAL_SECTION* critical_section);
 void EnterCriticalSection(CRITICAL_SECTION* critical_section);
@@ -537,13 +750,22 @@ BOOL SetCommTimeouts(HANDLE handle, const COMMTIMEOUTS* timeouts);
 BOOL SetupComm(HANDLE handle, DWORD in_queue, DWORD out_queue);
 BOOL PurgeComm(HANDLE handle, DWORD flags);
 BOOL EscapeCommFunction(HANDLE handle, DWORD function);
+BOOL SetCommBreak(HANDLE handle);
+BOOL ClearCommBreak(HANDLE handle);
 BOOL GetOverlappedResult(HANDLE handle, LPOVERLAPPED overlapped, LPDWORD number_of_bytes_transferred, BOOL wait);
 BOOL ClearCommError(HANDLE handle, LPDWORD errors, COMSTAT* status);
 BOOL GetCommModemStatus(HANDLE handle, LPDWORD modem_status);
 DWORD SetFilePointer(HANDLE handle, LONG distance_to_move, LONG* distance_to_move_high, DWORD move_method);
 DWORD GetFileSize(HANDLE handle, DWORD* file_size_high);
+BOOL GetFileInformationByHandle(HANDLE handle, BY_HANDLE_FILE_INFORMATION* file_information);
+BOOL GetFileTime(HANDLE handle, FILETIME* creation_time, FILETIME* last_access_time, FILETIME* last_write_time);
+BOOL FileTimeToDosDateTime(const FILETIME* file_time, LPWORD dos_date, LPWORD dos_time);
+BOOL DosDateTimeToFileTime(WORD dos_date, WORD dos_time, FILETIME* file_time);
+BOOL SetFileTime(HANDLE handle, const FILETIME* creation_time, const FILETIME* last_access_time, const FILETIME* last_write_time);
 BOOL DeleteFile(LPCSTR file_name);
 UINT GetDriveType(LPCSTR root_path_name);
+BOOL GetVolumeInformation(LPCSTR root_path_name, LPSTR volume_name_buffer, DWORD volume_name_size, DWORD* volume_serial_number,
+    DWORD* maximum_component_length, DWORD* file_system_flags, LPSTR file_system_name_buffer, DWORD file_system_name_size);
 
 HANDLE FindFirstFile(LPCSTR file_name, LPWIN32_FIND_DATA find_file_data);
 BOOL FindNextFile(HANDLE find_file, LPWIN32_FIND_DATA find_file_data);
@@ -571,6 +793,7 @@ LONG RegQueryInfoKey(HKEY key, LPSTR class_name, LPDWORD class_size, LPDWORD res
     LPDWORD max_value_len, LPDWORD security_descriptor, FILETIME* last_write_time);
 LONG RegEnumKeyEx(HKEY key, DWORD index, LPSTR name, DWORD* name_size, DWORD* reserved,
     LPSTR class_name, DWORD* class_size, FILETIME* last_write_time);
+LONG RegQueryValue(HKEY key, LPCSTR sub_key, LPSTR data, LPLONG data_size);
 LONG RegQueryValueEx(HKEY key, LPCSTR value_name, DWORD* reserved, DWORD* type, LPBYTE data, DWORD* data_size);
 LONG RegCloseKey(HKEY key);
 
@@ -611,8 +834,8 @@ inline char* ra_integer_to_string(long long value, char* str, int radix)
     char* out = str;
 
     do {
-        const unsigned digit = static_cast<unsigned>(current % static_cast<unsigned long long>(radix));
-        *out++ = static_cast<char>(digit < 10 ? ('0' + digit) : ('a' + (digit - 10)));
+        const unsigned digit_value = static_cast<unsigned>(current % static_cast<unsigned long long>(radix));
+        *out++ = static_cast<char>(digit_value < 10 ? ('0' + digit_value) : ('a' + (digit_value - 10)));
         current /= static_cast<unsigned long long>(radix);
     } while (current != 0);
 

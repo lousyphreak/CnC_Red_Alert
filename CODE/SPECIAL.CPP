@@ -117,8 +117,9 @@ void Special_Dialog(bool simple)
 	TextButtonClass cancel(201, TXT_CANCEL, TPF_BUTTON, OPTION_X+OPTION_WIDTH-60*RESFACTOR, OPTION_Y+OPTION_HEIGHT-15*RESFACTOR);
 	buttons = &ok;
 	cancel.Add(*buttons);
+	int index;
 
-	for (int index = 0; index < sizeof(_options)/sizeof(_options[0]); index++) {
+	for (index = 0; index < sizeof(_options)/sizeof(_options[0]); index++) {
 		_options[index].Button = new CheckBoxClass(100+index, OPTION_X+17*RESFACTOR, OPTION_Y+20*RESFACTOR+(index*10*RESFACTOR));
 		if (_options[index].Button) {
 			_options[index].Button->Add(*buttons);
@@ -319,7 +320,7 @@ char const * Fetch_Password(int caption, int message, int btext)
 
 	if (btext == TXT_NONE) btext = TXT_OK;
 
-	Fancy_Text_Print(TXT_NONE, 0, 0, TBLACK, TBLACK, TPF_6PT_GRAD|TPF_NOSHADOW);
+	Fancy_Text_Print(TXT_NONE, 0, 0, GadgetClass::Get_Color_Scheme(), TBLACK, TPF_6PT_GRAD|TPF_NOSHADOW);
 
 	/*
 	**	Examine the optional button parameters. Fetch the width and starting
@@ -331,7 +332,7 @@ char const * Fetch_Password(int caption, int message, int btext)
 	**	Build the button list.
 	*/
 	bheight = FontHeight + FontYSpacing + 2*RESFACTOR;
-	bwidth = max((String_Pixel_Width(Text_String(btext)) + 8*RESFACTOR), 30*RESFACTOR);
+	bwidth = max((int)(String_Pixel_Width(Text_String(btext)) + 8*RESFACTOR), 30*RESFACTOR);
 
 	/*
 	**	Determine the dimensions of the text to be used for the dialog box.
@@ -339,7 +340,7 @@ char const * Fetch_Password(int caption, int message, int btext)
 	*/
 	buffer[BUFFSIZE-1] = 0;
 	strncpy(buffer, Text_String(message), BUFFSIZE-1);
-	Fancy_Text_Print(TXT_NONE, 0, 0, TBLACK, TBLACK, TPF_6PT_GRAD|TPF_NOSHADOW);
+	Fancy_Text_Print(TXT_NONE, 0, 0, GadgetClass::Get_Color_Scheme(), TBLACK, TPF_6PT_GRAD|TPF_NOSHADOW);
 	int width;
 	int height;
 	Format_Window_String(buffer, 255, width, height);
@@ -493,7 +494,7 @@ int Fetch_Difficulty(void)
 		}
 	}
 #endif
-	Fancy_Text_Print(TXT_NONE, 0, 0, TBLACK, TBLACK, TPF_6PT_GRAD|TPF_NOSHADOW);
+	Fancy_Text_Print(TXT_NONE, 0, 0, GadgetClass::Get_Color_Scheme(), TBLACK, TPF_6PT_GRAD|TPF_NOSHADOW);
 	int width;
 	int height;
 	Format_Window_String(buffer, w-60*RESFACTOR, width, height);

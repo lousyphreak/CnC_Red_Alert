@@ -63,6 +63,33 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "FUNCTION.H"
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+static bool Map_Trace_Enabled(void)
+{
+	static int enabled = -1;
+	if (enabled == -1) {
+		enabled = (getenv("RA_TRACE_STARTUP") != NULL) ? 1 : 0;
+	}
+	return(enabled != 0);
+}
+
+static void Map_Trace(char const * format, ...)
+{
+	if (!Map_Trace_Enabled()) {
+		return;
+	}
+
+	va_list args;
+	va_start(args, format);
+	fputs("[map] ", stderr);
+	vfprintf(stderr, format, args);
+	fputc('\n', stderr);
+	fflush(stderr);
+	va_end(args);
+}
 
 #define	MCW	MAP_CELL_W
 int const MapClass::RadiusOffset[] = {
@@ -114,6 +141,7 @@ void MapClass::One_Time(void)
 	**	Allocate the cell array.
 	*/
 	Alloc_Cells();
+	Map_Trace("One_Time complete size=%d", Size);
 }
 
 
@@ -172,7 +200,13 @@ void MapClass::Alloc_Cells(void)
 	**	(it may have been loaded from a save-game file), so zero it out first.
 	*/
 	new (&Array) VectorClass<CellClass>;
+	Map_Trace("Alloc_Cells resize start size=%d", Size);
 	Array.Resize(Size);
+	Map_Trace("Alloc_Cells resize complete size=%d", Size);
+	for (int index = 0; index < Size; ++index) {
+		Array[index].ID = index;
+	}
+	Map_Trace("Alloc_Cells ids assigned size=%d", Size);
 }
 
 
@@ -225,6 +259,7 @@ void MapClass::Init_Cells(void)
 	TotalValue = 0;
 	for (int index = 0; index < MAP_CELL_TOTAL; index++) {
 		new (&Array[index]) CellClass;
+		Array[index].ID = index;
 	}
 }
 

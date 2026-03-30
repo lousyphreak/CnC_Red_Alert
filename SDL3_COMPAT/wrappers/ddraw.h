@@ -161,6 +161,7 @@ struct DDSURFACEDESC {
 struct DDCAPS {
     DWORD dwSize;
     DWORD dwCaps;
+    DWORD dwVidMemTotal;
     DWORD dwVidMemFree;
     DWORD dwSVBCaps;
     DWORD dwVSBCaps;
@@ -170,6 +171,7 @@ struct DDCAPS {
 class IDirectDrawPalette {
 public:
     IDirectDrawPalette();
+    HRESULT GetEntries(DWORD flags, DWORD start, DWORD count, PALETTEENTRY* entries);
     HRESULT SetEntries(DWORD flags, DWORD start, DWORD count, const PALETTEENTRY* entries);
     HRESULT Release();
     const PALETTEENTRY* Entries() const;
@@ -180,7 +182,7 @@ private:
 
 class IDirectDrawSurface {
 public:
-    IDirectDrawSurface(int width, int height, bool primary, bool system_memory);
+    IDirectDrawSurface(int width, int height, bool primary, bool system_memory, HWND window);
     HRESULT Lock(RECT* rect, DDSURFACEDESC* desc, DWORD flags, HANDLE handle);
     HRESULT Unlock(LPVOID data);
     HRESULT Blt(RECT* dest_rect, IDirectDrawSurface* src_surface, RECT* src_rect, DWORD flags, DDBLTFX* fx);
@@ -188,6 +190,7 @@ public:
     HRESULT Restore();
     HRESULT Release();
     HRESULT GetCaps(DDSCAPS* caps);
+    HRESULT GetPalette(IDirectDrawPalette** palette);
     HRESULT SetPalette(IDirectDrawPalette* palette);
     HRESULT AddAttachedSurface(IDirectDrawSurface* surface);
 
@@ -196,11 +199,14 @@ public:
     uint8_t* Pixels();
     const PALETTEENTRY* PaletteEntries() const;
     bool IsPrimary() const;
+    bool UsesPalette(const IDirectDrawPalette* palette) const;
+    void Present();
 private:
     int width_;
     int height_;
     bool primary_;
     bool system_memory_;
+    HWND window_;
     int ref_count_;
     IDirectDrawPalette* palette_;
     std::vector<uint8_t> pixels_;

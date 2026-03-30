@@ -41,6 +41,7 @@
 
 
 #include	<stdio.h>
+#include	<cstdint>
 #include	<string.h>
 #include	<stdlib.h>
 #include	<new.h>
@@ -76,9 +77,10 @@ class SHAEngine
 	private:
 
 		typedef union {
-			unsigned long Long[5];
+			uint32_t Long[5];
 			unsigned char Char[20];
 		} SHADigest;
+		static_assert(sizeof(SHADigest) == 20, "SHA digest must stay 20 bytes");
 
 		/*
 		**	This holds the calculated final result. It is cached
@@ -90,26 +92,26 @@ class SHAEngine
 
 		enum {
 			// These are the initial seeds to the block accumulators.
-			SA=0x67452301L,
-			SB=0xefcdab89L,
-			SC=0x98badcfeL,
-			SD=0x10325476L,
-			SE=0xc3d2e1f0L,
+			SA=0x67452301u,
+			SB=0xefcdab89u,
+			SC=0x98badcfeu,
+			SD=0x10325476u,
+			SE=0xc3d2e1f0u,
 
 			// These are the constants used in the block transformation.
-			K1=0x5a827999L,		// t=0..19		2^(1/2)/4
-			K2=0x6ed9eba1L,		// t=20..39		3^(1/2)/4
-			K3=0x8f1bbcdcL,		// t=40..59		5^(1/2)/4
-			K4=0xca62c1d6L,		// t=60..79		10^(1/2)/4
+			K1=0x5a827999u,		// t=0..19		2^(1/2)/4
+			K2=0x6ed9eba1u,		// t=20..39		3^(1/2)/4
+			K3=0x8f1bbcdcu,		// t=40..59		5^(1/2)/4
+			K4=0xca62c1d6u,		// t=60..79		10^(1/2)/4
 
 			// Source data is grouped into blocks of this size.
-			SRC_BLOCK_SIZE=16*sizeof(long),
+			SRC_BLOCK_SIZE=16*sizeof(uint32_t),
 
 			// Internal processing data is grouped into blocks this size.
-			PROC_BLOCK_SIZE=80*sizeof(long)
+			PROC_BLOCK_SIZE=80*sizeof(uint32_t)
 		};
 
-		long Get_Constant(int index) const {
+		uint32_t Get_Constant(int index) const {
 			if (index < 20) return K1;
 			if (index < 40) return K2;
 			if (index < 60) return K3;
@@ -117,26 +119,26 @@ class SHAEngine
 		};
 
 		// Used for 0..19
-		long Function1(long X, long Y, long Z) const {
+		uint32_t Function1(uint32_t X, uint32_t Y, uint32_t Z) const {
 			return(Z ^ ( X & ( Y ^ Z ) ) );
 		};
 
 		// Used for 20..39
-		long Function2(long X, long Y, long Z) const {
+		uint32_t Function2(uint32_t X, uint32_t Y, uint32_t Z) const {
 			return( X ^ Y ^ Z );
 		};
 
 		// Used for 40..59
-		long Function3(long X, long Y, long Z) const {
+		uint32_t Function3(uint32_t X, uint32_t Y, uint32_t Z) const {
 			return( (X & Y) | (Z & (X | Y) ) );
 		};
 
 		// Used for 60..79
-		long Function4(long X, long Y, long Z) const {
+		uint32_t Function4(uint32_t X, uint32_t Y, uint32_t Z) const {
 			return( X ^ Y ^ Z );
 		};
 
-		long Do_Function(int index, long X, long Y, long Z) const {
+		uint32_t Do_Function(int index, uint32_t X, uint32_t Y, uint32_t Z) const {
 			if (index < 20) return Function1(X, Y, Z);
 			if (index < 40) return Function2(X, Y, Z);
 			if (index < 60) return Function3(X, Y, Z);
@@ -162,7 +164,7 @@ class SHAEngine
 		**	resulting hash value as if it were appended to the end
 		**	of the source data.
 		*/
-		long Length;
+		uint32_t Length;
 
 		/*
 		**	This holds any partial source block. Partial source blocks are

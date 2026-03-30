@@ -37,8 +37,25 @@
 *     Febuary 3, 1995
 *
 ****************************************************************************/
-
-#include <vqm32\vesavid.h>
+#ifndef far
+#define far
+#endif
+#ifndef near
+#define near
+#endif
+#ifndef huge
+#define huge
+#endif
+#ifndef interrupt
+#define interrupt
+#endif
+#ifndef __cdecl
+#define __cdecl
+#endif
+#ifndef cdecl
+#define cdecl __cdecl
+#endif
+#include <VQM32/VESAVID.H>
 
 /*---------------------------------------------------------------------------
  * VGA video modes
@@ -112,4 +129,3 @@ void cdecl MCGA_Blit(unsigned char *buffer, unsigned char *screen,
 #endif
 
 #endif /* VQMVIDEO_H */
-

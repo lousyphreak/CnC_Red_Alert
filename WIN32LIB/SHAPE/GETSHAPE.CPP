@@ -46,8 +46,28 @@
 /*
 ********************************* Includes **********************************
 */
+#include <cstring>
+
 #include "wwstd.h"
 #include	"shape.h"
+
+namespace {
+
+template <typename T>
+T Read_Unaligned(void const* data)
+{
+	T value;
+	std::memcpy(&value, data, sizeof(value));
+	return value;
+}
+
+template <typename T>
+void Write_Unaligned(void* data, T value)
+{
+	std::memcpy(data, &value, sizeof(value));
+}
+
+}
 
 extern "C" {
 char * _ShapeBuffer = 0;
@@ -82,8 +102,6 @@ void __cdecl Set_Shape_Buffer(void const *buffer, int size)
  *=========================================================================*/
 int cdecl Get_Shape_Size(VOID const *shape)
 {
-	Shape_Type *shp = (Shape_Type *)shape;
-
 	/*
 	------------------------- Return if NULL pointer -------------------------
 	*/
@@ -93,7 +111,7 @@ int cdecl Get_Shape_Size(VOID const *shape)
 	/*
 	-------------------------- Returns shape's size --------------------------
 	*/
-	return (shp->ShapeSize);
+	return Read_Unaligned<uint16_t>((char const*)shape + offsetof(Shape_Type, ShapeSize));
 
 }	/* end of Get_Shape_Size */
 
@@ -117,9 +135,7 @@ int cdecl Get_Shape_Size(VOID const *shape)
  *=========================================================================*/
 int Get_Shape_Uncomp_Size(VOID const *shape)
 {
-	Shape_Type *shp = (Shape_Type *)shape;
-
-	return (shp->DataLength);
+	return Read_Unaligned<uint16_t>((char const*)shape + offsetof(Shape_Type, DataLength));
 
 }	/* end of Get_Shape_Uncomp_Size */
 
@@ -150,10 +166,9 @@ int Get_Shape_Uncomp_Size(VOID const *shape)
  *=========================================================================*/
 WORD cdecl Get_Shape_Data(VOID const *shape, WORD data)
 {
-	WORD *word_ptr = (WORD *)shape;
 	WORD retval;
 
-	retval = *(word_ptr - (data+1));
+	retval = Read_Unaligned<WORD>((char const*)shape - ((data+1) * sizeof(WORD)));
 
 	return (retval);
 
@@ -182,9 +197,7 @@ WORD cdecl Get_Shape_Data(VOID const *shape, WORD data)
  *=========================================================================*/
 int cdecl Extract_Shape_Count(VOID const *buffer)
 {
-	ShapeBlock_Type *block = (ShapeBlock_Type *)buffer;
-
-	return (block->NumShapes);
+	return Read_Unaligned<uint16_t>(buffer);
 
 }	/* end of Extract_Shape_Count */
 
@@ -209,7 +222,6 @@ int cdecl Extract_Shape_Count(VOID const *buffer)
  *=========================================================================*/
 VOID * cdecl Extract_Shape(VOID const *buffer, int shape)
 {
-	ShapeBlock_Type *block = (ShapeBlock_Type*) buffer;
 	int numshapes;		// Number of shapes
 	int32_t offset;			// Offset of shape data, from start of block
 	char *bytebuf = (char*) buffer;
@@ -217,10 +229,14 @@ VOID * cdecl Extract_Shape(VOID const *buffer, int shape)
 	/*
 	----------------------- Return if invalid argument -----------------------
 	*/
-	if (!buffer || shape < 0 || shape >= block->NumShapes)
+	if (!buffer)
 		return(NULL);
 
-	offset = block->Offsets[shape];
+	numshapes = Read_Unaligned<uint16_t>(buffer);
+	if (shape < 0 || shape >= numshapes)
+		return(NULL);
+
+	offset = Read_Unaligned<int32_t>(bytebuf + offsetof(ShapeBlock_Type, Offsets) + (shape * sizeof(int32_t)));
 
 	return(bytebuf + 2 + offset);
 
@@ -246,9 +262,7 @@ VOID * cdecl Extract_Shape(VOID const *buffer, int shape)
  *=========================================================================*/
 int Get_Shape_Width(VOID const *shape)
 {
-	Shape_Type *shp = (Shape_Type *)shape;
-
-	return (shp->Width);
+	return Read_Unaligned<uint16_t>((char const*)shape + offsetof(Shape_Type, Width));
 
 }	/* end of Get_Shape_Width */
 
@@ -272,9 +286,7 @@ int Get_Shape_Width(VOID const *shape)
  *=========================================================================*/
 int Get_Shape_Height(VOID const *shape)
 {
-	Shape_Type *shp = (Shape_Type *)shape;
-
-	return (shp->Height);
+	return Read_Unaligned<uint8_t>((char const*)shape + offsetof(Shape_Type, Height));
 
 }	/* end of Get_Shape_Height */
 
@@ -303,11 +315,10 @@ int Get_Shape_Height(VOID const *shape)
  *=========================================================================*/
 int cdecl Set_Shape_Height(VOID const *shape, WORD newheight)
 {
-	Shape_Type *shp = (Shape_Type *)shape;
 	WORD oldheight;
 
-	oldheight = shp->Height;
-	shp->Height = newheight;
+	oldheight = Read_Unaligned<uint8_t>((char const*)shape + offsetof(Shape_Type, Height));
+	Write_Unaligned<uint8_t>((char*)shape + offsetof(Shape_Type, Height), (uint8_t)newheight);
 
 	return(oldheight);
 
@@ -332,11 +343,11 @@ int cdecl Set_Shape_Height(VOID const *shape, WORD newheight)
  *=========================================================================*/
 int cdecl Restore_Shape_Height(VOID *shape)
 {
-	Shape_Type *shp = (Shape_Type *)shape;
 	WORD oldheight;
 
-	oldheight = shp->Height;
-	shp->Height = shp->OriginalHeight;
+	oldheight = Read_Unaligned<uint8_t>((char const*)shape + offsetof(Shape_Type, Height));
+	Write_Unaligned<uint8_t>((char*)shape + offsetof(Shape_Type, Height),
+		Read_Unaligned<uint8_t>((char const*)shape + offsetof(Shape_Type, OriginalHeight)));
 
 	return(oldheight);
 
@@ -362,9 +373,7 @@ int cdecl Restore_Shape_Height(VOID *shape)
  *=========================================================================*/
 int Get_Shape_Original_Height(VOID const *shape)
 {
-	Shape_Type *shp = (Shape_Type *)shape;
-	
-	return (shp->OriginalHeight);
+	return Read_Unaligned<uint8_t>((char const*)shape + offsetof(Shape_Type, OriginalHeight));
 
 }	/* end of Get_Shape_Original_Height */
 

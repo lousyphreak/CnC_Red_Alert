@@ -62,17 +62,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <malloc.h>
-#include <mem.h>
-#include <sys\timeb.h>
-#include "vqaplayp.h"
-#include <vqm32\all.h>
+#include <string.h>
+#include <sys/timeb.h>
+#include <VQM32/MEM.H>
+#include "VQAPLAYP.H"
 
 #ifdef __WATCOMC__
 #pragma pack(4);
 #endif
 
 #if(VQAAUDIO_ON)
-#include "sos.h"
+#include <SOS.H>
 #endif
 
 
@@ -109,6 +109,7 @@ static long TimerIntCount = 0;
 static WORD VQATimer = 0;
 static long TimerMethod;
 static long VQATickCount = 0;
+static bool VQAAudioPaused = false;
 #endif /* VQAAUDIO_ON */
 
 static long TickOffset = 0;
@@ -579,6 +580,7 @@ void VQA_CloseAudio(VQAHandleP *vqap)
 	audio->Flags &= ~VQAAUDF_DIGIINIT;
 	AudioFlags &= ~VQAAUDF_DIGIINIT;
 	AudioFlags &= ~VQAAUDF_ISPLAYING;
+	VQAAudioPaused = false;
 
 	/* Unlock the memory accupied by this module. */
 	if ((audio->Flags & VQAAUDF_MODLOCKED) == 1) {
@@ -710,6 +712,7 @@ long VQA_StartAudio(VQAHandleP *vqap)
 
 	/* Save buffers for the callback routine */
 	VQAP = vqap;
+	VQAAudioPaused = false;
 
 	/* Dereference commonly used data members for quicker access. */
 	config = &vqap->Config;
@@ -823,7 +826,45 @@ void VQA_StopAudio(VQAHandleP *vqap)
 		AudioFlags &= ~VQAAUDF_ISPLAYING;
 	}
 
+	VQAAudioPaused = false;
 	VQAP = NULL;
+}
+
+
+void VQA_PauseAudio(void)
+{
+	#if(VQAAUDIO_ON)
+	VQAAudio *audio;
+
+	if (VQAP == NULL || VQAP->VQABuf == NULL) {
+		return;
+	}
+
+	audio = &VQAP->VQABuf->Audio;
+	if ((AudioFlags & VQAAUDF_ISPLAYING) && !VQAAudioPaused) {
+		sosDIGIStopSample(audio->DigiHandle, audio->SampleHandle);
+		VQAAudioPaused = true;
+	}
+	#endif
+}
+
+
+void VQA_ResumeAudio(void)
+{
+	#if(VQAAUDIO_ON)
+	VQAAudio *audio;
+
+	if (VQAP == NULL || VQAP->VQABuf == NULL) {
+		return;
+	}
+
+	audio = &VQAP->VQABuf->Audio;
+	if ((AudioFlags & VQAAUDF_ISPLAYING) && VQAAudioPaused) {
+		sosDIGIContinueSample(audio->DigiHandle, audio->SampleHandle,
+				&audio->sSOSSampleData);
+		VQAAudioPaused = false;
+	}
+	#endif
 }
 
 
@@ -1305,4 +1346,3 @@ long VQA_TimerMethod(void)
 #ifdef __WATCOMC__
 #pragma pack(1);
 #endif
-

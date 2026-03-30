@@ -75,7 +75,7 @@ typedef enum {
 ** Define the sample control structure which helps us to handle feeding
 ** data to the sound interrupt.
 */
-#pragma pack(1);
+#pragma pack(push, 8)
 typedef struct {
 	/*
 	**	This flags whether this sample structure is active or not.
@@ -273,7 +273,7 @@ typedef struct LockedData {
 } LockedDataType;
 
 extern LockedDataType LockedData;
-#pragma pack(4);
+#pragma pack(pop)
 
 void Init_Locked_Data(void);
 LONG Simple_Copy(void ** source, LONG * ssize, void ** alternate, LONG * altsize, void **dest, LONG size);

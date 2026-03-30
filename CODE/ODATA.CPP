@@ -674,7 +674,8 @@ void OverlayTypeClass::One_Time(void)
 OverlayType OverlayTypeClass::From_Name(char const * name)
 {
 	if (name != NULL) {
-		for (OverlayType index = OVERLAY_FIRST; index < OVERLAY_COUNT; index++) {
+		for (int value = OVERLAY_FIRST; value < OVERLAY_COUNT; ++value) {
+			OverlayType index = (OverlayType)value;
 			if (stricmp(As_Reference(index).IniName, name) == 0) {
 				return(index);
 			}
@@ -891,7 +892,8 @@ void OverlayTypeClass::Init(TheaterType theater)
 {
 	if (theater != LastTheater) {
 
-		for (OverlayType index = OVERLAY_FIRST; index < OVERLAY_COUNT; index++) {
+		for (int value = OVERLAY_FIRST; value < OVERLAY_COUNT; ++value) {
+			OverlayType index = (OverlayType)value;
 			OverlayTypeClass & overlay = As_Reference(index);
 			char fullname[_MAX_FNAME+_MAX_EXT];	// Fully constructed iconset name.
 
