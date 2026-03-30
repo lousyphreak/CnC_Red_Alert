@@ -1828,24 +1828,25 @@ bool TechnoClass::Evaluate_Cell(ThreatType method, int mask, CELL cell, int rang
 		return(false);
 	}
 
-	TechnoClass const * tentative = (TechnoClass const *)cellptr->Cell_Occupier();
-	while (tentative != NULL) {
-		if (tentative != this) {
-			if (tentative->Is_Techno()) {
-				if (Combat_Damage() < 0) {
-					if (tentative->Health_Ratio() < Rule.ConditionGreen && House->Is_Ally(tentative)) break;
-				} else {
-					if (!House->Is_Ally(tentative)) break;
-				}
+	ObjectClass const * tentative_obj = cellptr->Cell_Occupier();
+	TechnoClass const * tentative = NULL;
+	while (tentative_obj != NULL) {
+		if (tentative_obj != this && tentative_obj->Is_Techno()) {
+			tentative = static_cast<TechnoClass const *>(tentative_obj);
+			if (Combat_Damage() < 0) {
+				if (tentative->Health_Ratio() < Rule.ConditionGreen && House->Is_Ally(tentative)) break;
+			} else {
+				if (!House->Is_Ally(tentative)) break;
 			}
 		}
-		tentative = (TechnoClass const *)(ObjectClass *)tentative->Next;
+		tentative_obj = tentative_obj->Next;
 	}
 
-	if (tentative == NULL) {
+	if (tentative_obj == NULL) {
 		BEnd(BENCH_EVAL_CELL);
 		return(false);
 	}
+	tentative = static_cast<TechnoClass const *>(tentative_obj);
 	*object = tentative;
 
 	bool result = Evaluate_Object(method, mask, range, tentative, value);

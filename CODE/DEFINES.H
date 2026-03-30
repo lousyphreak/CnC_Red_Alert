@@ -36,6 +36,8 @@
 #ifndef DEFINES_H
 #define DEFINES_H
 
+#include <stdint.h>
+
 #include	"NOINIT.H"
 #include	"FIXED.H"
 
@@ -521,7 +523,7 @@ typedef union {
 	} Sub;
 } LEPTON_COMPOSITE;
 
-typedef unsigned long	COORDINATE;
+typedef uint32_t	COORDINATE;
 typedef union {
 	COORDINATE Coord;
 	struct {
@@ -534,6 +536,8 @@ typedef union {
 #endif
 	} Sub;
 }	COORD_COMPOSITE;
+static_assert(sizeof(COORDINATE) == 4, "COORDINATE must remain 32-bit");
+static_assert(sizeof(COORD_COMPOSITE) == 4, "COORD_COMPOSITE must remain 32-bit");
 
 typedef signed short		CELL;
 #define	SLUFF_BITS	2
@@ -565,7 +569,7 @@ typedef int		WAYPOINT;
 **	and an index value of 0, the target value returned is identical with
 **	TARGET_NONE. This is by design and is necessary.
 */
-typedef long	TARGET;
+typedef int32_t	TARGET;
 
 #define	TARGET_MANTISSA			24				// Bits of value precision.
 #define	TARGET_EXPONENT			8
@@ -581,6 +585,8 @@ typedef union {
 #endif
 	} Sub;
 } TARGET_COMPOSITE;
+static_assert(sizeof(TARGET) == 4, "TARGET must remain 32-bit");
+static_assert(sizeof(TARGET_COMPOSITE) == 4, "TARGET_COMPOSITE must remain 32-bit");
 
 
 inline TARGET Build_Target(RTTIType kind, int value)
@@ -1495,7 +1501,7 @@ inline StructType operator++(StructType &, int);
 **	a transparent icon. It is placed over the terrain but usually falls
 **	"under" buildings, trees, and units.
 */
-typedef enum OverlayType {
+typedef enum OverlayType : int8_t {
 	OVERLAY_NONE=-1,
 	OVERLAY_SANDBAG_WALL,	// Piled sandbags.
 	OVERLAY_CYCLONE_WALL,	// Chain-link fence.
@@ -1526,6 +1532,7 @@ typedef enum OverlayType {
 	OVERLAY_COUNT,
 	OVERLAY_FIRST=0
 } OverlayType;
+static_assert(sizeof(OverlayType) == 1, "OverlayType must remain 8-bit");
 
 inline OverlayType operator++(OverlayType &, int);
 
@@ -1713,7 +1720,7 @@ inline AircraftType operator++(AircraftType &, int);
 **	terrain is broken up into icons, is not transparent, and is drawn
 **	as the bottom most layer, then it is a template.
 */
-typedef enum TemplateType {
+enum TemplateType : uint16_t {
 	TEMPLATE_CLEAR1,
 	TEMPLATE_WATER,			// This must be the first non-clear template.
 	TEMPLATE_WATER2,
@@ -2126,7 +2133,7 @@ typedef enum TemplateType {
 	TEMPLATE_COUNT,
 	TEMPLATE_NONE=65535,
 	TEMPLATE_FIRST=0
-} TemplateType;
+};
 
 inline TemplateType operator++(TemplateType &, int);
 

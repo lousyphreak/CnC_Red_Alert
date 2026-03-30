@@ -4,6 +4,7 @@
 
 #include <SDL3/SDL_loadso.h>
 
+#include <algorithm>
 #include <array>
 #include <cctype>
 #include <cstdint>
@@ -13,6 +14,7 @@
 #include <cstring>
 #include <atomic>
 #include <chrono>
+#include <cmath>
 #include <condition_variable>
 #include <ctime>
 #include <filesystem>
@@ -624,6 +626,77 @@ BOOL next_message(MSG* message, bool remove, bool wait)
 
 } // namespace
 
+bool RA_GetPresentationRect(HWND window, SDL_FRect* rect)
+{
+    if (!window || !window->sdl_window || !rect || window->width <= 0 || window->height <= 0) {
+        return false;
+    }
+
+    int window_width = 0;
+    int window_height = 0;
+    if (!SDL_GetWindowSize(window->sdl_window, &window_width, &window_height) || window_width <= 0 || window_height <= 0) {
+        return false;
+    }
+
+    const float logical_width = static_cast<float>(window->width);
+    const float logical_height = static_cast<float>(window->height);
+    const float scale = std::min(static_cast<float>(window_width) / logical_width, static_cast<float>(window_height) / logical_height);
+    rect->w = std::max(1.0f, logical_width * scale);
+    rect->h = std::max(1.0f, logical_height * scale);
+    rect->x = (static_cast<float>(window_width) - rect->w) * 0.5f;
+    rect->y = (static_cast<float>(window_height) - rect->h) * 0.5f;
+    return true;
+}
+
+bool RA_WindowToGamePoint(HWND window, float window_x, float window_y, int* game_x, int* game_y)
+{
+    if (!game_x || !game_y) {
+        return false;
+    }
+
+    SDL_FRect presentation{};
+    if (!RA_GetPresentationRect(window, &presentation) || presentation.w <= 0.0f || presentation.h <= 0.0f || !window
+        || window->width <= 0 || window->height <= 0) {
+        *game_x = static_cast<int>(window_x);
+        *game_y = static_cast<int>(window_y);
+        return false;
+    }
+
+    const float normalized_x = (window_x - presentation.x) / presentation.w;
+    const float normalized_y = (window_y - presentation.y) / presentation.h;
+    int mapped_x = static_cast<int>(normalized_x * static_cast<float>(window->width));
+    int mapped_y = static_cast<int>(normalized_y * static_cast<float>(window->height));
+    mapped_x = std::clamp(mapped_x, 0, window->width - 1);
+    mapped_y = std::clamp(mapped_y, 0, window->height - 1);
+    *game_x = mapped_x;
+    *game_y = mapped_y;
+    return true;
+}
+
+bool RA_GameRectToWindowRect(HWND window, const RECT* game_rect, SDL_Rect* window_rect)
+{
+    if (!game_rect || !window_rect || !window || window->width <= 0 || window->height <= 0) {
+        return false;
+    }
+
+    SDL_FRect presentation{};
+    if (!RA_GetPresentationRect(window, &presentation) || presentation.w <= 0.0f || presentation.h <= 0.0f) {
+        return false;
+    }
+
+    const float scale_x = presentation.w / static_cast<float>(window->width);
+    const float scale_y = presentation.h / static_cast<float>(window->height);
+    const float left = presentation.x + static_cast<float>(game_rect->left) * scale_x;
+    const float top = presentation.y + static_cast<float>(game_rect->top) * scale_y;
+    const float right = presentation.x + static_cast<float>(game_rect->right) * scale_x;
+    const float bottom = presentation.y + static_cast<float>(game_rect->bottom) * scale_y;
+    window_rect->x = static_cast<int>(std::floor(left));
+    window_rect->y = static_cast<int>(std::floor(top));
+    window_rect->w = std::max(0, static_cast<int>(std::ceil(right)) - window_rect->x);
+    window_rect->h = std::max(0, static_cast<int>(std::ceil(bottom)) - window_rect->y);
+    return true;
+}
+
 extern "C" {
 
 ATOM RegisterClass(const WNDCLASS* wndclass)
@@ -660,7 +733,7 @@ HWND CreateWindowEx(DWORD, LPCSTR class_name, LPCSTR window_name, DWORD, INT, IN
     window->wnd_proc = klass.lpfnWndProc;
     window->width = width > 0 ? width : 640;
     window->height = height > 0 ? height : 480;
-    window->sdl_window = SDL_CreateWindow(window->title.c_str(), window->width, window->height, 0);
+    window->sdl_window = SDL_CreateWindow(window->title.c_str(), window->width, window->height, SDL_WINDOW_RESIZABLE);
     {
         std::scoped_lock lock(g_window_mutex);
         g_windows.insert(window);
@@ -1142,18 +1215,31 @@ BOOL ClipCursor(const RECT* rect)
         return result;
     }
 
+    RECT surface_rect = *rect;
+    RECT viewport_rect{};
+    if (SDL_GameInput_GetViewportRect(&viewport_rect)) {
+        surface_rect.left += viewport_rect.left;
+        surface_rect.top += viewport_rect.top;
+        surface_rect.right += viewport_rect.left;
+        surface_rect.bottom += viewport_rect.top;
+    }
+
     SDL_Rect mouse_rect{};
-    mouse_rect.x = static_cast<int>(rect->left);
-    mouse_rect.y = static_cast<int>(rect->top);
-    mouse_rect.w = std::max<int>(0, rect->right - rect->left);
-    mouse_rect.h = std::max<int>(0, rect->bottom - rect->top);
-    if (!SDL_SetWindowMouseRect(window->sdl_window, &mouse_rect)) {
-        return FALSE;
+    if (!RA_GameRectToWindowRect(window, &surface_rect, &mouse_rect)) {
+        mouse_rect.x = static_cast<int>(surface_rect.left);
+        mouse_rect.y = static_cast<int>(surface_rect.top);
+        mouse_rect.w = std::max<int>(0, surface_rect.right - surface_rect.left);
+        mouse_rect.h = std::max<int>(0, surface_rect.bottom - surface_rect.top);
     }
 
     if (mouse_rect.w <= 0 || mouse_rect.h <= 0) {
+        SDL_SetWindowMouseRect(window->sdl_window, nullptr);
         SDL_GameInput_SetCursorClip(rect);
         return TRUE;
+    }
+
+    if (!SDL_SetWindowMouseRect(window->sdl_window, &mouse_rect)) {
+        return FALSE;
     }
 
     float x = 0.0f;

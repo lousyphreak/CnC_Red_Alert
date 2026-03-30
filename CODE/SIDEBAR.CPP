@@ -396,7 +396,7 @@ void SidebarClass::Init_Theater(TheaterType theater)
  *=============================================================================================*/
 void SidebarClass::Reload_Sidebar(void)
 {
-	static char * sidebarnames[]={
+	static char const * const sidebarnames[]={
 		"SIDE?NA.SHP",		//NATO
 		"SIDE?NA.SHP",
 		"SIDE?US.SHP",		//USSR
@@ -414,7 +414,8 @@ void SidebarClass::Reload_Sidebar(void)
 		houseloaded = PlayerPtr->ActLike;
 	}
 
-	char * sidename = sidebarnames[houseloaded];
+	char sidename[sizeof("SIDE?NA.SHP")];
+	strcpy(sidename, sidebarnames[houseloaded]);
 	*(sidename+4) = '1';
 	SidebarShape = (void*)MFCD::Retrieve(sidename);
 	*(sidename+4) = '2';

@@ -5572,17 +5572,18 @@ void Shake_The_Screen(int shakes)
  *=============================================================================================*/
 void List_Copy(short const * source, int len, short * dest)
 {
-	if (dest == NULL || dest == NULL) {
+	if (source == NULL || dest == NULL || len <= 0) {
 		return;
 	}
 
-	while (len > 0) {
+	while (len > 1) {
 		*dest = *source;
 		if (*dest == REFRESH_EOL) break;
 		dest++;
 		source++;
 		len--;
 	}
+	*dest = REFRESH_EOL;
 }
 
 

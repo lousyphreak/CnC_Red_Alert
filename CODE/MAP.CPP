@@ -725,7 +725,7 @@ void MapClass::Place_Down(CELL cell, ObjectClass * object)
 	if (!object) return;
 
 	if (object->Class_Of().IsFootprint && object->In_Which_Layer() == LAYER_GROUND)  {
-		short xlist[32];
+		short xlist[128];
 		List_Copy(object->Occupy_List(), ARRAY_SIZE(xlist), xlist);
 		short const * list = xlist;
 		while (*list != REFRESH_EOL) {
@@ -773,7 +773,7 @@ void MapClass::Pick_Up(CELL cell, ObjectClass * object)
 	if (!object) return;
 
 	if (object->Class_Of().IsFootprint && object->In_Which_Layer() == LAYER_GROUND)  {
-		short xlist[32];
+		short xlist[128];
 		List_Copy(object->Occupy_List(), ARRAY_SIZE(xlist), xlist);
 		short const * list = xlist;
 		while (*list != REFRESH_EOL) {
@@ -824,7 +824,7 @@ void MapClass::Overlap_Down(CELL cell, ObjectClass * object)
 	if (!object) return;
 
 	if (object->Class_Of().IsFootprint && object->In_Which_Layer() == LAYER_GROUND)  {
-		short xlist[32];
+		short xlist[128];
 		List_Copy(object->Overlap_List(), ARRAY_SIZE(xlist), xlist);
 		short const * list = xlist;
 		while (*list != REFRESH_EOL) {
@@ -864,7 +864,7 @@ void MapClass::Overlap_Up(CELL cell, ObjectClass * object)
 	if (!object) return;
 
 	if (object->Class_Of().IsFootprint && object->In_Which_Layer() == LAYER_GROUND)  {
-		short xlist[32];
+		short xlist[128];
 		List_Copy(object->Overlap_List(), ARRAY_SIZE(xlist), xlist);
 		short const * list = xlist;
 		while (*list != REFRESH_EOL) {

@@ -1,5 +1,6 @@
 #include "SDLINPUT.H"
 
+#include "GBUFFER.H"
 #include "KEY.H"
 
 #ifdef WIN32
@@ -34,6 +35,7 @@
 extern HWND MainWindow;
 extern BOOL GameInFocus;
 extern BOOL BootstrapFocusSeen;
+extern GraphicViewPortClass SeenBuff;
 
 namespace {
 
@@ -65,6 +67,19 @@ bool valid_virtual_key(int virtual_key)
 bool is_toggle_key(int virtual_key)
 {
 	return (virtual_key == VK_CAPITAL || virtual_key == VK_NUMLOCK || virtual_key == VK_SCROLL);
+}
+
+bool get_viewport_rect(RECT& rect)
+{
+	if (SeenBuff.Get_Width() <= 0 || SeenBuff.Get_Height() <= 0) {
+		return false;
+	}
+
+	rect.left = SeenBuff.Get_XPos();
+	rect.top = SeenBuff.Get_YPos();
+	rect.right = rect.left + SeenBuff.Get_Width();
+	rect.bottom = rect.top + SeenBuff.Get_Height();
+	return true;
 }
 
 uint32_t mouse_button_mask(int button)
@@ -107,6 +122,23 @@ int mouse_button_to_virtual_key(int button)
 			return (VK_MBUTTON);
 		default:
 			return (0);
+	}
+}
+
+void translate_window_mouse_position(int& x, int& y)
+{
+	int translated_x = x;
+	int translated_y = y;
+	if (RA_WindowToGamePoint(MainWindow, static_cast<float>(x), static_cast<float>(y), &translated_x, &translated_y)) {
+		RECT viewport{};
+		if (get_viewport_rect(viewport)) {
+			translated_x -= viewport.left;
+			translated_y -= viewport.top;
+			translated_x = std::clamp(translated_x, 0, std::max(0, SeenBuff.Get_Width() - 1));
+			translated_y = std::clamp(translated_y, 0, std::max(0, SeenBuff.Get_Height() - 1));
+		}
+		x = translated_x;
+		y = translated_y;
 	}
 }
 
@@ -324,7 +356,10 @@ void initialize_mouse_snapshot_locked(void)
 	float x = 0.0f;
 	float y = 0.0f;
 	uint32_t buttons = static_cast<uint32_t>(SDL_GetMouseState(&x, &y));
-	update_mouse_position_locked(static_cast<int>(x), static_cast<int>(y));
+	int mouse_x = static_cast<int>(x);
+	int mouse_y = static_cast<int>(y);
+	translate_window_mouse_position(mouse_x, mouse_y);
+	update_mouse_position_locked(mouse_x, mouse_y);
 	g_mouse_buttons = translate_mouse_button_state(buttons);
 }
 
@@ -439,6 +474,7 @@ void SDL_GameInput_Handle_Key(int virtual_key, int physical_key, bool repeat, bo
 
 void SDL_GameInput_Handle_Mouse_Motion(int x, int y, uint32_t button_state)
 {
+	translate_window_mouse_position(x, y);
 	int mouse_x = x;
 	int mouse_y = y;
 	{
@@ -459,6 +495,7 @@ void SDL_GameInput_Handle_Mouse_Button(int button, int x, int y, bool release)
 		return;
 	}
 
+	translate_window_mouse_position(x, y);
 	int mouse_x = x;
 	int mouse_y = y;
 	{
@@ -573,6 +610,16 @@ int SDL_GameInput_GetGlobalMouseY(void)
 	SDL_GameInput_Maybe_Pump();
 	std::scoped_lock lock(g_input_mutex);
 	return (g_mouse_y);
+}
+
+BOOL SDL_GameInput_GetViewportRect(RECT* rect)
+{
+	if (rect == NULL) {
+		return (FALSE);
+	}
+
+	*rect = RECT{};
+	return (get_viewport_rect(*rect) ? TRUE : FALSE);
 }
 
 void SDL_GameInput_SetCursorClip(const RECT* rect)

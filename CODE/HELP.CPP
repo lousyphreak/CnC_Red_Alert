@@ -53,7 +53,7 @@
 **	This is the holding buffer for the text overlap list. This buffer must be in the near
 **	data segment. It will be filled in by the Set_Text() function.
 */
-short const HelpClass::OverlapList[60] = {
+short HelpClass::OverlapList[60] = {
 	REFRESH_EOL
 };
 
@@ -333,8 +333,8 @@ void HelpClass::Set_Text(int text)
 			if (DrawX < TacPixelX+1) DrawX = TacPixelX+1;
 			if (DrawY < TacPixelY+1) DrawY = TacPixelY+1;
 		}
-		memcpy((void*)OverlapList, Text_Overlap_List(Text_String(Text), DrawX-1, DrawY), sizeof(OverlapList));
-		*(short *)&OverlapList[ARRAY_SIZE(OverlapList)-1] = REFRESH_EOL;
+		memcpy(OverlapList, Text_Overlap_List(Text_String(Text), DrawX-1, DrawY), sizeof(OverlapList));
+		OverlapList[ARRAY_SIZE(OverlapList)-1] = REFRESH_EOL;
 	}
 }
 

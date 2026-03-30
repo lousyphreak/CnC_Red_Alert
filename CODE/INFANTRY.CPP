@@ -1689,7 +1689,7 @@ void InfantryClass::Enter_Idle_Mode(bool )
 			}
 		} else {
 
-			if (Mission == MISSION_GUARD || Mission == MISSION_GUARD_AREA || MissionControl[Mission].IsZombie || MissionControl[Mission].IsParalyzed) {
+			if (Mission == MISSION_GUARD || Mission == MISSION_GUARD_AREA || (Mission != MISSION_NONE && (MissionControl[Mission].IsZombie || MissionControl[Mission].IsParalyzed))) {
 				return;
 			}
 
@@ -3382,6 +3382,7 @@ void InfantryClass::Read_INI(CCINIClass & ini)
 							infantry->Assign_Mission(mission);
 							infantry->Commence();
 						} else {
+							infantry->Set_Mission(mission);
 							infantry->Enter_Idle_Mode();
 						}
 					} else {

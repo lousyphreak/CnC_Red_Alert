@@ -1304,7 +1304,7 @@ void VesselClass::Enter_Idle_Mode(bool )
 
 		} else {
 
-			if (Mission == MISSION_GUARD || Mission == MISSION_GUARD_AREA || MissionControl[Mission].IsParalyzed || MissionControl[Mission].IsZombie) {
+			if (Mission == MISSION_GUARD || Mission == MISSION_GUARD_AREA || (Mission != MISSION_NONE && (MissionControl[Mission].IsParalyzed || MissionControl[Mission].IsZombie))) {
 				return;
 			}
 
@@ -2020,6 +2020,7 @@ void VesselClass::Read_INI(CCINIClass & ini)
 							vessel->Assign_Mission(mission);
 							vessel->Commence();
 						} else {
+							vessel->Set_Mission(mission);
 							vessel->Enter_Idle_Mode();
 						}
 

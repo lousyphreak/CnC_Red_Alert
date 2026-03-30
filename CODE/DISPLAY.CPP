@@ -1276,7 +1276,7 @@ bool DisplayClass::Scroll_Map(DirType facing, int & distance, bool really)
  *=============================================================================================*/
 void DisplayClass::Refresh_Cells(CELL cell, short const * list)
 {
-	short tlist[36];
+	short tlist[128];
 
 	if (*list == REFRESH_SIDEBAR) {
 		list++;

@@ -200,6 +200,7 @@ public:
     const PALETTEENTRY* PaletteEntries() const;
     bool IsPrimary() const;
     bool UsesPalette(const IDirectDrawPalette* palette) const;
+    HWND Window() const;
     void Present();
 private:
     int width_;

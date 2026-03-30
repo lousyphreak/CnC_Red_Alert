@@ -756,6 +756,10 @@ struct RAWindow {
     int height;
 };
 
+bool RA_GetPresentationRect(HWND window, SDL_FRect* rect);
+bool RA_WindowToGamePoint(HWND window, float window_x, float window_y, int* game_x, int* game_y);
+bool RA_GameRectToWindowRect(HWND window, const RECT* game_rect, SDL_Rect* window_rect);
+
 extern "C" {
 
 ATOM RegisterClass(const WNDCLASS* wndclass);

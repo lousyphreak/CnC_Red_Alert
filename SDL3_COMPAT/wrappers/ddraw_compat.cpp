@@ -38,7 +38,7 @@ RAWindow* ensure_window(RAWindow* window, int width, int height)
     created->title = "Red Alert";
     created->width = width;
     created->height = height;
-    created->sdl_window = SDL_CreateWindow(created->title.c_str(), width, height, 0);
+    created->sdl_window = SDL_CreateWindow(created->title.c_str(), width, height, SDL_WINDOW_RESIZABLE);
     return created;
 }
 
@@ -120,8 +120,24 @@ void present_surface(IDirectDrawSurface* surface, RAWindow* window)
     }
 
     SDL_UpdateTexture(g_texture, nullptr, rgba.data(), surface->Width() * static_cast<int>(sizeof(uint32_t)));
+    SDL_FRect destination{0.0f, 0.0f, static_cast<float>(surface->Width()), static_cast<float>(surface->Height())};
+    RAWindow* present_window = window ? window : surface->Window();
+    if (!RA_GetPresentationRect(present_window, &destination)) {
+        int output_width = 0;
+        int output_height = 0;
+        if (SDL_GetRenderOutputSize(g_renderer, &output_width, &output_height) && output_width > 0 && output_height > 0) {
+            const float scale = std::min(
+                static_cast<float>(output_width) / static_cast<float>(surface->Width()),
+                static_cast<float>(output_height) / static_cast<float>(surface->Height()));
+            destination.w = std::max(1.0f, static_cast<float>(surface->Width()) * scale);
+            destination.h = std::max(1.0f, static_cast<float>(surface->Height()) * scale);
+            destination.x = (static_cast<float>(output_width) - destination.w) * 0.5f;
+            destination.y = (static_cast<float>(output_height) - destination.h) * 0.5f;
+        }
+    }
+    SDL_SetRenderDrawColor(g_renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(g_renderer);
-    SDL_RenderTexture(g_renderer, g_texture, nullptr, nullptr);
+    SDL_RenderTexture(g_renderer, g_texture, nullptr, &destination);
     SDL_RenderPresent(g_renderer);
 }
 
@@ -346,6 +362,7 @@ uint8_t* IDirectDrawSurface::Pixels() { return pixels_.data(); }
 const PALETTEENTRY* IDirectDrawSurface::PaletteEntries() const { return palette_ ? palette_->Entries() : nullptr; }
 bool IDirectDrawSurface::IsPrimary() const { return primary_; }
 bool IDirectDrawSurface::UsesPalette(const IDirectDrawPalette* palette) const { return palette_ == palette; }
+HWND IDirectDrawSurface::Window() const { return window_; }
 void IDirectDrawSurface::Present()
 {
     queue_present(this, window_);
@@ -369,6 +386,9 @@ HRESULT IDirectDraw::SetDisplayMode(int width, int height, int bits_per_pixel)
     bits_per_pixel_ = bits_per_pixel;
     window_ = ensure_window(window_, width_, height_);
     if (window_ && window_->sdl_window) {
+        window_->width = width_;
+        window_->height = height_;
+        SDL_SetWindowResizable(window_->sdl_window, true);
         SDL_SetWindowSize(window_->sdl_window, width_, height_);
         SDL_ShowWindow(window_->sdl_window);
     }

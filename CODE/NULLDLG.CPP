@@ -2829,7 +2829,9 @@ static void Build_Init_String_Listbox (ListClass *list, EditClass *edit, char *b
 	/*
 	** Now sort the init string list by name then number
 	*/
-	qsort ((void *)(&Session.InitStrings[0]), Session.InitStrings.Count(), sizeof(char *), Init_String_Compare);
+	if (Session.InitStrings.Count() > 1) {
+		qsort ((void *)(&Session.InitStrings[0]), Session.InitStrings.Count(), sizeof(char *), Init_String_Compare);
+	}
 
 	/*........................................................................
 	Build the list
@@ -6787,7 +6789,9 @@ static void Build_Phone_Listbox (ListClass *list, EditClass *edit, char *buf)
 	/*
 	** Now sort the phone list by name then number
 	*/
-	qsort ((void *)(&Session.PhoneBook[0]), Session.PhoneBook.Count(), sizeof(class PhoneEntryClass *), Phone_Compare);
+	if (Session.PhoneBook.Count() > 1) {
+		qsort ((void *)(&Session.PhoneBook[0]), Session.PhoneBook.Count(), sizeof(class PhoneEntryClass *), Phone_Compare);
+	}
 
 	/*........................................................................
 	Build the list

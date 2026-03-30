@@ -9,6 +9,24 @@ _Last updated: 2026-03-30_
 - Shared platform/rendering/input/audio support code lives in `WIN32LIB/`.
 - The active compatibility include order puts `SDL3_COMPAT/wrappers/` ahead of `CODE/` and `WIN32LIB/INCLUDE`.
 
+## Mission-start crash-chain findings
+
+- `VectorClass` callers that sort with `qsort(&vec[0], ...)` must guard empty counts; `operator[]` on an empty vector binds a reference to null before `qsort` even runs.
+- `Buffer` self-owned storage is allocated as `new char[]`; releasing it through `void *` selects the wrong delete operator on ASan-enabled LP64 builds.
+- `SIDE?NA.SHP`-style theater templates must be copied into writable storage before replacing `'?'`; Linux places string literals in read-only storage.
+- `OverlayPack` is a signed one-byte-per-cell stream; `OverlayType` must stay 8-bit or the loader reads multiple packed cells into one enum value (`0xFF0706FF` was the traced symptom).
+- `TemplateType` is a 16-bit on-disk value in map/template data. Letting it widen breaks template/icon lookups after scenario load.
+- `COORDINATE` / `TARGET` are Win32-sized 32-bit values, not native `long`.
+- `CELL_COMPOSITE` bitfield packing is compiler-dependent; cell/coord helpers must use explicit mask/shift math.
+- Legacy iconset headers (`IControl_Type` / `IconsetClass`) contain on-disk offsets, not host pointers; the active headers must stay packed/fixed-width and the loader must translate offsets explicitly.
+- `Assign_Mission()` only queues `MissionQueue`; when scenario loaders need an immediate live mission before `Enter_Idle_Mode()`, they must use `Set_Mission()`.
+- `List_Copy()` callers rely on a trailing `REFRESH_EOL`; if truncation is possible, reserve one slot for the terminator.
+- `Coord_Spillage_List(COORDINATE, Rect, ...)` can return up to 128 offsets; 32-entry temporary lists in map/display code are not universally safe.
+- `HelpClass::OverlapList` is mutable scratch storage despite the legacy `const` declaration. Linux puts the old declaration in read-only storage, so the cast-away-const write crashes.
+- In-place `Path[]` compaction in `DriveClass` requires `memmove()`, not `memcpy()`.
+- Team scripts can legitimately have `CurrentMission == -1` while regrouping; any direct `MissionList[CurrentMission]` access must guard that state.
+- `Cell_Occupier()` may return terrain or other non-techno `ObjectClass` instances; `TechnoClass` AI code must check `Is_Techno()` before casting.
+
 ## Gameplay audio system observations
 
 - The active gameplay audio path is `CODE/AUDIO.CPP` -> `WIN32LIB/AUDIO/SOUNDIO.CPP` -> `WIN32LIB/AUDIO/SOUNDINT.CPP`.
@@ -149,6 +167,14 @@ _Last updated: 2026-03-30_
   - key and mouse delivery now stay on the SDL-backed path end-to-end, which removes the old split between queued menu input and polled software-cursor motion.
 - `GetKeyState()` / `GetAsyncKeyState()` in the SDL compat layer must report ordinary keys and mouse buttons, not just modifiers.
   - `CODE/KEY.CPP::Down()` is just `GetAsyncKeyState(key & 0xFF) != 0`, so returning `0` for non-modifier keys makes the UI look frozen even when the menu loop is still running.
+- The SDL3 port now lets the main game window resize independently from the logical game framebuffer.
+  - The shared letterbox/pillarbox math lives in `RA_GetPresentationRect()`, `RA_WindowToGamePoint()`, and `RA_GameRectToWindowRect()` in `SDL3_COMPAT/wrappers/win32_compat.cpp`.
+  - `SDL3_COMPAT/wrappers/ddraw_compat.cpp` must render the primary surface into that computed presentation rectangle and clear the rest of the window to black; otherwise resize stretches or smears the indexed framebuffer.
+  - `CODE/SDLINPUT.CPP` and `ClipCursor()` must convert mouse positions and clip rectangles through the same helpers, or menu hit-testing / software-cursor confinement drift away from the displayed image after a non-4:3 resize.
+- The active mouse space is not always the same as the primary-surface space.
+  - `CODE/STARTUP.CPP` often leaves the primary surface at `640x480` but attaches `SeenBuff` and `HidPage` as `640x400` viewports, usually at `(0,40)`.
+  - `RA_WindowToGamePoint()` and `RA_GameRectToWindowRect()` work in primary-surface coordinates, so the SDL input layer must subtract `SeenBuff.Get_XPos()/Get_YPos()` after `RA_WindowToGamePoint()`, while `ClipCursor()` must add that origin back before calling `SDL_SetWindowMouseRect()`.
+  - If that viewport offset is ignored, the software cursor and SDL confinement both skew toward the top-left corner after resize because SDL is clipping against the wrong logical rectangle.
 
 ## General runtime correctness notes
 

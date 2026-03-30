@@ -38,6 +38,8 @@
 #ifndef COMPAT_H
 #define COMPAT_H
 
+#include <stdint.h>
+
 #include "FIXED.H"
 
 
@@ -138,23 +140,27 @@ typedef enum MenuIndexType {
 
 class IconsetClass;
 #ifndef WIN32
+#pragma pack(push, 1)
 typedef struct {
-	short	Width;			// Width of icons (pixels).
-	short	Height;			// Height of icons (pixels).
-	short	Count;			// Number of (logical) icons in this set.
-	short	Allocated;		// Was this iconset allocated?
-	short MapWidth;		// Width of map (in icons).
-	short MapHeight;		// Height of map (in icons).
-	long	Size;				// Size of entire iconset memory block.
-	long	Icons;			// Offset from buffer start to icon data.
+	int16_t	Width;			// Width of icons (pixels).
+	int16_t	Height;			// Height of icons (pixels).
+	int16_t	Count;			// Number of (logical) icons in this set.
+	int16_t	Allocated;		// Was this iconset allocated?
+	int16_t MapWidth;		// Width of map (in icons).
+	int16_t MapHeight;		// Height of map (in icons).
+	int32_t	Size;				// Size of entire iconset memory block.
+	int32_t	Icons;			// Offset from buffer start to icon data.
 //	unsigned char * Icons;	// Offset from buffer start to icon data.
-	long	Palettes;		// Offset from buffer start to palette data.
-	long	Remaps;			// Offset from buffer start to remap index data.
-	long	TransFlag;		// Offset for transparency flag table.
-	long	ColorMap;		// Offset for color control value table.
-	long	Map;				// Icon map offset (if present).
+	int32_t	Palettes;		// Offset from buffer start to palette data.
+	int32_t	Remaps;			// Offset from buffer start to remap index data.
+	int32_t	TransFlag;		// Offset for transparency flag table.
+	int32_t	ColorMap;		// Offset for color control value table.
+	int32_t	Map;				// Icon map offset (if present).
 //	unsigned char * Map;				// Icon map offset (if present).
 } IControl_Type;
+#pragma pack(pop)
+
+static_assert(sizeof(IControl_Type) == 40, "IControl_Type layout mismatch");
 #endif
 
 inline int Get_IconSet_MapWidth(void const * data)
@@ -181,6 +187,7 @@ inline unsigned char const * Get_IconSet_ControlMap(void const * data)
 	return(0);
 }
 
+#pragma pack(push, 1)
 class IconsetClass : protected IControl_Type
 {
 	public:
@@ -214,6 +221,9 @@ class IconsetClass : protected IControl_Type
 		IconsetClass(void);
 		static void * operator new(size_t);
 };
+#pragma pack(pop)
+
+static_assert(sizeof(IconsetClass) == sizeof(IControl_Type), "IconsetClass layout mismatch");
 
 
 #endif

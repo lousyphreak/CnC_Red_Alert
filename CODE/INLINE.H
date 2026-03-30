@@ -226,11 +226,7 @@ inline CELL Coord_YCell(COORDINATE coord)
  *=============================================================================================*/
 inline CELL XY_Cell(int x, int y)
 {
-	CELL_COMPOSITE cell;
-	cell.Cell = 0;
-	cell.Sub.X = x;
-	cell.Sub.Y = y;
-	return(cell.Cell);
+	return (CELL)(uint16_t)((((uint16_t)y) & 0x007FU) << 7 | (((uint16_t)x) & 0x007FU));
 }
 
 
@@ -338,7 +334,7 @@ inline LEPTON Coord_Y(COORDINATE coord)
  *=============================================================================================*/
 inline int Cell_X(CELL cell)
 {
-	return(((CELL_COMPOSITE &)cell).Sub.X);
+	return((int)(((uint16_t)cell) & 0x007FU));
 }
 
 
@@ -358,7 +354,7 @@ inline int Cell_X(CELL cell)
  *=============================================================================================*/
 inline int Cell_Y(CELL cell)
 {
-	return(((CELL_COMPOSITE &)cell).Sub.Y);
+	return((int)((((uint16_t)cell) >> 7) & 0x007FU));
 }
 
 
@@ -453,9 +449,10 @@ inline COORDINATE Cell_Coord(CELL cell)
 {
 	COORD_COMPOSITE coord;
 
-	coord.Sub.X.Sub.Cell = (unsigned char)(((CELL_COMPOSITE &)cell).Sub.X);
+	coord.Coord = 0;
+	coord.Sub.X.Sub.Cell = (unsigned char)Cell_X(cell);
 	coord.Sub.X.Sub.Lepton = (unsigned char)(CELL_LEPTON_W / 2);
-	coord.Sub.Y.Sub.Cell = (unsigned char)(((CELL_COMPOSITE &)cell).Sub.Y);
+	coord.Sub.Y.Sub.Cell = (unsigned char)Cell_Y(cell);
 	coord.Sub.Y.Sub.Lepton = (unsigned char)(CELL_LEPTON_W / 2);
 	return(coord.Coord);
 }
@@ -1066,4 +1063,3 @@ inline int Distance(int x1, int y1, int x2, int y2)
 
 
 #endif
-

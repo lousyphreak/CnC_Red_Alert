@@ -25,6 +25,29 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - The non-portable DirectShow/DirectDraw MPEG path is now disabled by leaving `MPEGMOVIE` off in `CODE/DEFINES.H`. The buffered VQA path remains the active movie implementation.
 - Case-sensitive include fixes and DOS-header cleanup have been applied across the active `VQ/VQA32` and `VQ/INCLUDE/VQM32` surface so the portable movie sources build cleanly on Linux.
 - The runtime now reaches the real front-end path from `GameData` in both normal and ASan builds instead of dying in early startup.
+- The mission-start crash chain reported from `"New Game"` is now pushed past the original hard-failure points:
+  - `CODE/BUFF.CPP` now frees self-owned buffers with `delete[]` on `char *`, fixing the alloc/dealloc mismatch during dialog/button teardown.
+  - `CODE/LOADDLG.CPP` and `CODE/NULLDLG.CPP` now guard `qsort(&vec[0], ...)` so empty save/session lists no longer bind references to null through `VectorClass::operator[]`.
+  - `CODE/SIDEBAR.CPP` now copies `SIDE?NA.SHP`-style template names into writable storage before patching the theater letter, instead of writing into string literals.
+  - `CODE/DEFINES.H`, `CODE/INLINE.H`, and `CODE/COORD.CPP` now keep mission-start scenario coordinates and packed cell math deterministic on LP64 hosts:
+    - `TemplateType` is fixed to 16 bits;
+    - `COORDINATE` / `TARGET` are fixed to 32 bits;
+    - cell helpers now use explicit mask/shift math instead of compiler-dependent `CELL_COMPOSITE` bitfields.
+  - `CODE/COMPAT.H`, `WIN32LIB/TILE/TILE.H`, `WIN32LIB/INCLUDE/TILE.H`, and `WIN32LIB/TILE/ICONSET.CPP` now preserve the original packed iconset header/layout and use offsets instead of host pointers, fixing the template/iconset corruption that appeared during scenario startup.
+  - `CODE/UNIT.CPP`, `CODE/INFANTRY.CPP`, and `CODE/VESSEL.CPP` now seed non-human scenario missions with `Set_Mission(...)` before `Enter_Idle_Mode()` and guard `MISSION_NONE`, fixing the `MissionControl[-1]` crash during scenario object initialization.
+  - `CODE/CONQUER.CPP::List_Copy()` now always leaves a trailing `REFRESH_EOL`, while `CODE/MAP.CPP` and `CODE/DISPLAY.CPP` now use 128-entry temporary overlap buffers so infantry/map overlap lists no longer overrun 32-entry stacks during placement/redraw.
+  - `CODE/DEFINES.H` now keeps `OverlayType` at 8 bits again, matching `OverlayPack`'s one-byte-per-cell format and fixing the later `0xFF0706FF` overlay load corruption.
+  - `CODE/HELP.H` / `CODE/HELP.CPP` now keep the help overlap scratch buffer writable instead of casting away `const` and writing into read-only storage.
+  - `CODE/DRIVE.CPP` now uses `memmove()` when compacting in-place path buffers, fixing the ASan `memcpy-param-overlap` abort that appeared after the mission had already entered live AI.
+  - `CODE/TEAM.CPP` and `CODE/TECHNO.CPP` now guard regrouping `CurrentMission == -1` state and only cast occupiers to `TechnoClass` after `Is_Techno()`, removing the last mission-start UBSan hits seen in the active AI loop.
+- Latest traced mission-start validation now survives until the external timeout instead of aborting:
+  - `ASAN_OPTIONS=detect_leaks=0 RA_TRACE_STARTUP=1 timeout 20s ./GameData/redalert-asan` exits with `124` from `timeout`, not from ASan/UBSan termination;
+  - the old crash signatures in `BUFF.CPP`, `LOADDLG.CPP`, `OVERLAY.CPP`, `HELP.CPP`, `DRIVE.CPP`, `TEAM.CPP`, and `TECHNO.CPP` no longer appear in that run.
+- Remaining traced runtime warnings after the mission-start crash chain:
+  - misaligned `uint32_t` loads in `CODE/SHA.CPP`;
+  - left-shift-of-negative-value warnings in `CODE/RANDOM.CPP`;
+  - invalid-vptr/member-access warnings from fixed-heap operator-new paths that set fields before object construction in `TEAMTYPE.CPP`, `TRIGTYPE.CPP`, `TERRAIN.CPP`, `UNIT.CPP`, `INFANTRY.CPP`, `BUILDING.CPP`, `SMUDGE.CPP`, `OVERLAY.CPP`, `TEAM.CPP`, and `AIRCRAFT.CPP`;
+  - `long`-sized bitmask overflow warnings in `CODE/HOUSE.CPP` / `CODE/BUILDING.CPP` (e.g. shift exponent `83`).
 - The SDL3 window is no longer stuck black after startup:
   - the DirectDraw compatibility layer now presents primary-surface updates on `Unlock()`, `Blt()`, and palette attachment;
   - a live Hyprland capture of the rebuilt game window shows substantial non-black content instead of an all-black frame.
@@ -108,6 +131,13 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - `VQ/VQA32/TASK.CPP` now treats callback-driven `VQAERR_EOF` from the active buffered draw path as a real movie-stop condition instead of ignoring it and continuing to spin the player loop;
   - this lets the intro abort unwind through normal VQA shutdown, return from `VQA_Play()`, and continue startup exactly like a completed movie.
 - A compositor close request now shuts the game down cleanly through the SDL/Win32 message bridge instead of leaving the process hung until `SIGKILL`.
+- The SDL game window now behaves like a normal resizable desktop window without stretching the legacy framebuffer:
+  - `SDL3_COMPAT/wrappers/win32_compat.cpp` and `SDL3_COMPAT/wrappers/ddraw_compat.cpp` now create the main SDL window with resize support while keeping the usual decorated/movable window behavior;
+  - `SDL3_COMPAT/wrappers/ddraw_compat.cpp` now presents the primary surface into a centered letterbox/pillarbox rectangle and clears the unused window area to black;
+  - `CODE/SDLINPUT.CPP` and `SDL3_COMPAT/wrappers/win32_compat.cpp` now translate mouse positions and cursor-clip rectangles through that same presentation rectangle so menu hit-testing and the software cursor stay aligned after resize.
+- The resize follow-up mouse regression is fixed:
+  - when the game runs with a `640x480` primary surface but attaches the active `SeenBuff` viewport as `640x400` at `(0,40)`, `CODE/SDLINPUT.CPP` now converts SDL window coordinates into primary-surface coordinates first and then subtracts the active viewport origin before storing the shared mouse position;
+  - `SDL3_COMPAT/wrappers/win32_compat.cpp::ClipCursor()` now adds the active viewport origin back before asking SDL to confine the OS cursor, so SDL mouse clipping follows the displayed `SeenBuff` content instead of the raw top-left corner of the primary surface.
 - Validation status:
   - `cmake --build build --target redalert -j4` passes.
   - `cmake --build build -j4` passes.
@@ -135,6 +165,10 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
     - `Theme.Play_Song(THEME_INTRO)` reaches `File_Stream_Sample_Vol("INTRO.AUD", ...)`;
     - `File_Stream_Sample_Vol()` returns valid streaming handles for the intro theme startup path;
     - `Stream_Sample_Vol()` returns matching play IDs for those handles.
+  - A new standalone temporary harness linked against the built `libsdl3_compat.a` now confirms the resizable-window math and the repaired mouse/clip bridge directly:
+    - windows created through the compat layer now expose `SDL_WINDOW_RESIZABLE`;
+    - resizing a `640x480` window to `800x700` yields the expected `800x600` centered presentation rect with `50` pixels of black padding above and below;
+    - for the common `640x480` primary-surface path with `SeenBuff` attached as `0,40,640,400`, `SDL_GameInput_GetViewportRect()` reports `0,40,640,440`, `ClipCursor()` installs an SDL mouse rect of `0,100,800,500`, and window-space mouse positions map back to viewport space as expected (`400,350 -> 320,200`, `400,100 -> 320,0`, `400,599 -> 320,399`).
   - A forced callback-abort `gdb` run now reaches `reached task shutdown`, `entered VQA_StopAudio`, and `returned from VQA_Play` instead of wedging after the callback returns early.
   - A second forced `key == KN_ESC` `gdb` run now confirms the real intro-breakout branch follows the same path:
     - `Brokeout=1` at `Play_Movie VQA_Play complete`;
@@ -151,7 +185,7 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
     - `UseBigShapeBuffer` is `1` on the current host;
     - `Build_Frame()` returns a cached wrapper pointer for that shape;
     - `Get_Shape_Header_Data()` returns a later raw-pixel pointer, so the normal Win32 draw path must unwrap before blitting.
-  - Fresh `timeout 20s env RA_TRACE_STARTUP=1 ./redalert` and `timeout 20s env ASAN_OPTIONS=abort_on_error=1:detect_leaks=0:new_delete_type_mismatch=0 RA_TRACE_STARTUP=1 ./redalert-asan` smoke runs both reach the front-end startup baseline and exit without new crashes or sanitizer diagnostics.
+  - Fresh `timeout 20s env RA_TRACE_STARTUP=1 ./redalert` and `timeout 20s env ASAN_OPTIONS=abort_on_error=1:detect_leaks=0:new_delete_type_mismatch=0 RA_TRACE_STARTUP=1 ./redalert-asan` smoke runs from `GameData/` still reach the intro/title/menu-theme startup baseline and exit on timeout without new crashes or sanitizer diagnostics.
 
 ## Runtime fixes since first successful link
 

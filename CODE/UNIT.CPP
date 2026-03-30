@@ -1345,7 +1345,7 @@ void UnitClass::Enter_Idle_Mode(bool initial)
 #endif
 		} else {
 
-			if (Mission == MISSION_GUARD || Mission == MISSION_GUARD_AREA || MissionControl[Mission].IsParalyzed || MissionControl[Mission].IsZombie) {
+			if (Mission == MISSION_GUARD || Mission == MISSION_GUARD_AREA || (Mission != MISSION_NONE && (MissionControl[Mission].IsParalyzed || MissionControl[Mission].IsZombie))) {
 				return;
 			}
 
@@ -4707,6 +4707,7 @@ void UnitClass::Read_INI(CCINIClass & ini)
 							unit->Assign_Mission(mission);
 							unit->Commence();
 						} else {
+							unit->Set_Mission(mission);
 							unit->Enter_Idle_Mode();
 						}
 

@@ -94,11 +94,7 @@ unsigned Fixed_To_Cardinal(unsigned base, unsigned fixed)
  *=============================================================================================*/
 CELL Coord_Cell(COORDINATE coord)
 {
-	CELL_COMPOSITE cell;
-	cell.Cell = 0;
-	cell.Sub.X = ((COORD_COMPOSITE &)coord).Sub.X.Sub.Cell;
-	cell.Sub.Y = ((COORD_COMPOSITE &)coord).Sub.Y.Sub.Cell;
-	return(cell.Cell);
+	return(XY_Cell(Coord_XCell(coord), Coord_YCell(coord)));
 //	return(XY_Cell(((COORD_COMPOSITE)coord).Sub.X, ((COORD_COMPOSITE)composite).Sub.Y));
 }
 

@@ -16,6 +16,7 @@ SHORT SDL_GameInput_GetAsyncKeyState(int virtual_key);
 BOOL SDL_GameInput_GetCursorPos(POINT* point);
 int SDL_GameInput_GetGlobalMouseX(void);
 int SDL_GameInput_GetGlobalMouseY(void);
+BOOL SDL_GameInput_GetViewportRect(RECT* rect);
 void SDL_GameInput_SetCursorClip(const RECT* rect);
 
 #endif
