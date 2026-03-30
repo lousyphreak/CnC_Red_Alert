@@ -178,9 +178,6 @@ static bool _Counts_As_Civ_Evac(ObjectClass const * candidate)
 void * AircraftClass::operator new(size_t)
 {
 	void * ptr = Aircraft.Allocate();
-	if (ptr) {
-		((AircraftClass *)ptr)->IsActive = true;
-	}
 	return(ptr);
 }
 
@@ -201,9 +198,6 @@ void * AircraftClass::operator new(size_t)
  *=============================================================================================*/
 void AircraftClass::operator delete(void * ptr)
 {
-	if (ptr) {
-		((AircraftClass *)ptr)->IsActive = false;
-	}
 	Aircraft.Free((AircraftClass *)ptr);
 }
 

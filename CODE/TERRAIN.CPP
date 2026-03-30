@@ -169,9 +169,6 @@ ResultType TerrainClass::Take_Damage(int & damage, int distance, WarheadType war
 void * TerrainClass::operator new(size_t)
 {
 	void * ptr = Terrains.Allocate();
-	if (ptr) {
-		((TerrainClass *)ptr)->IsActive = true;
-	}
 	return(ptr);
 }
 
@@ -193,9 +190,6 @@ void * TerrainClass::operator new(size_t)
  *=============================================================================================*/
 void TerrainClass::operator delete(void * ptr)
 {
-	if (ptr) {
-		((TerrainClass *)ptr)->IsActive = false;
-	}
 	Terrains.Free((TerrainClass *)ptr);
 }
 

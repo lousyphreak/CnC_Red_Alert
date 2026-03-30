@@ -1351,10 +1351,10 @@ bool CCINIClass::Put_TerrainType(char const * section, char const * entry, Terra
  * HISTORY:                                                                                    *
  *   07/11/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-long CCINIClass::Get_Buildings(char const * section, char const * entry, long defvalue) const
+uint32_t CCINIClass::Get_Buildings(char const * section, char const * entry, uint32_t defvalue) const
 {
 	char buffer[128];
-	long pre;
+	uint32_t pre;
 
 	if (Get_String(section, entry, "", buffer, sizeof(buffer))) {
 
@@ -1363,7 +1363,7 @@ long CCINIClass::Get_Buildings(char const * section, char const * entry, long de
 		while (token != NULL && *token != '\0') {
 			StructType building = BuildingTypeClass::From_Name(token);
 			if (building != STRUCT_NONE) {
-				pre |= (1L << building);
+				pre |= Structure_Scan_Bit(building);
 			}
 			token = strtok(NULL, ",");
 		}
@@ -1397,13 +1397,13 @@ long CCINIClass::Get_Buildings(char const * section, char const * entry, long de
  * HISTORY:                                                                                    *
  *   07/11/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-bool CCINIClass::Put_Buildings(char const * section, char const * entry, long value)
+bool CCINIClass::Put_Buildings(char const * section, char const * entry, uint32_t value)
 {
 	char buffer[128] = "";
 	int maxi = (32 < STRUCT_COUNT) ? 32 : STRUCT_COUNT;
 
 	for (StructType index = STRUCT_FIRST; index < maxi; index++) {
-		if ((value & (1L << index)) != 0) {
+		if ((value & Structure_Scan_Bit(index)) != 0) {
 
 			if (buffer[0] != '\0') {
 				strcat(buffer, ",");

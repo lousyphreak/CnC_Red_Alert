@@ -193,9 +193,6 @@ BulletClass::~BulletClass(void)
 void * BulletClass::operator new(size_t )
 {
 	void * ptr = Bullets.Allocate();
-	if (ptr) {
-		((BulletClass *)ptr)->IsActive = true;
-	}
 	return(ptr);
 }
 
@@ -217,9 +214,6 @@ void * BulletClass::operator new(size_t )
  *=============================================================================================*/
 void BulletClass::operator delete(void * ptr)
 {
-	if (ptr) {
-		((BulletClass *)ptr)->IsActive = false;
-	}
 	Bullets.Free((BulletClass *)ptr);
 }
 

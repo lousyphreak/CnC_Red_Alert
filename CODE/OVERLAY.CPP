@@ -88,9 +88,6 @@ void OverlayClass::Init(void)
 void * OverlayClass::operator new(size_t )
 {
 	void * ptr = Overlays.Allocate();
-	if (ptr) {
-		((OverlayClass *)ptr)->IsActive = true;
-	}
 	return(ptr);
 }
 
@@ -112,9 +109,6 @@ void * OverlayClass::operator new(size_t )
  *=============================================================================================*/
 void OverlayClass::operator delete(void * ptr)
 {
-	if (ptr) {
-		((OverlayClass *)ptr)->IsActive = false;
-	}
 	Overlays.Free((OverlayClass *)ptr);
 }
 

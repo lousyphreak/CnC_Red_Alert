@@ -442,9 +442,6 @@ void AnimClass::Init(void)
 void * AnimClass::operator new(size_t)
 {
 	void * ptr = Anims.Allocate();
-	if (ptr != NULL) {
-		((AnimClass *)ptr)->IsActive = true;
-	}
 	return(ptr);
 }
 
@@ -466,9 +463,6 @@ void * AnimClass::operator new(size_t)
  *=============================================================================================*/
 void AnimClass::operator delete(void * ptr)
 {
-	if (ptr != NULL) {
-		((AnimClass *)ptr)->IsActive = false;
-	}
 	Anims.Free((AnimClass *)ptr);
 }
 

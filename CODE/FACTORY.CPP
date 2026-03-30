@@ -73,6 +73,7 @@
 FactoryClass::FactoryClass(void) :
 	RTTI(RTTI_FACTORY),
 	ID(Factories.ID(this)),
+	IsActive(true),
 	IsSuspended(false),
 	IsDifferent(false),
 	Balance(0),
@@ -106,6 +107,8 @@ FactoryClass::~FactoryClass(void)
 	if (GameActive) {
 		Abandon();
 	}
+
+	IsActive = false;
 }
 
 
@@ -149,9 +152,6 @@ void FactoryClass::Init(void)
 void * FactoryClass::operator new(size_t)
 {
 	void * ptr = Factories.Allocate();
-	if (ptr) {
-		((FactoryClass *)ptr)->IsActive = true;
-	}
 	return(ptr);
 }
 
@@ -173,9 +173,6 @@ void * FactoryClass::operator new(size_t)
  *=============================================================================================*/
 void FactoryClass::operator delete(void * ptr)
 {
-	if (ptr) {
-		((FactoryClass *)ptr)->IsActive = false;
-	}
 	Factories.Free((FactoryClass *)ptr);
 }
 

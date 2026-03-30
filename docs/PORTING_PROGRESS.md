@@ -43,11 +43,12 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - Latest traced mission-start validation now survives until the external timeout instead of aborting:
   - `ASAN_OPTIONS=detect_leaks=0 RA_TRACE_STARTUP=1 timeout 20s ./GameData/redalert-asan` exits with `124` from `timeout`, not from ASan/UBSan termination;
   - the old crash signatures in `BUFF.CPP`, `LOADDLG.CPP`, `OVERLAY.CPP`, `HELP.CPP`, `DRIVE.CPP`, `TEAM.CPP`, and `TECHNO.CPP` no longer appear in that run.
-- Remaining traced runtime warnings after the mission-start crash chain:
+- The latest mission-entry runtime cleanup removes the remaining warnings that were directly tied to the user-reported black in-mission state:
+  - fixed-heap pooled objects no longer write `IsActive` from `operator new/delete`, so the old pre-construction/post-destruction invalid-vptr hits in `TEAMTYPE.CPP`, `TRIGTYPE.CPP`, `TERRAIN.CPP`, `UNIT.CPP`, `INFANTRY.CPP`, `BUILDING.CPP`, `SMUDGE.CPP`, `OVERLAY.CPP`, `TEAM.CPP`, and `AIRCRAFT.CPP` no longer reproduce on the active ASan path;
+  - building scan/prerequisite masks now go through guarded 32-bit `Structure_Scan_Bit(...)` handling, so the old `CODE/HOUSE.CPP` / `CODE/BUILDING.CPP` shift-exponent warnings (for example shift exponent `83`) no longer reproduce on the active ASan path.
+- Remaining traced runtime warnings after that cleanup:
   - misaligned `uint32_t` loads in `CODE/SHA.CPP`;
-  - left-shift-of-negative-value warnings in `CODE/RANDOM.CPP`;
-  - invalid-vptr/member-access warnings from fixed-heap operator-new paths that set fields before object construction in `TEAMTYPE.CPP`, `TRIGTYPE.CPP`, `TERRAIN.CPP`, `UNIT.CPP`, `INFANTRY.CPP`, `BUILDING.CPP`, `SMUDGE.CPP`, `OVERLAY.CPP`, `TEAM.CPP`, and `AIRCRAFT.CPP`;
-  - `long`-sized bitmask overflow warnings in `CODE/HOUSE.CPP` / `CODE/BUILDING.CPP` (e.g. shift exponent `83`).
+  - left-shift-of-negative-value warnings in `CODE/RANDOM.CPP`.
 - The SDL3 window is no longer stuck black after startup:
   - the DirectDraw compatibility layer now presents primary-surface updates on `Unlock()`, `Blt()`, and palette attachment;
   - a live Hyprland capture of the rebuilt game window shows substantial non-black content instead of an all-black frame.
@@ -185,7 +186,10 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
     - `UseBigShapeBuffer` is `1` on the current host;
     - `Build_Frame()` returns a cached wrapper pointer for that shape;
     - `Get_Shape_Header_Data()` returns a later raw-pixel pointer, so the normal Win32 draw path must unwrap before blitting.
-  - Fresh `timeout 20s env RA_TRACE_STARTUP=1 ./redalert` and `timeout 20s env ASAN_OPTIONS=abort_on_error=1:detect_leaks=0:new_delete_type_mismatch=0 RA_TRACE_STARTUP=1 ./redalert-asan` smoke runs from `GameData/` still reach the intro/title/menu-theme startup baseline and exit on timeout without new crashes or sanitizer diagnostics.
+- Fresh `timeout 20s env RA_TRACE_STARTUP=1 ./redalert` and `timeout 20s env ASAN_OPTIONS=abort_on_error=1:detect_leaks=0:new_delete_type_mismatch=0 RA_TRACE_STARTUP=1 ./redalert-asan` smoke runs from `GameData/` still reach the intro/title/menu-theme startup baseline and exit on timeout without new crashes or sanitizer diagnostics.
+- A forced mission-entry `gdb` probe now confirms the direct scenario path still reaches gameplay loading on the active tree:
+  - a breakpoint command script that sets `Debug_Map = true` at `Select_Game()` immediately drives the game into `Start_Scenario("SCG01EA.INI")` without front-end clicks;
+  - the corresponding `GameData/redalert-asan` run times out with only the known `CODE/SHA.CPP` and `CODE/RANDOM.CPP` warnings, and does not reproduce the old `TEAM.CPP` / `AIRCRAFT.CPP` invalid-vptr hits or the `HOUSE.CPP` / `BUILDING.CPP` shift-exponent warnings.
 
 ## Runtime fixes since first successful link
 
@@ -224,6 +228,8 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - A timed `RA_TRACE_STARTUP=1 ./redalert-asan` smoke run from `GameData/` now repeatedly reaches `File_Stream_Sample_Vol("INTRO.AUD", ...)`, `Stream_Sample_Vol(...)`, and later front-end theme restarts without reproducing the old `Play_Sample_Handle()` segfault; the remaining forced-timeout ASan output is unrelated leak noise.
 - A follow-up `RA_TRACE_STARTUP=1 timeout 25s ./redalert-asan` run from `GameData/` now shows exactly one `Theme.Play_Song(INTRO)` / `Stream_Sample_Vol("INTRO.AUD")` start, no repeated song churn, and no ASan errors before the forced timeout; only the pre-existing forced-timeout leak summary remains.
 - Fixed the shutdown-time `SessionClass::Free_Scenario_Descriptions()` allocation mismatch by changing the `InitStrings` cleanup from `delete` to `delete[]`, matching the `new char[INITSTRBUF_MAX]` allocations in `Read_MultiPlayer_Settings()`.
+- Fixed fixed-heap pooled-object lifetime UB by removing raw `IsActive` member writes from pooled `operator new/delete` paths and moving that bookkeeping into constructor/destructor-safe code for `AbstractClass`-based pools plus `HouseClass`, `FactoryClass`, `TriggerClass`, `TriggerTypeClass`, and `TeamTypeClass`.
+- Fixed building scan/prerequisite mask handling by routing structure-bit math through guarded 32-bit `Structure_Scan_Bit(...)` semantics, changing the active `TechnoTypeClass::Prerequisite` / `CCINIClass::{Get,Put}_Buildings()` surface to `uint32_t`, and falling back to `Get_Quantity(...)` for out-of-range trigger checks such as fake-structure detection.
 - Fixed the active public/private `VQAConfig` layout mismatch by keeping `SoundObject` / `PrimaryBufferPtr` as backend-agnostic placeholder pointers on the game include path and in `CONFIG.CPP`.
 - Fixed the active movie ADPCM ABI mismatch by restoring the `_SOS_COMPRESS_INFO` field order expected by the game-side decoder and routing movie decode through `General_sosCODECDecompressData()`.
 - Restored buffered `4x4` VQA decode support by porting the old `UnVQ_4x4` helper into `VQ/VQA32/UNVQCOMPAT.CPP` and enabling the `VQABLOCK_4X4` path used by the startup intro movies.
@@ -339,8 +345,9 @@ The final link failure was narrowed to the movie layer and resolved by replacing
 
 ## Remaining validation work
 
-1. Re-test front-end interaction with real user-driven pointer input on SDL/Wayland to confirm that visible cursor motion, click behavior, and intro `ESC` breakout now match the repaired compat/input/VQA-stop behavior in live use.
-2. Re-check additional VQA playback beyond `ENGLISH.VQA`/`REDINTRO` to confirm no other movie variants rely on version-specific pointer handling that is still missing on the SDL3/Linux path.
-3. Validate the same CMake target on Windows and fix any remaining case, type-width, or wrapper issues that only surface there.
-4. Continue tightening remaining legacy Win32/DirectDraw/audio assumptions only where runtime behavior or sanitizers still prove they are wrong on 64-bit/SDL3 builds.
-5. Keep the porting docs aligned with each verified runtime or cross-platform milestone.
+1. Re-check the live in-mission viewport on a real desktop session now that forced `SCG01EA` mission entry no longer emits the old invalid-vptr/shift warnings; this shell environment can prove the scenario path but cannot capture the visible mission window directly.
+2. Re-test front-end interaction with real user-driven pointer input on SDL/Wayland to confirm that visible cursor motion, click behavior, and intro `ESC` breakout now match the repaired compat/input/VQA-stop behavior in live use.
+3. Re-check additional VQA playback beyond `ENGLISH.VQA`/`REDINTRO` to confirm no other movie variants rely on version-specific pointer handling that is still missing on the SDL3/Linux path.
+4. Validate the same CMake target on Windows and fix any remaining case, type-width, or wrapper issues that only surface there.
+5. Continue tightening remaining legacy Win32/DirectDraw/audio assumptions only where runtime behavior or sanitizers still prove they are wrong on 64-bit/SDL3 builds.
+6. Keep the porting docs aligned with each verified runtime or cross-platform milestone.

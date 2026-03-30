@@ -187,9 +187,6 @@ VesselClass::~VesselClass(void)
 void * VesselClass::operator new(size_t)
 {
 	void * ptr = Vessels.Alloc();
-	if (ptr != NULL) {
-		((VesselClass *)ptr)->IsActive = true;
-	}
 	return(ptr);
 }
 
@@ -211,10 +208,6 @@ void * VesselClass::operator new(size_t)
  *=============================================================================================*/
 void VesselClass::operator delete(void * ptr)
 {
-	if (ptr != NULL) {
-		assert(((VesselClass *)ptr)->IsActive);
-		((VesselClass *)ptr)->IsActive = false;
-	}
 	Vessels.Free((VesselClass *)ptr);
 }
 

@@ -188,9 +188,6 @@ void Recoil_Adjust(DirType dir, int &x, int &y)
 void * UnitClass::operator new(size_t)
 {
 	void * ptr = Units.Alloc();
-	if (ptr != NULL) {
-		((UnitClass *)ptr)->IsActive = true;
-	}
 	return(ptr);
 }
 
@@ -213,9 +210,6 @@ void * UnitClass::operator new(size_t)
  *=============================================================================================*/
 void UnitClass::operator delete(void * ptr)
 {
-	if (ptr != NULL) {
-		((UnitClass *)ptr)->IsActive = false;
-	}
 	Units.Free((UnitClass *)ptr);
 }
 

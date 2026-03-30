@@ -26,6 +26,15 @@ _Last updated: 2026-03-30_
 - In-place `Path[]` compaction in `DriveClass` requires `memmove()`, not `memcpy()`.
 - Team scripts can legitimately have `CurrentMission == -1` while regrouping; any direct `MissionList[CurrentMission]` access must guard that state.
 - `Cell_Occupier()` may return terrain or other non-techno `ObjectClass` instances; `TechnoClass` AI code must check `Is_Techno()` before casting.
+- Fixed-heap pooled classes must not touch `IsActive` from `operator new/delete`.
+  - On the active Clang/UBSan build that writes into object storage before construction and after destruction, which shows up as invalid-vptr/member-access UB in pooled classes such as `TeamClass`, `AircraftClass`, `BuildingClass`, `TriggerTypeClass`, and other `TFixedIHeapClass<>` users.
+  - The safe seam is constructor/destructor-owned bookkeeping (`AbstractClass` for battlefield objects, plus the standalone house/factory/trigger/team-type families that carry their own `IsActive` bit).
+- Building availability/prerequisite scan masks are only reliable for the original 32 tracked structure IDs.
+  - Use a guarded helper (`Structure_Scan_Bit(...)`) instead of raw `1L << type` shifts on LP64 hosts.
+  - For higher structure enums (fake structures, civilian structures, and similar out-of-range cases), use `Get_Quantity(...)` instead of pretending they fit in the building scan bitfield.
+- `Select_Game()` already contains a useful no-menu mission-entry path for debugging.
+  - If `Debug_Map` is true, it skips the front-end selection flow, sets `Scen.ScenarioName` to `SCG01EA.INI`, and then falls through to the normal `Start_Scenario(...)` call.
+  - A `gdb` breakpoint script that flips `Debug_Map = true` at `Select_Game()` is a practical way to reproduce in-mission issues without manual UI input.
 
 ## Gameplay audio system observations
 

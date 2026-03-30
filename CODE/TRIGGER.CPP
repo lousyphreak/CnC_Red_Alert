@@ -128,6 +128,7 @@ void TriggerClass::Draw_It(int , int x, int y, int width, int height, bool selec
 TriggerClass::TriggerClass(TriggerTypeClass * trigtype) :
 	RTTI(RTTI_TRIGGER),
 	ID(Triggers.ID(this)),
+	IsActive(true),
 	Class(trigtype),
 	AttachCount(0),
 	Cell(0)
@@ -177,6 +178,7 @@ TriggerClass::~TriggerClass(void)
 		Houses.Ptr(Class->House)->BorrowedTime = TICKS_PER_SECOND*4;
 	}
 	ID = -1;
+	IsActive = false;
 }
 
 
@@ -376,9 +378,6 @@ bool TriggerClass::Spring(TEventType event, ObjectClass * obj, CELL cell, bool f
 void * TriggerClass::operator new(size_t )
 {
 	void * ptr = Triggers.Allocate();
-	if (ptr) {
-		((TriggerClass *)ptr)->IsActive = true;
-	}
 
 	return(ptr);
 }
@@ -401,9 +400,6 @@ void * TriggerClass::operator new(size_t )
  *=============================================================================================*/
 void TriggerClass::operator delete(void * pointer)
 {
-	if (pointer) {
-		((TriggerClass *)pointer)->IsActive = false;
-	}
 	Triggers.Free((TriggerClass *)pointer);
 }
 

@@ -59,7 +59,7 @@ class CCINIClass : public INIClass
 		int Save(FileClass & file, bool withdigest) const;
 		int Save(Pipe & pipe, bool withdigest) const;
 
-		long Get_Buildings(char const * section, char const * entry, long defvalue) const;
+		uint32_t Get_Buildings(char const * section, char const * entry, uint32_t defvalue) const;
 		UnitType Get_UnitType(char const * section, char const * entry, UnitType defvalue) const;
 		AnimType Get_AnimType(char const * section, char const * entry, AnimType defvalue) const;
 		ArmorType Get_ArmorType(char const * section, char const * entry, ArmorType defvalue) const;
@@ -81,7 +81,7 @@ class CCINIClass : public INIClass
 		CrateType Get_CrateType(char const * section, char const * entry, CrateType defvalue) const;
 
 
-		bool Put_Buildings(char const * section, char const * entry, long value);
+		bool Put_Buildings(char const * section, char const * entry, uint32_t value);
 		bool Put_AnimType(char const * section, char const * entry, AnimType value);
 		bool Put_UnitType(char const * section, char const * entry, UnitType value);
 		bool Put_ArmorType(char const * section, char const * entry, ArmorType value);

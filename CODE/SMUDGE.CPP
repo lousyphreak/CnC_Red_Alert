@@ -69,9 +69,6 @@ HousesType SmudgeClass::ToOwn = HOUSE_NONE;
 void * SmudgeClass::operator new(size_t )
 {
 	void * ptr = Smudges.Allocate();
-	if (ptr != NULL) {
-		((SmudgeClass *)ptr)->IsActive = true;
-	}
 	return(ptr);
 }
 
@@ -92,9 +89,6 @@ void * SmudgeClass::operator new(size_t )
  *=============================================================================================*/
 void SmudgeClass::operator delete(void * ptr)
 {
-	if (ptr != NULL) {
-		((SmudgeClass *)ptr)->IsActive = false;
-	}
 	Smudges.Free((SmudgeClass *)ptr);
 }
 

@@ -1115,8 +1115,9 @@ bool BuildingClass::Unlimbo(COORDINATE coord, DirType dir)
 		**	Ensure that the owning house knows about the
 		**	new object.
 		*/
-		House->BScan |= (1L << Class->Type);
-		House->ActiveBScan |= (1L << Class->Type);
+		const uint32_t structure_bit = Structure_Scan_Bit(Class->Type);
+		House->BScan |= structure_bit;
+		House->ActiveBScan |= structure_bit;
 
 		/*
 		**	Recalculate the center point of the house's base.
@@ -1508,9 +1509,6 @@ ResultType BuildingClass::Take_Damage(int & damage, int distance, WarheadType wa
 void * BuildingClass::operator new(size_t )
 {
 	void * ptr = Buildings.Allocate();
-	if (ptr) {
-		((BuildingClass *)ptr)->IsActive = true;
-	}
 	return(ptr);
 }
 
@@ -1533,9 +1531,6 @@ void * BuildingClass::operator new(size_t )
  *=============================================================================================*/
 void BuildingClass::operator delete(void *ptr)
 {
-	if (ptr) {
-		((BuildingClass *)ptr)->IsActive = false;
-	}
 	Buildings.Free((BuildingClass *)ptr);
 }
 

@@ -122,7 +122,7 @@ class TeamTypeClass : public AbstractTypeClass
 		*/
 		TeamTypeClass(void);
 		TeamTypeClass(NoInitClass const & x) : AbstractTypeClass(x), Trigger(x) {};
-		virtual ~TeamTypeClass(void) {};
+		virtual ~TeamTypeClass(void) {IsActive = false;};
 
 		static void * operator new(size_t );
 		static void * operator new(size_t, void * ptr) {return(ptr);};

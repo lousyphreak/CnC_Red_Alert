@@ -345,7 +345,7 @@ bool TEventClass::operator () (TDEventClass & td, TEventType event, HousesType h
 			**	Ensure that there are no fake structures left.
 			*/
 			case TEVENT_FAKES_DESTROYED:
-				if (hptr->BScan & (STRUCTF_FAKECONST|STRUCTF_FAKEWEAP)) return(false);
+				if (hptr->Get_Quantity(STRUCT_FAKECONST) != 0 || hptr->Get_Quantity(STRUCT_FAKEWEAP) != 0) return(false);
 				break;
 
 			/*
@@ -359,8 +359,11 @@ bool TEventClass::operator () (TDEventClass & td, TEventType event, HousesType h
 			**	Verify that the structure has been built.
 			*/
 			case TEVENT_BUILDING_EXISTS:
-				if ((hptr->ActiveBScan & (1 << Data.Structure)) == 0) return(false);
-//				if (hptr->Get_Quantity(Data.Structure) == 0) return(false);
+				if (Structure_Scan_Bit(Data.Structure) != 0) {
+					if ((hptr->ActiveBScan & Structure_Scan_Bit(Data.Structure)) == 0) return(false);
+				} else if (hptr->Get_Quantity(Data.Structure) == 0) {
+					return(false);
+				}
 				break;
 
 			/*

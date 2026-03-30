@@ -184,9 +184,6 @@ bool TemplateClass::Mark(MarkType mark)
 void * TemplateClass::operator new(size_t )
 {
 	void * ptr = Templates.Allocate();
-	if (ptr) {
-		((TemplateClass *)ptr)->IsActive = true;
-	}
 	return(ptr);
 }
 
@@ -208,9 +205,6 @@ void * TemplateClass::operator new(size_t )
  *=============================================================================================*/
 void TemplateClass::operator delete(void * ptr)
 {
-	if (ptr) {
-		((TemplateClass *)ptr)->IsActive = false;
-	}
 	Templates.Free((TemplateClass *)ptr);
 }
 

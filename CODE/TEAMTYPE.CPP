@@ -164,6 +164,7 @@ char const * TeamTypeClass::TMissions[TMISSION_COUNT] = {
  *=========================================================================*/
 TeamTypeClass::TeamTypeClass(void) :
 	AbstractTypeClass(RTTI_TEAMTYPE, TeamTypes.ID(this), TXT_NONE, ""),
+	IsActive(true),
 	IsRoundAbout(false),
 	IsSuicide(false),
 	IsAutocreate(false),
@@ -304,9 +305,6 @@ char const * TeamTypeClass::Name_From_Mission(TeamMissionType order)
 void * TeamTypeClass::operator new(size_t )
 {
 	void * ptr = TeamTypes.Allocate();
-	if (ptr) {
-		((TeamTypeClass *)ptr)->IsActive = true;
-	}
 	return(ptr);
 }
 
@@ -328,9 +326,6 @@ void * TeamTypeClass::operator new(size_t )
  *=========================================================================*/
 void TeamTypeClass::operator delete(void * ptr)
 {
-	if (ptr) {
-		((TeamTypeClass *)ptr)->IsActive = false;
-	}
 	TeamTypes.Free((TeamTypeClass *)ptr);
 }
 

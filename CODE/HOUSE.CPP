@@ -463,9 +463,6 @@ void HouseClass::Debug_Dump(MonoClass * mono) const
 void * HouseClass::operator new(size_t)
 {
 	void * ptr = Houses.Allocate();
-	if (ptr) {
-		((HouseClass *)ptr)->IsActive = true;
-	}
 	return(ptr);
 }
 
@@ -487,9 +484,6 @@ void * HouseClass::operator new(size_t)
  *=============================================================================================*/
 void HouseClass::operator delete(void * ptr)
 {
-	if (ptr) {
-		((HouseClass *)ptr)->IsActive = false;
-	}
 	Houses.Free((HouseClass *)ptr);
 }
 
@@ -525,6 +519,7 @@ HouseClass::HouseClass(HousesType house) :
 	RepairDelay(0),
 	BuildDelay(0),
 	ActLike(Class->House),
+	IsActive(true),
 	IsHuman(false),
 	IsPlayerControl(false),
 	IsStarted(false),
@@ -730,6 +725,8 @@ HouseClass::~HouseClass (void)
 		delete CapturedBuildings;
 		delete TotalCrates;
 	}
+
+	IsActive = false;
 }
 
 
@@ -842,7 +839,7 @@ bool HouseClass::Can_Build(ObjectTypeClass const * type, HousesType house) const
 	/*
 	**	Perform some equivalency fixups for the building existence flags.
 	*/
-	long flags = ActiveBScan;
+	uint32_t flags = ActiveBScan;
 
 	/*
 	**	The computer records prerequisite buildings because it can't relay on the
@@ -852,7 +849,7 @@ bool HouseClass::Can_Build(ObjectTypeClass const * type, HousesType house) const
 		flags = OldBScan;
 	}
 
-	int pre = ((TechnoTypeClass const *)type)->Prerequisite;
+	uint32_t pre = ((TechnoTypeClass const *)type)->Prerequisite;
 
 	/*
 	**	Advanced power also serves as a prerequisite for normal power.
@@ -6428,7 +6425,7 @@ void HouseClass::Tracking_Add(TechnoClass const * techno)
 			CurBuildings++;
 			building = ((BuildingTypeClass const &)techno->Class_Of()).Type;
 			BQuantity[building]++;
-			BScan |= (1L << building);
+			BScan |= Structure_Scan_Bit(building);
 			if (Session.Type == GAME_INTERNET) {
 				BuildingTotals->Increment_Unit_Total(techno->Class_Of().ID);
 			}
@@ -6759,12 +6756,13 @@ void HouseClass::Recalc_Attributes(void)
 	}
 	for (int index = 0; index < Buildings.Count(); index++) {
 		BuildingClass const * building = Buildings.Ptr(index);
-		if (building->Class->Type < 32) {
-			building->House->BScan |= (1L << building->Class->Type);
+		const uint32_t structure_bit = Structure_Scan_Bit(building->Class->Type);
+		if (structure_bit != 0) {
+			building->House->BScan |= structure_bit;
 			if (building->IsLocked && (Session.Type != GAME_NORMAL || !building->House->IsHuman || building->IsDiscoveredByPlayer)) {
 				if (!building->IsInLimbo) {
-					building->House->ActiveBScan |= (1L << building->Class->Type);
-					building->House->OldBScan |= (1L << building->Class->Type);
+					building->House->ActiveBScan |= structure_bit;
+					building->House->OldBScan |= structure_bit;
 				}
 			}
 		}

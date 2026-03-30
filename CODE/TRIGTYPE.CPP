@@ -73,6 +73,7 @@
  *=============================================================================================*/
 TriggerTypeClass::TriggerTypeClass(void) :
 	AbstractTypeClass(RTTI_TRIGGERTYPE, TriggerTypes.ID(this), TXT_NONE, "x"),
+	IsActive(true),
 	IsPersistant(VOLATILE),
 	EventControl(MULTI_ONLY),
 	ActionControl(MULTI_ONLY),
@@ -98,6 +99,7 @@ TriggerTypeClass::TriggerTypeClass(void) :
  *=============================================================================================*/
 TriggerTypeClass::~TriggerTypeClass(void)
 {
+	IsActive = false;
 }
 
 
@@ -120,9 +122,6 @@ TriggerTypeClass::~TriggerTypeClass(void)
 void * TriggerTypeClass::operator new(size_t )
 {
 	void * ptr = TriggerTypes.Allocate();
-	if (ptr) {
-		((TriggerTypeClass *)ptr)->IsActive = true;
-	}
 
 	return(ptr);
 }
@@ -145,9 +144,6 @@ void * TriggerTypeClass::operator new(size_t )
  *=============================================================================================*/
 void TriggerTypeClass::operator delete(void * ptr)
 {
-	if (ptr) {
-		((TriggerTypeClass *)ptr)->IsActive = false;
-	}
 	TriggerTypes.Free((TriggerTypeClass *)ptr);
 }
 

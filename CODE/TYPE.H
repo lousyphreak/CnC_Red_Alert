@@ -460,7 +460,7 @@ class TechnoTypeClass : public ObjectTypeClass
 		**	This specifies the building prerequisites required before an object
 		**	of this type can be produced.
 		*/
-		long Prerequisite;
+		uint32_t Prerequisite;
 
 		/*
 		**	The risk and reward values are used to determine targets and paths
@@ -2024,4 +2024,3 @@ class SmudgeTypeClass : public ObjectTypeClass
 };
 
 #endif
-
