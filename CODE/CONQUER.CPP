@@ -19,6 +19,14 @@
 /* $Header: /CounterStrike/CONQUER.CPP 6     3/13/97 2:05p Steve_tall $ */
 #include <cstdlib>
 
+// disable leak detection
+#ifdef __cplusplus
+extern "C"
+#endif
+const char* __asan_default_options() { return "detect_leaks=0"; }
+
+
+
 #ifdef WIN32
 extern "C" void DirectDraw_Flush_Present(void);
 #endif
