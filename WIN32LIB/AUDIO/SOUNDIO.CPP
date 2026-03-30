@@ -68,6 +68,7 @@ extern	void Colour_Debug (int call_number);
 #include	<windowsx.h>
 #include	"SDLAUDIOBACKEND.H"
 
+#include	<cstdarg>
 #include	<mem.h>
 #include	<WWMEM.H>
 #include	"SOUNDINT.H"
@@ -161,6 +162,32 @@ static void Stop_Sound_Thread(void);
 //static int __cdecl Stream_Sample(void *buffer, long size, BOOL (*callback)(short id, short *odd, void **buffer, long *size));
 volatile BOOL AudioDone = FALSE;
 /*= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =*/
+
+static bool Sound_Trace_Enabled(void)
+{
+	static int enabled = -1;
+	if (enabled == -1) {
+		char const* env = getenv("RA_TRACE_STARTUP");
+		enabled = (env != NULL && env[0] != '\0') ? 1 : 0;
+	}
+	return(enabled != 0);
+}
+
+
+static void Sound_Trace(char const* format, ...)
+{
+	if (!Sound_Trace_Enabled()) {
+		return;
+	}
+
+	va_list arguments;
+	va_start(arguments, format);
+	fprintf(stderr, "[sound] ");
+	vfprintf(stderr, format, arguments);
+	fputc('\n', stderr);
+	fflush(stderr);
+	va_end(arguments);
+}
 
 
 
@@ -329,6 +356,14 @@ static int __cdecl Stream_Sample_Vol(void *buffer, long size, BOOL (*callback)(s
 	long							oldsize;                // Copy of original sound size.
 	AUDHeaderType                   header;
 
+	Sound_Trace("Stream_Sample_Vol start size=%ld volume=%d handle=%d audio_done=%d digi=%d callback=%p",
+		size,
+		volume,
+		handle,
+		AudioDone ? 1 : 0,
+		LockedData.DigiHandle,
+		callback);
+
 	if (!AudioDone && buffer && size && LockedData.DigiHandle != -1) {
 
 		/*
@@ -355,6 +390,7 @@ static int __cdecl Stream_Sample_Vol(void *buffer, long size, BOOL (*callback)(s
 //             ServiceSomething = TRUE;
     	}
 	}
+	Sound_Trace("Stream_Sample_Vol result playid=%d", playid);
 		  return (playid);
 }
 
@@ -560,8 +596,21 @@ int File_Stream_Sample_Vol(char const *filename, int volume, BOOL real_time_star
 	int     fh;
 	int     handle = -1;
 	int     index;
+	BOOL    found = FALSE;
 
-	if (!AudioDone && LockedData.DigiHandle != -1 && filename && Find_File(filename)) {
+	if (filename) {
+		found = Find_File(filename);
+	}
+
+	Sound_Trace("File_Stream_Sample_Vol start file=%s volume=%d real_time=%d audio_done=%d digi=%d found=%d",
+		filename ? filename : "<null>",
+		volume,
+		real_time_start ? 1 : 0,
+		AudioDone ? 1 : 0,
+		LockedData.DigiHandle,
+		found ? 1 : 0);
+
+	if (!AudioDone && LockedData.DigiHandle != -1 && filename && found) {
 
 	/*
 	**  Make sure all sample tracker structures point to the same
@@ -617,6 +666,12 @@ int File_Stream_Sample_Vol(char const *filename, int volume, BOOL real_time_star
 		File_Stream_Preload(handle);
 	}
 
+	Sound_Trace("File_Stream_Sample_Vol result file=%s handle=%d loading=%d pending=%d file_handle=%d",
+		filename ? filename : "<null>",
+		handle,
+		(handle >= 0) ? (st->Loading ? 1 : 0) : -1,
+		(handle >= 0) ? st->FilePending : -1,
+		(handle >= 0) ? st->FileHandle : -1);
 	return (handle);
 }
 

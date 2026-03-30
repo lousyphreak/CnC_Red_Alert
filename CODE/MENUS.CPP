@@ -710,8 +710,13 @@ int Main_Menu(unsigned long )
 		TBLACK, TPF_CENTER|TPF_6PT_GRAD|TPF_USE_GRAD_PAL|TPF_NOSHADOW);
 
 	fixed oldvolume = Options.ScoreVolume;
+	int oldmousestate = Get_Mouse_State();
 	if (oldvolume == 0) {
 		Options.Set_Score_Volume(fixed(4, 10), false);
+	}
+	Map.Set_Default_Mouse(MOUSE_NORMAL, false);
+	while (Get_Mouse_State()) {
+		Show_Mouse();
 	}
 	Theme.Play_Song(THEME_INTRO);
 
@@ -788,9 +793,15 @@ int Main_Menu(unsigned long )
 			/*
 			**	Copy the menu to the visible page.
 			*/
+#ifdef WIN32
+			WWMouse->Draw_Mouse(&HidPage);
+			HidPage.Blit(SeenPage);
+			WWMouse->Erase_Mouse(&HidPage, FALSE);
+#else
 			Hide_Mouse();
 			HidPage.Blit(SeenPage);
 			Show_Mouse();
+#endif
 
 			Set_Logic_Page(SeenBuff);
 			display = false;
@@ -1007,6 +1018,9 @@ int Main_Menu(unsigned long )
 	}
 
 	Options.Set_Score_Volume(oldvolume, false);
+	while (Get_Mouse_State() < oldmousestate) {
+		Hide_Mouse();
+	}
 
 	return(retval);
 }

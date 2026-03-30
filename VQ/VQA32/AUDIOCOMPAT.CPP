@@ -311,7 +311,7 @@ long VQA_OpenAudio(VQAHandleP *vqap)
 	gain = (config->Volume <= 0) ? 0.0f : ((config->Volume >= 0x00FF)
 			? 1.0f : ((float)config->Volume / 255.0f));
 	SDL_SetAudioStreamGain(VQAAudioStream, gain);
-	SDL_PauseAudioDevice(device);
+	SDL_PauseAudioStreamDevice(VQAAudioStream);
 
 	audio->CurBlock = 0;
 	audio->NextBlock = 0;
@@ -366,7 +366,6 @@ void VQA_CloseAudio(VQAHandleP *vqap)
 long VQA_StartAudio(VQAHandleP *vqap)
 {
 	VQAAudio *audio;
-	SDL_AudioDeviceID device;
 
 	audio = &vqap->VQABuf->Audio;
 
@@ -393,8 +392,7 @@ long VQA_StartAudio(VQAHandleP *vqap)
 		return (-1);
 	}
 
-	device = Get_Stream_Device();
-	if (device == 0 || !SDL_ResumeAudioDevice(device)) {
+	if (!SDL_ResumeAudioStreamDevice(VQAAudioStream)) {
 		audio->Flags &= ~VQAAUDF_ISPLAYING;
 		AudioFlags &= ~VQAAUDF_ISPLAYING;
 		return (-1);
@@ -407,16 +405,11 @@ long VQA_StartAudio(VQAHandleP *vqap)
 void VQA_StopAudio(VQAHandleP *vqap)
 {
 	VQAAudio *audio;
-	SDL_AudioDeviceID device;
 
 	audio = &vqap->VQABuf->Audio;
-	device = Get_Stream_Device();
-
-	if (device != 0) {
-		SDL_PauseAudioDevice(device);
-	}
 
 	if (VQAAudioStream != NULL) {
+		SDL_PauseAudioStreamDevice(VQAAudioStream);
 		SDL_ClearAudioStream(VQAAudioStream);
 	}
 
@@ -434,15 +427,12 @@ void VQA_StopAudio(VQAHandleP *vqap)
 
 void VQA_PauseAudio(void)
 {
-	SDL_AudioDeviceID device;
-
 	if ((AudioFlags & VQAAUDF_ISPLAYING) == 0 || VQAAudioPaused) {
 		return;
 	}
 
-	device = Get_Stream_Device();
-	if (device != 0) {
-		SDL_PauseAudioDevice(device);
+	if (VQAAudioStream != NULL) {
+		SDL_PauseAudioStreamDevice(VQAAudioStream);
 		VQAAudioPaused = true;
 	}
 }
@@ -450,8 +440,6 @@ void VQA_PauseAudio(void)
 
 void VQA_ResumeAudio(void)
 {
-	SDL_AudioDeviceID device;
-
 	if ((AudioFlags & VQAAUDF_ISPLAYING) == 0 || !VQAAudioPaused) {
 		return;
 	}
@@ -460,8 +448,7 @@ void VQA_ResumeAudio(void)
 		Drain_Audio_Blocks(VQAP);
 	}
 
-	device = Get_Stream_Device();
-	if (device != 0 && SDL_ResumeAudioDevice(device)) {
+	if (VQAAudioStream != NULL && SDL_ResumeAudioStreamDevice(VQAAudioStream)) {
 		VQAAudioPaused = false;
 	}
 }

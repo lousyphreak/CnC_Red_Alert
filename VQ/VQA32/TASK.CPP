@@ -304,6 +304,10 @@ long VQA_Play(VQAHandle *vqa, long mode)
 							vqabuf->Flags |= (VQADATF_DDONE|VQADATF_LDONE);
 						}
 					}
+					else if (rc == VQAERR_EOF) {
+						vqabuf->Flags |= (VQADATF_DDONE|VQADATF_LDONE);
+						rc = 0;
+					}
 					else if ((vqabuf->Flags & VQADATF_LDONE)
 							&& (rc == VQAERR_NOBUFFER)) {
 						vqabuf->Flags |= VQADATF_DDONE;

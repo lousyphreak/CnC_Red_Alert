@@ -81,6 +81,7 @@ typedef enum {
 /*
 ------------------------------- Shape header --------------------------------
 */
+#pragma pack(push, 1)
 typedef struct {
 	uint16_t		ShapeType;			// 0 = normal, 1 = 16 colors,
 										//  2 = uncompressed, 4 = 	<16 colors
@@ -91,7 +92,8 @@ typedef struct {
 	uint16_t		DataLength;			// Size of the uncompressed shape (just data)
 	uint8_t		Colortable[16];	// Optional color table for compact shape
 } Shape_Type;
-static_assert(sizeof(Shape_Type) == 28, "Shape_Type must stay 28 bytes");
+#pragma pack(pop)
+static_assert(sizeof(Shape_Type) == 26, "Shape_Type must stay 26 bytes");
 
 /*
 ------------------------------- Shape block ---------------------------------

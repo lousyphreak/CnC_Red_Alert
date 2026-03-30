@@ -62,6 +62,22 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - Menu click hit-testing is no longer using stale mouse coordinates:
   - `CODE/KEY.CPP` now updates `MouseQX` / `MouseQY` on `WM_MOUSEMOVE`;
   - queued mouse-button messages now capture the current coordinates immediately when the event is enqueued.
+- The SDL/Win32 input bridge now matches the legacy menu/movie expectations closely enough for the front end to keep moving past the intro:
+  - `SDL3_COMPAT/wrappers/win32_compat.cpp` now maps SDL keyboard events to Win32 virtual keys instead of forwarding raw SDL keycodes;
+  - `GetKeyState()` / `GetAsyncKeyState()` now report ordinary keys and mouse buttons, and `GetAsyncKeyState()` keeps a one-shot press latch for callers that check the low bit;
+  - SDL mouse motion/button events now preserve `MK_*` button flags and distinguish middle mouse from right mouse correctly.
+- Manual intro breakout is restored again on the SDL/Linux path:
+  - `SDL3_COMPAT/wrappers/win32_compat.cpp` now exposes toggle-key state with the normal Win32 low-bit convention instead of the earlier compat-only `0x0008` pollution;
+  - this stops `CODE/KEY.CPP` from spuriously adding `WWKEY_SHIFT_BIT` to `ESC` when NumLock/CapsLock are set, so the intro callback can match exact `KN_ESC` again.
+- The main-menu software cursor is visible again:
+  - `CODE/MENUS.CPP` now restores the default `MOUSE_NORMAL` shape on menu entry, forces the Westwood software cursor hide-count back to visible state, and composites the software cursor into the menu blit on the active Win32/SDL front-end path;
+  - `WIN32LIB/SHAPE/SHAPE.H` and `WIN32LIB/INCLUDE/SHAPE.H` now keep the raw on-disk `Shape_Type` header packed to 26 bytes, so `Get_Shape_Width()` / `Get_Shape_Original_Height()` read real cursor dimensions on LP64 hosts instead of rejecting valid `.SHP` cursor frames with bogus sizes.
+- The movie-to-menu audio handoff is now isolated to the VQA stream itself:
+  - `VQ/VQA32/AUDIOCOMPAT.CPP` now pauses and resumes the movie SDL audio stream directly instead of routing those state changes through broader device helpers;
+  - traced startup runs now show the front-end theme successfully opening and starting `INTRO.AUD` after the intro completes.
+- Intro `ESC` abort no longer hard-locks the process:
+  - `VQ/VQA32/TASK.CPP` now treats callback-driven `VQAERR_EOF` from the active buffered draw path as a real movie-stop condition instead of ignoring it and continuing to spin the player loop;
+  - this lets the intro abort unwind through normal VQA shutdown, return from `VQA_Play()`, and continue startup exactly like a completed movie.
 - A compositor close request now shuts the game down cleanly through the SDL/Win32 message bridge instead of leaving the process hung until `SIGKILL`.
 - Validation status:
   - `cmake --build build --target redalert -j4` passes.
@@ -74,9 +90,29 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - A traced startup run now logs `ENGLISH.VQA` with `block=4x4`, and the first callback samples are non-zero from frame `0` onward instead of staying all black.
   - Two focused intro captures taken a few seconds apart now differ across tens of thousands of pixels, confirming that the intro is animating on-screen instead of presenting a static black frame.
   - Dumped `ENGLISH.VQA` reference frames from `ffmpeg` now match the in-engine buffered output for sampled early and later intro frames (`frame 7` and `frame 15`), replacing the previous quadrant/garbled decode.
+  - A fresh traced startup run now reaches `Play_Movie VQA_Play complete`, `Init_Game Play_Intro complete`, `Load_Title_Page complete`, and `Init_One_Time_Systems ... complete` instead of stalling at the intro→menu boundary.
+  - A standalone temporary harness linked against the built `libsdl3_compat.a` now passes direct checks for the repaired input bridge:
+    - `SDL_SCANCODE_Q` translates to `WM_KEYDOWN` + `VK_Q`;
+    - `SDL_SCANCODE_UP` translates to `WM_KEYDOWN` + `VK_UP`;
+    - `SDL_EVENT_MOUSE_MOTION` preserves `MK_LBUTTON` in `wParam`;
+    - middle and left mouse button events translate to `WM_MBUTTONDOWN` / `WM_LBUTTONDOWN`;
+    - `GetAsyncKeyState()` now exposes the expected low-bit press latch for keyboard and mouse buttons.
+  - A second standalone temporary harness now confirms that `GetKeyState(VK_CAPITAL)` / `GetKeyState(VK_NUMLOCK)` report only the Win32 low toggle bit (`0x0001`) and no compat-only `0x0008` bit, which is the condition needed for exact intro `KN_ESC` breakout matching in `CODE/CONQUER.CPP`.
   - Running `GameData/redalert-asan` with `ASAN_OPTIONS=abort_on_error=1:detect_leaks=0:new_delete_type_mismatch=0` reaches the same front-end baseline, handles window close, and emits no sanitizer diagnostics on the latest quiet run.
   - `RA_TRACE_STARTUP=1 gdb ./redalert-asan` from `GameData/` now gets through the same startup path without the earlier immediate ASan abort.
   - Re-running the user-visible ASan intro path (`cmake --build build-asan -j32`, copy `build-asan/redalert` to `GameData/redalert`, then `RA_TRACE_STARTUP=1 ./redalert`) now stays alive past the old `UnVQ_4x4` overflow point and emits no sanitizer diagnostics on the traced intro run.
+  - A fresh `RA_TRACE_STARTUP=1` ASan run now logs the menu-theme startup path immediately after `Init_One_Time_Systems complete`:
+    - `Theme.Play_Song(THEME_INTRO)` reaches `File_Stream_Sample_Vol("INTRO.AUD", ...)`;
+    - `File_Stream_Sample_Vol()` returns valid streaming handles (`4`, then `3` after a focus-driven restart);
+    - `Stream_Sample_Vol()` returns matching play IDs for those handles.
+  - A forced callback-abort `gdb` run now reaches `reached task shutdown`, `entered VQA_StopAudio`, and `returned from VQA_Play` instead of wedging after the callback returns early.
+  - A second forced `key == KN_ESC` `gdb` run now confirms the real intro-breakout branch follows the same path:
+    - `Brokeout=1` at `Play_Movie VQA_Play complete`;
+    - startup then proceeds through `Init_Game Play_Intro complete`, `Load_Title_Page complete`, `Init_One_Time_Systems complete`, and the first main-menu `Theme.Play_Song(THEME_INTRO)` call.
+  - A focused main-menu `gdb` probe now reaches the cursor-present path in `CODE/MENUS.CPP` with the software cursor visible (`state=0`) and a valid default cursor shape:
+    - `MouseShapes` count remains `222`;
+    - the extracted menu cursor shape now reads as `30x24`;
+    - `WWMouse` records matching runtime dimensions (`curw=30`, `curh=24`) instead of the earlier bogus `6144x109` reject case.
   - `ctest --test-dir build --output-on-failure` reports that the repository currently has no registered tests.
 
 ## Runtime fixes since first successful link
@@ -116,6 +152,16 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - Fixed buffered VQA palette upload on the active SDL/Linux movie path by teaching `VQ/VQA32/DRAWER.CPP::DrawFrame_Buffer()` to apply frame palettes and deferred skipped-frame palettes before the game callback blits the decoded image to `SeenBuff`.
 - Fixed SDL movie color presentation in `SDL3_COMPAT/wrappers/ddraw_compat.cpp` by switching the compat texture format from `SDL_PIXELFORMAT_RGBA8888` to `SDL_PIXELFORMAT_ARGB8888` and disabling texture blending; the old format mismatch made palette-expanded movie pixels show up as dark/red shades.
 - Fixed SDL/Win32 menu click handling by updating `CODE/KEY.CPP` so `WM_MOUSEMOVE` refreshes `MouseQX` / `MouseQY` and queued mouse-button events latch the current coordinates immediately.
+- Fixed SDL/Win32 input translation/state handling in `SDL3_COMPAT/wrappers/win32_compat.cpp`:
+  - SDL key events now translate to Win32 virtual keys instead of raw SDL keycodes;
+  - `GetKeyState()` / `GetAsyncKeyState()` now report ordinary keys and mouse buttons correctly;
+  - `GetAsyncKeyState()` now keeps a one-shot low-bit press latch for callers that rely on Win32 transition semantics;
+  - middle mouse now maps to `WM_MBUTTON*`, and mouse motion/button events preserve `MK_*` state.
+- Fixed compat toggle-key state reporting in `SDL3_COMPAT/wrappers/win32_compat.cpp` so `GetKeyState(VK_CAPITAL)` / `GetKeyState(VK_NUMLOCK)` now match Win32 low-bit semantics instead of polluting legacy key queueing with a fake `0x0008` shift bit.
+- Fixed main-menu cursor visibility in `CODE/MENUS.CPP` by normalizing the Westwood software-cursor hide count to visible-on-entry and restoring the prior hide count on exit.
+- Fixed VQA/movie audio pause-resume scoping in `VQ/VQA32/AUDIOCOMPAT.CPP` by pausing/resuming the movie SDL stream directly instead of routing those state changes through broader device helpers.
+- Fixed buffered VQA movie abort handling in `VQ/VQA32/TASK.CPP` so callback-driven `VQAERR_EOF` (including intro `ESC` breakout) is treated as movie completion instead of being ignored and leaving the player loop spinning with update state still set.
+- Added `RA_TRACE_STARTUP` diagnostics around `Theme.Play_Song()` and streamed score startup in `WIN32LIB/AUDIO/SOUNDIO.CPP` so intro→menu theme handoff regressions can be traced without reintroducing always-on callback spam.
 - Added a `redalert` post-build deployment step in `CMakeLists.txt` so `GameData/redalert` and `GameData/redalert-asan` stay synchronized with the latest normal and ASan builds.
 
 ## Build layout in use
@@ -192,7 +238,7 @@ The final link failure was narrowed to the movie layer and resolved by replacing
 
 ## Remaining validation work
 
-1. Re-test front-end interaction with real user-driven pointer input on SDL/Wayland to confirm that visible cursor motion and click behavior now match the restored queue-side mouse coordinates.
+1. Re-test front-end interaction with real user-driven pointer input on SDL/Wayland to confirm that visible cursor motion, click behavior, and intro `ESC` breakout now match the repaired compat/input/VQA-stop behavior in live use.
 2. Re-check additional VQA playback beyond `ENGLISH.VQA`/`REDINTRO` to confirm no other movie variants rely on version-specific pointer handling that is still missing on the SDL3/Linux path.
 3. Validate the same CMake target on Windows and fix any remaining case, type-width, or wrapper issues that only surface there.
 4. Continue tightening remaining legacy Win32/DirectDraw/audio assumptions only where runtime behavior or sanitizers still prove they are wrong on 64-bit/SDL3 builds.

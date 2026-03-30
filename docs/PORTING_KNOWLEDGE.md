@@ -65,7 +65,12 @@ _Last updated: 2026-03-30_
 - The SDL3-backed implementation keeps the old VQA loader/buffer structure intact:
   - audio blocks are still copied into the existing ring buffer;
   - queued-byte accounting is used for `VQA_GetTime()` when audio timing is active;
-  - `VQA_PauseAudio()` / `VQA_ResumeAudio()` pause and resume the SDL playback device instead of touching HMI sample handles.
+  - `VQA_PauseAudio()` / `VQA_ResumeAudio()` pause and resume the movie SDL stream directly instead of touching HMI sample handles.
+- Traced intro→menu runs now show the front-end theme successfully reaching `File_Stream_Sample_Vol("INTRO.AUD", ...)` and `Stream_Sample_Vol(...)` after startup movie playback completes.
+- `WINSTUB.CPP::Focus_Loss()` calls `Theme.Suspend()`, so a brief `WM_ACTIVATEAPP` focus flap around the intro→menu handoff can legitimately reset `Current=-1`, move `Pending=Score`, and cause one immediate theme restart on the next `Theme.AI()` pass.
+- In the active buffered movie path, `config->DrawerCallback(...)` returning non-zero makes `DrawFrame_Buffer()` return `VQAERR_EOF`.
+  - `VQ/VQA32/TASK.CPP` must treat that as a real stop condition.
+  - If the draw loop ignores it, the player keeps spinning with `VQADATF_UPDATE` / `VQADATF_DSLEEP` state still set and the process appears hard-locked when the intro is aborted with `ESC`.
 - Because the build globally defines `WIN32=1` for legacy code, SDL headers must be included with `WIN32` / `_WIN32` temporarily undefined in files that include SDL directly. Otherwise SDL takes Windows-only include paths and collides with the old SOS typedef layer.
 
 ## Linkage and header pitfalls
@@ -109,6 +114,26 @@ _Last updated: 2026-03-30_
   - click selection uses `Keyboard->MouseQX` / `Keyboard->MouseQY` from `CODE/KEY.CPP`.
 - `CODE/KEY.CPP` therefore has to update `MouseQX` / `MouseQY` both on `WM_MOUSEMOVE` and when queueing mouse-button events. Otherwise button clicks can be delivered with stale coordinates even if the low-level SDL/Win32 button message itself arrived.
 - The software cursor in `WIN32LIB/KEYBOARD/MOUSE.CPP` is timer-driven and redraws from `GetCursorPos()`, so queue-side mouse-coordinate fixes and visible cursor fixes are related but not the same subsystem.
+- `SDL3_COMPAT/wrappers/win32_compat.cpp` must translate SDL keyboard events to Win32 virtual-key values before they enter the legacy queue.
+  - Passing raw SDL keycodes through as `wParam` only works for a few accidental overlaps such as `ESC`.
+  - Letters need uppercase `VK_*` values, arrows/function keys need their Win32 virtual keys, and keypad/punctuation keys need explicit mapping.
+- `GetKeyState()` / `GetAsyncKeyState()` in the SDL compat layer must report ordinary keys and mouse buttons, not just modifiers.
+  - `CODE/KEY.CPP::Down()` is just `GetAsyncKeyState(key & 0xFF) != 0`, so returning `0` for non-modifier keys makes the UI look frozen even when the menu loop is still running.
+  - Some legacy loops also use `GetAsyncKeyState(vk) & 1`, so the compat layer needs a one-shot low-bit latch for recent press transitions as well as current high-bit state.
+- Toggle keys must also keep real Win32 low-bit semantics:
+  - `CODE/KEY.CPP` still probes `GetKeyState(VK_CAPITAL/VK_NUMLOCK) & 0x0008` when building queued key codes;
+  - if the compat layer incorrectly sets that bit, ordinary keys like `ESC` pick up `WWKEY_SHIFT_BIT` and exact comparisons against `KN_ESC` fail in the intro callback.
+- The intro breakout path on this build is now two-stage:
+  - `CODE/CONQUER.CPP::VQ_Call_Back()` sets `Brokeout = true` and returns non-zero when it sees exact `KN_ESC`;
+  - `VQ/VQA32/TASK.CPP` then has to convert the resulting `VQAERR_EOF` into movie shutdown so `VQA_StopAudio()`, `VQA_Play()` return, and startup continues to the title/menu path.
+- Mouse messages from the SDL compat layer should carry current `MK_*` flags and correct button identities.
+  - `SDL_EVENT_MOUSE_MOTION` should preserve held-button state in `wParam`.
+  - `SDL_EVENT_MOUSE_BUTTON_DOWN/UP` must distinguish left, middle, and right buttons; mapping middle mouse to right mouse breaks the old Win32 message contract.
+- `Init_Mouse()` leaves the software cursor hidden again before front-end flow continues, so menu entry points that need pointer interaction must drive the Westwood cursor hide count back to visible state explicitly and restore the prior hide state when they exit.
+- The menu cursor regression on LP64 was not just a hide-count problem:
+  - the active `Shape_Type` file header must stay packed to the original 26-byte on-disk layout in `WIN32LIB/SHAPE/SHAPE.H` / `WIN32LIB/INCLUDE/SHAPE.H`;
+  - if that header grows to 28 bytes, `Get_Shape_Width()` / `Get_Shape_Original_Height()` read the wrong offsets from raw `.SHP` data, so a real `30x24` mouse frame is misread as `6144x109`, `ASM_Set_Mouse_Cursor()` rejects it against the `48x48` cursor buffer, and the software cursor becomes invisible even though menu code has already unhidden it;
+  - once the shape header is packed again, `CODE/MENUS.CPP` can reliably restore `MOUSE_NORMAL` and composite `WWMouse->Draw_Mouse(&HidPage)` into the title/menu blit to keep the front-end cursor visible on the SDL/Win32 path.
 
 ## 64-bit ABI pitfalls found during runtime debugging
 

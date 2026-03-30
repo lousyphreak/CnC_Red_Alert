@@ -362,6 +362,15 @@ void ThemeClass::Queue_Song(ThemeType theme)
  *=============================================================================================*/
 int ThemeClass::Play_Song(ThemeType theme)
 {
+	Theme_Trace("Play_Song request theme=%d current=%d score=%d pending=%d scores=%d sample=%d quiet=%d scorevol=%d",
+		theme,
+		Current,
+		Score,
+		Pending,
+		ScoresPresent ? 1 : 0,
+		SampleType ? 1 : 0,
+		Debug_Quiet ? 1 : 0,
+		(int)Options.ScoreVolume);
 	if (ScoresPresent && SampleType && !Debug_Quiet && Options.ScoreVolume != 0) {
 		Stop();
 		Score = theme;
@@ -370,6 +379,9 @@ int ThemeClass::Play_Song(ThemeType theme)
 			Current = File_Stream_Sample_Vol(Theme_File_Name(theme), 0xFF, true);
 			StreamLowImpact = false;
 		}
+		Theme_Trace("Play_Song started theme=%d current=%d score=%d", theme, Current, Score);
+	} else {
+		Theme_Trace("Play_Song skipped theme=%d current=%d score=%d", theme, Current, Score);
 	}
 	return(Current);
 }

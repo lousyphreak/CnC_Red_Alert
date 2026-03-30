@@ -3,6 +3,7 @@
 
 #include <SDL3/SDL_loadso.h>
 
+#include <array>
 #include <cctype>
 #include <cstdint>
 #include <cstdarg>
@@ -126,6 +127,8 @@ std::mutex g_window_mutex;
 std::unordered_set<HWND> g_windows;
 std::mutex g_message_queue_mutex;
 std::deque<MSG> g_message_queue;
+std::mutex g_async_key_state_mutex;
+std::array<uint8_t, 256> g_async_key_press_latches{};
 std::mutex g_registered_message_mutex;
 std::unordered_map<std::string, UINT> g_registered_messages;
 std::atomic<UINT> g_next_registered_message{0xC000};
@@ -585,6 +588,321 @@ BOOL fill_find_data(const SearchMatch& entry, WIN32_FIND_DATA* data)
     return TRUE;
 }
 
+constexpr SHORT kCompatKeyDownMask = static_cast<SHORT>(0x8000);
+constexpr SHORT kCompatToggleMask = static_cast<SHORT>(0x0001);
+
+SHORT make_compat_key_state(bool is_down, bool is_toggled = false)
+{
+    SHORT state = 0;
+    if (is_down) {
+        state = static_cast<SHORT>(state | kCompatKeyDownMask);
+    }
+    if (is_toggled) {
+        state = static_cast<SHORT>(state | kCompatToggleMask);
+    }
+    return state;
+}
+
+void note_async_key_press(int virtual_key)
+{
+    if (virtual_key < 0 || virtual_key > 0xFF) {
+        return;
+    }
+
+    std::scoped_lock lock(g_async_key_state_mutex);
+    g_async_key_press_latches[virtual_key] = 1;
+}
+
+SHORT consume_async_key_press(int virtual_key)
+{
+    if (virtual_key < 0 || virtual_key > 0xFF) {
+        return 0;
+    }
+
+    std::scoped_lock lock(g_async_key_state_mutex);
+    const SHORT state = g_async_key_press_latches[virtual_key] != 0 ? static_cast<SHORT>(0x0001) : static_cast<SHORT>(0);
+    g_async_key_press_latches[virtual_key] = 0;
+    return state;
+}
+
+SDL_Keycode virtual_key_to_sdl_keycode(int virtual_key)
+{
+    if (virtual_key >= VK_A && virtual_key <= VK_Z) {
+        return static_cast<SDL_Keycode>('a' + (virtual_key - VK_A));
+    }
+    if (virtual_key >= VK_0 && virtual_key <= VK_9) {
+        return static_cast<SDL_Keycode>('0' + (virtual_key - VK_0));
+    }
+
+    switch (virtual_key) {
+        case VK_BACK: return SDLK_BACKSPACE;
+        case VK_TAB: return SDLK_TAB;
+        case VK_CLEAR: return SDLK_CLEAR;
+        case VK_RETURN: return SDLK_RETURN;
+        case VK_PAUSE: return SDLK_PAUSE;
+        case VK_CAPITAL: return SDLK_CAPSLOCK;
+        case VK_ESCAPE: return SDLK_ESCAPE;
+        case VK_SPACE: return SDLK_SPACE;
+        case VK_PRIOR: return SDLK_PAGEUP;
+        case VK_NEXT: return SDLK_PAGEDOWN;
+        case VK_END: return SDLK_END;
+        case VK_HOME: return SDLK_HOME;
+        case VK_LEFT: return SDLK_LEFT;
+        case VK_UP: return SDLK_UP;
+        case VK_RIGHT: return SDLK_RIGHT;
+        case VK_DOWN: return SDLK_DOWN;
+        case VK_SNAPSHOT: return SDLK_PRINTSCREEN;
+        case VK_INSERT: return SDLK_INSERT;
+        case VK_DELETE: return SDLK_DELETE;
+        case VK_NUMPAD0: return SDLK_KP_0;
+        case VK_NUMPAD1: return SDLK_KP_1;
+        case VK_NUMPAD2: return SDLK_KP_2;
+        case VK_NUMPAD3: return SDLK_KP_3;
+        case VK_NUMPAD4: return SDLK_KP_4;
+        case VK_NUMPAD5: return SDLK_KP_5;
+        case VK_NUMPAD6: return SDLK_KP_6;
+        case VK_NUMPAD7: return SDLK_KP_7;
+        case VK_NUMPAD8: return SDLK_KP_8;
+        case VK_NUMPAD9: return SDLK_KP_9;
+        case VK_MULTIPLY: return SDLK_KP_MULTIPLY;
+        case VK_ADD: return SDLK_KP_PLUS;
+        case VK_SUBTRACT: return SDLK_KP_MINUS;
+        case VK_DECIMAL: return SDLK_KP_PERIOD;
+        case VK_DIVIDE: return SDLK_KP_DIVIDE;
+        case VK_F1: return SDLK_F1;
+        case VK_F2: return SDLK_F2;
+        case VK_F3: return SDLK_F3;
+        case VK_F4: return SDLK_F4;
+        case VK_F5: return SDLK_F5;
+        case VK_F6: return SDLK_F6;
+        case VK_F7: return SDLK_F7;
+        case VK_F8: return SDLK_F8;
+        case VK_F9: return SDLK_F9;
+        case VK_F10: return SDLK_F10;
+        case VK_F11: return SDLK_F11;
+        case VK_F12: return SDLK_F12;
+        case VK_NUMLOCK: return SDLK_NUMLOCKCLEAR;
+        case VK_SCROLL: return SDLK_SCROLLLOCK;
+        case VK_OEM_1: return SDLK_SEMICOLON;
+        case VK_OEM_PLUS: return SDLK_EQUALS;
+        case VK_OEM_COMMA: return SDLK_COMMA;
+        case VK_OEM_MINUS: return SDLK_MINUS;
+        case VK_OEM_PERIOD: return SDLK_PERIOD;
+        case VK_OEM_2: return SDLK_SLASH;
+        case VK_OEM_3: return SDLK_GRAVE;
+        case VK_OEM_4: return SDLK_LEFTBRACKET;
+        case VK_OEM_5: return SDLK_BACKSLASH;
+        case VK_OEM_6: return SDLK_RIGHTBRACKET;
+        case VK_OEM_7: return SDLK_APOSTROPHE;
+        default: return SDLK_UNKNOWN;
+    }
+}
+
+int sdl_keycode_to_virtual_key(SDL_Keycode keycode)
+{
+    if (keycode >= SDLK_A && keycode <= SDLK_Z) {
+        return VK_A + static_cast<int>(keycode - SDLK_A);
+    }
+    if (keycode >= SDLK_0 && keycode <= SDLK_9) {
+        return static_cast<int>(keycode);
+    }
+
+    switch (keycode) {
+        case SDLK_BACKSPACE: return VK_BACK;
+        case SDLK_TAB: return VK_TAB;
+        case SDLK_CLEAR: return VK_CLEAR;
+        case SDLK_RETURN:
+        case SDLK_RETURN2:
+        case SDLK_KP_ENTER: return VK_RETURN;
+        case SDLK_PAUSE: return VK_PAUSE;
+        case SDLK_CAPSLOCK: return VK_CAPITAL;
+        case SDLK_ESCAPE: return VK_ESCAPE;
+        case SDLK_SPACE: return VK_SPACE;
+        case SDLK_PAGEUP: return VK_PRIOR;
+        case SDLK_PAGEDOWN: return VK_NEXT;
+        case SDLK_END: return VK_END;
+        case SDLK_HOME: return VK_HOME;
+        case SDLK_LEFT: return VK_LEFT;
+        case SDLK_UP: return VK_UP;
+        case SDLK_RIGHT: return VK_RIGHT;
+        case SDLK_DOWN: return VK_DOWN;
+        case SDLK_PRINTSCREEN: return VK_SNAPSHOT;
+        case SDLK_INSERT: return VK_INSERT;
+        case SDLK_DELETE: return VK_DELETE;
+        case SDLK_LSHIFT:
+        case SDLK_RSHIFT: return VK_SHIFT;
+        case SDLK_LCTRL:
+        case SDLK_RCTRL: return VK_CONTROL;
+        case SDLK_LALT:
+        case SDLK_RALT: return VK_MENU;
+        case SDLK_SCROLLLOCK: return VK_SCROLL;
+        case SDLK_NUMLOCKCLEAR: return VK_NUMLOCK;
+        case SDLK_F1: return VK_F1;
+        case SDLK_F2: return VK_F2;
+        case SDLK_F3: return VK_F3;
+        case SDLK_F4: return VK_F4;
+        case SDLK_F5: return VK_F5;
+        case SDLK_F6: return VK_F6;
+        case SDLK_F7: return VK_F7;
+        case SDLK_F8: return VK_F8;
+        case SDLK_F9: return VK_F9;
+        case SDLK_F10: return VK_F10;
+        case SDLK_F11: return VK_F11;
+        case SDLK_F12: return VK_F12;
+        case SDLK_KP_0: return VK_NUMPAD0;
+        case SDLK_KP_1: return VK_NUMPAD1;
+        case SDLK_KP_2: return VK_NUMPAD2;
+        case SDLK_KP_3: return VK_NUMPAD3;
+        case SDLK_KP_4: return VK_NUMPAD4;
+        case SDLK_KP_5: return VK_NUMPAD5;
+        case SDLK_KP_6: return VK_NUMPAD6;
+        case SDLK_KP_7: return VK_NUMPAD7;
+        case SDLK_KP_8: return VK_NUMPAD8;
+        case SDLK_KP_9: return VK_NUMPAD9;
+        case SDLK_KP_MULTIPLY: return VK_MULTIPLY;
+        case SDLK_KP_PLUS: return VK_ADD;
+        case SDLK_KP_MINUS: return VK_SUBTRACT;
+        case SDLK_KP_PERIOD: return VK_DECIMAL;
+        case SDLK_KP_DIVIDE: return VK_DIVIDE;
+        case SDLK_SEMICOLON: return VK_OEM_1;
+        case SDLK_EQUALS: return VK_OEM_PLUS;
+        case SDLK_COMMA: return VK_OEM_COMMA;
+        case SDLK_MINUS: return VK_OEM_MINUS;
+        case SDLK_PERIOD: return VK_OEM_PERIOD;
+        case SDLK_SLASH: return VK_OEM_2;
+        case SDLK_GRAVE: return VK_OEM_3;
+        case SDLK_LEFTBRACKET: return VK_OEM_4;
+        case SDLK_BACKSLASH: return VK_OEM_5;
+        case SDLK_RIGHTBRACKET: return VK_OEM_6;
+        case SDLK_APOSTROPHE: return VK_OEM_7;
+        default: return 0;
+    }
+}
+
+int sdl_keyboard_event_to_virtual_key(const SDL_KeyboardEvent& event)
+{
+    const SDL_Keycode unshifted_keycode = SDL_GetKeyFromScancode(event.scancode, SDL_KMOD_NONE, true);
+    int virtual_key = sdl_keycode_to_virtual_key(unshifted_keycode);
+    if (virtual_key != 0) {
+        return virtual_key;
+    }
+
+    virtual_key = sdl_keycode_to_virtual_key(event.key);
+    return virtual_key;
+}
+
+bool is_scancode_pressed(const bool* keyboard_state, int key_count, SDL_Scancode scancode)
+{
+    return keyboard_state != nullptr && scancode != SDL_SCANCODE_UNKNOWN && static_cast<int>(scancode) >= 0
+        && static_cast<int>(scancode) < key_count && keyboard_state[scancode];
+}
+
+bool is_virtual_key_pressed(int virtual_key)
+{
+    int key_count = 0;
+    const bool* keyboard_state = SDL_GetKeyboardState(&key_count);
+    if (!keyboard_state) {
+        return false;
+    }
+
+    if (virtual_key == VK_RETURN) {
+        return is_scancode_pressed(keyboard_state, key_count, SDL_SCANCODE_RETURN)
+            || is_scancode_pressed(keyboard_state, key_count, SDL_SCANCODE_RETURN2)
+            || is_scancode_pressed(keyboard_state, key_count, SDL_SCANCODE_KP_ENTER);
+    }
+
+    const SDL_Keycode keycode = virtual_key_to_sdl_keycode(virtual_key);
+    if (keycode == SDLK_UNKNOWN) {
+        return false;
+    }
+
+    const SDL_Scancode scancode = SDL_GetScancodeFromKey(keycode, nullptr);
+    return is_scancode_pressed(keyboard_state, key_count, scancode);
+}
+
+SDL_MouseButtonFlags current_mouse_buttons()
+{
+    float mouse_x = 0.0f;
+    float mouse_y = 0.0f;
+    return SDL_GetMouseState(&mouse_x, &mouse_y);
+}
+
+SHORT mouse_button_state(SDL_MouseButtonFlags buttons, SDL_MouseButtonFlags mask)
+{
+    return (buttons & mask) != 0 ? kCompatKeyDownMask : static_cast<SHORT>(0);
+}
+
+WPARAM mouse_buttons_to_mk_flags(SDL_MouseButtonFlags buttons)
+{
+    WPARAM flags = 0;
+    if ((buttons & SDL_BUTTON_LMASK) != 0) {
+        flags |= MK_LBUTTON;
+    }
+    if ((buttons & SDL_BUTTON_RMASK) != 0) {
+        flags |= MK_RBUTTON;
+    }
+    if ((buttons & SDL_BUTTON_MMASK) != 0) {
+        flags |= MK_MBUTTON;
+    }
+
+    const SDL_Keymod mod_state = SDL_GetModState();
+    if ((mod_state & SDL_KMOD_SHIFT) != 0) {
+        flags |= MK_SHIFT;
+    }
+    if ((mod_state & SDL_KMOD_CTRL) != 0) {
+        flags |= MK_CONTROL;
+    }
+
+    return flags;
+}
+
+int mouse_button_to_virtual_key(Uint8 button)
+{
+    switch (button) {
+        case SDL_BUTTON_LEFT: return VK_LBUTTON;
+        case SDL_BUTTON_MIDDLE: return VK_MBUTTON;
+        case SDL_BUTTON_RIGHT: return VK_RBUTTON;
+        default: return 0;
+    }
+}
+
+UINT mouse_button_message(Uint8 button, bool down)
+{
+    switch (button) {
+        case SDL_BUTTON_LEFT: return down ? WM_LBUTTONDOWN : WM_LBUTTONUP;
+        case SDL_BUTTON_MIDDLE: return down ? WM_MBUTTONDOWN : WM_MBUTTONUP;
+        case SDL_BUTTON_RIGHT: return down ? WM_RBUTTONDOWN : WM_RBUTTONUP;
+        default: return 0;
+    }
+}
+
+SHORT current_virtual_key_state(int virtual_key)
+{
+    SDL_PumpEvents();
+
+    const SDL_Keymod mod_state = SDL_GetModState();
+    switch (virtual_key) {
+        case VK_LBUTTON:
+            return mouse_button_state(current_mouse_buttons(), SDL_BUTTON_LMASK);
+        case VK_RBUTTON:
+            return mouse_button_state(current_mouse_buttons(), SDL_BUTTON_RMASK);
+        case VK_MBUTTON:
+            return mouse_button_state(current_mouse_buttons(), SDL_BUTTON_MMASK);
+        case VK_SHIFT:
+            return make_compat_key_state((mod_state & SDL_KMOD_SHIFT) != 0);
+        case VK_CONTROL:
+            return make_compat_key_state((mod_state & SDL_KMOD_CTRL) != 0);
+        case VK_MENU:
+            return make_compat_key_state((mod_state & SDL_KMOD_ALT) != 0);
+        case VK_CAPITAL:
+            return make_compat_key_state(false, (mod_state & SDL_KMOD_CAPS) != 0);
+        case VK_NUMLOCK:
+            return make_compat_key_state(false, (mod_state & SDL_KMOD_NUM) != 0);
+        default:
+            return make_compat_key_state(is_virtual_key_pressed(virtual_key));
+    }
+}
+
 BOOL next_message(MSG* message, bool remove, bool wait)
 {
     for (;;) {
@@ -638,36 +956,63 @@ BOOL next_message(MSG* message, bool remove, bool wait)
                 compat_trace("SDL_EVENT_WINDOW_FOCUS_LOST -> WM_ACTIVATEAPP hwnd=%p", translated.hwnd);
                 break;
             case SDL_EVENT_KEY_DOWN:
+            {
+                const int virtual_key = sdl_keyboard_event_to_virtual_key(event.key);
+                if (virtual_key == 0) {
+                    continue;
+                }
                 translated.message = WM_KEYDOWN;
                 translated.hwnd = window_for_id(event.key.windowID);
-                translated.wParam = static_cast<WPARAM>(event.key.key);
+                translated.wParam = static_cast<WPARAM>(virtual_key);
+                note_async_key_press(virtual_key);
                 break;
+            }
             case SDL_EVENT_KEY_UP:
+            {
+                const int virtual_key = sdl_keyboard_event_to_virtual_key(event.key);
+                if (virtual_key == 0) {
+                    continue;
+                }
                 translated.message = WM_KEYUP;
                 translated.hwnd = window_for_id(event.key.windowID);
-                translated.wParam = static_cast<WPARAM>(event.key.key);
+                translated.wParam = static_cast<WPARAM>(virtual_key);
                 break;
+            }
             case SDL_EVENT_MOUSE_MOTION:
                 translated.message = WM_MOUSEMOVE;
                 translated.hwnd = window_for_id(event.motion.windowID);
+                translated.wParam = mouse_buttons_to_mk_flags(event.motion.state);
                 translated.pt.x = static_cast<LONG>(event.motion.x);
                 translated.pt.y = static_cast<LONG>(event.motion.y);
                 translated.lParam = MAKELONG(static_cast<int>(event.motion.x), static_cast<int>(event.motion.y));
                 break;
             case SDL_EVENT_MOUSE_BUTTON_DOWN:
-                translated.message = event.button.button == SDL_BUTTON_LEFT ? WM_LBUTTONDOWN : WM_RBUTTONDOWN;
+            {
+                translated.message = mouse_button_message(event.button.button, true);
+                if (translated.message == 0) {
+                    continue;
+                }
                 translated.hwnd = window_for_id(event.button.windowID);
+                translated.wParam = mouse_buttons_to_mk_flags(current_mouse_buttons());
                 translated.pt.x = static_cast<LONG>(event.button.x);
                 translated.pt.y = static_cast<LONG>(event.button.y);
                 translated.lParam = MAKELONG(static_cast<int>(event.button.x), static_cast<int>(event.button.y));
+                note_async_key_press(mouse_button_to_virtual_key(event.button.button));
                 break;
+            }
             case SDL_EVENT_MOUSE_BUTTON_UP:
-                translated.message = event.button.button == SDL_BUTTON_LEFT ? WM_LBUTTONUP : WM_RBUTTONUP;
+            {
+                translated.message = mouse_button_message(event.button.button, false);
+                if (translated.message == 0) {
+                    continue;
+                }
                 translated.hwnd = window_for_id(event.button.windowID);
+                translated.wParam = mouse_buttons_to_mk_flags(current_mouse_buttons());
                 translated.pt.x = static_cast<LONG>(event.button.x);
                 translated.pt.y = static_cast<LONG>(event.button.y);
                 translated.lParam = MAKELONG(static_cast<int>(event.button.x), static_cast<int>(event.button.y));
                 break;
+            }
             default:
                 continue;
         }
@@ -1045,27 +1390,12 @@ void GlobalMemoryStatus(MEMORYSTATUS* memory_status)
 
 SHORT GetKeyState(int virtual_key)
 {
-    const SDL_Keymod mod_state = SDL_GetModState();
-
-    switch (virtual_key) {
-    case VK_SHIFT:
-        return (mod_state & SDL_KMOD_SHIFT) ? static_cast<SHORT>(0x8000) : static_cast<SHORT>(0);
-    case VK_CONTROL:
-        return (mod_state & SDL_KMOD_CTRL) ? static_cast<SHORT>(0x8000) : static_cast<SHORT>(0);
-    case VK_MENU:
-        return (mod_state & SDL_KMOD_ALT) ? static_cast<SHORT>(0x8000) : static_cast<SHORT>(0);
-    case VK_CAPITAL:
-        return (mod_state & SDL_KMOD_CAPS) ? static_cast<SHORT>(0x0001) : static_cast<SHORT>(0);
-    case VK_NUMLOCK:
-        return (mod_state & SDL_KMOD_NUM) ? static_cast<SHORT>(0x0001) : static_cast<SHORT>(0);
-    default:
-        return 0;
-    }
+    return current_virtual_key_state(virtual_key);
 }
 
 SHORT GetAsyncKeyState(int virtual_key)
 {
-    return GetKeyState(virtual_key);
+    return static_cast<SHORT>((current_virtual_key_state(virtual_key) & kCompatKeyDownMask) | consume_async_key_press(virtual_key));
 }
 
 SHORT VkKeyScan(unsigned char ch)
