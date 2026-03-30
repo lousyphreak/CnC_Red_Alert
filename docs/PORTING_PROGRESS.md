@@ -139,6 +139,12 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - The resize follow-up mouse regression is fixed:
   - when the game runs with a `640x480` primary surface but attaches the active `SeenBuff` viewport as `640x400` at `(0,40)`, `CODE/SDLINPUT.CPP` now converts SDL window coordinates into primary-surface coordinates first and then subtracts the active viewport origin before storing the shared mouse position;
   - `SDL3_COMPAT/wrappers/win32_compat.cpp::ClipCursor()` now adds the active viewport origin back before asking SDL to confine the OS cursor, so SDL mouse clipping follows the displayed `SeenBuff` content instead of the raw top-left corner of the primary surface.
+- Mission-map drag selection is restored on the SDL path:
+  - `CODE/SDLINPUT.CPP::SDL_GameInput_Handle_Mouse_Button()` now updates the shared virtual-key down counts on mouse press/release instead of only updating the raw mouse-button bitmask;
+  - this makes `Keyboard->Down(KN_LMOUSE)` / `Keyboard->Down(KN_RMOUSE)` report held state again, so `CODE/GADGET.CPP` emits `LEFTHELD` / `RIGHTHELD` correctly and `CODE/DISPLAY.CPP::Mouse_Left_Held()` can enter rubber-band mode.
+- Focused post-fix runtime probes against the built debug mission path now show the tactical SDL input path behaving as expected:
+  - a full SDL window-coordinate press+drag probe reports `DOWN_AFTER_PRESS=1`, `DOWN_AFTER_MOTION=1`, and `RUBBER_BAND=1`;
+  - a full SDL window-coordinate select-then-enemy-click probe still leaves `CurrentObject.Count()==1` and queues the attack order (`OutList.Count` `0 -> 1`), so the drag fix does not regress ordinary attack clicks.
 - The Hyprland/Wayland window-management mouse regression is fixed for the current windowed SDL path:
   - `SDL3_COMPAT/wrappers/win32_compat.cpp::ClipCursor()` now detects SDL's `wayland` video driver and, for windowed mode, keeps only the game-side `SDL_GameInput_SetCursorClip()` state while clearing any SDL window mouse rectangle;
   - this avoids Wayland pointer confinement and the follow-up `SDL_WarpMouseInWindow()` clamp on that path, so compositor `Meta+left-drag` move and `Meta+right-drag` resize gestures can still take control of the real pointer under Hyprland;
@@ -151,6 +157,8 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - `cmake --build build -j4` passes.
   - `cmake --build build-asan --target redalert -j4` passes.
   - `ctest --test-dir build --output-on-failure` still reports that the repository currently has no registered tests.
+  - A fresh focused `gdb` drag probe on `GameData/redalert-asan` confirms the held-button path after the fix: `DOWN_AFTER_PRESS=1`, `DOWN_AFTER_MOTION=1`, `RUBBER_BAND=1`, `TENTATIVE=1`.
+  - Re-running the focused full-SDL attack-click probe on `GameData/redalert-asan` still reports `SELECTED_AFTER_SDL_CLICK=1` and `OUTLIST_AFTER_SDL_ATTACK=1`.
   - Rebuilding after the Wayland `ClipCursor()` change still passes in both `build/` and `build-asan/`, with the expected `sdl3_compat` and `redalert` relinks only.
   - Running `GameData/redalert` reaches a live `640x480` `Red Alert` window with visible framebuffer updates.
   - `RA_TRACE_STARTUP=1 gdb ./redalert` from `GameData/` now gets through window/audio/media startup instead of aborting immediately in `GetDriveType()`.

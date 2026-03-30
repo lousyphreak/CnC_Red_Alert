@@ -504,9 +504,10 @@ void SDL_GameInput_Handle_Mouse_Button(int button, int x, int y, bool release)
 		uint32_t mask = mouse_button_mask(button);
 		if (!release) {
 			g_mouse_buttons |= mask;
-			note_async_press_locked(virtual_key);
+			press_virtual_key_locked(virtual_key);
 		} else {
 			g_mouse_buttons &= ~mask;
+			release_virtual_key_locked(virtual_key);
 		}
 		mouse_x = g_mouse_x;
 		mouse_y = g_mouse_y;

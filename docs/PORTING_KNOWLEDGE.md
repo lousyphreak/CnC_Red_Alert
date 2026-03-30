@@ -183,6 +183,9 @@ _Last updated: 2026-03-30_
   - key and mouse delivery now stay on the SDL-backed path end-to-end, which removes the old split between queued menu input and polled software-cursor motion.
 - `GetKeyState()` / `GetAsyncKeyState()` in the SDL compat layer must report ordinary keys and mouse buttons, not just modifiers.
   - `CODE/KEY.CPP::Down()` is just `GetAsyncKeyState(key & 0xFF) != 0`, so returning `0` for non-modifier keys makes the UI look frozen even when the menu loop is still running.
+  - Mouse buttons must also drive the shared virtual-key down counts, not just the raw `g_mouse_buttons` mask.
+  - `CODE/GADGET.CPP::Input()` synthesizes `LEFTHELD` / `RIGHTHELD` from `Keyboard->Down(KN_LMOUSE)` / `Keyboard->Down(KN_RMOUSE)`, so if `CODE/SDLINPUT.CPP::SDL_GameInput_Handle_Mouse_Button()` only records the click latch and never calls `press_virtual_key_locked()` / `release_virtual_key_locked()`, mission-map drag behavior breaks even though ordinary click/release events still arrive.
+  - The concrete symptom is that `DisplayClass::Mouse_Left_Held()` never runs, `Map.IsRubberBand` never becomes true, and no drag-select rectangle appears while the button is held.
 - The SDL3 port now lets the main game window resize independently from the logical game framebuffer.
   - The shared letterbox/pillarbox math lives in `RA_GetPresentationRect()`, `RA_WindowToGamePoint()`, and `RA_GameRectToWindowRect()` in `SDL3_COMPAT/wrappers/win32_compat.cpp`.
   - `SDL3_COMPAT/wrappers/ddraw_compat.cpp` must render the primary surface into that computed presentation rectangle and clear the rest of the window to black; otherwise resize stretches or smears the indexed framebuffer.
@@ -219,6 +222,9 @@ _Last updated: 2026-03-30_
 - The latest focused `gdb` validation for the SDL input rewrite was:
   - inject `SDL_GameInput_Handle_Key(0x1B, 41, 0, 0)` from the first `VQ_Call_Back()` hit and confirm startup still reaches `Main_Menu`;
   - push a real `SDL_EVENT_MOUSE_MOTION` with `SDL_PushEvent()` at `Main_Menu`, let the next `Call_Back()` run, and confirm both `Keyboard->MouseQX/MouseQY` and `GetCursorPos()` report `320,200`.
+- A focused debug-mission probe against `SCG01EA.INI` is a fast way to validate tactical SDL mouse behavior end-to-end.
+  - With the fixed `SDL_GameInput_Handle_Mouse_Button()` path, a synthetic SDL press+drag now shows `Keyboard->Down(KN_LMOUSE)=1` after press and `Map.IsRubberBand=1` after motion.
+  - The same full SDL window-coordinate path still selects a player unit and queues an attack click (`OutList.Count` `0 -> 1`), so if enemy orders later fail in live gameplay the first place to look is not `TechnoClass::What_Action()` or `FootClass::Active_Click_With()`.
 - The active Win32/SDL shape path has an extra cached-shape wrapper when `UseBigShapeBuffer` is enabled.
   - `Build_Frame()` can return a pointer to a cached `ShapeHeaderType` wrapper plus reserved line-header scratch, not the raw pixel buffer itself.
   - Code that wants raw frame pixels (for example `Buffer_Frame_To_Page()`) must call `Get_Shape_Header_Data()` first.
