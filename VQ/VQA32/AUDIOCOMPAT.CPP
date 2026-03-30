@@ -29,6 +29,8 @@
 #include <SDL3/SDL_audio.h>
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_timer.h>
+#include <cstdio>
+#include <cstdlib>
 
 #ifdef VQA_RESTORE_WIN32
 #define WIN32 1
@@ -322,6 +324,20 @@ long VQA_OpenAudio(VQAHandleP *vqap)
 
 	Set_State(&audio->Flags, VQAAUDF_DIGIINIT, VQAAUDB_DIGIINIT, HMI_VQAINIT);
 	Set_State((unsigned long *)&AudioFlags, VQAAUDF_DIGIINIT, VQAAUDB_DIGIINIT, HMI_VQAINIT);
+
+	if (getenv("RA_TRACE_STARTUP") != NULL) {
+		fprintf(stderr,
+				"[vqa] audio open audio=%p buffer=%p tempbuf=%p isloaded=%p blocks=%lu rate=%u ch=%u bits=%u\n",
+				audio,
+				audio->Buffer,
+				audio->TempBuf,
+				audio->IsLoaded,
+				audio->NumAudBlocks,
+				(unsigned)audio->sSOSInitDriver.wSampleRate,
+				(unsigned)audio->Channels,
+				(unsigned)audio->BitsPerSample);
+		fflush(stderr);
+	}
 	return (0);
 }
 

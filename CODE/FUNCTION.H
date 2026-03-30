@@ -512,6 +512,8 @@ void Handle_Team(int team, int action=0);
 TechnoTypeClass const * Fetch_Techno_Type(RTTIType type, int id);
 char const * Fading_Table_Name(char const * base, TheaterType theater);
 void Unselect_All(void);
+bool Try_Play_Movie(char const * name, ThemeType theme=THEME_NONE, bool clrscrn=true);
+bool Try_Play_Movie(VQType name, ThemeType theme=THEME_NONE, bool clrscrn=true);
 void Play_Movie(char const * name, ThemeType theme=THEME_NONE, bool clrscrn=true);
 void Play_Movie(VQType name, ThemeType theme=THEME_NONE, bool clrscrn=true);
 bool Main_Loop(void);

@@ -56,3 +56,50 @@ extern "C" void cdecl UnVQ_4x2(unsigned char *codebook, unsigned char *pointers,
 		row_ptr += bufwidth * 2;
 	}
 }
+
+extern "C" void cdecl UnVQ_4x4(unsigned char *codebook, unsigned char *pointers,
+		unsigned char *buffer, unsigned long blocksperrow,
+		unsigned long numrows, unsigned long bufwidth)
+{
+	static const unsigned short SKIP_PTR = 0x8000u;
+	unsigned char *row_ptr = buffer;
+
+	if (codebook == NULL || pointers == NULL || buffer == NULL) {
+		return;
+	}
+
+	for (unsigned long row = 0; row < numrows; ++row) {
+		unsigned char *row0 = row_ptr;
+		unsigned char *row1 = row_ptr + bufwidth;
+		unsigned char *row2 = row_ptr + (bufwidth * 2);
+		unsigned char *row3 = row_ptr + (bufwidth * 3);
+
+		for (unsigned long column = 0; column < blocksperrow; ++column) {
+			const unsigned short code = (unsigned short)pointers[0] | ((unsigned short)pointers[1] << 8);
+			pointers += 2;
+
+			if ((code & 0x8000u) != 0) {
+				if (code != SKIP_PTR) {
+					const unsigned char color = (unsigned char)(~code & 0xFFu);
+					memset(row0, color, 4);
+					memset(row1, color, 4);
+					memset(row2, color, 4);
+					memset(row3, color, 4);
+				}
+			} else {
+				unsigned char *entry = codebook + code - 4;
+				memcpy(row0, entry, 4);
+				memcpy(row1, entry + 4, 4);
+				memcpy(row2, entry + 8, 4);
+				memcpy(row3, entry + 12, 4);
+			}
+
+			row0 += 4;
+			row1 += 4;
+			row2 += 4;
+			row3 += 4;
+		}
+
+		row_ptr += bufwidth * 4;
+	}
+}

@@ -39,6 +39,11 @@
 *
 ****************************************************************************/
 
+/* Fixed-width integer types are required here because IFF/VQA chunk ids and
+ * sizes are always 32-bit on disk, even on LP64 hosts.
+ */
+#include <stdint.h>
+
 /* FormHeader - Structure associated with IFF forms.
  *
  * id   - IFF form id (IE: "FORM")
@@ -46,9 +51,9 @@
  * type - Form type (IE: "ILBM")
  */
 typedef struct _FormHeader {
-	long id;
-	long size;
-	long type;
+	uint32_t id;
+	uint32_t size;
+	uint32_t type;
 } FormHeader;
 
 /* Context - Structure associated with chunks.
@@ -58,9 +63,9 @@ typedef struct _FormHeader {
  * scan - Bytes read/written.
  */
 typedef struct _Context {
-	long id;
-	long size;
-	long scan;
+	uint32_t id;
+	uint32_t size;
+	uint32_t scan;
 } Context;
 
 /* IFFHandle - Structure associated with an active IFF read\write session.
@@ -101,10 +106,10 @@ typedef struct _IFFHandle {
 #define IFFERR_NOMEM -4
 
 /* Macros to make things easier. */
-#define REVERSE_LONG(id) (unsigned long)((((unsigned long)(id)>>24) \
-		&0x000000FFL)|(((unsigned long)(id)>>8) \
-		&0x0000FF00L)|(((unsigned long)(id)<<8) \
-		&0x00FF0000L)|(((unsigned long)(id)<<24)&0xFF000000L))
+#define REVERSE_LONG(id) (uint32_t)((((uint32_t)(id)>>24) \
+		&UINT32_C(0x000000FF))|(((uint32_t)(id)>>8) \
+		&UINT32_C(0x0000FF00))|(((uint32_t)(id)<<8) \
+		&UINT32_C(0x00FF0000))|(((uint32_t)(id)<<24)&UINT32_C(0xFF000000)))
 
 #define REVERSE_WORD(id) ((unsigned short)((((unsigned short)(id)<<8) \
 		&0x00FF00)|(((unsigned short)(id)>>8)&0x0FF)))
@@ -112,8 +117,8 @@ typedef struct _IFFHandle {
 #define PADSIZE(size) (((size)+1)&(~1))
 
 #ifndef MAKE_ID
-#define MAKE_ID(a,b,c,d) ((long)((long)(d)<<24)|((long)(c)<<16)| \
-		((long)(b)<<8)|(long)(a))
+#define MAKE_ID(a,b,c,d) ((uint32_t)((uint32_t)(uint8_t)(d)<<24)|((uint32_t)(uint8_t)(c)<<16)| \
+		((uint32_t)(uint8_t)(b)<<8)|(uint32_t)(uint8_t)(a))
 #endif
 
 /* Universal IFF identifiers */
@@ -138,4 +143,3 @@ char *IDtoStr(long, char *);
 long CurrentFilePos(IFFHandle *);
 
 #endif /* VQMIFF_H */
-

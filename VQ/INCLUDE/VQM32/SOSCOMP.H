@@ -44,8 +44,6 @@ typedef struct _tagCOMPRESS_INFO {
 	char       *lpDest;
 	unsigned long dwCompSize;
 	unsigned long dwUnCompSize;
-	short         wBitSize;
-	short			    wChannels;
 	unsigned long dwSampleIndex;
 	long          dwPredicted;
 	long          dwDifference;
@@ -61,6 +59,8 @@ typedef struct _tagCOMPRESS_INFO {
 	short         wCode2; 			//added BP for channel 2
 	short         wStep2; 			//added BP for channel 2
 	short         wIndex2; 			//added BP for channel 2
+	short         wBitSize;
+	short			    wChannels;
 	} _SOS_COMPRESS_INFO;
 
 /* compressed file type header */
@@ -87,4 +87,3 @@ unsigned long cdecl sosCODECDecompressData(_SOS_COMPRESS_INFO *,unsigned long);
 #endif
 
 #endif
-

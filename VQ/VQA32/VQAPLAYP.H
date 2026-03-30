@@ -60,6 +60,8 @@
 #ifndef cdecl
 #define cdecl __cdecl
 #endif
+#include <stdint.h>
+
 #include <VQM32/VIDEO.H>
 #include <VQM32/SOSCOMP.H>
 #include <VQM32/CAPTOKEN.H>
@@ -107,8 +109,8 @@
  * size - Size of chunk.
  */
 typedef struct _ChunkHeader {
-	unsigned long id;
-	unsigned long size;
+	uint32_t id;
+	uint32_t size;
 } ChunkHeader;
 
 
@@ -120,8 +122,8 @@ typedef struct _ChunkHeader {
  * CompSize   - Compressed size in bytes.
  */
 typedef struct _ZAPHeader {
-	unsigned short UnCompSize;
-	unsigned short CompSize;
+	uint16_t UnCompSize;
+	uint16_t CompSize;
 } ZAPHeader;
 
 

@@ -124,6 +124,10 @@ static VQAConfig _defaultconfig = {
 	/* NumCBBufs: The number of codebook buffers to allocate/use. */
 	3,
 
+	/* SoundObject, PrimaryBufferPtr: DirectSound compatibility placeholders. */
+	NULL,
+	NULL,
+
 	/* VocFile: Filename of audio track override. A value of 0 tells the
 	 * player not to override the movies audio track.
 	 */
@@ -501,6 +505,5 @@ void VQA_DefaultConfig(VQAConfig *config)
 {
 	memcpy(config, &_defaultconfig, sizeof(VQAConfig));
 }
-
 
 

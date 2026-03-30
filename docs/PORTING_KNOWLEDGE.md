@@ -1,6 +1,6 @@
 # Porting Knowledge
 
-_Last updated: 2026-03-29_
+_Last updated: 2026-03-30_
 
 ## Repo facts
 
@@ -21,10 +21,24 @@ _Last updated: 2026-03-29_
   - Pointer bytes are split into low-byte and high-byte streams.
   - A high byte of `0x0F` means a solid-color 4x2 block filled with the low byte.
   - Otherwise `((high << 8) | low)` selects an 8-byte codebook entry.
+- `VQ/VQA32/UNVQCOMPAT.CPP` also now carries the C++ replacement for the old `UnVQ_4x4` decoder used by startup movies.
+  - The pointer stream is 16-bit little-endian values.
+  - `0x8000` is the skip marker.
+  - Other high-bit-set values are one-color blocks, where `~pointer & 0xFF` is the fill color.
+  - Non-negative values address 16-byte codebook entries at `codebook + pointer - 4`.
 - `VQ/VQA32/AUDUNZAPCOMPAT.CPP` is the C++ replacement for the old `AUDUNZAP.ASM` helper used by compressed movie audio.
   - 2-bit and 4-bit delta modes use saturated sample deltas.
   - Raw 5-bit delta mode preserves the original wrapping byte arithmetic.
   - The function returns the number of compressed bytes consumed, matching the old assembly contract.
+
+## Movie runtime pitfalls
+
+- Active VQA/IFF on-disk header structs must use fixed-width integer types. Leaving legacy `unsigned long` fields in the active movie headers breaks parsing on LP64 hosts and causes `VQAERR_NOTVQA`/bad chunk handling on Linux.
+- The active game-facing and VQA-private `VQAConfig` definitions must stay layout-compatible even though the SDL3 build does not use DirectSound objects directly.
+  - Keep the placeholder `SoundObject` and `PrimaryBufferPtr` fields in the private header.
+  - Keep the matching initializer slots in `VQ/VQA32/CONFIG.CPP`.
+- The VQ-side `_SOS_COMPRESS_INFO` layout must match the active game-side ADPCM decoder, not just the original VQ headers.
+- The startup intro movies loaded from the MIX archives use `4x4` VQ blocks. If only `4x2` decode is enabled, the intro can open and play audio while the video surface stays black.
 
 ## SDL3 movie-audio integration
 
@@ -63,6 +77,15 @@ _Last updated: 2026-03-29_
 - The DDE compatibility layer cannot keep startup-critical mutable state in ordinary file-scope globals. Game-side global constructors may call into DDE before those globals are safely initialized.
 - SDL/Wayland startup can deliver focus gained and focus lost in the same early pump cycle. The bootstrap path needs a sticky "focus seen once" latch instead of waiting only on the live `GameInFocus` bit.
 
+## Mouse/input notes
+
+- The active keyboard queue path in this build is `CODE/KEY.CPP`, not `CODE/KEYBOARD.CPP`.
+- Main-menu hover logic is split from click logic:
+  - hover/selection tracking uses `Get_Mouse_X()` / `Get_Mouse_Y()` from `WIN32LIB/KEYBOARD/MOUSE.CPP`;
+  - click selection uses `Keyboard->MouseQX` / `Keyboard->MouseQY` from `CODE/KEY.CPP`.
+- `CODE/KEY.CPP` therefore has to update `MouseQX` / `MouseQY` both on `WM_MOUSEMOVE` and when queueing mouse-button events. Otherwise button clicks can be delivered with stale coordinates even if the low-level SDL/Win32 button message itself arrived.
+- The software cursor in `WIN32LIB/KEYBOARD/MOUSE.CPP` is timer-driven and redraws from `GetCursorPos()`, so queue-side mouse-coordinate fixes and visible cursor fixes are related but not the same subsystem.
+
 ## 64-bit ABI pitfalls found during runtime debugging
 
 - `GameInFocus` must stay a Win32-style `BOOL`, not `bool`. Several legacy translation units still declare it as `extern BOOL GameInFocus`, and shrinking it to 1 byte causes out-of-bounds reads on 64-bit builds.
@@ -99,6 +122,7 @@ _Last updated: 2026-03-29_
 - Running the copied executable from `GameData/` now reaches the real front-end path with a live `640x480` SDL/Hyprland window titled `Red Alert`.
 - The latest validated normal run is no longer visually black; a captured window image has substantial non-black and bright-pixel coverage after the DirectDraw present-path fix.
 - The latest validated normal run opens a PipeWire sink input and emits non-silent monitor audio during the front-end/menu baseline.
+- The latest validated startup run now opens and visibly animates `ENGLISH.VQA` instead of skipping directly to the menu on a black movie surface.
 - The latest validated normal and ASan runs both handle compositor-driven window close cleanly through `SDL_EVENT_WINDOW_CLOSE_REQUESTED -> WM_CLOSE -> WM_DESTROY`.
 - The latest quiet ASan/UBSan validation reaches that same front-end baseline and shuts down without sanitizer diagnostics.
-- The next likely issues are now deeper validation items such as front-end interaction, VQA playback, gameplay transitions, and Windows-specific runtime behavior.
+- The next likely issues are now deeper validation items such as full real-pointer front-end interaction, gameplay transitions, and Windows-specific runtime behavior.

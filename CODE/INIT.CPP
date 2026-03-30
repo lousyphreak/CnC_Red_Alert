@@ -1689,14 +1689,21 @@ static void Play_Intro(bool sequenced)
 #ifdef WIN32
 		char fullname[_MAX_FNAME+_MAX_EXT];
 		_makepath(fullname, NULL, NULL, VQName[VQ_REDINTRO], ".VQA");
-		if (CCFileClass(fullname).Is_Available()) {
-			Play_Movie(VQ_REDINTRO, THEME_NONE, false);
+		const int hires_available = CCFileClass(fullname).Is_Available();
+		init_trace("Play_Intro selecting hi-res=%d file=%s session=%d", hires_available, fullname, Session.Type);
+		if (hires_available) {
+			const bool hires_played = Try_Play_Movie(VQ_REDINTRO, THEME_NONE, false);
+			init_trace("Play_Intro hi-res result=%d", hires_played ? 1 : 0);
+			if (!hires_played) {
+				init_trace("Play_Intro hi-res intro failed, falling back to %s", VQName[VQ_TITLE]);
+				(void)Try_Play_Movie(VQ_TITLE, THEME_NONE, false);
+			}
 		} else {
 			init_trace("Play_Intro hi-res intro unavailable, falling back to %s", VQName[VQ_TITLE]);
-			Play_Movie(VQ_TITLE, THEME_NONE, false);
+			(void)Try_Play_Movie(VQ_TITLE, THEME_NONE, false);
 		}
 #else
-		Play_Movie(VQ_TITLE, THEME_NONE, false);
+		(void)Try_Play_Movie(VQ_TITLE, THEME_NONE, false);
 #endif
 	}
 }

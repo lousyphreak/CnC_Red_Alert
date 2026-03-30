@@ -59,7 +59,7 @@
 #define	VQABLOCK_2X2  0  /* 2x2 block decode enable/disable */
 #define	VQABLOCK_2X3  0  /* 2x2 block decode enable/disable */
 #define	VQABLOCK_4X2  1  /* 4x2 block decode enable/disable */
-#define	VQABLOCK_4X4  0  /* 4x4 block decode enable/disable */
+#define	VQABLOCK_4X4  1  /* 4x4 block decode enable/disable */
 #define VQAWOOFER_ON  0
 #else
 #define VQASTANDALONE 0  /* Stand alone player */
@@ -74,7 +74,7 @@
 #define	VQABLOCK_2X2  0  /* 2x2 block decode enable/disable */
 #define	VQABLOCK_2X3  0  /* 2x2 block decode enable/disable */
 #define	VQABLOCK_4X2  1  /* 4x2 block decode enable/disable */
-#define	VQABLOCK_4X4  0  /* 4x4 block decode enable/disable */
+#define	VQABLOCK_4X4  1  /* 4x4 block decode enable/disable */
 #define VQAWOOFER_ON  0
 #endif
 
@@ -196,6 +196,9 @@ typedef struct _VQAConfig {
 #if (VQADIRECT_SOUND)
 	LPDIRECTSOUND			SoundObject;
 	LPDIRECTSOUNDBUFFER	PrimaryBufferPtr;
+#else
+	void          *SoundObject;
+	void          *PrimaryBufferPtr;
 #endif	//(VQADIRECT_SOUND)
 	char          *VocFile;
 	unsigned char *AudioBuf;

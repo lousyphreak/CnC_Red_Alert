@@ -265,6 +265,11 @@ bool WWKeyboardClass::Put_Key_Message(unsigned short vk_key, bool release)
  *=============================================================================================*/
 bool WWKeyboardClass::Put_Mouse_Message(unsigned short vk_key, int x, int y, bool release)
 {
+	if (Is_Mouse_Key(vk_key)) {
+		MouseQX = x;
+		MouseQY = y;
+	}
+
 	if (Available_Buffer_Room() >= 3 && Is_Mouse_Key(vk_key)) {
 		Put_Key_Message(vk_key, release);
 		Put((unsigned short)x);
@@ -701,6 +706,12 @@ bool WWKeyboardClass::Message_Handler(HWND window, UINT message, UINT wParam, LO
 			Put_Mouse_Message(VK_RBUTTON, LOWORD(lParam), HIWORD(lParam), true);
 			Put_Mouse_Message(VK_RBUTTON, LOWORD(lParam), HIWORD(lParam));
 			Put_Mouse_Message(VK_RBUTTON, LOWORD(lParam), HIWORD(lParam), true);
+			processed = true;
+			break;
+
+		case WM_MOUSEMOVE:
+			MouseQX = LOWORD(lParam);
+			MouseQY = HIWORD(lParam);
 			processed = true;
 			break;
 

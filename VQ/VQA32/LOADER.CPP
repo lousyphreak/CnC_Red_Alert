@@ -68,6 +68,7 @@
 ****************************************************************************/
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <fcntl.h>
 #include <malloc.h>
 #include <string.h>
@@ -243,6 +244,26 @@ long VQA_Open(VQAHandle *vqa, char const *filename, VQAConfig *config)
 				if (vqap->IOHandler(vqa, VQACMD_READ, header, PADSIZE(chunk.size))) {
 					VQA_Close(vqa);
 					return (VQAERR_READ);
+				}
+
+				if (getenv("RA_TRACE_STARTUP") != NULL) {
+					fprintf(stderr,
+							"[vqa] header version=%u flags=0x%04x image=%ux%u block=%ux%u fps=%u frames=%u audio=%u/%u/%u alt=%u/%u/%u\n",
+							(unsigned)header->Version,
+							(unsigned)header->Flags,
+							(unsigned)header->ImageWidth,
+							(unsigned)header->ImageHeight,
+							(unsigned)header->BlockWidth,
+							(unsigned)header->BlockHeight,
+							(unsigned)header->FPS,
+							(unsigned)header->Frames,
+							(unsigned)header->SampleRate,
+							(unsigned)header->Channels,
+							(unsigned)header->BitsPerSample,
+							(unsigned)header->AltSampleRate,
+							(unsigned)header->AltChannels,
+							(unsigned)header->AltBitsPerSample);
+					fflush(stderr);
 				}
 
 				/*-------------------------------------------------------------------
@@ -1513,6 +1534,15 @@ static VQAData *AllocBuffers(VQAHeader *header, VQAConfig *config)
 				audio->Buffer = config->AudioBuf;
 			}
 
+			if (getenv("RA_TRACE_STARTUP") != NULL) {
+				fprintf(stderr,
+						"[vqa] audio alloc buffer=%p size=%ld configbuf=%p\n",
+						audio->Buffer,
+						config->AudioBufSize,
+						config->AudioBuf);
+				fflush(stderr);
+			}
+
 			/* Allocate IsLoaded flags */
 			audio->NumAudBlocks = (config->AudioBufSize / config->HMIBufSize);
 			audio->IsLoaded = (short *)malloc(audio->NumAudBlocks * sizeof(short));
@@ -1546,6 +1576,17 @@ static VQAData *AllocBuffers(VQAHeader *header, VQAConfig *config)
 
 			/* Add temporary buffer size to memory usage. */
 			vqa->MemUsed += audio->TempBufSize;
+
+			if (getenv("RA_TRACE_STARTUP") != NULL) {
+				fprintf(stderr,
+						"[vqa] audio tempbuf=%p size=%lu isloaded=%p blocks=%lu bytespersec=%lu\n",
+						audio->TempBuf,
+						audio->TempBufSize,
+						audio->IsLoaded,
+						audio->NumAudBlocks,
+						audio->BytesPerSec);
+				fflush(stderr);
+			}
 		}
 	}
 	#endif /* VQAAUDIO_ON */
@@ -2694,6 +2735,26 @@ static long Load_SND2(VQAHandleP *vqap, unsigned long iffsize)
 	}
 
 	uncomp_size = iffsize * (audio->BitsPerSample / 4);
+
+	if (getenv("RA_TRACE_STARTUP") != NULL) {
+		fprintf(stderr,
+				"[vqa] Load_SND2 audio=%p buffer=%p tempbuf=%p isloaded=%p iff=%lu pad=%lu uncomp=%lu temp=%lu audiobuf=%ld audpos=%lu hmi=%ld rate=%u ch=%u bits=%u\n",
+				audio,
+				audio->Buffer,
+				audio->TempBuf,
+				audio->IsLoaded,
+				iffsize,
+				padsize,
+				uncomp_size,
+				audio->TempBufSize,
+				config->AudioBufSize,
+				audio->AudBufPos,
+				config->HMIBufSize,
+				(unsigned)audio->SampleRate,
+				(unsigned)audio->Channels,
+				(unsigned)audio->BitsPerSample);
+		fflush(stderr);
+	}
 
 	/* Read large startup chunk directly into AudioBuf */
 	if ((uncomp_size > audio->TempBufSize) && (audio->AudBufPos == 0)) {

@@ -2878,7 +2878,7 @@ extern void Resume_Audio_Thread(void);
 extern GraphicBufferClass VQ640;
 #endif
 #endif
-void Play_Movie(char const * name, ThemeType theme, bool clrscrn)
+bool Try_Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 	{
 	#ifdef MPEGMOVIE
 	//theme = theme;
@@ -2886,7 +2886,7 @@ void Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 	if( Using_DVD() )
 	{
 		if (PlayMpegMovie(name))
-			return;
+			return(true);
 	}
 	#endif
 
@@ -2897,7 +2897,7 @@ void Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 	** Don't play movies in editor mode
 	*/
 	if (Debug_Map) {
-		return;
+		return(false);
 	}
 	#ifdef CHEAT_KEYS
 	//	Mono_Printf("A\n");
@@ -2906,13 +2906,15 @@ void Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 	** Don't play movies in multiplayer mode
 	*/
 	if (Session.Type != GAME_NORMAL) {
-		return;
+		return(false);
 	}
 	#ifdef CHEAT_KEYS
 	//Mono_Printf("b\n");
 	#endif	//CHEAT_KEYS
 
 	if (name) {
+		Conquer_Trace("Play_Movie begin name=%s theme=%d clrscrn=%d", name, theme, clrscrn ? 1 : 0);
+		bool played = false;
 		char fullname[_MAX_FNAME+_MAX_EXT];
 		_makepath(fullname, NULL, NULL, name, ".VQA");
 		#ifdef WIN32
@@ -2924,10 +2926,11 @@ void Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 		#endif
 
 		if (!CCFileClass(fullname).Is_Available()){
+			Conquer_Trace("Play_Movie unavailable file=%s", fullname);
 			#ifdef CHEAT_KEYS
 			//		 Mono_Printf("fullname: %s\n", fullname);
 			#endif	//CHEAT_KEYS
-		 return;
+		 return(false);
 		}
 		/*
 		**	Reset the anim control structure.
@@ -2975,11 +2978,16 @@ void Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 		} else {
 			AnimControl.OptionFlags &= ~VQAOPTF_AUDIO;
 		}
+		Conquer_Trace("Play_Movie prepared file=%s size=%ldx%ld audio=%d", fullname, AnimControl.ImageWidth, AnimControl.ImageHeight,
+			(AnimControl.OptionFlags & VQAOPTF_AUDIO) ? 1 : 0);
 
 		if ((vqa = VQA_Alloc()) != NULL) {
 			VQA_Init(vqa, MixFileHandler);
 
-			if (VQA_Open(vqa, fullname, &AnimControl) == 0) {
+			const long open_result = VQA_Open(vqa, fullname, &AnimControl);
+			if (open_result == 0) {
+				Conquer_Trace("Play_Movie VQA_Open success file=%s", fullname);
+				played = true;
 				Brokeout = false;
 				#ifdef WIN32
 				//Suspend_Audio_Thread();
@@ -2994,7 +3002,9 @@ void Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 				SysMemPage.Clear();
 				InMovie = true;
 				#endif	//WIN32
+				Conquer_Trace("Play_Movie VQA_Play start file=%s", fullname);
 				VQA_Play(vqa, VQAMODE_RUN);
+				Conquer_Trace("Play_Movie VQA_Play complete file=%s brokeout=%d", fullname, Brokeout ? 1 : 0);
 				VQA_Close(vqa);
 				#ifdef WIN32
 				//Resume_Audio_Thread();
@@ -3020,6 +3030,7 @@ void Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 					Brokeout = false;
 				}
 			} else {
+				Conquer_Trace("Play_Movie VQA_Open failed file=%s code=%ld", fullname, open_result);
 				#ifndef NDEBUG
 				bool error = true;
 				assert(error);
@@ -3028,6 +3039,7 @@ void Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 
 			VQA_Free(vqa);
 		} else {
+			Conquer_Trace("Play_Movie VQA_Alloc failed file=%s", fullname);
 			assert(vqa != NULL);
 		}
 		#ifdef CHEAT_KEYS
@@ -3046,19 +3058,37 @@ void Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 			BlackPalette.Set();
 		}
 		Show_Mouse();
+		Conquer_Trace("Play_Movie end name=%s clrscrn=%d played=%d", name, clrscrn ? 1 : 0, played ? 1 : 0);
+		return(played);
 	}
+	return(false);
+}
+
+
+void Play_Movie(char const * name, ThemeType theme, bool clrscrn)
+{
+	(void)Try_Play_Movie(name, theme, clrscrn);
+}
+
+
+bool Try_Play_Movie(VQType name, ThemeType theme, bool clrscrn)
+{
+	Conquer_Trace("Play_Movie enum name=%d theme=%d clrscrn=%d session=%d", name, theme, clrscrn ? 1 : 0, Session.Type);
+	if (name != VQ_NONE) {
+		if (name == VQ_REDINTRO) {
+			IsVQ640 = true;
+		}
+		const bool played = Try_Play_Movie(VQName[name], theme, clrscrn);
+		IsVQ640 = false;
+		return(played);
+	}
+	return(false);
 }
 
 
 void Play_Movie(VQType name, ThemeType theme, bool clrscrn)
 {
-	if (name != VQ_NONE) {
-		if (name == VQ_REDINTRO) {
-			IsVQ640 = true;
-		}
-		Play_Movie(VQName[name], theme, clrscrn);
-		IsVQ640 = false;
-	}
+	(void)Try_Play_Movie(name, theme, clrscrn);
 }
 
 
@@ -3791,7 +3821,7 @@ void Check_VQ_Palette_Set(void);
 
 extern GraphicBufferClass VQ640;
 extern bool IsVQ640;
-long VQ_Call_Back(unsigned char *, long )
+long VQ_Call_Back(unsigned char *, long frame)
 {
 	int key = 0;
 	if (Keyboard->Check()) {

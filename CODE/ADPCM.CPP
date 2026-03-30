@@ -122,52 +122,7 @@ void sosCODECInitStream(_SOS_COMPRESS_INFO* info)
 
 unsigned long sosCODECDecompressData(_SOS_COMPRESS_INFO* info, unsigned long numbytes)
 {
-	const unsigned long output_size = numbytes;
-	unsigned long token;
-	long sample;
-	unsigned int fastindex;
-	unsigned char *inbuff;
-	unsigned short *outbuff;
-
-	inbuff = (unsigned char *)info->lpSource;
-	outbuff = (unsigned short *)info->lpDest;
-
-	// Preload variables before the big loop
-	fastindex = (unsigned int)info->dwSampleIndex;
-	sample = info->dwPredicted;
-
-	if (!numbytes)
-		goto SkipLoop;
-
-	do {
-		// First nibble
-		token = *inbuff++;
-		fastindex += token & 0x0f;
-		sample += DiffTable[fastindex];
-		fastindex = IndexTable[fastindex];
-		if (sample > 32767L)
-			sample = 32767L;
-		if (sample < -32768L)
-			sample = -32768L;
-		*outbuff++ = (unsigned short)sample;
-
-		// Second nibble
-		fastindex += token >> 4;
-		sample += DiffTable[fastindex];
-		fastindex = IndexTable[fastindex];
-		if (sample > 32767L)
-			sample = 32767L;
-		if (sample < -32768L)
-			sample = -32768L;
-		*outbuff++ = (unsigned short)sample;
-	} while(--numbytes);
-
-SkipLoop:
-
-	// Put local vars back
-	info->dwSampleIndex = (unsigned long)fastindex;
-	info->dwPredicted = sample;
-	return(output_size);
+	return General_sosCODECDecompressData(info, numbytes);
 }
 
 

@@ -1,6 +1,6 @@
 # Porting Progress
 
-_Last updated: 2026-03-29_
+_Last updated: 2026-03-30_
 
 ## Goal
 
@@ -18,6 +18,7 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - The previously blocked movie layer is still wired into the active build through the portable `VQ/VQA32` path instead of the old unresolved Win32-only movie stack.
 - The active VQA path now includes:
   - the buffered `UnVQ_4x2` decoder replacement in `VQ/VQA32/UNVQCOMPAT.CPP`;
+  - the buffered `UnVQ_4x4` decoder replacement in `VQ/VQA32/UNVQCOMPAT.CPP`;
   - the audio decompressor replacement in `VQ/VQA32/AUDUNZAPCOMPAT.CPP`;
   - palette/text/INI/VBlank compatibility glue in `VQ/VQA32/VQCOMPAT.CPP`;
   - an SDL3-backed movie audio/timer implementation in `VQ/VQA32/AUDIOCOMPAT.CPP`.
@@ -30,6 +31,16 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - Audio is active in the live SDL3 build:
   - the game opens a real PipeWire sink input while the menu/front-end is running;
   - a short capture from the default sink monitor shows non-silent PCM output.
+- Startup movie playback is working again in the Linux SDL3 build:
+  - `ENGLISH.VQA` now opens through the buffered VQA path instead of failing with `VQAERR_NOTVQA`;
+  - the intro no longer jumps straight to the main menu;
+  - focused captures of the intro window now show changing non-black frames instead of a static black surface.
+- The startup movie audio path is working again:
+  - the intro plays through the same restored VQA audio decode/output path validated under ASan;
+  - normal focused runs continue into the front end with active audio output.
+- Menu click hit-testing is no longer using stale mouse coordinates:
+  - `CODE/KEY.CPP` now updates `MouseQX` / `MouseQY` on `WM_MOUSEMOVE`;
+  - queued mouse-button messages now capture the current coordinates immediately when the event is enqueued.
 - A compositor close request now shuts the game down cleanly through the SDL/Win32 message bridge instead of leaving the process hung until `SIGKILL`.
 - Validation status:
   - `cmake --build build --target redalert -j4` passes.
@@ -38,6 +49,8 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - Running `GameData/redalert` reaches a live `640x480` `Red Alert` window with visible framebuffer updates.
   - A captured window image from the rebuilt normal run reports `mean_rgb=22,6,6`, `nonblack_ratio=0.444277`, `bright_ratio=0.365957`.
   - A short monitor capture from the rebuilt normal run reports `abs_mean=1224.67`, `rms=2406.59`, `peak=21253`, `nonzero_ratio=0.808433`.
+  - A traced startup run now logs `ENGLISH.VQA` with `block=4x4`, and the first callback samples are non-zero from frame `0` onward instead of staying all black.
+  - Two focused intro captures taken a few seconds apart now differ across tens of thousands of pixels, confirming that the intro is animating on-screen instead of presenting a static black frame.
   - Running `GameData/redalert-asan` with `ASAN_OPTIONS=abort_on_error=1:detect_leaks=0:new_delete_type_mismatch=0` reaches the same front-end baseline, handles window close, and emits no sanitizer diagnostics on the latest quiet run.
   - `ctest --test-dir build --output-on-failure` reports that the repository currently has no registered tests.
 
@@ -66,6 +79,11 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - Fixed the SDL/Wayland bootstrap focus race by latching the first valid activation edge during startup.
 - Fixed the DirectDraw compatibility presentation path so updates to the primary surface actually reach the SDL window after drawing and palette changes.
 - Fixed the shutdown-time `FixedHeapClass::Clear()` deallocation mismatch exposed by ASan after clean SDL window close.
+- Fixed LP64-breaking movie file parsing by replacing active on-disk IFF/VQA header fields that still used `unsigned long` with fixed-width integer types.
+- Fixed the active public/private `VQAConfig` layout mismatch by restoring the DirectSound-era placeholder fields expected by the game-side header and `CONFIG.CPP`.
+- Fixed the active movie ADPCM ABI mismatch by restoring the `_SOS_COMPRESS_INFO` field order expected by the game-side decoder and routing movie decode through `General_sosCODECDecompressData()`.
+- Restored buffered `4x4` VQA decode support by porting the old `UnVQ_4x4` helper into `VQ/VQA32/UNVQCOMPAT.CPP` and enabling the `VQABLOCK_4X4` path used by the startup intro movies.
+- Fixed SDL/Win32 menu click handling by updating `CODE/KEY.CPP` so `WM_MOUSEMOVE` refreshes `MouseQX` / `MouseQY` and queued mouse-button events latch the current coordinates immediately.
 
 ## Build layout in use
 
@@ -139,8 +157,8 @@ The final link failure was narrowed to the movie layer and resolved by replacing
 
 ## Remaining validation work
 
-1. Exercise front-end interaction and actual menu/input flow now that visible rendering, audio output, and clean quit are all working in the Linux SDL3 build.
-2. Verify real VQA playback and in-game transitions, not just front-end/menu startup.
+1. Re-test front-end interaction with real user-driven pointer input on SDL/Wayland to confirm that visible cursor motion and click behavior now match the restored queue-side mouse coordinates.
+2. Exercise additional VQA playback and in-game transitions beyond the startup intro and front-end.
 3. Validate the same CMake target on Windows and fix any remaining case, type-width, or wrapper issues that only surface there.
 4. Continue tightening legacy Win32/DirectDraw/DirectSound assumptions only where runtime behavior or sanitizers still prove they are wrong on 64-bit/SDL3 builds.
 5. Keep the porting docs aligned with each verified runtime or cross-platform milestone.

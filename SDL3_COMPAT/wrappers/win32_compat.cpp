@@ -1196,6 +1196,10 @@ BOOL ClipCursor(const RECT* rect)
         return FALSE;
     }
 
+    if (mouse_rect.w <= 0 || mouse_rect.h <= 0) {
+        return TRUE;
+    }
+
     float x = 0.0f;
     float y = 0.0f;
     SDL_GetMouseState(&x, &y);
