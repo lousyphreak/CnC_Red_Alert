@@ -5232,7 +5232,7 @@ bool Force_CD_Available(int cd)
  * HISTORY:                                                                *
  *   08/11/1995 PWG : Created.                                             *
  *=========================================================================*/
-unsigned long Disk_Space_Available(void)
+uint64_t Disk_Space_Available(void)
 {
 	struct diskfree_t diskdata;
 	unsigned drive;
@@ -5240,7 +5240,9 @@ unsigned long Disk_Space_Available(void)
 	_dos_getdrive(&drive);
 	_dos_getdiskfree(drive, &diskdata);
 
-	return(diskdata.avail_clusters * diskdata.sectors_per_cluster * diskdata.bytes_per_sector);
+	return(static_cast<uint64_t>(diskdata.avail_clusters) *
+		static_cast<uint64_t>(diskdata.sectors_per_cluster) *
+		static_cast<uint64_t>(diskdata.bytes_per_sector));
 }
 
 

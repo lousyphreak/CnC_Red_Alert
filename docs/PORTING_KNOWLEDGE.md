@@ -17,7 +17,11 @@ _Last updated: 2026-03-30_
 - `OverlayPack` is a signed one-byte-per-cell stream; `OverlayType` must stay 8-bit or the loader reads multiple packed cells into one enum value (`0xFF0706FF` was the traced symptom).
 - `TemplateType` is a 16-bit on-disk value in map/template data. Letting it widen breaks template/icon lookups after scenario load.
 - `COORDINATE` / `TARGET` are Win32-sized 32-bit values, not native `long`.
-- `CELL_COMPOSITE` bitfield packing is compiler-dependent; cell/coord helpers must use explicit mask/shift math.
+- `CELL_COMPOSITE`, `LEPTON_COMPOSITE`, and `COORD_COMPOSITE` helper packing is compiler-/layout-dependent; map/view helpers should use explicit mask/shift math instead of union layout or short-pointer punning.
+- The mission-entry black-map / `"unrevealed terrain"` symptom came from the remaining packed-coordinate helpers in `CODE/INLINE.H` / `CODE/COORD.CPP`, not from the scenario map bounds themselves.
+  - The traced bad state still loaded sane map bounds (`MapCell=49,45 size=30x36`) and a sane home waypoint (`6079`), but `TacticalCoord` was poisoned before the mission-home adjustment ran.
+  - Rewriting the active `LEPTON` / `COORDINATE` helpers (`Cell_To_Lepton`, `XY_Coord`, `Coord_X/Y`, `Coord_{Whole,Snap,Fraction,Add,Sub,Mid}`, `Coord_Move`, and the spillage-list bounds math) to explicit bit operations removes that platform-sensitive seam.
+  - Mission/home-view setup in `CODE/DISPLAY.CPP` / `CODE/SCENARIO.CPP` should use `Coord_Whole(Cell_Coord(...))` so scenario start matches the existing bookmark-restore and computed-start behavior.
 - Legacy iconset headers (`IControl_Type` / `IconsetClass`) contain on-disk offsets, not host pointers; the active headers must stay packed/fixed-width and the loader must translate offsets explicitly.
 - `Assign_Mission()` only queues `MissionQueue`; when scenario loaders need an immediate live mission before `Enter_Idle_Mode()`, they must use `Set_Mission()`.
 - `List_Copy()` callers rely on a trailing `REFRESH_EOL`; if truncation is possible, reserve one slot for the terminator.
@@ -149,6 +153,9 @@ _Last updated: 2026-03-30_
   - normal builds refresh `GameData/redalert`;
   - ASan builds refresh `GameData/redalert-asan`.
   Smoke tests should launch those `GameData/` copies so the executable directory still contains the real assets.
+- `_dos_getdiskfree()` compatibility data is still fundamentally a 32-bit DOS/Win32-shaped interface.
+  - `struct diskfree_t` fields such as `avail_clusters`, `sectors_per_cluster`, and `bytes_per_sector` are 32-bit values.
+  - Any helper that converts those fields into free bytes (notably `CODE/CONQUER.CPP::Disk_Space_Available()`) must promote the multiply to `uint64_t`; otherwise modern large disks wrap modulo `4 GiB` and can falsely trip the `INIT_FREE_DISK_SPACE` / `SAVE_GAME_DISK_SPACE` checks even when hundreds of gigabytes are free.
 - The DDE compatibility layer cannot keep startup-critical mutable state in ordinary file-scope globals. Game-side global constructors may call into DDE before those globals are safely initialized.
 - SDL/Wayland startup can deliver focus gained and focus lost in the same early pump cycle. The bootstrap path needs a sticky "focus seen once" latch instead of waiting only on the live `GameInFocus` bit.
 - On the SDL3 port, that first activation is now also the last time ordinary OS focus changes should touch the legacy pause/resume path.

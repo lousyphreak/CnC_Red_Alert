@@ -38,6 +38,8 @@
 #ifndef FUNCTION_H
 #define FUNCTION_H
 
+#include <stdint.h>
+
 /*
 **	!!!DEFINE!!!  "NDEBUG" if the assertion code is to be !!!REMOVED!!! from the project.
 */
@@ -534,7 +536,7 @@ void CC_Add_Shape_To_Global(void const * shapeptr, char * filename, char code );
 void Bubba_Print(char * format,...);
 void Heap_Dump_Check(char * string );
 void Dump_Heap_Pointers(void);
-unsigned long Disk_Space_Available(void);
+uint64_t Disk_Space_Available(void);
 void * Hires_Load(char * name);
 void Shake_The_Screen(int shakes);
 

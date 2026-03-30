@@ -301,24 +301,20 @@ short const * Coord_Spillage_List(COORDINATE coord, Rect const & rect, bool noce
 	**	corners of the rectangle. The values are now absolute to the real game world rather
 	**	than relative to the coordinate.
 	*/
-	LEPTON_COMPOSITE startx;
-	LEPTON_COMPOSITE starty;
-	LEPTON_COMPOSITE endx;
-	LEPTON_COMPOSITE endy;
-	startx.Raw = (int)x + (short)Pixel_To_Lepton(rect.X);
-	starty.Raw = (int)y + (short)Pixel_To_Lepton(rect.Y);
-	endx.Raw = startx.Raw + Pixel_To_Lepton(rect.Width-1);
-	endy.Raw = starty.Raw + Pixel_To_Lepton(rect.Height-1);
+	LEPTON const startx = (LEPTON)(uint16_t)((int)x + (short)Pixel_To_Lepton(rect.X));
+	LEPTON const starty = (LEPTON)(uint16_t)((int)y + (short)Pixel_To_Lepton(rect.Y));
+	LEPTON const endx = (LEPTON)(uint16_t)((int)startx + Pixel_To_Lepton(rect.Width-1));
+	LEPTON const endy = (LEPTON)(uint16_t)((int)starty + Pixel_To_Lepton(rect.Height-1));
 
 	/*
 	**	Determine the upper left and lower right cell indexes. This is a simple conversion from
 	**	their lepton counterpart. These cells values are used to form the bounding box for the
 	**	map offset list.
 	*/
-	int cellx = startx.Sub.Cell;
-	int cellx2 = endx.Sub.Cell;
-	int celly = starty.Sub.Cell;
-	int celly2 = endy.Sub.Cell;
+	int cellx = ((uint16_t)startx >> 8) & 0x00FFU;
+	int cellx2 = ((uint16_t)endx >> 8) & 0x00FFU;
+	int celly = ((uint16_t)starty >> 8) & 0x00FFU;
+	int celly2 = ((uint16_t)endy >> 8) & 0x00FFU;
 
 	/*
 	**	Generate the spillage list by counting off the rows and colums of the cells
@@ -377,8 +373,11 @@ COORDINATE Coord_Move(COORDINATE start, register DirType dir, unsigned short dis
 	return(XY_Coord(x,y));
 #endif
 
-	Move_Point(*(short *)&start, *(((short *)&start)+1), dir, distance);
-	return(start);
+	short x = (short)Coord_X(start);
+	short y = (short)Coord_Y(start);
+
+	Move_Point(x, y, dir, distance);
+	return(XY_Coord((LEPTON)(uint16_t)x, (LEPTON)(uint16_t)y));
 }
 
 

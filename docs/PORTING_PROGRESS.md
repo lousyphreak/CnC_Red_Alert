@@ -139,6 +139,9 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - The resize follow-up mouse regression is fixed:
   - when the game runs with a `640x480` primary surface but attaches the active `SeenBuff` viewport as `640x400` at `(0,40)`, `CODE/SDLINPUT.CPP` now converts SDL window coordinates into primary-surface coordinates first and then subtracts the active viewport origin before storing the shared mouse position;
   - `SDL3_COMPAT/wrappers/win32_compat.cpp::ClipCursor()` now adds the active viewport origin back before asking SDL to confine the OS cursor, so SDL mouse clipping follows the displayed `SeenBuff` content instead of the raw top-left corner of the primary surface.
+- The bogus low-disk startup/save warning is fixed on modern large disks:
+  - `CODE/CONQUER.CPP::Disk_Space_Available()` and its declaration in `CODE/FUNCTION.H` now use `uint64_t` and perform the free-space multiply in 64-bit;
+  - this removes the old modulo-`4 GiB` wrap from `_dos_getdiskfree()`'s 32-bit fields, which could make large modern filesystems appear to have less than the `INIT_FREE_DISK_SPACE` / `SAVE_GAME_DISK_SPACE` thresholds and trigger the `TEXT_CRITICALLY_LOW` startup popup or save refusal even when plenty of space was available.
 - Validation status:
   - `cmake --build build --target redalert -j4` passes.
   - `cmake --build build -j4` passes.
@@ -187,9 +190,14 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
     - `Build_Frame()` returns a cached wrapper pointer for that shape;
     - `Get_Shape_Header_Data()` returns a later raw-pixel pointer, so the normal Win32 draw path must unwrap before blitting.
 - Fresh `timeout 20s env RA_TRACE_STARTUP=1 ./redalert` and `timeout 20s env ASAN_OPTIONS=abort_on_error=1:detect_leaks=0:new_delete_type_mismatch=0 RA_TRACE_STARTUP=1 ./redalert-asan` smoke runs from `GameData/` still reach the intro/title/menu-theme startup baseline and exit on timeout without new crashes or sanitizer diagnostics.
+- A fresh `timeout 20s env RA_TRACE_STARTUP=1 ./redalert` smoke run after the disk-space fix now still reaches `Play_Movie VQA_Play complete`, `Load_Title_Page complete`, and `Init_One_Time_Systems complete` before timeout, confirming startup no longer gets stuck behind the bogus low-disk popup on the current tree.
 - A forced mission-entry `gdb` probe now confirms the direct scenario path still reaches gameplay loading on the active tree:
   - a breakpoint command script that sets `Debug_Map = true` at `Select_Game()` immediately drives the game into `Start_Scenario("SCG01EA.INI")` without front-end clicks;
   - the corresponding `GameData/redalert-asan` run times out with only the known `CODE/SHA.CPP` and `CODE/RANDOM.CPP` warnings, and does not reproduce the old `TEAM.CPP` / `AIRCRAFT.CPP` invalid-vptr hits or the `HOUSE.CPP` / `BUILDING.CPP` shift-exponent warnings.
+- The mission-entry tactical camera no longer seeds off-map garbage on the active SDL/Linux path:
+  - `CODE/INLINE.H` and `CODE/COORD.CPP` now pack/unpack `LEPTON` / `COORDINATE` values with explicit mask/shift math instead of relying on union layout or short-pointer punning in the map/view helper path;
+  - `CODE/DISPLAY.CPP` and `CODE/SCENARIO.CPP` now convert `WAYPT_HOME` into the tactical upper-left corner through `Coord_Whole(Cell_Coord(...))`, matching the existing bookmark-restore and computed-start paths;
+  - a fresh ASan `gdb` probe at `Fill_In_Data()` now reports sane in-map tactical coords before and after the mission-home adjustment (`MapCell=49,45 size=30x36`, `entry TacticalCoord cell=52,45`, `post-home TacticalCoord cell=53,45`) instead of the previous off-map garbage values that left the cursor over `"unrevealed terrain"` on a black mission view.
 
 ## Runtime fixes since first successful link
 
@@ -207,6 +215,7 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - Fixed multiple startup and loader loops that depended on enum post-increment reaching the `COUNT` sentinel instead of wrapping back to `FIRST`.
 - Replaced unsafe `std::filesystem`-based DOS and Win32 directory enumeration wrappers with POSIX-backed implementations suitable for the Linux `_WIN32` hybrid build.
 - Fixed Linux compat virtual-CD probing in `SDL3_COMPAT/wrappers/win32_compat.cpp` by replacing `std::filesystem` path composition in `virtual_cd_index_for_drive_letter()` / `GetDriveType()` with string-plus-`stat()` checks on non-Windows hosts; this removes the immediate ASan `new-delete-type-mismatch` abort seen under `gdb` during `GetCDClass` startup.
+- Fixed `CODE/CONQUER.CPP::Disk_Space_Available()` to use 64-bit free-byte math instead of multiplying `_dos_getdiskfree()`'s 32-bit fields in 32-bit arithmetic; without that promotion, large modern disks could wrap modulo `4 GiB` and falsely trigger the startup/save low-space warnings.
 - Fixed several LP64/alignment/runtime faults uncovered by ASan/UBSan in active startup paths, including:
   - unaligned font and shape header reads;
   - overlapping INI string copies;
@@ -345,7 +354,7 @@ The final link failure was narrowed to the movie layer and resolved by replacing
 
 ## Remaining validation work
 
-1. Re-check the live in-mission viewport on a real desktop session now that forced `SCG01EA` mission entry no longer emits the old invalid-vptr/shift warnings; this shell environment can prove the scenario path but cannot capture the visible mission window directly.
+1. Re-check the live in-mission viewport on a real desktop session now that the forced `SCG01EA` mission-entry path keeps the tactical camera inside the loaded map bounds; this shell environment can prove the scenario/home-position state but cannot capture the visible mission window directly.
 2. Re-test front-end interaction with real user-driven pointer input on SDL/Wayland to confirm that visible cursor motion, click behavior, and intro `ESC` breakout now match the repaired compat/input/VQA-stop behavior in live use.
 3. Re-check additional VQA playback beyond `ENGLISH.VQA`/`REDINTRO` to confirm no other movie variants rely on version-specific pointer handling that is still missing on the SDL3/Linux path.
 4. Validate the same CMake target on Windows and fix any remaining case, type-width, or wrapper issues that only surface there.

@@ -4309,7 +4309,7 @@ void DisplayClass::Read_INI(CCINIClass & ini)
 	}
 
 	Scen.Views[0] = Scen.Views[1] = Scen.Views[2] = Scen.Views[3] = Scen.Waypoint[WAYPT_HOME];
-	Set_Tactical_Position(Cell_Coord((Scen.Waypoint[WAYPT_HOME] - (MAP_CELL_W * 4 * RESFACTOR)) - (5*RESFACTOR)));
+	Set_Tactical_Position(Coord_Whole(Cell_Coord((Scen.Waypoint[WAYPT_HOME] - (MAP_CELL_W * 4 * RESFACTOR)) - (5*RESFACTOR))));
 
 	/*
 	**	Loop through all CellTrigger entries.
