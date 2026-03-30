@@ -219,6 +219,10 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - `cmake --build build --target redalert -j4` passes;
   - `cmake --build build-asan --target redalert -j4` passes;
   - a direct debug-mission `gdb` probe (`Debug_Map = true` at `Select_Game()`, then `((UnitClass*)Units.Raw_Ptr(0))->Override_Mission(MISSION_ATTACK, ((UnitClass*)Units.Raw_Ptr(1))->As_Target(), 0)`) now reaches the post-copy path state in `CODE/FOOT.CPP` with sane commands on both sides of the copy (`path->Length=11`, `workpath1[0..2]=3,3,3`, `Path[0..2]=3,3,3`) instead of the old partially written facing values.
+- Starting the Soviet campaign from the front end now reaches the real mission-start path again:
+  - `CODE/MSGBOX.CPP::WWMessageBox::Process()` now stores its return value in an `int` instead of a `bool`, so three-button dialogs no longer collapse button `3`'s result (`2`) into button `2`'s result (`1`);
+  - this was the root cause behind the user-reported Soviet campaign failure on the active SDL/Linux build: the `TXT_CHOOSE / TXT_ALLIES / TXT_CANCEL / TXT_SOVIET` chooser in `CODE/INIT.CPP::Select_Game()` was receiving the centered Soviet button press correctly as `BUTTON_3|BUTTON_FLAG`, but `WWMessageBox()` returned `1`, so the code followed the `default:` / cancel path, dropped back to the menu loop, and only restarted `THEME_INTRO`;
+  - fresh focused `gdb` probes that force `Main_Menu()` to `SEL_START_NEW_GAME` and inject a click into the centered Soviet chooser button now log `MSGBOX_RETURN 2` and reach `Start_Scenario("SCU01EA.INI")` on both `GameData/redalert` and `GameData/redalert-asan`.
 
 ## Runtime fixes since first successful link
 
@@ -279,6 +283,9 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - `SDL3_COMPAT/wrappers/win32_compat.cpp` no longer fabricates `WM_KEY*` / `WM_MOUSE*` messages for normal gameplay input, but still posts focus/close messages for the legacy front-end flow;
   - `GetCursorPos()` and `CODE/MOUSEUTIL.CPP` now use the shared SDL input snapshot instead of raw `SDL_GetMouseState()`, so the software cursor redraw thread and the menu queue consume one coherent mouse position.
 - Fixed `CODE/KEY.CPP` to test the real Win32 toggle low bit (`0x0001`) when adding synthetic shift state for CapsLock/NumLock, matching the repaired SDL input state layer.
+- Fixed `CODE/MSGBOX.CPP::WWMessageBox::Process()` to keep its return code in an `int` instead of a `bool`.
+  - The function legitimately returns `0`, `1`, or `2` for one-, two-, and three-button dialogs.
+  - Keeping that accumulator as `bool` truncated the third button's return value to `1`, which made the front-end side chooser in `CODE/INIT.CPP::Select_Game()` treat `"Soviet"` exactly like `"Cancel"`.
 - Fixed main-menu cursor visibility in `CODE/MENUS.CPP` by normalizing the Westwood software-cursor hide count to visible-on-entry and restoring the prior hide count on exit.
 - Fixed VQA/movie audio pause-resume scoping in `VQ/VQA32/AUDIOCOMPAT.CPP` by pausing/resuming the movie SDL stream directly instead of routing those state changes through broader device helpers.
 - Fixed buffered VQA movie abort handling in `VQ/VQA32/TASK.CPP` so callback-driven `VQAERR_EOF` (including intro `ESC` breakout) is treated as movie completion instead of being ignored and leaving the player loop spinning with update state still set.

@@ -186,6 +186,10 @@ _Last updated: 2026-03-30_
   - Mouse buttons must also drive the shared virtual-key down counts, not just the raw `g_mouse_buttons` mask.
   - `CODE/GADGET.CPP::Input()` synthesizes `LEFTHELD` / `RIGHTHELD` from `Keyboard->Down(KN_LMOUSE)` / `Keyboard->Down(KN_RMOUSE)`, so if `CODE/SDLINPUT.CPP::SDL_GameInput_Handle_Mouse_Button()` only records the click latch and never calls `press_virtual_key_locked()` / `release_virtual_key_locked()`, mission-map drag behavior breaks even though ordinary click/release events still arrive.
   - The concrete symptom is that `DisplayClass::Mouse_Left_Held()` never runs, `Map.IsRubberBand` never becomes true, and no drag-select rectangle appears while the button is held.
+- `CODE/MSGBOX.CPP::WWMessageBox::Process()` must keep its `retval` as an `int`, not a `bool`.
+  - The chooser really returns `0`, `1`, or `2` for button 1/2/3.
+  - On the active tree, a real click in the centered Soviet button of `WWMessageBox().Process(TXT_CHOOSE, TXT_ALLIES, TXT_CANCEL, TXT_SOVIET)` arrived as `BUTTON_3|BUTTON_FLAG` and set `selection = BUTTON_3`, but the final `retval = 2` was truncated to `true`, so callers received `1`.
+  - In `CODE/INIT.CPP::Select_Game()` under `FIXIT_VERSION_3`, that made the Soviet choice look identical to Cancel, which matched the observed symptom: the game fell back to the main menu and only restarted the front-end `INTRO.AUD` theme instead of reaching `Start_Scenario("SCU01EA.INI")`.
 - The SDL3 port now lets the main game window resize independently from the logical game framebuffer.
   - The shared letterbox/pillarbox math lives in `RA_GetPresentationRect()`, `RA_WindowToGamePoint()`, and `RA_GameRectToWindowRect()` in `SDL3_COMPAT/wrappers/win32_compat.cpp`.
   - `SDL3_COMPAT/wrappers/ddraw_compat.cpp` must render the primary surface into that computed presentation rectangle and clear the rest of the window to black; otherwise resize stretches or smears the indexed framebuffer.
