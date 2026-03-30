@@ -31,6 +31,15 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - Audio is active in the live SDL3 build:
   - the game opens a real PipeWire sink input while the menu/front-end is running;
   - a short capture from the default sink monitor shows non-silent PCM output.
+- The active gameplay sound path is now SDL-backed instead of DirectSound-backed:
+  - `CODE/AUDIO.CPP` still drives the legacy `Audio_*` / `Play_Sample` API surface used by the game;
+  - `WIN32LIB/AUDIO/SOUNDIO.CPP` / `WIN32LIB/AUDIO/SOUNDINT.CPP` now sit on top of `WIN32LIB/AUDIO/SDLAUDIOBACKEND.CPP`;
+  - the active build no longer compiles `SDL3_COMPAT/wrappers/dsound_compat.cpp`.
+- Active sound servicing no longer depends on WinMM multimedia timers:
+  - `WIN32LIB/AUDIO/SOUNDIO.CPP` now uses `Pump_Sound_Service()` and a dedicated sound thread around the existing maintenance callback logic.
+- The runnable `GameData` executables are now refreshed automatically from the active build trees:
+  - normal builds copy `build/redalert` to `GameData/redalert`;
+  - ASan builds copy `build-asan/redalert` to `GameData/redalert-asan`.
 - Startup movie playback is working again in the Linux SDL3 build:
   - `ENGLISH.VQA` now opens through the buffered VQA path instead of failing with `VQAERR_NOTVQA`;
   - the intro no longer jumps straight to the main menu;
@@ -47,11 +56,13 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - `cmake --build build -j4` passes.
   - `cmake --build build-asan --target redalert -j4` passes.
   - Running `GameData/redalert` reaches a live `640x480` `Red Alert` window with visible framebuffer updates.
+  - `RA_TRACE_STARTUP=1 gdb ./redalert` from `GameData/` now gets through window/audio/media startup instead of aborting immediately in `GetDriveType()`.
   - A captured window image from the rebuilt normal run reports `mean_rgb=22,6,6`, `nonblack_ratio=0.444277`, `bright_ratio=0.365957`.
   - A short monitor capture from the rebuilt normal run reports `abs_mean=1224.67`, `rms=2406.59`, `peak=21253`, `nonzero_ratio=0.808433`.
   - A traced startup run now logs `ENGLISH.VQA` with `block=4x4`, and the first callback samples are non-zero from frame `0` onward instead of staying all black.
   - Two focused intro captures taken a few seconds apart now differ across tens of thousands of pixels, confirming that the intro is animating on-screen instead of presenting a static black frame.
   - Running `GameData/redalert-asan` with `ASAN_OPTIONS=abort_on_error=1:detect_leaks=0:new_delete_type_mismatch=0` reaches the same front-end baseline, handles window close, and emits no sanitizer diagnostics on the latest quiet run.
+  - `RA_TRACE_STARTUP=1 gdb ./redalert-asan` from `GameData/` now gets through the same startup path without the earlier immediate ASan abort.
   - `ctest --test-dir build --output-on-failure` reports that the repository currently has no registered tests.
 
 ## Runtime fixes since first successful link
@@ -69,6 +80,7 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - Fixed remaining sound-runtime alignment issues by restoring native alignment around `SampleTrackerType` / `LockedDataType` and explicitly aligning `CRITICAL_SECTION` to pointer alignment in the Win32 wrapper.
 - Fixed multiple startup and loader loops that depended on enum post-increment reaching the `COUNT` sentinel instead of wrapping back to `FIRST`.
 - Replaced unsafe `std::filesystem`-based DOS and Win32 directory enumeration wrappers with POSIX-backed implementations suitable for the Linux `_WIN32` hybrid build.
+- Fixed Linux compat virtual-CD probing in `SDL3_COMPAT/wrappers/win32_compat.cpp` by replacing `std::filesystem` path composition in `virtual_cd_index_for_drive_letter()` / `GetDriveType()` with string-plus-`stat()` checks on non-Windows hosts; this removes the immediate ASan `new-delete-type-mismatch` abort seen under `gdb` during `GetCDClass` startup.
 - Fixed several LP64/alignment/runtime faults uncovered by ASan/UBSan in active startup paths, including:
   - unaligned font and shape header reads;
   - overlapping INI string copies;
@@ -80,16 +92,22 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - Fixed the DirectDraw compatibility presentation path so updates to the primary surface actually reach the SDL window after drawing and palette changes.
 - Fixed the shutdown-time `FixedHeapClass::Clear()` deallocation mismatch exposed by ASan after clean SDL window close.
 - Fixed LP64-breaking movie file parsing by replacing active on-disk IFF/VQA header fields that still used `unsigned long` with fixed-width integer types.
-- Fixed the active public/private `VQAConfig` layout mismatch by restoring the DirectSound-era placeholder fields expected by the game-side header and `CONFIG.CPP`.
+- Replaced the active gameplay DirectSound backend with `WIN32LIB/AUDIO/SDLAUDIOBACKEND.CPP`, keeping the legacy `Audio_*` / `Play_Sample` behavior and refill semantics intact while moving transport/mixing to SDL3.
+- Replaced active WinMM sound-maintenance timer usage in `WIN32LIB/AUDIO/SOUNDIO.CPP` with `Pump_Sound_Service()` plus a sound worker thread.
+- Fixed the active public/private `VQAConfig` layout mismatch by keeping `SoundObject` / `PrimaryBufferPtr` as backend-agnostic placeholder pointers on the game include path and in `CONFIG.CPP`.
 - Fixed the active movie ADPCM ABI mismatch by restoring the `_SOS_COMPRESS_INFO` field order expected by the game-side decoder and routing movie decode through `General_sosCODECDecompressData()`.
 - Restored buffered `4x4` VQA decode support by porting the old `UnVQ_4x4` helper into `VQ/VQA32/UNVQCOMPAT.CPP` and enabling the `VQABLOCK_4X4` path used by the startup intro movies.
 - Fixed SDL/Win32 menu click handling by updating `CODE/KEY.CPP` so `WM_MOUSEMOVE` refreshes `MouseQX` / `MouseQY` and queued mouse-button events latch the current coordinates immediately.
+- Added a `redalert` post-build deployment step in `CMakeLists.txt` so `GameData/redalert` and `GameData/redalert-asan` stay synchronized with the latest normal and ASan builds.
 
 ## Build layout in use
 
 ### Main executable
 
 - `redalert`
+- Post-build deployment:
+  - normal builds refresh `GameData/redalert`;
+  - ASan builds refresh `GameData/redalert-asan`.
 - Sources:
   - `CODE/*.CPP`
   - `CODE/DIBCOMPAT.CPP`
@@ -142,7 +160,6 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - `SDL3_COMPAT/wrappers/ddeml_compat.cpp`
   - `SDL3_COMPAT/wrappers/dos_compat.cpp`
   - `SDL3_COMPAT/wrappers/ddraw_compat.cpp`
-  - `SDL3_COMPAT/wrappers/dsound_compat.cpp`
   - `SDL3_COMPAT/wrappers/profile_compat.cpp`
 
 ## Resolved blocker
@@ -160,5 +177,5 @@ The final link failure was narrowed to the movie layer and resolved by replacing
 1. Re-test front-end interaction with real user-driven pointer input on SDL/Wayland to confirm that visible cursor motion and click behavior now match the restored queue-side mouse coordinates.
 2. Exercise additional VQA playback and in-game transitions beyond the startup intro and front-end.
 3. Validate the same CMake target on Windows and fix any remaining case, type-width, or wrapper issues that only surface there.
-4. Continue tightening legacy Win32/DirectDraw/DirectSound assumptions only where runtime behavior or sanitizers still prove they are wrong on 64-bit/SDL3 builds.
+4. Continue tightening remaining legacy Win32/DirectDraw/audio assumptions only where runtime behavior or sanitizers still prove they are wrong on 64-bit/SDL3 builds.
 5. Keep the porting docs aligned with each verified runtime or cross-platform milestone.

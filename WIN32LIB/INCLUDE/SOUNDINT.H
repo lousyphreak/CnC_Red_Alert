@@ -37,7 +37,7 @@
  * Functions:                                                              *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include "sound.h"
+#include "SOUND.H"
 
 /*
 ** Defines for true and false.  These are included because we do not allow
@@ -117,7 +117,7 @@ typedef struct {
 	/*
 	**	These are pointers to the double buffers.
 	*/
-	LPDIRECTSOUNDBUFFER PlayBuffer;
+	AudioBackendBuffer * PlayBuffer;
 
 	/*
 	** Variable to keep track of the playback rate of this buffer

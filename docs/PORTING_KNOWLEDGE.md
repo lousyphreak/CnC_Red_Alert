@@ -9,6 +9,17 @@ _Last updated: 2026-03-30_
 - Shared platform/rendering/input/audio support code lives in `WIN32LIB/`.
 - The active compatibility include order puts `SDL3_COMPAT/wrappers/` ahead of `CODE/` and `WIN32LIB/INCLUDE`.
 
+## Gameplay audio system observations
+
+- The active gameplay audio path is `CODE/AUDIO.CPP` -> `WIN32LIB/AUDIO/SOUNDIO.CPP` -> `WIN32LIB/AUDIO/SOUNDINT.CPP`.
+- The safest porting seam is below the legacy `Audio_*`, `Play_Sample`, and sample-tracker logic. Keep those APIs and refill rules stable; replace only the device/buffer backend under them.
+- The active gameplay backend is now `WIN32LIB/INCLUDE/SDLAUDIOBACKEND.H` plus `WIN32LIB/AUDIO/SDLAUDIOBACKEND.CPP`.
+  - `AudioBackendDevice`, `AudioBackendBuffer`, and `AudioBufferFormat` replace the active DirectSound types.
+  - The backend uses SDL3 audio streams/device output internally while preserving the old primary/secondary buffer contract expected by `SOUNDIO.CPP` and `SOUNDINT.CPP`.
+- `WIN32LIB/AUDIO/SOUNDIO.CPP` no longer uses `DirectSoundCreate()` or WinMM timer callbacks on the active path.
+  - maintenance now runs through `Pump_Sound_Service()` plus `Start_Sound_Thread()` / `Stop_Sound_Thread()`;
+  - the service thread still uses the generic Win32-compat thread helpers, but audio transport/output is SDL-backed.
+
 ## Movie system observations
 
 - The active Red Alert in-game movie path is buffered VQA playback (`VQACFGF_BUFFER`) into system-memory pages. The current SDL3 port does not need the old direct MCGA/XMode/VESA output paths for normal gameplay movie playback.
@@ -35,7 +46,7 @@ _Last updated: 2026-03-30_
 
 - Active VQA/IFF on-disk header structs must use fixed-width integer types. Leaving legacy `unsigned long` fields in the active movie headers breaks parsing on LP64 hosts and causes `VQAERR_NOTVQA`/bad chunk handling on Linux.
 - The active game-facing and VQA-private `VQAConfig` definitions must stay layout-compatible even though the SDL3 build does not use DirectSound objects directly.
-  - Keep the placeholder `SoundObject` and `PrimaryBufferPtr` fields in the private header.
+  - On the active game include path (`VQ/INCLUDE/VQA32/VQAPLAY.H`), keep `VQADIRECT_SOUND` disabled and expose `SoundObject` / `PrimaryBufferPtr` as generic pointer placeholders.
   - Keep the matching initializer slots in `VQ/VQA32/CONFIG.CPP`.
 - The VQ-side `_SOS_COMPRESS_INFO` layout must match the active game-side ADPCM decoder, not just the original VQ headers.
 - The startup intro movies loaded from the MIX archives use `4x4` VQ blocks. If only `4x2` decode is enabled, the intro can open and play audio while the video surface stays black.
@@ -62,18 +73,23 @@ _Last updated: 2026-03-30_
 
 - The codebase still leans on compatibility wrappers for:
   - file I/O (`CreateFile`, `ReadFile`, `WriteFile`, `CloseHandle`);
-  - threading and timing (`Sleep`, multimedia timers, thread priority helpers);
+  - threading and timing (`Sleep`, generic thread helpers, thread priority helpers);
   - registry access (`RegOpenKeyEx`, `RegQueryValueEx`, `RegCloseKey`);
   - directory enumeration (`FindFirstFile`, `FindNextFile`, `FindClose`);
-  - DirectDraw and DirectSound compatibility types used by legacy rendering/audio code.
+  - DirectDraw compatibility types used by legacy rendering code.
+- The active gameplay audio path no longer depends on the DirectSound compatibility wrapper; any remaining DirectSound-shaped code is archival or inactive.
 
 ## Startup/runtime porting notes
 
 - The Linux build still compiles large parts of the game with `WIN32=1` / `_WIN32=1`, so runtime compatibility has to preserve Win32-era expectations even on SDL/Linux.
 - Because `_WIN32` remains visible in this Linux build, `std::filesystem` can take Windows-oriented code paths that are unsafe in compat wrappers. For file enumeration and similar wrappers, prefer direct POSIX `opendir` / `readdir` / `stat` / `statvfs` logic on non-Windows hosts.
+- `SDL3_COMPAT/wrappers/win32_compat.cpp` virtual-CD probing (`virtual_cd_index_for_drive_letter()` / `GetDriveType()`) is part of static startup through `GetCDClass`. On the Linux `_WIN32` hybrid build, avoid `std::filesystem::path` composition there; it can trip ASan/libstdc++ `new-delete-type-mismatch` failures before the game reaches normal startup.
 - Linux must enter the real `WinMain(...)` startup path. If the Unix stub `main()` is left in place, the program only prints the old placeholder message (`Run C&C.COM.`) instead of running the game.
 - `GetModuleFileName()` must return a real executable path on Linux because `CODE/STARTUP.CPP` uses it during startup.
-- `CODE/STARTUP.CPP` changes the current working directory to the executable directory. For smoke tests that need the real assets, copy the built executable into `GameData/` and launch it from there.
+- `CODE/STARTUP.CPP` changes the current working directory to the executable directory. The build now copies the runnable binaries into `GameData/` automatically:
+  - normal builds refresh `GameData/redalert`;
+  - ASan builds refresh `GameData/redalert-asan`.
+  Smoke tests should launch those `GameData/` copies so the executable directory still contains the real assets.
 - The DDE compatibility layer cannot keep startup-critical mutable state in ordinary file-scope globals. Game-side global constructors may call into DDE before those globals are safely initialized.
 - SDL/Wayland startup can deliver focus gained and focus lost in the same early pump cycle. The bootstrap path needs a sticky "focus seen once" latch instead of waiting only on the live `GameInFocus` bit.
 
@@ -97,7 +113,7 @@ _Last updated: 2026-03-30_
 ## Packing/alignment notes
 
 - Old `#pragma pack` state leaks easily through the audio headers; keep those headers balanced with `push` / `pop`.
-- The DirectSound compatibility wrapper must match the original `DSBUFFERDESC` layout closely enough for the legacy code to populate it safely, including `dwReserved`.
+- The active SDL audio backend still has to preserve the DirectSound-era buffer contract closely enough for legacy sound code to populate formats, lock regions, and play/status flags safely.
 - Some translation units include `windows.h` under `#pragma pack(4)`. The compatibility `CRITICAL_SECTION` therefore needs explicit pointer alignment (`alignas(void*)`) so its internal mutex pointer is not placed at 4-byte-aligned addresses on 64-bit Linux.
 - The runtime sound bookkeeping structs (`SampleTrackerType`, `LockedDataType`) need native alignment for pointer-bearing members and `CRITICAL_SECTION`. Keeping them under forced 4-byte packing produces sanitizer-reported misaligned accesses during `Audio_Init()`.
 - Asset/file formats that were historically read through raw pointer casts now need fixed-width structs or `memcpy`-based header loads in active Linux/ASan paths. Unaligned font, shape, IFF/CPS, and keyframe reads were all real runtime issues in this port.
@@ -122,7 +138,10 @@ _Last updated: 2026-03-30_
 - Running the copied executable from `GameData/` now reaches the real front-end path with a live `640x480` SDL/Hyprland window titled `Red Alert`.
 - The latest validated normal run is no longer visually black; a captured window image has substantial non-black and bright-pixel coverage after the DirectDraw present-path fix.
 - The latest validated normal run opens a PipeWire sink input and emits non-silent monitor audio during the front-end/menu baseline.
+- The latest validated normal and ASan builds both compile/link the SDL-backed gameplay audio path, and the active `sdl3_compat` library no longer includes `dsound_compat.cpp`.
+- The latest validated normal and ASan builds also refresh `GameData/redalert` and `GameData/redalert-asan` automatically, so the runnable launchers match the current build outputs byte-for-byte.
 - The latest validated startup run now opens and visibly animates `ENGLISH.VQA` instead of skipping directly to the menu on a black movie surface.
 - The latest validated normal and ASan runs both handle compositor-driven window close cleanly through `SDL_EVENT_WINDOW_CLOSE_REQUESTED -> WM_CLOSE -> WM_DESTROY`.
+- The latest `RA_TRACE_STARTUP=1 gdb` checks on both `GameData/redalert` and `GameData/redalert-asan` get through window/audio/media startup instead of aborting immediately in compat `GetDriveType()` / virtual-CD probing.
 - The latest quiet ASan/UBSan validation reaches that same front-end baseline and shuts down without sanitizer diagnostics.
 - The next likely issues are now deeper validation items such as full real-pointer front-end interaction, gameplay transitions, and Windows-specific runtime behavior.

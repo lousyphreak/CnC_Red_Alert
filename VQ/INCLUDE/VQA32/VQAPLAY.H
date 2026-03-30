@@ -50,10 +50,10 @@
 #define VQASTANDALONE 0  /* Stand alone player */
 #define VQAVOC_ON     0  /* Enable VOC file override */
 #define	VQAMONO_ON    0  /* Mono display output enable/disable */
-#define VQADIRECT_SOUND 1	/* Use windows direct sound system */
+#define VQADIRECT_SOUND 0	/* Use windows direct sound system */
 #define VQAAUDIO_ON   1  /* Audio playback enable/disable */
 #define VQAVIDEO_ON   0  /* Video manager enable/disable */
-#define VQAMCGA_ON    1  /* MCGA enable/disable */
+#define VQAMCGA_ON    0  /* MCGA enable/disable */
 #define VQAXMODE_ON   0  /* Xmode enable/disable */
 #define VQAVESA_ON    0  /* VESA enable/disable */
 #define	VQABLOCK_2X2  0  /* 2x2 block decode enable/disable */
@@ -64,11 +64,11 @@
 #else
 #define VQASTANDALONE 0  /* Stand alone player */
 #define VQAVOC_ON     0  /* Enable VOC file override */
-#define	VQAMONO_ON    1  /* Mono display output enable/disable */
-#define VQADIRECT_SOUND 1	/* Use windows direct sound system */
+#define	VQAMONO_ON    0  /* Mono display output enable/disable */
+#define VQADIRECT_SOUND 0	/* Use windows direct sound system */
 #define VQAAUDIO_ON   1  /* Audio playback enable/disable */
 #define VQAVIDEO_ON   0  /* Video manager enable/disable */
-#define VQAMCGA_ON    1  /* MCGA enable/disable */
+#define VQAMCGA_ON    0  /* MCGA enable/disable */
 #define VQAXMODE_ON   0  /* Xmode enable/disable */
 #define VQAVESA_ON    0  /* VESA enable/disable */
 #define	VQABLOCK_2X2  0  /* 2x2 block decode enable/disable */
@@ -196,6 +196,9 @@ typedef struct _VQAConfig {
 #if (VQADIRECT_SOUND)
 	LPDIRECTSOUND			SoundObject;
 	LPDIRECTSOUNDBUFFER	PrimaryBufferPtr;
+#else
+	void          *SoundObject;
+	void          *PrimaryBufferPtr;
 #endif	//(VQADIRECT_SOUND)
 	char          *VocFile;
 	unsigned char *AudioBuf;

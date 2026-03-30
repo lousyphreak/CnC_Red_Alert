@@ -61,7 +61,7 @@
 #endif // _WIN32
 #include	<windows.h>
 #include	<windowsx.h>
-#include	"dsound.h"
+#include	"SDLAUDIOBACKEND.H"
 #include	<WWSTD.H>
 #include "SOUNDINT.H"
 #include "MEMFLAG.H"
@@ -258,7 +258,7 @@ LONG Sample_Copy(SampleTrackerType *st, void ** source, LONG * ssize, void ** al
 
 
 
-extern int Convert_HMI_To_Direct_Sound_Volume(int volume);
+extern int Convert_HMI_To_Backend_Volume(int volume);
 
 /***********************************************************************************************
  * maintenance_callback -- routine to service the direct play secondary buffers                *
@@ -317,8 +317,8 @@ VOID far __cdecl maintenance_callback(VOID)
 				/*
 				** Check for unusual situations like a focus loss
 				*/
-				if (return_code != DS_OK){
-					if (return_code == DSERR_BUFFERLOST){
+				if (return_code != RAAUDIO_OK){
+					if (return_code == RAAUDIOERR_BUFFERLOST){
 						if (Audio_Focus_Loss_Function){
 							Audio_Focus_Loss_Function();
 						}
@@ -359,13 +359,12 @@ VOID far __cdecl maintenance_callback(VOID)
 						/*
 						** Lock a 1/2 of the direct sound buffer so we can write to it
 						*/
-						if ( DS_OK== st->PlayBuffer->Lock (	(DWORD)st->DestPtr ,
+						if ( RAAUDIO_OK== st->PlayBuffer->Lock (	(DWORD)st->DestPtr ,
 															(DWORD)SECONDARY_BUFFER_SIZE/2,
 															&play_buffer_ptr,
 															&lock_length1,
 															&dummy_buffer_ptr,
-															&lock_length2,
-															0 )){
+															&lock_length2 )){
 
 							bytes_copied = Sample_Copy(	st,
 														&st->Source,
@@ -485,9 +484,9 @@ VOID far __cdecl maintenance_callback(VOID)
 				//st->PlayBuffer->SetVolume (-( ( (32768-st->Volume)*1000) >>15 ) );
 
 				if (st->IsScore){
-					st->PlayBuffer->SetVolume ( Convert_HMI_To_Direct_Sound_Volume( ( LockedData.ScoreVolume*(st->Volume >>7))/256) );
+					st->PlayBuffer->SetVolume ( Convert_HMI_To_Backend_Volume( ( LockedData.ScoreVolume*(st->Volume >>7))/256) );
 				}else{
-					st->PlayBuffer->SetVolume ( Convert_HMI_To_Direct_Sound_Volume( ( LockedData.SoundVolume*(st->Volume >>7))/256) );
+					st->PlayBuffer->SetVolume ( Convert_HMI_To_Backend_Volume( ( LockedData.SoundVolume*(st->Volume >>7))/256) );
 				}
 
 				//LeaveCriticalSection (&st->AudioCriticalSection);

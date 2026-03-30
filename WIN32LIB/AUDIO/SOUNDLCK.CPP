@@ -41,7 +41,7 @@
 #include <windows.h>
 #include <windowsx.h>
 #include <objbase.h>
-#include "dsound.h"
+#include "SDLAUDIOBACKEND.H"
 #include <mem.h>
 #include "WWMEM.H"
 #include "WWSTD.H"

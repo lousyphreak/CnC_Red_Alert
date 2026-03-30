@@ -38,7 +38,7 @@
 #ifndef EXTERNS_H
 #define EXTERNS_H
 
-#include	<dsound.h>
+#include	<SDLAUDIOBACKEND.H>
 #include	"PALETTEC.H"
 #include	"../WIN32LIB/INCLUDE/AUDIO.H"
 #include	"CELL.H"
@@ -135,8 +135,8 @@ extern GraphicBufferClass	HiddenPage;
 extern GraphicBufferClass		VisiblePage;
 extern GraphicViewPortClass	SeenBuff;
 extern GraphicBufferClass		SysMemPage;
-extern LPDIRECTSOUND				SoundObject;
-extern LPDIRECTSOUNDBUFFER		PrimaryBufferPtr;
+extern AudioBackendDevice *				SoundObject;
+extern AudioBackendBuffer *		PrimaryBufferPtr;
 extern int							ScreenWidth;
 extern int							ScreenHeight;
 extern GraphicBufferClass		ModeXBuff;

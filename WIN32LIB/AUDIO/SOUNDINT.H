@@ -38,7 +38,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include <windows.h>
-#include "dsound.h"
+#include "SDLAUDIOBACKEND.H"
 
 #include "SOUND.H"
 
@@ -120,7 +120,7 @@ typedef struct {
 	/*
 	**	These are pointers to the double buffers.
 	*/
-	LPDIRECTSOUNDBUFFER PlayBuffer;
+	AudioBackendBuffer * PlayBuffer;
 
 	/*
 	** Variable to keep track of the playback rate of this buffer

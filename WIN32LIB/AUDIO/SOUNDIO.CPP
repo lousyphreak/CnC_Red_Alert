@@ -66,7 +66,7 @@ extern	void Colour_Debug (int call_number);
 
 #include	<windows.h>
 #include	<windowsx.h>
-#include	"dsound.h"
+#include	"SDLAUDIOBACKEND.H"
 
 #include	<mem.h>
 #include	<WWMEM.H>
@@ -85,9 +85,10 @@ extern	void Colour_Debug (int call_number);
 #include	"AUDIO.H"
 #pragma		pack(4)
 
-LPDIRECTSOUNDBUFFER	DumpBuffer;
+AudioBackendBuffer *	DumpBuffer = NULL;
 HANDLE						SoundThreadHandle = NULL;
 BOOL						SoundThreadActive = FALSE;
+volatile BOOL			SoundThreadShouldRun = FALSE;
 
 /*
 **      If this is defined, then the streaming audio buffer will be filled
@@ -135,13 +136,10 @@ int							Misc;
 SFX_Type					SoundType;
 Sample_Type				SampleType;
 int							ReverseChannels = FALSE;
-LPDIRECTSOUND			SoundObject;			//Direct sound object
-LPDIRECTSOUNDBUFFER	PrimaryBufferPtr;		//Pointer to the  buffer that the
-unsigned					SoundTimerHandle=0;	//Windows Handle for sound timer
-WAVEFORMATEX				DsBuffFormat;			//format of direct sound buffer
-DSBUFFERDESC				BufferDesc;				//Buffer description for creating buffers
-WAVEFORMATEX				PrimaryBuffFormat;	//Copy of format of direct sound primary buffer
-DSBUFFERDESC				PrimaryBufferDesc;	//Copy of buffer description for re-creating primary buffer
+AudioBackendDevice *			SoundObject = NULL;
+AudioBackendBuffer *	PrimaryBufferPtr = NULL;
+AudioBufferFormat				DsBuffFormat;
+AudioBufferFormat				PrimaryBuffFormat;
 CRITICAL_SECTION		GlobalAudioCriticalSection;
 void						*FileStreamBuffer = NULL;	//Buffer for streaming audio from CD
 /*
@@ -156,10 +154,12 @@ extern	void (*Audio_Focus_Loss_Function)(void) = NULL;
 
 static BOOL File_Callback(short id, short *odd, void **buffer, long *size);
 static int __cdecl Stream_Sample_Vol(void *buffer, long size, BOOL (*callback)(short id, short *odd, void **buffer, long *size), int volume, int handle);
-void CALLBACK Sound_Timer_Callback ( UINT, UINT, DWORD, DWORD, DWORD );
+static void Pump_Sound_Service(void);
+static DWORD WINAPI Sound_Thread(LPVOID);
+static BOOL Start_Sound_Thread(void);
+static void Stop_Sound_Thread(void);
 //static int __cdecl Stream_Sample(void *buffer, long size, BOOL (*callback)(short id, short *odd, void **buffer, long *size));
-void Sound_Thread (void *);
-volatile BOOL AudioDone;
+volatile BOOL AudioDone = FALSE;
 /*= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =*/
 
 
@@ -209,7 +209,7 @@ static BOOL File_Callback(short id, short *odd, void **buffer, long *size)
 			if (!AudioDone){
 				LeaveCriticalSection(&GlobalAudioCriticalSection);
 			}
-			Sound_Timer_Callback(0,0,0,0,0);	//Shouldnt block as we are calling it from the same thread
+			Pump_Sound_Service();	//Shouldnt block as we are calling it from the same thread
 
 	 	  	/*
 	 	  	** If the file handle is still valid, then read in the next
@@ -270,7 +270,7 @@ static BOOL File_Callback(short id, short *odd, void **buffer, long *size)
 						if (!AudioDone){
 							LeaveCriticalSection(&GlobalAudioCriticalSection);
 						}
-						Sound_Timer_Callback(0,0,0,0,0);	//Shouldnt block as we are calling it from the same thread
+						Pump_Sound_Service();	//Shouldnt block as we are calling it from the same thread
 				 	}
 				 	num_empty_buffers--;
 				}
@@ -298,7 +298,7 @@ static BOOL File_Callback(short id, short *odd, void **buffer, long *size)
 				if (!AudioDone){
 					LeaveCriticalSection(&GlobalAudioCriticalSection);
 				}
-				Sound_Timer_Callback(0,0,0,0,0);	//Shouldnt block as we are calling it from the same thread
+				Pump_Sound_Service();	//Shouldnt block as we are calling it from the same thread
 			}
 
 			/*
@@ -445,7 +445,7 @@ void File_Stream_Preload(int handle)
 		if (s < LockedData.StreamBufferSize) break;
     }
 
-	Sound_Timer_Callback(0,0,0,0,0);	//Shouldnt block as we are calling it from the same thread
+	Pump_Sound_Service();	//Shouldnt block as we are calling it from the same thread
 
 
 	/*
@@ -646,7 +646,7 @@ void __cdecl Sound_Callback(void)
 		/*
 		** Call the timer callback now as we may block it in this function
 		*/
-		Sound_Timer_Callback(0,0,0,0,0);
+		Pump_Sound_Service();
 
 		st = &LockedData.SampleTracker[0];
 		for (index = 0; index < MAX_SFX; index++) {
@@ -877,49 +877,65 @@ void Free_Sample(void const *sample)
 
 
 /***********************************************************************************************
- * Sound_Timer_Callback -- windows timer callback for sound maintenance                        *
- *                                                                                             *
- *                                                                                             *
- *                                                                                             *
- * INPUT:    Nothing                                                                           *
- *                                                                                             *
- * OUTPUT:   Nothing                                                                           *
- *                                                                                             *
- * WARNINGS: None                                                                              *
- *                                                                                             *
- * HISTORY:                                                                                    *
- *    11/2/95 4:01PM ST : Created                                                              *
+ * Pump_Sound_Service -- runs the audio maintenance pass on the current thread                 *
  *=============================================================================================*/
 
-void CALLBACK Sound_Timer_Callback ( UINT, UINT, DWORD, DWORD, DWORD )
+static void Pump_Sound_Service(void)
 {
-	//if (!InTimerCallback){
-		//InTimerCallback++;
-		//Colour_Debug (5);
-		if (!AudioDone){
-			EnterCriticalSection(&GlobalAudioCriticalSection);
-			maintenance_callback();
-			LeaveCriticalSection(&GlobalAudioCriticalSection);
-		}
-		//Colour_Debug (0);
-		//InTimerCallback--;
-	//}
-}
-
-void Sound_Thread (void *)
-{
-	DuplicateHandle (GetCurrentProcess(), GetCurrentThread() , GetCurrentProcess() ,&SoundThreadHandle , THREAD_ALL_ACCESS , TRUE , 0);
-	SetThreadPriority (SoundThreadHandle, THREAD_PRIORITY_TIME_CRITICAL);
-	SoundThreadActive = TRUE;
-
-	while (!AudioDone){
-
+	if (!AudioDone) {
 		EnterCriticalSection(&GlobalAudioCriticalSection);
 		maintenance_callback();
 		LeaveCriticalSection(&GlobalAudioCriticalSection);
-		Sleep(1000/40);
+	}
+}
+
+
+static DWORD WINAPI Sound_Thread(LPVOID)
+{
+	SoundThreadActive = TRUE;
+
+	while (SoundThreadShouldRun) {
+		Pump_Sound_Service();
+		Sleep(1000 / MAINTENANCE_RATE);
 	}
 
+	SoundThreadActive = FALSE;
+	return (0);
+}
+
+
+static BOOL Start_Sound_Thread(void)
+{
+	DWORD thread_id = 0;
+
+	if (SoundThreadHandle != NULL) {
+		return (TRUE);
+	}
+
+	SoundThreadShouldRun = TRUE;
+	SoundThreadHandle = CreateThread(NULL, 0, Sound_Thread, NULL, 0, &thread_id);
+	if (SoundThreadHandle == NULL) {
+		SoundThreadShouldRun = FALSE;
+		return (FALSE);
+	}
+
+	SetThreadPriority(SoundThreadHandle, THREAD_PRIORITY_TIME_CRITICAL);
+	return (TRUE);
+}
+
+
+static void Stop_Sound_Thread(void)
+{
+	if (SoundThreadHandle == NULL) {
+		SoundThreadActive = FALSE;
+		SoundThreadShouldRun = FALSE;
+		return;
+	}
+
+	SoundThreadShouldRun = FALSE;
+	WaitForSingleObject(SoundThreadHandle, INFINITE);
+	CloseHandle(SoundThreadHandle);
+	SoundThreadHandle = NULL;
 	SoundThreadActive = FALSE;
 }
 
@@ -947,7 +963,7 @@ void Sound_Thread (void *)
 BOOL Set_Primary_Buffer_Format(void)
 {
 	if (SoundObject && PrimaryBufferPtr){
-		return (PrimaryBufferPtr->SetFormat ( &PrimaryBuffFormat ) == DS_OK);
+		return (PrimaryBufferPtr->SetFormat ( &PrimaryBuffFormat ) == RAAUDIO_OK);
 	}
 	return (FALSE);
 }
@@ -1013,35 +1029,28 @@ BOOL Audio_Init( HWND window , int bits_per_sample, BOOL stereo , int rate , int
 	if ( !SoundObject ){
 
 		/*
-		**	Create the direct sound object
+		**	Create the SDL audio backend object.
 		*/
-		if ( DirectSoundCreate (NULL,&SoundObject,NULL) !=DS_OK ) {
-			Print_Sound_Error("Warning - Unable to create Direct Sound Object",window);
+		if (CreateAudioBackendDevice(&SoundObject) != RAAUDIO_OK) {
+			Print_Sound_Error("Warning - Unable to create SDL audio backend", window);
 			return (FALSE);
 		}
 
 		/*
-		**	Give ourselves exclusive access to it
+		**	Give the backend the owning window for focus-related behavior.
 		*/
-		if ( SoundObject->SetCooperativeLevel( window, DSSCL_PRIORITY ) != DS_OK){
-			Print_Sound_Error("Warning - Unable to set Direct Sound cooperative level",window);
+		if (SoundObject->SetWindow(window) != RAAUDIO_OK) {
+			Print_Sound_Error("Warning - Unable to configure SDL audio backend", window);
 			SoundObject->Release();
 			SoundObject = NULL;
 			return (FALSE);
 		}
 
 		/*
-		** Set up the primary buffer structure
-		*/
-		memset (&BufferDesc , 0 , sizeof(DSBUFFERDESC));
-		BufferDesc.dwSize=sizeof(DSBUFFERDESC);
-		BufferDesc.dwFlags=DSBCAPS_PRIMARYBUFFER | DSBCAPS_CTRLVOLUME;
-
-		/*
 		**	Set up the primary buffer format
 		*/
-		memset (&DsBuffFormat , 0 , sizeof(WAVEFORMATEX));
-		DsBuffFormat.wFormatTag		= WAVE_FORMAT_PCM;
+		memset (&DsBuffFormat , 0 , sizeof(AudioBufferFormat));
+		DsBuffFormat.wFormatTag		= RA_AUDIO_FORMAT_PCM;
 		DsBuffFormat.nChannels		= (unsigned short) (1 + stereo);
 		DsBuffFormat.nSamplesPerSec	= rate;
 		DsBuffFormat.wBitsPerSample	= (short) bits_per_sample;
@@ -1050,19 +1059,13 @@ BOOL Audio_Init( HWND window , int bits_per_sample, BOOL stereo , int rate , int
 		DsBuffFormat.cbSize = 0;
 
 
-		/*
-		** Make a copy of the primary buffer description so we can reset its format later
-		*/
-		memcpy (&PrimaryBufferDesc , &BufferDesc , sizeof(DSBUFFERDESC));
-		memcpy (&PrimaryBuffFormat , &DsBuffFormat , sizeof(WAVEFORMATEX));
+		memcpy(&PrimaryBuffFormat, &DsBuffFormat, sizeof(AudioBufferFormat));
 
 		/*
 		**	Create the primary buffer object
 		*/
-		if ( SoundObject->CreateSoundBuffer (&PrimaryBufferDesc ,
-														&PrimaryBufferPtr ,
-														NULL ) !=DS_OK ){
-			Print_Sound_Error("Warning - Unable to create Direct Sound primary buffer",window);
+		if (SoundObject->CreateBuffer(4096, NULL, TRUE, &PrimaryBufferPtr) != RAAUDIO_OK) {
+			Print_Sound_Error("Warning - Unable to create SDL primary audio buffer", window);
 			SoundObject->Release();
 			SoundObject = NULL;
 			return (FALSE);
@@ -1092,11 +1095,7 @@ BOOL Audio_Init( HWND window , int bits_per_sample, BOOL stereo , int rate , int
 				DsBuffFormat.nBlockAlign	= (unsigned short)( (DsBuffFormat.wBitsPerSample/8) * DsBuffFormat.nChannels);
 				DsBuffFormat.nAvgBytesPerSec= DsBuffFormat.nSamplesPerSec * DsBuffFormat.nBlockAlign;
 
-				/*
-				** Make a copy of the primary buffer description so we can reset its format later
-				*/
-				memcpy (&PrimaryBufferDesc , &BufferDesc , sizeof(DSBUFFERDESC));
-				memcpy (&PrimaryBuffFormat , &DsBuffFormat , sizeof(WAVEFORMATEX));
+				memcpy(&PrimaryBuffFormat, &DsBuffFormat, sizeof(AudioBufferFormat));
 			}
 
 			if (!Set_Primary_Buffer_Format()){
@@ -1128,8 +1127,8 @@ BOOL Audio_Init( HWND window , int bits_per_sample, BOOL stereo , int rate , int
 		/*
 		** Start the primary sound buffer playing
 		**
-		*/if ( PrimaryBufferPtr->Play(0,0,DSBPLAY_LOOPING) != DS_OK ){
-			Print_Sound_Error("Unable to play Direct Sound primary buffer",window);
+		*/if (PrimaryBufferPtr->Play(TRUE) != RAAUDIO_OK) {
+			Print_Sound_Error("Unable to start SDL primary audio buffer", window);
 			PrimaryBufferPtr->Release();
 			PrimaryBufferPtr = NULL;
 			SoundObject->Release();
@@ -1146,22 +1145,22 @@ BOOL Audio_Init( HWND window , int bits_per_sample, BOOL stereo , int rate , int
 		InitializeCriticalSection(&GlobalAudioCriticalSection);
 
 		/*
-		** Initialise the Windows timer system to provide us with a callback
-		**
+		** Start the audio service thread that keeps the streaming buffers fed.
 		*/
-		SoundTimerHandle = timeSetEvent ( 1000/MAINTENANCE_RATE , 1 , Sound_Timer_Callback , 0 , TIME_PERIODIC);
 		AudioDone = FALSE;
-		//_beginthread(&Sound_Thread, NULL, 16*1024, NULL);
+		if (!Start_Sound_Thread()) {
+			DeleteCriticalSection(&GlobalAudioCriticalSection);
+			PrimaryBufferPtr->Release();
+			PrimaryBufferPtr = NULL;
+			SoundObject->Release();
+			SoundObject = NULL;
+			Print_Sound_Error("Warning - Unable to start audio service thread", window);
+			return (FALSE);
+		}
 
 		/*
 		**	Define the format for the secondary sound buffers
 		*/
-		BufferDesc.dwFlags=DSBCAPS_CTRLVOLUME;
-		BufferDesc.dwBufferBytes=SECONDARY_BUFFER_SIZE;
-		BufferDesc.lpwfxFormat = (LPWAVEFORMATEX) &DsBuffFormat;
-
-
-
 		/*
     	** Allocate a decompression buffer equal to the size of a SONARC frame
 		** block.
@@ -1171,10 +1170,14 @@ BOOL Audio_Init( HWND window , int bits_per_sample, BOOL stereo , int rate , int
     	/*
     	** Allocate once secondary direct sound buffer for each simultaneous sound effect
 		**
-    	*/
+		*/
 		for (index = 0; index < MAX_SFX; index++) {
 
-			SoundObject->CreateSoundBuffer (&BufferDesc , &LockedData.SampleTracker[index].PlayBuffer , NULL);
+			if (SoundObject->CreateBuffer(SECONDARY_BUFFER_SIZE, &DsBuffFormat, FALSE, &LockedData.SampleTracker[index].PlayBuffer) != RAAUDIO_OK) {
+				Sound_End();
+				Print_Sound_Error("Warning - Unable to create SDL sample buffer", window);
+				return (FALSE);
+			}
 
 			LockedData.SampleTracker[index].PlaybackRate	= rate;
 			LockedData.SampleTracker[index].Stereo			= (stereo) ? AUD_FLAG_STEREO : 0;
@@ -1217,13 +1220,7 @@ void Sound_End(void)
 
 	int	index;
 
-	/*
-	** Remove the Windows timer event we installed for the sound callback
-	*/
-	if (SoundTimerHandle){
-		timeKillEvent(SoundTimerHandle);
-		SoundTimerHandle = 0;
-	}
+	Stop_Sound_Thread();
 
 
 	if (SoundObject && PrimaryBufferPtr){
@@ -1240,8 +1237,6 @@ void Sound_End(void)
 			}
 		}
 	}
-
-	AudioDone = TRUE;
 
 	if (FileStreamBuffer){
 		Free (FileStreamBuffer);
@@ -1275,6 +1270,7 @@ void Sound_End(void)
 	** Since the timer has stopped, we are finished with our global critical section.
 	*/
 	DeleteCriticalSection(&GlobalAudioCriticalSection);
+	AudioDone = TRUE;
 }
 
 
@@ -1379,8 +1375,8 @@ BOOL Sample_Status(int handle)
 	** that it is.
 	*/
 	DumpBuffer = LockedData.SampleTracker[handle].PlayBuffer;
-	if (LockedData.SampleTracker[handle].PlayBuffer->GetStatus( &status ) == DS_OK){
-		return ( (DSBSTATUS_PLAYING & status) || (DSBSTATUS_LOOPING & status) );
+	if (LockedData.SampleTracker[handle].PlayBuffer->GetStatus( &status ) == RAAUDIO_OK){
+		return ( (RAAUDIOSTATUS_PLAYING & status) || (RAAUDIOSTATUS_LOOPING & status) );
 	}else{
 		return (TRUE);
 	}
@@ -1542,7 +1538,7 @@ int Play_Sample(void const *sample, int priority, int volume, signed short panlo
  *    3/20/96 9:47AM ST : Created                                                              *
  *=============================================================================================*/
 
-BOOL Attempt_Audio_Restore (LPDIRECTSOUNDBUFFER sound_buffer)
+BOOL Attempt_Audio_Restore (AudioBackendBuffer * sound_buffer)
 {
 
 	int 	return_code;
@@ -1567,15 +1563,15 @@ BOOL Attempt_Audio_Restore (LPDIRECTSOUNDBUFFER sound_buffer)
 		Restore_Sound_Buffers();
 		return_code = sound_buffer->GetStatus ( &play_status );
 
-	} while (restore_attempts++<2 && return_code == DSERR_BUFFERLOST);
+	} while (restore_attempts++<2 && return_code == RAAUDIOERR_BUFFERLOST);
 
-	return ((BOOL) ~(return_code == DSERR_BUFFERLOST));
+	return ((BOOL) ~(return_code == RAAUDIOERR_BUFFERLOST));
 }
 
 
 
 /***********************************************************************************************
- * Convert_HMI_To_Direct_Sound_Volume -- Converts a linear volume value into an expotential    *
+ * Convert_HMI_To_Backend_Volume -- Converts a linear volume value into an expotential    *
  *                                        value                                                *
  *                                                                                             *
  * This function converts a linear C&C volume in the range 0-255 (255 loudest) to a direct     *
@@ -1592,7 +1588,7 @@ BOOL Attempt_Audio_Restore (LPDIRECTSOUNDBUFFER sound_buffer)
  * HISTORY:                                                                                    *
  *    9/18/96 11:36AM ST : Created                                                             *
  *=============================================================================================*/
-int Convert_HMI_To_Direct_Sound_Volume(int volume)
+int Convert_HMI_To_Backend_Volume(int volume)
 {
 	if (volume == 0) return -10000;
 	if (volume == 255) return 0;
@@ -1723,14 +1719,14 @@ int Play_Sample_Handle(void const *sample, int priority, int volume, signed shor
 		DumpBuffer = st->PlayBuffer;
 		do {
 			return_code = st->PlayBuffer->GetStatus ( &play_status );
-			if (return_code==DSERR_BUFFERLOST){
+			if (return_code==RAAUDIOERR_BUFFERLOST){
 				if (!Attempt_Audio_Restore(st->PlayBuffer)) return(-1);
 			}
-		}while (return_code == DSERR_BUFFERLOST);
+		}while (return_code == RAAUDIOERR_BUFFERLOST);
 
-		if (play_status & (DSBSTATUS_PLAYING | DSBSTATUS_LOOPING) ){
+		if (play_status & (RAAUDIOSTATUS_PLAYING | RAAUDIOSTATUS_LOOPING) ){
 			st->PlayBuffer->Stop();
-			if (return_code==DSERR_BUFFERLOST){
+			if (return_code==RAAUDIOERR_BUFFERLOST){
 				if (!Attempt_Audio_Restore(st->PlayBuffer)) return(-1);
 			}
 		}
@@ -1747,8 +1743,8 @@ int Play_Sample_Handle(void const *sample, int priority, int volume, signed shor
 		/*
 		** Create the new sound buffer
 		*/
-		return_code= SoundObject->CreateSoundBuffer (&BufferDesc , &st->PlayBuffer , NULL);
-		if (return_code==DSERR_BUFFERLOST){
+		return_code = SoundObject->CreateBuffer(SECONDARY_BUFFER_SIZE, &DsBuffFormat, FALSE, &st->PlayBuffer);
+		if (return_code==RAAUDIOERR_BUFFERLOST){
 			if (!Attempt_Audio_Restore(st->PlayBuffer)) return(-1);
 		}
 		/*
@@ -1757,7 +1753,7 @@ int Play_Sample_Handle(void const *sample, int priority, int volume, signed shor
 		** If we failed then flag the buffer as having an impossible format so it wont match
 		** any sample. This will ensure that we try and create the buffer again next time its used.
 		*/
-		if (return_code!=DS_OK && return_code!=DSERR_BUFFERLOST){
+		if (return_code!=RAAUDIO_OK && return_code!=RAAUDIOERR_BUFFERLOST){
 			st->PlaybackRate = 0;
 			st->Stereo = 0;
 			st->BitSize = 0;
@@ -1782,12 +1778,12 @@ int Play_Sample_Handle(void const *sample, int priority, int volume, signed shor
 	do {
 		DumpBuffer = st->PlayBuffer;
 		return_code = st->PlayBuffer->GetStatus ( &play_status );
-		if (return_code==DSERR_BUFFERLOST){
+		if (return_code==RAAUDIOERR_BUFFERLOST){
 			if (!Attempt_Audio_Restore(st->PlayBuffer)) return(-1);
 		}
-	} while (return_code==DSERR_BUFFERLOST);
+	} while (return_code==RAAUDIOERR_BUFFERLOST);
 
-	if (play_status & (DSBSTATUS_PLAYING | DSBSTATUS_LOOPING) ){
+	if (play_status & (RAAUDIOSTATUS_PLAYING | RAAUDIOSTATUS_LOOPING) ){
 		st->Active=0;
 		st->Service=0;
 		st->MoreSource=0;
@@ -1797,19 +1793,18 @@ int Play_Sample_Handle(void const *sample, int priority, int volume, signed shor
 	// Lock the direct sound buffer so we can write to it
 	//
 	do {
-		return_code = st->PlayBuffer->Lock (	0 ,
+		return_code = st->PlayBuffer->Lock(0,
 										SECONDARY_BUFFER_SIZE,
 										&play_buffer_ptr,
 										&lock_length1,
 										&dummy_buffer_ptr,
-										&lock_length2,
-										0 );
-		if (return_code==DSERR_BUFFERLOST){
+										&lock_length2);
+		if (return_code==RAAUDIOERR_BUFFERLOST){
 			if (!Attempt_Audio_Restore(st->PlayBuffer)) return(-1);
 		}
-	} while (return_code==DSERR_BUFFERLOST);
+	} while (return_code==RAAUDIOERR_BUFFERLOST);
 
-	if (return_code != DS_OK) {
+	if (return_code != RAAUDIO_OK) {
 		//LeaveCriticalSection (&GlobalAudioCriticalSection);
 		return (-1);
 	}
@@ -1861,14 +1856,14 @@ int Play_Sample_Handle(void const *sample, int priority, int volume, signed shor
 	st->Volume = (volume << 7);
 	do {
 
-		//return_code = st->PlayBuffer->SetVolume ( Convert_HMI_To_Direct_Sound_Volume(volume));
-		st->PlayBuffer->SetVolume ( Convert_HMI_To_Direct_Sound_Volume( ( LockedData.SoundVolume*volume)/256) );
+		//return_code = st->PlayBuffer->SetVolume ( Convert_HMI_To_Backend_Volume(volume));
+		st->PlayBuffer->SetVolume ( Convert_HMI_To_Backend_Volume( ( LockedData.SoundVolume*volume)/256) );
 		//return_code = st->PlayBuffer->SetVolume (- ( ( (32768- ( (st->Volume >> 8) *LockedData.SoundVolume) )
 		//															*1000) >>15 ) );
-		if (return_code==DSERR_BUFFERLOST){
+		if (return_code==RAAUDIOERR_BUFFERLOST){
 			if (!Attempt_Audio_Restore(st->PlayBuffer)) return(-1);
 		}
-	} while (return_code==DSERR_BUFFERLOST);
+	} while (return_code==RAAUDIOERR_BUFFERLOST);
 
 
 	/*
@@ -1885,10 +1880,10 @@ int Play_Sample_Handle(void const *sample, int priority, int volume, signed shor
 	*/
 	do {
 		return_code = st->PlayBuffer->SetCurrentPosition (0);
-		if (return_code==DSERR_BUFFERLOST){
+		if (return_code==RAAUDIOERR_BUFFERLOST){
 			if (!Attempt_Audio_Restore(st->PlayBuffer)) return(-1);
 		}
-	} while (return_code==DSERR_BUFFERLOST);
+	} while (return_code==RAAUDIOERR_BUFFERLOST);
 
 
 	/*
@@ -1896,11 +1891,11 @@ int Play_Sample_Handle(void const *sample, int priority, int volume, signed shor
 	*/
 	do
 	{
-		return_code = st->PlayBuffer->Play (0,0,DSBPLAY_LOOPING);
+		return_code = st->PlayBuffer->Play(TRUE);
 
 		switch (return_code){
 
-			case DS_OK :
+			case RAAUDIO_OK :
 				if (!AudioDone){
 					EnterCriticalSection (&GlobalAudioCriticalSection);
 				}
@@ -1912,7 +1907,7 @@ int Play_Sample_Handle(void const *sample, int priority, int volume, signed shor
 				}
 				return (st->Handle);
 
-			case DSERR_BUFFERLOST :
+			case RAAUDIOERR_BUFFERLOST :
 				if (!Attempt_Audio_Restore(st->PlayBuffer)) return(-1);
 				break;
 
@@ -1922,7 +1917,7 @@ int Play_Sample_Handle(void const *sample, int priority, int volume, signed shor
 				return (st->Handle);
 		}
 
-	} while (return_code==DSERR_BUFFERLOST);
+	} while (return_code==RAAUDIOERR_BUFFERLOST);
 
 	//LeaveCriticalSection (&GlobalAudioCriticalSection);
 	return (st->Handle);
@@ -2022,8 +2017,8 @@ int Set_Score_Vol(int volume)
 			//st->PlayBuffer->SetVolume (- ( ( (32768- ( (st->Volume >> 8) *LockedData.ScoreVolume) )
 			//														*1000) >>15 ) );
 
-			//st->PlayBuffer->SetVolume ( Convert_HMI_To_Direct_Sound_Volume ( st->Volume >>7 ) );
-			st->PlayBuffer->SetVolume ( Convert_HMI_To_Direct_Sound_Volume( ( LockedData.ScoreVolume*(st->Volume >>7))/256) );
+			//st->PlayBuffer->SetVolume ( Convert_HMI_To_Backend_Volume ( st->Volume >>7 ) );
+			st->PlayBuffer->SetVolume ( Convert_HMI_To_Backend_Volume( ( LockedData.ScoreVolume*(st->Volume >>7))/256) );
 		}
 	}
 	return(old);
@@ -2134,13 +2129,13 @@ BOOL Start_Primary_Sound_Buffer (BOOL forced)
 
 	if (PrimaryBufferPtr && GameInFocus){
 		if (forced){
-			PrimaryBufferPtr->Play(0,0,DSBPLAY_LOOPING);
+			PrimaryBufferPtr->Play(TRUE);
 			return (TRUE);
 		} else {
 
-			if (PrimaryBufferPtr->GetStatus (&status) == DS_OK){
-				if (! ((status & DSBSTATUS_PLAYING) || (status & DSBSTATUS_LOOPING))){
-					PrimaryBufferPtr->Play(0,0,DSBPLAY_LOOPING);
+			if (PrimaryBufferPtr->GetStatus (&status) == RAAUDIO_OK){
+				if (! ((status & RAAUDIOSTATUS_PLAYING) || (status & RAAUDIOSTATUS_LOOPING))){
+					PrimaryBufferPtr->Play(TRUE);
 					return (TRUE);
 				}else{
 					return (TRUE);
@@ -2171,9 +2166,6 @@ void Stop_Primary_Sound_Buffer (void)
 {
 	if (PrimaryBufferPtr){
 		PrimaryBufferPtr->Stop();
-		PrimaryBufferPtr->Stop();	      // Oh I
-		PrimaryBufferPtr->Stop();			// Hate Direct Sound
-		PrimaryBufferPtr->Stop();			// So much.....
 	}
 
 	for ( int index = 0; index < MAX_SFX; index++) {
@@ -2185,12 +2177,7 @@ void Stop_Primary_Sound_Buffer (void)
 
 void Suspend_Audio_Thread(void)
 {
-	if (SoundThreadActive){
-		//SuspendThread(SoundThreadHandle);
-		timeKillEvent(SoundTimerHandle);
-		SoundTimerHandle = NULL;
-		SoundThreadActive = FALSE;
-	}
+	Stop_Sound_Thread();
 }
 
 
@@ -2198,11 +2185,7 @@ void Suspend_Audio_Thread(void)
 
 void Resume_Audio_Thread(void)
 {
-	if (!SoundThreadActive){
-		//ResumeThread(SoundThreadHandle);
-		SoundTimerHandle = timeSetEvent ( 1000/MAINTENANCE_RATE , 1 , Sound_Timer_Callback , 0 , TIME_PERIODIC);
-		SoundThreadActive = TRUE;
+	if (!AudioDone && !SoundThreadActive){
+		Start_Sound_Thread();
 	}
 }
-
-

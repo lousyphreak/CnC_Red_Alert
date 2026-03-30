@@ -200,6 +200,21 @@ std::string compat_base_directory()
     return path;
 }
 
+bool compat_path_exists(const char* path)
+{
+    if (!path || !*path) {
+        return false;
+    }
+
+#if RA_REAL_WINDOWS
+    std::error_code error;
+    return std::filesystem::exists(std::filesystem::path(path), error);
+#else
+    struct stat status;
+    return stat(path, &status) == 0;
+#endif
+}
+
 int virtual_cd_index_for_drive_letter(char drive_letter)
 {
     const int index = std::tolower(static_cast<unsigned char>(drive_letter)) - 'c';
@@ -210,8 +225,13 @@ int virtual_cd_index_for_drive_letter(char drive_letter)
     char mix_name[16];
     std::snprintf(mix_name, sizeof(mix_name), "MAIN%d.MIX", index + 1);
 
-    std::error_code error;
-    if (error || !std::filesystem::exists(std::filesystem::path(compat_base_directory()) / mix_name, error)) {
+    std::string mix_path = compat_base_directory();
+    if (!mix_path.empty() && mix_path.back() != '/' && mix_path.back() != '\\') {
+        mix_path.push_back('/');
+    }
+    mix_path += mix_name;
+
+    if (!compat_path_exists(mix_path.c_str())) {
         return -1;
     }
 
@@ -1793,14 +1813,12 @@ UINT GetDriveType(LPCSTR root_path_name)
         return DRIVE_CDROM;
     }
 
-    std::error_code ec;
-    const std::filesystem::path path(normalize_compat_path(root_path_name));
-    if (!std::filesystem::exists(path, ec)) {
+    const std::string normalized_path = normalize_compat_path(root_path_name);
+    if (!compat_path_exists(normalized_path.c_str())) {
         return DRIVE_NO_ROOT_DIR;
     }
 
-    const std::string path_string = path.string();
-    if (path_string.find("cdrom") != std::string::npos || path_string.find("CDROM") != std::string::npos) {
+    if (normalized_path.find("cdrom") != std::string::npos || normalized_path.find("CDROM") != std::string::npos) {
         return DRIVE_CDROM;
     }
 

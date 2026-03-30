@@ -40,6 +40,7 @@
 //#define	HMI_DRIVER	TRUE
 //#include	"sos.h"
 #include	"SOSCOMP.H"
+#include "SDLAUDIOBACKEND.H"
 
 /*
 **	Maximum number of sound effects that may run at once.

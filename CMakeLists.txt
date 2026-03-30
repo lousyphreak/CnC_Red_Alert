@@ -171,7 +171,6 @@ add_library(sdl3_compat STATIC
     SDL3_COMPAT/wrappers/ddeml_compat.cpp
     SDL3_COMPAT/wrappers/dos_compat.cpp
     SDL3_COMPAT/wrappers/ddraw_compat.cpp
-    SDL3_COMPAT/wrappers/dsound_compat.cpp
     SDL3_COMPAT/wrappers/profile_compat.cpp
 )
 
@@ -198,6 +197,12 @@ target_compile_definitions(win32lib
 )
 
 add_executable(redalert ${RA_GAME_SOURCES})
+
+if(RA_ENABLE_ASAN)
+    set(RA_RUNTIME_COPY_NAME "redalert-asan")
+else()
+    set(RA_RUNTIME_COPY_NAME "redalert")
+endif()
 
 target_include_directories(redalert
     PRIVATE
@@ -256,4 +261,11 @@ target_link_libraries(redalert
         ${RA_SDL_TARGET}
         Threads::Threads
         m
+)
+
+add_custom_command(TARGET redalert POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:redalert>
+        "${CMAKE_SOURCE_DIR}/GameData/${RA_RUNTIME_COPY_NAME}${CMAKE_EXECUTABLE_SUFFIX}"
+    VERBATIM
 )
