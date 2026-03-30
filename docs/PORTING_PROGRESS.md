@@ -139,6 +139,10 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - The resize follow-up mouse regression is fixed:
   - when the game runs with a `640x480` primary surface but attaches the active `SeenBuff` viewport as `640x400` at `(0,40)`, `CODE/SDLINPUT.CPP` now converts SDL window coordinates into primary-surface coordinates first and then subtracts the active viewport origin before storing the shared mouse position;
   - `SDL3_COMPAT/wrappers/win32_compat.cpp::ClipCursor()` now adds the active viewport origin back before asking SDL to confine the OS cursor, so SDL mouse clipping follows the displayed `SeenBuff` content instead of the raw top-left corner of the primary surface.
+- The Hyprland/Wayland window-management mouse regression is fixed for the current windowed SDL path:
+  - `SDL3_COMPAT/wrappers/win32_compat.cpp::ClipCursor()` now detects SDL's `wayland` video driver and, for windowed mode, keeps only the game-side `SDL_GameInput_SetCursorClip()` state while clearing any SDL window mouse rectangle;
+  - this avoids Wayland pointer confinement and the follow-up `SDL_WarpMouseInWindow()` clamp on that path, so compositor `Meta+left-drag` move and `Meta+right-drag` resize gestures can still take control of the real pointer under Hyprland;
+  - non-Wayland and fullscreen paths keep the existing OS-level SDL mouse-rect confinement behavior.
 - The bogus low-disk startup/save warning is fixed on modern large disks:
   - `CODE/CONQUER.CPP::Disk_Space_Available()` and its declaration in `CODE/FUNCTION.H` now use `uint64_t` and perform the free-space multiply in 64-bit;
   - this removes the old modulo-`4 GiB` wrap from `_dos_getdiskfree()`'s 32-bit fields, which could make large modern filesystems appear to have less than the `INIT_FREE_DISK_SPACE` / `SAVE_GAME_DISK_SPACE` thresholds and trigger the `TEXT_CRITICALLY_LOW` startup popup or save refusal even when plenty of space was available.
@@ -147,6 +151,7 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - `cmake --build build -j4` passes.
   - `cmake --build build-asan --target redalert -j4` passes.
   - `ctest --test-dir build --output-on-failure` still reports that the repository currently has no registered tests.
+  - Rebuilding after the Wayland `ClipCursor()` change still passes in both `build/` and `build-asan/`, with the expected `sdl3_compat` and `redalert` relinks only.
   - Running `GameData/redalert` reaches a live `640x480` `Red Alert` window with visible framebuffer updates.
   - `RA_TRACE_STARTUP=1 gdb ./redalert` from `GameData/` now gets through window/audio/media startup instead of aborting immediately in `GetDriveType()`.
   - A captured window image from the rebuilt normal run reports `mean_rgb=22,6,6`, `nonblack_ratio=0.444277`, `bright_ratio=0.365957`.

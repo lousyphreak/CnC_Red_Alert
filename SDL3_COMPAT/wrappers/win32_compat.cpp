@@ -156,6 +156,12 @@ bool compat_trace_enabled()
     return enabled;
 }
 
+bool compat_uses_wayland_video_driver()
+{
+    const char* video_driver = SDL_GetCurrentVideoDriver();
+    return video_driver != nullptr && SDL_strcasecmp(video_driver, "wayland") == 0;
+}
+
 void compat_trace(const char* format, ...)
 {
     if (!compat_trace_enabled()) {
@@ -1207,7 +1213,16 @@ BOOL ClipCursor(const RECT* rect)
         return rect == nullptr ? TRUE : FALSE;
     }
 
+    const bool wayland_windowed = compat_uses_wayland_video_driver()
+        && (SDL_GetWindowFlags(window->sdl_window) & SDL_WINDOW_FULLSCREEN) == 0;
+
     if (!rect) {
+        if (wayland_windowed) {
+            SDL_SetWindowMouseRect(window->sdl_window, nullptr);
+            SDL_GameInput_SetCursorClip(nullptr);
+            return TRUE;
+        }
+
         const BOOL result = SDL_SetWindowMouseRect(window->sdl_window, nullptr) ? TRUE : FALSE;
         if (result) {
             SDL_GameInput_SetCursorClip(nullptr);
@@ -1233,6 +1248,16 @@ BOOL ClipCursor(const RECT* rect)
     }
 
     if (mouse_rect.w <= 0 || mouse_rect.h <= 0) {
+        SDL_SetWindowMouseRect(window->sdl_window, nullptr);
+        SDL_GameInput_SetCursorClip(rect);
+        return TRUE;
+    }
+
+    if (wayland_windowed) {
+        /*
+        ** Hyprland/Wayland compositor move/resize gestures rely on the real
+        ** pointer remaining unconstrained. Keep only the game's logical clip.
+        */
         SDL_SetWindowMouseRect(window->sdl_window, nullptr);
         SDL_GameInput_SetCursorClip(rect);
         return TRUE;
