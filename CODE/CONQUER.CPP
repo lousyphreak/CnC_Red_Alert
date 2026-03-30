@@ -17,6 +17,8 @@
 */
 
 /* $Header: /CounterStrike/CONQUER.CPP 6     3/13/97 2:05p Steve_tall $ */
+#include <cstdlib>
+
 /***********************************************************************************************
  ***              C O N F I D E N T I A L  ---  W E S T W O O D  S T U D I O S               ***
  ***********************************************************************************************
@@ -3821,14 +3823,38 @@ void Check_VQ_Palette_Set(void);
 
 extern GraphicBufferClass VQ640;
 extern bool IsVQ640;
-long VQ_Call_Back(unsigned char *, long frame)
+
+long VQ_Call_Back(unsigned char *buffer, long frame)
 {
+	static int frame_trace_count = 0;
 	int key = 0;
 	if (Keyboard->Check()) {
 		key = Keyboard->Get();
 		Keyboard->Clear();
 	}
 	Check_VQ_Palette_Set();
+	if (std::getenv("RA_TRACE_STARTUP") != NULL && buffer != NULL && frame_trace_count < 8) {
+		unsigned long width = IsVQ640 ? 640u : 320u;
+		unsigned long height = IsVQ640 ? 400u : 200u;
+		unsigned long total = width * height;
+		unsigned long nonzero = 0;
+		for (unsigned long index = 0; index < total; ++index) {
+			if (buffer[index] != 0) {
+				++nonzero;
+			}
+		}
+		Conquer_Trace("Play_Movie callback frame=%ld size=%lux%lu pix_nonzero=%lu/%lu first=%u,%u,%u,%u",
+			frame,
+			width,
+			height,
+			nonzero,
+			total,
+			(unsigned)buffer[0],
+			(unsigned)buffer[1],
+			(unsigned)buffer[2],
+			(unsigned)buffer[3]);
+		++frame_trace_count;
+	}
 #ifdef MOVIE640
 	if(IsVQ640) {
 		VQ640.Blit(SeenBuff);
@@ -3838,6 +3864,39 @@ long VQ_Call_Back(unsigned char *, long frame)
 #else
 	Interpolate_2X_Scale(&SysMemPage, &SeenBuff, NULL);
 #endif
+	if (std::getenv("RA_TRACE_STARTUP") != NULL && frame < 8 && SeenBuff.Lock()) {
+		unsigned char* visible = static_cast<unsigned char*>(SeenBuff.Get_Graphic_Buffer()->Get_Buffer());
+		unsigned long nonzero = 0;
+		unsigned long width = (unsigned long)SeenBuff.Get_Width();
+		unsigned long height = (unsigned long)SeenBuff.Get_Height();
+		int pitch = SeenBuff.Get_Pitch();
+		long offset = SeenBuff.Get_Offset();
+		if (visible != NULL && pitch > 0 && offset >= 0) {
+			unsigned char* row = visible + offset;
+			for (unsigned long y = 0; y < height; ++y) {
+				for (unsigned long x = 0; x < width; ++x) {
+					if (row[x] != 0) {
+						++nonzero;
+					}
+				}
+				row += pitch;
+			}
+			row = visible + offset;
+			Conquer_Trace("Play_Movie dest frame=%ld size=%lux%lu pix_nonzero=%lu/%lu first=%u,%u,%u,%u pitch=%d offset=%ld",
+				frame,
+				width,
+				height,
+				nonzero,
+				width * height,
+				(unsigned)row[0],
+				(unsigned)row[1],
+				(unsigned)row[2],
+				(unsigned)row[3],
+				pitch,
+				offset);
+		}
+		SeenBuff.Unlock();
+	}
 	//Call_Back();
 
 	if ((BreakoutAllowed || Debug_Flag) && key == KN_ESC) {

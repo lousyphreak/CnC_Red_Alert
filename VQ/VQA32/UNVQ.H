@@ -88,6 +88,10 @@ void cdecl UnVQ_4x4(unsigned char *codebook, unsigned char *pointers,
 		unsigned char *buffer, unsigned long blocksperrow,
 		unsigned long numrows, unsigned long bufwidth);
 
+void cdecl UnVQ_4x4_V2(unsigned char *codebook, unsigned char *pointers,
+		unsigned char *buffer, unsigned long blocksperrow,
+		unsigned long numrows, unsigned long bufwidth);
+
 void cdecl UnVQ_4x2_Woofer(unsigned char *codebook, unsigned char *pointers,
 		unsigned char *buffer, unsigned long blocksperrow,
 		unsigned long numrows, unsigned long bufwidth);
@@ -112,6 +116,10 @@ void cdecl UnVQ_4x2(unsigned char *codebook, unsigned char *pointers,
 		unsigned long bufwidth);
 
 void cdecl UnVQ_4x4(unsigned char *codebook, unsigned char *pointers,
+		FARPTR buffer, unsigned long blocksperrow, unsigned long numrows,
+		unsigned long bufwidth);
+
+void cdecl UnVQ_4x4_V2(unsigned char *codebook, unsigned char *pointers,
 		FARPTR buffer, unsigned long blocksperrow, unsigned long numrows,
 		unsigned long bufwidth);
 

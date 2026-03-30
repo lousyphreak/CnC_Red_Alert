@@ -704,6 +704,8 @@ extern "C"{
 	void __cdecl SetPalette(unsigned char *palette, long numbytes, unsigned long slowpal);
 }
 
+void Create_Palette_Interpolation_Table(void);
+
 
 
 void Flag_To_Set_Palette(unsigned char *palette, long numbytes, unsigned long slowpal)
@@ -728,17 +730,69 @@ void Check_VQ_Palette_Set(void)
 
 
 
-void __cdecl SetPalette(unsigned char *palette, long, unsigned long)
+void __cdecl SetPalette(unsigned char *palette, long numbytes, unsigned long slowpal)
 {
-	for (int i=0 ; i<256*3 ; i++) {
-		*(palette+i)&=63;
+	static int palette_trace_count = 0;
+	unsigned char movie_palette[256 * 3];
+	bool used_precomputed_palette = false;
+
+	if (palette == NULL) {
+		return;
 	}
-	Increase_Palette_Luminance(palette , 15 , 15 , 15 ,63);
+
+	memcpy(movie_palette, palette, sizeof(movie_palette));
+
+	for (int i = 0; i < 256 * 3; ++i) {
+		movie_palette[i] &= 63;
+	}
+
+	if (winstub_trace_enabled() && palette != NULL && palette_trace_count < 8) {
+		int nonzero_components = 0;
+		for (int i = 0; i < 256 * 3; ++i) {
+			if (movie_palette[i] != 0) {
+				++nonzero_components;
+			}
+		}
+		winstub_trace("movie palette bytes=%ld slow=%lu first=%u,%u,%u second=%u,%u,%u",
+			numbytes,
+			slowpal,
+			(unsigned)movie_palette[0],
+			(unsigned)movie_palette[1],
+			(unsigned)movie_palette[2],
+			(unsigned)movie_palette[3],
+			(unsigned)movie_palette[4],
+			(unsigned)movie_palette[5]);
+		winstub_trace("movie palette nonzero=%d idx55=%u,%u,%u idx163=%u,%u,%u idx240=%u,%u,%u",
+			nonzero_components,
+			(unsigned)movie_palette[55 * 3 + 0],
+			(unsigned)movie_palette[55 * 3 + 1],
+			(unsigned)movie_palette[55 * 3 + 2],
+			(unsigned)movie_palette[163 * 3 + 0],
+			(unsigned)movie_palette[163 * 3 + 1],
+			(unsigned)movie_palette[163 * 3 + 2],
+			(unsigned)movie_palette[240 * 3 + 0],
+			(unsigned)movie_palette[240 * 3 + 1],
+			(unsigned)movie_palette[240 * 3 + 2]);
+		++palette_trace_count;
+	}
+
+	Set_Palette(movie_palette);
+
+	if (PalettesRead
+			&& PaletteCounter < ARRAY_SIZE(InterpolatedPalettes)
+			&& InterpolatedPalettes[PaletteCounter] != NULL) {
+		memcpy(&PaletteInterpolationTable[0][0], InterpolatedPalettes[PaletteCounter], 65536);
+		used_precomputed_palette = true;
+	}
 
 	if (PalettesRead) {
-		memcpy (&PaletteInterpolationTable[0][0] , InterpolatedPalettes[PaletteCounter++] , 65536);
+		++PaletteCounter;
 	}
-	Set_Palette(palette);
+
+	if (!used_precomputed_palette) {
+		InterpolationPalette = CurrentPalette;
+		Create_Palette_Interpolation_Table();
+	}
 }
 
 

@@ -33,10 +33,10 @@ _Last updated: 2026-03-30_
   - A high byte of `0x0F` means a solid-color 4x2 block filled with the low byte.
   - Otherwise `((high << 8) | low)` selects an 8-byte codebook entry.
 - `VQ/VQA32/UNVQCOMPAT.CPP` also now carries the C++ replacement for the old `UnVQ_4x4` decoder used by startup movies.
-  - The pointer stream is 16-bit little-endian values.
-  - `0x8000` is the skip marker.
-  - Other high-bit-set values are one-color blocks, where `~pointer & 0xFF` is the fill color.
-  - Non-negative values address 16-byte codebook entries at `codebook + pointer - 4`.
+  - **Important:** `4x4` decoding is version-dependent.
+  - VQA header versions `1`/`2` use the older split low-byte/high-byte pointer layout, with the low-byte plane first and the high-byte plane second.
+  - For the active startup intro asset `ENGLISH.VQA` (version `2`, palettized), the correct buffered decode is `vector_index = (high << 8) | low`, and `high == 0xFF` is a solid-color `4x4` fill using `low` as the palette index.
+  - The direct 16-bit offset / high-bit special-case path belongs to newer `4x4` streams and must not be used for version-2 palettized intro movies.
 - `VQ/VQA32/AUDUNZAPCOMPAT.CPP` is the C++ replacement for the old `AUDUNZAP.ASM` helper used by compressed movie audio.
   - 2-bit and 4-bit delta modes use saturated sample deltas.
   - Raw 5-bit delta mode preserves the original wrapping byte arithmetic.
@@ -50,6 +50,14 @@ _Last updated: 2026-03-30_
   - Keep the matching initializer slots in `VQ/VQA32/CONFIG.CPP`.
 - The VQ-side `_SOS_COMPRESS_INFO` layout must match the active game-side ADPCM decoder, not just the original VQ headers.
 - The startup intro movies loaded from the MIX archives use `4x4` VQ blocks. If only `4x2` decode is enabled, the intro can open and play audio while the video surface stays black.
+- Buffered `4x4` VQ playback does not size codebooks the same way as buffered `4x2`.
+  - `UnVQ_4x4` consumes direct positive 15-bit offsets from the pointer stream and then reads a full 16-byte codeword at `codebook + pointer - 4`.
+  - For `ENGLISH.VQA` (`block=4x4`, `group=8`, `cb=2000`, `one=256`), the legacy `CBentries * 16 + 250` estimate in `LOADER.CPP` was too small for that address space.
+  - `LOADER.CPP` therefore has to clamp `Max_CB_Size` to the full buffered `4x4` pointer range (~32 KiB) before LCW decompression. Otherwise the codebook is silently truncated, the intro can go audio-only/black, and ASan trips in `UnVQ_4x4`.
+- The buffered VQA callback path does not get palette handling "for free" from the page-flip routines.
+  - `PageFlip_MCGABuf()` and related direct-display paths already call `SetPalette(...)` / handle `VQADRWF_SETPAL`.
+  - `DrawFrame_Buffer()` originally only decoded into `ImageBuf` and invoked the callback, so SDL/Linux startup movies could play audio and decode non-zero frames while the visible page stayed black.
+  - The active buffered path therefore has to apply `VQAFRMF_PALETTE` and deferred `VQADRWF_SETPAL` updates itself before invoking the callback.
 
 ## SDL3 movie-audio integration
 
@@ -126,6 +134,13 @@ _Last updated: 2026-03-30_
   - `IDirectDrawSurface::Blt()` when the destination is the primary surface;
   - `IDirectDrawSurface::SetPalette()` when a primary surface palette is attached or changed.
 - The DirectDraw compat surface needs the owning SDL window/`HWND` stored with it so presentation can target the correct window during those updates.
+- The SDL texture format must match how the compat layer packs palette-expanded pixels.
+  - The current compat presenter expands indexed pixels to `0xAARRGGBB`.
+  - Feeding those values to an `SDL_PIXELFORMAT_RGBA8888` texture makes movies appear as red-tinted shades because SDL interprets the bytes as `R,G,B,A`.
+  - Use `SDL_PIXELFORMAT_ARGB8888` and `SDL_BLENDMODE_NONE` for the compat movie presenter.
+- Startup trace dumps of `ENGLISH.VQA` show that the remaining "quadrant" complaint is not a literal four-way mirror in the final SDL window.
+  - The old quadrant/garbled look was in the decoded `640x400` movie buffer, not in the final SDL present path.
+  - Comparing extracted `ENGLISH.VQA` frames against `ffmpeg` was enough to confirm the root cause: the SDL port was feeding the version-2 intro through the wrong `4x4` pointer decoder.
 
 ## Runtime tracing notes
 
@@ -144,4 +159,5 @@ _Last updated: 2026-03-30_
 - The latest validated normal and ASan runs both handle compositor-driven window close cleanly through `SDL_EVENT_WINDOW_CLOSE_REQUESTED -> WM_CLOSE -> WM_DESTROY`.
 - The latest `RA_TRACE_STARTUP=1 gdb` checks on both `GameData/redalert` and `GameData/redalert-asan` get through window/audio/media startup instead of aborting immediately in compat `GetDriveType()` / virtual-CD probing.
 - The latest quiet ASan/UBSan validation reaches that same front-end baseline and shuts down without sanitizer diagnostics.
+- The latest traced ASan intro run also survives the old `UnVQ_4x4` crash path after the `4x4` codebook sizing fix and continues streaming `ENGLISH.VQA` without sanitizer output.
 - The next likely issues are now deeper validation items such as full real-pointer front-end interaction, gameplay transitions, and Windows-specific runtime behavior.

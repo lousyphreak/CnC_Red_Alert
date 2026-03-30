@@ -248,7 +248,7 @@ long VQA_Open(VQAHandle *vqa, char const *filename, VQAConfig *config)
 
 				if (getenv("RA_TRACE_STARTUP") != NULL) {
 					fprintf(stderr,
-							"[vqa] header version=%u flags=0x%04x image=%ux%u block=%ux%u fps=%u frames=%u audio=%u/%u/%u alt=%u/%u/%u\n",
+							"[vqa] header version=%u flags=0x%04x image=%ux%u block=%ux%u fps=%u frames=%u group=%u cb=%u one=%u audio=%u/%u/%u alt=%u/%u/%u\n",
 							(unsigned)header->Version,
 							(unsigned)header->Flags,
 							(unsigned)header->ImageWidth,
@@ -257,6 +257,9 @@ long VQA_Open(VQAHandle *vqa, char const *filename, VQAConfig *config)
 							(unsigned)header->BlockHeight,
 							(unsigned)header->FPS,
 							(unsigned)header->Frames,
+							(unsigned)header->Groupsize,
+							(unsigned)header->CBentries,
+							(unsigned)header->Num1Colors,
 							(unsigned)header->SampleRate,
 							(unsigned)header->Channels,
 							(unsigned)header->BitsPerSample,
@@ -1323,6 +1326,23 @@ static VQAData *AllocBuffers(VQAHeader *header, VQAConfig *config)
 	/* Set maximum codebook size. */
 	vqa->Max_CB_Size = ((header->CBentries) * header->BlockWidth
 			* header->BlockHeight + 250) & 0xFFFC;
+
+	/* The buffered 4x4 direct-offset decoder uses direct 15-bit codebook
+	 * offsets and then reads a full 16-byte codeword from that offset. On
+	 * Linux/ASan the original CBentries-based estimate can be slightly too
+	 * small for those streams, truncating the decompressed codebook and
+	 * sending valid 4x4 pointers past the end of the buffer.
+	 */
+	if ((header->BlockWidth == 4) && (header->BlockHeight == 4)) {
+		const unsigned long block_bytes = ((unsigned long)header->BlockWidth
+				* (unsigned long)header->BlockHeight);
+		const unsigned long pointer_max = 0x7FFFu;
+		const unsigned long min_codebook_bytes = (((pointer_max - 4u)
+				+ block_bytes) + 3u) & 0xFFFFFFFCu;
+		if (vqa->Max_CB_Size < min_codebook_bytes) {
+			vqa->Max_CB_Size = min_codebook_bytes;
+		}
+	}
 
 	/* Set maximum palette size. */
 	vqa->Max_Pal_Size = (768 + 1024) & 0xFFFC;
@@ -2735,26 +2755,6 @@ static long Load_SND2(VQAHandleP *vqap, unsigned long iffsize)
 	}
 
 	uncomp_size = iffsize * (audio->BitsPerSample / 4);
-
-	if (getenv("RA_TRACE_STARTUP") != NULL) {
-		fprintf(stderr,
-				"[vqa] Load_SND2 audio=%p buffer=%p tempbuf=%p isloaded=%p iff=%lu pad=%lu uncomp=%lu temp=%lu audiobuf=%ld audpos=%lu hmi=%ld rate=%u ch=%u bits=%u\n",
-				audio,
-				audio->Buffer,
-				audio->TempBuf,
-				audio->IsLoaded,
-				iffsize,
-				padsize,
-				uncomp_size,
-				audio->TempBufSize,
-				config->AudioBufSize,
-				audio->AudBufPos,
-				config->HMIBufSize,
-				(unsigned)audio->SampleRate,
-				(unsigned)audio->Channels,
-				(unsigned)audio->BitsPerSample);
-		fflush(stderr);
-	}
 
 	/* Read large startup chunk directly into AudioBuf */
 	if ((uncomp_size > audio->TempBufSize) && (audio->AudBufPos == 0)) {

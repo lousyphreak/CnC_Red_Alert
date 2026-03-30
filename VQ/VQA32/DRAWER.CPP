@@ -126,6 +126,66 @@ static void Mask_Rect(VQAHandle *vqa, unsigned long x1, unsigned long y1,
 static void Mask_Pointers(VQAData *vqabuf);
 #endif
 
+static int drawer_trace_enabled(void)
+{
+	static int enabled = -1;
+	if (enabled == -1) {
+		enabled = (getenv("RA_TRACE_STARTUP") != NULL) ? 1 : 0;
+	}
+	return (enabled);
+}
+
+static void trace_buffer_frame(VQAHandle *vqa, VQAFrameNode *curframe,
+		unsigned char const *buffer)
+{
+	static unsigned long traced_frames = 0;
+	unsigned long image_width;
+	unsigned long image_height;
+	unsigned long pixel_count;
+	unsigned long nonzero = 0;
+	unsigned long sample_count;
+	unsigned long index;
+
+	if (!drawer_trace_enabled() || traced_frames >= 8 || curframe == NULL
+			|| buffer == NULL || curframe->Codebook == NULL
+			|| curframe->Codebook->Buffer == NULL || curframe->Pointers == NULL) {
+		return;
+	}
+
+	image_width = ((VQAHandleP *)vqa)->Header.ImageWidth;
+	image_height = ((VQAHandleP *)vqa)->Header.ImageHeight;
+	pixel_count = image_width * image_height;
+	sample_count = (pixel_count < 16) ? pixel_count : 16;
+
+	for (index = 0; index < pixel_count; ++index) {
+		if (buffer[index] != 0) {
+			++nonzero;
+		}
+	}
+
+	fprintf(stderr,
+			"[vqa] draw frame=%lu flags=0x%08lx pal=%ld ptr=%02x%02x%02x%02x cb=%02x%02x%02x%02x pix_nonzero=%lu/%lu first=",
+			(unsigned long)curframe->FrameNum,
+			(unsigned long)curframe->Flags,
+			(long)curframe->PaletteSize,
+			(unsigned)curframe->Pointers[0],
+			(unsigned)curframe->Pointers[1],
+			(unsigned)curframe->Pointers[2],
+			(unsigned)curframe->Pointers[3],
+			(unsigned)curframe->Codebook->Buffer[0],
+			(unsigned)curframe->Codebook->Buffer[1],
+			(unsigned)curframe->Codebook->Buffer[2],
+			(unsigned)curframe->Codebook->Buffer[3],
+			nonzero,
+			pixel_count);
+	for (index = 0; index < sample_count; ++index) {
+		fprintf(stderr, "%s%02x", (index == 0) ? "" : ",",
+				(unsigned)buffer[index]);
+	}
+	fprintf(stderr, "\n");
+	fflush(stderr);
+	++traced_frames;
+}
 
 /****************************************************************************
 *
@@ -250,7 +310,9 @@ void VQA_Configure_Drawer(VQAHandleP *vqap)
 
 			#if(VQABLOCK_4X4)
 			case BLOCK_4X4:
-				vqabuf->UnVQ = UnVQ_4x4;
+				vqabuf->UnVQ = (header->Version <= VQAHD_VER2)
+						? UnVQ_4x4_V2
+						: UnVQ_4x4;
 				break;
 			#endif
 
@@ -306,7 +368,9 @@ void VQA_Configure_Drawer(VQAHandleP *vqap)
 
 					#if(VQABLOCK_4X4)
 					case BLOCK_4X4:
-						vqabuf->UnVQ = UnVQ_4x4;
+						vqabuf->UnVQ = (header->Version <= VQAHD_VER2)
+								? UnVQ_4x4_V2
+								: UnVQ_4x4;
 						break;
 					#endif
 				}
@@ -1974,6 +2038,9 @@ static long DrawFrame_Buffer(VQAHandle *vqa)
 	VQADrawer    *drawer;
 	VQAFrameNode *curframe;
 	VQAConfig    *config;
+	unsigned char *pal;
+	long         palsize;
+	long         slowpal;
 	long         rc;
 
 	#ifndef PHARLAP_TNT
@@ -2012,6 +2079,9 @@ static long DrawFrame_Buffer(VQAHandle *vqa)
 
 	/* Dereference current frame for quicker access. */
 	curframe = drawer->CurFrame;
+	pal = curframe->Palette;
+	palsize = curframe->PaletteSize;
+	slowpal = (config->OptionFlags & VQAOPTF_SLOWPAL) ? 1 : 0;
 
 	#ifndef PHARLAP_TNT
 	buff = (unsigned char *)(drawer->ImageBuf + drawer->ScreenOffset);
@@ -2022,6 +2092,7 @@ static long DrawFrame_Buffer(VQAHandle *vqa)
 	/* Un-VQ the image */
 	vqabuf->UnVQ(curframe->Codebook->Buffer, curframe->Pointers, buff,
 			drawer->BlocksPerRow, drawer->NumRows, drawer->ImageWidth);
+	trace_buffer_frame(vqa, curframe, buff);
 
 	/* Update data for mono output */
 	drawer->LastFrameNum = curframe->FrameNum;
@@ -2031,6 +2102,38 @@ static long DrawFrame_Buffer(VQAHandle *vqa)
 
 	/* Set the page-avail flag for the flipper */
 	vqabuf->Flags |= VQADATF_UPDATE;
+
+	/* Buffered playback still needs to apply frame palettes before the
+	 * client callback copies the image to the visible page.
+	 */
+	if (curframe->Flags & VQAFRMF_PALETTE) {
+		WaitNoVB(vqabuf->VBIBit);
+		WaitVB(vqabuf->VBIBit);
+
+		if (!(config->OptionFlags & VQAOPTF_PALOFF)) {
+			SetPalette(pal, palsize, slowpal);
+		}
+
+		if ((config->NotifyFlags & VQAEVENT_PALETTE)
+				&& (config->EventHandler != NULL)) {
+			config->EventHandler(VQAEVENT_PALETTE, (void *)pal, (long)palsize);
+		}
+	}
+	else if (drawer->Flags & VQADRWF_SETPAL) {
+		drawer->Flags &= (~VQADRWF_SETPAL);
+		WaitNoVB(vqabuf->VBIBit);
+		WaitVB(vqabuf->VBIBit);
+
+		if (!(config->OptionFlags & VQAOPTF_PALOFF)) {
+			SetPalette(drawer->Palette_24, drawer->CurPalSize, slowpal);
+		}
+
+		if ((config->NotifyFlags & VQAEVENT_PALETTE)
+				&& (config->EventHandler != NULL)) {
+			config->EventHandler(VQAEVENT_PALETTE, (void *)drawer->Palette_24,
+					(long)drawer->CurPalSize);
+		}
+	}
 
 	/* Invoke user's callback routine */
 	if (config->DrawerCallback != NULL) {

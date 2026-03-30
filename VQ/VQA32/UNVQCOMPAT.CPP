@@ -103,3 +103,49 @@ extern "C" void cdecl UnVQ_4x4(unsigned char *codebook, unsigned char *pointers,
 		row_ptr += bufwidth * 4;
 	}
 }
+
+extern "C" void cdecl UnVQ_4x4_V2(unsigned char *codebook, unsigned char *pointers,
+		unsigned char *buffer, unsigned long blocksperrow,
+		unsigned long numrows, unsigned long bufwidth)
+{
+	const unsigned long entry_count = blocksperrow * numrows;
+	unsigned char *lo_ptr = pointers;
+	unsigned char *hi_ptr = pointers + entry_count;
+	unsigned char *row_ptr = buffer;
+
+	if (codebook == NULL || pointers == NULL || buffer == NULL) {
+		return;
+	}
+
+	for (unsigned long row = 0; row < numrows; ++row) {
+		unsigned char *row0 = row_ptr;
+		unsigned char *row1 = row_ptr + bufwidth;
+		unsigned char *row2 = row_ptr + (bufwidth * 2);
+		unsigned char *row3 = row_ptr + (bufwidth * 3);
+
+		for (unsigned long column = 0; column < blocksperrow; ++column) {
+			const unsigned char low = *lo_ptr++;
+			const unsigned char high = *hi_ptr++;
+
+			if (high == 0xFFu) {
+				memset(row0, low, 4);
+				memset(row1, low, 4);
+				memset(row2, low, 4);
+				memset(row3, low, 4);
+			} else {
+				unsigned char *entry = codebook + ((((unsigned long)high << 8) | low) * 16);
+				memcpy(row0, entry, 4);
+				memcpy(row1, entry + 4, 4);
+				memcpy(row2, entry + 8, 4);
+				memcpy(row3, entry + 12, 4);
+			}
+
+			row0 += 4;
+			row1 += 4;
+			row2 += 4;
+			row3 += 4;
+		}
+
+		row_ptr += bufwidth * 4;
+	}
+}
