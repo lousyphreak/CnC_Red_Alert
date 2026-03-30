@@ -59,6 +59,11 @@
 
 #include "function.h"
 
+#ifdef WIN32
+extern "C" void DirectDraw_Begin_Present_Batch(void);
+extern "C" void DirectDraw_End_Present_Batch(void);
+#endif
+
 
 /*
 **	This records the current gadget the the gadget system is "stuck on". Such a
@@ -452,10 +457,18 @@ void GadgetClass::Draw_All(bool forced)
 {
 	GadgetClass * gadget = this;
 
+#ifdef WIN32
+	DirectDraw_Begin_Present_Batch();
+#endif
+
 	while (gadget != NULL) {
 		gadget->Draw_Me(forced);
 		gadget = gadget->Get_Next();
 	}
+
+#ifdef WIN32
+	DirectDraw_End_Present_Batch();
+#endif
 }
 
 
@@ -869,4 +882,3 @@ void GadgetClass::Set_Position(int x, int y)
 	X = x;
 	Y = y;
 }
-

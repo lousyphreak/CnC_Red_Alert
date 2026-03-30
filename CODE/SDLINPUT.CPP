@@ -287,11 +287,23 @@ void handle_focus_event(bool focused)
 		}
 	}
 
+	const bool first_focus_gain = focused && !BootstrapFocusSeen;
+
 	if (!MainWindow) {
 		if (focused) {
 			BootstrapFocusSeen = TRUE;
 		}
 		GameInFocus = focused ? TRUE : FALSE;
+		return;
+	}
+
+	if (!first_focus_gain && BootstrapFocusSeen) {
+		/*
+		** Keep the legacy Win32 focus latch active after bootstrap so the
+		** SDL3 window can keep rendering/audio/movie playback alive while
+		** unfocused.
+		*/
+		GameInFocus = TRUE;
 		return;
 	}
 

@@ -19,6 +19,10 @@
 /* $Header: /CounterStrike/CONQUER.CPP 6     3/13/97 2:05p Steve_tall $ */
 #include <cstdlib>
 
+#ifdef WIN32
+extern "C" void DirectDraw_Flush_Present(void);
+#endif
+
 /***********************************************************************************************
  ***              C O N F I D E N T I A L  ---  W E S T W O O D  S T U D I O S               ***
  ***********************************************************************************************
@@ -1754,6 +1758,10 @@ void Call_Back(void)
 	if (trace_callback) {
 		Conquer_Trace("Call_Back exit");
 	}
+
+#ifdef WIN32
+	DirectDraw_Flush_Present();
+#endif
 }
 
 
@@ -3561,7 +3569,11 @@ void CC_Draw_Shape(void const * shapefile, int shapenum, int x, int y, WindowNum
 														WindowList[window][WINDOWY] + LogicPage->Get_YPos(),
 														WindowList[window][WINDOWWIDTH],
 														WindowList[window][WINDOWHEIGHT]);
-			unsigned char * buffer = (unsigned char *) shape_pointer;	//Get_Shape_Header_Data((void*)shape_pointer);
+			/*
+			**	The Win32 build can return cached shapes wrapped in a small header.
+			**	The software blitter needs the raw pixel payload, not that wrapper.
+			*/
+			unsigned char * buffer = (unsigned char *)Get_Shape_Header_Data((void*)shape_pointer);
 
 #else	//WIN32
 		if ( Build_Frame(shapefile, shapenum, _ShapeBuffer ) <= (unsigned long)_ShapeBufferSize) {
@@ -3874,6 +3886,7 @@ long VQ_Call_Back(unsigned char *buffer, long frame)
 #else
 	Interpolate_2X_Scale(&SysMemPage, &SeenBuff, NULL);
 #endif
+	DirectDraw_Flush_Present();
 	if (std::getenv("RA_TRACE_STARTUP") != NULL && frame < 8 && SeenBuff.Lock()) {
 		unsigned char* visible = static_cast<unsigned char*>(SeenBuff.Get_Graphic_Buffer()->Get_Buffer());
 		unsigned long nonzero = 0;

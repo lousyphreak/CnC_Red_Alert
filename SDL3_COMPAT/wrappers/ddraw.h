@@ -241,5 +241,8 @@ using LPDIRECTDRAWSURFACE = IDirectDrawSurface*;
 using LPDIRECTDRAWPALETTE = IDirectDrawPalette*;
 
 extern "C" HRESULT DirectDrawCreate(LPVOID guid, LPDIRECTDRAW* direct_draw, LPVOID unknown_outer);
+extern "C" void DirectDraw_Begin_Present_Batch(void);
+extern "C" void DirectDraw_End_Present_Batch(void);
+extern "C" void DirectDraw_Flush_Present(void);
 
 #endif

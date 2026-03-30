@@ -63,7 +63,7 @@ static inline bool Should_Draw_Predator_Pixel(int& partial_count, int partial_pr
 
 static inline uint8_t Sample_Predator_Pixel(const uint8_t* view_base,
 	int view_width,
-	int pitch,
+	int row_bytes,
 	int x,
 	int y,
 	bool use_negative_offsets,
@@ -79,7 +79,7 @@ static inline uint8_t Sample_Predator_Pixel(const uint8_t* view_base,
 		sample_x = view_width - 1;
 	}
 
-	return view_base[(y * pitch) + sample_x];
+	return view_base[(y * row_bytes) + sample_x];
 }
 
 }
@@ -160,9 +160,14 @@ extern "C" long __cdecl Buffer_Frame_To_Page(int x,
 		return 0;
 	}
 
-	const int pitch = view.Get_Pitch();
+	/*
+	** GraphicViewPortClass stores Pitch as the end-of-line skip, not the full
+	** row stride. Shapes often draw through clipped sub-viewports, so we need
+	** the real stride here to advance between rows correctly.
+	*/
+	const int row_bytes = view.Get_Width() + view.Get_XAdd() + view.Get_Pitch();
 	const uint8_t* src = (const uint8_t*)buffer + (src_y * w) + src_x;
-	uint8_t* dst = (uint8_t*)view.Get_Offset() + (dst_y * pitch) + dst_x;
+	uint8_t* dst = (uint8_t*)view.Get_Offset() + (dst_y * row_bytes) + dst_x;
 	const uint8_t* view_base = (const uint8_t*)view.Get_Offset();
 	const int src_adjust = w - draw_width;
 	const bool predator_negative = (predator_offset < 0);
@@ -186,7 +191,7 @@ extern "C" long __cdecl Buffer_Frame_To_Page(int x,
 					continue;
 				}
 
-				color = Sample_Predator_Pixel(view_base, view.Get_Width(), pitch, dst_x + col, view_y, predator_negative, pred_index);
+				color = Sample_Predator_Pixel(view_base, view.Get_Width(), row_bytes, dst_x + col, view_y, predator_negative, pred_index);
 			} else if (flags & SHAPE_GHOST) {
 				color = Apply_Ghost(source_pixel, row_dst[col], is_translucent, translucent);
 			}
@@ -199,7 +204,7 @@ extern "C" long __cdecl Buffer_Frame_To_Page(int x,
 		}
 
 		src += src_adjust;
-		dst += pitch;
+		dst += row_bytes;
 	}
 
 	return (long)(draw_width * draw_height);

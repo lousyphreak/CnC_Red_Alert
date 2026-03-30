@@ -14,6 +14,10 @@ SDL_Texture* g_texture = nullptr;
 int g_texture_width = 0;
 int g_texture_height = 0;
 IDirectDrawSurface* g_primary_surface = nullptr;
+IDirectDrawSurface* g_pending_surface = nullptr;
+RAWindow* g_pending_window = nullptr;
+int g_present_batch_depth = 0;
+bool g_present_pending = false;
 
 bool ddraw_trace_enabled()
 {
@@ -121,6 +125,34 @@ void present_surface(IDirectDrawSurface* surface, RAWindow* window)
     SDL_RenderPresent(g_renderer);
 }
 
+void queue_present(IDirectDrawSurface* surface, RAWindow* window)
+{
+    if (!surface || !surface->IsPrimary()) {
+        return;
+    }
+
+    g_pending_surface = surface;
+    g_pending_window = window;
+    g_present_pending = true;
+}
+
+void flush_pending_present()
+{
+    if (!g_present_pending || g_present_batch_depth != 0) {
+        return;
+    }
+
+    IDirectDrawSurface* surface = g_pending_surface ? g_pending_surface : g_primary_surface;
+    RAWindow* window = g_pending_window;
+    g_pending_surface = nullptr;
+    g_pending_window = nullptr;
+    g_present_pending = false;
+
+    if (surface) {
+        present_surface(surface, window);
+    }
+}
+
 RECT normalize_rect(const RECT* rect, int width, int height)
 {
     RECT result{};
@@ -154,7 +186,7 @@ HRESULT IDirectDrawPalette::SetEntries(DWORD, DWORD start, DWORD count, const PA
     }
     std::copy(entries, entries + count, entries_ + start);
     if (g_primary_surface && g_primary_surface->UsesPalette(this)) {
-        g_primary_surface->Present();
+        queue_present(g_primary_surface, nullptr);
     }
     return DD_OK;
 }
@@ -198,7 +230,7 @@ HRESULT IDirectDrawSurface::Lock(RECT*, DDSURFACEDESC* desc, DWORD, HANDLE)
 HRESULT IDirectDrawSurface::Unlock(LPVOID)
 {
     if (primary_) {
-        present_surface(this, window_);
+        queue_present(this, window_);
     }
     return DD_OK;
 }
@@ -240,7 +272,7 @@ HRESULT IDirectDrawSurface::Blt(RECT* dest_rect, IDirectDrawSurface* src_surface
         }
     }
     if (primary_) {
-        present_surface(this, window_);
+        queue_present(this, window_);
     }
     return DD_OK;
 }
@@ -298,7 +330,7 @@ HRESULT IDirectDrawSurface::SetPalette(IDirectDrawPalette* palette)
 {
     palette_ = palette;
     if (primary_) {
-        present_surface(this, window_);
+        queue_present(this, window_);
     }
     return DD_OK;
 }
@@ -314,7 +346,11 @@ uint8_t* IDirectDrawSurface::Pixels() { return pixels_.data(); }
 const PALETTEENTRY* IDirectDrawSurface::PaletteEntries() const { return palette_ ? palette_->Entries() : nullptr; }
 bool IDirectDrawSurface::IsPrimary() const { return primary_; }
 bool IDirectDrawSurface::UsesPalette(const IDirectDrawPalette* palette) const { return palette_ == palette; }
-void IDirectDrawSurface::Present() { present_surface(this, window_); }
+void IDirectDrawSurface::Present()
+{
+    queue_present(this, window_);
+    flush_pending_present();
+}
 
 IDirectDraw::IDirectDraw() : width_(640), height_(480), bits_per_pixel_(8), window_(nullptr), ref_count_(1)
 {
@@ -363,7 +399,8 @@ HRESULT IDirectDraw::CreateSurface(DDSURFACEDESC* desc, IDirectDrawSurface** sur
     const int height = primary ? height_ : static_cast<int>(desc->dwHeight);
     *surface = new IDirectDrawSurface(width > 0 ? width : width_, height > 0 ? height : height_, primary, system_memory, window_);
     if (primary) {
-        present_surface(*surface, window_);
+        queue_present(*surface, window_);
+        flush_pending_present();
     }
     return DD_OK;
 }
@@ -415,4 +452,24 @@ extern "C" HRESULT DirectDrawCreate(LPVOID, LPDIRECTDRAW* direct_draw, LPVOID)
     }
     *direct_draw = new IDirectDraw();
     return DD_OK;
+}
+
+extern "C" void DirectDraw_Begin_Present_Batch(void)
+{
+    ++g_present_batch_depth;
+}
+
+extern "C" void DirectDraw_End_Present_Batch(void)
+{
+    if (g_present_batch_depth <= 0) {
+        return;
+    }
+
+    --g_present_batch_depth;
+    flush_pending_present();
+}
+
+extern "C" void DirectDraw_Flush_Present(void)
+{
+    flush_pending_present();
 }

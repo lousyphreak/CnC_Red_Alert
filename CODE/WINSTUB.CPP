@@ -307,11 +307,18 @@ long FAR PASCAL _export Windows_Procedure(HWND hwnd, UINT message, UINT wParam, 
 			winstub_trace("WM_ACTIVATEAPP hwnd=%p active=%u", hwnd, wParam);
 			if ((BOOL)wParam) {
 				BootstrapFocusSeen = TRUE;
+				GameInFocus = TRUE;
+				AllSurfaces.Set_Surface_Focus(TRUE);
+				AllSurfaces.Restore_Surfaces();
+			} else if (!BootstrapFocusSeen) {
+				GameInFocus = FALSE;
+				Focus_Loss();
+				AllSurfaces.Set_Surface_Focus(FALSE);
+				AllSurfaces.Restore_Surfaces();
+			} else {
+				winstub_trace("WM_ACTIVATEAPP ignoring post-bootstrap focus loss");
+				GameInFocus = TRUE;
 			}
-			GameInFocus=(BOOL)wParam;
-			if (!GameInFocus) Focus_Loss();
-			AllSurfaces.Set_Surface_Focus (GameInFocus);
-			AllSurfaces.Restore_Surfaces();
 //			if (GameInFocus) {
 //				Restore_Cached_Icons();
 //				Map.Flag_To_Redraw(true);

@@ -87,6 +87,13 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - `CODE/KEY.CPP` now pumps that SDL input module directly, queues key/button events through `WWKeyboardClass`, and uses the normal Win32 low toggle bit (`0x0001`) when composing queued key modifiers;
   - `SDL3_COMPAT/wrappers/win32_compat.cpp` now keeps only lifecycle/focus messages on the compat queue while forwarding SDL key/mouse events straight into the new game input module;
   - `GetKeyState()`, `GetAsyncKeyState()`, `GetCursorPos()`, and `CODE/MOUSEUTIL.CPP` now all read the same shared SDL input state.
+- Post-startup focus loss no longer suspends the SDL3/Linux game:
+  - `CODE/SDLINPUT.CPP` now treats focus changes as bootstrap-only after the first successful activation while still clearing held input on focus loss;
+  - `CODE/WINSTUB.CPP` now ignores post-bootstrap `WM_ACTIVATEAPP` loss instead of dropping `GameInFocus`, suspending theme playback, or stopping the primary sound buffer;
+  - a scripted `gdb` probe at `Main_Menu` now forces `WM_ACTIVATEAPP(active=0)` and confirms `GameInFocus` stays `1` and `Start_Primary_Sound_Buffer(FALSE)` still succeeds immediately afterward.
+- Dialog background shapes render again on the active SDL/Win32 front-end path:
+  - `CODE/CONQUER.CPP::CC_Draw_Shape()` now unwraps Win32 cached `Build_Frame()` results through `Get_Shape_Header_Data()` before calling `Buffer_Frame_To_Page()`;
+  - a focused `gdb` probe at `Main_Menu` against `DD-BKGND.SHP` confirms `UseBigShapeBuffer=1` on the current machine and that the cached wrapper pointer differs from the raw payload pointer, which matches the missing-background symptom the user reported.
 - Reworked the Westwood software cursor so it no longer redraws from its old WinMM timer callback:
   - `WIN32LIB/KEYBOARD/MOUSE.CPP` no longer starts a `timeSetEvent()` cursor thread on the active SDL path;
   - `CODE/CONQUER.CPP::Call_Back()` now runs `WWMouse->Process_Mouse()` on the same main thread that pumps SDL input;
@@ -105,6 +112,7 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - `cmake --build build --target redalert -j4` passes.
   - `cmake --build build -j4` passes.
   - `cmake --build build-asan --target redalert -j4` passes.
+  - `ctest --test-dir build --output-on-failure` still reports that the repository currently has no registered tests.
   - Running `GameData/redalert` reaches a live `640x480` `Red Alert` window with visible framebuffer updates.
   - `RA_TRACE_STARTUP=1 gdb ./redalert` from `GameData/` now gets through window/audio/media startup instead of aborting immediately in `GetDriveType()`.
   - A captured window image from the rebuilt normal run reports `mean_rgb=22,6,6`, `nonblack_ratio=0.444277`, `bright_ratio=0.365957`.
@@ -125,7 +133,7 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - Re-running the user-visible ASan intro path (`cmake --build build-asan -j32`, copy `build-asan/redalert` to `GameData/redalert`, then `RA_TRACE_STARTUP=1 ./redalert`) now stays alive past the old `UnVQ_4x4` overflow point and emits no sanitizer diagnostics on the traced intro run.
   - A fresh `RA_TRACE_STARTUP=1` ASan run now logs the menu-theme startup path immediately after `Init_One_Time_Systems complete`:
     - `Theme.Play_Song(THEME_INTRO)` reaches `File_Stream_Sample_Vol("INTRO.AUD", ...)`;
-    - `File_Stream_Sample_Vol()` returns valid streaming handles (`4`, then `3` after a focus-driven restart);
+    - `File_Stream_Sample_Vol()` returns valid streaming handles for the intro theme startup path;
     - `Stream_Sample_Vol()` returns matching play IDs for those handles.
   - A forced callback-abort `gdb` run now reaches `reached task shutdown`, `entered VQA_StopAudio`, and `returned from VQA_Play` instead of wedging after the callback returns early.
   - A second forced `key == KN_ESC` `gdb` run now confirms the real intro-breakout branch follows the same path:
@@ -135,11 +143,15 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - `MouseShapes` count remains `222`;
   - the extracted menu cursor shape now reads as `30x24`;
   - `WWMouse` records matching runtime dimensions (`curw=30`, `curh=24`) instead of the earlier bogus `6144x109` reject case.
-- A scripted `gdb` intro/menu probe against `GameData/redalert` now validates the SDL-native input rewrite end-to-end:
-  - forcing `SDL_GameInput_Handle_Key(0x1B, 41, 0, 0)` from the first `VQ_Call_Back()` hit still breaks out of the intro and reaches `Main_Menu`;
-  - pushing a real `SDL_EVENT_MOUSE_MOTION` with `SDL_PushEvent()` at `Main_Menu`, then letting the next `Call_Back()` pump run, updates both `Keyboard->MouseQX/MouseQY` and `GetCursorPos()` to `320,200`;
-  - `CODE/CONQUER.CPP::Call_Back()` now pumps SDL every front-end callback, while `SDL3_COMPAT/wrappers/win32_compat.cpp::next_message()` only drains posted lifecycle/focus/quit messages and no longer owns key/mouse translation.
-- `ctest --test-dir build --output-on-failure` reports that the repository currently has no registered tests.
+  - A scripted `gdb` intro/menu probe against `GameData/redalert` now validates the SDL-native input rewrite end-to-end:
+    - forcing `SDL_GameInput_Handle_Key(0x1B, 41, 0, 0)` from the first `VQ_Call_Back()` hit still breaks out of the intro and reaches `Main_Menu`;
+    - pushing a real `SDL_EVENT_MOUSE_MOTION` with `SDL_PushEvent()` at `Main_Menu`, then letting the next `Call_Back()` pump run, updates both `Keyboard->MouseQX/MouseQY` and `GetCursorPos()` to `320,200`;
+    - `CODE/CONQUER.CPP::Call_Back()` now pumps SDL every front-end callback, while `SDL3_COMPAT/wrappers/win32_compat.cpp::next_message()` only drains posted lifecycle/focus/quit messages and no longer owns key/mouse translation.
+  - A follow-up `gdb` probe at `Main_Menu` now fetches `DD-BKGND.SHP` directly and confirms the active cached-shape layout that motivated the dialog fix:
+    - `UseBigShapeBuffer` is `1` on the current host;
+    - `Build_Frame()` returns a cached wrapper pointer for that shape;
+    - `Get_Shape_Header_Data()` returns a later raw-pixel pointer, so the normal Win32 draw path must unwrap before blitting.
+  - Fresh `timeout 20s env RA_TRACE_STARTUP=1 ./redalert` and `timeout 20s env ASAN_OPTIONS=abort_on_error=1:detect_leaks=0:new_delete_type_mismatch=0 RA_TRACE_STARTUP=1 ./redalert-asan` smoke runs both reach the front-end startup baseline and exit without new crashes or sanitizer diagnostics.
 
 ## Runtime fixes since first successful link
 
@@ -201,6 +213,22 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - Fixed VQA/movie audio pause-resume scoping in `VQ/VQA32/AUDIOCOMPAT.CPP` by pausing/resuming the movie SDL stream directly instead of routing those state changes through broader device helpers.
 - Fixed buffered VQA movie abort handling in `VQ/VQA32/TASK.CPP` so callback-driven `VQAERR_EOF` (including intro `ESC` breakout) is treated as movie completion instead of being ignored and leaving the player loop spinning with update state still set.
 - Added `RA_TRACE_STARTUP` diagnostics around `Theme.Play_Song()` and streamed score startup in `WIN32LIB/AUDIO/SOUNDIO.CPP` so intro→menu theme handoff regressions can be traced without reintroducing always-on callback spam.
+- Fixed post-bootstrap focus-loss handling in `CODE/SDLINPUT.CPP` / `CODE/WINSTUB.CPP` so ordinary SDL focus loss no longer clears `GameInFocus`, stops rendering/video playback, or blocks `Start_Primary_Sound_Buffer()`; this removes the black-screen/audio-stop/theme-restart behavior seen when the window is unfocused.
+- Fixed the active Win32/SDL cached-shape draw path in `CODE/CONQUER.CPP::CC_Draw_Shape()` by unwrapping `Build_Frame()` results with `Get_Shape_Header_Data()` before `Buffer_Frame_To_Page()`; on modern-memory hosts with `UseBigShapeBuffer` enabled, the old code was blitting the wrapper/header scratch area instead of the real raw pixels, which left dialog backdrops like `DD-BKGND.SHP` effectively blank.
+- Fixed the active software-shape blitter in `CODE/KEYFBUFF.CPP::Buffer_Frame_To_Page()` to advance rows with the real viewport stride (`Get_Width() + Get_XAdd() + Get_Pitch()`) instead of `Get_Pitch()` alone.
+  - On this codebase, `GraphicViewPortClass::Pitch` is the end-of-line skip, not the full bytes-per-row stride.
+  - The old Linux/SDL port only happened to work for full-width buffers; clipped sub-viewports such as `WINDOW_PARTIAL` in `Dialog_Box()` advanced by `0` on `640x480 -> 500x160` dialog draws, collapsing multi-row shapes like `DD-BKGND.SHP` into a single scanline and leaving the dialog background effectively missing.
+  - A focused `gdb` probe that first cleared `HidPage` to zero now shows `Dialog_Box(70, 120, 500, 160)` writing non-zero pixels into the underlying hidden/visible DirectDraw surface buffers where the pre-fix probe stayed all-zero across the dialog region.
+- Fixed the SDL DirectDraw presentation cadence in `SDL3_COMPAT/wrappers/ddraw_compat.cpp`, `CODE/GADGET.CPP`, and `CODE/CONQUER.CPP` by queuing primary-surface presents and flushing them coherently instead of presenting on every intermediate UI primitive.
+  - Primary-surface `Unlock()`, `Blt()`, and palette updates now mark a pending present instead of calling `SDL_RenderPresent()` immediately.
+  - `GadgetClass::Draw_All()` now brackets list redraws in a present batch, and `Call_Back()` flushes any pending primary update once per front-end tick.
+  - This matches the old whole-frame/front-buffer behavior much more closely on SDL and prevents dialog/button overlays drawn directly on `SeenBuff` from repainting one control at a time across multiple visible frames.
+- Fixed the follow-on VQA movie regression in `CODE/CONQUER.CPP::VQ_Call_Back()` by flushing queued DirectDraw presents after each movie frame blit.
+  - The deferred-present change above fixed front-end overlays, but the Win32 movie callback does not call `Call_Back()`, so VQA frames were reaching `SeenBuff` without any later present flush and the window stayed black.
+  - The latest traced normal and ASan startup runs now show `Play_Movie callback frame=N` immediately followed by `[ddraw] present ...` lines, and both runs exit with status `0` instead of hanging until timeout.
+- Fixed the clean-shutdown hang by restoring `ReadyToQuit` to an integer state variable in `CODE/GLOBALS.CPP` / `CODE/EXTERNS.H`.
+  - The shutdown code in `CODE/STARTUP.CPP` / `CODE/WINSTUB.CPP` uses `ReadyToQuit` as a 4-state flag (`0`, `1`, `2`, `3`), but the active port had it declared as `bool`.
+  - That truncated `ReadyToQuit = 2` back to `true`, so the `while (ReadyToQuit == 1)` shutdown waits never completed even though `WM_DESTROY` had already run and logged.
 - Added a `redalert` post-build deployment step in `CMakeLists.txt` so `GameData/redalert` and `GameData/redalert-asan` stay synchronized with the latest normal and ASan builds.
 
 ## Build layout in use

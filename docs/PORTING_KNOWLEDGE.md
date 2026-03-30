@@ -124,6 +124,9 @@ _Last updated: 2026-03-30_
   Smoke tests should launch those `GameData/` copies so the executable directory still contains the real assets.
 - The DDE compatibility layer cannot keep startup-critical mutable state in ordinary file-scope globals. Game-side global constructors may call into DDE before those globals are safely initialized.
 - SDL/Wayland startup can deliver focus gained and focus lost in the same early pump cycle. The bootstrap path needs a sticky "focus seen once" latch instead of waiting only on the live `GameInFocus` bit.
+- On the SDL3 port, that first activation is now also the last time ordinary OS focus changes should touch the legacy pause/resume path.
+  - `CODE/SDLINPUT.CPP::handle_focus_event()` should still clear held key/button state on focus loss, but after bootstrap it should not keep posting focus-loss events into the old Win32 suspension logic.
+  - `CODE/WINSTUB.CPP::WM_ACTIVATEAPP` should treat post-bootstrap loss as informational only; otherwise `Theme.Suspend()`, `Stop_Primary_Sound_Buffer()`, and the `GameInFocus` render gate recreate the exact black-screen/video-stop/theme-restart bug the SDL3 port is trying to remove.
 
 ## Mouse/input notes
 
@@ -142,7 +145,7 @@ _Last updated: 2026-03-30_
   - that makes the old timer path unsafe on Wayland/OpenGL because it drives SDL rendering from a background thread;
   - the active path now ticks `WWMouse->Process_Mouse()` from `CODE/CONQUER.CPP::Call_Back()` instead.
 - `CODE/WINSTUB.CPP::Windows_Procedure()` no longer forwards `WM_*` input messages into `Keyboard->Message_Handler()`, and `CODE/KEY.CPP` no longer carries that old Win32 input translation path.
-  - focus and close still flow through `WM_ACTIVATEAPP` / `WM_CLOSE`, which keeps the legacy focus-loss path working;
+  - focus and close still flow through `WM_ACTIVATEAPP` / `WM_CLOSE`, but post-bootstrap `WM_ACTIVATEAPP(active=0)` is intentionally ignored so ordinary unfocus does not pause the game;
   - key and mouse delivery now stay on the SDL-backed path end-to-end, which removes the old split between queued menu input and polled software-cursor motion.
 - `GetKeyState()` / `GetAsyncKeyState()` in the SDL compat layer must report ordinary keys and mouse buttons, not just modifiers.
   - `CODE/KEY.CPP::Down()` is just `GetAsyncKeyState(key & 0xFF) != 0`, so returning `0` for non-modifier keys makes the UI look frozen even when the menu loop is still running.
@@ -170,6 +173,14 @@ _Last updated: 2026-03-30_
 - The latest focused `gdb` validation for the SDL input rewrite was:
   - inject `SDL_GameInput_Handle_Key(0x1B, 41, 0, 0)` from the first `VQ_Call_Back()` hit and confirm startup still reaches `Main_Menu`;
   - push a real `SDL_EVENT_MOUSE_MOTION` with `SDL_PushEvent()` at `Main_Menu`, let the next `Call_Back()` run, and confirm both `Keyboard->MouseQX/MouseQY` and `GetCursorPos()` report `320,200`.
+- The active Win32/SDL shape path has an extra cached-shape wrapper when `UseBigShapeBuffer` is enabled.
+  - `Build_Frame()` can return a pointer to a cached `ShapeHeaderType` wrapper plus reserved line-header scratch, not the raw pixel buffer itself.
+  - Code that wants raw frame pixels (for example `Buffer_Frame_To_Page()`) must call `Get_Shape_Header_Data()` first.
+  - `CODE/CONQUER.CPP::CC_Draw_Shape()` must do this on its ordinary Win32 path; otherwise dialog background assets such as `DD-BKGND.SHP` appear missing because the blitter reads wrapper/header bytes instead of image pixels.
+- `GraphicViewPortClass::Pitch` is not a full row stride in the active Win32/SDL path.
+  - `Get_Pitch()` returns the end-of-line skip/modulo, so manual pixel walkers must use `Get_Width() + Get_XAdd() + Get_Pitch()` to move between rows.
+  - Using `Get_Pitch()` by itself only works by accident on full-width buffers and breaks clipped viewports like `WINDOW_PARTIAL`, where the row advance can become `0` even though the underlying surface stride is still `640`.
+  - `CODE/KEYFBUFF.CPP::Buffer_Frame_To_Page()` needs that full-stride calculation for both normal row writes and predator sampling; otherwise dialog/window shapes collapse into one scanline and appear missing.
 
 ## 64-bit ABI pitfalls found during runtime debugging
 
@@ -178,6 +189,9 @@ _Last updated: 2026-03-30_
 - CRC accumulation code that historically relied on 32-bit signed wraparound should use explicit `uint32_t` intermediates instead. This preserves the original modulo-2^32 behavior without triggering UB on modern compilers/sanitizers.
 - Typed list nodes must be deleted through their concrete type. Deleting derived list nodes through `GenericNode*` triggers `new-delete-type-mismatch` under ASan.
 - Enum post-increment helpers used by ordinary `for (x = FIRST; x < COUNT; x++)` loops must advance to the `COUNT` sentinel, not wrap back to `FIRST`, or startup/UI one-time initialization can spin forever.
+- `ReadyToQuit` must not be a `bool` on the active Win32/SDL path.
+  - `CODE/STARTUP.CPP` and `CODE/WINSTUB.CPP` use it as a multi-state shutdown latch: `0` = forced shutdown, `1` = waiting for graceful `WM_DESTROY`, `2` = graceful shutdown complete, `3` = emergency shutdown path.
+  - If it is declared as `bool`, assignments like `ReadyToQuit = 2` collapse back to `true`, and the `while (ReadyToQuit == 1)` cleanup loops never finish even though `WM_DESTROY` already ran.
 
 ## Packing/alignment notes
 
@@ -196,6 +210,13 @@ _Last updated: 2026-03-30_
   - `IDirectDrawSurface::Unlock()` on the primary surface;
   - `IDirectDrawSurface::Blt()` when the destination is the primary surface;
   - `IDirectDrawSurface::SetPalette()` when a primary surface palette is attached or changed.
+- For front-end overlays, those primary-surface updates must be coalesced before hitting SDL.
+  - Many menus and dialogs draw directly to `SeenBuff`, and the primitive helpers (`Print`, `Fill_Rect`, `Put_Pixel`, etc.) lock/unlock the destination repeatedly.
+  - If every primary-surface unlock/blit triggers an immediate SDL present, overlay redraw becomes visibly incremental and buttons repaint one by one.
+  - Queue the present in the DirectDraw wrapper, flush once per callback tick, and use an explicit batch around `GadgetClass::Draw_All()` so the whole overlay lands in one SDL frame.
+- VQA movie playback needs an explicit present flush on the Win32/SDL path.
+  - `CODE/CONQUER.CPP::VQ_Call_Back()` blits each decoded movie frame to `SeenBuff`, but unlike many front-end loops it does not call `Call_Back()` afterward.
+  - After switching the DirectDraw wrapper to queued presents, movie frames therefore need `DirectDraw_Flush_Present()` directly from the callback or the SDL window stays black while the decoded frame buffer keeps updating underneath.
 - The DirectDraw compat surface needs the owning SDL window/`HWND` stored with it so presentation can target the correct window during those updates.
 - The SDL texture format must match how the compat layer packs palette-expanded pixels.
   - The current compat presenter expands indexed pixels to `0xAARRGGBB`.
