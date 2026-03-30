@@ -211,6 +211,14 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - `CODE/INLINE.H` and `CODE/COORD.CPP` now pack/unpack `LEPTON` / `COORDINATE` values with explicit mask/shift math instead of relying on union layout or short-pointer punning in the map/view helper path;
   - `CODE/DISPLAY.CPP` and `CODE/SCENARIO.CPP` now convert `WAYPT_HOME` into the tactical upper-left corner through `Coord_Whole(Cell_Coord(...))`, matching the existing bookmark-restore and computed-start paths;
   - a fresh ASan `gdb` probe at `Fill_In_Data()` now reports sane in-map tactical coords before and after the mission-home adjustment (`MapCell=49,45 size=30x36`, `entry TacticalCoord cell=52,45`, `post-home TacticalCoord cell=53,45`) instead of the previous off-map garbage values that left the cursor over `"unrevealed terrain"` on a black mission view.
+- In-mission attack/move orders no longer corrupt shared foot-unit path facings on the active SDL/Linux build:
+  - `CODE/FOOT.CPP::Basic_Path()` now passes `Find_Path()` a command capacity in facing elements instead of raw bytes, and it copies the generated `workpath1[]` commands into `FootClass::Path[]` using `path->Length * sizeof(FacingType)` bytes instead of the old partial-byte copy;
+  - `CODE/FINDPATH.CPP` now clones the in-progress `path.Command` prefixes into `pleft` / `pright` using `path.Length * sizeof(FacingType)` bytes instead of raw command counts;
+  - this fixes the user-reported regression where attack orders left units animating in place and later produced `FacingType` / `DirType` sanitizer faults such as `-65529` (`0xFFFF0007`) and `Dir_To_32()` indexing `Facing32[256]`.
+- Focused validation for that movement fix now passes on the current ASan tree:
+  - `cmake --build build --target redalert -j4` passes;
+  - `cmake --build build-asan --target redalert -j4` passes;
+  - a direct debug-mission `gdb` probe (`Debug_Map = true` at `Select_Game()`, then `((UnitClass*)Units.Raw_Ptr(0))->Override_Mission(MISSION_ATTACK, ((UnitClass*)Units.Raw_Ptr(1))->As_Target(), 0)`) now reaches the post-copy path state in `CODE/FOOT.CPP` with sane commands on both sides of the copy (`path->Length=11`, `workpath1[0..2]=3,3,3`, `Path[0..2]=3,3,3`) instead of the old partially written facing values.
 
 ## Runtime fixes since first successful link
 

@@ -394,7 +394,7 @@ bool FootClass::Basic_Path(void)
 			**	maximum severity is reached.
 			*/
 			for (;;) {
-				path = Find_Path(cell, &workpath1[0], sizeof(workpath1), PathThreshhold);
+				path = Find_Path(cell, &workpath1[0], sizeof(workpath1) / sizeof(workpath1[0]), PathThreshhold);
 				if (path && path->Cost) {
 					memcpy(&path1, path, sizeof(path1));
 					found1 = true;
@@ -454,7 +454,8 @@ bool FootClass::Basic_Path(void)
 			*/
 			if (found1) {
 				Fixup_Path(&path1);
-				memcpy(&Path[0], &workpath1[0], min(path->Length, (int)sizeof(Path)));
+				int pathlength = min(path->Length, (int)(sizeof(Path) / sizeof(Path[0])));
+				memcpy(&Path[0], &workpath1[0], pathlength * sizeof(Path[0]));
 			}
 
 			Mark(MARK_DOWN);

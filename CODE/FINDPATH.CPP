@@ -626,7 +626,7 @@ top_of_list:
 				Mem_Copy(&path, &pleft, sizeof(PathType));
 				pleft.Command 	= &moves_left[0];
 				pleft.Overlap 	= LeftOverlap;
-				Mem_Copy(path.Command, pleft.Command, path.Length);
+				Mem_Copy(path.Command, pleft.Command, path.Length * sizeof(FacingType));
 				Mem_Copy(path.Overlap, pleft.Overlap, sizeof(LeftOverlap));
 				left = Follow_Edge(startcell, next, &pleft, COUNTERCLOCK, direction, threat, threat_stage, sizeof(moves_left)/sizeof(moves_left[0]), threshhold);
 //				left = Follow_Edge(startcell, next, &pleft, COUNTERCLOCK, direction, threat, threat_stage, follow_len, threshhold);
@@ -638,7 +638,7 @@ top_of_list:
 				Mem_Copy(&path, &pright, sizeof(PathType));
 				pright.Command = &moves_right[0];
 				pright.Overlap = RightOverlap;
-				Mem_Copy(path.Command, pright.Command, path.Length);
+				Mem_Copy(path.Command, pright.Command, path.Length * sizeof(FacingType));
 				Mem_Copy(path.Overlap, pright.Overlap, sizeof(RightOverlap));
 				right = Follow_Edge(startcell, next, &pright, CLOCK, direction, threat, threat_stage, sizeof(moves_right)/sizeof(moves_right[0]), threshhold);
 //				right = Follow_Edge(startcell, next, &pright, CLOCK, direction, threat, threat_stage, follow_len, threshhold);
@@ -1291,4 +1291,3 @@ int FootClass::Passable_Cell(CELL cell, FacingType face, int threat, MoveType th
 	};
 	return(_value[move]);
 }
-

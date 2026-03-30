@@ -225,6 +225,9 @@ _Last updated: 2026-03-30_
 - A focused debug-mission probe against `SCG01EA.INI` is a fast way to validate tactical SDL mouse behavior end-to-end.
   - With the fixed `SDL_GameInput_Handle_Mouse_Button()` path, a synthetic SDL press+drag now shows `Keyboard->Down(KN_LMOUSE)=1` after press and `Map.IsRubberBand=1` after motion.
   - The same full SDL window-coordinate path still selects a player unit and queues an attack click (`OutList.Count` `0 -> 1`), so if enemy orders later fail in live gameplay the first place to look is not `TechnoClass::What_Action()` or `FootClass::Active_Click_With()`.
+  - The same probe path is also useful for shared movement/path corruption checks:
+    - `((UnitClass*)Units.Raw_Ptr(0))` and `((UnitClass*)Units.Raw_Ptr(1))` are still a good direct attack-order pair in `SCG01EA.INI`;
+    - calling `Override_Mission(MISSION_ATTACK, enemy->As_Target(), 0)` there reproduces the real tactical path build without depending on manual clicks.
 - The active Win32/SDL shape path has an extra cached-shape wrapper when `UseBigShapeBuffer` is enabled.
   - `Build_Frame()` can return a pointer to a cached `ShapeHeaderType` wrapper plus reserved line-header scratch, not the raw pixel buffer itself.
   - Code that wants raw frame pixels (for example `Buffer_Frame_To_Page()`) must call `Get_Shape_Header_Data()` first.
@@ -241,6 +244,10 @@ _Last updated: 2026-03-30_
 - CRC accumulation code that historically relied on 32-bit signed wraparound should use explicit `uint32_t` intermediates instead. This preserves the original modulo-2^32 behavior without triggering UB on modern compilers/sanitizers.
 - Typed list nodes must be deleted through their concrete type. Deleting derived list nodes through `GenericNode*` triggers `new-delete-type-mismatch` under ASan.
 - Enum post-increment helpers used by ordinary `for (x = FIRST; x < COUNT; x++)` loops must advance to the `COUNT` sentinel, not wrap back to `FIRST`, or startup/UI one-time initialization can spin forever.
+- `PathType::Length` and `Find_Path(..., maxlen, ...)` are facing-count values, not byte counts.
+  - `CODE/FOOT.CPP::Basic_Path()` must pass `Find_Path()` the number of `FacingType` slots in its staging buffer, not `sizeof(workpath)` bytes.
+  - Any copy of `FacingType` path commands must multiply that count by `sizeof(FacingType)` before calling `memcpy()` / `Mem_Copy()`.
+  - On the active Linux/ASan build, treating those counts as raw bytes partially overwrites 32-bit enum slots and produces values like `0xFFFF0007` (`-65529`), which then show up later as invalid `FacingType` / `DirType` values and out-of-bounds `Facing32[]` lookups in `Dir_To_32()`.
 - `ReadyToQuit` must not be a `bool` on the active Win32/SDL path.
   - `CODE/STARTUP.CPP` and `CODE/WINSTUB.CPP` use it as a multi-state shutdown latch: `0` = forced shutdown, `1` = waiting for graceful `WM_DESTROY`, `2` = graceful shutdown complete, `3` = emergency shutdown path.
   - If it is declared as `bool`, assignments like `ReadyToQuit = 2` collapse back to `true`, and the `while (ReadyToQuit == 1)` cleanup loops never finish even though `WM_DESTROY` already ran.
