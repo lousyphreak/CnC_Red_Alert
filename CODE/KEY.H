@@ -67,9 +67,9 @@ class WWKeyboardClass
 		void Clear(void);
 		char To_ASCII(unsigned short num);
 		bool Down(unsigned short key);
-
-		/* Define the main hook for the message processing loop.					*/
-		bool Message_Handler(HWND hwnd, UINT message, UINT wParam, LONG lParam);
+		bool Handle_Key_Event(unsigned short vk_key, bool release = false);
+		bool Handle_Mouse_Button_Event(unsigned short vk_key, int x, int y, bool release = false);
+		void Handle_Mouse_Motion(int x, int y);
 		int Get_Mouse_X(void) const {return MouseQX;}
 		int Get_Mouse_Y(void) const {return MouseQY;}
 
@@ -111,6 +111,10 @@ class WWKeyboardClass
 		int Head;
 		int Tail;
 };
+
+bool Keyboard_Handle_Key_Event(unsigned short vk_key, bool release = false);
+bool Keyboard_Handle_Mouse_Button_Event(unsigned short vk_key, int x, int y, bool release = false);
+void Keyboard_Handle_Mouse_Motion(int x, int y);
 
 int Get_Mouse_X(void);
 int Get_Mouse_Y(void);

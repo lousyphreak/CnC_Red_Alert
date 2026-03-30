@@ -109,31 +109,42 @@ _Last updated: 2026-03-30_
 ## Mouse/input notes
 
 - The active keyboard queue path in this build is `CODE/KEY.CPP`, not `CODE/KEYBOARD.CPP`.
-- Main-menu hover logic is split from click logic:
-  - hover/selection tracking uses `Get_Mouse_X()` / `Get_Mouse_Y()` from `WIN32LIB/KEYBOARD/MOUSE.CPP`;
-  - click selection uses `Keyboard->MouseQX` / `Keyboard->MouseQY` from `CODE/KEY.CPP`.
-- `CODE/KEY.CPP` therefore has to update `MouseQX` / `MouseQY` both on `WM_MOUSEMOVE` and when queueing mouse-button events. Otherwise button clicks can be delivered with stale coordinates even if the low-level SDL/Win32 button message itself arrived.
-- The software cursor in `WIN32LIB/KEYBOARD/MOUSE.CPP` is timer-driven and redraws from `GetCursorPos()`, so queue-side mouse-coordinate fixes and visible cursor fixes are related but not the same subsystem.
-- `SDL3_COMPAT/wrappers/win32_compat.cpp` must translate SDL keyboard events to Win32 virtual-key values before they enter the legacy queue.
-  - Passing raw SDL keycodes through as `wParam` only works for a few accidental overlaps such as `ESC`.
-  - Letters need uppercase `VK_*` values, arrows/function keys need their Win32 virtual keys, and keypad/punctuation keys need explicit mapping.
+- The active SDL input architecture is now:
+  - `CODE/SDLINPUT.CPP` / `CODE/SDLINPUT.H` own SDL event pumping/waiting, track key/button/toggle state, keep async low-bit latches, and maintain the shared mouse position snapshot;
+  - `CODE/CONQUER.CPP::Call_Back()` pumps SDL every front-end loop iteration and now also runs `WWMouse->Process_Mouse()` on that same main thread;
+  - `SDL3_COMPAT/wrappers/win32_compat.cpp::next_message()` only drains posted lifecycle/focus/quit messages and uses `SDL_GameInput_Wait()` when the legacy message loop blocks;
+  - `WWKeyboardClass` still owns the legacy circular key/mouse queue, but SDL key/button events are now fed into it directly instead of being translated into fake `WM_KEY*` / `WM_MOUSE*` messages first.
+- Main-menu hover logic and click logic still use different legacy consumers, but they now read the same SDL-backed mouse state:
+  - hover/selection tracking uses `Get_Mouse_X()` / `Get_Mouse_Y()` from `WIN32LIB/KEYBOARD/MOUSE.CPP`, which poll `GetCursorPos()`;
+  - click selection uses `Keyboard->MouseQX` / `Keyboard->MouseQY` from `CODE/KEY.CPP`;
+  - `SDL_GameInput_Handle_Mouse_Motion(...)` updates both the shared cursor position and `Keyboard->MouseQX` / `MouseQY`, so the software cursor and menu hit-testing stay synchronized.
+- The software cursor in `WIN32LIB/KEYBOARD/MOUSE.CPP` must stay on the main thread on the SDL3 port:
+  - the old WinMM `timeSetEvent()` cursor callback could call `GraphicBufferClass::Unlock()`, which in the SDL DirectDraw wrapper presents the frame through SDL/OpenGL;
+  - that makes the old timer path unsafe on Wayland/OpenGL because it drives SDL rendering from a background thread;
+  - the active path now ticks `WWMouse->Process_Mouse()` from `CODE/CONQUER.CPP::Call_Back()` instead.
+- `CODE/WINSTUB.CPP::Windows_Procedure()` no longer forwards `WM_*` input messages into `Keyboard->Message_Handler()`, and `CODE/KEY.CPP` no longer carries that old Win32 input translation path.
+  - focus and close still flow through `WM_ACTIVATEAPP` / `WM_CLOSE`, which keeps the legacy focus-loss path working;
+  - key and mouse delivery now stay on the SDL-backed path end-to-end, which removes the old split between queued menu input and polled software-cursor motion.
 - `GetKeyState()` / `GetAsyncKeyState()` in the SDL compat layer must report ordinary keys and mouse buttons, not just modifiers.
   - `CODE/KEY.CPP::Down()` is just `GetAsyncKeyState(key & 0xFF) != 0`, so returning `0` for non-modifier keys makes the UI look frozen even when the menu loop is still running.
   - Some legacy loops also use `GetAsyncKeyState(vk) & 1`, so the compat layer needs a one-shot low-bit latch for recent press transitions as well as current high-bit state.
 - Toggle keys must also keep real Win32 low-bit semantics:
-  - `CODE/KEY.CPP` still probes `GetKeyState(VK_CAPITAL/VK_NUMLOCK) & 0x0008` when building queued key codes;
-  - if the compat layer incorrectly sets that bit, ordinary keys like `ESC` pick up `WWKEY_SHIFT_BIT` and exact comparisons against `KN_ESC` fail in the intro callback.
+  - `CODE/KEY.CPP` now probes `GetKeyState(VK_CAPITAL/VK_NUMLOCK) & 0x0001` when building queued key codes;
+  - if the SDL input state layer or compat wrappers return any fake higher bit there, ordinary keys like `ESC` pick up `WWKEY_SHIFT_BIT` and exact comparisons against `KN_ESC` fail in the intro callback.
 - The intro breakout path on this build is now two-stage:
   - `CODE/CONQUER.CPP::VQ_Call_Back()` sets `Brokeout = true` and returns non-zero when it sees exact `KN_ESC`;
   - `VQ/VQA32/TASK.CPP` then has to convert the resulting `VQAERR_EOF` into movie shutdown so `VQA_StopAudio()`, `VQA_Play()` return, and startup continues to the title/menu path.
-- Mouse messages from the SDL compat layer should carry current `MK_*` flags and correct button identities.
-  - `SDL_EVENT_MOUSE_MOTION` should preserve held-button state in `wParam`.
-  - `SDL_EVENT_MOUSE_BUTTON_DOWN/UP` must distinguish left, middle, and right buttons; mapping middle mouse to right mouse breaks the old Win32 message contract.
+- `GetCursorPos()`, `Get_Global_Mouse_X()`, and `Get_Global_Mouse_Y()` must all read the same shared SDL input snapshot.
+  - reading raw `SDL_GetMouseState()` directly from another thread leaves cursor redraw dependent on whatever SDL happened to pump on the main thread;
+  - the current SDL input layer fixes that by letting the main thread own event pumping while other callers read the last synchronized cursor position.
 - `Init_Mouse()` leaves the software cursor hidden again before front-end flow continues, so menu entry points that need pointer interaction must drive the Westwood cursor hide count back to visible state explicitly and restore the prior hide state when they exit.
 - The menu cursor regression on LP64 was not just a hide-count problem:
   - the active `Shape_Type` file header must stay packed to the original 26-byte on-disk layout in `WIN32LIB/SHAPE/SHAPE.H` / `WIN32LIB/INCLUDE/SHAPE.H`;
   - if that header grows to 28 bytes, `Get_Shape_Width()` / `Get_Shape_Original_Height()` read the wrong offsets from raw `.SHP` data, so a real `30x24` mouse frame is misread as `6144x109`, `ASM_Set_Mouse_Cursor()` rejects it against the `48x48` cursor buffer, and the software cursor becomes invisible even though menu code has already unhidden it;
   - once the shape header is packed again, `CODE/MENUS.CPP` can reliably restore `MOUSE_NORMAL` and composite `WWMouse->Draw_Mouse(&HidPage)` into the title/menu blit to keep the front-end cursor visible on the SDL/Win32 path.
+- The latest focused `gdb` validation for the SDL input rewrite was:
+  - inject `SDL_GameInput_Handle_Key(0x1B, 41, 0, 0)` from the first `VQ_Call_Back()` hit and confirm startup still reaches `Main_Menu`;
+  - push a real `SDL_EVENT_MOUSE_MOTION` with `SDL_PushEvent()` at `Main_Menu`, let the next `Call_Back()` run, and confirm both `Keyboard->MouseQX/MouseQY` and `GetCursorPos()` report `320,200`.
 
 ## 64-bit ABI pitfalls found during runtime debugging
 

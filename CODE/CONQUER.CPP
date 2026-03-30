@@ -88,6 +88,7 @@ B<A> test;
 
 
 #include	"FUNCTION.H"
+#include	"SDLINPUT.H"
 #ifdef WIN32
 #ifdef WINSOCK_IPX
 #include	"WSPROTO.H"
@@ -1653,6 +1654,15 @@ void Call_Back(void)
 	const bool trace_callback = Conquer_Callback_Trace_Enabled();
 	if (trace_callback) {
 		Conquer_Trace("Call_Back entry SampleType=%d SessionType=%d ModemService=%d", SampleType, Session.Type, Session.ModemService);
+	}
+
+	SDL_GameInput_Pump();
+	if (WWMouse) {
+		/*
+		** Keep the software cursor on the same main-thread SDL path as the rest
+		** of the front-end input and presentation work.
+		*/
+		WWMouse->Process_Mouse();
 	}
 
 	/*

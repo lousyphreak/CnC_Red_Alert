@@ -37,7 +37,8 @@
  *   main -- Initial startup routine (preps library systems).                                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
+#include	"FUNCTION.H"
+#include	"SDLINPUT.H"
 #include	<cstdarg>
 #include	<cstdio>
 #include	<cstdlib>
@@ -45,8 +46,8 @@
 #include	<io.h>
 
 #ifdef WIN32
-#include  "ccdde.h"
-#include	"ipx95.h"
+#include  "CCDDE.H"
+#include	"IPX95.H"
 #endif	//WIN32
 
 #ifdef MCIMPEG // Denzil 6/15/98
@@ -402,6 +403,7 @@ int main(int argc, char * argv[])
 #endif
 
 		Keyboard = new KeyboardClass();
+		SDL_GameInput_Set_Main_Thread();
 
 #ifdef WIN32
 		/*

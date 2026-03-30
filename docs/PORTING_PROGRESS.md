@@ -72,6 +72,18 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - The main-menu software cursor is visible again:
   - `CODE/MENUS.CPP` now restores the default `MOUSE_NORMAL` shape on menu entry, forces the Westwood software cursor hide-count back to visible state, and composites the software cursor into the menu blit on the active Win32/SDL front-end path;
   - `WIN32LIB/SHAPE/SHAPE.H` and `WIN32LIB/INCLUDE/SHAPE.H` now keep the raw on-disk `Shape_Type` header packed to 26 bytes, so `Get_Shape_Width()` / `Get_Shape_Original_Height()` read real cursor dimensions on LP64 hosts instead of rejecting valid `.SHP` cursor frames with bogus sizes.
+- The active front-end input path is now SDL-native instead of relying on fake Win32 keyboard/mouse messages:
+  - `CODE/SDLINPUT.CPP` / `CODE/SDLINPUT.H` now own SDL event pumping, virtual-key state, async low-bit latches, toggle state, mouse position, and button state for the game;
+  - `CODE/KEY.CPP` now pumps that SDL input module directly, queues key/button events through `WWKeyboardClass`, and uses the normal Win32 low toggle bit (`0x0001`) when composing queued key modifiers;
+  - `SDL3_COMPAT/wrappers/win32_compat.cpp` now keeps only lifecycle/focus messages on the compat queue while forwarding SDL key/mouse events straight into the new game input module;
+  - `GetKeyState()`, `GetAsyncKeyState()`, `GetCursorPos()`, and `CODE/MOUSEUTIL.CPP` now all read the same shared SDL input state.
+- Reworked the Westwood software cursor so it no longer redraws from its old WinMM timer callback:
+  - `WIN32LIB/KEYBOARD/MOUSE.CPP` no longer starts a `timeSetEvent()` cursor thread on the active SDL path;
+  - `CODE/CONQUER.CPP::Call_Back()` now runs `WWMouse->Process_Mouse()` on the same main thread that pumps SDL input;
+  - this keeps SDL surface unlock/present work off background threads, which was the root cause behind the latest menu freeze / ASan crash investigation on Wayland/OpenGL.
+- Focused debugger validation now shows the repaired cursor/update path end-to-end:
+  - the first `WWMouseClass::Process_Mouse()` hit now comes from `CODE/CONQUER.CPP::Call_Back()` on thread 1 instead of the old timer shim;
+  - a forced-intro-skip `GameData/redalert-asan` smoke run reaches `Main_Menu` and no longer reproduces the earlier `Buffer_Fill_Rect()` menu crash while sitting in the front end.
 - The movie-to-menu audio handoff is now isolated to the VQA stream itself:
   - `VQ/VQA32/AUDIOCOMPAT.CPP` now pauses and resumes the movie SDL audio stream directly instead of routing those state changes through broader device helpers;
   - traced startup runs now show the front-end theme successfully opening and starting `INTRO.AUD` after the intro completes.
@@ -109,11 +121,15 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - A second forced `key == KN_ESC` `gdb` run now confirms the real intro-breakout branch follows the same path:
     - `Brokeout=1` at `Play_Movie VQA_Play complete`;
     - startup then proceeds through `Init_Game Play_Intro complete`, `Load_Title_Page complete`, `Init_One_Time_Systems complete`, and the first main-menu `Theme.Play_Song(THEME_INTRO)` call.
-  - A focused main-menu `gdb` probe now reaches the cursor-present path in `CODE/MENUS.CPP` with the software cursor visible (`state=0`) and a valid default cursor shape:
-    - `MouseShapes` count remains `222`;
-    - the extracted menu cursor shape now reads as `30x24`;
-    - `WWMouse` records matching runtime dimensions (`curw=30`, `curh=24`) instead of the earlier bogus `6144x109` reject case.
-  - `ctest --test-dir build --output-on-failure` reports that the repository currently has no registered tests.
+- A focused main-menu `gdb` probe now reaches the cursor-present path in `CODE/MENUS.CPP` with the software cursor visible (`state=0`) and a valid default cursor shape:
+  - `MouseShapes` count remains `222`;
+  - the extracted menu cursor shape now reads as `30x24`;
+  - `WWMouse` records matching runtime dimensions (`curw=30`, `curh=24`) instead of the earlier bogus `6144x109` reject case.
+- A scripted `gdb` intro/menu probe against `GameData/redalert` now validates the SDL-native input rewrite end-to-end:
+  - forcing `SDL_GameInput_Handle_Key(0x1B, 41, 0, 0)` from the first `VQ_Call_Back()` hit still breaks out of the intro and reaches `Main_Menu`;
+  - pushing a real `SDL_EVENT_MOUSE_MOTION` with `SDL_PushEvent()` at `Main_Menu`, then letting the next `Call_Back()` pump run, updates both `Keyboard->MouseQX/MouseQY` and `GetCursorPos()` to `320,200`;
+  - `CODE/CONQUER.CPP::Call_Back()` now pumps SDL every front-end callback, while `SDL3_COMPAT/wrappers/win32_compat.cpp::next_message()` only drains posted lifecycle/focus/quit messages and no longer owns key/mouse translation.
+- `ctest --test-dir build --output-on-failure` reports that the repository currently has no registered tests.
 
 ## Runtime fixes since first successful link
 
@@ -158,6 +174,11 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - `GetAsyncKeyState()` now keeps a one-shot low-bit press latch for callers that rely on Win32 transition semantics;
   - middle mouse now maps to `WM_MBUTTON*`, and mouse motion/button events preserve `MK_*` state.
 - Fixed compat toggle-key state reporting in `SDL3_COMPAT/wrappers/win32_compat.cpp` so `GetKeyState(VK_CAPITAL)` / `GetKeyState(VK_NUMLOCK)` now match Win32 low-bit semantics instead of polluting legacy key queueing with a fake `0x0008` shift bit.
+- Replaced the active fake SDL→Win32 keyboard/mouse bridge with a dedicated SDL game-input layer in `CODE/SDLINPUT.CPP` / `CODE/SDLINPUT.H`.
+  - `WWKeyboardClass::Fill_Buffer_From_System()` now pumps SDL input directly before draining the remaining compat window-message queue;
+  - `SDL3_COMPAT/wrappers/win32_compat.cpp` no longer fabricates `WM_KEY*` / `WM_MOUSE*` messages for normal gameplay input, but still posts focus/close messages for the legacy front-end flow;
+  - `GetCursorPos()` and `CODE/MOUSEUTIL.CPP` now use the shared SDL input snapshot instead of raw `SDL_GetMouseState()`, so the software cursor redraw thread and the menu queue consume one coherent mouse position.
+- Fixed `CODE/KEY.CPP` to test the real Win32 toggle low bit (`0x0001`) when adding synthetic shift state for CapsLock/NumLock, matching the repaired SDL input state layer.
 - Fixed main-menu cursor visibility in `CODE/MENUS.CPP` by normalizing the Westwood software-cursor hide count to visible-on-entry and restoring the prior hide count on exit.
 - Fixed VQA/movie audio pause-resume scoping in `VQ/VQA32/AUDIOCOMPAT.CPP` by pausing/resuming the movie SDL stream directly instead of routing those state changes through broader device helpers.
 - Fixed buffered VQA movie abort handling in `VQ/VQA32/TASK.CPP` so callback-driven `VQAERR_EOF` (including intro `ESC` breakout) is treated as movie completion instead of being ignored and leaving the player loop spinning with update state still set.

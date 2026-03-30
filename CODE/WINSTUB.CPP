@@ -220,15 +220,6 @@ long FAR PASCAL _export Windows_Procedure(HWND hwnd, UINT message, UINT wParam, 
 	}
 #endif	//WINSOCK_IPX
 
-	
-	/*
-	**	Pass this message through to the keyboard handler. If the message
-	**	was processed and requires no further action, then return with
-	**	this information.
-	*/
-	if (Keyboard->Message_Handler(hwnd, message, wParam, lParam)) {
-		return(1);
-	}
 
 	switch ( message ) {
 //		case WM_SYSKEYDOWN:

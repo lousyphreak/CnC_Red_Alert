@@ -110,7 +110,6 @@ class WWMouseClass {
 		int						EraseFlags;		// Records whether mutex has been released
 
 		CRITICAL_SECTION		MouseCriticalSection;  // Control for mouse re-enterancy
-		unsigned					TimerHandle;
 
 		friend void __cdecl Mouse_Shadow_Buffer(void *thisptr, GraphicViewPortClass *srcdst, void *buffer, int x, int y, int hotx, int hoty, int store);
 		friend void __cdecl Draw_Mouse(void *thisptr, GraphicViewPortClass *srcdst, int x, int y);

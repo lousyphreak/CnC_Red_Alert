@@ -34,10 +34,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "MOUSE.H"
-#include <mmsystem.h>
 
 static WWMouseClass *_Mouse=NULL;
-void CALLBACK Process_Mouse( UINT event_id, UINT res1 , DWORD user, DWORD  res2, DWORD  res3 );
 extern BOOL GameInFocus;
 
 
@@ -76,12 +74,8 @@ WWMouseClass::WWMouseClass(GraphicViewPortClass *scr, int mouse_max_width, int m
 	PrevCursor		= NULL;
 	MouseUpdate		= 0;
 	State				= 1;
-	timeBeginPeriod ( 1000/ 60);
 
 	InitializeCriticalSection (&MouseCriticalSection);
-	//
-	// Install the timer callback event handler
-	//
 
 	EraseBuffer		= new char[mouse_max_width * mouse_max_height];
 	EraseBuffX		= -1;
@@ -91,7 +85,6 @@ WWMouseClass::WWMouseClass(GraphicViewPortClass *scr, int mouse_max_width, int m
 	EraseFlags		= FALSE;
 
 	_Mouse			= this;
-	TimerHandle = timeSetEvent( 1000/60 , 1 , ::Process_Mouse, 0 , TIME_PERIODIC);
 
 	/*
 	** Force the windows mouse pointer to stay withing the graphic view port region
@@ -105,10 +98,6 @@ WWMouseClass::~WWMouseClass()
 
 	if (MouseCursor) delete[] MouseCursor;
 	if (MouseBuffer) delete[] MouseBuffer;
-	if (TimerHandle) {
-		timeKillEvent(TimerHandle);
-	}
-	timeEndPeriod (1000/60);
 	DeleteCriticalSection(&MouseCriticalSection);
 
 	/*
@@ -609,20 +598,6 @@ void WWMouseClass::Get_Mouse_XY(int &x, int &y)
 	x = pt.x;
 	y = pt.y;
 }
-
-#pragma off(unreferenced)
-
-void CALLBACK Process_Mouse( UINT event_id, UINT res1 , DWORD user, DWORD  res2, DWORD  res3 )
-{
-	static	BOOL	in_mouse_callback = false;
-
-	if (_Mouse && !in_mouse_callback) {
-		in_mouse_callback = TRUE;
-		_Mouse->Process_Mouse();
-		in_mouse_callback = FALSE;
-	}
-}
-#pragma on(unreferenced)
 
 void Hide_Mouse(void)
 {
