@@ -35,6 +35,16 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - `CODE/AUDIO.CPP` still drives the legacy `Audio_*` / `Play_Sample` API surface used by the game;
   - `WIN32LIB/AUDIO/SOUNDIO.CPP` / `WIN32LIB/AUDIO/SOUNDINT.CPP` now sit on top of `WIN32LIB/AUDIO/SDLAUDIOBACKEND.CPP`;
   - the active build no longer compiles `SDL3_COMPAT/wrappers/dsound_compat.cpp`.
+- Gameplay `.AUD` parsing is now LP64-safe again:
+  - the active `AUDHeaderType` definitions in `WIN32LIB/AUDIO/AUDIO.H`, `WIN32LIB/INCLUDE/AUDIO.H`, and `VQ/INCLUDE/WWLIB32/AUDIO.H` now use fixed-width 32-bit size fields and are asserted to stay at the original 12-byte on-disk layout;
+  - this fixes the 64-bit Linux case where legacy `long` fields had grown the header to 20 bytes, corrupting streamed theme/music parsing and potentially affecting `.AUD`-backed sound effects too.
+- The gameplay mixer now preserves correct unsigned-8-bit silence semantics:
+  - `WIN32LIB/AUDIO/SOUNDIO.CPP` and `WIN32LIB/AUDIO/SOUNDINT.CPP` now fill unused 8-bit PCM regions with `0x80` instead of `0x00`;
+  - this matches the active SDL backend's unsigned 8-bit interpretation and avoids garbled tails/gaps when streamed or partially filled sound buffers run past valid sample data.
+- The gameplay sound refill path is now LP64-safe:
+  - `SampleTrackerType::DestPtr` in `WIN32LIB/AUDIO/SOUNDINT.H` / `WIN32LIB/INCLUDE/SOUNDINT.H` is now an integer byte offset instead of a fake pointer;
+  - `WIN32LIB/AUDIO/SOUNDIO.CPP` / `WIN32LIB/AUDIO/SOUNDINT.CPP` no longer truncate locked-buffer addresses through `(unsigned)` casts when comparing, updating, or using that offset;
+  - this fixes the ASan crash at `Play_Sample_Handle()` during menu/theme startup on 64-bit Linux after streamed music reaches `Stream_Sample_Vol(...)`.
 - Active sound servicing no longer depends on WinMM multimedia timers:
   - `WIN32LIB/AUDIO/SOUNDIO.CPP` now uses `Pump_Sound_Service()` and a dedicated sound thread around the existing maintenance callback logic.
 - The runnable `GameData` executables are now refreshed automatically from the active build trees:
@@ -158,8 +168,16 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - Fixed the DirectDraw compatibility presentation path so updates to the primary surface actually reach the SDL window after drawing and palette changes.
 - Fixed the shutdown-time `FixedHeapClass::Clear()` deallocation mismatch exposed by ASan after clean SDL window close.
 - Fixed LP64-breaking movie file parsing by replacing active on-disk IFF/VQA header fields that still used `unsigned long` with fixed-width integer types.
+- Fixed LP64-breaking gameplay `.AUD` parsing by replacing legacy `long` fields in the active `AUDHeaderType` definitions with fixed-width 32-bit integers, restoring the original 12-byte sample header layout used by streamed music and sound effects.
+- Fixed LP64-breaking gameplay audio buffer bookkeeping by changing `SampleTrackerType::DestPtr` from a pointer-shaped offset to an integer byte offset and removing the matching pointer-truncating casts in `WIN32LIB/AUDIO/SOUNDIO.CPP` / `WIN32LIB/AUDIO/SOUNDINT.CPP`.
 - Replaced the active gameplay DirectSound backend with `WIN32LIB/AUDIO/SDLAUDIOBACKEND.CPP`, keeping the legacy `Audio_*` / `Play_Sample` behavior and refill semantics intact while moving transport/mixing to SDL3.
 - Replaced active WinMM sound-maintenance timer usage in `WIN32LIB/AUDIO/SOUNDIO.CPP` with `Pump_Sound_Service()` plus a sound worker thread.
+- Fixed gameplay 8-bit PCM silence handling in `WIN32LIB/AUDIO/SOUNDIO.CPP` / `WIN32LIB/AUDIO/SOUNDINT.CPP` by filling unwritten buffer regions with unsigned silence (`0x80`) instead of signed-style zero bytes.
+- Fixed LP64-breaking gameplay compressed `.AUD` frame parsing in `WIN32LIB/AUDIO/SOUNDINT.CPP` by restoring the per-frame `0xDEAF` marker to a 32-bit read instead of a native `long`. `INTRO.AUD` traces now confirm the active front-end music path is `comp=99` (SOS ADPCM), the first streamed quarter decodes to a full `8192` bytes again, and the old front-end theme restart loop no longer reproduces in a traced startup run.
+- Fixed the active gameplay sound-tracker bookkeeping sizes in `WIN32LIB/AUDIO/SOUNDINT.H` / `WIN32LIB/INCLUDE/SOUNDINT.H` by keeping the stream magic and byte-count fields (`MagicNumber`, `StreamBufferSize`, `FilePendingSize`) at 32-bit widths instead of LP64-native `long`.
+- A timed `RA_TRACE_STARTUP=1 ./redalert-asan` smoke run from `GameData/` now repeatedly reaches `File_Stream_Sample_Vol("INTRO.AUD", ...)`, `Stream_Sample_Vol(...)`, and later front-end theme restarts without reproducing the old `Play_Sample_Handle()` segfault; the remaining forced-timeout ASan output is unrelated leak noise.
+- A follow-up `RA_TRACE_STARTUP=1 timeout 25s ./redalert-asan` run from `GameData/` now shows exactly one `Theme.Play_Song(INTRO)` / `Stream_Sample_Vol("INTRO.AUD")` start, no repeated song churn, and no ASan errors before the forced timeout; only the pre-existing forced-timeout leak summary remains.
+- Fixed the shutdown-time `SessionClass::Free_Scenario_Descriptions()` allocation mismatch by changing the `InitStrings` cleanup from `delete` to `delete[]`, matching the `new char[INITSTRBUF_MAX]` allocations in `Read_MultiPlayer_Settings()`.
 - Fixed the active public/private `VQAConfig` layout mismatch by keeping `SoundObject` / `PrimaryBufferPtr` as backend-agnostic placeholder pointers on the game include path and in `CONFIG.CPP`.
 - Fixed the active movie ADPCM ABI mismatch by restoring the `_SOS_COMPRESS_INFO` field order expected by the game-side decoder and routing movie decode through `General_sosCODECDecompressData()`.
 - Restored buffered `4x4` VQA decode support by porting the old `UnVQ_4x4` helper into `VQ/VQA32/UNVQCOMPAT.CPP` and enabling the `VQABLOCK_4X4` path used by the startup intro movies.

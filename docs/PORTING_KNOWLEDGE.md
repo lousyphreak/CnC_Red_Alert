@@ -19,6 +19,25 @@ _Last updated: 2026-03-30_
 - `WIN32LIB/AUDIO/SOUNDIO.CPP` no longer uses `DirectSoundCreate()` or WinMM timer callbacks on the active path.
   - maintenance now runs through `Pump_Sound_Service()` plus `Start_Sound_Thread()` / `Stop_Sound_Thread()`;
   - the service thread still uses the generic Win32-compat thread helpers, but audio transport/output is SDL-backed.
+- The gameplay `.AUD` loader/parser is separate from the working movie-audio path. If movies sound right but menu music or sound effects do not, investigate `WIN32LIB/AUDIO/SOUNDIO.CPP` and the active `AUDHeaderType` definitions before touching VQA audio code.
+- The active gameplay `AUDHeaderType` must stay at the original 12-byte on-disk layout.
+  - Leaving legacy `long` fields in `WIN32LIB/AUDIO/AUDIO.H` / `WIN32LIB/INCLUDE/AUDIO.H` grows the header to 20 bytes on LP64 hosts.
+  - That shifts sample-data offsets, corrupts flags/compression reads, and can make streamed theme music sound garbled while the separate movie SDL stream still plays correctly.
+- `SampleTrackerType::DestPtr` in the active gameplay sound path is a byte offset, not a host pointer.
+  - Keeping it as `void *` and routing it through `(unsigned)` casts worked by accident on 32-bit builds but truncates locked-buffer addresses on LP64 hosts.
+  - The active fix is to keep it as an integer offset in `SOUNDINT.H` and do buffer math in bytes explicitly inside `SOUNDIO.CPP` / `SOUNDINT.CPP`.
+  - The failure mode is an ASan crash in `Play_Sample_Handle()` when the menu theme startup path zero-fills the unwritten tail of the first streamed buffer.
+- The SDL gameplay mixer interprets 8-bit PCM as unsigned.
+  - `WIN32LIB/AUDIO/SOUNDIO.CPP` / `WIN32LIB/AUDIO/SOUNDINT.CPP` therefore must fill unwritten 8-bit buffer regions with `0x80` silence, not `0x00`.
+  - Zero-filled tails/gaps inject a strong negative DC offset and are especially noticeable on streamed front-end music, though the same issue can affect ordinary sound effects too.
+- The active front-end score files are not raw PCM blobs: traced `INTRO.AUD` startup playback reports `comp=99`, i.e. the menu music is going through the SOS ADPCM decode path in `WIN32LIB/AUDIO/SOUNDINT.CPP::Sample_Copy()`.
+  - Each compressed gameplay frame there is `uint16_t fsize`, `uint16_t dsize`, `uint32_t magic(0xDEAF)`, then `fsize` bytes of compressed payload.
+  - Leaving that frame marker as a native `long` on LP64 makes the decoder read 8 bytes instead of 4, which breaks the first streamed decode chunk and can show up as garbled or constantly restarting front-end music (and can affect gameplay sound effects that share the same path).
+- The gameplay sound-tracker bookkeeping around streamed file playback also expects 32-bit byte counts.
+  - `LockedData.MagicNumber`, `LockedData.StreamBufferSize`, and `SampleTrackerType::FilePendingSize` should stay 32-bit values, not LP64-native `long`, because the legacy code treats them as Win32-sized byte counters and frame constants.
+- `RA_TRACE_STARTUP=1` now has a useful gameplay-audio discriminator in `Play_Sample_Handle prepared ...`.
+  - If that trace shows `dest=8192 more=1 oneshot=0`, the first streamed quarter decoded correctly and the stream is ready to run.
+  - If playback still fails after that, check focus gating next: `Start_Primary_Sound_Buffer(FALSE)` refuses to launch audio unless `GameInFocus` is true, so headless or focus-flapping runs can produce false theme-restart spam even when decode is already correct.
 
 ## Movie system observations
 
@@ -127,6 +146,12 @@ _Last updated: 2026-03-30_
   - key and mouse delivery now stay on the SDL-backed path end-to-end, which removes the old split between queued menu input and polled software-cursor motion.
 - `GetKeyState()` / `GetAsyncKeyState()` in the SDL compat layer must report ordinary keys and mouse buttons, not just modifiers.
   - `CODE/KEY.CPP::Down()` is just `GetAsyncKeyState(key & 0xFF) != 0`, so returning `0` for non-modifier keys makes the UI look frozen even when the menu loop is still running.
+
+## General runtime correctness notes
+
+- `CODE/SESSION.CPP::Read_MultiPlayer_Settings()` allocates `InitStrings` entries with `new char[INITSTRBUF_MAX]`.
+  - `SessionClass::Free_Scenario_Descriptions()` therefore must free those entries with `delete[]`, not `delete`.
+  - ASan reports this as an `alloc-dealloc-mismatch` during shutdown after a normal startup/menu run.
   - Some legacy loops also use `GetAsyncKeyState(vk) & 1`, so the compat layer needs a one-shot low-bit latch for recent press transitions as well as current high-bit state.
 - Toggle keys must also keep real Win32 low-bit semantics:
   - `CODE/KEY.CPP` now probes `GetKeyState(VK_CAPITAL/VK_NUMLOCK) & 0x0001` when building queued key codes;
@@ -161,6 +186,8 @@ _Last updated: 2026-03-30_
 - Some translation units include `windows.h` under `#pragma pack(4)`. The compatibility `CRITICAL_SECTION` therefore needs explicit pointer alignment (`alignas(void*)`) so its internal mutex pointer is not placed at 4-byte-aligned addresses on 64-bit Linux.
 - The runtime sound bookkeeping structs (`SampleTrackerType`, `LockedDataType`) need native alignment for pointer-bearing members and `CRITICAL_SECTION`. Keeping them under forced 4-byte packing produces sanitizer-reported misaligned accesses during `Audio_Init()`.
 - Asset/file formats that were historically read through raw pointer casts now need fixed-width structs or `memcpy`-based header loads in active Linux/ASan paths. Unaligned font, shape, IFF/CPS, and keyframe reads were all real runtime issues in this port.
+- The same LP64 rule applies to gameplay audio sample headers: `.AUD` headers must use fixed-width 32-bit size fields instead of legacy `long`, or the loader silently reads the wrong header size on Linux/x86-64.
+- The same LP64 rule also applies to pointer-shaped bookkeeping in the old audio code: fields that really hold byte offsets must be converted to integer offsets before the SDL/Linux port can safely reuse the legacy refill logic on 64-bit hosts.
 
 ## DirectDraw/SDL presentation notes
 

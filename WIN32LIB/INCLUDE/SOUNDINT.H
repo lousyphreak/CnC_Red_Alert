@@ -38,6 +38,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "SOUND.H"
+#include <stdint.h>
 
 /*
 ** Defines for true and false.  These are included because we do not allow
@@ -149,11 +150,10 @@ typedef struct {
 //	short int Index;
 
 	/*
-	**	Pointer into the play buffer for writing the next
-	**  chunk of sample to
-	**
+	**	Byte offset into the play buffer for writing the next
+	**  chunk of sample to.
 	*/
-	VOID *DestPtr;
+	uint32_t DestPtr;
 
 	/*
 	**	This flag indicates that there is more source data
@@ -237,7 +237,7 @@ typedef struct {
 	LONG	QueueSize;		// Size of queue buffer attached.
 	short int	Odd;				// Block number tracker (0..StreamBufferCount-1).
 	int	FilePending;	// Number of buffers already filled ahead.
-	long	FilePendingSize;	// Number of bytes in last filled buffer.
+	int32_t	FilePendingSize;	// Number of bytes in last filled buffer.
 
 	/*
 	**	The file variables are used when streaming directly off of the
@@ -259,9 +259,9 @@ typedef struct {
 typedef struct LockedData {
 	unsigned int 		DigiHandle; 			// = -1;
 	BOOL 					ServiceSomething;		// = FALSE;
-	long 					MagicNumber; 			// = 0xDEAF;
+	uint32_t 			MagicNumber; 			// = 0xDEAF;
 	VOID 					*UncompBuffer;			// = NULL;
-	long 					StreamBufferSize; 	// = (2*SECONDARY_BUFFER_SIZE)+128;
+	int32_t 			StreamBufferSize; 	// = (2*SECONDARY_BUFFER_SIZE)+128;
 	short 				StreamBufferCount; 	// = 32;
 	SampleTrackerType SampleTracker[MAX_SFX];
 	unsigned int		SoundVolume;

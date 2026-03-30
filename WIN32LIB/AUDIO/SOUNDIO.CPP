@@ -895,7 +895,7 @@ long Sample_Read(int fh, void *buffer, long size)
 	size -= sizeof(RawHeader);
 	outbuffer = Add_Long_To_Pointer(buffer, sizeof(RawHeader));
   	actual_bytes_read = Read_File(fh, &RawHeader, sizeof(RawHeader));
-	actual_bytes_read +=Read_File(fh, outbuffer, MIN(size, RawHeader.Size));
+	actual_bytes_read +=Read_File(fh, outbuffer, MIN(size, (long)RawHeader.Size));
 	Mem_Copy(&RawHeader, buffer, sizeof(RawHeader));
 	return(actual_bytes_read);
 }
@@ -1677,6 +1677,7 @@ int Convert_HMI_To_Backend_Volume(int volume)
  *   11/02/1995 ST  : Windows Direct Sound support                                             *
  *=============================================================================================*/
 extern BOOL Any_Locked(void);
+extern BOOL GameInFocus;
 int Play_Sample_Handle(void const *sample, int priority, int volume, signed short , int id)
 {
 	AUDHeaderType                   RawHeader;
@@ -1867,7 +1868,7 @@ int Play_Sample_Handle(void const *sample, int priority, int volume, signed shor
 	//
 	// Decompress the sample into the direct sound buffer
 	//
-	st->DestPtr=(void*)Sample_Copy ( 	st,
+	st->DestPtr=(uint32_t)Sample_Copy ( 	st,
 								&st->Source,
 								&st->Remainder,
 								&st->QueueBuffer,
@@ -1878,7 +1879,7 @@ int Play_Sample_Handle(void const *sample, int priority, int volume, signed shor
 								&st->Trailer[0],
 								&st->TrailerLen);
 
-	if ( st->DestPtr==(void*) (SECONDARY_BUFFER_SIZE*1/4) ){
+	if (st->DestPtr == (uint32_t)(SECONDARY_BUFFER_SIZE*1/4)){
 
 		// Must be more data to copy so we dont need to zero the buffer
 		st->MoreSource=TRUE;
@@ -1893,9 +1894,20 @@ int Play_Sample_Handle(void const *sample, int priority, int volume, signed shor
 		st->OneShot=TRUE;
 		st->Service=TRUE;				//We still need to service it so that we can stop it when
 											// it plays past the end of the sample data
-		//memset ( (char*)( (unsigned)play_buffer_ptr + (unsigned)st->DestPtr ), 0 , SECONDARY_BUFFER_SIZE - (unsigned)st->DestPtr );
-		memset ( (char*)( (unsigned)play_buffer_ptr + (unsigned)st->DestPtr ), 0 , SECONDARY_BUFFER_SIZE/4);
+		memset (((char*)play_buffer_ptr) + st->DestPtr,
+			(RawHeader.Flags & AUD_FLAG_16BIT) ? 0 : 0x80,
+			SECONDARY_BUFFER_SIZE/4);
 	}
+
+	Sound_Trace("Play_Sample_Handle prepared id=%d rate=%u flags=0x%02x comp=%u dest=%u more=%d oneshot=%d focus=%d",
+		id,
+		(unsigned)RawHeader.Rate,
+		(unsigned)RawHeader.Flags,
+		(unsigned)RawHeader.Compression,
+		(unsigned)st->DestPtr,
+		st->MoreSource ? 1 : 0,
+		st->OneShot ? 1 : 0,
+		GameInFocus ? 1 : 0);
 
 	st->PlayBuffer->Unlock(	play_buffer_ptr,
 							lock_length1,
@@ -1925,6 +1937,7 @@ int Play_Sample_Handle(void const *sample, int priority, int volume, signed shor
 	** Make sure the primary sound buffer is playing
 	*/
 	if (!Start_Primary_Sound_Buffer(FALSE)){
+		Sound_Trace("Play_Sample_Handle primary start failed id=%d focus=%d", id, GameInFocus ? 1 : 0);
 		//LeaveCriticalSection (&GlobalAudioCriticalSection);
 		return(-1);
 	}
@@ -2177,7 +2190,6 @@ long Sample_Length(void const *sample)
  * HISTORY:                                                                                    *
  *    2/1/96 12:28PM ST : Created                                                              *
  *=============================================================================================*/
-extern BOOL GameInFocus;
 BOOL Start_Primary_Sound_Buffer (BOOL forced)
 {
 	DWORD status;
