@@ -37,7 +37,6 @@
 
 #include <stddef.h>
 
-#pragma pack(4) 
 extern   WORD     _sosDIGIData_Start;
 extern   WORD     _sosDIGIData_End;
 extern   WORD     _wSOSDriverLinear[];
@@ -121,8 +120,6 @@ extern   WORD  wDetectParam;
 #ifdef __cplusplus
 }
 #endif 
-
-#pragma pack()
 
 #endif
 

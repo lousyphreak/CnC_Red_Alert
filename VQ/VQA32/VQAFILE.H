@@ -43,9 +43,6 @@
 
 #include <VQM32/IFF.H>
 
-#ifdef __WATCOMC__
-#pragma pack(1);
-#endif
 
 /*---------------------------------------------------------------------------
  * STRUCTURE DEFINITIONS AND RELATED DEFINES.
@@ -95,6 +92,10 @@ typedef struct _VQAHeader {
 	unsigned char  AltBitsPerSample;
 	unsigned short FutureUse[5];
 } VQAHeader;
+
+#ifdef __cplusplus
+static_assert(sizeof(VQAHeader) == 42, "VQAHeader must stay 42 bytes");
+#endif
 
 /* Version type. */
 #define VQAHD_VER1 1
@@ -189,8 +190,5 @@ typedef struct _VQAHeader {
 #define ID_CAP0 MAKE_ID('C','A','P','0') /* Caption text */
 #define ID_EVA0 MAKE_ID('E','V','A','0') /* EVA text */
 
-#ifdef __WATCOMC__
-#pragma pack();
-#endif
 
 #endif /* VQAFILE_H */

@@ -54,7 +54,7 @@
 
 /*= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =*/
 
-#pragma pack(4)
+#pragma pack(push, 4)
 #include "soundint.h"
 
 /***************************************************************************
@@ -546,3 +546,4 @@ void Audio_Mem_Set(void const *ptr, unsigned char value, long size)
 		*temp++ = value;
 	}
 }
+#pragma pack(pop)

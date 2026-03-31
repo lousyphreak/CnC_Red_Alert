@@ -35,9 +35,7 @@
 #ifndef  _SOS_DEFINED
 #define  _SOS_DEFINED
 #include "sosdefs.h"
-
-#pragma pack(4)
-
+#pragma pack(push, 4)
 // error definition for sound operating system
 #define  _SOS_ERR          -1
 
@@ -530,12 +528,9 @@ enum
 
 // define for special 18.2 callback rate to dos
 #define  _TIMER_DOS_RATE   0xff00
-
-#pragma pack()
-
+#pragma pack(pop)
 #pragma aux int_3 = "int 3"
-
-#pragma pack( 1 )
+#pragma pack(push, 1)
 typedef struct
 {
 	unsigned       region_size;
@@ -556,9 +551,7 @@ typedef struct
 	unsigned       physical;
 
 } VDS_STRUCT;
-
-#pragma pack()
-
+#pragma pack(pop)
 #include "sosdata.h"
 #include "sosfnct.h"
 

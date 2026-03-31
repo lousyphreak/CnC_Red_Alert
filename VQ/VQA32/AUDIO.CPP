@@ -68,7 +68,7 @@
 #include "VQAPLAYP.H"
 
 #ifdef __WATCOMC__
-#pragma pack(4);
+#pragma pack(push, 4)
 #endif
 
 #if(VQAAUDIO_ON)
@@ -1344,5 +1344,5 @@ long VQA_TimerMethod(void)
 }
 
 #ifdef __WATCOMC__
-#pragma pack(1);
+#pragma pack(pop)
 #endif

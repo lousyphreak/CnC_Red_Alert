@@ -1038,8 +1038,7 @@ typedef unsigned long   MCFLAGS;    /* MemCheck settings flags */
 /* MemCheck Rocket allocator prototypes */
 typedef void _MCFAR * (_MCFAR *ROCKETALLOCF)    (size_t);
 typedef void          (_MCFAR *ROCKETFREEF)     (void _MCFAR *);
-
-#pragma pack(1)
+#pragma pack(push, 1)
 /* 
     Memory Tracking Structure (MEMREC)
 
@@ -1160,10 +1159,7 @@ typedef struct {
     int *           pLocked;    /* # times entered          */
     unsigned long   ulRsvd;     /* internal use             */
     } MCCRITSECT;
-
-#pragma pack()
-
-
+#pragma pack(pop)
 #define MC_FEXIT    ( (MCID) 0xFF )
 
 

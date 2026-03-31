@@ -35,8 +35,6 @@
 #ifndef  _SOS_FUNCTIONS
 #define  _SOS_FUNCTIONS
 
-#pragma pack(4)
-
 WORD sosDIGILockMemory          (  VOID  );
 WORD sosDIGIUnLockMemory        (  VOID  );
 WORD sosDIGIInitSystem           (  LPSTR, WORD  );
@@ -212,7 +210,5 @@ VOID  sosDIGILoad_Start( VOID );
 VOID  sosDIGILoad_End( VOID );
 VOID  sosDIGICntl_Start( VOID );
 VOID  sosDIGICntl_End( VOID );
-
-#pragma pack()
 
 #endif

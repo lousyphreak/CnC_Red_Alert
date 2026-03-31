@@ -57,8 +57,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 extern	void Colour_Debug (int call_number);
-#pragma 	pack(4)
-
+#pragma pack(push, 4)
 #define WIN32
 #ifndef _WIN32 // Denzil 6/2/98 Watcom 11.0 complains without this check
 #define _WIN32
@@ -79,10 +78,9 @@ extern	void Colour_Debug (int call_number);
 #include	<file.h>
 #include	<timer.h>
 #include	<math.h>
-#pragma		pack(1)
+#pragma pack(push, 1)
 #include	"audio.h"
-#pragma		pack(4)
-
+#pragma pack(pop)
 LPDIRECTSOUNDBUFFER	DumpBuffer;
 HANDLE						SoundThreadHandle = NULL;
 BOOL						SoundThreadActive = FALSE;
@@ -2154,3 +2152,4 @@ void Resume_Audio_Thread(void)
 }
 
 
+#pragma pack(pop)

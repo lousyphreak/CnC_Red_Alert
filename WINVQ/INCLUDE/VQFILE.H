@@ -40,10 +40,6 @@
 
 #include <vqm32\iff.h>
 
-/* Disable Watcom structure alignment. */
-#ifdef __WATCOMC__
-#pragma pack(1);
-#endif
 
 /*---------------------------------------------------------------------------
  * STRUCTURE DEFINITIONS AND RELATED INFORMATION
@@ -83,6 +79,10 @@ typedef struct _VQHeader {
 	short ColorModel;
 } VQHeader;
 
+#ifdef __cplusplus
+static_assert(sizeof(VQHeader) == 28, "VQHeader must stay 28 bytes");
+#endif
+
 
 /* VQ file flags */
 #define VQHB_CBCOMP 0 /* Codebook compressed */
@@ -110,9 +110,6 @@ typedef struct _VQHeader {
 #define ID_VQCT MAKE_ID('V','Q','C','T') /* VQ Color Table (palette) */
 #define ID_VQVP MAKE_ID('V','Q','V','P') /* VQ Vector pointers */
 
-#ifdef __WATCOMC__
-#pragma pack();
-#endif
 
 #endif /* VQFILE_H */
 

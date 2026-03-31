@@ -43,7 +43,7 @@
 
 /* Disable structure alignment.*/
 #ifdef __WATCOMC__
-#pragma pack(1);
+#pragma pack(push, 1)
 #endif
 
 /*---------------------------------------------------------------------------
@@ -72,6 +72,10 @@ typedef struct _MIXSubBlock {
 	long Size;
 } MIXSubBlock;
 
+#ifdef __WATCOMC__
+#pragma pack(pop)
+#endif
+
 /* MIXHandle: Mix file handle.
  *
  * Name    - Pointer to the name of the mix file this handle is for.
@@ -96,10 +100,4 @@ MIXHandle *OpenMix(char *name);
 void CloseMix(MIXHandle *mix);
 long OpenMixEntry(MIXHandle *mix, char *name);
 
-/* Restore original alignment */
-#ifdef __WATCOMC__
-#pragma pack();
-#endif
-
 #endif /* VQMMIXFILE_H */
-

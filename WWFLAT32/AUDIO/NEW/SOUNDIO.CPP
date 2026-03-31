@@ -46,8 +46,7 @@
  *   Sample_Status -- Queries the current playing sample status (if any).                      *
  *   Sample_Length -- returns length of a sample in ticks                                      *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-
-#pragma pack(4)
+#pragma pack(push, 4)
 #include	"soundint.h"
 #include <dos.h>
 #include <string.h>
@@ -60,10 +59,9 @@
 #include	<file.h>
 #include	<i86.h>
 #include <timer.h>
-#pragma pack(1)
+#pragma pack(push, 1)
 #include "audio.h"
-#pragma pack(4)
-
+#pragma pack(pop)
 /*
 **	If this is defined, then the streaming audio buffer will be filled
 **	to maximum whenever filling is to occur. If undefined, it will fill
@@ -1461,3 +1459,4 @@ long Sample_Length(void const *sample)
 	}
 	return(time);
 }
+#pragma pack(pop)

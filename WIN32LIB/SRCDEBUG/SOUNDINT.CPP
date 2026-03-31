@@ -54,7 +54,7 @@
 
 /*= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =*/
 
-#pragma pack(4)
+#pragma pack(push, 4)
 #define WIN32
 #ifndef _WIN32 // Denzil 6/2/98 Watcom 11.0 complains without this check
 #define _WIN32
@@ -541,3 +541,4 @@ void Audio_Mem_Set(void const *ptr, unsigned char value, long size)
 		*temp++ = value;
 	}
 }
+#pragma pack(pop)
