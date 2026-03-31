@@ -348,3 +348,22 @@ _Last updated: 2026-03-31_
 - The latest quiet ASan/UBSan validation reaches that same front-end baseline and shuts down without sanitizer diagnostics.
 - The latest traced ASan intro run also survives the old `UnVQ_4x4` crash path after the `4x4` codebook sizing fix and continues streaming `ENGLISH.VQA` without sanitizer output.
 - The next likely issues are now deeper validation items such as full real-pointer front-end interaction, gameplay transitions, and Windows-specific runtime behavior.
+
+## Watcom enum size differences
+
+The original Red Alert was built with Watcom C, which sizes enums to the smallest type that fits their value range. Most game enums (e.g., `HousesType` with range -1..21) were stored as **1-byte signed values**. GCC/Clang default to 4-byte enums.
+
+This matters for any code that uses unions containing both an enum field and a wider integer field (like `int32_t Value`). Writing to the 1-byte enum member only modifies the low byte of the union; the rest retains whatever was there before. The scenario data in the original MIX files was written with this 1-byte assumption, so 4-byte reads of `Data.Value` contain garbage in the upper bytes (typically `0xFF` from constructor initialization with `Data.Value = -1`).
+
+**Pattern**: A value like `-255` (`0xFFFFFF01`) in trigger INI data means "enum value 1 stored in the low byte, with 0xFF garbage in upper bytes". Sign-extend from byte (`(int32_t)(int8_t)(value & 0xFF)`) to recover the correct value.
+
+**Known affected types** (1-byte in Watcom, 4-byte in GCC):
+- `HousesType` (-1..21)
+- `ThemeType` (-3..41)
+- `SpecialWeaponType` (-1..7)
+- `QuarryType` (0..10)
+- `VQType` (-1..103)
+- `VoxType` (-1..118)
+
+**Types that are 2+ bytes even in Watcom** (range exceeds signed byte):
+- `VocType` (-1..167) — likely 2-byte short in Watcom

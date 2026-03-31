@@ -342,6 +342,11 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - The shutdown code in `CODE/STARTUP.CPP` / `CODE/WINSTUB.CPP` uses `ReadyToQuit` as a 4-state flag (`0`, `1`, `2`, `3`), but the active port had it declared as `bool`.
   - That truncated `ReadyToQuit = 2` back to `true`, so the `while (ReadyToQuit == 1)` shutdown waits never completed even though `WM_DESTROY` had already run and logged.
 - Added a `redalert` post-build deployment step in `CMakeLists.txt` so `GameData/redalert` and `GameData/redalert-asan` stay synchronized with the latest normal and ASan builds.
+- Fixed mission loss conditions being treated as wins due to corrupted trigger action `Data.House` values.
+  - The original game was built with Watcom C which sized enums to fit their value range. Most game enums (`HousesType`, `ThemeType`, etc.) were stored as 1-byte values. When these were written into the 4-byte `Data.Value` union member via `Build_INI_Entry`, only the low byte contained the actual enum value; the upper bytes retained `0xFF` garbage from the union constructor (`Data.Value = -1`).
+  - The original scenario data in MIX files contains these values (e.g., `-255` = `0xFFFFFF01` where `0x01` = `HOUSE_GREECE`).
+  - On the original 32-bit build with 1-byte enums, reading `Data.House` only compared the low byte, so the comparison worked correctly. On our port with 4-byte enums, `Data.House` reads all 4 bytes as `-255`, causing `TACTION_LOSE`'s `Data.House != PlayerPtr->Class->House` to always evaluate true and call `Flag_To_Win()` instead of `Flag_To_Lose()`.
+  - Fixed by extending `Normalize_Legacy_Action_Value()` in `CODE/TACTION.CPP` to sign-extend from byte for all 1-byte enum action types (`NEED_HOUSE`, `NEED_THEME`, `NEED_SPECIAL`, `NEED_QUARRY`, `NEED_MOVIE`).
 
 ## Build layout in use
 

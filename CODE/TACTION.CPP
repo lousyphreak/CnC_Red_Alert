@@ -49,14 +49,36 @@
 
 static int32_t Normalize_Legacy_Action_Value(TActionType action, int32_t value)
 {
-	if (Action_Needs(action) == NEED_SPEECH && value < VOX_NONE) {
-		int32_t legacy_voice = value & 0x00FF;
-		if (legacy_voice >= VOX_FIRST && legacy_voice < VOX_COUNT) {
-			return(legacy_voice);
-		}
-	}
+	/*
+	**	The original game was built with Watcom C which sized enums to fit their
+	**	value range. Most game enums (HousesType, ThemeType, VQType, etc.) fit in
+	**	a single signed byte. When these 1-byte enum values were written into the
+	**	4-byte Data.Value union member via Build_INI_Entry, only the low byte
+	**	contained the actual enum value — upper bytes retained 0xFF garbage from
+	**	the union's constructor initialization (Data.Value = -1). The original
+	**	scenario data in the MIX files contains these values (e.g. -255 meaning
+	**	house 1). Sign-extend from byte to recover the correct enum value.
+	*/
+	switch (Action_Needs(action)) {
+		case NEED_HOUSE:
+		case NEED_THEME:
+		case NEED_SPECIAL:
+		case NEED_QUARRY:
+		case NEED_MOVIE:
+			return (int32_t)(int8_t)(value & 0xFF);
 
-	return(value);
+		case NEED_SPEECH:
+			if (value < VOX_NONE) {
+				int32_t legacy_voice = value & 0x00FF;
+				if (legacy_voice >= VOX_FIRST && legacy_voice < VOX_COUNT) {
+					return(legacy_voice);
+				}
+			}
+			return(value);
+
+		default:
+			return(value);
+	}
 }
 
 /*

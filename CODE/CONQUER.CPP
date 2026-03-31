@@ -2393,9 +2393,6 @@ Mono_Set_Cursor(0,0);
 
 #ifdef WIN32
 
-		/*
-		** Send the game statistics to WChat.
-		*/
 		if (Session.Type == GAME_INTERNET && !GameStatisticsPacketSent) {
 			Register_Game_End_Time();
 			Send_Statistics_Packet();		//	Player just won.
@@ -2412,9 +2409,7 @@ Mono_Set_Cursor(0,0);
 	}
 	if (PlayerLoses) {
 #ifdef WIN32
-		/*
-		** Send the game statistics to WChat.
-		*/
+
 		if (Session.Type == GAME_INTERNET && !GameStatisticsPacketSent) {
 			Register_Game_End_Time();
 			Send_Statistics_Packet();		//	Player just lost.
