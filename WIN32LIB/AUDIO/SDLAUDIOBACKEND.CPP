@@ -80,6 +80,20 @@ int normalized_frequency(const AudioBufferFormat &format)
 	return ((int)(format.nSamplesPerSec ? format.nSamplesPerSec : 22050));
 }
 
+SDL_AudioFormat resolve_audio_format(const AudioBufferFormat &format)
+{
+	switch (normalized_bits_per_sample(format)) {
+		case 8:
+			return (SDL_AUDIO_U8);
+
+		case 16:
+			return (SDL_AUDIO_S16LE);
+
+		default:
+			return (SDL_AUDIO_UNKNOWN);
+	}
+}
+
 float backend_volume_to_gain(LONG volume)
 {
 	if (volume <= -10000) {
@@ -308,12 +322,6 @@ void AudioBackendBuffer::MixInto(float *mix_buffer, int output_frames, int outpu
 	const double step = (double)normalized_frequency(FormatData) / (double)std::max(1, output_rate);
 	const float gain = backend_volume_to_gain(Volume);
 	double cursor = PlaybackCursorFrames;
-	float peak = 0.0f;
-	float first_source_left = 0.0f;
-	float first_source_right = 0.0f;
-	float first_contribution_left = 0.0f;
-	float first_contribution_right = 0.0f;
-	bool saw_sample = false;
 
 	for (int frame = 0; frame < output_frames; ++frame) {
 		size_t source_index = (size_t)cursor;
@@ -332,29 +340,14 @@ void AudioBackendBuffer::MixInto(float *mix_buffer, int output_frames, int outpu
 		const uint8_t *source_frame = Data.data() + (source_index * (size_t)source_frame_bytes);
 		const float left = read_pcm_sample(source_frame, 0, FormatData);
 		const float right = (source_channels > 1) ? read_pcm_sample(source_frame, 1, FormatData) : left;
-		float contribution_left = gain * left;
-		float contribution_right = gain * right;
-
-		if (!saw_sample) {
-			saw_sample = true;
-			first_source_left = left;
-			first_source_right = right;
-			first_contribution_left = contribution_left;
-			first_contribution_right = contribution_right;
-		}
 
 		if (output_channels == 1) {
-			const float contribution = gain * ((source_channels > 1) ? ((left + right) * 0.5f) : left);
-			mix_buffer[frame] += contribution;
-			peak = std::max(peak, std::fabs(contribution));
+			mix_buffer[frame] += gain * ((source_channels > 1) ? ((left + right) * 0.5f) : left);
 		} else {
-			mix_buffer[frame * output_channels] += contribution_left;
-			mix_buffer[frame * output_channels + 1] += contribution_right;
-			peak = std::max(peak, std::max(std::fabs(contribution_left), std::fabs(contribution_right)));
+			mix_buffer[frame * output_channels] += gain * left;
+			mix_buffer[frame * output_channels + 1] += gain * right;
 			for (int channel = 2; channel < output_channels; ++channel) {
-				const float contribution = gain * ((left + right) * 0.5f);
-				mix_buffer[frame * output_channels + channel] += contribution;
-				peak = std::max(peak, std::fabs(contribution));
+				mix_buffer[frame * output_channels + channel] += gain * ((left + right) * 0.5f);
 			}
 		}
 
@@ -367,39 +360,15 @@ void AudioBackendBuffer::MixInto(float *mix_buffer, int output_frames, int outpu
 
 	PlaybackCursorFrames = cursor;
 	Position = Data.empty() ? 0 : (DWORD)(((uint64_t)(cursor * (double)source_frame_bytes)) % Data.size());
-
-	if (audio_trace_enabled()) {
-		static int trace_count = 0;
-		if (trace_count < 24 && (peak > 0.0f || saw_sample)) {
-			audio_trace(
-				"MixInto status=%u volume=%ld gain=%.6f src=%dch/%dbit/%dHz out=%dch/%dHz frames=%d peak=%.6f first_src=(%.6f,%.6f) first_mix=(%.6f,%.6f) pos=%u",
-				(unsigned)Status,
-				(long)Volume,
-				(double)gain,
-				source_channels,
-				normalized_bits_per_sample(FormatData),
-				normalized_frequency(FormatData),
-				output_channels,
-				output_rate,
-				output_frames,
-				(double)peak,
-				(double)first_source_left,
-				(double)first_source_right,
-				(double)first_contribution_left,
-				(double)first_contribution_right,
-				(unsigned)Position);
-			++trace_count;
-		}
-	}
 }
 
 
 AudioBackendDevice::AudioBackendDevice(void)
-	: RefCount(1), Window(NULL), Stream(NULL), MixChannels(2), MixRate(22050), PrimaryPlaying(false), PrimaryBuffer(NULL)
+	: RefCount(1), Window(NULL), Stream(NULL), MixFormat(SDL_AUDIO_U8), MixChannels(2), MixRate(22050), PrimaryPlaying(false), PrimaryBuffer(NULL)
 {
 	std::memset(&MixSpec, 0, sizeof(MixSpec));
 	MixSpec.channels = (Uint8)MixChannels;
-	MixSpec.format = SDL_AUDIO_F32;
+	MixSpec.format = MixFormat;
 	MixSpec.freq = MixRate;
 }
 
@@ -465,15 +434,18 @@ void SDLCALL AudioBackendDevice::AudioCallback(void *userdata, SDL_AudioStream *
 
 void AudioBackendDevice::FeedAudio(SDL_AudioStream *stream, int additional_amount)
 {
+	const SDL_AudioFormat output_format = (SDL_AudioFormat)MixFormat;
+	const int output_channels = std::max<int>(1, MixChannels);
+	const int sample_bytes = SDL_AUDIO_BYTESIZE(output_format);
+	const int frame_bytes = output_channels * std::max(1, sample_bytes);
+
 	std::unique_lock<std::mutex> lock(Mutex, std::try_to_lock);
 	if (!lock.owns_lock()) {
-		std::vector<float> silence((size_t)((additional_amount + (int)sizeof(float) - 1) / (int)sizeof(float)), 0.0f);
-		SDL_PutAudioStreamData(stream, silence.data(), (int)(silence.size() * sizeof(float)));
+		std::vector<uint8_t> silence((size_t)std::max(0, additional_amount), (uint8_t)SDL_GetSilenceValueForFormat(output_format));
+		SDL_PutAudioStreamData(stream, silence.data(), (int)silence.size());
 		return;
 	}
 
-	const int output_channels = std::max<int>(1, MixChannels);
-	const int frame_bytes = output_channels * (int)sizeof(float);
 	int output_frames = additional_amount / frame_bytes;
 	if (additional_amount % frame_bytes != 0) {
 		++output_frames;
@@ -491,33 +463,39 @@ void AudioBackendDevice::FeedAudio(SDL_AudioStream *stream, int additional_amoun
 		}
 	}
 
-	float pre_clamp_peak = 0.0f;
-	int clipped_samples = 0;
 	for (float &sample : mix) {
-		pre_clamp_peak = std::max(pre_clamp_peak, std::fabs(sample));
-		if (sample < -1.0f || sample > 1.0f) {
-			++clipped_samples;
-		}
 		sample = std::clamp(sample, -1.0f, 1.0f);
 	}
 
-	if (audio_trace_enabled()) {
-		static int trace_count = 0;
-		if (trace_count < 24 && (PrimaryPlaying || pre_clamp_peak > 0.0f)) {
-			audio_trace("FeedAudio bytes=%d frames=%d channels=%d rate=%d primary=%d peak=%.6f clipped=%d first=%.6f",
-				additional_amount,
-				output_frames,
-				output_channels,
-				MixRate,
-				PrimaryPlaying ? 1 : 0,
-				(double)pre_clamp_peak,
-				clipped_samples,
-				mix.empty() ? 0.0 : (double)mix[0]);
-			++trace_count;
+	if (output_format == SDL_AUDIO_S16LE) {
+		std::vector<int16_t> pcm((size_t)output_frames * (size_t)output_channels);
+		for (size_t index = 0; index < pcm.size(); ++index) {
+			const float sample = mix[index];
+			if (sample <= -1.0f) {
+				pcm[index] = INT16_MIN;
+			} else if (sample >= 1.0f) {
+				pcm[index] = INT16_MAX;
+			} else {
+				pcm[index] = (int16_t)std::lround(sample * 32767.0f);
+			}
 		}
+		SDL_PutAudioStreamData(stream, pcm.data(), (int)(pcm.size() * sizeof(int16_t)));
+		return;
 	}
 
-	SDL_PutAudioStreamData(stream, mix.data(), (int)(mix.size() * sizeof(float)));
+	if (output_format == SDL_AUDIO_U8) {
+		std::vector<uint8_t> pcm((size_t)output_frames * (size_t)output_channels);
+		for (size_t index = 0; index < pcm.size(); ++index) {
+			const float sample = std::clamp(mix[index], -1.0f, 1.0f);
+			const long value = std::lround((sample + 1.0f) * 127.5f);
+			pcm[index] = (uint8_t)std::clamp<long>(value, 0, 255);
+		}
+		SDL_PutAudioStreamData(stream, pcm.data(), (int)pcm.size());
+		return;
+	}
+
+	std::vector<uint8_t> silence((size_t)std::max(0, additional_amount), (uint8_t)SDL_GetSilenceValueForFormat(output_format));
+	SDL_PutAudioStreamData(stream, silence.data(), (int)silence.size());
 }
 
 
@@ -555,19 +533,38 @@ bool AudioBackendDevice::EnsureAudioStreamLocked(void)
 	if (PrimaryBuffer != NULL) {
 		std::scoped_lock primary_lock(PrimaryBuffer->Mutex);
 		const AudioBufferFormat &format = PrimaryBuffer->FormatData;
+		MixFormat = (unsigned short)resolve_audio_format(format);
+		if (MixFormat == SDL_AUDIO_UNKNOWN) {
+			return (false);
+		}
 		MixChannels = normalized_channels(format);
 		MixRate = normalized_frequency(format);
 	} else {
+		MixFormat = SDL_AUDIO_U8;
 		MixChannels = 2;
 		MixRate = 22050;
 	}
 	MixSpec.channels = (Uint8)MixChannels;
 	MixSpec.freq = MixRate;
-	MixSpec.format = SDL_AUDIO_F32;
+	MixSpec.format = (SDL_AudioFormat)MixFormat;
 
 	Stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &MixSpec, AudioCallback, this);
 	if (Stream == NULL) {
 		return (false);
+	}
+
+	if (audio_trace_enabled()) {
+		SDL_AudioSpec src_spec;
+		SDL_AudioSpec dst_spec;
+		if (SDL_GetAudioStreamFormat(Stream, &src_spec, &dst_spec)) {
+			audio_trace("OpenStream src=%dHz/%dch/0x%x dst=%dHz/%dch/0x%x",
+				src_spec.freq,
+				src_spec.channels,
+				(unsigned)src_spec.format,
+				dst_spec.freq,
+				dst_spec.channels,
+				(unsigned)dst_spec.format);
+		}
 	}
 
 	if (PrimaryPlaying) {

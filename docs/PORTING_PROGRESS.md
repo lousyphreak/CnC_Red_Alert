@@ -11,6 +11,11 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - The reconstructed CMake/SDL3 build is now able to compile and link the full `redalert` executable on Linux.
 - `cmake --build build --target redalert -j16` completes successfully.
 - `cmake --build build-asan --target redalert -j16` completes successfully with ASan/UBSan enabled.
+- Repository-owned `#pragma pack` usage outside `extern/SDL3` has been re-audited and tightened:
+  - declaration-only HMI/SOS headers (`SOSDATA.H`, `SOSFNCT.H`) no longer force or reset caller packing state;
+  - legacy HMI/SOS, VQA, archive audio, and debug headers/source files now use scoped `push` / `pop` packing instead of bare `pack(N)` / `pack()` resets;
+  - the old VQM32/WINVQ mix headers now keep only the on-disk `MIXHeader` / `MIXSubBlock` packed, while the runtime `MIXHandle` regains natural alignment for its host pointer;
+  - `VQAFILE.H` / `VQFILE.H` no longer rely on redundant packing for naturally laid-out file headers, and now assert the expected `VQAHeader` / `VQHeader` sizes where those headers are still used.
 - The unsupported BIOS/register-access surface is removed from the tree:
   - deleted `SDL3_COMPAT/wrappers/bios.h` and removed every remaining non-documentation `bios.h`/`REGS`/`SREGS`/`int386*`-style reference from the repository;
   - removed the dead active-source fallback branches that still carried DOS real-mode/IPX/modem/CD register access (`CODE/IPX.CPP`, `CODE/IPXMGR.CPP`, `CODE/CDFILE.CPP`, `WIN32LIB/MEM/ALLOC.CPP`);
@@ -74,10 +79,14 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - `CODE/AUDIO.CPP` still drives the legacy `Audio_*` / `Play_Sample` API surface used by the game;
   - `WIN32LIB/AUDIO/SOUNDIO.CPP` / `WIN32LIB/AUDIO/SOUNDINT.CPP` now sit on top of `WIN32LIB/AUDIO/SDLAUDIOBACKEND.CPP`;
   - the active build no longer compiles `SDL3_COMPAT/wrappers/dsound_compat.cpp`.
-- Fixed the gameplay SDL audio backend producing blasted/noisy non-movie music:
-  - a traced menu-theme run showed `AudioBackendBuffer::MixInto(...)` being called with `output_rate = 0` on the gameplay audio path, even though `Audio_Init(...)` requested `22050` Hz;
-  - the movie path was unaffected because `VQ/VQA32/AUDIOCOMPAT.CPP` uses its own SDL stream and does not go through `WIN32LIB/AUDIO/SDLAUDIOBACKEND.CPP`;
-  - `WIN32LIB/AUDIO/SDLAUDIOBACKEND.CPP` / `WIN32LIB/INCLUDE/SDLAUDIOBACKEND.H` now preserve cached mix rate/channel values separately from the mutable `SDL_AudioSpec` struct and pass those cached values into `MixInto(...)`, so the gameplay mixer no longer falls back to the broken zero-rate path.
+- Tightened the gameplay SDL audio backend to match the working movie-audio stream setup more closely:
+  - a traced menu-theme run first showed `AudioBackendBuffer::MixInto(...)` being called with `output_rate = 0` on the gameplay audio path, even though `Audio_Init(...)` requested `22050` Hz;
+  - `WIN32LIB/AUDIO/SDLAUDIOBACKEND.CPP` / `WIN32LIB/INCLUDE/SDLAUDIOBACKEND.H` now preserve cached mix rate/channel values separately from the mutable `SDL_AudioSpec` struct and pass those cached values into `MixInto(...)`, so the gameplay mixer no longer falls back to the broken zero-rate path;
+  - the remaining “speaker blast” suspicion then narrowed to the gameplay SDL stream source format: unlike the working movie path in `VQ/VQA32/AUDIOCOMPAT.CPP`, the gameplay backend had been opening `SDL_OpenAudioDeviceStream(...)` with `SDL_AUDIO_F32` as its source format;
+  - the gameplay backend now opens the SDL stream in the actual primary PCM format (`SDL_AUDIO_S16LE` / `SDL_AUDIO_U8`) and converts its internal float accumulator back to that PCM format before `SDL_PutAudioStreamData(...)`;
+  - traced disk-audio validation for `INTRO.AUD` now reports `OpenStream src=22050Hz/1ch/S16LE dst=44100Hz/2ch/S16LE`, and the captured output peaks at `6837/32767` instead of the previous nonsensical giant values;
+  - user retest on real speakers confirmed the non-movie audio now sounds normal again;
+  - the movie path was unaffected throughout because `VQ/VQA32/AUDIOCOMPAT.CPP` uses its own SDL stream and does not go through `WIN32LIB/AUDIO/SDLAUDIOBACKEND.CPP`.
 - Gameplay `.AUD` parsing is now LP64-safe again:
   - the active `AUDHeaderType` definitions in `WIN32LIB/AUDIO/AUDIO.H`, `WIN32LIB/INCLUDE/AUDIO.H`, and `VQ/INCLUDE/WWLIB32/AUDIO.H` now use fixed-width 32-bit size fields and are asserted to stay at the original 12-byte on-disk layout;
   - this fixes the 64-bit Linux case where legacy `long` fields had grown the header to 20 bytes, corrupting streamed theme/music parsing and potentially affecting `.AUD`-backed sound effects too.

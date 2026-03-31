@@ -97,6 +97,12 @@ _Last updated: 2026-03-31_
   - A traced `INTRO.AUD` menu-theme run showed `WIN32LIB/AUDIO/SDLAUDIOBACKEND.CPP::MixInto(...)` being called with `output_rate = 0` when the backend reused `MixSpec.freq` from the `SDL_AudioSpec` struct after `SDL_OpenAudioDeviceStream(...)`.
   - That zero-rate path makes the resample step jump by the full source rate each output frame, which turns otherwise sane gameplay `.AUD` decode data into extremely loud/noisy garbage.
   - Keep cached mix rate/channel integers owned by the backend and pass those cached values into `MixInto(...)`; movie audio is unaffected because it uses the separate `VQ/VQA32/AUDIOCOMPAT.CPP` SDL stream.
+- The gameplay SDL device stream should use the actual gameplay PCM source format, not a forced float source format.
+  - `SDL_OpenAudioDeviceStream(...)` creates a stream from the caller-supplied `spec` into the device format, and its playback callback requests `additional_amount` / `total_amount` in **source-format bytes**.
+  - The working in-tree reference is `VQ/VQA32/AUDIOCOMPAT.CPP`, which resolves movie audio to `SDL_AUDIO_U8` / `SDL_AUDIO_S16LE` from the asset bit depth before queuing raw PCM blocks.
+  - For the gameplay backend, opening the stream as `SDL_AUDIO_F32` while the legacy engine still fundamentally owns PCM primary/secondary buffers was a bad seam.
+  - The durable fix is to keep the internal accumulator float if convenient, but open the gameplay stream in the primary buffer's PCM format (`SDL_AUDIO_U8` / `SDL_AUDIO_S16LE`) and convert back to that PCM format before `SDL_PutAudioStreamData(...)`.
+  - A traced `INTRO.AUD` menu-theme run after that change reported `OpenStream src=22050Hz/1ch/S16LE dst=44100Hz/2ch/S16LE`, and SDL disk-audio capture peaked at only `6837/32767`, which is sane.
 - `RA_TRACE_STARTUP=1` now has a useful gameplay-audio discriminator in `Play_Sample_Handle prepared ...`.
   - If that trace shows `dest=8192 more=1 oneshot=0`, the first streamed quarter decoded correctly and the stream is ready to run.
   - If playback still fails after that, check focus gating next: `Start_Primary_Sound_Buffer(FALSE)` refuses to launch audio unless `GameInFocus` is true, so headless or focus-flapping runs can produce false theme-restart spam even when decode is already correct.
@@ -320,6 +326,10 @@ _Last updated: 2026-03-31_
 - The active SDL audio backend still has to preserve the DirectSound-era buffer contract closely enough for legacy sound code to populate formats, lock regions, and play/status flags safely.
 - Some translation units include `windows.h` under `#pragma pack(4)`. The compatibility `CRITICAL_SECTION` therefore needs explicit pointer alignment (`alignas(void*)`) so its internal mutex pointer is not placed at 4-byte-aligned addresses on 64-bit Linux.
 - The runtime sound bookkeeping structs (`SampleTrackerType`, `LockedDataType`) need native alignment for pointer-bearing members and `CRITICAL_SECTION`. Keeping them under forced 4-byte packing produces sanitizer-reported misaligned accesses during `Audio_Init()`.
+- `SOSDATA.H` / `SOSFNCT.H` are declaration-only headers; any `#pragma pack` there is just state pollution. Leave them unpacked and let the real struct-owning headers manage their own layout.
+- The VQA/VQ file headers (`VQAHeader`, `VQHeader`) are already naturally laid out with their current fixed-width field ordering; prefer size assertions to redundant header-wide packing there.
+- In the old VQM32/WINVQ mix headers, only the on-disk `MIXHeader` / `MIXSubBlock` should stay packed. The in-memory `MIXHandle` carries a host pointer and should not live under the packed region.
+- When an old translation unit still wants a temporary non-default pack (for example the legacy audio `.CPP` files that include Win32/HMI-era headers under `pack(4)`), scope that with `push` / `pop` around the full file or include region instead of relying on `pack()` resets.
 - Asset/file formats that were historically read through raw pointer casts now need fixed-width structs or `memcpy`-based header loads in active Linux/ASan paths. Unaligned font, shape, IFF/CPS, and keyframe reads were all real runtime issues in this port.
 - The same LP64 rule applies to gameplay audio sample headers: `.AUD` headers must use fixed-width 32-bit size fields instead of legacy `long`, or the loader silently reads the wrong header size on Linux/x86-64.
 - The same LP64 rule also applies to pointer-shaped bookkeeping in the old audio code: fields that really hold byte offsets must be converted to integer offsets before the SDL/Linux port can safely reuse the legacy refill logic on 64-bit hosts.
