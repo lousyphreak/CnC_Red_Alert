@@ -1898,16 +1898,6 @@ int Play_Sample_Handle(void const *sample, int priority, int volume, signed shor
 			SECONDARY_BUFFER_SIZE/4);
 	}
 
-	Sound_Trace("Play_Sample_Handle prepared id=%d rate=%u flags=0x%02x comp=%u dest=%u more=%d oneshot=%d focus=%d",
-		id,
-		(unsigned)RawHeader.Rate,
-		(unsigned)RawHeader.Flags,
-		(unsigned)RawHeader.Compression,
-		(unsigned)st->DestPtr,
-		st->MoreSource ? 1 : 0,
-		st->OneShot ? 1 : 0,
-		GameInFocus ? 1 : 0);
-
 	st->PlayBuffer->Unlock(	play_buffer_ptr,
 							lock_length1,
 							dummy_buffer_ptr,
