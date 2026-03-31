@@ -48,7 +48,6 @@ struct PORT;
 */
 #include "nullconn.h"
 #include "connmgr.h"
-#include "commlib.h"
 
 /*
 ***************************** Class Declaration *****************************

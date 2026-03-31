@@ -1,4 +1,0 @@
-#ifndef RA_COMMLIB_WRAPPER_H
-#define RA_COMMLIB_WRAPPER_H
-
-#endif
