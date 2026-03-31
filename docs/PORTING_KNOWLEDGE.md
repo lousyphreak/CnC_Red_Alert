@@ -135,6 +135,17 @@ _Last updated: 2026-03-31_
   - `PageFlip_MCGABuf()` and related direct-display paths already call `SetPalette(...)` / handle `VQADRWF_SETPAL`.
   - `DrawFrame_Buffer()` originally only decoded into `ImageBuf` and invoked the callback, so SDL/Linux startup movies could play audio and decode non-zero frames while the visible page stayed black.
   - The active buffered path therefore has to apply `VQAFRMF_PALETTE` and deferred `VQADRWF_SETPAL` updates itself before invoking the callback.
+- The low-resolution `320x200 -> 640x400` movie scaler depends on `PaletteInterpolationTable` matching the exact palette that is sent to the screen.
+  - `CODE/WINASM.CPP::Asm_Interpolate()` inserts every other pixel with `PaletteInterpolationTable[right][left]`, so stale or mismatched interpolation tables show up as colorful speckle over an otherwise recognizable frame rather than as block decode corruption.
+  - `CODE/WINSTUB.CPP::SetPalette()` therefore still needs the legacy movie palette normalization sequence (`&= 63` plus `Increase_Palette_Luminance(..., 15, 15, 15, 63)`) before `Set_Palette(...)` and before any runtime interpolation-table rebuild that falls back to `CurrentPalette`.
+  - A good decode-vs-presentation split test is to dump the raw `buffer` argument in `CODE/CONQUER.CPP::VQ_Call_Back()` for a known frame and reconstruct it with `CurrentPalette`; if that matches an external decode (for example `ffmpeg` on a loose `.VQA`), the failure is in interpolation/presentation rather than `UnVQ_*`.
+  - The traced mission-failed `BMAP.VQA` regression on Linux was ultimately a filesystem-resolution issue, not a decoder issue:
+    - the game asked `CCFileClass` for uppercase `BMAP.VQP`;
+    - the loose override on disk was lowercase `GameData/bmap.vqp`;
+    - the Win32 `CreateFile()` wrapper only did exact-case opens, so the loose file was skipped on case-sensitive filesystems and `CCFileClass` fell back to a different archived `BMAP.VQP`;
+    - the wrong interpolation table then poisoned `Interpolate_2X_Scale()` and produced the recognizable-image-plus-speckle symptom.
+  - `SDL3_COMPAT/wrappers/win32_compat.cpp::normalize_compat_path()` now resolves existing paths case-insensitively on non-Windows hosts before opening them, which restores Windows-style loose-file override behavior at the lowest file-system layer where the rest of the port expects it.
+  - A practical low-resolution movie smoke test on the current data set is: break on `Play_Intro()` under `gdb` and call `Try_Play_Movie("SIZZLE", THEME_NONE, true)`; this forces the buffered `320x200` movie path even when the old sequenced-debug intro route lands on unavailable assets such as `ANTINTRO.VQA`.
 
 ## SDL3 movie-audio integration
 

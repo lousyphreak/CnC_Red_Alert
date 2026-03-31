@@ -743,6 +743,7 @@ void __cdecl SetPalette(unsigned char *palette, long numbytes, unsigned long slo
 	for (int i = 0; i < 256 * 3; ++i) {
 		movie_palette[i] &= 63;
 	}
+	Increase_Palette_Luminance(movie_palette, 15, 15, 15, 63);
 
 	if (winstub_trace_enabled() && palette != NULL && palette_trace_count < 8) {
 		int nonzero_components = 0;
@@ -774,8 +775,6 @@ void __cdecl SetPalette(unsigned char *palette, long numbytes, unsigned long slo
 		++palette_trace_count;
 	}
 
-	Set_Palette(movie_palette);
-
 	if (PalettesRead
 			&& PaletteCounter < ARRAY_SIZE(InterpolatedPalettes)
 			&& InterpolatedPalettes[PaletteCounter] != NULL) {
@@ -786,6 +785,8 @@ void __cdecl SetPalette(unsigned char *palette, long numbytes, unsigned long slo
 	if (PalettesRead) {
 		++PaletteCounter;
 	}
+
+	Set_Palette(movie_palette);
 
 	if (!used_precomputed_palette) {
 		InterpolationPalette = CurrentPalette;

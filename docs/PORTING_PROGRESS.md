@@ -140,6 +140,12 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - Intro `ESC` abort no longer hard-locks the process:
   - `VQ/VQA32/TASK.CPP` now treats callback-driven `VQAERR_EOF` from the active buffered draw path as a real movie-stop condition instead of ignoring it and continuing to spin the player loop;
   - this lets the intro abort unwind through normal VQA shutdown, return from `VQA_Play()`, and continue startup exactly like a completed movie.
+- The mission-failed `BMAP.VQA` movie corruption is fixed on the SDL/Linux path:
+  - focused `gdb` frame dumps from `VQ_Call_Back()` showed the raw `320x200` indexed frame already matched independent `ffmpeg` decodes, so the buffered `UnVQ_4x2` decoder was not the failing seam;
+  - the visible colorful speckle came from the `320x200 -> 640x400` interpolation path using the wrong `BMAP.VQP` table, not from bad VQA bitstream decode;
+  - the actual regression was in low-level file resolution on case-sensitive filesystems: the game requests uppercase `BMAP.VQP`, but the loose override in `GameData/` is lowercase `bmap.vqp`, so exact-case `CreateFile()` opens skipped the loose file and `CCFileClass` fell back to a different archived `BMAP.VQP`;
+  - `SDL3_COMPAT/wrappers/win32_compat.cpp` now resolves existing filesystem paths case-insensitively before opening them on non-Windows hosts, restoring the original loose-file override behavior without changing higher-level movie logic;
+  - after the fix, the in-memory `PaletteInterpolationTable` matches `GameData/bmap.vqp` byte-for-byte, reconstructed frame-30 upscale output is clean instead of speckled, and forced `Try_Play_Movie("BMAP", THEME_NONE, true)` smoke runs complete successfully in both normal and ASan builds.
 - A compositor close request now shuts the game down cleanly through the SDL/Win32 message bridge instead of leaving the process hung until `SIGKILL`.
 - The SDL game window now behaves like a normal resizable desktop window without stretching the legacy framebuffer:
   - `SDL3_COMPAT/wrappers/win32_compat.cpp` and `SDL3_COMPAT/wrappers/ddraw_compat.cpp` now create the main SDL window with resize support while keeping the usual decorated/movable window behavior;
@@ -347,6 +353,14 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - The original scenario data in MIX files contains these values (e.g., `-255` = `0xFFFFFF01` where `0x01` = `HOUSE_GREECE`).
   - On the original 32-bit build with 1-byte enums, reading `Data.House` only compared the low byte, so the comparison worked correctly. On our port with 4-byte enums, `Data.House` reads all 4 bytes as `-255`, causing `TACTION_LOSE`'s `Data.House != PlayerPtr->Class->House` to always evaluate true and call `Flag_To_Win()` instead of `Flag_To_Lose()`.
   - Fixed by extending `Normalize_Legacy_Action_Value()` in `CODE/TACTION.CPP` to sign-extend from byte for all 1-byte enum action types (`NEED_HOUSE`, `NEED_THEME`, `NEED_SPECIAL`, `NEED_QUARRY`, `NEED_MOVIE`).
+- Restored the original low-resolution movie palette contract in `CODE/WINSTUB.CPP::SetPalette()`.
+  - The recent VQA playback changes kept the buffered decode fixes, but the low-resolution movie bridge had stopped applying the legacy `Increase_Palette_Luminance(..., 15, 15, 15, 63)` step before presenting the movie palette.
+  - `Interpolate_2X_Scale()` fills every other pixel from `PaletteInterpolationTable`, so once the visible movie palette and the interpolation table stopped matching, mission-failed movies showed the classic “recognizable frame plus colorful speckle” pattern instead of clean video.
+  - The fix restores that luminance step on the copied movie palette while keeping the newer null-safe / fallback interpolation-table handling intact.
+  - Validation:
+    - `cmake --build build --target redalert -j16` and `cmake --build build-asan --target redalert -j16` both still succeed.
+    - traced `gdb` smoke runs forcing `Try_Play_Movie("SIZZLE", THEME_NONE, true)` now exercise the active buffered `320x200` movie path (`SIZZLE.VQA`) successfully on both normal and ASan builds;
+    - the ASan movie smoke run still only reports the previously known non-movie UBSan warnings in `CODE/SHA.CPP` and `CODE/RANDOM.CPP`, not a new movie-path failure.
 
 ## Build layout in use
 

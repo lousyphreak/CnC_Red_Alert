@@ -225,6 +225,83 @@ bool compat_path_exists(const char* path)
 #endif
 }
 
+#if !RA_REAL_WINDOWS
+std::string append_compat_path_component(const std::string& base, const std::string& component)
+{
+    if (base.empty()) {
+        return component;
+    }
+
+    if (base == "/" || base.back() == '/' || base.back() == '\\') {
+        return base + component;
+    }
+
+    return base + "/" + component;
+}
+
+std::string resolve_existing_case_insensitive_path(const std::string& path)
+{
+    if (path.empty()) {
+        return {};
+    }
+
+    if (compat_path_exists(path.c_str())) {
+        return path;
+    }
+
+    std::string current = path.front() == '/' ? std::string("/") : std::string();
+    std::string::size_type cursor = (path.front() == '/') ? 1 : 0;
+
+    while (cursor <= path.size()) {
+        const std::string::size_type separator = path.find('/', cursor);
+        const std::string requested_name = path.substr(cursor, separator - cursor);
+        cursor = (separator == std::string::npos) ? path.size() + 1 : separator + 1;
+
+        if (requested_name.empty() || requested_name == ".") {
+            continue;
+        }
+
+        if (requested_name == "..") {
+            current = append_compat_path_component(current, requested_name);
+            continue;
+        }
+
+        const std::string search_directory = current.empty() ? std::string(".") : current;
+
+        std::string matched_name;
+        std::string folded_match;
+        DIR* directory = opendir(search_directory.c_str());
+        if (directory == nullptr) {
+            return {};
+        }
+
+        for (dirent* entry = readdir(directory); entry != nullptr; entry = readdir(directory)) {
+            const std::string entry_name(entry->d_name);
+            if (entry_name == requested_name) {
+                matched_name = entry_name;
+                break;
+            }
+
+            if (folded_match.empty() && SDL_strcasecmp(entry_name.c_str(), requested_name.c_str()) == 0) {
+                folded_match = entry_name;
+            }
+        }
+        closedir(directory);
+
+        if (matched_name.empty()) {
+            matched_name = folded_match;
+        }
+        if (matched_name.empty()) {
+            return {};
+        }
+
+        current = append_compat_path_component(current, matched_name);
+    }
+
+    return current.empty() ? path : current;
+}
+#endif
+
 int virtual_cd_index_for_drive_letter(char drive_letter)
 {
     const int index = std::tolower(static_cast<unsigned char>(drive_letter)) - 'c';
@@ -291,6 +368,14 @@ std::string normalize_compat_path(const char* windows_path)
 
     std::string normalized = windows_path ? windows_path : "";
     std::replace(normalized.begin(), normalized.end(), '\\', '/');
+
+#if !RA_REAL_WINDOWS
+    const std::string resolved_existing = resolve_existing_case_insensitive_path(normalized);
+    if (!resolved_existing.empty()) {
+        return resolved_existing;
+    }
+#endif
+
     return normalized;
 }
 
