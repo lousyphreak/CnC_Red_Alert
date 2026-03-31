@@ -11,6 +11,10 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - The reconstructed CMake/SDL3 build is now able to compile and link the full `redalert` executable on Linux.
 - `cmake --build build --target redalert -j16` completes successfully.
 - `cmake --build build-asan --target redalert -j16` completes successfully with ASan/UBSan enabled.
+- The active WSA animation loader is now LP64-safe again on the SDL/Linux path:
+  - `WIN32LIB/WSA/WSA.CPP` now reads the WSA on-disk header plus frame-0 offsets with packed fixed-width `uint16_t` / `uint32_t` fields instead of host-sized `unsigned long`;
+  - the runtime `largest_frame_size` accounting now translates the legacy 32-bit Animate header size to the current host `SysAnimHeaderType` size before laying out the animation buffers, so `Open_Animation()` no longer back-loads bogus frame data into `LCW_Uncompress()` on 64-bit builds;
+  - `cmake --build build-asan --target redalert -j4` still succeeds after the WSA fix.
 - Repository-owned `#pragma pack` usage outside `extern/SDL3` has been re-audited and tightened:
   - declaration-only HMI/SOS headers (`SOSDATA.H`, `SOSFNCT.H`) no longer force or reset caller packing state;
   - legacy HMI/SOS, VQA, archive audio, and debug headers/source files now use scoped `push` / `pop` packing instead of bare `pack(N)` / `pack()` resets;

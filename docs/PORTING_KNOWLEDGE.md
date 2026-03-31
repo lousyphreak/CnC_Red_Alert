@@ -34,6 +34,9 @@ _Last updated: 2026-03-31_
   - Rewriting the active `LEPTON` / `COORDINATE` helpers (`Cell_To_Lepton`, `XY_Coord`, `Coord_X/Y`, `Coord_{Whole,Snap,Fraction,Add,Sub,Mid}`, `Coord_Move`, and the spillage-list bounds math) to explicit bit operations removes that platform-sensitive seam.
   - Mission/home-view setup in `CODE/DISPLAY.CPP` / `CODE/SCENARIO.CPP` should use `Coord_Whole(Cell_Coord(...))` so scenario start matches the existing bookmark-restore and computed-start behavior.
 - Legacy iconset headers (`IControl_Type` / `IconsetClass`) contain on-disk offsets, not host pointers; the active headers must stay packed/fixed-width and the loader must translate offsets explicitly.
+- The active WSA loader has the same basic LP64 hazard pattern as iconsets and `.AUD` files.
+  - The WSA "header" read in `WIN32LIB/WSA/WSA.CPP::Open_Animation()` is really the 14-byte file header plus the first two 32-bit frame offsets; reading those offset slots as host `unsigned long` over-reads the table on LP64 and can surface later as bogus LCW back-references/ASan crashes in `LCW_Uncompress()`.
+  - `file_header.largest_frame_size` is stored with legacy 32-bit Animate header accounting only through the `flags` field, so the loader must translate from that legacy header size to the current host `SysAnimHeaderType` size before laying out the in-memory animation buffers.
 - `Assign_Mission()` only queues `MissionQueue`; when scenario loaders need an immediate live mission before `Enter_Idle_Mode()`, they must use `Set_Mission()`.
 - `List_Copy()` callers rely on a trailing `REFRESH_EOL`; if truncation is possible, reserve one slot for the terminator.
 - `Coord_Spillage_List(COORDINATE, Rect, ...)` can return up to 128 offsets; 32-entry temporary lists in map/display code are not universally safe.
