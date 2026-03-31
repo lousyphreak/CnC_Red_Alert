@@ -191,11 +191,15 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - The bogus low-disk startup/save warning is fixed on modern large disks:
   - `CODE/CONQUER.CPP::Disk_Space_Available()` and its declaration in `CODE/FUNCTION.H` now use `uint64_t` and perform the free-space multiply in 64-bit;
   - this removes the old modulo-`4 GiB` wrap from `_dos_getdiskfree()`'s 32-bit fields, which could make large modern filesystems appear to have less than the `INIT_FREE_DISK_SPACE` / `SAVE_GAME_DISK_SPACE` thresholds and trigger the `TEXT_CRITICALLY_LOW` startup popup or save refusal even when plenty of space was available.
+- The sound-controls music list no longer trips ASan when the dialog closes:
+  - `CODE/SOUNDDLG.CPP` now keeps the dynamically allocated theme-label buffers typed as `char *` / `char const *` from `new[]` through `delete[]`, instead of routing them through `void *`;
+  - this fixes the reported `alloc-dealloc-mismatch (operator new [] vs operator delete)` in `SoundControlsClass::Process()` when leaving the sound-controls dialog on the active ASan build.
 - Validation status:
   - `cmake --build build --target redalert -j16` passes.
   - `cmake --build build -j16` passes.
   - `cmake --build build-asan --target redalert -j16` passes.
   - `ctest --test-dir build --output-on-failure` and `ctest --test-dir build-asan --output-on-failure` still report that the repository currently has no registered tests.
+  - A fresh `timeout 10s env ASAN_OPTIONS=abort_on_error=1:detect_leaks=0:new_delete_type_mismatch=1 RA_TRACE_STARTUP=1 ./redalert-asan` smoke run from `GameData/` still reaches the intro/movie startup baseline and exits only via `timeout`, with no new sanitizer diagnostics on that path.
   - A fresh focused `gdb` drag probe on `GameData/redalert-asan` confirms the held-button path after the fix: `DOWN_AFTER_PRESS=1`, `DOWN_AFTER_MOTION=1`, `RUBBER_BAND=1`, `TENTATIVE=1`.
   - Re-running the focused full-SDL attack-click probe on `GameData/redalert-asan` still reports `SELECTED_AFTER_SDL_CLICK=1` and `OUTLIST_AFTER_SDL_ATTACK=1`.
   - Rebuilding after the Wayland `ClipCursor()` change still passes in both `build/` and `build-asan/`, with the expected `sdl3_compat` and `redalert` relinks only.

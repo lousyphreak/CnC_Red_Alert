@@ -268,7 +268,10 @@ _Last updated: 2026-03-31_
 - `CODE/SESSION.CPP::Read_MultiPlayer_Settings()` allocates `InitStrings` entries with `new char[INITSTRBUF_MAX]`.
   - `SessionClass::Free_Scenario_Descriptions()` therefore must free those entries with `delete[]`, not `delete`.
   - ASan reports this as an `alloc-dealloc-mismatch` during shutdown after a normal startup/menu run.
-  - Some legacy loops also use `GetAsyncKeyState(vk) & 1`, so the compat layer needs a one-shot low-bit latch for recent press transitions as well as current high-bit state.
+- `ListClass` stores caller-provided string pointers verbatim; it does not take ownership through a copying layer.
+  - Callers that populate list-box text with `new char[]` buffers (for example `SoundControlsClass::Process()` in `CODE/SOUNDDLG.CPP`) must preserve a `char *` / `char const *` pointer type all the way to `delete[]`.
+  - Deleting those buffers through `void *` reproduces an `alloc-dealloc-mismatch (operator new [] vs operator delete)` under ASan when the dialog tears down its item list.
+- Some legacy loops also use `GetAsyncKeyState(vk) & 1`, so the compat layer needs a one-shot low-bit latch for recent press transitions as well as current high-bit state.
 - Toggle keys must also keep real Win32 low-bit semantics:
   - `CODE/KEY.CPP` now probes `GetKeyState(VK_CAPITAL/VK_NUMLOCK) & 0x0001` when building queued key codes;
   - if the SDL input state layer or compat wrappers return any fake higher bit there, ordinary keys like `ESC` pick up `WWKEY_SHIFT_BIT` and exact comparisons against `KN_ESC` fail in the intro callback.
