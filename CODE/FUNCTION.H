@@ -275,7 +275,6 @@ extern long LParam;
 **	Greenleaf specific includes.
 */
 #include <modem.h>
-#include <fast.h>
 
 
 extern long Frame;
