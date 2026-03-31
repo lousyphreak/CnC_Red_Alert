@@ -156,6 +156,11 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - The movie-to-menu audio handoff is now isolated to the VQA stream itself:
   - `VQ/VQA32/AUDIOCOMPAT.CPP` now pauses and resumes the movie SDL audio stream directly instead of routing those state changes through broader device helpers;
   - traced startup runs now show the front-end theme successfully opening and starting `INTRO.AUD` after the intro completes.
+- The mission-complete score screen no longer leaves score-ornament redraw artifacts on the active SDL/Linux path:
+  - the affected score-screen animation objects in `CODE/SCORE.H` / `CODE/SCORE.CPP` now capture the pixels underneath their `TIMEHR` / `HISC*` / `CREDS*` shapes once and restore that patch before each new frame;
+  - this keeps the score-screen-local animated ornaments from smearing stale pixels into later frames without changing the shared `CC_Draw_Shape()` / `GraphicBufferClass` render path;
+  - `cmake --build build --target redalert -j16` and `cmake --build build-asan --target redalert -j16` both still pass after the fix;
+  - fresh `timeout 10s env RA_TRACE_STARTUP=1 ./redalert` and `timeout 10s env ASAN_OPTIONS=abort_on_error=1:detect_leaks=0:new_delete_type_mismatch=0 RA_TRACE_STARTUP=1 ./redalert-asan` smoke runs from `GameData/` still reach the normal intro/menu-theme startup path, with the ASan run exiting only via `timeout`.
 - Intro `ESC` abort no longer hard-locks the process:
   - `VQ/VQA32/TASK.CPP` now treats callback-driven `VQAERR_EOF` from the active buffered draw path as a real movie-stop condition instead of ignoring it and continuing to spin the player loop;
   - this lets the intro abort unwind through normal VQA shutdown, return from `VQA_Play()`, and continue startup exactly like a completed movie.

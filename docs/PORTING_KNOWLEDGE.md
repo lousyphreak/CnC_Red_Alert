@@ -171,6 +171,15 @@ _Last updated: 2026-03-31_
   - If the draw loop ignores it, the player keeps spinning with `VQADATF_UPDATE` / `VQADATF_DSLEEP` state still set and the process appears hard-locked when the intro is aborted with `ESC`.
 - Because the build globally defines `WIN32=1` for legacy code, SDL headers must be included with `WIN32` / `_WIN32` temporarily undefined in files that include SDL directly. Otherwise SDL takes Windows-only include paths and collides with the old SOS typedef layer.
 
+## Score screen rendering notes
+
+- The mission-complete score screen's animated ornaments are a score-screen-local redraw seam, not a general renderer bug.
+- `ScoreTimeClass` and `ScoreCredsClass` in `CODE/SCORE.CPP` advance `TIMEHR.SHP`, `HISC1-HR.SHP`, `HISC2-HR.SHP`, and `CREDS*HR.SHP` frames over mostly static background art.
+- On the active SDL/Linux path, those objects must capture the current pixels under their shape bounds when they are created and restore that patch before each new frame draw.
+  - If they only draw the next frame on top of the previous one, transparent/high-color ornament frames leave stale pixels behind and the mission-complete screen shows a few localized graphical glitches even though the rest of the render path is fine.
+- Keep this fix in `CODE/SCORE.*` unless there is stronger evidence of a shared renderer regression.
+  - The tempting `GraphicBufferClass::Offset` / LP64 theory is not the right seam for this Linux report: on the active host ABI, `long` is already 64-bit, so that field does not explain a score-screen-only artifact.
+
 ## Linkage and header pitfalls
 
 - The VQM32 headers rely on legacy memory-model and calling-convention keywords such as `far`, `near`, `huge`, `interrupt`, and `cdecl`. The safest fix is to define those macros locally in the VQM32 headers that need them.

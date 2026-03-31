@@ -130,6 +130,77 @@ ScoreAnimClass::ScoreAnimClass(int x, int y, void const * data)
 	YPos = y * RESFACTOR;
 	Timer = 0;
 	DataPtr = data;
+	Background = 0;
+	BackgroundX = 0;
+	BackgroundY = 0;
+	BackgroundWidth = 0;
+	BackgroundHeight = 0;
+}
+
+
+ScoreAnimClass::~ScoreAnimClass(void)
+{
+	if (Background) {
+		delete Background;
+		Background = 0;
+	}
+	DataPtr = 0;
+}
+
+
+void ScoreAnimClass::Capture_Background(int width, int height)
+{
+	int screen_width = SeenPage.Get_Width();
+	int screen_height = SeenPage.Get_Height();
+
+	BackgroundX = XPos;
+	BackgroundY = YPos;
+	BackgroundWidth = width;
+	BackgroundHeight = height;
+
+	if (Background) {
+		delete Background;
+		Background = 0;
+	}
+
+	if (BackgroundX < 0) {
+		BackgroundWidth += BackgroundX;
+		BackgroundX = 0;
+	}
+	if (BackgroundY < 0) {
+		BackgroundHeight += BackgroundY;
+		BackgroundY = 0;
+	}
+	if (BackgroundX + BackgroundWidth > screen_width) {
+		BackgroundWidth = screen_width - BackgroundX;
+	}
+	if (BackgroundY + BackgroundHeight > screen_height) {
+		BackgroundHeight = screen_height - BackgroundY;
+	}
+
+	if (BackgroundWidth <= 0 || BackgroundHeight <= 0) {
+		BackgroundX = 0;
+		BackgroundY = 0;
+		BackgroundWidth = 0;
+		BackgroundHeight = 0;
+		return;
+	}
+
+	Background = new GraphicBufferClass(BackgroundWidth, BackgroundHeight, (void*)NULL);
+	SeenPage.Blit(*Background, BackgroundX, BackgroundY, 0, 0, BackgroundWidth, BackgroundHeight);
+}
+
+
+void ScoreAnimClass::Restore_Background(void)
+{
+	if (!Background || BackgroundWidth <= 0 || BackgroundHeight <= 0) {
+		return;
+	}
+
+	Background->Blit(SeenPage, 0, 0, BackgroundX, BackgroundY, BackgroundWidth, BackgroundHeight);
+#ifdef WIN32
+	Background->Blit(*PseudoSeenBuff, 0, 0, BackgroundX, BackgroundY, BackgroundWidth, BackgroundHeight);
+#endif
 }
 
 
@@ -139,6 +210,7 @@ ScoreTimeClass::ScoreTimeClass(int xpos, int ypos, void const * data, int maxval
 	Stage = 0;
 	MaxStage = maxval;
 	TimerReset = xtimer;
+	Capture_Background(Get_Build_Frame_Width(DataPtr), Get_Build_Frame_Height(DataPtr));
 }
 
 void ScoreTimeClass::Update(void)
@@ -151,6 +223,10 @@ void ScoreTimeClass::Update(void)
 	if (!Timer) {
 		Timer = TimerReset;
 		if (++Stage >= MaxStage) Stage = 0;
+		/*
+		** Restore the static score-screen pixels before drawing the next ornament frame.
+		*/
+		Restore_Background();
 		oldpage = LogicPage;
 		Set_Logic_Page(SeenBuff);
 		CC_Draw_Shape(DataPtr, Stage, XPos, YPos, WINDOW_MAIN, SHAPE_WIN_REL, 0, 0);
@@ -170,6 +246,7 @@ ScoreCredsClass::ScoreCredsClass(int xpos, int ypos, void const * data, int maxv
 	TimerReset = xtimer;
 	Clock1 = MFCD::Retrieve("CLOCK1.AUD");
 	CashTurn = MFCD::Retrieve("CASHTURN.AUD");
+	Capture_Background(Get_Build_Frame_Width(DataPtr), Get_Build_Frame_Height(DataPtr));
 }
 
 
@@ -183,6 +260,10 @@ void ScoreCredsClass::Update(void)
 	if (!Timer) {
 		Timer = TimerReset;
 		if (++Stage >= MaxStage) Stage = 0;
+		/*
+		** Restore the static score-screen pixels before drawing the next ornament frame.
+		*/
+		Restore_Background();
 		oldpage = LogicPage;
 		Set_Logic_Page(SeenBuff);
 #ifdef WIN32

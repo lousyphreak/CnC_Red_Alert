@@ -41,6 +41,8 @@
 #include	"unit.h"
 #include	"building.h"
 
+class GraphicBufferClass;
+
 class ScoreClass {
 	public:
 		ScoreClass(void) {};
@@ -88,12 +90,21 @@ class ScoreClass {
 class ScoreAnimClass {
 	public:
 		ScoreAnimClass(int x, int y, void const * data);
+		virtual ~ScoreAnimClass(void);
 		int XPos;
 		int YPos;
 		CDTimerClass<SystemTimerClass> Timer;
 		void const * DataPtr;
+		void Capture_Background(int width, int height);
+		void Restore_Background(void);
 		virtual void Update(void) {} ;
-		virtual ~ScoreAnimClass(void) {DataPtr=0;} ;
+
+	protected:
+		GraphicBufferClass *Background;
+		int BackgroundX;
+		int BackgroundY;
+		int BackgroundWidth;
+		int BackgroundHeight;
 };
 
 class ScoreCredsClass : public ScoreAnimClass {
