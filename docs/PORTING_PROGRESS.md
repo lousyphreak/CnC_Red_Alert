@@ -9,8 +9,8 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 ## Current status
 
 - The reconstructed CMake/SDL3 build is now able to compile and link the full `redalert` executable on Linux.
-- `cmake --build build --target redalert -j4` completes successfully.
-- `cmake --build build-asan --target redalert -j4` completes successfully with ASan/UBSan enabled.
+- `cmake --build build --target redalert -j16` completes successfully.
+- `cmake --build build-asan --target redalert -j16` completes successfully with ASan/UBSan enabled.
 - The Linux build now enters the real game startup path instead of the old Unix stub path:
   - `CODE/STUB.CPP` bridges Linux `main()` into `WinMain(...)`.
   - `SDL3_COMPAT/wrappers/win32_compat.cpp` returns a real executable path from `GetModuleFileName()`.
@@ -157,9 +157,9 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - `CODE/CONQUER.CPP::Disk_Space_Available()` and its declaration in `CODE/FUNCTION.H` now use `uint64_t` and perform the free-space multiply in 64-bit;
   - this removes the old modulo-`4 GiB` wrap from `_dos_getdiskfree()`'s 32-bit fields, which could make large modern filesystems appear to have less than the `INIT_FREE_DISK_SPACE` / `SAVE_GAME_DISK_SPACE` thresholds and trigger the `TEXT_CRITICALLY_LOW` startup popup or save refusal even when plenty of space was available.
 - Validation status:
-  - `cmake --build build --target redalert -j4` passes.
-  - `cmake --build build -j4` passes.
-  - `cmake --build build-asan --target redalert -j4` passes.
+  - `cmake --build build --target redalert -j16` passes.
+  - `cmake --build build -j16` passes.
+  - `cmake --build build-asan --target redalert -j16` passes.
   - `ctest --test-dir build --output-on-failure` and `ctest --test-dir build-asan --output-on-failure` still report that the repository currently has no registered tests.
   - A fresh focused `gdb` drag probe on `GameData/redalert-asan` confirms the held-button path after the fix: `DOWN_AFTER_PRESS=1`, `DOWN_AFTER_MOTION=1`, `RUBBER_BAND=1`, `TENTATIVE=1`.
   - Re-running the focused full-SDL attack-click probe on `GameData/redalert-asan` still reports `SELECTED_AFTER_SDL_CLICK=1` and `OUTLIST_AFTER_SDL_ATTACK=1`.
@@ -225,8 +225,8 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - that left `Rule.GameSpeedBias`, `FootClass::SpeedBias`, and derived `HouseClass::GroundspeedBias` at raw value `1` (`1/256`) instead of raw value `256` (`1.0`), so infantry entered `DO_WALK` with valid paths and `IsDriving=1` but `MPHType maxspeed` collapsed to `0` and `Coord` never advanced;
   - `CODE/INFANTRY.CPP::Movement_AI()` now shifts `Path[]` with overlap-safe `Mem_Copy()` instead of overlapping `memcpy()`, removing the ASan `memcpy-param-overlap` abort that became visible once movement resumed.
 - Focused validation for that movement fix now passes on the current ASan tree:
-  - `cmake --build build --target redalert -j4` passes;
-  - `cmake --build build-asan --target redalert -j4` passes;
+  - `cmake --build build --target redalert -j16` passes;
+  - `cmake --build build-asan --target redalert -j16` passes;
   - a direct debug-mission `gdb` probe (`Debug_Map = true` at `Select_Game()`, then `((UnitClass*)Units.Raw_Ptr(0))->Override_Mission(MISSION_ATTACK, ((UnitClass*)Units.Raw_Ptr(1))->As_Target(), 0)`) now reaches the post-copy path state in `CODE/FOOT.CPP` with sane commands on both sides of the copy (`path->Length=11`, `workpath1[0..2]=3,3,3`, `Path[0..2]=3,3,3`) instead of the old partially written facing values;
   - a focused player-order infantry probe in `SCG01EA.INI` now reports `maxspeed=10`, `dist=10`, and a strictly changing `Coord` across successive `CODE/INFANTRY.CPP:4014` walk ticks instead of the old zero-speed/zero-motion state;
   - the same ASan probe can now queue `MISSION_ATTACK` and then a later `MISSION_MOVE` for that infantry (`MISSION 1 -> 2`, `Path[0] 3 -> 2`) while `Coord` keeps advancing, and it no longer reproduces the old `Dir_To_32()`/`Facing32[256]` crash path during the attack-to-move transition.
