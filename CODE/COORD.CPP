@@ -433,6 +433,8 @@ int calcy(signed short factor, short distance)
 
 void Move_Point(short &x, short &y, register DirType dir, unsigned short distance)
 {
+	unsigned int const index = Dir_Index(dir);
+
 	static char const CosTable[256] = {
 		0x00,0x03,0x06,0x09,0x0c,0x0f,0x12,0x15,
 		0x18,0x1b,0x1e,0x21,0x24,0x27,0x2a,0x2d,
@@ -523,7 +525,7 @@ void Move_Point(short &x, short &y, register DirType dir, unsigned short distanc
 	_DX = _AX;
 	x += _DX;
 #else
-	x += calcx(CosTable[dir], distance);
+	x += calcx(CosTable[index], distance);
 #endif
 //	asm add [word ptr start],ax
 
@@ -541,7 +543,7 @@ void Move_Point(short &x, short &y, register DirType dir, unsigned short distanc
 	_DX = _AX;
 	y += _DX;
 #else
-	y += calcy(SinTable[dir], distance);
+	y += calcy(SinTable[index], distance);
 #endif
 //	asm add [word ptr start+2],ax
 
@@ -573,6 +575,8 @@ void Move_Point(short &x, short &y, register DirType dir, unsigned short distanc
 //lint -e569
 void Normal_Move_Point(short &x, short &y, register DirType dir, unsigned short distance)
 {
+	unsigned int const index = Dir_Index(dir);
+
 	static signed char const CosTable[256] = {
 		0x00,0x03,0x06,0x09,0x0c,0x0f,0x12,0x15,
 		0x18,0x1b,0x1e,0x21,0x24,0x27,0x2a,0x2d,
@@ -650,7 +654,7 @@ void Normal_Move_Point(short &x, short &y, register DirType dir, unsigned short 
 	};
 	distance = distance;		// Keep LINT quiet.
 
-	x += calcx(CosTable[dir], distance);
+	x += calcx(CosTable[index], distance);
 
-	y += calcy(SinTable[dir] / 2, distance);
+	y += calcy(SinTable[index] / 2, distance);
 }

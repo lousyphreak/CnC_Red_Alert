@@ -60,8 +60,8 @@
  *=============================================================================================*/
 FacingClass::FacingClass(void)
 {
-	CurrentFacing = DIR_N;
-	DesiredFacing = DIR_N;
+	CurrentFacing = Normalize_Dir(DIR_N);
+	DesiredFacing = Normalize_Dir(DIR_N);
 }
 
 
@@ -85,6 +85,7 @@ FacingClass::FacingClass(void)
  *=============================================================================================*/
 int FacingClass::Set_Desired(DirType facing)
 {
+	facing = Normalize_Dir(facing);
 	if (DesiredFacing != facing) {
 		DesiredFacing = facing;
 		return(true);
@@ -111,6 +112,7 @@ int FacingClass::Set_Desired(DirType facing)
  *=============================================================================================*/
 int FacingClass::Set_Current(DirType facing)
 {
+	facing = Normalize_Dir(facing);
 	if (CurrentFacing != facing) {
 		CurrentFacing = facing;
 		return(true);
@@ -148,7 +150,7 @@ int FacingClass::Rotation_Adjust(int rate)
 	if (Is_Rotating()) {
 		rate = min(rate, 127);
 
-		DirType oldfacing = CurrentFacing;
+		DirType oldfacing = Current();
 		int diff = Difference();
 
 		/*
@@ -157,7 +159,7 @@ int FacingClass::Rotation_Adjust(int rate)
 		**	facing to the new value.
 		*/
 		if (ABS(diff) < rate) {
-			CurrentFacing = DesiredFacing;
+			CurrentFacing = Desired();
 		} else {
 
 			/*
@@ -166,9 +168,9 @@ int FacingClass::Rotation_Adjust(int rate)
 			**	facing.
 			*/
 			if (diff < 0) {
-				CurrentFacing = (DirType)(CurrentFacing - (DirType)rate);
+				CurrentFacing = Current() - (DirType)rate;
 			} else {
-				CurrentFacing = (DirType)(CurrentFacing + (DirType)rate);
+				CurrentFacing = Current() + (DirType)rate;
 			}
 		}
 
@@ -177,7 +179,7 @@ int FacingClass::Rotation_Adjust(int rate)
 		**	new 1/32 rotation zone (likely to cause a redraw), then return
 		**	this fact with a true value.
 		*/
-		return(Dir_To_32(CurrentFacing) != Dir_To_32(oldfacing));
+		return(Dir_To_32(Current()) != Dir_To_32(oldfacing));
 	}
 	return(false);
 }

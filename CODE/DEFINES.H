@@ -39,6 +39,7 @@
 #include <stdint.h>
 
 #include	"NOINIT.H"
+#include	"ENDIAN.H"
 #include	"FIXED.H"
 
 /**********************************************************************
@@ -513,7 +514,7 @@ typedef unsigned short	LEPTON;
 typedef union {
 	LEPTON Raw;
 	struct {
-#ifdef BIG_ENDIAN
+#if RA_BIG_ENDIAN_HOST
 		unsigned char Cell;
 		unsigned char Lepton;
 #else
@@ -527,7 +528,7 @@ typedef uint32_t	COORDINATE;
 typedef union {
 	COORDINATE Coord;
 	struct {
-#ifdef BIG_ENDIAN
+#if RA_BIG_ENDIAN_HOST
 		LEPTON_COMPOSITE Y;
 		LEPTON_COMPOSITE X;
 #else
@@ -544,7 +545,7 @@ typedef signed short		CELL;
 typedef union {
 	CELL Cell;
 	struct {
-#ifdef BIG_ENDIAN
+#if RA_BIG_ENDIAN_HOST
 #if SLUFF_BITS
 		/*
 		**	Unused upper bits will cause problems on a big-endian machine unless they
@@ -576,7 +577,7 @@ typedef int32_t	TARGET;
 typedef union {
 	TARGET Target;
 	struct {
-#ifdef BIG_ENDIAN
+#if RA_BIG_ENDIAN_HOST
 		unsigned Exponent:TARGET_EXPONENT;
 		unsigned Mantissa:TARGET_MANTISSA;
 #else

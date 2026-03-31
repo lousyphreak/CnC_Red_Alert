@@ -39,6 +39,7 @@
 #ifndef FIXED_H
 #define FIXED_H
 
+#include "ENDIAN.H"
 
 //#pragma warning 604 9
 //#pragma warning 595 9
@@ -204,7 +205,7 @@ class fixed
 	private:
 		union {
 			struct {
-#ifdef BIG_ENDIAN
+#if RA_BIG_ENDIAN_HOST
 				unsigned char Whole;
 				unsigned char Fraction;
 #else

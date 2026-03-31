@@ -655,7 +655,7 @@ inline DirType Facing_Dir(FacingType facing)
  *=============================================================================================*/
 inline int Dir_To_16(DirType facing)
 {
-	return Facing16[facing];
+	return Facing16[Dir_Index(facing)];
 }
 
 
@@ -677,7 +677,7 @@ inline int Dir_To_16(DirType facing)
  *=============================================================================================*/
 inline int Dir_To_32(DirType facing)
 {
-	return Facing32[facing];
+	return Facing32[Dir_Index(facing)];
 }
 
 

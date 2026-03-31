@@ -52,6 +52,16 @@ typedef enum DirType {
 	DIR_MAX=255
 } DirType;
 
+inline unsigned Dir_Index(DirType dir)
+{
+	return ((unsigned int)dir & 0x00FFU);
+}
+
+inline DirType Normalize_Dir(DirType dir)
+{
+	return (DirType)Dir_Index(dir);
+}
+
 // Operators that allow simple math with DirType.
 inline DirType operator + (DirType f1, DirType f2)
 {
@@ -76,6 +86,5 @@ DirType Desired_Facing8(int x1, int y1, int x2, int y2);
 DirType Desired_Facing256(int srcx, int srcy, int dstx, int dsty);
 
 #endif
-
 
 

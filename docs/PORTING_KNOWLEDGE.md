@@ -252,6 +252,19 @@ _Last updated: 2026-03-30_
   - `CODE/FOOT.CPP::Basic_Path()` must pass `Find_Path()` the number of `FacingType` slots in its staging buffer, not `sizeof(workpath)` bytes.
   - Any copy of `FacingType` path commands must multiply that count by `sizeof(FacingType)` before calling `memcpy()` / `Mem_Copy()`.
   - On the active Linux/ASan build, treating those counts as raw bytes partially overwrites 32-bit enum slots and produces values like `0xFFFF0007` (`-65529`), which then show up later as invalid `FacingType` / `DirType` values and out-of-bounds `Facing32[]` lookups in `Dir_To_32()`.
+- On Linux/glibc, host-endian tests must not use `#ifdef BIG_ENDIAN`.
+  - glibc headers define `BIG_ENDIAN` as an integer constant even on little-endian hosts, so `#ifdef BIG_ENDIAN` fires on x86-64 Linux and selects the wrong packed/union layout.
+  - The active port now centralizes this in `CODE/ENDIAN.H` via `RA_BIG_ENDIAN_HOST`, and low-level packed helpers must use `#if RA_BIG_ENDIAN_HOST` instead of raw `#ifdef BIG_ENDIAN`.
+  - This directly affected `CODE/FIXED.H`: constructor-based fixed-point defaults such as `fixed(1)` were landing as raw `0x0001` (`1/256`) instead of raw `0x0100` (`1.0`).
+  - Practical movement symptom: `Rule.GameSpeedBias`, `FootClass::SpeedBias`, and derived `HouseClass::GroundspeedBias` collapsed to `1/256`, `MPHType maxspeed` rounded down to `0`, infantry entered `DO_WALK`, `IsDriving` stayed true, and `HeadToCoord`/`Path[0]` were valid, but `Coord` never changed.
+- Once the fixed-point/endian bug is corrected, `CODE/INFANTRY.CPP::Movement_AI()` exposes a second live-path issue at path-step completion.
+  - The old `memcpy(&Path[0], &Path[1], ...)` overlaps source and destination by one `FacingType` entry.
+  - ASan reports this as `memcpy-param-overlap` at `CODE/INFANTRY.CPP:3965` on the real infantry attack movement path.
+  - The correct helper there is `Mem_Copy()` (backed by `memmove()`), not `memcpy()`.
+- A useful end-to-end revalidation script for this regression in `SCG01EA.INI` is:
+  - force `Debug_Map = true` at `Select_Game()`;
+  - use player-order dispatch (`Player_Assign_Mission(...)`) rather than direct `Override_Mission(...)` calls when checking queued order transitions;
+  - for the first player-owned infantry (`Infantry.Raw_Ptr(13)` on the active probe), confirm that attack orders now produce nonzero walk-step values (`maxspeed=10`, `dist=10`) and steadily changing `Coord`, then queue a later `MISSION_MOVE` to `::As_Target(cell)` and confirm the mission changes from `1` to `2` without reviving the old `Dir_To_32()` crash.
 - `ReadyToQuit` must not be a `bool` on the active Win32/SDL path.
   - `CODE/STARTUP.CPP` and `CODE/WINSTUB.CPP` use it as a multi-state shutdown latch: `0` = forced shutdown, `1` = waiting for graceful `WM_DESTROY`, `2` = graceful shutdown complete, `3` = emergency shutdown path.
   - If it is declared as `bool`, assignments like `ReadyToQuit = 2` collapse back to `true`, and the `while (ReadyToQuit == 1)` cleanup loops never finish even though `WM_DESTROY` already ran.
