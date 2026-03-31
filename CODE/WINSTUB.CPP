@@ -833,17 +833,10 @@ void Assert_Failure (char *expression, int line, char *file)
 																		assertbuf);
 
 
-	HMMIO handle = mmioOpen("ASSERT.TXT", NULL, MMIO_WRITE);
-	if (!handle) {
-		handle = mmioOpen("ASSERT.TXT", NULL, MMIO_CREATE | MMIO_WRITE);
-		//mmioClose(handle, 0);
-		//handle = mmioOpen("ASSERT.TXT", NULL, MMIO_WRITE);
-	}
-
-	if (handle) {
-
-		mmioWrite(handle, timebuff, strlen(timebuff));
-		mmioClose(handle, 0);
+	SDL_IOStream * assert_io = SDL_IOFromFile("ASSERT.TXT", "ab");
+	if (assert_io) {
+		SDL_WriteIO(assert_io, timebuff, strlen(timebuff));
+		SDL_CloseIO(assert_io);
 	}
 
 	WWMessageBox().Process(assertbuf);

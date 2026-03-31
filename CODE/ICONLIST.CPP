@@ -34,7 +34,7 @@
 //	an extra void pointer, and a color remapping value.
 
 #include "iconlist.h"
-#include "dibapi.h"
+#include "DIBAPI.H"
 
 int Format_Window_String_New( const char* string, int maxlinelen, int& width, int& height, char* szReturn, int iExtraChars );
 void CC_Draw_DIB( const char* pDIB, int xDest, int yDest, int iWidth, WindowNumberType window );

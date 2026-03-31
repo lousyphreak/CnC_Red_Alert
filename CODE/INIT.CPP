@@ -2808,21 +2808,28 @@ static void Init_Expansion_Files(void)
 	/*
 	**	Before all else, cache any additional mixfiles.
 	*/
-	struct find_t ff;		// for _dos_findfirst
-	if (!_dos_findfirst("SC*.MIX", _A_NORMAL, &ff)) {
-		char * ptr;
-		do {
-			ptr = strdup(ff.name);
-			new MFCD(ptr, &FastKey);
-			MFCD::Cache(ptr);
-		} while (!_dos_findnext(&ff));
+	{
+		int mix_count = 0;
+		char **mix_files = SDL_GlobDirectory(".", "SC*.MIX", SDL_GLOB_CASEINSENSITIVE, &mix_count);
+		if (mix_files) {
+			for (int i = 0; i < mix_count; i++) {
+				char * ptr = strdup(mix_files[i]);
+				new MFCD(ptr, &FastKey);
+				MFCD::Cache(ptr);
+			}
+			SDL_free(mix_files);
+		}
 	}
-	if (!_dos_findfirst("SS*.MIX", _A_NORMAL, &ff)) {
-		char * ptr;
-		do {
-			ptr = strdup(ff.name);
-			new MFCD(ptr, &FastKey);
-		} while (!_dos_findnext(&ff));
+	{
+		int mix_count = 0;
+		char **mix_files = SDL_GlobDirectory(".", "SS*.MIX", SDL_GLOB_CASEINSENSITIVE, &mix_count);
+		if (mix_files) {
+			for (int i = 0; i < mix_count; i++) {
+				char * ptr = strdup(mix_files[i]);
+				new MFCD(ptr, &FastKey);
+			}
+			SDL_free(mix_files);
+		}
 	}
 }
 

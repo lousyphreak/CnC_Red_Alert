@@ -67,8 +67,6 @@ inline void delay(unsigned milliseconds)
     Sleep(milliseconds);
 }
 
-int _dos_findfirst(const char* path, unsigned attrib, struct find_t* block);
-int _dos_findnext(struct find_t* block);
 int _dos_getdrive(unsigned* drive);
 int _dos_setdrive(unsigned drive, unsigned* numdrives);
 int _dos_getdiskfree(unsigned drive, struct diskfree_t* diskspace);

@@ -483,7 +483,7 @@ int LoadOptionsClass::Process(void)
 				game_num = Files[game_idx]->Num;
 				if (WWMessageBox().Process(TXT_DELETE_FILE_QUERY, TXT_YES, TXT_NO)==0) {
 					sprintf(fname, "SAVEGAME.%03d", game_num);
-					unlink(fname);
+					SDL_RemovePath(fname);
 					Clear_List(&listbtn);
 					Fill_List(&listbtn);
 					if (listbtn.Count() == 0) {
@@ -620,7 +620,6 @@ void LoadOptionsClass::Fill_List(ListClass * list)
 	char descr[DESCRIP_MAX+32];
 	unsigned scenario;			// scenario #
 	HousesType house;				// house
-	struct find_t ff;		// for _dos_findfirst
 	int id;
 
 	/*
@@ -641,16 +640,17 @@ void LoadOptionsClass::Fill_List(ListClass * list)
 	/*
 	** Find all savegame files
 	*/
-	int rc = _dos_findfirst("SAVEGAME.*", _A_NORMAL, &ff);
+	int save_count = 0;
+	char **save_files = SDL_GlobDirectory(".", "SAVEGAME.*", SDL_GLOB_CASEINSENSITIVE, &save_count);
 
-	while (!rc) {
+	for (int si = 0; si < save_count; si++) {
 
-		if (stricmp(ff.name, NET_SAVE_FILE_NAME) != 0) {
+		if (stricmp(save_files[si], NET_SAVE_FILE_NAME) != 0) {
 
 			/*
 			** Extract the game ID from the filename
 			*/
-			id = Num_From_Ext(ff.name);
+			id = Num_From_Ext(save_files[si]);
 
 			/*
 			** get the game's info; if success, add it to the list
@@ -682,14 +682,13 @@ void LoadOptionsClass::Fill_List(ListClass * list)
 			fdata->Scenario = scenario;
 			fdata->House = house;
 			fdata->Num = id;
-			fdata->DateTime = (((unsigned long)ff.wr_date) << 16) | (unsigned long)ff.wr_time;
+			fdata->DateTime = 0;
 			Files.Add(fdata);
 		}
+	}
 
-		/*
-		** Find the next file
-		*/
-		rc = _dos_findnext(&ff);
+	if (save_files) {
+		SDL_free(save_files);
 	}
 
 	/*

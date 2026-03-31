@@ -18,6 +18,7 @@
 
 
 #include "bmp8.h"
+#include <SDL3/SDL.h>
 
 //***********************************************************************************************
 BMP8::~BMP8()
@@ -34,7 +35,6 @@ bool BMP8::Init( const char* szFile, HWND hWnd )
 {
   int                  i;
   char                 string[128];
-  DWORD                dwRead;
   BITMAPFILEHEADER     bitmapHeader;
   BITMAPINFOHEADER     bitmapInfoHeader;
   LPLOGPALETTE         lpLogPalette;
@@ -52,23 +52,16 @@ bool BMP8::Init( const char* szFile, HWND hWnd )
 	this->hWnd = hWnd;
 
 	//	Retrieve a handle identifying the file. 
-	HANDLE hFile = ::CreateFile(
-		szFile,
-		GENERIC_READ,
-		FILE_SHARE_READ,
-		(LPSECURITY_ATTRIBUTES)NULL,
-		OPEN_EXISTING,
-		FILE_ATTRIBUTE_READONLY,
-		(HANDLE)NULL );
+	SDL_IOStream* hFile = SDL_IOFromFile(szFile, "rb");
 
 	if(	!hFile )
 		return false;
 
 	// Retrieve the BITMAPFILEHEADER structure. 
-	::ReadFile( hFile, &bitmapHeader, sizeof(BITMAPFILEHEADER), &dwRead, (LPOVERLAPPED)NULL );
+	SDL_ReadIO( hFile, &bitmapHeader, sizeof(BITMAPFILEHEADER) );
 
 	// Retrieve the BITMAPFILEHEADER structure. 
-	::ReadFile( hFile, &bitmapInfoHeader, sizeof(BITMAPINFOHEADER), &dwRead, (LPOVERLAPPED)NULL );
+	SDL_ReadIO( hFile, &bitmapInfoHeader, sizeof(BITMAPINFOHEADER) );
  
 	// Allocate memory for the BITMAPINFO structure. 
 	HGLOBAL infoHeaderMem = ::GlobalAlloc( GHND, sizeof(BITMAPINFOHEADER) + ((1<<bitmapInfoHeader.biBitCount) * sizeof(RGBQUAD)) );
@@ -90,8 +83,7 @@ bool BMP8::Init( const char* szFile, HWND hWnd )
 
 	// Retrieve the color table. 
 	// 1 << bitmapInfoHeader.biBitCount == 2 ^ bitmapInfoHeader.biBitCount 
-	::ReadFile( hFile, lpHeaderMem->bmiColors, ((1<<bitmapInfoHeader.biBitCount) * sizeof(RGBQUAD)),
-				&dwRead, (LPOVERLAPPED)NULL );
+	SDL_ReadIO( hFile, lpHeaderMem->bmiColors, ((1<<bitmapInfoHeader.biBitCount) * sizeof(RGBQUAD)) );
 
 
 	lpLogPalette = (LPLOGPALETTE)new char[ (sizeof(LOGPALETTE) + sizeof(PALETTEENTRY)*256) ];
@@ -116,7 +108,7 @@ bool BMP8::Init( const char* szFile, HWND hWnd )
 	lpvBits = ::GlobalLock( hmem2 );
  
 	// Retrieve the bitmap data. 
-	::ReadFile( hFile, lpvBits, (bitmapHeader.bfSize - bitmapHeader.bfOffBits), &dwRead, (LPOVERLAPPED)NULL );
+	SDL_ReadIO( hFile, lpvBits, (bitmapHeader.bfSize - bitmapHeader.bfOffBits) );
  
 	// Create a bitmap from the data stored in the .BMP file. 
 	hdc = ::GetDC( hWnd );
@@ -133,7 +125,7 @@ bool BMP8::Init( const char* szFile, HWND hWnd )
 	// Unlock the global memory objects and close the .BMP file.  
 	::GlobalUnlock( infoHeaderMem );
 	::GlobalUnlock( hmem2 );
-	::CloseHandle( hFile );
+	SDL_CloseIO( hFile );
  
 	if( !hBMP )
 		return false;

@@ -8,9 +8,32 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
-- The reconstructed CMake/SDL3 build is now able to compile and link the full `redalert` executable on Linux.
+- All file I/O is now SDL3-native:
+  - **`CODE/RAWFILE.H` / `CODE/RAWFILE.CPP`**: the core `RawFileClass` now uses `SDL_IOStream*` directly instead of going through Win32 compat (`CreateFile`→`ReadFile`→`WriteFile`→`CloseHandle`→`SDL_IOStream`). Methods use `SDL_IOFromFile`, `SDL_ReadIO`, `SDL_WriteIO`, `SDL_SeekIO`, `SDL_CloseIO`, `SDL_GetIOSize`, `SDL_RemovePath`, `SDL_GetPathInfo`, and `SDL_TimeToDateTime`. Handle type changed from `HANDLE`/`void*` to `SDL_IOStream*`, null from `INVALID_HANDLE_VALUE` to `nullptr`.
+  - **`CODE/WWFILE.H`**: replaced `#include <io.h>` with `#include <stdio.h>` for SEEK_SET/SEEK_CUR/SEEK_END.
+  - **`CODE/STATS.CPP`**: replaced `Get_File_Handle()`+`GetFileTime()` with `SDL_GetPathInfo()`+`SDL_TimeToDateTime()` for executable timestamp.
+  - **`CODE/WINSTUB.CPP`**: replaced `mmioOpen`/`mmioWrite`/`mmioClose` with `SDL_IOFromFile`/`SDL_WriteIO`/`SDL_CloseIO` for ASSERT.TXT logging.
+  - **`CODE/BMP8.CPP`**: replaced `CreateFile`/`ReadFile`/`CloseHandle` with `SDL_IOFromFile`/`SDL_ReadIO`/`SDL_CloseIO` for BMP loading.
+  - **`CODE/DIBFILE.CPP`**: this file was still excluded from the current CMake build, which is why the old Win16-style `OpenFile`/`_lread`/`_lwrite`/`_llseek`/`_lclose` path lingered there; it now uses `SDL_IOFromFile`/`SDL_ReadIO`/`SDL_WriteIO`/`SDL_SeekIO`/`SDL_CloseIO`, the unused file-size `lseek()` probe is removed entirely, and the duplicate dead `LoadDIB_FromMemory()` implementation is dropped in favor of the active `CODE/DIBCOMPAT.CPP` version.
+  - **`CODE/SESSION.CPP`**: replaced 4× `FindFirstFile`/`FindNextFile`/`_dos_findfirst`/`_dos_findnext` with `SDL_GlobDirectory`.
+  - **`CODE/STARTUP.CPP`**: replaced `FindFirstFile`/`FindClose`/`DeleteFile` with `SDL_GetPathInfo`/`SDL_RemovePath`.
+  - **`CODE/LOADDLG.CPP`**: replaced `unlink` with `SDL_RemovePath`; `_dos_findfirst`/`_dos_findnext` with `SDL_GlobDirectory`.
+  - **`CODE/INIT.CPP`**: replaced `_dos_findfirst`/`_dos_findnext` for MIX file scanning with `SDL_GlobDirectory`.
+  - **`CODE/CDFILE.CPP`**: replaced `_dos_findfirst` disk check with `SDL_GetPathInfo` + `normalize_compat_path`.
+  - **`CODE/CONQUER.CPP`**: replaced `CreateFile`/`CloseHandle` file existence check with `SDL_GetPathInfo`.
+  - **`CODE/WOL_MAIN.CPP`**: replaced `FindFirstFile`/`FindClose` with `SDL_GetPathInfo`.
+  - **`CODE/WOLAPIOB.CPP`**: replaced `CreateFile`/`CloseHandle`/`DeleteFile` with `SDL_IOFromFile`/`SDL_CloseIO`/`SDL_RemovePath`.
+  - **`CODE/WOL_LOGN.CPP`**: replaced commented-out Win32 file code with SDL3 equivalents.
+  - **`SDL3_COMPAT/wrappers/win32_compat.cpp`**: replaced all `std::filesystem` and POSIX (`opendir`/`readdir`/`closedir`/`stat`/`readlink`) calls with SDL3 equivalents (`SDL_GetPathInfo`, `SDL_EnumerateDirectory`, `SDL_GetBasePath`); removed `<filesystem>`, `<dirent.h>`, `<sys/stat.h>`, `<unistd.h>` includes; removed all `#if RA_REAL_WINDOWS` guards (SDL works everywhere).
+  - **`SDL3_COMPAT/wrappers/dos_compat.cpp`**: replaced POSIX includes with SDL3; rewrote `_dos_findfirst` to use `SDL_EnumerateDirectory`+`SDL_GetPathInfo`.
+- The CMake/SDL3 build is now able to compile and link the full `redalert` executable on Linux.
 - `cmake --build build --target redalert -j16` completes successfully.
 - `cmake --build build-asan --target redalert -j16` completes successfully with ASan/UBSan enabled.
+- Removed unused Win32 file compatibility functions from the SDL3 compat layer:
+  - **`win32_compat.h/cpp`**: removed `DeleteFile`, `GetFileInformationByHandle`, `GetFileTime`, `SetFileTime`, `FileTimeToDosDateTime`, `DosDateTimeToFileTime`, `FindFirstFile`, `FindNextFile`, `FindClose`, plus all internal helpers only used by them (`SearchMatch`, `SearchHandle`, FILETIME conversion helpers, `wildcard_to_regex`, `fill_find_data`, `make_search_match`, etc.); removed `WIN32_FIND_DATA`, `LPWIN32_FIND_DATA`, `BY_HANDLE_FILE_INFORMATION` structs (zero callers in game code); kept `FILETIME` struct (still used by `RegQueryInfoKey`/`RegEnumKeyEx` signatures).
+  - **`dos_compat.cpp`**: removed `_dos_findfirst`/`_dos_findnext` and all their helpers; kept `_dos_getdrive`, `_dos_setdrive`, `_dos_getdiskfree`, `_harderr`, `_hardresume`.
+  - **`dos.h`**: removed `_dos_findfirst`/`_dos_findnext` declarations; kept `find_t` (still referenced in `CODE/CONQUER.CPP`), `_A_*` constants, `_HARDERR_*` constants (`_HARDERR_FAIL` used in `CODE/CDFILE.CPP`), `diskfree_t`.
+  - **`io.h`**: removed `filelength()` (zero callers); header now just provides `<fcntl.h>` and `<unistd.h>`.
 - The active WSA animation loader is now LP64-safe again on the SDL/Linux path:
   - `WIN32LIB/WSA/WSA.CPP` now reads the WSA on-disk header plus frame-0 offsets with packed fixed-width `uint16_t` / `uint32_t` fields instead of host-sized `unsigned long`;
   - the runtime `largest_frame_size` accounting now translates the legacy 32-bit Animate header size to the current host `SysAnimHeaderType` size before laying out the animation buffers, so `Open_Animation()` no longer back-loads bogus frame data into `LCW_Uncompress()` on 64-bit builds;
@@ -465,6 +488,22 @@ The final link failure was narrowed to the movie layer and resolved by replacing
 3. Added direct C++ ports for the old assembly-only `UnVQ_4x2` and `AudioUnzap` helpers.
 4. Replaced the missing HMI/SOS movie-audio dependency chain with an SDL3-backed audio stream implementation.
 5. Disabled the obsolete DirectShow-based MPEG path that had no in-tree implementation and was not appropriate for the SDL3 port.
+
+## Win32 file I/O → SDL3 conversion (game layer)
+
+Converted all remaining Win32 file I/O calls in the game-layer source files to SDL3 equivalents:
+- **`CODE/CONQUER.CPP`**: `CreateFile`/`CloseHandle` for CD existence check → `SDL_GetPathInfo`; `_dos_findfirst` with `_A_VOLID` → stubbed (volume labels not supported on modern systems).
+- **`CODE/SESSION.CPP`**: `FindFirstFile`/`FindNextFile` for `*.PKT` and `*.MPR` scenario enumeration → `SDL_GlobDirectory` with `SDL_GLOB_CASEINSENSITIVE`; `_dos_findfirst`/`_dos_findnext` in the `#else` (non-WIN32) path → same `SDL_GlobDirectory` conversion, `#error` removed.
+- **`CODE/STARTUP.CPP`**: `FindFirstFile`/`FindClose`/`DeleteFile` for `wolsetup.exe` and `conquer.eng` → `SDL_GetPathInfo` + `SDL_RemovePath` (inside `WOLAPI_INTEGRATION` guard).
+- **`CODE/LOADDLG.CPP`**: `unlink()` → `SDL_RemovePath()`; `_dos_findfirst`/`_dos_findnext` for `SAVEGAME.*` → `SDL_GlobDirectory` with `SDL_GLOB_CASEINSENSITIVE`.
+- **`CODE/INIT.CPP`**: `_dos_findfirst`/`_dos_findnext` for `SC*.MIX` and `SS*.MIX` expansion files → `SDL_GlobDirectory`.
+- **`CODE/CDFILE.CPP`**: `_dos_findfirst` disk-inserted check → `SDL_GetPathInfo` with `normalize_compat_path()`.
+- **`CODE/BMP8.CPP`**: Full `CreateFile`/`ReadFile`/`CloseHandle` BMP loading → `SDL_IOFromFile`/`SDL_ReadIO`/`SDL_CloseIO` (not in active build).
+- **`CODE/DIBFILE.CPP`**: old excluded disk-DIB path converted from `OpenFile`/`_lread`/`_lwrite`/`_llseek`/`_lclose` to SDL I/O, removed the dead unused `lseek()` file-size probe, removed dead local `LoadDIB_FromMemory()` duplication (active implementation remains in `CODE/DIBCOMPAT.CPP`), and fixed DIB header include casing.
+- **`CODE/WOL_LOGN.CPP`**: Commented-out `LoadShpFile` → SDL3 equivalents in comment.
+- **`CODE/WOLAPIOB.CPP`**: Constructor temp-file creation/deletion → `SDL_IOFromFile`/`SDL_CloseIO`/`SDL_RemovePath`; commented-out `LoadFileIntoMemory` → SDL3 equivalents in comment (inside `WOLAPI_INTEGRATION` guard).
+- **`CODE/WOL_MAIN.CPP`**: `FindFirstFile`/`FindClose` for DLL existence and file-size checks → `SDL_GetPathInfo` (inside `WOLAPI_INTEGRATION` guard).
+- `cmake --build build --target redalert -j16` still succeeds after all conversions.
 
 ## Remaining validation work
 

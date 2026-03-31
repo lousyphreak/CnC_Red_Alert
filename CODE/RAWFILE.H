@@ -47,15 +47,7 @@
 #include	<stddef.h>
 #include	<stdlib.h>
 
-#ifdef WIN32
-#include "win32_compat.h"
-
-#define	NULL_HANDLE		INVALID_HANDLE_VALUE
-#define	HANDLE_TYPE		HANDLE
-#else
-#define	NULL_HANDLE		-1
-#define	HANDLE_TYPE		int
-#endif
+#include	<SDL3/SDL_iostream.h>
 
 #include	"wwfile.h"
 
@@ -168,7 +160,7 @@ class RawFileClass : public FileClass
 
 		void Bias(int start, int length=-1);
 
-		HANDLE_TYPE Get_File_Handle(void) { return (Handle); };
+		SDL_IOStream * Get_File_Handle(void) { return (Handle); };
 
 		/*
 		**	These bias values enable a sub-portion of a file to appear as if it
@@ -191,9 +183,9 @@ class RawFileClass : public FileClass
 	private:
 
 		/*
-		**	This is the low level DOS handle. A -1 indicates an empty condition.
+		**	This is the low level file handle. A nullptr indicates an empty condition.
 		*/
-		HANDLE_TYPE Handle;
+		SDL_IOStream * Handle;
 
 		/*
 		**	This points to the filename as a NULL terminated string. It may point to either a
@@ -268,11 +260,7 @@ inline RawFileClass::RawFileClass(void) :
 	Rights(READ),
 	BiasStart(0),
 	BiasLength(-1),
-	#ifdef WIN32
-	Handle(INVALID_HANDLE_VALUE),
-	#else
-	Handle(-1),
-	#endif
+	Handle(nullptr),
 	Filename(0),
 	Date(0),
 	Time(0),
@@ -325,11 +313,7 @@ inline RawFileClass::~RawFileClass(void)
  *=============================================================================================*/
 inline int RawFileClass::Is_Open(void) const
 {
-#ifdef WIN32
-	return(Handle != INVALID_HANDLE_VALUE);
-#else
-	return (Handle >= 0);
-#endif
+	return(Handle != nullptr);
 }
 
 #endif

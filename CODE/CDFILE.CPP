@@ -119,15 +119,11 @@ int harderr_handler(unsigned int , unsigned int , unsigned int __far *)
  *=============================================================================================*/
 int cdecl Is_Disk_Inserted(int disk)
 {
-	struct find_t fb;
-	char	scan[] = "?:\\*.*";
-
-	#ifndef WIN32
-		_harderr(harderr_handler);		// BG: Install hard error handler
-	#endif
+	char	scan[] = "?:\\";
 
 	scan[0] = (char)('A' + disk);
-	return(_dos_findfirst(scan, _A_SUBDIR, &fb) == 0);
+	SDL_PathInfo path_info;
+	return SDL_GetPathInfo(normalize_compat_path(scan).c_str(), &path_info) ? 1 : 0;
 }
 
 

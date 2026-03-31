@@ -648,16 +648,15 @@ char* LoadShpFile( const char* szShpFile )
 {
 	//	Returns pointer to shp data that has been new'ed (and must be delete[]d), or NULL if failure.
 	//	ajw: No longer needed - I used this before putting new resources into a mix file.
-	HANDLE hFile;
-	hFile = CreateFile( szShpFile, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
-	if( hFile == INVALID_HANDLE_VALUE )
+	SDL_IOStream* hFile;
+	hFile = SDL_IOFromFile( szShpFile, "rb" );
+	if( !hFile )
 		return NULL;
-	DWORD dwFileSize = GetFileSize( hFile, NULL );
+	Sint64 dwFileSize = SDL_GetIOSize( hFile );
 	char* pShp = new char[ dwFileSize ];
-	DWORD dwBytesRead;
-	ReadFile( hFile, pShp, dwFileSize, &dwBytesRead, NULL );
-//	debugprint( "~~ LoadShpFile() - Read %i bytes out of %i from shp file.\n", dwBytesRead, dwFileSize );
-	CloseHandle( hFile );
+	SDL_ReadIO( hFile, pShp, dwFileSize );
+//	debugprint( "~~ LoadShpFile() - Read %i bytes from shp file.\n", (int)dwFileSize );
+	SDL_CloseIO( hFile );
 	return pShp;
 }
 */

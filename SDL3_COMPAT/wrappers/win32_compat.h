@@ -640,33 +640,6 @@ struct FILETIME {
     DWORD dwHighDateTime;
 };
 
-struct WIN32_FIND_DATA {
-    DWORD dwFileAttributes;
-    FILETIME ftCreationTime;
-    FILETIME ftLastAccessTime;
-    FILETIME ftLastWriteTime;
-    DWORD nFileSizeHigh;
-    DWORD nFileSizeLow;
-    DWORD dwReserved0;
-    DWORD dwReserved1;
-    CHAR cFileName[MAX_PATH];
-    CHAR cAlternateFileName[14];
-};
-using LPWIN32_FIND_DATA = WIN32_FIND_DATA*;
-
-struct BY_HANDLE_FILE_INFORMATION {
-    DWORD dwFileAttributes;
-    FILETIME ftCreationTime;
-    FILETIME ftLastAccessTime;
-    FILETIME ftLastWriteTime;
-    DWORD dwVolumeSerialNumber;
-    DWORD nFileSizeHigh;
-    DWORD nFileSizeLow;
-    DWORD nNumberOfLinks;
-    DWORD nFileIndexHigh;
-    DWORD nFileIndexLow;
-};
-
 #pragma pack(push, 1)
 struct BITMAPFILEHEADER {
     WORD bfType;
@@ -853,19 +826,9 @@ BOOL ClearCommError(HANDLE handle, LPDWORD errors, COMSTAT* status);
 BOOL GetCommModemStatus(HANDLE handle, LPDWORD modem_status);
 DWORD SetFilePointer(HANDLE handle, LONG distance_to_move, LONG* distance_to_move_high, DWORD move_method);
 DWORD GetFileSize(HANDLE handle, DWORD* file_size_high);
-BOOL GetFileInformationByHandle(HANDLE handle, BY_HANDLE_FILE_INFORMATION* file_information);
-BOOL GetFileTime(HANDLE handle, FILETIME* creation_time, FILETIME* last_access_time, FILETIME* last_write_time);
-BOOL FileTimeToDosDateTime(const FILETIME* file_time, LPWORD dos_date, LPWORD dos_time);
-BOOL DosDateTimeToFileTime(WORD dos_date, WORD dos_time, FILETIME* file_time);
-BOOL SetFileTime(HANDLE handle, const FILETIME* creation_time, const FILETIME* last_access_time, const FILETIME* last_write_time);
-BOOL DeleteFile(LPCSTR file_name);
 UINT GetDriveType(LPCSTR root_path_name);
 BOOL GetVolumeInformation(LPCSTR root_path_name, LPSTR volume_name_buffer, DWORD volume_name_size, DWORD* volume_serial_number,
     DWORD* maximum_component_length, DWORD* file_system_flags, LPSTR file_system_name_buffer, DWORD file_system_name_size);
-
-HANDLE FindFirstFile(LPCSTR file_name, LPWIN32_FIND_DATA find_file_data);
-BOOL FindNextFile(HANDLE find_file, LPWIN32_FIND_DATA find_file_data);
-BOOL FindClose(HANDLE find_file);
 
 HGLOBAL GlobalAlloc(UINT flags, size_t bytes);
 LPVOID GlobalLock(HGLOBAL memory);
@@ -968,5 +931,7 @@ inline unsigned long _lrotl(unsigned long value, int shift)
 {
     return _rotl(value, shift);
 }
+
+std::string normalize_compat_path(const char* windows_path);
 
 #endif

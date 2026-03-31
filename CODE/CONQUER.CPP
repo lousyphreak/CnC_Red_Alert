@@ -4355,11 +4355,9 @@ int Get_CD_Index (int cd_drive, int timeout)
 			*/
 			sprintf(buffer, "%c:\\main.mix", 'A' + cd_drive);
 
-			HANDLE handle = CreateFile(buffer, GENERIC_READ, FILE_SHARE_READ,NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-
-			if (handle != INVALID_HANDLE_VALUE)
+			SDL_PathInfo path_info;
+			if (SDL_GetPathInfo(normalize_compat_path(buffer).c_str(), &path_info))
 				{
-				CloseHandle(handle);
 
 				/*
 				** Match the volume label to the list of known C&C volume labels.
@@ -4421,7 +4419,7 @@ int Get_CD_Index(int cd_drive, int)
 		** If we are able to read the volume label, this is good but not enough.
 		** Further verification must be done.
 		*/
-		if (!_dos_findfirst(buffer, _A_VOLID, &ft))
+		if (0)  // Volume labels not supported on modern systems
 			{
 			/*
 			** Since some versions of disk cacheing software will cache the CD's

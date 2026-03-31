@@ -205,12 +205,10 @@ bool ReregisterWolapiDLL()
 		DWORD dwBufSize = _MAX_PATH;
 		if( ::RegQueryValueEx( hKey, "InstallPath", 0, NULL, (LPBYTE)szInstallPath, &dwBufSize ) == ERROR_SUCCESS )
 		{
-			WIN32_FIND_DATA wfd;
-			HANDLE handle = FindFirstFile( szInstallPath, &wfd );
-			if( handle == INVALID_HANDLE_VALUE )
+			SDL_PathInfo wfd_info;
+			if( !SDL_GetPathInfo( szInstallPath, &wfd_info ) )
 			{
 				//	File is not there.
-				FindClose( handle );
 				::RegCloseKey( hKey );
 				return false;
 			}
@@ -239,7 +237,6 @@ bool ReregisterWolapiDLL()
 			//	(The extra threads shouldn't really be created in this case, anyway...)
 			::Sleep( 1000 );
 			FreeLibrary( hLib );
-			FindClose( handle );
 		}
 		else
 		{
@@ -269,16 +266,14 @@ void HandleDLLFail()
 
 	strcat( szPath, "oleaut32.dll" );
 
-	WIN32_FIND_DATA wfd;
-	HANDLE handle = FindFirstFile( szPath, &wfd );
+	SDL_PathInfo wfd_info;
+	bool bFound = SDL_GetPathInfo( szPath, &wfd_info );
 
-//	debugprint( "HandleDLLFail(): filesize of oleaut32 is %i\n", wfd.nFileSizeLow );
-	if( handle != INVALID_HANDLE_VALUE && wfd.nFileSizeLow <= 232720 )
+//	debugprint( "HandleDLLFail(): filesize of oleaut32 is %i\n", (int)wfd_info.size );
+	if( bFound && wfd_info.size <= 232720 )
 		WWMessageBox().Process( TXT_WOL_DLLERROR_GETIE3 );
 	else
 		WWMessageBox().Process( TXT_WOL_DLLERROR_CALLUS );
-
-	FindClose( handle );
 
 	delete pWolapi;
 	pWolapi = NULL;

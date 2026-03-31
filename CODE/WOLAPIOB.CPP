@@ -126,18 +126,20 @@ WolapiObject::WolapiObject() : pChat( NULL ), pDownload( NULL ), pChatSink( NULL
 	//	This seems to be the "correct" way to do this, but it's bloody stupid.
 	*szWebBrowser = 0;
 	char szFile[] = "\\name_unlikely_to_conflict_77.html";	//"\\it is really dumb for me to have to create this file.html";
-	HANDLE hFile = ::CreateFile( szFile, GENERIC_WRITE, NULL, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL );
-	if( hFile != INVALID_HANDLE_VALUE )
 	{
-		::CloseHandle( hFile );
-		HINSTANCE hExecutable = ::FindExecutable( szFile, "", szWebBrowser );
-//		if( (int)hExecutable <= 32 )
-//		{
-//			debugprint( "error %i getting browser\n", hExecutable );
-//		}
-//		else
-//			debugprint( "szWebBrowser is %s\n", szWebBrowser );
-		::DeleteFile( szFile );
+		SDL_IOStream* io = SDL_IOFromFile( szFile, "w" );
+		if( io )
+		{
+			SDL_CloseIO( io );
+			HINSTANCE hExecutable = ::FindExecutable( szFile, "", szWebBrowser );
+//			if( (int)hExecutable <= 32 )
+//			{
+//				debugprint( "error %i getting browser\n", hExecutable );
+//			}
+//			else
+//				debugprint( "szWebBrowser is %s\n", szWebBrowser );
+			SDL_RemovePath( szFile );
+		}
 	}
 }
 
@@ -3409,17 +3411,16 @@ char* LoadFileIntoMemory( const char* szFileName, int& iLength )
 {
 	//	Loads a file into a buffer.
 	//	Delete[] the pointer when you're done with the buffer.
-	HANDLE hFile;
-	hFile = CreateFile( szFileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL );
-	if( hFile == INVALID_HANDLE_VALUE )
+	SDL_IOStream* hFile;
+	hFile = SDL_IOFromFile( szFileName, "rb" );
+	if( !hFile )
 		return NULL;
-	iLength = GetFileSize( hFile, NULL );
+	iLength = (int)SDL_GetIOSize( hFile );
 	char* pData = new char[ iLength ];
-	DWORD dwBytesRead;
-	ReadFile( hFile, pData, iLength, &dwBytesRead, NULL );
-	if( dwBytesRead != iLength )
-//		debugprint( "######LoadFileIntoMemory expected %i bytes and got %i\n", iLength, dwBytesRead );
-	CloseHandle( hFile );
+	size_t dwBytesRead = SDL_ReadIO( hFile, pData, iLength );
+	if( (int)dwBytesRead != iLength )
+//		debugprint( "######LoadFileIntoMemory expected %i bytes and got %i\n", iLength, (int)dwBytesRead );
+	SDL_CloseIO( hFile );
 	return pData;
 }
 */

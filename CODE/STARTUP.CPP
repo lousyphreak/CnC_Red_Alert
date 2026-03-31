@@ -301,12 +301,10 @@ int main(int argc, char * argv[])
 
 #ifdef WOLAPI_INTEGRATION
 	//	Look for special wolapi install program, used after the patch to version 3, to install "Shared Internet Components".
-	WIN32_FIND_DATA wfd;
-	HANDLE hWOLSetupFile = FindFirstFile( "wolsetup.exe", &wfd );
-	bool bWOLSetupFile = ( hWOLSetupFile != INVALID_HANDLE_VALUE );
+	SDL_PathInfo wfd_info;
+	bool bWOLSetupFile = SDL_GetPathInfo("wolsetup.exe", &wfd_info);
 //	if( bWOLSetupFile )
 //		debugprint( "Found wolsetup.exe\n" );
-	FindClose( hWOLSetupFile );
 	//	Look for special registry entry that tells us when the setup exe has done its thing.
 	HKEY hKey;
 	RegOpenKeyEx( HKEY_LOCAL_MACHINE, Game_Registry_Key(), 0, KEY_READ, &hKey );
@@ -318,7 +316,7 @@ int main(int argc, char * argv[])
 		//	Setup has finished. Delete the setup exe and remove reg key.
 		if( bWOLSetupFile )
 		{
-			if( DeleteFile( "wolsetup.exe" ) )
+			if( SDL_RemovePath("wolsetup.exe") )
 				RegDeleteValue( hKey, "WolapiInstallComplete" );
 		}
 		else
@@ -330,8 +328,8 @@ int main(int argc, char * argv[])
 	//	directory for 1.08, but which must NOT be present for this version (Aftermath mix files provide the
 	//	string overrides that the 1.08 separate conquer.eng did before Aftermath).
 	//	Delete conquer.eng if it's found.
-	if( FindFirstFile( "conquer.eng", &wfd ) != INVALID_HANDLE_VALUE )
-		DeleteFile( "conquer.eng" );
+	if( SDL_GetPathInfo( "conquer.eng", &wfd_info ) )
+		SDL_RemovePath( "conquer.eng" );
 
 #endif
 

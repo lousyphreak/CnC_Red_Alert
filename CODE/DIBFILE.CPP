@@ -47,14 +47,10 @@
 //*******************************************************************
 
 #include "win32_compat.h"
-#include <string.h>
 #include <stdio.h>
-#include <math.h>
-#include <io.h>
-#include <direct.h>
 #include <stdlib.h>
-#include "dibutil.h"
-#include "dibapi.h"
+#include <string.h>
+#include "DIBAPI.H"
 
 //#include "WOLDEBUG.H"
 
@@ -70,11 +66,34 @@
  *********************************************************************/
 
 
-HANDLE ReadDIBFile(int);
-BOOL MyRead(int, LPSTR, DWORD);
-BOOL SaveDIBFile(void);
-BOOL WriteDIB(LPSTR, HANDLE);
-DWORD PASCAL MyWrite(int, VOID FAR *, DWORD);
+namespace {
+
+struct BITMAPCOREHEADER {
+   DWORD bcSize;
+   WORD bcWidth;
+   WORD bcHeight;
+   WORD bcPlanes;
+   WORD bcBitCount;
+};
+
+constexpr DWORD BI_RLE8_VALUE = 1;
+constexpr DWORD BI_RLE4_VALUE = 2;
+
+bool ReadExact(SDL_IOStream* stream, void* buffer, size_t size)
+{
+   return stream != NULL && SDL_ReadIO(stream, buffer, size) == size;
+}
+
+bool WriteExact(SDL_IOStream* stream, const void* buffer, size_t size)
+{
+   return stream != NULL && SDL_WriteIO(stream, buffer, size) == size;
+}
+
+} // namespace
+
+HDIB ReadDIBFile(SDL_IOStream*);
+BOOL MyRead(SDL_IOStream*, LPSTR, DWORD);
+DWORD PASCAL MyWrite(SDL_IOStream*, const VOID FAR *, DWORD);
 
 /*************************************************************************
  *
@@ -102,26 +121,25 @@ DWORD PASCAL MyWrite(int, VOID FAR *, DWORD);
 HDIB FAR LoadDIB(LPSTR lpFileName)
 {
    HDIB hDIB;
-   int hFile;
-   OFSTRUCT ofs;
+   SDL_IOStream* hFile;
 
    /*
     * Set the cursor to a hourglass, in case the loading operation
     * takes more than a sec, the user will know what's going on.
     */
 
-   SetCursor(LoadCursor(NULL, IDC_WAIT));
-   if ((hFile = OpenFile(lpFileName, &ofs, OF_READ)) != -1)
+   SetCursor(LoadCursor(NULL, NULL));
+   if ((hFile = SDL_IOFromFile(lpFileName, "rb")) != NULL)
    {
       hDIB = ReadDIBFile(hFile);
-      _lclose(hFile);
-      SetCursor(LoadCursor(NULL, IDC_ARROW));
+      SDL_CloseIO(hFile);
+      SetCursor(LoadCursor(NULL, NULL));
       return hDIB;
    }
    else
    {
 //      DIBError(ERR_FILENOTFOUND);
-      SetCursor(LoadCursor(NULL, IDC_ARROW));
+      SetCursor(LoadCursor(NULL, NULL));
       return NULL;
    }
 }
@@ -165,15 +183,14 @@ WORD FAR SaveDIB(HDIB hDib, LPSTR lpFileName)
 {
    BITMAPFILEHEADER bmfHdr; // Header for Bitmap file
    LPBITMAPINFOHEADER lpBI;   // Pointer to DIB info structure
-   int fh;     // file handle for opened file
-   OFSTRUCT of;     // OpenFile structure
+   SDL_IOStream* fh;     // file handle for opened file
    DWORD dwDIBSize;
    DWORD dwError;   // Error return from MyWrite
 
    if (!hDib)
       return ERR_INVALIDHANDLE;
-   fh = OpenFile(lpFileName, &of, OF_CREATE | OF_READWRITE);
-   if (fh == -1)
+   fh = SDL_IOFromFile(lpFileName, "wb");
+   if (fh == NULL)
       return ERR_OPEN;
 
    /*
@@ -181,8 +198,10 @@ WORD FAR SaveDIB(HDIB hDib, LPSTR lpFileName)
     * a BITMAPINFO structure
     */
    lpBI = (LPBITMAPINFOHEADER)GlobalLock(hDib);
-   if (!lpBI)
+   if (!lpBI) {
+      SDL_CloseIO(fh);
       return ERR_LOCK;
+   }
 
    // Check to see if we're dealing with an OS/2 DIB.  If so, don't
    // save it because our functions aren't written to deal with these
@@ -190,8 +209,9 @@ WORD FAR SaveDIB(HDIB hDib, LPSTR lpFileName)
 
    if (lpBI->biSize != sizeof(BITMAPINFOHEADER))
    {
-     GlobalUnlock(hDib);
-     return ERR_NOT_DIB;
+      GlobalUnlock(hDib);
+      SDL_CloseIO(fh);
+      return ERR_NOT_DIB;
    }
 
    /*
@@ -218,7 +238,7 @@ WORD FAR SaveDIB(HDIB hDib, LPSTR lpFileName)
 
    // Now calculate the size of the image
 
-   if ((lpBI->biCompression == BI_RLE8) || (lpBI->biCompression == BI_RLE4)) {
+   if ((lpBI->biCompression == BI_RLE8_VALUE) || (lpBI->biCompression == BI_RLE4_VALUE)) {
 
       // It's an RLE bitmap, we can't calculate size, so trust the
       // biSizeImage field
@@ -256,16 +276,18 @@ WORD FAR SaveDIB(HDIB hDib, LPSTR lpFileName)
    bmfHdr.bfOffBits = (DWORD)sizeof(BITMAPFILEHEADER) + lpBI->biSize +
                       PaletteSize((LPSTR)lpBI);
 
-   /* Write the file header */
-   _lwrite(fh, (LPSTR)&bmfHdr, sizeof(BITMAPFILEHEADER));
+    /* Write the file header */
+   dwError = WriteExact(fh, &bmfHdr, sizeof(BITMAPFILEHEADER))
+       ? MyWrite(fh, lpBI, dwDIBSize)
+       : 0;
 
    /*
     * Write the DIB header and the bits -- use local version of
     * MyWrite, so we can write more than 32767 bytes of data
     */
-   dwError = MyWrite(fh, (LPSTR)lpBI, dwDIBSize);
    GlobalUnlock(hDib);
-   _lclose(fh);
+   if (!SDL_CloseIO(fh))
+      dwError = 0;
 
    if (dwError == 0)
      return ERR_OPEN; // oops, something happened in the write
@@ -329,21 +351,15 @@ WORD FAR DestroyDIB(HDIB hDib)
  *
  *************************************************************************/
 
-HANDLE ReadDIBFile(int hFile)
+HDIB ReadDIBFile(SDL_IOStream* hFile)
 {
    BITMAPFILEHEADER bmfHeader;
-   DWORD dwBitsSize;
    UINT nNumColors;   // Number of colors in table
    HANDLE hDIB;        
    HANDLE hDIBtmp;    // Used for GlobalRealloc() //MPB
    LPBITMAPINFOHEADER lpbi;
    DWORD offBits;
-
-   /*
-    * get length of DIB in bytes for use when reading
-    */
-
-   dwBitsSize = filelength(hFile);
+   BITMAPINFOHEADER header_copy;
 
    // Allocate memory for header & color table.	We'll enlarge this
    // memory as needed.
@@ -362,16 +378,16 @@ HANDLE ReadDIBFile(int hFile)
 
    // read the BITMAPFILEHEADER from our file
 
-   if (sizeof (BITMAPFILEHEADER) != _lread (hFile, (LPSTR)&bmfHeader, sizeof (BITMAPFILEHEADER)))
-     goto ErrExit;
+   if (!ReadExact(hFile, &bmfHeader, sizeof(BITMAPFILEHEADER)))
+      goto ErrExit;
 
    if (bmfHeader.bfType != 0x4d42)	/* 'BM' */
      goto ErrExit;
 
    // read the BITMAPINFOHEADER
 
-   if (sizeof(BITMAPINFOHEADER) != _lread (hFile, (LPSTR)lpbi, sizeof(BITMAPINFOHEADER)))
-     goto ErrExit;
+   if (!ReadExact(hFile, lpbi, sizeof(BITMAPINFOHEADER)))
+      goto ErrExit;
 
    // Check to see that it's a Windows DIB -- an OS/2 DIB would cause
    // strange problems with the rest of the DIB API since the fields
@@ -407,20 +423,27 @@ HANDLE ReadDIBFile(int hFile)
    }
 
    // get a proper-sized buffer for header, color table and bits
+   header_copy = *lpbi;
    GlobalUnlock(hDIB);
-   hDIBtmp = GlobalReAlloc(hDIB, lpbi->biSize +
+   hDIBtmp = GlobalAlloc(GMEM_MOVEABLE, header_copy.biSize +
                         nNumColors * sizeof(RGBQUAD) +
-                        lpbi->biSizeImage, 0);
+                        header_copy.biSizeImage);
 
    if (!hDIBtmp) // can't resize buffer for loading
-     goto ErrExitNoUnlock; //MPB
-   else
-     hDIB = hDIBtmp;
+      goto ErrExitNoUnlock; //MPB
 
-   lpbi = (LPBITMAPINFOHEADER)GlobalLock(hDIB);
+   lpbi = (LPBITMAPINFOHEADER)GlobalLock(hDIBtmp);
+   if (!lpbi) {
+      GlobalFree(hDIBtmp);
+      goto ErrExitNoUnlock;
+   }
+   memcpy(lpbi, &header_copy, sizeof(header_copy));
+   GlobalFree(hDIB);
+   hDIB = hDIBtmp;
 
    // read the color table
-   _lread (hFile, (LPSTR)(lpbi) + lpbi->biSize, nNumColors * sizeof(RGBQUAD));
+   if (!ReadExact(hFile, (LPSTR)(lpbi) + lpbi->biSize, nNumColors * sizeof(RGBQUAD)))
+      goto ErrExit;
 
    // offset to the bits from start of DIB header
    offBits = lpbi->biSize + nNumColors * sizeof(RGBQUAD);
@@ -429,8 +452,10 @@ HANDLE ReadDIBFile(int hFile)
    // directly following the color table in the file.  Use the value in
    // bfOffBits to seek the bits.
 
-   if (bmfHeader.bfOffBits != 0L)
-      _llseek(hFile, bmfHeader.bfOffBits, SEEK_SET);
+   if (bmfHeader.bfOffBits != 0L) {
+      if (SDL_SeekIO(hFile, bmfHeader.bfOffBits, SDL_IO_SEEK_SET) < 0)
+         goto ErrExit;
+   }
    
    if (MyRead(hFile, (LPSTR)lpbi + offBits, lpbi->biSizeImage))
      goto OKExit;
@@ -449,7 +474,7 @@ OKExit:
 
 /*************************************************************************
 
-  Function:  MyRead (int, LPSTR, DWORD)
+  Function:  MyRead (SDL_IOStream*, LPSTR, DWORD)
 
    Purpose:  Routine to read files greater than 64K in size.
 
@@ -463,9 +488,9 @@ OKExit:
 *************************************************************************/
 
 
-BOOL MyRead(int hFile, LPSTR lpBuffer, DWORD dwSize)
+BOOL MyRead(SDL_IOStream* hFile, LPSTR lpBuffer, DWORD dwSize)
 {
-   char huge *lpInBuf = (char huge *)lpBuffer;
+   char *lpInBuf = lpBuffer;
    int nBytes;
 
    /*
@@ -476,7 +501,7 @@ BOOL MyRead(int hFile, LPSTR lpBuffer, DWORD dwSize)
    while (dwSize)
    {
       nBytes = (int)(dwSize > (DWORD)32767 ? 32767 : LOWORD (dwSize));
-      if (_lread(hFile, (LPSTR)lpInBuf, nBytes) != (WORD)nBytes)
+      if (!ReadExact(hFile, lpInBuf, (size_t)nBytes))
          return FALSE;
       dwSize -= nBytes;
       lpInBuf += nBytes;
@@ -487,11 +512,11 @@ BOOL MyRead(int hFile, LPSTR lpBuffer, DWORD dwSize)
 
 /****************************************************************************
 
- FUNCTION   : MyWrite(int fh, VOID FAR *pv, DWORD ul)
+ FUNCTION   : MyWrite(SDL_IOStream* fh, const VOID FAR *pv, DWORD ul)
 
  PURPOSE    : Writes data in steps of 32k till all the data is written.
-              Normal _lwrite uses a WORD as 3rd parameter, so it is
-              limited to 32767 bytes, but this procedure is not.
+              This preserves the old chunked-write behavior while using
+              SDL I/O instead of the legacy `_lwrite` API.
 
  RETURNS    : 0 - If write did not proceed correctly.
               number of bytes written otherwise.
@@ -502,10 +527,10 @@ BOOL MyRead(int hFile, LPSTR lpBuffer, DWORD dwSize)
  ****************************************************************************/
 
 
-DWORD PASCAL MyWrite(int iFileHandle, VOID FAR *lpBuffer, DWORD dwBytes)
+DWORD PASCAL MyWrite(SDL_IOStream* iFileHandle, const VOID FAR *lpBuffer, DWORD dwBytes)
 {
    DWORD dwBytesTmp = dwBytes;       // Save # of bytes for return value
-   BYTE huge *hpBuffer = (BYTE huge *)lpBuffer;   // make a huge pointer to the data
+   const BYTE *hpBuffer = (const BYTE *)lpBuffer;   // make a pointer to the data
 
    /*
     * Write out the data in 32767 byte chunks.
@@ -513,191 +538,14 @@ DWORD PASCAL MyWrite(int iFileHandle, VOID FAR *lpBuffer, DWORD dwBytes)
 
    while (dwBytes > 32767)
    {
-      if (_lwrite(iFileHandle, (LPSTR)hpBuffer, (WORD)32767) != 32767)
+      if (!WriteExact(iFileHandle, hpBuffer, 32767))
          return 0;
       dwBytes -= 32767;
       hpBuffer += 32767;
    }
 
    /* Write out the last chunk (which is < 32767 bytes) */
-   if (_lwrite(iFileHandle, (LPSTR)hpBuffer, (WORD)dwBytes) != (WORD)dwBytes)
+   if (!WriteExact(iFileHandle, hpBuffer, dwBytes))
       return 0;
    return dwBytesTmp;
-}
-
-//	ajw added
-//	Added to allow "loading" from a location in memory.
-//	A modification of ReadDIBFile(), above.
-//***********************************************************************************************
-HDIB LoadDIB_FromMemory( const unsigned char* pData, DWORD dwBitsSize )
-{
-	BITMAPFILEHEADER bmfHeader;
-	UINT nNumColors;   // Number of colors in table
-	HANDLE hDIB;        
-	HANDLE hDIBtmp;    // Used for GlobalRealloc() //MPB
-	LPBITMAPINFOHEADER lpbi;
-	DWORD offBits;
-
-	const unsigned char* const pDataStart = pData;
-	const unsigned char* pDataEnd = pData + dwBitsSize;		//	One char past end of "file".
-
-	// Allocate memory for header & color table.	We'll enlarge this
-	// memory as needed.
-
-//	debugprint( "LoadDIB_FromMemory, GlobalAlloc\n" );
-	hDIB = GlobalAlloc(GMEM_MOVEABLE, (DWORD)(sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD)));
-//	debugprint( "hDIB from GlobalALloc is %i\n", hDIB );
-
-	if (!hDIB)
-	{
-//		debugprint( "LoadDIB_FromMemory error: failed alloc\n" );
-		return NULL;
-	}
-
-//	debugprint( "LoadDIB_FromMemory, lpbi Lock\n" );
-	lpbi = (LPBITMAPINFOHEADER)GlobalLock(hDIB);
-//	debugprint( "lpbi is %i\n", lpbi );
-	if (!lpbi) 
-	{
-//		debugprint( "LoadDIB_FromMemory error: failed lock\n" );
-		GlobalFree(hDIB);
-		return NULL;
-	}
-
-	// read the BITMAPFILEHEADER from our file
-//	if (sizeof (BITMAPFILEHEADER) != _lread (hFile, (LPSTR)&bmfHeader, sizeof (BITMAPFILEHEADER)))
-//		goto ErrExit;
-	if( pData + sizeof( BITMAPFILEHEADER ) >= pDataEnd )
-	{
-//		debugprint( "LoadDIB_FromMemory error: bad size\n" );
-		goto ErrExit;
-	}
-//	debugprint( "LoadDIB_FromMemory, memcpy BITMAPFILEHEADER %i bytes\n", sizeof( BITMAPFILEHEADER ) );
-	memcpy( &bmfHeader, pData, sizeof( BITMAPFILEHEADER ) );
-	pData += sizeof( BITMAPFILEHEADER );
-
-	if (bmfHeader.bfType != 0x4d42)	/* 'BM' */
-	{
-//		debugprint( "LoadDIB_FromMemory error: no BM\n" );
-		goto ErrExit;
-	}
-
-	// read the BITMAPINFOHEADER
-//	if (sizeof(BITMAPINFOHEADER) != _lread (hFile, (LPSTR)lpbi, sizeof(BITMAPINFOHEADER)))
-//		goto ErrExit;
-	if( pData + sizeof( BITMAPINFOHEADER ) >= pDataEnd )
-	{
-//		debugprint( "LoadDIB_FromMemory error: bad size 2\n" );
-		goto ErrExit;
-	}
-//	debugprint( "LoadDIB_FromMemory, memcpy BITMAPINFOHEADER %i bytes\n", sizeof( BITMAPINFOHEADER ) );
-	memcpy( lpbi, pData, sizeof( BITMAPINFOHEADER ) );
-	pData += sizeof( BITMAPINFOHEADER );
-
-	// Check to see that it's a Windows DIB -- an OS/2 DIB would cause
-	// strange problems with the rest of the DIB API since the fields
-	// in the header are different and the color table entries are
-	// smaller.
-	//
-	// If it's not a Windows DIB (e.g. if biSize is wrong), return NULL.
-
-	if (lpbi->biSize == sizeof(BITMAPCOREHEADER))
-	{
-//		debugprint( "LoadDIB_FromMemory error: lpbi->biSize bad\n" );
-		goto ErrExit;
-	}
-
-	if( lpbi->biCompression != BI_RGB )
-	{
-//		debugprint( "LoadDIB_FromMemory error: Image is compressed\n" );
-		goto ErrExit;
-	}
-
-	// Now determine the size of the color table and read it.  Since the
-	// bitmap bits are offset in the file by bfOffBits, we need to do some
-	// special processing here to make sure the bits directly follow
-	// the color table (because that's the format we are susposed to pass
-	// back)
-	nNumColors = (UINT)lpbi->biClrUsed;
-	if (!nNumColors)
-	{
-		// no color table for 24-bit, default size otherwise
-		if (lpbi->biBitCount != 24)
-			nNumColors = 1 << lpbi->biBitCount; /* standard size table */
-	}
-
-	// fill in some default values if they are zero
-	if (lpbi->biClrUsed == 0)
-		lpbi->biClrUsed = nNumColors;
-
-//	debugprint( "biSizeImage is %i. I would say it was %i, because the bpp is %i.\n", lpbi->biSizeImage, ((((lpbi->biWidth * (DWORD)lpbi->biBitCount) + 31) & ~31) >> 3) * lpbi->biHeight, lpbi->biBitCount );
-	if (lpbi->biSizeImage == 0)
-	{
-		lpbi->biSizeImage = ((((lpbi->biWidth * (DWORD)lpbi->biBitCount) + 31) & ~31) >> 3) * lpbi->biHeight;
-	}
-
-	// get a proper-sized buffer for header, color table and bits
-	GlobalUnlock(hDIB);
-//	debugprint( "LoadDIB_FromMemory, GlobalReAlloc: lpbi->biSize=%i, nNumColors=%i, lpbi->biSizeImage=%i\n", lpbi->biSize, nNumColors,lpbi->biSizeImage );
-	hDIBtmp = GlobalReAlloc(hDIB, lpbi->biSize + nNumColors * sizeof(RGBQUAD) + lpbi->biSizeImage, 0);
-
-	if (!hDIBtmp) // can't resize buffer for loading
-	{
-//		debugprint( "LoadDIB_FromMemory error: realloc failed\n" );
-		goto ErrExitNoUnlock; //MPB
-	}
-	else
-		hDIB = hDIBtmp;
-
-	lpbi = (LPBITMAPINFOHEADER)GlobalLock(hDIB);
-
-	// read the color table
-//	_lread (hFile, (LPSTR)(lpbi) + lpbi->biSize, nNumColors * sizeof(RGBQUAD));
-//	debugprint( "LoadDIB_FromMemory, memcpy color table %i colors, so %i bytes\n", nNumColors, nNumColors * sizeof(RGBQUAD) );
-	memcpy( (LPSTR)(lpbi) + lpbi->biSize, pData, nNumColors * sizeof(RGBQUAD) );
-	pData += nNumColors * sizeof(RGBQUAD);
-
-	// offset to the bits from start of DIB header
-	offBits = lpbi->biSize + nNumColors * sizeof(RGBQUAD);
-
-	// If the bfOffBits field is non-zero, then the bits might *not* be
-	// directly following the color table in the file.  Use the value in
-	// bfOffBits to seek the bits.
-
-	if (bmfHeader.bfOffBits != 0L)
-//		_llseek(hFile, bmfHeader.bfOffBits, SEEK_SET);
-		pData = pDataStart + bmfHeader.bfOffBits;
-
-//	debugprint( "bmfHeader.bfOffBits is %i\n", bmfHeader.bfOffBits );
-
-//	if (MyRead(hFile, (LPSTR)lpbi + offBits, lpbi->biSizeImage))
-//		goto OKExit;
-//	debugprint( "Checking that pData(%i) + biSizeImage(%i), which is %i, is equal to pDataEnd(%i)\n", 
-//					pData, lpbi->biSizeImage, pData + lpbi->biSizeImage, pDataEnd );
-//	if( pData + lpbi->biSizeImage != pDataEnd )			condition relaxed
-//	{
-//		debugprint( "LoadDIB_FromMemory error: bad size 3\n" );
-//		goto ErrExit;
-//	}
-
-//	debugprint( "LoadDIB_FromMemory, memcpy the bits, %i bytes. Image is w %i, h.%i\n", 
-//								lpbi->biSizeImage, lpbi->biWidth, lpbi->biHeight );
-//	debugprint( "Writing to lpbi (%i) + offBits (%i)\n", lpbi, offBits );
-
-	memcpy( (LPSTR)lpbi + offBits, pData, lpbi->biSizeImage );
-//	pData += lpbi->biSizeImage;
-//	if( pData != pDataEnd )		//	Should end up one byte past end of data. - condition relaxed
-//		debugprint( "LoadDIB_FromMemory: ERROR! Ended up at %i instead of %i\n", pData, pDataEnd );
-	goto OKExit;
-
-ErrExit:
-	GlobalUnlock(hDIB);
-ErrExitNoUnlock:    
-	GlobalFree(hDIB);
-//	debugprint( "LoadDIB_FromMemory Error!\n" );
-	return NULL;
-
-OKExit:
-	GlobalUnlock(hDIB);
-	return hDIB;
 }

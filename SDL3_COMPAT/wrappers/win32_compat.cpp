@@ -17,10 +17,8 @@
 #include <cmath>
 #include <condition_variable>
 #include <ctime>
-#include <filesystem>
 #include <memory>
 #include <mutex>
-#include <regex>
 #include <string_view>
 #include <thread>
 #include <unordered_map>
@@ -28,20 +26,6 @@
 #include <utility>
 #include <vector>
 
-#if !defined(_WIN32) || defined(__linux__) || defined(__APPLE__) || defined(__unix__)
-#include <dirent.h>
-#include <sys/stat.h>
-#endif
-
-#if defined(__linux__)
-#include <unistd.h>
-#endif
-
-#if defined(_WIN32) && !defined(__linux__) && !defined(__APPLE__) && !defined(__unix__)
-#define RA_REAL_WINDOWS 1
-#else
-#define RA_REAL_WINDOWS 0
-#endif
 
 namespace {
 
@@ -52,7 +36,6 @@ enum class HandleKind {
     Thread,
     Event,
     Mutex,
-    Search,
     Mapping,
     Global,
 };
@@ -97,19 +80,6 @@ struct EventHandle final : HandleBase {
 struct MutexHandle final : HandleBase {
     MutexHandle() : HandleBase(HandleKind::Mutex) {}
     std::timed_mutex mutex;
-};
-
-struct SearchMatch {
-    std::string name;
-    DWORD attributes = 0;
-    DWORD size_high = 0;
-    DWORD size_low = 0;
-};
-
-struct SearchHandle final : HandleBase {
-    SearchHandle() : HandleBase(HandleKind::Search) {}
-    std::vector<SearchMatch> matches;
-    size_t index = 0;
 };
 
 struct MappingHandle final : HandleBase {
@@ -180,20 +150,6 @@ void compat_trace(const char* format, ...)
 std::string compat_base_directory()
 {
     static const std::string path = []() {
-#if defined(__linux__)
-        char executable_path[4096];
-        const ssize_t path_length = readlink("/proc/self/exe", executable_path, sizeof(executable_path) - 1);
-        if (path_length > 0) {
-            executable_path[path_length] = '\0';
-            std::string path_string(executable_path, static_cast<size_t>(path_length));
-            const std::string::size_type separator = path_string.find_last_of('/');
-            if (separator != std::string::npos) {
-                return path_string.substr(0, separator);
-            }
-            return std::string(".");
-        }
-#endif
-
         const char* base_path = SDL_GetBasePath();
         if (base_path && *base_path) {
             std::string path_string(base_path);
@@ -203,8 +159,7 @@ std::string compat_base_directory()
             return path_string.empty() ? std::string(".") : path_string;
         }
 
-        std::error_code error;
-        return std::filesystem::current_path(error).string();
+        return std::string(".");
     }();
 
     return path;
@@ -216,16 +171,10 @@ bool compat_path_exists(const char* path)
         return false;
     }
 
-#if RA_REAL_WINDOWS
-    std::error_code error;
-    return std::filesystem::exists(std::filesystem::path(path), error);
-#else
-    struct stat status;
-    return stat(path, &status) == 0;
-#endif
+    SDL_PathInfo info;
+    return SDL_GetPathInfo(path, &info);
 }
 
-#if !RA_REAL_WINDOWS
 std::string append_compat_path_component(const std::string& base, const std::string& component)
 {
     if (base.empty()) {
@@ -237,6 +186,31 @@ std::string append_compat_path_component(const std::string& base, const std::str
     }
 
     return base + "/" + component;
+}
+
+struct CaseMatchContext {
+    const char* requested_name;
+    std::string matched_name;
+    std::string folded_match;
+    bool exact_found;
+};
+
+SDL_EnumerationResult case_match_callback(void* userdata, const char* dirname, const char* fname)
+{
+    (void)dirname;
+    auto* ctx = static_cast<CaseMatchContext*>(userdata);
+
+    if (SDL_strcmp(fname, ctx->requested_name) == 0) {
+        ctx->matched_name = fname;
+        ctx->exact_found = true;
+        return SDL_ENUM_SUCCESS;
+    }
+
+    if (ctx->folded_match.empty() && SDL_strcasecmp(fname, ctx->requested_name) == 0) {
+        ctx->folded_match = fname;
+    }
+
+    return SDL_ENUM_CONTINUE;
 }
 
 std::string resolve_existing_case_insensitive_path(const std::string& path)
@@ -268,39 +242,24 @@ std::string resolve_existing_case_insensitive_path(const std::string& path)
 
         const std::string search_directory = current.empty() ? std::string(".") : current;
 
-        std::string matched_name;
-        std::string folded_match;
-        DIR* directory = opendir(search_directory.c_str());
-        if (directory == nullptr) {
+        CaseMatchContext ctx;
+        ctx.requested_name = requested_name.c_str();
+        ctx.exact_found = false;
+
+        if (!SDL_EnumerateDirectory(search_directory.c_str(), case_match_callback, &ctx)) {
             return {};
         }
 
-        for (dirent* entry = readdir(directory); entry != nullptr; entry = readdir(directory)) {
-            const std::string entry_name(entry->d_name);
-            if (entry_name == requested_name) {
-                matched_name = entry_name;
-                break;
-            }
-
-            if (folded_match.empty() && SDL_strcasecmp(entry_name.c_str(), requested_name.c_str()) == 0) {
-                folded_match = entry_name;
-            }
-        }
-        closedir(directory);
-
-        if (matched_name.empty()) {
-            matched_name = folded_match;
-        }
-        if (matched_name.empty()) {
+        std::string final_match = ctx.exact_found ? ctx.matched_name : ctx.folded_match;
+        if (final_match.empty()) {
             return {};
         }
 
-        current = append_compat_path_component(current, matched_name);
+        current = append_compat_path_component(current, final_match);
     }
 
     return current.empty() ? path : current;
 }
-#endif
 
 int virtual_cd_index_for_drive_letter(char drive_letter)
 {
@@ -359,6 +318,8 @@ bool resolve_virtual_cd_path(const char* windows_path, std::string& resolved_pat
     return true;
 }
 
+} // end anonymous namespace
+
 std::string normalize_compat_path(const char* windows_path)
 {
     std::string resolved_path;
@@ -369,15 +330,15 @@ std::string normalize_compat_path(const char* windows_path)
     std::string normalized = windows_path ? windows_path : "";
     std::replace(normalized.begin(), normalized.end(), '\\', '/');
 
-#if !RA_REAL_WINDOWS
     const std::string resolved_existing = resolve_existing_case_insensitive_path(normalized);
     if (!resolved_existing.empty()) {
         return resolved_existing;
     }
-#endif
 
     return normalized;
 }
+
+namespace {
 
 HWND first_window()
 {
@@ -484,171 +445,6 @@ std::vector<std::string> split_command_line(const char* command_line)
     return arguments;
 }
 
-constexpr uint64_t kWindowsTicksPerSecond = 10000000ULL;
-constexpr uint64_t kUnixEpochInWindowsTicks = 11644473600ULL * kWindowsTicksPerSecond;
-
-uint64_t filetime_to_uint64(const FILETIME& file_time)
-{
-    return (static_cast<uint64_t>(file_time.dwHighDateTime) << 32) | file_time.dwLowDateTime;
-}
-
-FILETIME uint64_to_filetime(uint64_t value)
-{
-    FILETIME file_time{};
-    file_time.dwLowDateTime = static_cast<DWORD>(value & 0xffffffffULL);
-    file_time.dwHighDateTime = static_cast<DWORD>(value >> 32);
-    return file_time;
-}
-
-std::chrono::system_clock::time_point filetime_to_system_clock(const FILETIME& file_time)
-{
-    const uint64_t ticks = filetime_to_uint64(file_time);
-    if (ticks <= kUnixEpochInWindowsTicks) {
-        return std::chrono::system_clock::time_point{};
-    }
-
-    const uint64_t unix_ticks = ticks - kUnixEpochInWindowsTicks;
-    const auto duration = std::chrono::duration_cast<std::chrono::system_clock::duration>(
-        std::chrono::nanoseconds(unix_ticks * 100ULL));
-    return std::chrono::system_clock::time_point(duration);
-}
-
-FILETIME system_clock_to_filetime(std::chrono::system_clock::time_point time_point)
-{
-    const auto since_epoch = time_point.time_since_epoch();
-    const auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(since_epoch).count();
-    const uint64_t clamped_nanoseconds = nanoseconds > 0 ? static_cast<uint64_t>(nanoseconds) : 0ULL;
-    return uint64_to_filetime(kUnixEpochInWindowsTicks + (clamped_nanoseconds / 100ULL));
-}
-
-std::chrono::system_clock::time_point filesystem_to_system_clock(std::filesystem::file_time_type file_time)
-{
-    return std::chrono::system_clock::now()
-        + std::chrono::duration_cast<std::chrono::system_clock::duration>(
-            file_time - std::filesystem::file_time_type::clock::now());
-}
-
-std::filesystem::file_time_type system_to_filesystem_clock(std::chrono::system_clock::time_point time_point)
-{
-    return std::filesystem::file_time_type::clock::now()
-        + std::chrono::duration_cast<std::filesystem::file_time_type::duration>(
-            time_point - std::chrono::system_clock::now());
-}
-
-std::string wildcard_to_regex(const std::string& pattern)
-{
-    std::string out = "^";
-    for (char ch : pattern) {
-        switch (ch) {
-            case '*': out += ".*"; break;
-            case '?': out += '.'; break;
-            case '.': out += "\\."; break;
-            case '\\': out += "\\\\"; break;
-            default:
-                if (std::isalnum(static_cast<unsigned char>(ch)) || ch == '/' || ch == '_' || ch == '-') {
-                    out += ch;
-                } else {
-                    out += '\\';
-                    out += ch;
-                }
-                break;
-        }
-    }
-    out += '$';
-    return out;
-}
-
-std::string find_leaf_name(const std::string& path)
-{
-    const std::string::size_type separator = path.find_last_of("/\\");
-    if (separator == std::string::npos) {
-        return path;
-    }
-    return path.substr(separator + 1);
-}
-
-std::string find_parent_directory(const std::string& path)
-{
-    const std::string::size_type separator = path.find_last_of("/\\");
-    if (separator == std::string::npos) {
-        return ".";
-    }
-    if (separator == 0) {
-        return path.substr(0, 1);
-    }
-    return path.substr(0, separator);
-}
-
-std::string join_find_path(const std::string& directory, const std::string& name)
-{
-    if (directory.empty() || directory == ".") {
-        return name;
-    }
-
-    if (directory.back() == '/' || directory.back() == '\\') {
-        return directory + name;
-    }
-
-    return directory + "/" + name;
-}
-
-std::string translate_find_directory(std::string directory)
-{
-    std::replace(directory.begin(), directory.end(), '\\', '/');
-
-    if (directory.size() >= 2 && std::isalpha(static_cast<unsigned char>(directory[0])) && directory[1] == ':') {
-#if RA_REAL_WINDOWS
-#else
-        directory.erase(0, 2);
-        if (!directory.empty() && (directory[0] == '/' || directory[0] == '\\')) {
-            directory.erase(0, 1);
-        }
-#endif
-    }
-
-    if (directory.empty()) {
-        return ".";
-    }
-
-    return directory;
-}
-
-#if !RA_REAL_WINDOWS
-DWORD determine_find_attributes(const char* name, const struct stat& status)
-{
-    DWORD attributes = 0;
-
-    if (name != nullptr && name[0] == '.') {
-        attributes |= FILE_ATTRIBUTE_HIDDEN;
-    }
-
-    if (S_ISDIR(status.st_mode)) {
-        attributes |= FILE_ATTRIBUTE_DIRECTORY;
-    }
-
-    if (attributes == 0) {
-        attributes = FILE_ATTRIBUTE_NORMAL;
-    }
-
-    return attributes;
-}
-
-SearchMatch make_search_match(const char* name, const struct stat& status)
-{
-    SearchMatch match;
-    if (name != nullptr) {
-        match.name = name;
-    }
-    match.attributes = determine_find_attributes(name, status);
-    if (S_ISREG(status.st_mode) && status.st_size > 0) {
-        const uint64_t size = static_cast<uint64_t>(status.st_size);
-        match.size_low = static_cast<DWORD>(size & 0xffffffffu);
-        match.size_high = static_cast<DWORD>((size >> 32) & 0xffffffffu);
-    }
-    return match;
-}
-#endif
-
 std::string create_file_mode(DWORD desired_access, DWORD creation_disposition)
 {
     const bool can_read = (desired_access & GENERIC_READ) != 0;
@@ -665,19 +461,6 @@ std::string create_file_mode(DWORD desired_access, DWORD creation_disposition)
             if (can_write) return "wb";
             return "rb";
     }
-}
-
-BOOL fill_find_data(const SearchMatch& entry, WIN32_FIND_DATA* data)
-{
-    if (!data) {
-        return FALSE;
-    }
-    ZeroMemory(data, sizeof(*data));
-    std::snprintf(data->cFileName, sizeof(data->cFileName), "%s", entry.name.c_str());
-    data->dwFileAttributes = entry.attributes != 0 ? entry.attributes : FILE_ATTRIBUTE_NORMAL;
-    data->nFileSizeLow = entry.size_low;
-    data->nFileSizeHigh = entry.size_high;
-    return TRUE;
 }
 
 BOOL next_message(MSG* message, bool remove, bool wait)
@@ -1766,167 +1549,6 @@ DWORD GetFileSize(HANDLE handle, DWORD*)
     return end < 0 ? 0xffffffffu : static_cast<DWORD>(end);
 }
 
-BOOL GetFileInformationByHandle(HANDLE handle, BY_HANDLE_FILE_INFORMATION* file_information)
-{
-    if (!handle || handle == INVALID_HANDLE_VALUE || !file_information) {
-        return FALSE;
-    }
-
-    auto* file = static_cast<FileHandle*>(handle);
-    if (file->path.empty()) {
-        return FALSE;
-    }
-
-    std::error_code ec;
-    const std::filesystem::path path(file->path);
-    const auto status = std::filesystem::status(path, ec);
-    if (ec) {
-        return FALSE;
-    }
-
-    ZeroMemory(file_information, sizeof(*file_information));
-    file_information->dwFileAttributes = std::filesystem::is_directory(status) ? FILE_ATTRIBUTE_DIRECTORY : FILE_ATTRIBUTE_NORMAL;
-
-    const uintmax_t size = std::filesystem::is_regular_file(status) ? std::filesystem::file_size(path, ec) : 0;
-    if (ec) {
-        return FALSE;
-    }
-    file_information->nFileSizeLow = static_cast<DWORD>(size & 0xffffffffULL);
-    file_information->nFileSizeHigh = static_cast<DWORD>(size >> 32);
-    file_information->nNumberOfLinks = 1;
-
-    const auto write_time = std::filesystem::last_write_time(path, ec);
-    if (ec) {
-        return FALSE;
-    }
-
-    const FILETIME last_write_time = system_clock_to_filetime(filesystem_to_system_clock(write_time));
-    file_information->ftCreationTime = last_write_time;
-    file_information->ftLastAccessTime = last_write_time;
-    file_information->ftLastWriteTime = last_write_time;
-    return TRUE;
-}
-
-BOOL GetFileTime(HANDLE handle, FILETIME* creation_time, FILETIME* last_access_time, FILETIME* last_write_time)
-{
-    if (!handle || handle == INVALID_HANDLE_VALUE) {
-        return FALSE;
-    }
-
-    auto* file = static_cast<FileHandle*>(handle);
-    if (file->path.empty()) {
-        return FALSE;
-    }
-
-    std::error_code ec;
-    const auto write_time = std::filesystem::last_write_time(std::filesystem::path(file->path), ec);
-    if (ec) {
-        return FALSE;
-    }
-
-    const FILETIME file_time = system_clock_to_filetime(filesystem_to_system_clock(write_time));
-    if (creation_time) {
-        *creation_time = file_time;
-    }
-    if (last_access_time) {
-        *last_access_time = file_time;
-    }
-    if (last_write_time) {
-        *last_write_time = file_time;
-    }
-    return TRUE;
-}
-
-BOOL FileTimeToDosDateTime(const FILETIME* file_time, LPWORD dos_date, LPWORD dos_time)
-{
-    if (!file_time || !dos_date || !dos_time) {
-        return FALSE;
-    }
-
-    const std::time_t raw_time = std::chrono::system_clock::to_time_t(filetime_to_system_clock(*file_time));
-    std::tm time_info{};
-#if defined(__unix__) || defined(__APPLE__) || defined(__linux__)
-    localtime_r(&raw_time, &time_info);
-#else
-    const std::tm* local_time = std::localtime(&raw_time);
-    if (!local_time) {
-        return FALSE;
-    }
-    time_info = *local_time;
-#endif
-
-    if (time_info.tm_year < 80) {
-        time_info.tm_year = 80;
-        time_info.tm_mon = 0;
-        time_info.tm_mday = 1;
-        time_info.tm_hour = 0;
-        time_info.tm_min = 0;
-        time_info.tm_sec = 0;
-    }
-
-    *dos_date = static_cast<WORD>(((time_info.tm_year - 80) << 9)
-        | ((time_info.tm_mon + 1) << 5)
-        | time_info.tm_mday);
-    *dos_time = static_cast<WORD>((time_info.tm_hour << 11)
-        | (time_info.tm_min << 5)
-        | (time_info.tm_sec / 2));
-    return TRUE;
-}
-
-BOOL DosDateTimeToFileTime(WORD dos_date, WORD dos_time, FILETIME* file_time)
-{
-    if (!file_time) {
-        return FALSE;
-    }
-
-    std::tm time_info{};
-    time_info.tm_year = ((dos_date >> 9) & 0x7f) + 80;
-    time_info.tm_mon = ((dos_date >> 5) & 0x0f) - 1;
-    time_info.tm_mday = dos_date & 0x1f;
-    time_info.tm_hour = (dos_time >> 11) & 0x1f;
-    time_info.tm_min = (dos_time >> 5) & 0x3f;
-    time_info.tm_sec = (dos_time & 0x1f) * 2;
-    time_info.tm_isdst = -1;
-
-    const std::time_t raw_time = std::mktime(&time_info);
-    if (raw_time == static_cast<std::time_t>(-1)) {
-        return FALSE;
-    }
-
-    *file_time = system_clock_to_filetime(std::chrono::system_clock::from_time_t(raw_time));
-    return TRUE;
-}
-
-BOOL SetFileTime(HANDLE handle, const FILETIME*, const FILETIME* last_access_time, const FILETIME* last_write_time)
-{
-    if (!handle || handle == INVALID_HANDLE_VALUE) {
-        return FALSE;
-    }
-
-    auto* file = static_cast<FileHandle*>(handle);
-    if (file->path.empty()) {
-        return FALSE;
-    }
-
-    const FILETIME* source_time = last_write_time ? last_write_time : last_access_time;
-    if (!source_time) {
-        return FALSE;
-    }
-
-    std::error_code ec;
-    std::filesystem::last_write_time(
-        std::filesystem::path(file->path),
-        system_to_filesystem_clock(filetime_to_system_clock(*source_time)),
-        ec);
-    return ec ? FALSE : TRUE;
-}
-
-BOOL DeleteFile(LPCSTR file_name)
-{
-    std::error_code ec;
-    return std::filesystem::remove(normalize_compat_path(file_name), ec) ? TRUE : FALSE;
-}
-
 UINT GetDriveType(LPCSTR root_path_name)
 {
     if (!root_path_name || !*root_path_name) {
@@ -1958,7 +1580,7 @@ BOOL GetVolumeInformation(LPCSTR root_path_name, LPSTR volume_name_buffer, DWORD
 
     int virtual_cd_index = -1;
     std::string virtual_path;
-    std::filesystem::path path;
+    std::string normalized_path = normalize_compat_path(root_path_name);
     if (resolve_virtual_cd_path(root_path_name, virtual_path, &virtual_cd_index) && virtual_cd_index >= 0) {
         if (volume_name_buffer && volume_name_size > 0) {
             std::snprintf(volume_name_buffer, volume_name_size, "CD%d", virtual_cd_index + 1);
@@ -1978,18 +1600,20 @@ BOOL GetVolumeInformation(LPCSTR root_path_name, LPSTR volume_name_buffer, DWORD
         return TRUE;
     }
 
-    std::error_code ec;
-    path = std::filesystem::path(normalize_compat_path(root_path_name));
-    if (!std::filesystem::exists(path, ec)) {
+    if (!compat_path_exists(normalized_path.c_str())) {
         return FALSE;
     }
 
-    std::string volume_name = path.filename().string();
-    if (volume_name.empty()) {
-        volume_name = path.root_name().string();
+    // Extract the last path component as the "volume name"
+    std::string volume_name;
+    {
+        size_t pos = normalized_path.find_last_of('/');
+        if (pos != std::string::npos && pos + 1 < normalized_path.size()) {
+            volume_name = normalized_path.substr(pos + 1);
+        }
     }
     if (volume_name.empty()) {
-        volume_name = path.string();
+        volume_name = normalized_path;
     }
 
     if (volume_name_buffer && volume_name_size > 0) {
@@ -2009,98 +1633,6 @@ BOOL GetVolumeInformation(LPCSTR root_path_name, LPSTR volume_name_buffer, DWORD
     }
 
     return TRUE;
-}
-
-HANDLE FindFirstFile(LPCSTR file_name, LPWIN32_FIND_DATA find_file_data)
-{
-    if (file_name == nullptr || find_file_data == nullptr) {
-        set_last_error(ERROR_INVALID_PARAMETER);
-        return INVALID_HANDLE_VALUE;
-    }
-
-    const std::string pattern = normalize_compat_path(file_name);
-    const std::string directory = translate_find_directory(find_parent_directory(pattern));
-    const std::string wildcard = find_leaf_name(pattern);
-    auto regex = std::regex(wildcard_to_regex(wildcard), std::regex::icase);
-    auto* handle = new SearchHandle();
-
-#if RA_REAL_WINDOWS
-    std::error_code ec;
-    for (const auto& entry : std::filesystem::directory_iterator(directory, ec)) {
-        const std::string name = entry.path().filename().string();
-        if (std::regex_match(name, regex)) {
-            SearchMatch match;
-            match.name = name;
-            if (entry.is_directory(ec) && !ec) {
-                match.attributes |= FILE_ATTRIBUTE_DIRECTORY;
-            }
-            if (match.attributes == 0) {
-                match.attributes = FILE_ATTRIBUTE_NORMAL;
-            }
-            if (entry.is_regular_file(ec) && !ec) {
-                const auto size = entry.file_size(ec);
-                if (!ec) {
-                    match.size_low = static_cast<DWORD>(size & 0xffffffffu);
-                    match.size_high = static_cast<DWORD>((size >> 32) & 0xffffffffu);
-                }
-            }
-            handle->matches.push_back(std::move(match));
-        }
-    }
-#else
-    DIR* dir = opendir(directory.c_str());
-    if (dir == nullptr) {
-        delete handle;
-        set_last_error(ERROR_PATH_NOT_FOUND);
-        return INVALID_HANDLE_VALUE;
-    }
-
-    while (dirent* entry = readdir(dir)) {
-        if (!std::regex_match(entry->d_name, regex)) {
-            continue;
-        }
-
-        const std::string full_path = join_find_path(directory, entry->d_name);
-        struct stat status {};
-        if (stat(full_path.c_str(), &status) != 0) {
-            continue;
-        }
-
-        handle->matches.push_back(make_search_match(entry->d_name, status));
-    }
-
-    closedir(dir);
-#endif
-
-    if (handle->matches.empty()) {
-        delete handle;
-        set_last_error(ERROR_FILE_NOT_FOUND);
-        return INVALID_HANDLE_VALUE;
-    }
-    fill_find_data(handle->matches[0], find_file_data);
-    handle->index = 1;
-    set_last_error(ERROR_SUCCESS);
-    return handle;
-}
-
-BOOL FindNextFile(HANDLE find_file, LPWIN32_FIND_DATA find_file_data)
-{
-    if (!find_file || find_file == INVALID_HANDLE_VALUE) {
-        set_last_error(ERROR_INVALID_HANDLE);
-        return FALSE;
-    }
-    auto* handle = static_cast<SearchHandle*>(find_file);
-    if (handle->index >= handle->matches.size()) {
-        set_last_error(ERROR_NO_MORE_FILES);
-        return FALSE;
-    }
-    set_last_error(ERROR_SUCCESS);
-    return fill_find_data(handle->matches[handle->index++], find_file_data);
-}
-
-BOOL FindClose(HANDLE find_file)
-{
-    return CloseHandle(find_file);
 }
 
 HGLOBAL GlobalAlloc(UINT, size_t bytes)
@@ -2150,18 +1682,8 @@ DWORD GetModuleFileName(HINSTANCE, LPSTR file_name, DWORD size)
     if (!file_name || size == 0) return 0;
     std::string path;
 
-#if defined(__linux__)
-    std::error_code error;
-    const std::filesystem::path executable_path = std::filesystem::read_symlink("/proc/self/exe", error);
-    if (!error) {
-        path = executable_path.string();
-    }
-#endif
-
-    if (path.empty()) {
-        const char* base_path = SDL_GetBasePath();
-        path = (base_path != nullptr) ? base_path : "./";
-    }
+    const char* base_path = SDL_GetBasePath();
+    path = (base_path != nullptr) ? base_path : "./";
 
     std::snprintf(file_name, size, "%s", path.c_str());
     return static_cast<DWORD>(std::strlen(file_name));

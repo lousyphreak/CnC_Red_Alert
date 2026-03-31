@@ -61,8 +61,8 @@
 /* header files */
 #include "win32_compat.h"
 #include <assert.h>
-#include "dibapi.h"
-#include "dibutil.h"
+#include "DIBAPI.H"
+#include "DIBUTIL.H"
 #include <stdio.h>
 
 

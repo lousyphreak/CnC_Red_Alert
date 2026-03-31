@@ -615,15 +615,21 @@ void Send_Statistics_Packet(void)
 		FILETIME write_time;		//File time is 64 bits
 
 		GetModuleFileName (ProgramInstance, path_to_exe, 280);
-		RawFileClass file;
-		file.Set_Name(path_to_exe);
-		file.Open();
-		HANDLE handle = file.Get_File_Handle();
 
-		if (handle != INVALID_HANDLE_VALUE){
-			if (GetFileTime (handle, NULL, NULL, &write_time)){
-				write_time.dwLowDateTime = htonl (write_time.dwLowDateTime);
-				write_time.dwHighDateTime = htonl (write_time.dwHighDateTime);
+		/*
+		**	Get the executable's modification time via SDL_GetPathInfo.
+		*/
+		SDL_PathInfo path_info;
+		if (SDL_GetPathInfo(path_to_exe, &path_info)) {
+			SDL_DateTime dt;
+			if (SDL_TimeToDateTime(path_info.modify_time, &dt, false)) {
+				FILETIME write_time;
+				/*
+				**	Pack the date/time into a FILETIME-sized structure for network transmission.
+				**	The exact encoding doesn't matter as long as it's consistent across players.
+				*/
+				write_time.dwLowDateTime = htonl((DWORD)((uint64_t)path_info.modify_time & 0xFFFFFFFF));
+				write_time.dwHighDateTime = htonl((DWORD)((uint64_t)path_info.modify_time >> 32));
 				stats.Add_Field (FIELD_GAME_BUILD_DATE, (void*)&write_time, sizeof (write_time));
 			}
 		}

@@ -1321,47 +1321,43 @@ void SessionClass::Read_Scenario_Descriptions (void)
 	**	Fetch any scenario packet lists and apply them first.
 	*/
 #ifdef WIN32
-	WIN32_FIND_DATA block;
-	HANDLE handle = FindFirstFile("*.PKT", &block);
-	while (handle != INVALID_HANDLE_VALUE) {
-		if ((block.dwFileAttributes & (FILE_ATTRIBUTE_DIRECTORY|FILE_ATTRIBUTE_HIDDEN|FILE_ATTRIBUTE_SYSTEM|FILE_ATTRIBUTE_TEMPORARY)) == 0) {
-			char const * name = &block.cAlternateFileName[0];
-			if (*name == '\0') name = &block.cFileName[0];
-//Mono_Printf("Found file '%s'.\n", block.cAlternateFileName);
-//Mono_Printf("Found file '%s'.\n", block.cFileName);
-//debugprint("Found file '%s'.\n", block.cAlternateFileName);
-//debugprint("Found file '%s'.\n", block.cFileName);
+	{
+		int pkt_count = 0;
+		char **pkt_files = SDL_GlobDirectory(".", "*.PKT", SDL_GLOB_CASEINSENSITIVE, &pkt_count);
+		if (pkt_files) {
+			for (int fi = 0; fi < pkt_count; fi++) {
+				char const * name = pkt_files[fi];
 //debugprint( "Found alternate PKT file.\n" );
-			CCFileClass file(name);
-			INIClass ini;
-			ini.Load(file);
+				CCFileClass file(name);
+				INIClass ini;
+				ini.Load(file);
 
-			int count = ini.Entry_Count("Missions");
-			for (int index = 0; index < count; index++) {
-				char const * fname = ini.Get_Entry("Missions", index);
-				char buffer[128];
-				ini.Get_String("Missions", fname, "", buffer, sizeof(buffer));
+				int count = ini.Entry_Count("Missions");
+				for (int index = 0; index < count; index++) {
+					char const * fname = ini.Get_Entry("Missions", index);
+					char buffer[128];
+					ini.Get_String("Missions", fname, "", buffer, sizeof(buffer));
 
 #ifdef FIXIT_VERSION_3
-			Scenarios.Add(new MultiMission(fname, buffer, NULL, true,
-									Is_Mission_Counterstrike ((char*)fname)));
+				Scenarios.Add(new MultiMission(fname, buffer, NULL, true,
+										Is_Mission_Counterstrike ((char*)fname)));
 #else	//	FIXIT_VERSION_3
 #ifdef FIXIT_CSII	//	checked - ajw
-				bool official = Is_Mission_126x126( (char *)fname);
-				if (!official) {
-					official = !Is_Mission_Aftermath((char *)fname);
-				}
-				Scenarios.Add(new MultiMission(fname, buffer, NULL, official,
-									Is_Mission_Counterstrike ((char*)fname)));
+					bool official = Is_Mission_126x126( (char *)fname);
+					if (!official) {
+						official = !Is_Mission_Aftermath((char *)fname);
+					}
+					Scenarios.Add(new MultiMission(fname, buffer, NULL, official,
+										Is_Mission_Counterstrike ((char*)fname)));
 #else
-				Scenarios.Add(new MultiMission(fname, buffer, NULL, true,
-									Is_Mission_Counterstrike ((char*)fname)));
+					Scenarios.Add(new MultiMission(fname, buffer, NULL, true,
+										Is_Mission_Counterstrike ((char*)fname)));
 #endif
 #endif	//	FIXIT_VERSION_3
+				}
 			}
+			SDL_free(pkt_files);
 		}
-
-		if (FindNextFile(handle, &block) == 0) break;
 	}
 
 
@@ -1442,56 +1438,58 @@ void SessionClass::Read_Scenario_Descriptions (void)
 	char name_buffer[128];
 	char digest_buffer[32];
 
-	handle = FindFirstFile ( "*.MPR" , &block );
-	while (handle != INVALID_HANDLE_VALUE) {
-		if ((block.dwFileAttributes & (FILE_ATTRIBUTE_DIRECTORY|FILE_ATTRIBUTE_HIDDEN|FILE_ATTRIBUTE_SYSTEM|FILE_ATTRIBUTE_TEMPORARY)) == 0) {
-			file_name = &block.cAlternateFileName[0];
-			if (*file_name == '\0') file_name = &block.cFileName[0];
+	{
+		int mpr_count = 0;
+		char **mpr_files = SDL_GlobDirectory(".", "*.MPR", SDL_GLOB_CASEINSENSITIVE, &mpr_count);
+		if (mpr_files) {
+			for (int fi = 0; fi < mpr_count; fi++) {
+				file_name = mpr_files[fi];
 //debugprint( "Found MPR '%s'\n", file_name );
-			CCFileClass file(file_name);
-			INIClass ini;
-			ini.Load(file);
+				CCFileClass file(file_name);
+				INIClass ini;
+				ini.Load(file);
 
-			ini.Get_String ("Basic", "Name", "No Name", name_buffer, sizeof (name_buffer) );
-			ini.Get_String ("Digest", "1", "No Digest", digest_buffer, sizeof (digest_buffer) );
-			Scenarios.Add (new MultiMission (file_name, name_buffer, digest_buffer,ini.Get_Bool("Basic", "Official", false), false ));
+				ini.Get_String ("Basic", "Name", "No Name", name_buffer, sizeof (name_buffer) );
+				ini.Get_String ("Digest", "1", "No Digest", digest_buffer, sizeof (digest_buffer) );
+				Scenarios.Add (new MultiMission (file_name, name_buffer, digest_buffer,ini.Get_Bool("Basic", "Official", false), false ));
+			}
+			SDL_free(mpr_files);
 		}
-
-		if (FindNextFile(handle, &block) == 0) break;
 	}
 
 #else	//WIN32
 
-#error	What? You think you can still build the DOS version after all this time?
-
 	char name_buffer[128];
 	char digest_buffer[32];
 
-	struct find_t block;
-	if (_dos_findfirst("*.PKT", _A_NORMAL, &block) == 0) {
-		do {
-			CCFileClass file(block.name);
-			INIClass ini;
-			ini.Load(file);
-			int count = ini.Entry_Count("Missions");
-			for (int index = 0; index < count; index++) {
-				char const * fname = ini.Get_Entry("Missions", index);
-				char buffer[128];
-				ini.Get_String("Missions", fname, "", buffer, sizeof(buffer));
+	{
+		int pkt_count = 0;
+		char **pkt_files = SDL_GlobDirectory(".", "*.PKT", SDL_GLOB_CASEINSENSITIVE, &pkt_count);
+		if (pkt_files) {
+			for (int fi = 0; fi < pkt_count; fi++) {
+				CCFileClass file(pkt_files[fi]);
+				INIClass ini;
+				ini.Load(file);
+				int count = ini.Entry_Count("Missions");
+				for (int index = 0; index < count; index++) {
+					char const * fname = ini.Get_Entry("Missions", index);
+					char buffer[128];
+					ini.Get_String("Missions", fname, "", buffer, sizeof(buffer));
 #ifdef FIXIT_CSII
-				bool official = Is_Mission_126x126( (char *)fname);
-				if (!official) {
-					official = !Is_Mission_Aftermath((char *)fname);
-				}
-				Scenarios.Add(new MultiMission(fname, buffer, NULL, official,
-										Is_Mission_Counterstrike ((char*)fname)));
+					bool official = Is_Mission_126x126( (char *)fname);
+					if (!official) {
+						official = !Is_Mission_Aftermath((char *)fname);
+					}
+					Scenarios.Add(new MultiMission(fname, buffer, NULL, official,
+											Is_Mission_Counterstrike ((char*)fname)));
 #else
-				Scenarios.Add(new MultiMission(fname, buffer, NULL, true,
-									Is_Mission_Counterstrike ((char*)fname)));
+					Scenarios.Add(new MultiMission(fname, buffer, NULL, true,
+										Is_Mission_Counterstrike ((char*)fname)));
 #endif
+				}
 			}
-
-		} while(_dos_findnext(&block) == 0);
+			SDL_free(pkt_files);
+		}
 	}
 
 
@@ -1499,16 +1497,21 @@ void SessionClass::Read_Scenario_Descriptions (void)
 	** Scan the current directory for any loose .MPR files and build the appropriate entries
 	**  into the scenario list list
 	*/
-	if (_dos_findfirst("*.MPR", _A_NORMAL, &block) == 0) {
-		do {
-			CCFileClass file(block.name);
-			INIClass ini;
-			ini.Load(file);
-			ini.Get_String ("Basic", "Name", "No Name", name_buffer, sizeof (name_buffer) );
-			ini.Get_String ("Digest", "1", "No Digest", digest_buffer, sizeof (digest_buffer) );
-			bool official = ini.Get_Bool("Basic", "Official", false);
-			Scenarios.Add (new MultiMission (block.name, name_buffer, digest_buffer, official, false ));
-		} while(_dos_findnext(&block) == 0);
+	{
+		int mpr_count = 0;
+		char **mpr_files = SDL_GlobDirectory(".", "*.MPR", SDL_GLOB_CASEINSENSITIVE, &mpr_count);
+		if (mpr_files) {
+			for (int fi = 0; fi < mpr_count; fi++) {
+				CCFileClass file(mpr_files[fi]);
+				INIClass ini;
+				ini.Load(file);
+				ini.Get_String ("Basic", "Name", "No Name", name_buffer, sizeof (name_buffer) );
+				ini.Get_String ("Digest", "1", "No Digest", digest_buffer, sizeof (digest_buffer) );
+				bool official = ini.Get_Bool("Basic", "Official", false);
+				Scenarios.Add (new MultiMission (mpr_files[fi], name_buffer, digest_buffer, official, false ));
+			}
+			SDL_free(mpr_files);
+		}
 	}
 
   #ifdef FIXIT_CSII
