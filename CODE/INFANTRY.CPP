@@ -1233,7 +1233,9 @@ void InfantryClass::AI(void)
 	/*
 	**	Handle the completion of the animation sequence.
 	*/
-	Doing_AI();
+	if (Doing_AI()) {
+		return;
+	}
 
 	/*
 	**	Perform movement operations at this time.
@@ -3668,14 +3670,14 @@ void InfantryClass::Firing_AI(void)
  *                                                                                             *
  * INPUT:   none                                                                               *
  *                                                                                             *
- * OUTPUT:  none                                                                               *
+ * OUTPUT:  bool; Was the infantry deleted by this routine?                                   *
  *                                                                                             *
  * WARNINGS:   Only call this routine once per infantry unit per game logic loop.              *
  *                                                                                             *
  * HISTORY:                                                                                    *
  *   07/29/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-void InfantryClass::Doing_AI(void)
+bool InfantryClass::Doing_AI(void)
 {
 	if (Doing == DO_NOTHING || Fetch_Stage() >= Class->DoControls[Doing].Count) {
 		switch (Doing) {
@@ -3734,10 +3736,11 @@ void InfantryClass::Doing_AI(void)
 						new AnimClass(ANIM_CORPSE2, Center_Coord());
 					}
 					delete this;
-					return;
+					return(true);
 				}
 		}
 	}
+	return(false);
 }
 
 

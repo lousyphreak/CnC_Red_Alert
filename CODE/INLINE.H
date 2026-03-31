@@ -613,7 +613,7 @@ inline COORDINATE Coord_Mid(COORDINATE coord1, COORDINATE coord2)
  *=============================================================================================*/
 inline FacingType Dir_Facing(DirType facing)
 {
-	return (FacingType)((((unsigned int)facing) + 0x10U) >> 5);
+	return (FacingType)(((((unsigned int)facing) + 0x10U) >> 5) & 0x07U);
 }
 
 

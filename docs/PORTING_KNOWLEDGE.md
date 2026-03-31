@@ -31,11 +31,15 @@ _Last updated: 2026-03-31_
 - `DirType`, `FacingType`, and the active drive-facing control enums must stay 8-bit on the SDL/Linux port.
   - `Path[]`, `FacingClass`, the direction lookup helpers, and `DriveClass::TurnTrackType` all assume original byte-sized facing storage; leaving those enums host-sized recreates movement-state corruption on LP64 hosts and forces fragile “trim back to 8-bit” helpers into the active code.
   - The durable fix is to restore the underlying enum size directly, represent `FACING_NONE` explicitly as `0xFF`, remove `Dir_Index()` / `Normalize_Dir()`, and then convert the few active signed-facing sites to explicit integer math (`FINDPATH.CPP` optimization deltas, `COMBAT.CPP` center-plus-adjacents sweep, `FOOT.CPP` path debug print).
+  - `Dir_Facing()` still needs wraparound after rounding. On the active 8-bit port, transient high `DirType` values near `0xFF` are legitimate during facing interpolation; if the helper returns the raw rounded result, those values become `8` instead of wrapping to `0`, which overruns 8-entry facing tables (the traced symptom was `CODE/AIRCRAFT.CPP::Draw_Rotors()` indexing `_stretch[8]`).
 - Team scripts can legitimately have `CurrentMission == -1` while regrouping; any direct `MissionList[CurrentMission]` access must guard that state.
 - `Cell_Occupier()` may return terrain or other non-techno `ObjectClass` instances; `TechnoClass` AI code must check `Is_Techno()` before casting.
 - Fixed-heap pooled classes must not touch `IsActive` from `operator new/delete`.
   - On the active Clang/UBSan build that writes into object storage before construction and after destruction, which shows up as invalid-vptr/member-access UB in pooled classes such as `TeamClass`, `AircraftClass`, `BuildingClass`, `TriggerTypeClass`, and other `TFixedIHeapClass<>` users.
   - The safe seam is constructor/destructor-owned bookkeeping (`AbstractClass` for battlefield objects, plus the standalone house/factory/trigger/team-type families that carry their own `IsActive` bit).
+- `InfantryClass::Doing_AI()` is a self-delete seam.
+  - When death-animation completion reaches the `delete this` path, callers must return immediately rather than checking more infantry state afterward.
+  - On the active UBSan build, continuing into later infantry AI phases after that point reports the object as `AbstractClass` because destruction has already unwound the dynamic type back through the base-class vtables; the fix is to have `Doing_AI()` report deletion explicitly and let `InfantryClass::AI()` bail out before `Movement_AI()`.
 - Building availability/prerequisite scan masks are only reliable for the original 32 tracked structure IDs.
   - Use a guarded helper (`Structure_Scan_Bit(...)`) instead of raw `1L << type` shifts on LP64 hosts.
   - For higher structure enums (fake structures, civilian structures, and similar out-of-range cases), use `Get_Quantity(...)` instead of pretending they fit in the building scan bitfield.

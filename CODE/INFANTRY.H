@@ -181,7 +181,7 @@ class InfantryClass : public FootClass
 		virtual int Mission_Attack(void);
 		bool Edge_Of_World_AI(void);
 		void Firing_AI(void);
-		void Doing_AI(void);
+		bool Doing_AI(void);
 		void Movement_AI(void);
 
 		/*

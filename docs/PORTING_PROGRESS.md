@@ -234,6 +234,15 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - `CODE/MSGBOX.CPP::WWMessageBox::Process()` now stores its return value in an `int` instead of a `bool`, so three-button dialogs no longer collapse button `3`'s result (`2`) into button `2`'s result (`1`);
   - this was the root cause behind the user-reported Soviet campaign failure on the active SDL/Linux build: the `TXT_CHOOSE / TXT_ALLIES / TXT_CANCEL / TXT_SOVIET` chooser in `CODE/INIT.CPP::Select_Game()` was receiving the centered Soviet button press correctly as `BUTTON_3|BUTTON_FLAG`, but `WWMessageBox()` returned `1`, so the code followed the `default:` / cancel path, dropped back to the menu loop, and only restarted `THEME_INTRO`;
   - fresh focused `gdb` probes that force `Main_Menu()` to `SEL_START_NEW_GAME` and inject a click into the centered Soviet chooser button now log `MSGBOX_RETURN 2` and reach `Start_Scenario("SCU01EA.INI")` on both `GameData/redalert` and `GameData/redalert-asan`.
+- The latest mission-entry ASan follow-up removes the newly reported infantry/aircraft runtime failures:
+  - `CODE/INLINE.H::Dir_Facing()` now wraps rounded 256-direction values back into the `0..7` facing range, so near-wrap directions such as `0xFF` no longer produce `FacingType == 8` and overrun 8-entry tables like `CODE/AIRCRAFT.CPP::Draw_Rotors()`'s `_stretch[]`;
+  - `CODE/INFANTRY.H` / `CODE/INFANTRY.CPP` now let `Doing_AI()` report when it deletes the infantry at death-animation completion, and `InfantryClass::AI()` now returns immediately in that case instead of falling through into `Movement_AI()` on a destructed object whose dynamic type has already unwound back to `AbstractClass`.
+- Fresh validation for that follow-up now passes on the current tree:
+  - `cmake --build build --target redalert -j4` passes;
+  - `cmake --build build-asan --target redalert -j4` passes;
+  - `ctest --test-dir build-asan --output-on-failure` still reports that the repository currently has no registered tests;
+  - a focused `timeout 30s env ASAN_OPTIONS=abort_on_error=1:detect_leaks=0:new_delete_type_mismatch=0 ./redalert-asan "Erik Yeo"` smoke run from `GameData/` reaches the debug-map mission path and times out with only the already-known `CODE/SHA.CPP` misaligned-load and `CODE/RANDOM.CPP` left-shift warnings;
+  - that mission-entry ASan smoke no longer reproduces the user-reported `CODE/INFANTRY.CPP` invalid-vptr/member-access chain or the `CODE/AIRCRAFT.CPP::Draw_Rotors()` stack-buffer-overflow.
 
 ## Runtime fixes since first successful link
 
