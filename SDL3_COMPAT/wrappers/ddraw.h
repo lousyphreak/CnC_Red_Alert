@@ -1,7 +1,7 @@
 #ifndef RA_DDRAW_WRAPPER_H
 #define RA_DDRAW_WRAPPER_H
 
-#include "windows.h"
+#include "win32_compat.h"
 
 #include <vector>
 

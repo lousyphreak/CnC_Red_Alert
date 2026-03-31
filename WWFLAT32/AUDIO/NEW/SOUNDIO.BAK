@@ -50,7 +50,7 @@
 #pragma pack(4)
 #include	"soundint.h"
 #include <dos.h>
-#include <mem.h>
+#include <string.h>
 #include <stdio.h>
 #include <string.h>
 #include	<direct.h>

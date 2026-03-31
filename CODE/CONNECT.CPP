@@ -49,7 +49,7 @@
 
 #include	"FUNCTION.H"
 #include <stdio.h>
-#include <mem.h>
+#include <string.h>
 #include <sys/timeb.h>
 #include "CONNECT.H"
 

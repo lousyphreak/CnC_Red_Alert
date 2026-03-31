@@ -37,7 +37,7 @@
 #define WWMEM_H
 
 #include "wwstd.h"
-#include "new.h"
+#include <new>
 #include "memflag.h"
 
 // Defines

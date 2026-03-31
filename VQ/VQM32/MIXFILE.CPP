@@ -66,7 +66,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <io.h>
-#include <mem.h>
+#include <string.h>
 #include <string.h>
 #include "mixfile.h"
 #include "crc.h"

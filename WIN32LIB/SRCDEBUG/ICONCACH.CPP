@@ -52,7 +52,7 @@
 #define	WIN32_LEAN_AND_MEAN
 #define	_WIN32
 
-#include <windows.h>
+#include "win32_compat.h"
 #include "ddraw.h"
 #include "misc.h"
 #include "iconcach.h"

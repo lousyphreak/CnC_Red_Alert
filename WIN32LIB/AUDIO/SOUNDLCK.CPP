@@ -38,11 +38,10 @@
 #define _WIN32
 #endif // _WIN32
 #define WIN32
-#include <windows.h>
-#include <windowsx.h>
+#include "win32_compat.h"
 #include <objbase.h>
 #include "SDLAUDIOBACKEND.H"
-#include <mem.h>
+#include <string.h>
 #include "WWMEM.H"
 #include "WWSTD.H"
 #include "SOUNDINT.H"

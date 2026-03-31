@@ -1,4 +1,4 @@
-#include "windows.h"
+#include "win32_compat.h"
 
 extern "C" void __cdecl Start_Profiler(void)
 {

@@ -67,7 +67,7 @@
 #include	<stdlib.h>
 #include	<stdio.h>
 #include	<dos.h>
-#include	<mem.h>
+#include <string.h>
 #include	<stdarg.h>
 #include	<string.h>
 

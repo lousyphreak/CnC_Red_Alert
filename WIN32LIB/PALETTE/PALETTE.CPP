@@ -44,7 +44,7 @@
 /*
 ********************************* Includes **********************************
 */
-#include <mem.h>
+#include <string.h>
 #include "wwstd.h"
 #include "palette.h"
 #include "timer.h"

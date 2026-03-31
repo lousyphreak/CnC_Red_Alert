@@ -38,7 +38,7 @@
 // INCLUDES
 //==========================================================================
 
-#include <windows.h>
+#include "win32_compat.h"
 
 #include <westwood.h>
 #include <wm.h>

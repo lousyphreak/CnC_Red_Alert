@@ -24,8 +24,7 @@
 #define WIN32
 #define __WIN32
 
-#include <windows.h>
-#include <windowsx.h>
+#include "win32_compat.h"
 #include <ole2.h>
 
 main

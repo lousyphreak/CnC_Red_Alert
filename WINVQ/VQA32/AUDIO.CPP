@@ -66,7 +66,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <malloc.h>
-#include <mem.h>
+#include <string.h>
 #include <sys\timeb.h>
 #include "vqaplayp.h"
 #include <vqm32\all.h>

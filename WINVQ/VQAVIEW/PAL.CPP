@@ -36,7 +36,7 @@
  * Update_Full_Palette -- Modifies the Windows palette                     *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include <windows.h>
+#include "win32_compat.h"
 
 #include <westwood.h>
 #include <vidmode.h>

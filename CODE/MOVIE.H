@@ -34,7 +34,7 @@
 *
 ****************************************************************************/
 
-#include <windows.h>
+#include "win32_compat.h"
 #include <ddraw.h>
 
 #ifdef MPGEXPORT		  

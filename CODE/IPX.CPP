@@ -61,7 +61,7 @@
 
 #include "FUNCTION.H"
 #include <stdio.h>
-#include <mem.h>
+#include <string.h>
 #include "IPX.H"
 
 #ifdef WIN32

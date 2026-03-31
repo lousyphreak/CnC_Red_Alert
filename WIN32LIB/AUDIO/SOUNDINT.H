@@ -37,7 +37,7 @@
  * Functions:                                                              *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include <windows.h>
+#include "win32_compat.h"
 #include "SDLAUDIOBACKEND.H"
 
 #include "SOUND.H"

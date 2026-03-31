@@ -39,7 +39,7 @@
 
 #include	<wwstd.h>
 #include	<keyboard.h>
-#include "windows.h"
+#include "win32_compat.h"
 
 
 #if(IBM)

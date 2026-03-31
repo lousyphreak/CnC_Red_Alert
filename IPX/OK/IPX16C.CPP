@@ -19,7 +19,7 @@
 
 
 
-#include <windows.h>
+#include "win32_compat.h"
 
 extern "C"{
 	extern BOOL FAR __pascal ASM_IPX_Initialise(void);

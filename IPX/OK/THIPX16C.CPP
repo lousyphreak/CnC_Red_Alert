@@ -18,7 +18,7 @@
 
 
 
-#include <windows.h>
+#include "win32_compat.h"
 
 extern "C" {
 	BOOL FAR PASCAL Thipx_ThunkConnect16_(LPSTR pszDll16, LPSTR pszDll32, WORD  hInst, DWORD dwReason);

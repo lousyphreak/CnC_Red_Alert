@@ -59,7 +59,7 @@
 //**********************************************************************
 
 /* header files */
-#include <windows.h>
+#include "win32_compat.h"
 #include <assert.h>
 #include "dibapi.h"
 #include "dibutil.h"

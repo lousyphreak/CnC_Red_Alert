@@ -59,7 +59,7 @@
 #include <string.h>
 #include <conio.h>
 #include <sys\timeb.h>
-#include <mem.h>
+#include <string.h>
 #include <io.h>
 #include <ctype.h>
 #include <process.h>

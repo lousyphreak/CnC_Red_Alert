@@ -56,7 +56,7 @@
 #include <timer.h>
 
 #include	<stddef.h>
-#include	<mem.h>
+#include <string.h>
 
 extern TimerClass TickCount;
 

@@ -19,7 +19,7 @@
 #ifndef DIBAPI_H
 #define DIBAPI_H
 
-#include <windows.h>
+#include "win32_compat.h"
 /*
  *  dibapi.h
  *

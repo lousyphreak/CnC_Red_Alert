@@ -69,7 +69,7 @@
 #include <file.h>
 #include <misc.h>
 #include <iff.h>
-#include <mem.h> 
+#include <string.h>
 #include <string.h>
 
 //

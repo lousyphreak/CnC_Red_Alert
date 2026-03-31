@@ -42,8 +42,7 @@
 #ifndef _WIN32 // Denzil 6/2/98 Watcom 11.0 complains without this check
 #define _WIN32
 #endif // _WIN32
-#include <windows.h>
-#include <windowsx.h>
+#include "win32_compat.h"
 
 /*=========================================================================*/
 /* The following prototypes are for the file: TIMERA.ASM							*/

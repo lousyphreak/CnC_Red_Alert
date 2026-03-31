@@ -43,7 +43,7 @@
 ****************************************************************************/
 
 #include <stdio.h>
-#include <mem.h>
+#include <string.h>
 #include <dos.h>
 #include "video.h"
 #include "vesavid.h"

@@ -44,7 +44,7 @@
 #include <wwmem.h>	// For Alloc.
 
 #if(IBM)
-#include <mem.h>
+#include <string.h>
 #endif
 
 // Since we are not currently using AMIGA, this has been put in to

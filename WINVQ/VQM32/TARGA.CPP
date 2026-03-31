@@ -50,7 +50,7 @@
 
 #include <stdio.h>
 #include <malloc.h>
-#include <mem.h>
+#include <string.h>
 #include <io.h>
 #include <fcntl.h>
 #include <sys\stat.h>

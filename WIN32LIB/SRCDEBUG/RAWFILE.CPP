@@ -53,7 +53,7 @@
 
 #define	WIN32
 #define	_WIN32
-#include 	<windows.h>
+#include "win32_compat.h"
 
 #include	<stdlib.h>
 #include	<stdio.h>

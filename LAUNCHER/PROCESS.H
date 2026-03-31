@@ -19,7 +19,7 @@
 #ifndef PROCESS_HEADER
 #define PROCESS_HEADER
 
-#include <windows.h>
+#include "win32_compat.h"
 #include "wstypes.h"
 #include "wdebug.h"
 #include "configfile.h"

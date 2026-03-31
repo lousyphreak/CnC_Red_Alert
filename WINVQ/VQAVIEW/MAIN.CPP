@@ -40,8 +40,7 @@
 //	INCLUDES
 //---------------------------------------------------------------------------------------------
 
-#include <windows.h>
-#include <windowsx.h>
+#include "win32_compat.h"
 #include <gbuffer.h>
 #include <ddraw.h>
 #include <file.h>

@@ -46,7 +46,7 @@
 #include "wincomm.h"
 #endif	//WIN32
 #include <stdio.h>
-#include <mem.h>
+#include <string.h>
 #include "nullconn.h"
 
 

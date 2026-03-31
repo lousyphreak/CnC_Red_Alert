@@ -1,7 +1,7 @@
 #ifndef SDLAUDIOBACKEND_H
 #define SDLAUDIOBACKEND_H
 
-#include "windows.h"
+#include "win32_compat.h"
 
 #include <cstdint>
 #include <mutex>
@@ -85,6 +85,8 @@ private:
 	std::mutex Mutex;
 	struct SDL_AudioStream *Stream;
 	struct SDL_AudioSpec MixSpec;
+	int MixChannels;
+	int MixRate;
 	bool PrimaryPlaying;
 	AudioBackendBuffer *PrimaryBuffer;
 	std::vector<AudioBackendBuffer *> SecondaryBuffers;

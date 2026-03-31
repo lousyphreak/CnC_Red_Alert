@@ -58,7 +58,7 @@
 #include <io.h>
 #include <fcntl.h>
 #include <sys\stat.h>
-#include <mem.h>
+#include <string.h>
 #include "iff.h"
 
 

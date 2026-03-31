@@ -35,7 +35,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include <dos.h>
-#include <mem.h>
+#include <string.h>
 #include "soundint.h"
 #include "wwmem.h"
 

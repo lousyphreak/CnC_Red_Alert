@@ -48,7 +48,7 @@
 #define	WIN32
 #define	_WIN32
 #endif	//WIN32
-#include <windows.h>
+#include "win32_compat.h"
 
 typedef enum WinCommDialMethodType {
 	WC_TOUCH_TONE = 0,

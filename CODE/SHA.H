@@ -44,7 +44,7 @@
 #include	<cstdint>
 #include	<string.h>
 #include	<stdlib.h>
-#include	<new.h>
+#include <new>
 
 
 /*

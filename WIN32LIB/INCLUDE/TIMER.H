@@ -44,8 +44,7 @@
 #define _WIN32
 #endif // _WIN32
 #endif
-#include <windows.h>
-#include <windowsx.h>
+#include "win32_compat.h"
 
 /*=========================================================================*/
 /* The following prototypes are for the file: TIMERA.ASM							*/

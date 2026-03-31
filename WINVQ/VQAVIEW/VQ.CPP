@@ -57,8 +57,7 @@
 // INCLUDES
 //==========================================================================
 
-#include <windows.h>
-#include <windowsx.h>
+#include "win32_compat.h"
 #include <westwood.h>
 #include <file.h>
 #include <stdio.h>

@@ -1,7 +1,7 @@
 #ifndef RA_OBJBASE_WRAPPER_H
 #define RA_OBJBASE_WRAPPER_H
 
-#include "windows.h"
+#include "win32_compat.h"
 
 inline HRESULT CoInitialize(LPVOID)
 {

@@ -54,7 +54,7 @@
 
 #ifdef WIN32
 
-#include <windows.h>
+#include "win32_compat.h"
 #include <winsock.h>
 #include "CCDDE.H"
 #include <stdio.h>

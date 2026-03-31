@@ -36,7 +36,7 @@
 #ifndef KEYBOARD_H
 #define KEYBOARD_H
 
-#include	<windows.h>
+#include "win32_compat.h"
 
 
 typedef enum {

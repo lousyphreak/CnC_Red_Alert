@@ -129,7 +129,7 @@ UnitTypeClass      �   BuildingTypeClass      �  VesselTypeClass
 
 #ifdef WIN32
 //#define WIN32_LEAN_AND_MEAN
-#include	<windows.h>
+#include "win32_compat.h"
 #define WWFILE_H
 #define RAWFILE_H
 #define MONOC_H
@@ -234,7 +234,6 @@ typedef struct {
 #include	<stdlib.h>
 #include	<stdio.h>
 #include	<stddef.h>
-#include	<mem.h>
 #include	<dos.h>
 #include	<direct.h>
 #include	<stdarg.h>
@@ -242,7 +241,7 @@ typedef struct {
 #include	<assert.h>
 #include	<algorithm>
 #include	<process.h>
-#include	<new.h>
+#include <new>
 
 using std::max;
 using std::min;
@@ -274,7 +273,6 @@ extern long LParam;
 /*
 **	Greenleaf specific includes.
 */
-#include <modem.h>
 
 
 extern long Frame;

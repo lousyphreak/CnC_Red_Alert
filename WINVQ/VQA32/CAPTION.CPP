@@ -39,7 +39,7 @@
 *
 ****************************************************************************/
 
-#include <mem.h>
+#include <string.h>
 #include <malloc.h>
 #include <vqm32\font.h>
 #include <vqm32\text.h>

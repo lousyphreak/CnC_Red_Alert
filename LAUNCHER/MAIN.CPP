@@ -58,7 +58,7 @@
 #include "monod.h"
 #include "filed.h"
 #include "configfile.h"
-#include <windows.h>
+#include "win32_compat.h"
 
 #define UPDATE_RETVAL 123456789  // if a program returns this it means it wants to check for patches
 

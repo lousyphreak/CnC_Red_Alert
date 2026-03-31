@@ -29,7 +29,7 @@ extern "C" {
 #include <assert.h>
 }
 
-#include <windows.h>
+#include "win32_compat.h"
 
 #define     STATUS_OK    1
 #define     STATUS_BAD   0

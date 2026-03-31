@@ -21,7 +21,7 @@
 #include <string>
 #include <vector>
 
-#include <windows.h>
+#include "win32_compat.h"
 
 extern int PASCAL WinMain(HINSTANCE instance, HINSTANCE previous_instance, char* command_line, int command_show);
 

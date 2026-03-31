@@ -17,7 +17,6 @@
 */
 
 #include <windows.h>
-#include <windowsx.h>
 #include <alloc.h>
 
 DWORD GetDibInfoHeaderSize (BYTE huge *);

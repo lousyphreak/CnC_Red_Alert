@@ -46,7 +46,7 @@
 //
 //*******************************************************************
 
-#include <windows.h>
+#include "win32_compat.h"
 #include <string.h>
 #include <stdio.h>
 #include <math.h>

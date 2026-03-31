@@ -44,7 +44,7 @@
 #include	<dos.h>
 #include	<stdlib.h>
 #include	<stdio.h>
-#include	<mem.h>
+#include <string.h>
 #include	<wwstd.h>
 #include	<file.h>
 #include	"tile.h"

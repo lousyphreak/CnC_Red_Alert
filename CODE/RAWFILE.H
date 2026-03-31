@@ -48,7 +48,7 @@
 #include	<stdlib.h>
 
 #ifdef WIN32
-#include	<windows.h>
+#include "win32_compat.h"
 
 #define	NULL_HANDLE		INVALID_HANDLE_VALUE
 #define	HANDLE_TYPE		HANDLE

@@ -45,12 +45,12 @@
 #ifndef _WIN32 // Denzil 6/2/98 Watcom 11.0 complains without this check
 #define _WIN32
 #endif // _WIN32
-#include <windows.h>
+#include "win32_compat.h"
 
 //#include	<wwlib32.h>
 #include	<limits.h>
 #include	<errno.h>
-#include	<windows.h>
+#include "win32_compat.h"
 //#include	<algo.h>
 #include	"wwfile.h"
 

@@ -64,12 +64,11 @@ extern	void Colour_Debug (int call_number);
 #define _WIN32
 #endif // _WIN32
 
-#include	<windows.h>
-#include	<windowsx.h>
+#include "win32_compat.h"
 #include	"SDLAUDIOBACKEND.H"
 
 #include	<cstdarg>
-#include	<mem.h>
+#include <string.h>
 #include	<WWMEM.H>
 #include	"SOUNDINT.H"
 #include	<stdio.h>

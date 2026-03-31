@@ -36,7 +36,7 @@
 #include "function.h"
 
 #ifdef MCIMPEG
-#include <windows.h>
+#include "win32_compat.h"
 #include <mmsystem.h>
 #include <digitalv.h>
 #include "watcom.h"

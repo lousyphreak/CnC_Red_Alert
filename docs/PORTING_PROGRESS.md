@@ -16,6 +16,12 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - removed the dead active-source fallback branches that still carried DOS real-mode/IPX/modem/CD register access (`CODE/IPX.CPP`, `CODE/IPXMGR.CPP`, `CODE/CDFILE.CPP`, `WIN32LIB/MEM/ALLOC.CPP`);
   - trimmed the duplicate `PLAYCD.H`, `WWSTD.H`, `DESCMGMT.H`, and old `SOUNDIO.CPP` variants so the remaining archive headers no longer expose BIOS/DPMI types;
   - deleted the archive-only DPMI/VESA-era source files that were entirely tied to the removed BIOS/register path (old allocators, VESA backends, old VQM32 memory/video sources, and the old `MPLIB` DOS transport sources).
+- The empty forwarding-wrapper cleanup is now applied across the in-tree compat surface:
+  - deleted `SDL3_COMPAT/wrappers/mem.h`, `modem.h`, `new.h`, `windows.h`, `WINDOWS.H`, and `windowsx.h`;
+  - active C/C++ sources now include `win32_compat.h`, `<string.h>`, or `<new>` directly instead of routing through those forwarding headers;
+  - surviving compat headers such as `dos.h`, `ddraw.h`, `io.h`, `mmsystem.h`, `objbase.h`, `process.h`, and `winsock.h` now include `win32_compat.h` directly.
+  - only the legacy Windows-only `LAUNCHER/256BMP.C` and `WINVQ/VQAVIEW/DIALOGS.RC` artifacts still include the real SDK `windows.h`; the active SDL/Linux compat path no longer depends on the deleted forwarding headers.
+  - `cmake --build build --target redalert -j16` and `cmake --build build-asan --target redalert -j16` still succeed after this cleanup.
 - The Linux build now enters the real game startup path instead of the old Unix stub path:
   - `CODE/STUB.CPP` bridges Linux `main()` into `WinMain(...)`.
   - `SDL3_COMPAT/wrappers/win32_compat.cpp` returns a real executable path from `GetModuleFileName()`.
@@ -68,6 +74,10 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - `CODE/AUDIO.CPP` still drives the legacy `Audio_*` / `Play_Sample` API surface used by the game;
   - `WIN32LIB/AUDIO/SOUNDIO.CPP` / `WIN32LIB/AUDIO/SOUNDINT.CPP` now sit on top of `WIN32LIB/AUDIO/SDLAUDIOBACKEND.CPP`;
   - the active build no longer compiles `SDL3_COMPAT/wrappers/dsound_compat.cpp`.
+- Fixed the gameplay SDL audio backend producing blasted/noisy non-movie music:
+  - a traced menu-theme run showed `AudioBackendBuffer::MixInto(...)` being called with `output_rate = 0` on the gameplay audio path, even though `Audio_Init(...)` requested `22050` Hz;
+  - the movie path was unaffected because `VQ/VQA32/AUDIOCOMPAT.CPP` uses its own SDL stream and does not go through `WIN32LIB/AUDIO/SDLAUDIOBACKEND.CPP`;
+  - `WIN32LIB/AUDIO/SDLAUDIOBACKEND.CPP` / `WIN32LIB/INCLUDE/SDLAUDIOBACKEND.H` now preserve cached mix rate/channel values separately from the mutable `SDL_AudioSpec` struct and pass those cached values into `MixInto(...)`, so the gameplay mixer no longer falls back to the broken zero-rate path.
 - Gameplay `.AUD` parsing is now LP64-safe again:
   - the active `AUDHeaderType` definitions in `WIN32LIB/AUDIO/AUDIO.H`, `WIN32LIB/INCLUDE/AUDIO.H`, and `VQ/INCLUDE/WWLIB32/AUDIO.H` now use fixed-width 32-bit size fields and are asserted to stay at the original 12-byte on-disk layout;
   - this fixes the 64-bit Linux case where legacy `long` fields had grown the header to 20 bytes, corrupting streamed theme/music parsing and potentially affecting `.AUD`-backed sound effects too.

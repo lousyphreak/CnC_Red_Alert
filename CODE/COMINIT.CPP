@@ -23,7 +23,6 @@
 #include "COMINIT.H"
 //#include <stdlib.h>
 //#include <stdio.h>
-//#include <windows.h>
 #include <objbase.h>
 //#include "externs.h"
 //#include "text.rh"

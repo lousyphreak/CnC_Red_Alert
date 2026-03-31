@@ -75,7 +75,7 @@
 #include <malloc.h>
 #include <conio.h>
 #include <dos.h>
-#include <mem.h>
+#include <string.h>
 #include "vq.h"
 #include "unvq.h"
 #include "vqaplayp.h"

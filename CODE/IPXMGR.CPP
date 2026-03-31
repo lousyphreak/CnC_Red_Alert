@@ -69,7 +69,7 @@
 
 #include	"FUNCTION.H"
 #include <stdio.h>
-#include <mem.h>
+#include <string.h>
 #ifndef WIN32
 #include <i86.h>
 #endif

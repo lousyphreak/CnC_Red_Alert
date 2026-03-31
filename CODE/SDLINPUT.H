@@ -1,7 +1,7 @@
 #ifndef SDLINPUT_H
 #define SDLINPUT_H
 
-#include <windows.h>
+#include "win32_compat.h"
 #include <cstdint>
 
 void SDL_GameInput_Set_Main_Thread(void);

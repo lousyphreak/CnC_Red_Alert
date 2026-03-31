@@ -56,7 +56,6 @@
 
 #pragma pack(4)
 #include "soundint.h"
-//#include "mem.h"
 
 /***************************************************************************
 ** All routines past this point must be locked for the sound driver to	  **

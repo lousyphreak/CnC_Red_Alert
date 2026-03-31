@@ -20,7 +20,7 @@
 #define mpmgr_h
 
 #include "CONNMGR.H"
-#include <windows.h>
+#include "win32_compat.h"
 
 // maximum number of connections
 #define CONNECT_MAX    7

@@ -51,7 +51,7 @@
 #include	<stdio.h>
 #include	<stdarg.h>
 #include <wwstd.h>
-#include "windows.h"
+#include "win32_compat.h"
 #include <keyboard.h>
 #include	<font.h>
 #include <dipthong.h>

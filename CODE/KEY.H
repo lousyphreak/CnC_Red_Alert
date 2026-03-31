@@ -40,7 +40,7 @@
 #include	"..\wwflat32\include\keyboard.h"
 #else
 
-#include	<windows.h>
+#include "win32_compat.h"
 
 
 typedef enum {

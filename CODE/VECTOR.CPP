@@ -63,7 +63,7 @@
 #endif	//WINSOCK_IPX
 #include "vector.h"
 #include <stdint.h>
-#include	<mem.h>
+#include <string.h>
 #include	<stdio.h>
 
 struct NodeNameTag;

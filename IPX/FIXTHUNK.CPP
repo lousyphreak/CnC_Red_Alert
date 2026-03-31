@@ -17,7 +17,7 @@
 */
 
 
-#include <windows.h>
+#include "win32_compat.h"
 #include <sys\types.h>
 #include <sys\stat.h>
 #include <fcntl.h>

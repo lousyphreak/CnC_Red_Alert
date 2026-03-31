@@ -53,7 +53,7 @@
 
 #include	"function.h"
 #include <stdio.h>
-#include <mem.h>
+#include <string.h>
 #include "combuf.h"
 #include "connect.h"	// for command names for debug output
 #include "wwlib32.h"	// to enable mono output

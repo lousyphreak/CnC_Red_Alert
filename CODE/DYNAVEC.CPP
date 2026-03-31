@@ -50,7 +50,7 @@
 #include	"WSPROTO.H"
 #include	"WSPUDP.H"
 #endif	//WINSOCK_IPX
-#include	<mem.h>
+#include <string.h>
 #include	<stdio.h>
 
 struct NodeNameTag;

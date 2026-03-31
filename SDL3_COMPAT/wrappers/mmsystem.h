@@ -1,7 +1,7 @@
 #ifndef RA_MMSYSTEM_WRAPPER_H
 #define RA_MMSYSTEM_WRAPPER_H
 
-#include "windows.h"
+#include "win32_compat.h"
 
 #define TIME_ONESHOT 0x0000
 #define TIME_PERIODIC 0x0001

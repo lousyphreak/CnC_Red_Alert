@@ -89,8 +89,7 @@ extern void Debug_Printf( char *format_string, ... );
 #define _WIN32
 #endif // _WIN32
 #undef WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <windowsx.h>
+#include "win32_compat.h"
 #include "dsound.h"
 #endif
 

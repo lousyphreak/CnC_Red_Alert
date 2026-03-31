@@ -21,7 +21,7 @@
 #define _WIN32
 #endif // _WIN32
 
-#include <windows.h>
+#include "win32_compat.h"
 
 
 

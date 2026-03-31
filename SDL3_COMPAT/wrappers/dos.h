@@ -1,7 +1,7 @@
 #ifndef RA_DOS_WRAPPER_H
 #define RA_DOS_WRAPPER_H
 
-#include "windows.h"
+#include "win32_compat.h"
 
 #include <cstdint>
 #include <unistd.h>

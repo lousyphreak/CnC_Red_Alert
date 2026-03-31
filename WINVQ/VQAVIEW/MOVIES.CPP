@@ -39,7 +39,7 @@
 // INCLUDES
 //==========================================================================
 
-#include <windows.h>
+#include "win32_compat.h"
 #include <westwood.h>
 #include <vq.h>
 #include <movies.h>

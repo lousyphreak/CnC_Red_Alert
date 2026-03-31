@@ -33,7 +33,7 @@
  *-------------------------------------------------------------------------*
  * Functions:                                                              *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-#include "windows.h"
+#include <windows.h>
 #include "dialogs.rh"
 
 GEEB DIALOG 152, 52, 106, 64
@@ -44,5 +44,4 @@ CAPTION "Hi"
    DEFPUSHBUTTON "OK", IDOK, 31, 39, 43, 13
    EDITTEXT FRAME_RATE, 32, 15, 41, 12
 }
-
 

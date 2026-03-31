@@ -1,7 +1,7 @@
 #ifndef RA_WINSOCK_WRAPPER_H
 #define RA_WINSOCK_WRAPPER_H
 
-#include "windows.h"
+#include "win32_compat.h"
 
 #include <arpa/inet.h>
 #include <cerrno>
