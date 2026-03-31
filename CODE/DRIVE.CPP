@@ -665,7 +665,7 @@ bool DriveClass::While_Moving(void)
 	if (IsFormationMove) maxspeed = FormationMaxSpeed;
 
 	int actual;			// Working movement addition value.
-	if (((UnitClass *)this)->Flagged != HOUSE_NONE) {
+	if (What_Am_I() == RTTI_UNIT && ((UnitClass *)this)->Flagged != HOUSE_NONE) {
 		actual = SpeedAccum + ((int)maxspeed/2) * fixed(Speed, 256);
 	} else {
 		actual = SpeedAccum + maxspeed * fixed(Speed, 256);
@@ -2328,5 +2328,4 @@ DriveClass::TurnTrackType const DriveClass::TrackControl[67] = {
 	{12,	12,	DIR_SW_X2,	F_},															// Drive back into refinery.
 	{13,	13,	DIR_SW,	F_}																// Drive out of weapons factory.
 };
-
 

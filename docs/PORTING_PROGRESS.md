@@ -94,12 +94,21 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - the old crash signatures in `BUFF.CPP`, `LOADDLG.CPP`, `OVERLAY.CPP`, `HELP.CPP`, `DRIVE.CPP`, `TEAM.CPP`, and `TECHNO.CPP` no longer appear in that run.
 - After the WSA scratch-space follow-up, the existing ASan startup smoke still reaches the normal title/init path:
   - `ASAN_OPTIONS=detect_leaks=0 RA_TRACE_STARTUP=1 timeout 20s ./GameData/redalert-asan` still exits with `124` from `timeout`, not from a new ASan/UBSan abort.
+- The save-path LP64 follow-up fixes two later sanitizer hits without changing gameplay behavior:
+  - `CODE/DRIVE.CPP` now applies the captured-flag movement slowdown only when `DriveClass::While_Moving()` is actually running on a `UnitClass`, so the old `VesselClass`→`UnitClass` downcast at `Flagged` no longer trips UBSan.
+  - `CODE/LZOPIPE.CPP` and `CODE/LZOSTRAW.CPP` now allocate LZO compressor work memory with `LZO1X_MEM_COMPRESS` instead of the old fixed `64*1024`, matching the in-tree LZO1X pointer-sized workmem contract on LP64 and removing the save/compression heap overwrite in `CODE/LZO1X_C.CPP::do_compress`.
+  - the active LZO sources/headers also now use correctly cased in-tree includes (`LZO1X.H`, `LZO_CONF.H`, `LZOCONF.H`) instead of relying on non-portable case-insensitive header lookup.
+  - a focused ASan LZO smoke now round-trips an 8 KiB block through `CODE/LZO1X_C.CPP` / `CODE/LZO1X_D.CPP` with `workmem=131072`.
+- The latest traced ASan startup smoke after that save-path follow-up still reaches the front-end baseline:
+  - `ASAN_OPTIONS=detect_leaks=0 RA_TRACE_STARTUP=1 timeout 20s ./GameData/redalert-asan` still exits with `124` from `timeout` after intro/movie/menu startup, not from the old `DRIVE.CPP` or `LZO1X_C.CPP` aborts;
+  - that run also surfaced one remaining unrelated UBSan warning in `CODE/LOADDLG.CPP:683` (`HousesType` invalid value load) for later follow-up.
 - The latest mission-entry runtime cleanup removes the remaining warnings that were directly tied to the user-reported black in-mission state:
   - fixed-heap pooled objects no longer write `IsActive` from `operator new/delete`, so the old pre-construction/post-destruction invalid-vptr hits in `TEAMTYPE.CPP`, `TRIGTYPE.CPP`, `TERRAIN.CPP`, `UNIT.CPP`, `INFANTRY.CPP`, `BUILDING.CPP`, `SMUDGE.CPP`, `OVERLAY.CPP`, `TEAM.CPP`, and `AIRCRAFT.CPP` no longer reproduce on the active ASan path;
   - building scan/prerequisite masks now go through guarded 32-bit `Structure_Scan_Bit(...)` handling, so the old `CODE/HOUSE.CPP` / `CODE/BUILDING.CPP` shift-exponent warnings (for example shift exponent `83`) no longer reproduce on the active ASan path.
 - Remaining traced runtime warnings after that cleanup:
   - misaligned `uint32_t` loads in `CODE/SHA.CPP`;
   - left-shift-of-negative-value warnings in `CODE/RANDOM.CPP`.
+  - invalid `HousesType` value load in `CODE/LOADDLG.CPP:683`.
 - The SDL3 window is no longer stuck black after startup:
   - the DirectDraw compatibility layer now presents primary-surface updates on `Unlock()`, `Blt()`, and palette attachment;
   - a live Hyprland capture of the rebuilt game window shows substantial non-black content instead of an all-black frame.

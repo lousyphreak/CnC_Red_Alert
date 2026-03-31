@@ -41,7 +41,7 @@
 
 
 #include	"lzopipe.h"
-#include	"lzo.h"
+#include	"LZO1X.H"
 #include	"buff.h"
 #include	<string.h>
 #include	<assert.h>
@@ -200,7 +200,7 @@ int LZOPipe::Put(void const * source, int slen)
 
 			if (Counter == BlockSize) {
 				unsigned int len = sizeof (Buffer2);
-				char *dictionary = new char [64*1024];
+				char *dictionary = new char [LZO1X_MEM_COMPRESS];
 				lzo1x_1_compress ((unsigned char*)Buffer, BlockSize, (unsigned char*)Buffer2, &len, dictionary);
 				delete [] dictionary;
 				BlockHeader.CompCount = (unsigned short)len;
@@ -217,7 +217,7 @@ int LZOPipe::Put(void const * source, int slen)
 		*/
 		while (slen >= BlockSize) {
 			unsigned int len = sizeof (Buffer2);
-			char *dictionary = new char [64*1024];
+			char *dictionary = new char [LZO1X_MEM_COMPRESS];
 			lzo1x_1_compress ((unsigned char*)source, BlockSize, (unsigned char*)Buffer2, &len, dictionary);
 			delete [] dictionary;
 			source = ((char *)source) + BlockSize;
@@ -304,7 +304,7 @@ int LZOPipe::Flush(void)
 			**	compress the partial block and output normally.
 			*/
 			unsigned int len = sizeof (Buffer2);
-			char *dictionary = new char [64*1024];
+			char *dictionary = new char [LZO1X_MEM_COMPRESS];
 			lzo1x_1_compress ((unsigned char*)Buffer, Counter, (unsigned char *)Buffer2, &len, dictionary);
 			delete [] dictionary;
 			BlockHeader.CompCount = (unsigned short)len;
@@ -318,4 +318,3 @@ int LZOPipe::Flush(void)
 	total += Pipe::Flush();
 	return(total);
 }
-

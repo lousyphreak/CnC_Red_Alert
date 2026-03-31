@@ -45,6 +45,11 @@ _Last updated: 2026-03-31_
 - `Coord_Spillage_List(COORDINATE, Rect, ...)` can return up to 128 offsets; 32-entry temporary lists in map/display code are not universally safe.
 - `HelpClass::OverlapList` is mutable scratch storage despite the legacy `const` declaration. Linux puts the old declaration in read-only storage, so the cast-away-const write crashes.
 - In-place `Path[]` compaction in `DriveClass` requires `memmove()`, not `memcpy()`.
+- `DriveClass` is a shared base for both `UnitClass` and `VesselClass`; any shared movement/UI logic that wants `UnitClass`-only state such as `Flagged` must guard `What_Am_I() == RTTI_UNIT` before casting.
+- The in-tree LZO1X compressor workmem contract is pointer-sized: `LZO1X_MEM_COMPRESS == 16384 * sizeof(lzo_byte *)`.
+  - the old fixed `64*1024` workmem allocations in `LZOPipe` / `LZOStraw` only matched 32-bit builds;
+  - on LP64, `CODE/LZO1X_C.CPP::do_compress()` immediately writes 8-byte dictionary entries, so callers must allocate the full `LZO1X_MEM_COMPRESS` bytes or the save/compression path overruns the dictionary table;
+  - a focused ASan round-trip smoke against `CODE/LZO1X_C.CPP` / `CODE/LZO1X_D.CPP` now reports `workmem=131072`, which is the expected LP64 size.
 - `DirType`, `FacingType`, and the active drive-facing control enums must stay 8-bit on the SDL/Linux port.
   - `Path[]`, `FacingClass`, the direction lookup helpers, and `DriveClass::TurnTrackType` all assume original byte-sized facing storage; leaving those enums host-sized recreates movement-state corruption on LP64 hosts and forces fragile “trim back to 8-bit” helpers into the active code.
   - The durable fix is to restore the underlying enum size directly, represent `FACING_NONE` explicitly as `0xFF`, remove `Dir_Index()` / `Normalize_Dir()`, and then convert the few active signed-facing sites to explicit integer math (`FINDPATH.CPP` optimization deltas, `COMBAT.CPP` center-plus-adjacents sweep, `FOOT.CPP` path debug print).
@@ -410,6 +415,8 @@ This matters for any code that uses unions containing both an enum field and a w
 - `QuarryType` (0..10)
 - `VQType` (-1..103)
 - `VoxType` (-1..118)
+
+The current traced reminder that this still matters is `CODE/LOADDLG.CPP:683`, where the ASan startup smoke reports an invalid `HousesType` load while the front-end/load-dialog path is active. Treat save/load UI metadata reads as another likely enum-width seam.
 
 **Types that are 2+ bytes even in Watcom** (range exceeds signed byte):
 - `VocType` (-1..167) — likely 2-byte short in Watcom
