@@ -39,6 +39,8 @@
 #ifndef TEVENT_H
 #define TEVENT_H
 
+#include <cstdint>
+
 /*
 **	These are the trigger events that are checked for and if qualified, they will signal
 **	a successful trigger event. This might result in the trigger action being performed.
@@ -135,7 +137,7 @@ struct TEventClass {
 		InfantryType			Infantry;	//	Used for infantry type checking.
 		AircraftType			Aircraft;	// Used for aircraft type checking.
 		HousesType				House;		// Used for house specific events.
-		long	Value;							// Used for other events that need data.
+		int32_t				Value;		// Used for other events that need data.
 	} Data;
 
 	TEventClass(void) : Event(TEVENT_NONE) {Data.Value = 0;};
@@ -183,6 +185,8 @@ class EventChoiceClass {
 };
 
 extern EventChoiceClass EventChoices[TEVENT_COUNT];
+
+static_assert(sizeof(TEventClass) == 12, "TEventClass must stay 12 bytes");
 
 
 #endif

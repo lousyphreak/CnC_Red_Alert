@@ -439,8 +439,13 @@ void AnimClass::Init(void)
  * HISTORY:                                                                                    *
  *   05/31/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-void * AnimClass::operator new(size_t)
+void * AnimClass::operator new(size_t) noexcept
 {
+	/*
+	**	Modern C++ will still invoke the constructor if a throwing allocation
+	**	function returns null. The original animation heap contract is that
+	**	exhaustion returns null, so this must stay non-throwing.
+	*/
 	void * ptr = Anims.Allocate();
 	return(ptr);
 }

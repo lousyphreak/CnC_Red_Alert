@@ -248,6 +248,14 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - `ctest --test-dir build-asan --output-on-failure` still reports that the repository currently has no registered tests;
   - a focused `timeout 30s env ASAN_OPTIONS=abort_on_error=1:detect_leaks=0:new_delete_type_mismatch=0 ./redalert-asan "Erik Yeo"` smoke run from `GameData/` reaches the debug-map mission path and times out with only the already-known `CODE/SHA.CPP` misaligned-load and `CODE/RANDOM.CPP` left-shift warnings;
   - that mission-entry ASan smoke no longer reproduces the user-reported `CODE/INFANTRY.CPP` invalid-vptr/member-access chain or the `CODE/AIRCRAFT.CPP::Draw_Rotors()` stack-buffer-overflow.
+- Shipped trigger speech actions no longer load invalid `VoxType` values on the active SDL/Linux path:
+  - `CODE/TACTION.H` / `CODE/TEVENT.H` now keep trigger/event generic payloads at fixed 32-bit storage again and assert the original `TActionClass` / `TEventClass` sizes (`16` / `12` bytes);
+  - `CODE/TACTION.CPP::Read_INI()` now normalizes legacy packed `TACTION_PLAY_SPEECH` payloads from scenario INIs, preserving `VOX_NONE` but converting negative packed values such as `-191`, `-143`, and `-192` back to valid `VoxType` IDs `65`, `113`, and `64`;
+  - focused `gdb` traces against debug-map `SCG01EA.INI` now show the shipped `ein3`, `shl3`, and `dcop` trigger entries loading clean speech bytes (`0x41 00 00 00`, `0x71 00 00 00`, `0x40 00 00 00`) instead of the old sign-extended `0xFF..` values that later crashed `CODE/AUDIO.CPP`.
+- Animation-pool exhaustion no longer crashes `new AnimClass(...)` call sites on the active SDL/Linux build:
+  - `CODE/ANIM.H` / `CODE/ANIM.CPP` now declare `AnimClass::operator new(size_t)` as `noexcept`, matching the longstanding fixed-heap contract that `Anims.Allocate()` returns `NULL` when the animation pool is full;
+  - this was the root cause of the reported `CODE/ANIM.CPP::Middle()` crash path: the pool could legitimately hit `Rule.AnimMax`, and with a throwing allocation-function signature Clang still entered `AnimClass::AnimClass(...)` with `this == NULL` on `new AnimClass(...)` side-effect spawns such as the napalm/fire cases;
+  - validation for the fix now includes a standalone C++ repro that demonstrates the required `noexcept` null-allocation semantics, fresh `build/` and `build-asan/` rebuilds, and a debug-map `gdb` / ASan mission-entry probe that exits cleanly with only the already-known `CODE/SHA.CPP` and `CODE/RANDOM.CPP` runtime warnings.
 
 ## Runtime fixes since first successful link
 
@@ -273,6 +281,8 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - unaligned keyframe header access;
   - signed left-shift UB in palette and software draw paths;
   - delete mismatches in the active buffer and heap implementations.
+- Fixed legacy trigger speech parsing for shipped scenario INIs by normalizing packed negative `TACTION_PLAY_SPEECH` payloads back into valid `VoxType` IDs during `TActionClass::Read_INI()`, and restored `TActionClass::Data.Value` / `TEventClass::Data.Value` to fixed 32-bit storage so the trigger/event layouts stay Win32-sized on LP64 hosts.
+- Fixed pooled animation allocation semantics by making `AnimClass::operator new()` non-throwing again, so animation-pool exhaustion returns `NULL` instead of entering `AnimClass::AnimClass(...)` with `this == NULL` on modern C++ builds.
 - Fixed the SDL/Wayland bootstrap focus race by latching the first valid activation edge during startup.
 - Fixed the DirectDraw compatibility presentation path so updates to the primary surface actually reach the SDL window after drawing and palette changes.
 - Fixed the shutdown-time `FixedHeapClass::Clear()` deallocation mismatch exposed by ASan after clean SDL window close.

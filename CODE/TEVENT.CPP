@@ -488,7 +488,7 @@ bool TEventClass::operator () (TDEventClass & td, TEventType event, HousesType h
  *=============================================================================================*/
 void TEventClass::Build_INI_Entry(char * ptr) const
 {
-	sprintf(ptr, "%d,%d,%d", Event, TeamTypes.Logical_ID(Team), Data.Value);
+	sprintf(ptr, "%d,%d,%d", Event, TeamTypes.Logical_ID(Team), (int)Data.Value);
 }
 
 

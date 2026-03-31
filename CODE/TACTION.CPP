@@ -47,6 +47,18 @@
 
 #include	"function.h"
 
+static int32_t Normalize_Legacy_Action_Value(TActionType action, int32_t value)
+{
+	if (Action_Needs(action) == NEED_SPEECH && value < VOX_NONE) {
+		int32_t legacy_voice = value & 0x00FF;
+		if (legacy_voice >= VOX_FIRST && legacy_voice < VOX_COUNT) {
+			return(legacy_voice);
+		}
+	}
+
+	return(value);
+}
+
 /*
 **	These are the text names for the various actions. If the action name ends with "..." then
 **	this means that additional data is probably required.
@@ -222,7 +234,7 @@ void TActionClass::Detach(TARGET target)
  *=============================================================================================*/
 void TActionClass::Build_INI_Entry(char * ptr) const
 {
-	sprintf(ptr, "%d,%d,%d,%d", Action, TeamTypes.Logical_ID(Team), TriggerTypes.Logical_ID(Trigger), Data.Value);
+	sprintf(ptr, "%d,%d,%d,%d", Action, TeamTypes.Logical_ID(Team), TriggerTypes.Logical_ID(Trigger), (int)Data.Value);
 }
 
 
@@ -249,7 +261,7 @@ void TActionClass::Read_INI(void)
 			Action = TActionType(atoi(strtok(NULL, ",")));
 			Team.Set_Raw(atoi(strtok(NULL, ",")));
 			Trigger.Set_Raw(atoi(strtok(NULL, ",")));
-			Data.Value = atoi(strtok(NULL, ","));
+			Data.Value = Normalize_Legacy_Action_Value(Action, atoi(strtok(NULL, ",")));
 			break;
 
 		case 1:
@@ -266,7 +278,7 @@ void TActionClass::Read_INI(void)
 			*/
 			Trigger.Set_Raw((long)strdup(strtok(NULL, ",")));
 
-			Data.Value = atoi(strtok(NULL, ","));
+			Data.Value = Normalize_Legacy_Action_Value(Action, atoi(strtok(NULL, ",")));
 			break;
 	}
 }
@@ -888,5 +900,4 @@ NeedType Action_Needs(TActionType action)
 	}
 	return(NEED_NONE);
 }
-
 

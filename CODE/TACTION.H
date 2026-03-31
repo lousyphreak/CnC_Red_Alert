@@ -39,6 +39,8 @@
 #ifndef ACTION_H
 #define ACTION_H
 
+#include <cstdint>
+
 typedef enum TActionType {
 	TACTION_NONE,
 
@@ -115,7 +117,7 @@ struct TActionClass {
 		QuarryType			Quarry;		// Preferred target for attack.
 		VQType				Movie;		// The movie to play.
 		bool					Bool;			// Boolean value.
-		long					Value;
+		int32_t				Value;
 	} Data;
 
 	TActionClass(void) : Action(TACTION_NONE) {
@@ -153,5 +155,7 @@ class ActionChoiceClass {
 
 
 extern ActionChoiceClass ActionChoices[TACTION_COUNT];
+
+static_assert(sizeof(TActionClass) == 16, "TActionClass must stay 16 bytes");
 
 #endif

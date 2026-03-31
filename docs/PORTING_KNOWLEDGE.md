@@ -57,6 +57,15 @@ _Last updated: 2026-03-31_
 - `Select_Game()` already contains a useful no-menu mission-entry path for debugging.
   - If `Debug_Map` is true, it skips the front-end selection flow, sets `Scen.ScenarioName` to `SCG01EA.INI`, and then falls through to the normal `Start_Scenario(...)` call.
   - A `gdb` breakpoint script that flips `Debug_Map = true` at `Select_Game()` is a practical way to reproduce in-mission issues without manual UI input.
+- Some shipped `NewINIFormat=3` scenario trigger entries still carry legacy packed speech payloads instead of plain `VoxType` integers.
+  - A focused `gdb` load trace against `SCG01EA.INI` showed `ein3`, `shl3`, and `dcop` loading `TACTION_PLAY_SPEECH` data as `-191`, `-143`, and `-192`, with raw bytes `0x41 FF FF FF`, `0x71 FF FF FF`, and `0x40 FF FF FF`.
+  - The low byte is the real speech ID (`65`, `113`, `64` respectively); normalize those values during `TActionClass::Read_INI()` when `Action_Needs(action) == NEED_SPEECH`, the stored value is less than `VOX_NONE`, and `value & 0xFF` falls inside `[VOX_FIRST, VOX_COUNT)`.
+  - `TActionClass::Data.Value` and `TEventClass::Data.Value` must stay fixed 32-bit fields. Their original layouts are `16` bytes for `TActionClass` and `12` bytes for `TEventClass`; letting the generic payload widen back to native `long` reintroduces LP64 layout drift around trigger/event storage and serialization.
+- `AnimClass::operator new()` must stay non-throwing on the active port.
+  - The animation pool is a fixed heap (`Anims.Allocate()` -> `FixedIHeapClass::Allocate()`), and exhaustion is a normal legacy condition: once `Rule.AnimMax` objects are active, allocation returns `NULL`.
+  - If `AnimClass::operator new(size_t)` is left as a throwing allocation function on modern C++, a plain `new AnimClass(...)` expression can still enter `AnimClass::AnimClass(...)` with `this == NULL`, which is exactly the reported `CODE/ANIM.CPP` crash signature.
+  - Declaring the allocator `noexcept` restores the engine's expected semantics: a failed animation allocation makes the `new` expression yield `NULL`, callers that already check keep working, and unassigned cosmetic side-effect spawns are simply skipped instead of crashing.
+  - A tiny standalone C++ repro is a good sanity check here: a throwing-style custom `operator new` that returns `nullptr` still ran the constructor on this toolchain, while the `noexcept` version returned null without a constructor call.
 
 ## Gameplay audio system observations
 
