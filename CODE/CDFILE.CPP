@@ -119,7 +119,6 @@ int harderr_handler(unsigned int , unsigned int , unsigned int __far *)
  *=============================================================================================*/
 int cdecl Is_Disk_Inserted(int disk)
 {
-#ifndef OBSOLETE
 	struct find_t fb;
 	char	scan[] = "?:\\*.*";
 
@@ -129,36 +128,6 @@ int cdecl Is_Disk_Inserted(int disk)
 
 	scan[0] = (char)('A' + disk);
 	return(_dos_findfirst(scan, _A_SUBDIR, &fb) == 0);
-#else
-	struct {
-		struct {
-			char	Length;
-			char	Unit;
-			char	Function;
-			char	Status;
-			char	Reserved[8];
-		} ReqHdr;
-		char	MediaDescriptor;		// Media descriptor byte from BPB.
-		void	*Transfer;				// Pointer to transfer address block.
-		short	Length;					// Number of bytes to transfer.
-		short Sector;					// Starting sector number.
-		void	*Volume;					// Pointer to requested volume.
-	} IOCTLI;
-	char status[5];
-
-	memset(IOCTLI, 0, sizeof(IOCTLI));
-	IOCTLI.ReqHdr.Length = 26;
-	IOCTLI.ReqHdr.Unit = 0;			// First CD-ROM controlled by this driver.
-	//IOCTLI.ReqHdr.Unit = 11;		// Hard coded for K:
-	IOCTLI.ReqHdr.Function = 3;	// IOCTL read
-	IOCTLI.Transfer = &status[0];
-	IOCTLI.Length = sizeof(status);
-	status[0] = 6;					// Fetch device status code.
-	_AX = 0x440D;
-	_CX = 0x0003;
-	geninterrupt(0x21);
-	return(!(_AX & (1<<11)));
-#endif
 }
 
 
@@ -674,47 +643,3 @@ int CDFileClass::Open(char const *filename, int rights)
 	Set_Name(filename);
 	return(BufferIOFileClass::Open(rights));
 }
-
-
-#ifdef NEVER
-/*
-** Get the drive letters if the CD's online */
-*/
-WORD cdecl GetCDDrive(VOID)
-{
-	_ES = FP_SEG(&cdDrive[0]);
-	_BX = FP_OFF(&cdDrive[0]);
-	_AX = 0x150d;
-	geninterrupt(0x2F);
-	return((WORD)(*cdDrive));
-}
-#endif
-
-#if 0
-int Get_CD_Drive(void)
-{
-#ifdef WIN32
-	return(10);
-#else
-
-#ifdef NEVER
-	for (int index = 0; index < 26; index++) {
-		union REGS regs;
-
-		regs.w.ax = 0x150B;
-		regs.w.bx = 0;
-		regs.w.cx = index;
-		int386(0x2F, &regs, &regs);
-		if (regs.w.bx == 0xADAD) {
-			return(index);
-		}
-	}
-	return(0);
-#else
-	GetCDClass temp;
-	return(temp.GetCDDrive());
-#endif
-#endif
-}
-
-#endif

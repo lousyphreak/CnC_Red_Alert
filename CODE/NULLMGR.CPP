@@ -673,7 +673,6 @@ DetectPortType NullModemClass::Detect_Port( SerialSettingsType *settings )
 
 #else	//WIN32
 
-	union REGS		regs ;
 	int com;
 	int irqnum;
 	int address;
@@ -686,30 +685,6 @@ DetectPortType NullModemClass::Detect_Port( SerialSettingsType *settings )
 
 	if (settings->IRQ > 0xf) {
 		return( PORT_INVALID );
-	}
-
-	//
-	// check if the IRQ is the same as the mouse
-	// call mouse func to get mouse IRQ number
-	//
-
-	regs.x.eax = 0x0024;
-	int386( 0x33, &regs, &regs );
-
-	//
-	// check for error
-	//
-	if (regs.w.ax != 0xffff) {
-		//
-		// is the mouse IRQ the same as that they selected
-		//
-		if (regs.h.cl == 0) {	// PS/2 IRQ 0xc
-			if (settings->IRQ == 0xc) {
-				return( PORT_IRQ_INUSE );
-			}
-		} else if (regs.h.cl == (unsigned char)(settings->IRQ)) {
-			return( PORT_IRQ_INUSE );
-		}
 	}
 
 	if (settings->IRQ < 2					// 0 timer, 1 keyboard
@@ -748,31 +723,31 @@ DetectPortType NullModemClass::Detect_Port( SerialSettingsType *settings )
 	status = FastGetPortHardware( com, &irqnum, &address );
 	if (status == ASSUCCESS) {
 		if (settings->Port != address || settings->IRQ != irqnum) {
+
 			status = FastSetPortHardware( com, settings->IRQ, settings->Port );
+
+			if (status < ASSUCCESS) {
+				Mono_Printf( "Unable to set Com port status %d\n", status );
+				Mono_Printf( "Com port number %d with address %x, irq %d\n",
+					com + 1, settings->Port, settings->IRQ );
+			} else {
+				Mono_Printf( "Changed Com port number %d to address %x, irq %d\n",
+					com + 1, settings->Port, settings->IRQ );
+			}
+		} else {
+			Mono_Printf( "No changes to Com port number %d with address %x, irq %d\n",
+				com + 1, settings->Port, settings->IRQ );
 		}
+	} else {
+		Mono_Printf( "Com port number %d\n", com + 1 );
 	}
 
 	if (status != ASSUCCESS) {
 		return( PORT_INVALID );
 	}
 
-	/*------------------------------------------------------------------------
-	Open the Greenleaf port
-	------------------------------------------------------------------------*/
-	Port = PortOpenGreenleafFast (com, settings->Baud, 'N', 8, 1);
-
-	status = Port->status;
-
-	PortClose(Port);
-	Port = NULL;
-
-	if (status == ASIRQINUSE) {
-		return( PORT_IRQ_INUSE );
-	} else if (status != ASSUCCESS) {
-		return( PORT_INVALID );
-	}
-
 	return( PORT_VALID );
+
 #endif	//WIN32
 }
 

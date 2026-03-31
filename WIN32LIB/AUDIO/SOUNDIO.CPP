@@ -79,7 +79,6 @@ extern	void Colour_Debug (int call_number);
 #include <process.h>
 #include	<KEYBOARD.H>
 #include	<FILE.H>
-#include	<bios.h>
 #include	<TIMER.H>
 #include	<math.h>
 #pragma		pack(1)

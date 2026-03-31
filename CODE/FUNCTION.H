@@ -249,12 +249,6 @@ using std::min;
 
 
 
-#ifdef WIN32
-#define	int386x(a,b,c,d)	0
-#define	int386(a,b,c)	0
-#endif
-
-
 /*
 **	VQ player specific includes.
 */

@@ -49,7 +49,6 @@ extern "C" {
 #endif
 
 #include <dos.h>
-#include <bios.h>
 
 #ifdef __cplusplus
 }

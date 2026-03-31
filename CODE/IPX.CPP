@@ -62,9 +62,6 @@
 #include "FUNCTION.H"
 #include <stdio.h>
 #include <mem.h>
-#ifndef WIN32
-#include <i86.h>
-#endif
 #include "IPX.H"
 
 #ifdef WIN32
@@ -93,7 +90,6 @@
  *=========================================================================*/
 int IPX_SPX_Installed(void)
 {
-#ifdef WIN32
 
 #ifdef TIBERIAN_SUN
 	return(false);
@@ -104,85 +100,6 @@ int IPX_SPX_Installed(void)
 		return(false);
 	}
 #endif
-
-#else	//WIN32
-
-	union REGS regs;
-	struct SREGS sregs;
-	RMIType rmi;
-
-	//------------------------------------------------------------------------
-	//	Init all registers to 0's
-	//------------------------------------------------------------------------
-	memset (&regs, 0, sizeof(regs));
-	segread (&sregs);
-	memset (&rmi, 0, sizeof(rmi));
-
-	//------------------------------------------------------------------------
-	//	Fill in registers for the DPMI call, function 0x300
-	//------------------------------------------------------------------------
-	regs.w.ax = DPMI_CALL_REAL_INT;	// DPMI function to call
-	regs.w.bx = 0x002f;					// interrupt # to invoke
-	sregs.es = FP_SEG(&rmi);			// tell DPMI where the RMI is
-	regs.x.edi = FP_OFF(&rmi);
-
-	//------------------------------------------------------------------------
-	//	Fill in registers for the real-mode interrupt handler.
-	//	To test for the presence of IPX, set AH to 0x7a, AL to 0, and invoke
-	//	interrupt 0x2f (the "multiplex" interrupt).  If IPX is installed,
-	//	AL will be 0xff, and ES:DI will contain the IPX/SPX function address.
-	//------------------------------------------------------------------------
-	rmi.eax = 0x00007a00;
-
-	//------------------------------------------------------------------------
-	//	call DPMI
-	//------------------------------------------------------------------------
-	int386x(DPMI_INT, &regs, &regs, &sregs);
-
-	//------------------------------------------------------------------------
-	//	If IPX isn't there, return 0
-	//------------------------------------------------------------------------
-	if ( (rmi.eax & 0x00ff) != 0xff) {
-		return(0);
-	}
-
-	//------------------------------------------------------------------------
-	//	Test for SPX by invoking the IPX_SPX function with BX = 0x10, and AL = 0.
-	//	If SPX is present, AL will be 0xff.
-	//------------------------------------------------------------------------
-	//........................................................................
-	//	Fill in registers for the DPMI call
-	//........................................................................
-	memset (&regs, 0 ,sizeof(regs));
-	segread (&sregs);
-	memset (&rmi, 0 ,sizeof(rmi));
-	regs.w.ax = DPMI_CALL_REAL_INT;	// DPMI function to call
-	regs.w.bx = IPX_INT;					// interrupt # to invoke
-	sregs.es = FP_SEG(&rmi);			// tell DPMI where the RMI is
-	regs.x.edi = FP_OFF(&rmi);
-
-	//........................................................................
-	//	Fill in registers for the interrupt call
-	//........................................................................
-	rmi.ebx = 0x00000010;
-
-	//........................................................................
-	//	call DPMI
-	//........................................................................
-	int386x(DPMI_INT, &regs, &regs, &sregs);
-
-	//------------------------------------------------------------------------
-	//	SPX is installed; return '2'
-	//------------------------------------------------------------------------
-	if ( (rmi.eax & 0x00ff) == 0xff) {
-		return(2);
-	}
-
-	//------------------------------------------------------------------------
-	//	SPX is not installed; return '1'
-	//------------------------------------------------------------------------
-	return(1);
-#endif	//WIN32
 
 }	/* end of IPX_SPX_Installed */
 
@@ -209,49 +126,6 @@ int IPX_SPX_Installed(void)
  *   12/15/1994 BR : Created.                                              *
  *=========================================================================*/
 
-#ifndef WIN32		// WIN32 version is in IPX95.CPP
-
-int IPX_Open_Socket(unsigned short socket)
-{
-	union REGS regs;
-	struct SREGS sregs;
-	RMIType rmi;
-	int rc;
-
-	//------------------------------------------------------------------------
-	//	Open the socket:
-	//	DX = socket number
-	//	AL = 0 for short-lived socket, 0xff for long-lived socket
-	//------------------------------------------------------------------------
-	//........................................................................
-	//	Fill in registers for the DPMI call
-	//........................................................................
-	memset (&regs, 0 ,sizeof(regs));
-	segread (&sregs);
-	memset (&rmi, 0 ,sizeof(rmi));
-	regs.w.ax = DPMI_CALL_REAL_INT;	// DPMI function to call
-	regs.w.bx = IPX_INT;					// interrupt # to invoke
-	sregs.es = FP_SEG (&rmi);			// tell DPMI where the RMI is
-	regs.x.edi = FP_OFF (&rmi);
-
-	//........................................................................
-	//	Fill in registers for the interrupt call
-	//........................................................................
-	rmi.ebx = IPX_OPEN_SOCKET;			// function code
-	rmi.edx = socket;						// desired socket #
-	rmi.eax = 0x00ff;						// make this a long-lived socket
-
-	//........................................................................
-	//	call DPMI
-	//........................................................................
-	int386x (DPMI_INT, &regs, &regs, &sregs);
-
-	rc = (rmi.eax & 0xff);
-
-	return(rc);
-
-}	/* end of IPX_Open_Socket */
-#endif	//WIN32
 
 /***************************************************************************
  * IPX_Close_Socket -- closes an open socket                               *
@@ -268,44 +142,6 @@ int IPX_Open_Socket(unsigned short socket)
  * HISTORY:                                                                *
  *   12/15/1994 BR : Created.                                              *
  *=========================================================================*/
-#ifndef WIN32		// WIN32 version is in IPX95.CPP
-
-int IPX_Close_Socket(unsigned short socket)
-{
-	union REGS regs;
-	struct SREGS sregs;
-	RMIType rmi;
-
-	//------------------------------------------------------------------------
-	//	Close the socket:
-	//	DX = socket number
-	//------------------------------------------------------------------------
-	//........................................................................
-	//	Fill in registers for the DPMI call
-	//........................................................................
-	memset (&regs, 0 ,sizeof(regs));
-	segread (&sregs);
-	memset (&rmi, 0 ,sizeof(rmi));
-	regs.w.ax = DPMI_CALL_REAL_INT;	// DPMI function to call
-	regs.w.bx = IPX_INT;					// interrupt # to invoke
-	sregs.es = FP_SEG(&rmi);			// tell DPMI where the RMI is
-	regs.x.edi = FP_OFF(&rmi);
-
-	//........................................................................
-	//	Fill in registers for the interrupt call
-	//........................................................................
-	rmi.ebx = IPX_CLOSE_SOCKET;
-	rmi.edx = socket;
-
-	//........................................................................
-	//	call DPMI
-	//........................................................................
-	int386x(DPMI_INT, &regs, &regs, &sregs);
-
-	return(0);
-
-}	/* end of IPX_Close_Socket */
-#endif		//WIN32
 
 
 /***************************************************************************
@@ -328,45 +164,6 @@ int IPX_Close_Socket(unsigned short socket)
  * HISTORY:                                                                *
  *   12/15/1994 BR : Created.                                              *
  *=========================================================================*/
-#ifndef WIN32		// WIN32 version is in IPX95.CPP
-int IPX_Get_Connection_Number(void)
-{
-	union REGS regs;
-	struct SREGS sregs;
-	RMIType rmi;
-	int num;
-
-	//------------------------------------------------------------------------
-	//	Call Interrupt 0x21, with AH = 0xdc.  This tells Novell to put the local
-	//	connection number into AL.
-	//------------------------------------------------------------------------
-	//........................................................................
-	//	Fill in registers for the DPMI call
-	//........................................................................
-	memset (&regs, 0 ,sizeof(regs));
-	segread (&sregs);
-	memset (&rmi, 0 ,sizeof(rmi));
-	regs.w.ax = DPMI_CALL_REAL_INT;	// DPMI function to call
-	regs.w.bx = 0x21;						// interrupt # to invoke
-	sregs.es = FP_SEG(&rmi);			// tell DPMI where the RMI is
-	regs.x.edi = FP_OFF(&rmi);
-
-	//........................................................................
-	//	Fill in registers for the interrupt call
-	//........................................................................
-	rmi.eax = 0x0000dc00;
-
-	//........................................................................
-	//	call DPMI
-	//........................................................................
-	int386x(DPMI_INT, &regs, &regs, &sregs);
-
-	num = rmi.eax & 0x00ff;
-
-	return(num);
-
-}	/* end of IPX_Get_Connection_Number */
-#endif	//WIN32
 
 
 /***************************************************************************
@@ -387,132 +184,6 @@ int IPX_Get_Connection_Number(void)
  * HISTORY:                                                                *
  *   12/15/1994 BR : Created.                                              *
  *=========================================================================*/
-#ifndef WIN32		// WIN32 version is in IPX95.CPP
-int IPX_Get_1st_Connection_Num (char * username)
-{
-	struct request_buffer {
-		unsigned short len;							// username length + 5
-		unsigned char buffer_type;					// ConnectionNum = 0x15
-		unsigned short object_type;				// set ot 0x0100
-		unsigned char name_len;						// length of username
-		char name [48];								// copy of username
-		unsigned short reserved;
-	};
-	struct reply_buffer {
-		unsigned short  len;
-		unsigned char   number_connections;		// will be 0 - 100
-		unsigned char   connection_num [100];	// array of connection numbers
-		unsigned short  reserved[2];
-	};
-	union REGS regs;
-	struct SREGS sregs;
-	RMIType rmi;
-	struct request_buffer * reqbuf;
-	struct reply_buffer * replybuf;
-	unsigned short segment;							// for DOS allocation
-	unsigned short selector;						// for DOS allocation
-	int num_conns;										// # connections returned
-	int conn_num;										// connection number
-	int rc;
-
-	//------------------------------------------------------------------------
-	//	Allocate DOS memory to store the buffers passed to the interrupt
-	//------------------------------------------------------------------------
-	memset (&regs, 0 ,sizeof(regs));
-	segread (&sregs);
-	regs.x.eax = DPMI_ALLOC_DOS_MEM;						// DPMI function to call
-	regs.x.ebx = (sizeof(struct request_buffer) + 	// # paragraphs to allocate
-		sizeof(struct reply_buffer) + 15) >> 4;
-	int386x (DPMI_INT, &regs, &regs, &sregs);			// allocate the memory
-
-	//------------------------------------------------------------------------
-	//	If the carry flag is set, DPMI is indicating an error.
-	//------------------------------------------------------------------------
-	if (regs.x.cflag) {
-		return(0);
-	}
-
-	//------------------------------------------------------------------------
-	//	Get pointers to allocated memory.
-	//	'reqbuf' is just the returned real-mode segment, multiplied by 16.
-	//	'replybuf' is an offset from 'reqbuf'.
-	//------------------------------------------------------------------------
-	segment = regs.w.ax;
-	selector = regs.w.dx;
-	reqbuf = (struct request_buffer *)(segment << 4);
-	replybuf = (struct reply_buffer *)
-		(((char *)reqbuf) + sizeof (struct request_buffer));
-
-	//------------------------------------------------------------------------
-	//	Init the contents of the request & reply buffers
-	//------------------------------------------------------------------------
-	reqbuf->len = (unsigned short)(strlen(username) + 5);
-	reqbuf->buffer_type = 0x15;
-	reqbuf->object_type = 0x0100;
-	reqbuf->name_len    = (unsigned char) strlen(username);
-	strcpy(reqbuf->name, username);
-	reqbuf->reserved = reqbuf->reserved;				// prevent compiler warning
-	replybuf->len = 101;
-	replybuf->reserved[0] = replybuf->reserved[0];	// prevent compiler warning
-	replybuf->reserved[0] = replybuf->reserved[1];	// prevent compiler warning
-
-	//------------------------------------------------------------------------
-	//	Invoke Int 21 with AH=0xe3, DS:SI=&request_buffer, ES:DI=&reply_buffer
-	//------------------------------------------------------------------------
-	//........................................................................
-	//	Fill in registers for the DPMI call
-	//........................................................................
-	memset (&regs, 0 ,sizeof(regs));
-	segread (&sregs);
-	memset (&rmi, 0 ,sizeof(rmi));
-	regs.w.ax = DPMI_CALL_REAL_INT;	// DPMI function to call
-	regs.w.bx = 0x21;						// interrupt # to invoke
-	sregs.es = FP_SEG(&rmi);			// tell DPMI where the RMI is
-	regs.x.edi = FP_OFF(&rmi);
-
-	//........................................................................
-	//	Fill in registers for the interrupt call
-	//........................................................................
-	rmi.eax = 0x0000e300;
-	rmi.ds = segment;
-	rmi.esi = 0;
-	rmi.es = segment;
-	rmi.edi = sizeof(struct request_buffer);
-
-	//........................................................................
-	//	call DPMI
-	//........................................................................
-	int386x(DPMI_INT, &regs, &regs, &sregs);
-
-	//------------------------------------------------------------------------
-	//	Stash the 1st connection number
-	//------------------------------------------------------------------------
-	rc = (rmi.eax & 0x00ff);								// if AL !=0, error
-	num_conns = replybuf->number_connections;			// # times user is logged in
-	conn_num = (int )replybuf->connection_num[0];	// 1st connection #
-
-	//------------------------------------------------------------------------
-	//	Free DOS memory
-	//------------------------------------------------------------------------
-	memset (&regs, 0 ,sizeof(regs));
-	segread (&sregs);
-	regs.x.eax = DPMI_FREE_DOS_MEM;						// DPMI function to call
-	regs.x.edx = selector;									// ptr to free
-	int386x (DPMI_INT, &regs, &regs, &sregs);			// allocate the memory
-
-	//------------------------------------------------------------------------
-	//	Return error if function failed, or user not logged in
-	//------------------------------------------------------------------------
-	if (rc != 0 || num_conns==0) {
-		return(0);
-	}
-	else {
-		return(conn_num);
-	}
-
-}	/* end of IPX_Get_1st_Connection_Num */
-
-#endif	//WIN32
 
 /***************************************************************************
  * IPX_Get_Internet_Address -- gets Network Number & Node Address				*
@@ -537,119 +208,6 @@ int IPX_Get_1st_Connection_Num (char * username)
  * HISTORY:                                                                *
  *   12/15/1994 BR : Created.                                              *
  *=========================================================================*/
-#ifndef WIN32		// WIN32 version is in IPX95.CPP
-int IPX_Get_Internet_Address(int connection_number,
-	unsigned char * network_number, unsigned char * physical_node)
-{
-	struct request_buffer {
-		unsigned short  len;
-		unsigned char   buffer_type;				// Internet = 0x13
-		unsigned char   connection_number;		// Conn. Number to translate
-	};
-	struct reply_buffer {
-		unsigned short  len;
-		unsigned char   network_number [4];		// filled in by IPX
-		unsigned char   physical_node  [6];		// filled in by IPX
-		unsigned short  server_socket;			// filled in by IPX, but don't use!
-	};
-	union REGS regs;
-	struct SREGS sregs;
-	RMIType rmi;
-	struct request_buffer * reqbuf;
-	struct reply_buffer * replybuf;
-	unsigned short segment;							// for DOS allocation
-	unsigned short selector;						// for DOS allocation
-
-	//------------------------------------------------------------------------
-	//	Error if invalid connection is given
-	//------------------------------------------------------------------------
-	if (connection_number==0) {
-		return(-1);
-	}
-
-	//------------------------------------------------------------------------
-	//	Allocate DOS memory to store the buffers passed to the interrupt
-	//------------------------------------------------------------------------
-	memset (&regs, 0 ,sizeof(regs));
-	segread (&sregs);
-	regs.x.eax = DPMI_ALLOC_DOS_MEM;						// DPMI function to call
-	regs.x.ebx = (sizeof(struct request_buffer) + 	// # paragraphs to allocate
-		sizeof(struct reply_buffer) + 15) >> 4;
-	int386x (DPMI_INT, &regs, &regs, &sregs);			// allocate the memory
-
-	//------------------------------------------------------------------------
-	//	If the carry flag is set, DPMI is indicating an error.
-	//------------------------------------------------------------------------
-	if (regs.x.cflag) {
-		return(-1);
-	}
-
-	//------------------------------------------------------------------------
-	//	Get pointers to allocated memory.
-	//	'reqbuf' is just the returned real-mode segment, multiplied by 16.
-	//	'replybuf' is an offset from 'reqbuf'.
-	//------------------------------------------------------------------------
-	segment = regs.w.ax;
-	selector = regs.w.dx;
-	reqbuf = (struct request_buffer *)(segment << 4);
-	replybuf = (struct reply_buffer *)
-		(((char *)reqbuf) + sizeof (struct request_buffer));
-
-	//------------------------------------------------------------------------
-	//	Init the contents of the request & reply buffers
-	//------------------------------------------------------------------------
-	reqbuf->len = 2;
-	reqbuf->buffer_type = 0x13;
-	reqbuf->connection_number = (unsigned char)connection_number;
-	replybuf->len = 12;
-	replybuf->network_number[0] = replybuf->network_number[0];	// suppress warning
-	replybuf->physical_node[0] = replybuf->physical_node[0];		// suppress warning
-	replybuf->server_socket = replybuf->server_socket;				// suppress warning
-
-	//------------------------------------------------------------------------
-	//	Invoke Int 21 with AH=0xe3, DS:SI=&request_buffer, ES:DI=&reply_buffer
-	//------------------------------------------------------------------------
-	//........................................................................
-	//	Fill in registers for the DPMI call
-	//........................................................................
-	memset (&regs, 0 ,sizeof(regs));
-	segread (&sregs);
-	memset (&rmi, 0 ,sizeof(rmi));
-	regs.w.ax = DPMI_CALL_REAL_INT;	// DPMI function to call
-	regs.w.bx = 0x21;						// interrupt # to invoke
-	sregs.es = FP_SEG(&rmi);			// tell DPMI where the RMI is
-	regs.x.edi = FP_OFF(&rmi);
-
-	//........................................................................
-	//	Fill in registers for the interrupt call
-	//........................................................................
-	rmi.eax = 0x0000e300;
-	rmi.ds = segment;
-	rmi.esi = 0;
-	rmi.es = segment;
-	rmi.edi = sizeof(struct request_buffer);
-
-	//........................................................................
-	//	call DPMI
-	//........................................................................
-	int386x(DPMI_INT, &regs, &regs, &sregs);
-
-	memcpy(network_number, replybuf->network_number, 4);
-	memcpy(physical_node,  replybuf->physical_node,  6);
-
-	//------------------------------------------------------------------------
-	//	Free DOS memory
-	//------------------------------------------------------------------------
-	memset (&regs, 0 ,sizeof(regs));
-	segread (&sregs);
-	regs.x.eax = DPMI_FREE_DOS_MEM;						// DPMI function to call
-	regs.x.edx = selector;									// ptr to free
-	int386x (DPMI_INT, &regs, &regs, &sregs);			// allocate the memory
-
-	return(0);
-
-}	/* end of IPX_Get_Internet_Address */
-#endif	//WIN32
 
 /***************************************************************************
  * IPX_Get_User_ID -- gets user ID from Connection Number                  *
@@ -668,123 +226,6 @@ int IPX_Get_Internet_Address(int connection_number,
  * HISTORY:                                                                *
  *   12/15/1994 BR : Created.                                              *
  *=========================================================================*/
-#ifndef WIN32		// WIN32 version is in IPX95.CPP
-int IPX_Get_User_ID(int connection_number, char * user_id)
-{
-	struct request_buffer {
-		unsigned short  len;
-		unsigned char   buffer_type;			// 0x16 = UserID buffer type
-		unsigned char   connection_number;	// Connection Number to get ID for
-	};
-	struct reply_buffer {
-		unsigned short  len;
-		unsigned char   object_id[4];
-		unsigned char   object_type[2];
-		char            object_name[48];
-		char            login_time[7];
-		unsigned short  reserved;
-	};
-	union REGS      regs;
-	struct SREGS    sregs;
-	RMIType rmi;
-	struct request_buffer * reqbuf;
-	struct reply_buffer * replybuf;
-	unsigned short segment;							// for DOS allocation
-	unsigned short selector;						// for DOS allocation
-
-	//------------------------------------------------------------------------
-	//	Error if invalid connection is given
-	//------------------------------------------------------------------------
-	if (connection_number==0) {
-		return(-1);
-	}
-
-	//------------------------------------------------------------------------
-	//	Allocate DOS memory to store the buffers passed to the interrupt
-	//------------------------------------------------------------------------
-	memset (&regs, 0 ,sizeof(regs));
-	segread (&sregs);
-	regs.x.eax = DPMI_ALLOC_DOS_MEM;						// DPMI function to call
-	regs.x.ebx = (sizeof(struct request_buffer) + 	// # paragraphs to allocate
-		sizeof(struct reply_buffer) + 15) >> 4;
-	int386x (DPMI_INT, &regs, &regs, &sregs);			// allocate the memory
-
-	//------------------------------------------------------------------------
-	//	If the carry flag is set, DPMI is indicating an error.
-	//------------------------------------------------------------------------
-	if (regs.x.cflag) {
-		return(-1);
-	}
-
-	//------------------------------------------------------------------------
-	//	Get pointers to allocated memory.
-	//	'reqbuf' is just the returned real-mode segment, multiplied by 16.
-	//	'replybuf' is an offset from 'reqbuf'.
-	//------------------------------------------------------------------------
-	segment = regs.w.ax;
-	selector = regs.w.dx;
-	reqbuf = (struct request_buffer *)(segment << 4);
-	replybuf = (struct reply_buffer *)
-		(((char *)reqbuf) + sizeof (struct request_buffer));
-
-	//------------------------------------------------------------------------
-	//	Init the contents of the request & reply buffers
-	//------------------------------------------------------------------------
-	reqbuf->len = 2;
-	reqbuf->buffer_type = 0x16;
-	reqbuf->connection_number = (unsigned char)connection_number;
-	replybuf->len = sizeof(struct reply_buffer) - 2;
-	replybuf->object_id[0] = replybuf->object_id[0];		// suppress warnings
-	replybuf->object_type[0] = replybuf->object_type[0];	// suppress warnings
-	replybuf->login_time[0] = replybuf->login_time[0];		// suppress warnings
-	replybuf->reserved = replybuf->reserved;					// suppress warnings
-
-	//------------------------------------------------------------------------
-	//	Invoke Int 21 with AH=0xe3, DS:SI=&request_buffer, ES:DI=&reply_buffer
-	//------------------------------------------------------------------------
-	//........................................................................
-	//	Fill in registers for the DPMI call
-	//........................................................................
-	memset (&regs, 0 ,sizeof(regs));
-	segread (&sregs);
-	memset (&rmi, 0 ,sizeof(rmi));
-	regs.w.ax = DPMI_CALL_REAL_INT;	// DPMI function to call
-	regs.w.bx = 0x21;						// interrupt # to invoke
-	sregs.es = FP_SEG(&rmi);			// tell DPMI where the RMI is
-	regs.x.edi = FP_OFF(&rmi);
-
-	//........................................................................
-	//	Fill in registers for the interrupt call
-	//........................................................................
-	rmi.eax = 0x0000e300;
-	rmi.ds = segment;
-	rmi.esi = 0;
-	rmi.es = segment;
-	rmi.edi = sizeof(struct request_buffer);
-
-	//........................................................................
-	//	call DPMI
-	//........................................................................
-	int386x(DPMI_INT, &regs, &regs, &sregs);
-
-	//------------------------------------------------------------------------
-	//	Fill in the caller's buffer with the user name
-	//------------------------------------------------------------------------
-	strncpy(user_id, replybuf->object_name, 48);
-
-	//------------------------------------------------------------------------
-	//	Free DOS memory
-	//------------------------------------------------------------------------
-	memset (&regs, 0 ,sizeof(regs));
-	segread (&sregs);
-	regs.x.eax = DPMI_FREE_DOS_MEM;						// DPMI function to call
-	regs.x.edx = selector;									// ptr to free
-	int386x (DPMI_INT, &regs, &regs, &sregs);			// allocate the memory
-
-	return(0);
-
-}	/* end of IPX_Get_User_ID */
-#endif	//WIN32
 
 /***************************************************************************
  * IPX_Listen_For_Packet -- commands IPX to listen for a packet            *
@@ -818,43 +259,6 @@ int IPX_Get_User_ID(int connection_number, char * user_id)
  * HISTORY:                                                                *
  *   12/15/1994 BR : Created.                                              *
  *=========================================================================*/
-#ifndef WIN32		// WIN32 version is in IPX95.CPP
-int IPX_Listen_For_Packet(struct ECB *ecb_ptr)
-{
-	union REGS      regs;
-	struct SREGS    sregs;
-	RMIType rmi;
-
-	//------------------------------------------------------------------------
-	//	Call IPX with ES:SI=ecb_ptr
-	//------------------------------------------------------------------------
-	//........................................................................
-	//	Fill in registers for the DPMI call
-	//........................................................................
-	memset (&regs, 0 ,sizeof(regs));
-	segread (&sregs);
-	memset (&rmi, 0 ,sizeof(rmi));
-	regs.w.ax = DPMI_CALL_REAL_INT;	// DPMI function to call
-	regs.w.bx = IPX_INT;					// interrupt # to invoke
-	sregs.es = FP_SEG(&rmi);			// tell DPMI where the RMI is
-	regs.x.edi = FP_OFF(&rmi);
-
-	//........................................................................
-	//	Fill in registers for the interrupt call
-	//........................................................................
-	rmi.ebx = IPX_LISTEN_FOR_PACKET;
-	rmi.es = (short)((long)ecb_ptr >> 4);
-	rmi.esi = (long)((long)ecb_ptr & 0x000f);
-
-	//........................................................................
-	//	call DPMI
-	//........................................................................
-	int386x(DPMI_INT, &regs, &regs, &sregs);
-
-	return(rmi.eax & 0x00ff);
-
-}	/* end of IPX_Listen_For_Packet */
-#endif	//WIN32
 
 /***************************************************************************
  * IPX_Send_Packet -- commands IPX to send a packet                        *
@@ -897,41 +301,6 @@ int IPX_Listen_For_Packet(struct ECB *ecb_ptr)
  * HISTORY:                                                                *
  *   12/15/1994 BR : Created.                                              *
  *=========================================================================*/
-#ifndef WIN32		// WIN32 version is in IPX95.CPP
-void IPX_Send_Packet(struct ECB *ecb_ptr)
-{
-	union REGS      regs;
-	struct SREGS    sregs;
-	RMIType rmi;
-
-	//------------------------------------------------------------------------
-	//	Call IPX with ES:SI=ecb_ptr
-	//------------------------------------------------------------------------
-	//........................................................................
-	//	Fill in registers for the DPMI call
-	//........................................................................
-	memset (&regs, 0 ,sizeof(regs));
-	segread (&sregs);
-	memset (&rmi, 0 ,sizeof(rmi));
-	regs.w.ax = DPMI_CALL_REAL_INT;	// DPMI function to call
-	regs.w.bx = IPX_INT;					// interrupt # to invoke
-	sregs.es = FP_SEG(&rmi);			// tell DPMI where the RMI is
-	regs.x.edi = FP_OFF(&rmi);
-
-	//........................................................................
-	//	Fill in registers for the interrupt call
-	//........................................................................
-	rmi.ebx = IPX_SEND_PACKET;
-	rmi.es = (short)((long)ecb_ptr >> 4);
-	rmi.esi = (long)((long)ecb_ptr & 0x000f);
-
-	//........................................................................
-	//	call DPMI
-	//........................................................................
-	int386x(DPMI_INT, &regs, &regs, &sregs);
-
-}	/* end of IPX_Send_Packet */
-#endif	//WIN32
 
 /***************************************************************************
  * IPX_Get_Local_Target -- fills in ImmediateAddress field of ECB          *
@@ -958,105 +327,6 @@ void IPX_Send_Packet(struct ECB *ecb_ptr)
  * HISTORY:                                                                *
  *   12/15/1994 BR : Created.                                              *
  *=========================================================================*/
-#ifndef WIN32		// WIN32 version is in IPX95.CPP
-int IPX_Get_Local_Target(unsigned char *dest_network, unsigned char *dest_node,
-	unsigned short dest_socket, unsigned char *bridge_address)
-{
-	struct request_buffer {
-		unsigned char   network_number [4];
-		unsigned char   physical_node  [6];
-		unsigned short  socket;
-	};
-	struct reply_buffer {
-		unsigned char   local_target [6];
-	};
-	unsigned int rc;
-	union REGS regs;
-	struct SREGS sregs;
-	RMIType rmi;
-	struct request_buffer *reqbuf;
-	struct reply_buffer *replybuf;
-	unsigned short segment;							// for DOS allocation
-	unsigned short selector;						// for DOS allocation
-
-	//------------------------------------------------------------------------
-	//	Allocate DOS memory to store the buffers passed to the interrupt
-	//------------------------------------------------------------------------
-	memset (&regs, 0 ,sizeof(regs));
-	segread (&sregs);
-	regs.x.eax = DPMI_ALLOC_DOS_MEM;						// DPMI function to call
-	regs.x.ebx = (sizeof(struct request_buffer) + 	// # paragraphs to allocate
-		sizeof(struct reply_buffer) + 15) >> 4;
-	int386x (DPMI_INT, &regs, &regs, &sregs);			// allocate the memory
-
-	//------------------------------------------------------------------------
-	//	If the carry flag is set, DPMI is indicating an error.
-	//------------------------------------------------------------------------
-	if (regs.x.cflag) {
-		return(-1);
-	}
-
-	//------------------------------------------------------------------------
-	//	Get pointers to allocated memory.
-	//	'reqbuf' is just the returned real-mode segment, multiplied by 16.
-	//	'replybuf' is an offset from 'reqbuf'.
-	//------------------------------------------------------------------------
-	segment = regs.w.ax;
-	selector = regs.w.dx;
-	reqbuf = (struct request_buffer *)(segment << 4);
-	replybuf = (struct reply_buffer *)
-		(((char *)reqbuf) + sizeof (struct request_buffer));
-
-	//------------------------------------------------------------------------
-	//	Init the contents of the request & reply buffers
-	//------------------------------------------------------------------------
-	memcpy(reqbuf->network_number, dest_network, 4);
-	memcpy(reqbuf->physical_node, dest_node, 6);
-	reqbuf->socket = dest_socket;
-
-	//------------------------------------------------------------------------
-	//	Invoke IPX with DS:SI=&request_buffer, ES:DI=&reply_buffer
-	//------------------------------------------------------------------------
-	//........................................................................
-	//	Fill in registers for the DPMI call
-	//........................................................................
-	memset (&regs, 0 ,sizeof(regs));
-	segread (&sregs);
-	memset (&rmi, 0 ,sizeof(rmi));
-	regs.w.ax = DPMI_CALL_REAL_INT;	// DPMI function to call
-	regs.w.bx = IPX_INT;					// interrupt # to invoke
-	sregs.es = FP_SEG(&rmi);			// tell DPMI where the RMI is
-	regs.x.edi = FP_OFF(&rmi);
-
-	//........................................................................
-	//	Fill in registers for the interrupt call
-	//........................................................................
-	rmi.ebx = IPX_GET_LOCAL_TARGET;
-	rmi.ds = segment;
-	rmi.esi = 0;
-	rmi.es = segment;
-	rmi.edi = sizeof(struct request_buffer);
-	//........................................................................
-	//	call DPMI
-	//........................................................................
-	int386x(DPMI_INT, &regs, &regs, &sregs);
-
-	rc = (rmi.eax & 0x00ff);
-	memcpy(bridge_address, replybuf->local_target, 6);
-
-	//------------------------------------------------------------------------
-	//	Free DOS memory
-	//------------------------------------------------------------------------
-	memset (&regs, 0 ,sizeof(regs));
-	segread (&sregs);
-	regs.x.eax = DPMI_FREE_DOS_MEM;						// DPMI function to call
-	regs.x.edx = selector;									// ptr to free
-	int386x (DPMI_INT, &regs, &regs, &sregs);			// allocate the memory
-
-	return(rc);
-
-}	/* end of IPX_Get_Local_Target */
-#endif	//WIN32
 
 /***************************************************************************
  * IPX_Cancel_Event -- cancels an operation in progress                    *
@@ -1074,43 +344,6 @@ int IPX_Get_Local_Target(unsigned char *dest_network, unsigned char *dest_node,
  * HISTORY:                                                                *
  *   12/15/1994 BR : Created.                                              *
  *=========================================================================*/
-#ifndef WIN32		// WIN32 version is in IPX95.CPP
-int IPX_Cancel_Event(struct ECB *ecb_ptr)
-{
-	union REGS      regs;
-	struct SREGS    sregs;
-	RMIType rmi;
-	unsigned int rc;
-
-	//------------------------------------------------------------------------
-	//	Fill in registers for the DPMI call
-	//------------------------------------------------------------------------
-	memset (&regs, 0 ,sizeof(regs));
-	segread (&sregs);
-	memset (&rmi, 0 ,sizeof(rmi));
-	regs.w.ax = DPMI_CALL_REAL_INT;	// DPMI function to call
-	regs.w.bx = IPX_INT;					// interrupt # to invoke
-	sregs.es = FP_SEG(&rmi);			// tell DPMI where the RMI is
-	regs.x.edi = FP_OFF(&rmi);
-
-	//------------------------------------------------------------------------
-	//	Fill in registers for the interrupt call
-	//------------------------------------------------------------------------
-	rmi.ebx = IPX_CANCEL_EVENT;
-	rmi.es = (short)((long)ecb_ptr >> 4);
-	rmi.esi = (long)((long)ecb_ptr & 0x000f);
-
-	//------------------------------------------------------------------------
-	//	call DPMI
-	//------------------------------------------------------------------------
-	int386x(DPMI_INT, &regs, &regs, &sregs);
-
-	rc = (rmi.eax & 0x00ff);
-
-	return(rc);
-
-}	/* end of IPX_Cancel_Event */
-#endif	//WIN32
 
 /***************************************************************************
  * Let_IPX_Breath -- gives IPX some CPU time                               *
@@ -1133,34 +366,4 @@ int IPX_Cancel_Event(struct ECB *ecb_ptr)
  * HISTORY:                                                                *
  *   12/15/1994 BR : Created.                                              *
  *=========================================================================*/
-#ifndef WIN32		// WIN32 version is in IPX95.CPP
-void Let_IPX_Breath(void)
-{
-	union REGS      regs;
-	struct SREGS    sregs;
-	RMIType rmi;
-
-	//------------------------------------------------------------------------
-	//	Fill in registers for the DPMI call
-	//------------------------------------------------------------------------
-	memset (&regs, 0 ,sizeof(regs));
-	segread (&sregs);
-	memset (&rmi, 0 ,sizeof(rmi));
-	regs.w.ax = DPMI_CALL_REAL_INT;	// DPMI function to call
-	regs.w.bx = IPX_INT;					// interrupt # to invoke
-	sregs.es = FP_SEG(&rmi);			// tell DPMI where the RMI is
-	regs.x.edi = FP_OFF(&rmi);
-
-	//------------------------------------------------------------------------
-	//	Fill in registers for the interrupt call
-	//------------------------------------------------------------------------
-	rmi.ebx = IPX_RELINQUISH_CONTROL;
-
-	//------------------------------------------------------------------------
-	//	call DPMI
-	//------------------------------------------------------------------------
-	int386x(DPMI_INT, &regs, &regs, &sregs);
-
-}	/* end of Let_IPX_Breath */
-#endif	//WIN32
 /**************************** end of ipx.cpp *******************************/

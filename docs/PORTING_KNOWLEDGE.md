@@ -9,6 +9,17 @@ _Last updated: 2026-03-31_
 - Shared platform/rendering/input/audio support code lives in `WIN32LIB/`.
 - The active compatibility include order puts `SDL3_COMPAT/wrappers/` ahead of `CODE/` and `WIN32LIB/INCLUDE`.
 
+## Removed BIOS/register surface
+
+- `SDL3_COMPAT/wrappers/bios.h` is gone. Do not reintroduce `union REGS`, `struct SREGS`, `bioskey()`, `segread()`, or `int386*`-style shims for the SDL3 port.
+- The supported port no longer carries any BIOS/DPMI/VESA/IPX real-mode fallback code in active sources.
+  - `CODE/IPX.CPP` keeps only the Win32/IPX95 path;
+  - `CODE/IPXMGR.CPP::Alloc_RealMode_Mem()` / `Free_RealMode_Mem()` are now explicit no-op success stubs on the supported path;
+  - `CODE/CDFILE.CPP` and `CODE/NULLMGR.CPP` no longer keep register-access fallback branches;
+  - `WIN32LIB/MEM/ALLOC.CPP` now preserves only the supported malloc/free path.
+- The duplicate archive headers under `WIN32LIB/`, `VQ/INCLUDE/WWLIB32/`, and `WWFLAT32/` were trimmed so they no longer expose BIOS/DPMI CD-audio or descriptor-management types.
+- Archive-only source files that were wholly tied to BIOS/register access (old VESA backends, VQM32 real-mode helpers, DPMI allocators, and the old `MPLIB` DOS transport sources) were deleted rather than stubbed. If similar dead DOS-era files are found later, prefer deletion over adding compat wrappers.
+
 ## Mission-start crash-chain findings
 
 - `VectorClass` callers that sort with `qsort(&vec[0], ...)` must guard empty counts; `operator[]` on an empty vector binds a reference to null before `qsort` even runs.

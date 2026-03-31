@@ -11,6 +11,11 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - The reconstructed CMake/SDL3 build is now able to compile and link the full `redalert` executable on Linux.
 - `cmake --build build --target redalert -j16` completes successfully.
 - `cmake --build build-asan --target redalert -j16` completes successfully with ASan/UBSan enabled.
+- The unsupported BIOS/register-access surface is removed from the tree:
+  - deleted `SDL3_COMPAT/wrappers/bios.h` and removed every remaining non-documentation `bios.h`/`REGS`/`SREGS`/`int386*`-style reference from the repository;
+  - removed the dead active-source fallback branches that still carried DOS real-mode/IPX/modem/CD register access (`CODE/IPX.CPP`, `CODE/IPXMGR.CPP`, `CODE/CDFILE.CPP`, `WIN32LIB/MEM/ALLOC.CPP`);
+  - trimmed the duplicate `PLAYCD.H`, `WWSTD.H`, `DESCMGMT.H`, and old `SOUNDIO.CPP` variants so the remaining archive headers no longer expose BIOS/DPMI types;
+  - deleted the archive-only DPMI/VESA-era source files that were entirely tied to the removed BIOS/register path (old allocators, VESA backends, old VQM32 memory/video sources, and the old `MPLIB` DOS transport sources).
 - The Linux build now enters the real game startup path instead of the old Unix stub path:
   - `CODE/STUB.CPP` bridges Linux `main()` into `WinMain(...)`.
   - `SDL3_COMPAT/wrappers/win32_compat.cpp` returns a real executable path from `GetModuleFileName()`.
