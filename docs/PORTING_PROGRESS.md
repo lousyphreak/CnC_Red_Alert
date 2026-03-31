@@ -37,6 +37,8 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - The active WSA animation loader is now LP64-safe again on the SDL/Linux path:
   - `WIN32LIB/WSA/WSA.CPP` now reads the WSA on-disk header plus frame-0 offsets with packed fixed-width `uint16_t` / `uint32_t` fields instead of host-sized `unsigned long`;
   - the runtime `largest_frame_size` accounting now translates the legacy 32-bit Animate header size to the current host `SysAnimHeaderType` size before laying out the animation buffers, so `Open_Animation()` no longer back-loads bogus frame data into `LCW_Uncompress()` on 64-bit builds;
+  - `Open_Animation()` now also scans the WSA frame-offset table to reserve enough scratch space for the largest compressed frame span, not just the recorded decoded-delta size, so map-select/style WSAs such as `MSAA.WSA` no longer back-load compressed frame data outside the delta workspace before `Mem_Copy()` / `LCW_Uncompress()`;
+  - `Apply_Delta()` now rejects inconsistent frame spans that exceed the reserved WSA scratch workspace instead of walking past the buffer on bad offset-table data;
   - `cmake --build build-asan --target redalert -j4` still succeeds after the WSA fix.
 - Repository-owned `#pragma pack` usage outside `extern/SDL3` has been re-audited and tightened:
   - declaration-only HMI/SOS headers (`SOSDATA.H`, `SOSFNCT.H`) no longer force or reset caller packing state;
@@ -90,6 +92,8 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - Latest traced mission-start validation now survives until the external timeout instead of aborting:
   - `ASAN_OPTIONS=detect_leaks=0 RA_TRACE_STARTUP=1 timeout 20s ./GameData/redalert-asan` exits with `124` from `timeout`, not from ASan/UBSan termination;
   - the old crash signatures in `BUFF.CPP`, `LOADDLG.CPP`, `OVERLAY.CPP`, `HELP.CPP`, `DRIVE.CPP`, `TEAM.CPP`, and `TECHNO.CPP` no longer appear in that run.
+- After the WSA scratch-space follow-up, the existing ASan startup smoke still reaches the normal title/init path:
+  - `ASAN_OPTIONS=detect_leaks=0 RA_TRACE_STARTUP=1 timeout 20s ./GameData/redalert-asan` still exits with `124` from `timeout`, not from a new ASan/UBSan abort.
 - The latest mission-entry runtime cleanup removes the remaining warnings that were directly tied to the user-reported black in-mission state:
   - fixed-heap pooled objects no longer write `IsActive` from `operator new/delete`, so the old pre-construction/post-destruction invalid-vptr hits in `TEAMTYPE.CPP`, `TRIGTYPE.CPP`, `TERRAIN.CPP`, `UNIT.CPP`, `INFANTRY.CPP`, `BUILDING.CPP`, `SMUDGE.CPP`, `OVERLAY.CPP`, `TEAM.CPP`, and `AIRCRAFT.CPP` no longer reproduce on the active ASan path;
   - building scan/prerequisite masks now go through guarded 32-bit `Structure_Scan_Bit(...)` handling, so the old `CODE/HOUSE.CPP` / `CODE/BUILDING.CPP` shift-exponent warnings (for example shift exponent `83`) no longer reproduce on the active ASan path.

@@ -175,6 +175,7 @@ static uint32_t Read_WSA_Frame_Offset(void const* offset_table, int frame)
 
 PRIVATE uint32_t Get_Resident_Frame_Offset( char *file_buffer, int frame );
 PRIVATE uint32_t Get_File_Frame_Offset( int file_handle, int frame, int palette_adjust);
+PRIVATE uint32_t Get_Largest_File_Frame_Data_Size( int file_handle, int total_frames );
 PRIVATE BOOL Apply_Delta(SysAnimHeaderType *sys_header, int curr_frame, char *dest_ptr, int dest_w);
 /*= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =*/
 
@@ -201,6 +202,8 @@ void * __cdecl Open_Animation(char const *file_name, char *user_buffer, long use
 	int						fh, anim_flags;
 	int						palette_adjust;
 	int32_t					buffer_size;
+	uint32_t				largest_frame_buffer_size;
+	uint32_t				largest_frame_data_size;
 	uint32_t				offsets_size;
 	uint32_t				frame0_size;
 	uint32_t				target_buffer_size, delta_buffer_size, file_buffer_size;
@@ -269,6 +272,16 @@ void * __cdecl Open_Animation(char const *file_name, char *user_buffer, long use
 		frame0_size = 0U;
 	}
 
+	offsets_size = ((uint32_t)file_header.total_frames + 2U) * sizeof(uint32_t);
+	largest_frame_data_size = frame0_size;
+
+	if (file_header.total_frames > 0) {
+		uint32_t largest_file_frame_data_size = Get_Largest_File_Frame_Data_Size(fh, file_header.total_frames);
+		if (largest_file_frame_data_size > largest_frame_data_size) {
+			largest_frame_data_size = largest_file_frame_data_size;
+		}
+	}
+
 	file_buffer_size -= (uint32_t)palette_adjust + frame0_size + (uint32_t)WSA_FILE_HEADER_SIZE;
 
 	// We need to determine the buffer sizes required for the animation.  At a
@@ -293,9 +306,24 @@ void * __cdecl Open_Animation(char const *file_name, char *user_buffer, long use
 	// UTILITY DID NOT KNOW I UPDATED IT, IT ADDS IT TO largest_frame_size BEFORE SAVING
 	// IT TO THE FILE.  The file stores the legacy 32-bit header size through
 	// the flags field, so adjust that value to the current host-side
-	// SysAnimHeaderType size before laying out the buffers.
-	delta_buffer_size  = (uint32_t)file_header.largest_frame_size
-	                   + ((uint32_t)sizeof(SysAnimHeaderType) - (uint32_t)sizeof(LegacyWSAAnimateHeaderType));
+	// SysAnimHeaderType size before laying out the buffers.  Some assets need
+	// additional back-load room for a compressed frame span that is larger than
+	// the recorded decoded-delta size, so reserve whichever is larger.
+	if ((uint32_t)file_header.largest_frame_size < (uint32_t)sizeof(LegacyWSAAnimateHeaderType)) {
+		Close_File(fh);
+		return(NULL);
+	}
+
+	largest_frame_buffer_size = (uint32_t)file_header.largest_frame_size - (uint32_t)sizeof(LegacyWSAAnimateHeaderType);
+	if (largest_frame_data_size > largest_frame_buffer_size) {
+		largest_frame_buffer_size = largest_frame_data_size;
+	}
+	if (largest_frame_buffer_size > 0xFFFFu) {
+		Close_File(fh);
+		return(NULL);
+	}
+
+	delta_buffer_size  = largest_frame_buffer_size + (uint32_t)sizeof(SysAnimHeaderType);
 	min_buffer_size = target_buffer_size + delta_buffer_size;
 	max_buffer_size = min_buffer_size + file_buffer_size;
 
@@ -381,15 +409,12 @@ void * __cdecl Open_Animation(char const *file_name, char *user_buffer, long use
 	sys_header -> pixel_height  = file_header.pixel_height;
 	sys_header -> anim_mem_size = (uint32_t)buffer_size;
 	sys_header -> delta_buffer  = delta_buffer;
-	sys_header -> largest_frame_size =
-                 (uint16_t)(delta_buffer_size - (uint32_t)sizeof(SysAnimHeaderType));
+	sys_header -> largest_frame_size = (uint16_t)largest_frame_buffer_size;
 
 	strcpy(sys_header->file_name, file_name);
 
 	// Figure how much room the frame offsets take up in the file.
 	// Add 2 - one for the wrap around and one for the final end offset.
-	offsets_size = ((uint32_t)file_header.total_frames + 2U) * sizeof(uint32_t);
-
 	// Can the user_buffer_size handle the maximum case buffer?
 	if ( (uint32_t)buffer_size == max_buffer_size) {
 
@@ -1113,6 +1138,46 @@ PRIVATE uint32_t Get_File_Frame_Offset( int file_handle, int frame, int palette_
 
 
 /***************************************************************************
+ * GET_LARGEST_FILE_FRAME_DATA_SIZE -- Finds the largest compressed frame.  *
+ *                                                                         *
+ * INPUT:      int file_handle of animation file.                         *
+ *             int total_frames in the animation.                         *
+ *                                                                         *
+ * OUTPUT:     uint32_t largest compressed frame span found in the table.  *
+ *                                                                         *
+ * WARNINGS:                                                               *
+ *                                                                         *
+ * HISTORY:                                                                *
+ *   03/31/2026 GPT : Created for SDL/Linux WSA workspace sizing.          *
+ *=========================================================================*/
+PRIVATE uint32_t Get_Largest_File_Frame_Data_Size( int file_handle, int total_frames )
+{
+	uint32_t largest_frame_data_size;
+
+	largest_frame_data_size = 0U;
+
+	for (int frame = 1; frame <= total_frames; ++frame) {
+		uint32_t frame_offset;
+		uint32_t next_frame_offset;
+		uint32_t frame_data_size;
+
+		frame_offset = Get_File_Frame_Offset(file_handle, frame, 0);
+		next_frame_offset = Get_File_Frame_Offset(file_handle, frame + 1, 0);
+		if (!frame_offset || !next_frame_offset || next_frame_offset < frame_offset) {
+			continue;
+		}
+
+		frame_data_size = next_frame_offset - frame_offset;
+		if (frame_data_size > largest_frame_data_size) {
+			largest_frame_data_size = frame_data_size;
+		}
+	}
+
+	return(largest_frame_data_size);
+}
+
+
+/***************************************************************************
  * APPLY_DELTA -- Copies frame into delta buffer, then applies to target   *
  *                                                                         *
  * INPUT:      SysAnimHeaderType *sys_header - pointer to animation buffer.*
@@ -1144,6 +1209,9 @@ PRIVATE BOOL Apply_Delta(SysAnimHeaderType *sys_header, int curr_frame, char *de
 
 		frame_offset = Get_Resident_Frame_Offset(sys_header->file_buffer, curr_frame);
 		frame_data_size = Get_Resident_Frame_Offset(sys_header->file_buffer, curr_frame + 1) -	frame_offset;
+		if (!frame_offset || !frame_data_size || frame_data_size > sys_header->largest_frame_size) {
+			return(FALSE);
+		}
 
 	  	data_ptr 	= (char *)Add_Long_To_Pointer(sys_header->file_buffer, frame_offset);
 	  	delta_back 	= (char *)Add_Long_To_Pointer(delta_back,
@@ -1167,7 +1235,7 @@ PRIVATE BOOL Apply_Delta(SysAnimHeaderType *sys_header, int curr_frame, char *de
 		frame_offset = Get_File_Frame_Offset(file_handle, curr_frame, palette_adjust);
 		frame_data_size = Get_File_Frame_Offset(file_handle, curr_frame + 1, palette_adjust) - frame_offset;
 
-		if (!frame_offset || !frame_data_size) {
+		if (!frame_offset || !frame_data_size || frame_data_size > sys_header->largest_frame_size) {
 			return(FALSE);
 		}
 
