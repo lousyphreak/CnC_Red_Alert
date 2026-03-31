@@ -133,13 +133,14 @@ class DriveClass : public FootClass
 		**	Smooth turning tracks are controlled by this structure and these
 		**	processing bits.
 		*/
-		typedef enum TrackControlType {
+		typedef enum TrackControlType : uint8_t {
 			F_=0x00,		// No translation necessary?
 			F_T=0x01,	// Transpose X and Y components?
 			F_X=0x02,	// Reverse X component sign?
 			F_Y=0x04,	// Reverse Y component sign?
 			F_D=0x08		// Two cell consumption?
 		} TrackControlType;
+		static_assert(sizeof(TrackControlType) == 1, "TrackControlType must remain 8-bit");
 
 	private:
 
@@ -149,6 +150,7 @@ class DriveClass : public FootClass
 			DirType				Facing;		// Facing when track has been completed.
 			DriveClass::TrackControlType	Flag;			// List processing flag bits.
 		} TurnTrackType;
+		static_assert(sizeof(TurnTrackType) == 4, "TurnTrackType must remain 4 bytes");
 
 		typedef struct {
 			COORDINATE		Offset;		// Offset to origin coordinate.

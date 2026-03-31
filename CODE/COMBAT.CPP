@@ -186,14 +186,16 @@ void Explosion_Damage(COORDINATE coord, int strength, TechnoClass * source, Warh
 	**	the cell data directly.
 	*/
 	count = 0;
-	for (FacingType i = FACING_NONE; i < FACING_COUNT; i++) {
+	for (int i = -1; i < FACING_COUNT; i++) {
 		/*
 		**	Fetch a pointer to the cell to examine. This is either
 		**	an adjacent cell or the center cell. Damage never spills
 		**	further than one cell away.
 		*/
-		if (i != FACING_NONE) {
-			cellptr = &Map[cell].Adjacent_Cell(i);
+		if (i == -1) {
+			cellptr = &Map[cell];
+		} else {
+			cellptr = &Map[cell].Adjacent_Cell((FacingType)i);
 		}
 
 		/*

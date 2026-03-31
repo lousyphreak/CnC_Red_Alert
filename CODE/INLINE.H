@@ -613,7 +613,7 @@ inline COORDINATE Coord_Mid(COORDINATE coord1, COORDINATE coord2)
  *=============================================================================================*/
 inline FacingType Dir_Facing(DirType facing)
 {
-	return (FacingType)(((unsigned char)((int)facing+0x10)&0xFF)>>5);
+	return (FacingType)((((unsigned int)facing) + 0x10U) >> 5);
 }
 
 
@@ -634,7 +634,7 @@ inline FacingType Dir_Facing(DirType facing)
  *=============================================================================================*/
 inline DirType Facing_Dir(FacingType facing)
 {
-	return (DirType)((int)facing << 5);
+	return (DirType)((unsigned int)facing << 5);
 }
 
 
@@ -655,7 +655,7 @@ inline DirType Facing_Dir(FacingType facing)
  *=============================================================================================*/
 inline int Dir_To_16(DirType facing)
 {
-	return Facing16[Dir_Index(facing)];
+	return Facing16[(unsigned int)facing];
 }
 
 
@@ -677,7 +677,7 @@ inline int Dir_To_16(DirType facing)
  *=============================================================================================*/
 inline int Dir_To_32(DirType facing)
 {
-	return Facing32[Dir_Index(facing)];
+	return Facing32[(unsigned int)facing];
 }
 
 
@@ -886,7 +886,7 @@ inline CELL Adjacent_Cell(CELL cell, DirType dir)
  *=============================================================================================*/
 inline FacingType Dir_To_8(DirType facing)
 {
-	return (FacingType)(((unsigned char)((int)facing|0x10))>>5);
+	return (FacingType)((((unsigned int)facing) | 0x10U) >> 5);
 }
 
 

@@ -433,7 +433,7 @@ int calcy(signed short factor, short distance)
 
 void Move_Point(short &x, short &y, register DirType dir, unsigned short distance)
 {
-	unsigned int const index = Dir_Index(dir);
+	unsigned int const index = (unsigned int)dir;
 
 	static char const CosTable[256] = {
 		0x00,0x03,0x06,0x09,0x0c,0x0f,0x12,0x15,
@@ -575,7 +575,7 @@ void Move_Point(short &x, short &y, register DirType dir, unsigned short distanc
 //lint -e569
 void Normal_Move_Point(short &x, short &y, register DirType dir, unsigned short distance)
 {
-	unsigned int const index = Dir_Index(dir);
+	unsigned int const index = (unsigned int)dir;
 
 	static signed char const CosTable[256] = {
 		0x00,0x03,0x06,0x09,0x0c,0x0f,0x12,0x15,

@@ -184,8 +184,9 @@ void FootClass::Debug_Dump(MonoClass * mono) const
 
 	static char	const * _p2c[9] = {"-","0","1","2","3","4","5","6","7"};
 	for (int index = 0; index < min(12, ARRAY_SIZE(Path)); index++) {
+		int path_index = (Path[index] == FACING_NONE) ? 0 : ((int)Path[index] + 1);
 		mono->Set_Cursor(54+index, 3);
-		mono->Printf("%s", _p2c[((ABS((int)Path[index]+1)) % ARRAY_SIZE(_p2c))]);
+		mono->Printf("%s", _p2c[path_index]);
 	}
 	mono->Set_Cursor(54, 5);mono->Printf("%2d", PathThreshhold);
 	mono->Set_Cursor(72, 3);mono->Printf("%4d", (long)PathDelay);

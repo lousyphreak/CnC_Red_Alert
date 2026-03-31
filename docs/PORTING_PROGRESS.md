@@ -1,6 +1,6 @@
 # Porting Progress
 
-_Last updated: 2026-03-30_
+_Last updated: 2026-03-31_
 
 ## Goal
 
@@ -39,6 +39,10 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - `CODE/DEFINES.H` now keeps `OverlayType` at 8 bits again, matching `OverlayPack`'s one-byte-per-cell format and fixing the later `0xFF0706FF` overlay load corruption.
   - `CODE/HELP.H` / `CODE/HELP.CPP` now keep the help overlap scratch buffer writable instead of casting away `const` and writing into read-only storage.
   - `CODE/DRIVE.CPP` now uses `memmove()` when compacting in-place path buffers, fixing the ASan `memcpy-param-overlap` abort that appeared after the mission had already entered live AI.
+  - `CODE/FACE.H`, `CODE/DEFINES.H`, `CODE/DRIVE.H`, `CODE/FACING.H`, `CODE/FACING.CPP`, `CODE/INLINE.H`, `CODE/COORD.CPP`, `CODE/FINDPATH.CPP`, `CODE/COMBAT.CPP`, and `CODE/FOOT.CPP` now restore the active facing/direction enums to explicit 8-bit storage instead of host-sized enums plus trim helpers:
+    - `DirType`, `FacingType`, and `DriveClass::TrackControlType` now use fixed-width 8-bit underlying types, `FACING_NONE` is represented explicitly as `0xFF`, and `DriveClass::TurnTrackType` is asserted back to a 4-byte row layout;
+    - the old `Dir_Index()` / `Normalize_Dir()` shims are removed, so the active code now carries/indexes the byte-sized enums directly;
+    - the remaining active signed-facing logic in `CODE/FINDPATH.CPP`, `CODE/COMBAT.CPP`, and `CODE/FOOT.CPP` now uses explicit signed temporaries or integer iteration where it previously relied on widened signed enums.
   - `CODE/TEAM.CPP` and `CODE/TECHNO.CPP` now guard regrouping `CurrentMission == -1` state and only cast occupiers to `TechnoClass` after `Is_Techno()`, removing the last mission-start UBSan hits seen in the active AI loop.
 - Latest traced mission-start validation now survives until the external timeout instead of aborting:
   - `ASAN_OPTIONS=detect_leaks=0 RA_TRACE_STARTUP=1 timeout 20s ./GameData/redalert-asan` exits with `124` from `timeout`, not from ASan/UBSan termination;
@@ -156,7 +160,7 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - `cmake --build build --target redalert -j4` passes.
   - `cmake --build build -j4` passes.
   - `cmake --build build-asan --target redalert -j4` passes.
-  - `ctest --test-dir build --output-on-failure` still reports that the repository currently has no registered tests.
+  - `ctest --test-dir build --output-on-failure` and `ctest --test-dir build-asan --output-on-failure` still report that the repository currently has no registered tests.
   - A fresh focused `gdb` drag probe on `GameData/redalert-asan` confirms the held-button path after the fix: `DOWN_AFTER_PRESS=1`, `DOWN_AFTER_MOTION=1`, `RUBBER_BAND=1`, `TENTATIVE=1`.
   - Re-running the focused full-SDL attack-click probe on `GameData/redalert-asan` still reports `SELECTED_AFTER_SDL_CLICK=1` and `OUTLIST_AFTER_SDL_ATTACK=1`.
   - Rebuilding after the Wayland `ClipCursor()` change still passes in both `build/` and `build-asan/`, with the expected `sdl3_compat` and `redalert` relinks only.

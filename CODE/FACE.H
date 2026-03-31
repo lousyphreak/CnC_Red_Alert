@@ -38,8 +38,10 @@
 #ifndef FACE_H
 #define FACE_H
 
+#include <stdint.h>
+
 // Enumerations of the facing values returned from Desired_Facing().
-typedef enum DirType {
+typedef enum DirType : uint8_t {
 	DIR_MIN=0,
 	DIR_N=0,
 	DIR_NE=1<<5,
@@ -47,37 +49,30 @@ typedef enum DirType {
 	DIR_SE=3<<5,
 	DIR_S=4<<5,
 	DIR_SW=5<<5,
+	DIR_SW_X1=(5<<5)-8,
+	DIR_SW_X2=(5<<5)-16,
 	DIR_W=6<<5,
 	DIR_NW=7<<5,
 	DIR_MAX=255
 } DirType;
-
-inline unsigned Dir_Index(DirType dir)
-{
-	return ((unsigned int)dir & 0x00FFU);
-}
-
-inline DirType Normalize_Dir(DirType dir)
-{
-	return (DirType)Dir_Index(dir);
-}
+static_assert(sizeof(DirType) == 1, "DirType must remain 8-bit");
 
 // Operators that allow simple math with DirType.
 inline DirType operator + (DirType f1, DirType f2)
 {
-	return (DirType)(((int)f1 + (int)f2) & 0x00FF);
+	return (DirType)(uint8_t)((unsigned int)f1 + (unsigned int)f2);
 }
 inline DirType operator + (DirType f1, int f2)
 {
-	return (DirType)(((int)f1 + (int)f2) & 0x00FF);
+	return (DirType)(uint8_t)((unsigned int)f1 + (unsigned int)f2);
 }
 inline DirType operator - (DirType f1, DirType f2)
 {
-	return (DirType)(((int)f1 - (int)f2) & 0x00FF);
+	return (DirType)(uint8_t)((unsigned int)f1 - (unsigned int)f2);
 }
 inline DirType operator - (DirType f1, int f2)
 {
-	return (DirType)(((int)f1 - (int)f2) & 0x00FF);
+	return (DirType)(uint8_t)((unsigned int)f1 - (unsigned int)f2);
 }
 
 
@@ -86,5 +81,4 @@ DirType Desired_Facing8(int x1, int y1, int x2, int y2);
 DirType Desired_Facing256(int srcx, int srcy, int dstx, int dsty);
 
 #endif
-
 

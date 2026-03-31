@@ -60,8 +60,8 @@
  *=============================================================================================*/
 FacingClass::FacingClass(void)
 {
-	CurrentFacing = Normalize_Dir(DIR_N);
-	DesiredFacing = Normalize_Dir(DIR_N);
+	CurrentFacing = DIR_N;
+	DesiredFacing = DIR_N;
 }
 
 
@@ -85,7 +85,6 @@ FacingClass::FacingClass(void)
  *=============================================================================================*/
 int FacingClass::Set_Desired(DirType facing)
 {
-	facing = Normalize_Dir(facing);
 	if (DesiredFacing != facing) {
 		DesiredFacing = facing;
 		return(true);
@@ -112,7 +111,6 @@ int FacingClass::Set_Desired(DirType facing)
  *=============================================================================================*/
 int FacingClass::Set_Current(DirType facing)
 {
-	facing = Normalize_Dir(facing);
 	if (CurrentFacing != facing) {
 		CurrentFacing = facing;
 		return(true);

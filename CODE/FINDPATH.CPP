@@ -1044,14 +1044,14 @@ int FootClass::Optimize_Moves(PathType * path, MoveType threshhold)
 	**	so eliminate both commands. Any other value adjusts the first command facing.
 	*/
 #ifdef DIAGONAL
-	static FacingType _trans[FACING_COUNT] = {(FacingType)0, (FacingType)0, (FacingType)1, (FacingType)2, (FacingType)3, (FacingType)-2, (FacingType)-1, (FacingType)0};	// Smoothing.
+	static int8_t const _trans[FACING_COUNT] = {0, 0, 1, 2, 3, -2, -1, 0};	// Smoothing.
 #else
-	static FacingType _trans[FACING_COUNT] = {(FacingType)0, (FacingType)0, (FacingType)0, (FacingType)2, (FacingType)3, (FacingType)-2, (FacingType)0, (FacingType)0};
+	static int8_t const _trans[FACING_COUNT] = {0, 0, 0, 2, 3, -2, 0, 0};
 #endif
-	FacingType	* cmd1,		// Floating first command pointer.
-					* cmd2,		// Floating second command pointer.
-					newcmd;		// Calculated new optimized command.
+	FacingType	* cmd1;		// Floating first command pointer.
+	FacingType	* cmd2;		// Floating second command pointer.
 	FacingType	newdir;		// Tentative new direction for smoothing.
+	int			newcmd;		// Calculated new optimized command offset.
 	CELL			cell;			// Working cell (as it moves along path).
 
 	/*
@@ -1098,8 +1098,8 @@ int FootClass::Optimize_Moves(PathType * path, MoveType threshhold)
 			**	commands. Any other value is new direction and eliminate
 			**	one command.
 			*/
-			newcmd = (FacingType)(*cmd2 - *cmd1);
-			if (newcmd < FACING_N) newcmd = (FacingType)(newcmd + FACING_COUNT);
+			newcmd = (int)*cmd2 - (int)*cmd1;
+			if (newcmd < 0) newcmd += FACING_COUNT;
 			newcmd = _trans[newcmd];
 
 			/*
@@ -1130,13 +1130,13 @@ int FootClass::Optimize_Moves(PathType * path, MoveType threshhold)
 					**	Diagonal optimizations are always only 45
 					**	degree adjustments.
 					*/
-					newdir = Next_Direction(*cmd1, (newcmd < FACING_N) ? (FacingType)-1 : (FacingType)1);
+					newdir = Next_Direction(*cmd1, (newcmd < 0) ? (FacingType)-1 : (FacingType)1);
 
 					/*
 					**	Diagonal 90 degree changes can be smoothed, although
 					**	the path isn't any shorter.
 					*/
-					if (ABS((int)newcmd) == 1) {
+					if (ABS(newcmd) == 1) {
 						if (Passable_Cell(Adjacent_Cell(cell, newdir), newdir, -1, threshhold)) {
 							*cmd2 = newdir;
 							*cmd1 = newdir;
@@ -1147,7 +1147,7 @@ int FootClass::Optimize_Moves(PathType * path, MoveType threshhold)
 						continue;
 					}
 				} else {
-					newdir = Next_Direction(*cmd1, newcmd);
+					newdir = Next_Direction(*cmd1, (FacingType)newcmd);
 				}
 
 				/*

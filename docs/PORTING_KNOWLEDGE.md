@@ -1,6 +1,6 @@
 # Porting Knowledge
 
-_Last updated: 2026-03-30_
+_Last updated: 2026-03-31_
 
 ## Repo facts
 
@@ -28,6 +28,9 @@ _Last updated: 2026-03-30_
 - `Coord_Spillage_List(COORDINATE, Rect, ...)` can return up to 128 offsets; 32-entry temporary lists in map/display code are not universally safe.
 - `HelpClass::OverlapList` is mutable scratch storage despite the legacy `const` declaration. Linux puts the old declaration in read-only storage, so the cast-away-const write crashes.
 - In-place `Path[]` compaction in `DriveClass` requires `memmove()`, not `memcpy()`.
+- `DirType`, `FacingType`, and the active drive-facing control enums must stay 8-bit on the SDL/Linux port.
+  - `Path[]`, `FacingClass`, the direction lookup helpers, and `DriveClass::TurnTrackType` all assume original byte-sized facing storage; leaving those enums host-sized recreates movement-state corruption on LP64 hosts and forces fragile “trim back to 8-bit” helpers into the active code.
+  - The durable fix is to restore the underlying enum size directly, represent `FACING_NONE` explicitly as `0xFF`, remove `Dir_Index()` / `Normalize_Dir()`, and then convert the few active signed-facing sites to explicit integer math (`FINDPATH.CPP` optimization deltas, `COMBAT.CPP` center-plus-adjacents sweep, `FOOT.CPP` path debug print).
 - Team scripts can legitimately have `CurrentMission == -1` while regrouping; any direct `MissionList[CurrentMission]` access must guard that state.
 - `Cell_Occupier()` may return terrain or other non-techno `ObjectClass` instances; `TechnoClass` AI code must check `Is_Techno()` before casting.
 - Fixed-heap pooled classes must not touch `IsActive` from `operator new/delete`.

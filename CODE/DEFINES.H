@@ -2996,9 +2996,9 @@ typedef enum WindowNumberType {
 **	when referring to adjacent cells. This comes into play when moving
 **	between cells and in the Desired_Facing() algorithm.
 */
-typedef enum FacingType {
-	FACING_NONE=-1,
-	FACING_N,			// North
+typedef enum FacingType : uint8_t {
+	FACING_NONE=0xFF,
+	FACING_N=0,			// North
 	FACING_NE,			// North-East
 	FACING_E,			// East
 	FACING_SE,			// South-East
@@ -3010,6 +3010,7 @@ typedef enum FacingType {
 	FACING_COUNT,			// Total of 8 directions (0..7).
 	FACING_FIRST=0
 } FacingType;
+static_assert(sizeof(FacingType) == 1, "FacingType must remain 8-bit");
 
 inline FacingType operator++(FacingType &, int);
 inline FacingType operator + (FacingType f1, FacingType f2)
@@ -3186,10 +3187,6 @@ inline DirType operator + (DirType f1, int f2)
 	return (DirType)(((int)f1 + (int)f2) & 0x00FF);
 }
 #endif
-#define DIR_SW_X1	DirType((5<<5)-8)
-#define DIR_SW_X2	DirType((5<<5)-16)
-
-
 /****************************************************************************
 **	Timer constants. These are used when setting the countdown timer.
 **	Note that this is based upon a timer that ticks every 60th of a second.
