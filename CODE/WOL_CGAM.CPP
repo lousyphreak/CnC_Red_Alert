@@ -28,7 +28,6 @@
 #endif
 
 #include "IconList.h"
-#include "WOLAPIOB.H"
 #include "WOLSTRNG.H"
 #include "SEditDlg.h"
 #include "BigCheck.h"

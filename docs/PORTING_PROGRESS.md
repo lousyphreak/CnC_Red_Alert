@@ -12,6 +12,17 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - repository-wide search found no remaining Red Alert game/compat/archive source that still includes `<io.h>` after the earlier SDL file-I/O cleanup;
   - the only remaining repository `<io.h>` include is SDL upstream's Windows-only `extern/SDL3/test/childprocess.c`, which stays outside the supported Red Alert build because `SDL_TESTS` is forced `OFF`;
   - `cmake --build build --target redalert -j16` and `cmake --build build-asan --target redalert -j16` still succeed after deleting the file.
+- Deleted the fake `SDL3_COMPAT/wrappers/objbase.h` COM shim and cleaned up every remaining in-tree consumer:
+  - the wrapper only provided no-op `CoInitialize` / `OleInitialize` stubs, so with `SDL3_COMPAT/wrappers/` first on the include path it could silently shadow the real Windows SDK `objbase.h`;
+  - `CODE/COMINIT.CPP` now only includes and calls the real `OleInitialize` / `OleUninitialize` on actual Windows toolchains, while the supported Linux/Unix SDL port keeps the same no-op behavior without faking COM APIs;
+  - `WIN32LIB/AUDIO/SOUNDLCK.CPP` and its archival `OLD/` / `SRCDEBUG/` copies no longer include `<objbase.h>` at all because they never used anything from it;
+  - `cmake --build build --target redalert -j16` and `cmake --build build-asan --target redalert -j16` still succeed after deleting the file.
+- Removed the remaining repo-owned COM/OLE bridge code instead of leaving it dormant:
+  - deleted the unused startup OLE initializer `CODE/COMINIT.CPP/.H` entirely; the SDL3 port no longer carries any game-owned `OleInitialize` / `OleUninitialize` path on any platform;
+  - deleted the old Westwood Online COM bridge (`CODE/RAWOLAPI.CPP/.H`, `CODE/WOLAPIOB.CPP/.H`, and the generated `CODE/WOLAPI/*` COM IDL headers/source) and removed the old Watcom `WOLAPI_INTEGRATION` define from `CODE/MAKEFILE`, so the legacy build no longer tries to compile the COM-based WOL client layer at all;
+  - `CODE/VERSION.CPP` no longer pulls `RAWOLAPI.H` just to pick up `GAME_VERSION`; it now uses the existing local fallback define directly;
+  - deleted the dead DirectShow COM movie implementation under `WIN32LIB/MOVIE/` plus the orphaned `WIN32LIB/*/TST.CPP` `ole2.h` stubs, leaving the SDL/VQA movie path as the only supported ported movie route;
+  - `cmake --build build --target redalert -j16` and `cmake --build build-asan --target redalert -j16` still succeed after the cleanup.
 - Removed the obsolete `SDL3_COMPAT/wrappers/conio.h` shim and cleaned up every remaining repository user:
   - active game sources no longer include `conio.h`, and the dead console fallback code in `CODE/STARTUP.CPP`, `CODE/RAND.CPP`, and `CODE/JSHELL.H` is gone;
   - surviving legacy/tool sources now either use existing headers directly (`VQ/VQM32/TESTVB.CPP`, `WINVQ/VQM32/TESTVB.CPP` now include `PORTIO.H`; `WIN32LIB/PROFILE/UTIL/PROFILE.CPP` uses `printf`) or were deleted when they were clearly backup/orphaned `conio` utilities (`WINVQ/VPLAY32/PLYVQA32.CPP`, `WWFLAT32/MISC/KEYCODE.CPP`, `*.BAK`, `WINVQ/VQA32/OLD/*`);
@@ -63,9 +74,9 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - trimmed the duplicate `PLAYCD.H`, `WWSTD.H`, `DESCMGMT.H`, and old `SOUNDIO.CPP` variants so the remaining archive headers no longer expose BIOS/DPMI types;
   - deleted the archive-only DPMI/VESA-era source files that were entirely tied to the removed BIOS/register path (old allocators, VESA backends, old VQM32 memory/video sources, and the old `MPLIB` DOS transport sources).
 - The empty forwarding-wrapper cleanup is now applied across the in-tree compat surface:
-  - deleted `SDL3_COMPAT/wrappers/mem.h`, `modem.h`, `new.h`, `windows.h`, `WINDOWS.H`, and `windowsx.h`;
+  - deleted `SDL3_COMPAT/wrappers/mem.h`, `modem.h`, `new.h`, `objbase.h`, `windows.h`, `WINDOWS.H`, and `windowsx.h`;
   - active C/C++ sources now include `win32_compat.h`, `<string.h>`, or `<new>` directly instead of routing through those forwarding headers;
-  - surviving compat headers such as `dos.h`, `ddraw.h`, `mmsystem.h`, `objbase.h`, `process.h`, and `winsock.h` now include `win32_compat.h` directly.
+  - surviving compat headers such as `dos.h`, `ddraw.h`, `mmsystem.h`, `process.h`, and `winsock.h` now include `win32_compat.h` directly.
   - only the legacy Windows-only `LAUNCHER/256BMP.C` and `WINVQ/VQAVIEW/DIALOGS.RC` artifacts still include the real SDK `windows.h`; the active SDL/Linux compat path no longer depends on the deleted forwarding headers.
   - `cmake --build build --target redalert -j16` and `cmake --build build-asan --target redalert -j16` still succeed after this cleanup.
 - The Linux build now enters the real game startup path instead of the old Unix stub path:

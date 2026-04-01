@@ -145,7 +145,6 @@ bool Force_Scenario_Available( const char* szName );
 #endif
 #ifdef WOLAPI_INTEGRATION
 #include "WOLSTRNG.H"
-#include "WOLAPIOB.H"
 extern WolapiObject* pWolapi;
 #endif
 

@@ -125,7 +125,6 @@ TcpipManagerClass	Winsock;
 #ifdef WOLAPI_INTEGRATION
 //#include "WOLDEBUG.H"
 #include "WOLSTRNG.H"
-#include "WOLAPIOB.H"
 extern WolapiObject* pWolapi;
 #define PAGE_RESPOND_KEY	KN_RETURN	//KN_COMMA
 #endif

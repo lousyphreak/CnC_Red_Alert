@@ -39,7 +39,6 @@
 #endif // _WIN32
 #define WIN32
 #include "win32_compat.h"
-#include <objbase.h>
 #include "SDLAUDIOBACKEND.H"
 #include <string.h>
 #include "WWMEM.H"
@@ -116,4 +115,3 @@ void Init_Locked_Data(void)
 
 	#endif	//cuts
 }
-

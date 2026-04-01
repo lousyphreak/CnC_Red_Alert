@@ -23,7 +23,6 @@
 
 #include "function.h"
 #include "iconlist.h"
-#include "WOLAPIOB.H"
 #include "SEditDlg.h"
 #include "WOLSTRNG.H"
 #include "TOOLTIP.H"

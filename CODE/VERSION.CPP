@@ -48,7 +48,6 @@
 #include "FUNCTION.H"
 
 #ifdef FIXIT_VERSION_3
-#include "RAWOLAPI.H"		//	For version number.
 #ifndef GAME_VERSION
 #define GAME_VERSION 0x00030003
 #endif

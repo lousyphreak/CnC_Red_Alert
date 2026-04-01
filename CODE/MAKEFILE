@@ -86,7 +86,6 @@ LIB=..\watcom\binnt\wlib
 CC_CFG = /d0                            # No debugging information	( else use /d1 )
 CC_CFG += /DWIN32=1
 CC_CFG += /D_WIN32
-CC_CFG += /DWOLAPI_INTEGRATION
 CC_CFG += /DWINSOCK_IPX
 CC_CFG += /D$(LANGUAGE)=1
 CC_CFG += /i=..\dxsdk\inc
@@ -313,10 +312,7 @@ OBJECTS = &
 	ICONLIST.OBJ &
 	WOL_MAIN.OBJ &
 	WOL_CHAT.OBJ &
-	RAWOLAPI.OBJ &
-	WOLAPIOB.OBJ &
 	W95TRACE.OBJ &
-	COMINIT.OBJ &
 	WOL_LOGN.OBJ &
 	WOLEDIT.OBJ &
 	PASSEDIT.OBJ &

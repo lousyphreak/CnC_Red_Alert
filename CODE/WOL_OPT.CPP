@@ -24,7 +24,6 @@
 #include "function.h"
 
 #include "IconList.h"
-#include "WOLAPIOB.H"
 #include "WOLSTRNG.H"
 #include "BigCheck.h"
 //#include "WOLDEBUG.H"

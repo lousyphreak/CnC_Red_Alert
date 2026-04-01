@@ -44,7 +44,6 @@
 
 #ifdef WOLAPI_INTEGRATION
 #include "WOLSTRNG.H"
-#include "WOLAPIOB.H"
 extern WolapiObject* pWolapi;
 bool WOL_Options_Dialog( WolapiObject* pWO, bool bCalledFromGame );
 #endif

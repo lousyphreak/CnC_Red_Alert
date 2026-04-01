@@ -22,7 +22,6 @@
 //	ajw 07/16/98
 
 #include "function.h"
-#include "WOLAPIOB.H"
 #include "wol_gsup.h"
 #include "WOLSTRNG.H"
 

@@ -24,7 +24,6 @@
 #include "function.h"
 
 #include "IconList.h"
-#include "WOLAPIOB.H"
 #include "PassEdit.h"
 #include "WOLSTRNG.H"
 #include "BigCheck.h"

@@ -172,7 +172,6 @@ bool Save_Recording_Values(CCFileClass & file);
 
 #ifdef WOLAPI_INTEGRATION
 extern int WOL_Main();
-#include "WOLAPIOB.H"
 extern WolapiObject* pWolapi;
 #endif
 

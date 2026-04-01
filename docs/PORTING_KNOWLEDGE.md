@@ -9,6 +9,14 @@ _Last updated: 2026-04-01_
 - Shared platform/rendering/input/audio support code lives in `WIN32LIB/`.
 - The active compatibility include order puts `SDL3_COMPAT/wrappers/` ahead of `CODE/` and `WIN32LIB/INCLUDE`.
 
+## Removed objbase wrapper
+
+- Do not reintroduce `SDL3_COMPAT/wrappers/objbase.h`. Because `SDL3_COMPAT/wrappers/` is first on the include path, an `objbase.h` shim there overrides the real Windows SDK COM header for both Red Alert code and bundled SDL Windows sources.
+- `CODE/COMINIT.CPP/.H` are now gone. Do not add a replacement startup COM/OLE initializer for the SDL3 port; game-owned COM setup is intentionally removed on all platforms.
+- `WIN32LIB/AUDIO/SOUNDLCK.CPP` and its archive copies never used any `objbase.h` declarations; if they pick up that include again, treat it as dead baggage and remove it instead of adding another wrapper.
+- The old Westwood Online client bridge was COM-based all the way down (`RAWOLAPI`, `WOLAPIOB`, generated `WOLAPI` IDL headers, `CoCreateInstance`, `IUnknown` sinks, connection points, `ole2`/`olectl` headers). That entire bridge is deleted now, and the old Watcom build no longer defines `WOLAPI_INTEGRATION`.
+- The dead DirectShow movie implementation under `WIN32LIB/MOVIE/` and the trivial `ole2.h` test stubs under `WIN32LIB/AUDIO/`, `WIN32LIB/AUDIO/OLD/`, and `WIN32LIB/SRCDEBUG/` are also deleted. The supported movie/audio path is SDL/VQA-based, not COM-based.
+
 ## Removed io wrapper
 
 - `SDL3_COMPAT/wrappers/io.h` is gone. After the earlier file-I/O cleanup removed `filelength()`, it had become a dead passthrough wrapper for `<fcntl.h>` and `<unistd.h>` only.
