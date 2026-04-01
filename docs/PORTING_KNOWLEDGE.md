@@ -62,6 +62,11 @@ _Last updated: 2026-04-01_
   - `Apply_Delta()` should still bounds-check `frame_data_size` against the reserved WSA workspace, because a bad or inconsistent frame-offset table otherwise turns the back-load `Mem_Copy()` / `Read_File()` into an out-of-bounds walk before LCW decode even starts.
 - `Assign_Mission()` only queues `MissionQueue`; when scenario loaders need an immediate live mission before `Enter_Idle_Mode()`, they must use `Set_Mission()`.
 - `List_Copy()` callers rely on a trailing `REFRESH_EOL`; if truncation is possible, reserve one slot for the terminator.
+- `DisplayClass::Set_Cursor_Shape()` also needs sentinel-aware copying.
+  - Its input is not a fixed 50-entry array; it is a variable-length `REFRESH_EOL`-terminated cell-offset list.
+  - The building-placement path can pass the temporary 25-entry buffer returned by `BuildingTypeClass::Occupy_List(true)` when bib/smudge cells are appended in `CODE/BDATA.CPP`.
+  - Copying that source with `memcpy(sizeof(local_buffer))` reads past the shorter global/static object on ASan builds even though the logical list contents are valid.
+  - Keep the owned static cursor buffer in `Set_Cursor_Shape()`, but populate it with `List_Copy(..., ARRAY_SIZE(buffer), ...)` instead of raw fixed-size `memcpy()`.
 - `Coord_Spillage_List(COORDINATE, Rect, ...)` can return up to 128 offsets; 32-entry temporary lists in map/display code are not universally safe.
 - `HelpClass::OverlapList` is mutable scratch storage despite the legacy `const` declaration. Linux puts the old declaration in read-only storage, so the cast-away-const write crashes.
 - In-place `Path[]` compaction in `DriveClass` requires `memmove()`, not `memcpy()`.

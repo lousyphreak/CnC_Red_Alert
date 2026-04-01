@@ -620,7 +620,7 @@ void DisplayClass::Set_Cursor_Shape(short const * list)
 		int	w,h;
 		static short _list[50];
 
-		memcpy(_list, list, sizeof(_list));
+		List_Copy(list, ARRAY_SIZE(_list), _list);
 		CursorSize = _list;
 		Get_Occupy_Dimensions (w, h, CursorSize);
 		ZoneOffset = -(((h/2)*MAP_CELL_W)+(w/2));

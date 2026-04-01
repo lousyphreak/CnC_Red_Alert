@@ -8,6 +8,12 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Fixed the building-placement cursor ASan global-buffer-overflow in `CODE/DISPLAY.CPP`:
+  - `DisplayClass::Set_Cursor_Shape()` was copying a fixed 50-entry buffer with `memcpy()`, but valid cursor-shape inputs are variable-length `REFRESH_EOL`-terminated cell-offset lists;
+  - the traced placement path (`SidebarClass::StripClass::SelectClass::Action()` -> `HouseClass::Manual_Place()` -> `BuildingTypeClass::Occupy_List(true)`) can hand back the temporary 25-entry `_list` from `CODE/BDATA.CPP` when a building placement cursor includes a bib/smudge footprint;
+  - that made `memcpy(_list, list, sizeof(_list))` read 100 bytes from a 50-byte global object on ASan builds before the placement cursor even finished initializing;
+  - `Set_Cursor_Shape()` now uses the existing sentinel-aware `List_Copy()` helper instead, preserving the owned static cursor buffer without reading past shorter source lists.
+  - `cmake --build build-asan --target redalert -j4` succeeds after the fix, and `ASAN_OPTIONS=detect_leaks=0 RA_TRACE_STARTUP=1 timeout 20s ./GameData/redalert-asan` still reaches the normal front-end/startup baseline before timing out.
 - Removed the forced `WIN32` / `_WIN32` / `WIN32_LEAN_AND_MEAN` compatibility defines from the supported CMake build and collapsed the corresponding legacy preprocessor branches to the behavior that build was already using:
   - active game, `win32lib`, and VQA sources no longer rely on global fake Win32 macros to compile on Linux; the selected branch is now written directly in source instead of being hidden behind `#ifdef WIN32`;
   - SDL-facing files (`CODE/SDLINPUT.CPP`, `WIN32LIB/AUDIO/SDLAUDIOBACKEND.CPP`, `VQ/VQA32/AUDIOCOMPAT.CPP`) now include SDL directly instead of temporarily undefining/redefining `WIN32` / `_WIN32`;
