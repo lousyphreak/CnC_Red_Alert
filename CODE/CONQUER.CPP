@@ -111,7 +111,6 @@ B<A> test;
 #include "sdl_fs.h"
 #include	<fcntl.h>
 #include <unistd.h>
-#include	<share.h>
 #include	"VORTEX.H"
 
 #ifdef WOLAPI_INTEGRATION
