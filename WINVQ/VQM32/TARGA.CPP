@@ -22,8 +22,7 @@
 *
 *----------------------------------------------------------------------------
 *
-* FILE
-*     targa.c
+* SDL_IOStream *     targa.c
 * 
 * DESCRIPTION
 *     Targa Image File reader. (32-Bit protected mode)
@@ -55,6 +54,7 @@
 #include <fcntl.h>
 #include <sys\stat.h>
 #include "targa.h"
+#include "sdl_fs.h"
 
 /* Private data declerations. */
 static long DecodeImageData(TGAHandle *, char *);
@@ -100,10 +100,10 @@ TGAHandle *OpenTarga(char *name, unsigned short mode)
 
 			/* Open targa file for read. */
 			case TGA_READMODE:
-				if ((tga->fh = open(name, (O_RDONLY|O_BINARY))) != -1) {
+				if ((tga->fh = WWFS_Open(name, (O_RDONLY|O_BINARY))) != -1) {
 
 					/* Read in header. */
-					size = read(tga->fh, &tga->header, sizeof(TGAHeader));
+					size = WWFS_Read(tga->fh, &tga->header, sizeof(TGAHeader));
 
 					if (size != sizeof(TGAHeader)) {
 						error = 1;
@@ -111,7 +111,7 @@ TGAHandle *OpenTarga(char *name, unsigned short mode)
 
 					/* Skip the ID field */
 					if (!error && (tga->header.IDLength != 0)) {
-						if (lseek(tga->fh, tga->header.IDLength, SEEK_CUR) == -1) {
+						if (WWFS_Seek(tga->fh, tga->header.IDLength, SEEK_CUR) == -1) {
 							error = 1;
 						}
 					}
@@ -122,7 +122,7 @@ TGAHandle *OpenTarga(char *name, unsigned short mode)
 
 			/* Open targa file for write. */
 			case TGA_WRITEMODE:
-				if ((tga->fh = open(name, (O_CREAT|O_TRUNC|O_WRONLY|O_BINARY),
+				if ((tga->fh = WWFS_Open(name, (O_CREAT|O_TRUNC|O_WRONLY|O_BINARY),
 						(S_IREAD|S_IWRITE))) == -1) {
 
 					error = 1;
@@ -133,11 +133,11 @@ TGAHandle *OpenTarga(char *name, unsigned short mode)
 
 			/* Open targa file for read/write.*/
 			case TGA_RDWRMODE:
-				if ((tga->fh = open(name, (O_RDWR|O_BINARY),
+				if ((tga->fh = WWFS_Open(name, (O_RDWR|O_BINARY),
 						(S_IREAD|S_IWRITE))) != -1) {
 
 					/* Read in header. */
-					size = read(tga->fh, &tga->header, sizeof(TGAHeader));
+					size = WWFS_Read(tga->fh, &tga->header, sizeof(TGAHeader));
 
 					if (size != sizeof(TGAHeader)) {
 						error = 1;
@@ -145,7 +145,7 @@ TGAHandle *OpenTarga(char *name, unsigned short mode)
 
 					/* Skip the ID field */
 					if (!error && (tga->header.IDLength != 0)) {
-						if (lseek(tga->fh, tga->header.IDLength, SEEK_CUR) == -1) {
+						if (WWFS_Seek(tga->fh, tga->header.IDLength, SEEK_CUR) == -1) {
 							error = 1;
 						}
 					}
@@ -193,7 +193,7 @@ void CloseTarga(TGAHandle *tga)
 	if (tga) {
 
 		/* Close the file if it is open. */
-		if (tga->fh != -1) close(tga->fh);
+		if (tga->fh != -1) WWFS_Close(tga->fh);
 
 		/* Free TGAHandle */
 		free(tga);
@@ -251,7 +251,7 @@ long LoadTarga(char *name, char *palette, char *image)
 				palette += (tga->header.CMapStart * depth);
 
 				/* Read in the palette. */
-				if (read(tga->fh, palette, size) == size) {
+				if (WWFS_Read(tga->fh, palette, size) == size) {
 
 					/* Swap the byte ordering of the palette entries. */
 					for (i = 0; i < tga->header.CMapLength; i++) {
@@ -274,7 +274,7 @@ long LoadTarga(char *name, char *palette, char *image)
 					error = TGAERR_READ;
 				}
 			} else {
-				if (lseek(tga->fh, size, SEEK_CUR) == -1) {
+				if (WWFS_Seek(tga->fh, size, SEEK_CUR) == -1) {
 					error = TGAERR_READ;
 				}
 			}
@@ -289,13 +289,13 @@ long LoadTarga(char *name, char *palette, char *image)
 
 			switch (tga->header.ImageType) {
 				case TGA_CMAPPED:
-					if (read(tga->fh, image, size) != size) {
+					if (WWFS_Read(tga->fh, image, size) != size) {
 						error = TGAERR_READ;
 					}
 					break;
 
 				case TGA_TRUECOLOR:
-					if (read(tga->fh, image, size) == size) {
+					if (WWFS_Read(tga->fh, image, size) == size) {
 						InvertImageData(&tga->header, image);
 					} else {
 						error = TGAERR_READ;
@@ -379,7 +379,7 @@ long SaveTarga(char *name, TGAHeader *tgahd, char *palette, char *image)
 	if ((tga = OpenTarga(name, TGA_WRITEMODE)) != NULL) {
 
 		/* Write the header. */
-		if (write(tga->fh, tgahd, sizeof(TGAHeader)) != sizeof(TGAHeader)) {
+		if (WWFS_Write(tga->fh, tgahd, sizeof(TGAHeader)) != sizeof(TGAHeader)) {
 			error = TGAERR_WRITE;
 		}
 
@@ -409,7 +409,7 @@ long SaveTarga(char *name, TGAHeader *tgahd, char *palette, char *image)
 				}
 				
 				/* Write the palette. */
-				if (write(tga->fh, temppal, size) != size) {
+				if (WWFS_Write(tga->fh, temppal, size) != size) {
 					error = TGAERR_WRITE;
 				}
 
@@ -430,7 +430,7 @@ long SaveTarga(char *name, TGAHeader *tgahd, char *palette, char *image)
 			depth = (tgahd->PixelDepth >> 3);
 			size = (((tgahd->Width * tgahd->Height)) * depth);
 
-			if (write(tga->fh, image, size) != size) {
+			if (WWFS_Write(tga->fh, image, size) != size) {
 				error = TGAERR_WRITE;
 			}
 		}
@@ -592,7 +592,7 @@ static long DecodeImageData(TGAHandle *tga, char *image)
 		while ((pixel_count > 0) && !error) {
 
 			/* Read count. */
-			if (read(tga->fh, &count, 1) == 1) {
+			if (WWFS_Read(tga->fh, &count, 1) == 1) {
 
 				/* If bit 8 of the count is set then we have a run of pixels,
 				 * otherwise the data is raw pixels.
@@ -602,7 +602,7 @@ static long DecodeImageData(TGAHandle *tga, char *image)
 					count++;
 
 					/* Read in run pixel. */
-					if (read(tga->fh, packet, depth) == depth) {
+					if (WWFS_Read(tga->fh, packet, depth) == depth) {
 
 						/* Repeat the pixel for the run count in the image buffer. */
 						for (c = 0; c < count; c++) {
@@ -618,7 +618,7 @@ static long DecodeImageData(TGAHandle *tga, char *image)
 					size = (count * depth);
 
 					/* Read in raw pixels. */
-					if (read(tga->fh, packet, size) == size) {
+					if (WWFS_Read(tga->fh, packet, size) == size) {
 
 						/* Copy the raw pixel data into the image buffer. */
 						memcpy(image, packet, size);

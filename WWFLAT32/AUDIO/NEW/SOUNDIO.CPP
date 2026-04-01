@@ -48,7 +48,6 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #pragma pack(push, 4)
 #include	"soundint.h"
-#include <dos.h>
 #include <string.h>
 #include <stdio.h>
 #include <string.h>

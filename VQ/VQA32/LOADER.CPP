@@ -80,6 +80,7 @@
 #include <VQM32/MEM.H>
 #include <VQM32/PALETTE.H>
 #include "VQAPLAYP.H"
+#include "sdl_fs.h"
 #include <VQM32/COMPRESS.H>
 
 #ifndef O_BINARY
@@ -477,7 +478,7 @@ long VQA_Open(VQAHandle *vqa, char const *filename, VQAConfig *config)
 	/* Open VOC file if one is requested. */
 	#if(VQAVOC_ON && VQAAUDIO_ON)
 	if (config->VocFile != NULL) {
-		vqap->vocfh = open(config->VocFile, (O_RDONLY|O_BINARY));
+		vqap->vocfh = WWFS_Open(config->VocFile, (O_RDONLY|O_BINARY));
 	} else {
 		vqap->vocfh = -1;
 	}
@@ -628,7 +629,7 @@ void VQA_Close(VQAHandle *vqa)
 	/* Close the VOC override file if one was opened */
 	#if(VQAVOC_ON && VQAAUDIO_ON)
 	if (((VQAHandleP *)vqa)->vocfh != -1) {
-		close(((VQAHandleP *)vqa)->vocfh);
+		WWFS_Close(((VQAHandleP *)vqa)->vocfh);
 	}
 	#endif /* VQAVOC_ON */
 
@@ -2849,7 +2850,7 @@ static void Load_AudFrame(VQAHandleP *vqap)
 	 */
 	if (firsttime) {
 		numblocks = (audio->NumAudBlocks / 2);
-		read(vqap->vocfh, audio->Buffer, config->HMIBufSize * numblocks);
+		WWFS_Read(vqap->vocfh, audio->Buffer, config->HMIBufSize * numblocks);
 		audio->AudBufPos += config->HMIBufSize * numblocks;
 
 		if (audio->AudBufPos >= config->AudioBufSize) {
@@ -2876,7 +2877,7 @@ static void Load_AudFrame(VQAHandleP *vqap)
 		lastplayblock = audio->PlayPosition / config->HMIBufSize;
 
 		/* read the VOC data */
-		read(vqap->vocfh, (audio->Buffer + myblock * config->HMIBufSize),
+		WWFS_Read(vqap->vocfh, (audio->Buffer + myblock * config->HMIBufSize),
 				config->HMIBufSize);
 
 		audio->AudBufPos += config->HMIBufSize;

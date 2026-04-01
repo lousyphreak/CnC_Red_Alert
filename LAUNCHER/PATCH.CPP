@@ -34,6 +34,7 @@ This is where all the code is for applying various types of patches.
 #include "patch.h"
 #include <shellapi.h>
 #include <direct.h>
+#include "sdl_fs.h"
 
 
 //
@@ -48,7 +49,7 @@ BOOL CALLBACK Update_Info_Proc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lPara
   {
     case WM_INITDIALOG:
     {
-      FILE *in = fopen("launcher.txt","r");
+      SDL_IOStream *in = WWFS_FOpen("launcher.txt","r");
       if (in==NULL)
       {
         EndDialog(hwnd,-1);
@@ -58,7 +59,7 @@ BOOL CALLBACK Update_Info_Proc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lPara
       char   line[270];
       int    lastsel=0;
       char  *cptr=NULL;
-      while(fgets(line,255,in))
+      while(WWFS_FGets(line,255,in))
       {
         //Get rid of any trailing junk
         while(1)
@@ -79,7 +80,7 @@ BOOL CALLBACK Update_Info_Proc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lPara
 	     SendDlgItemMessage(hwnd, IDC_TEXT, EM_GETSEL, (WPARAM)NULL, (LPARAM)&lastsel );
       }
       unselectText=1;
-      fclose(in);
+      WWFS_FClose(in);
 
       return(1);   // 1 means windows handles focus issues
     }
@@ -137,7 +138,7 @@ void Apply_Patch(char *patchfile,ConfigFile &config,int skuIndex)
 {
   DBGMSG("PATCHFILE : "<<patchfile);
   char cwdbuf[256];
-  _getcwd(cwdbuf,255);
+  WWFS_GetCurrentDirectory(cwdbuf,255);
   DBGMSG("CWD : "<<cwdbuf);
 
   //
@@ -226,7 +227,7 @@ void Apply_Patch(char *patchfile,ConfigFile &config,int skuIndex)
     sprintf(patchArgs,"\"%s\" .",patchfile);
     int rtpErrCode=patchFunc(patchArgs,PatchCallBack,TRUE);
     FreeLibrary(hInst);     // unload the DLL
-    _unlink(patchfile);     // delete the patch
+    WWFS_Unlink(patchfile);     // delete the patch
 
     DestroyWindow(dialog);  // get rid of the dialog
 
@@ -287,7 +288,7 @@ void Apply_Patch(char *patchfile,ConfigFile &config,int skuIndex)
     strcpy(proc.command,patchfile);
     Create_Process(proc);
     Wait_Process(proc);
-    _unlink(patchfile);
+    WWFS_Unlink(patchfile);
   }
   //
   // Web link type patch
@@ -302,14 +303,14 @@ void Apply_Patch(char *patchfile,ConfigFile &config,int skuIndex)
     LoadString(NULL,IDS_WEBPATCH_TITLE,title,128);
     MessageBox(NULL,message,title,MB_OK);
 
-    FILE *in=fopen(patchfile,"r");
+    SDL_IOStream *in=WWFS_FOpen(patchfile,"r");
     if (in!=NULL)
     {
       char URL[256];
-      fgets(URL,255,in);
-      fclose(in);
+      WWFS_FGets(URL,255,in);
+      WWFS_FClose(in);
       ShellExecute(NULL,NULL,URL,NULL,".",SW_SHOW);
-      _unlink(patchfile);
+      WWFS_Unlink(patchfile);
       //// This is somewhat skanky, but we can't wait
       //// for the viewer to exit (I tried).
       exit(0);
@@ -419,11 +420,11 @@ LPVOID CALLBACK __export PatchCallBack(UINT Id, LPVOID Param)
       ///////*g_LogFile << (char *)Parm << endl;
       MessageBox(NULL,(char *)Param,"ERROR",MB_OK);
       {
-        FILE *out=fopen("patch.err","a");
+        SDL_IOStream *out=WWFS_FOpen("patch.err","a");
         time_t  timet=time(NULL);
-        fprintf(out,"\n\nPatch Erorr: %s\n",ctime(&timet));
-        fprintf(out,"%s\n",(char *)Param);
-        fclose(out);
+        WWFS_FPrintf(out,"\n\nPatch Erorr: %s\n",ctime(&timet));
+        WWFS_FPrintf(out,"%s\n",(char *)Param);
+        WWFS_FClose(out);
       }
 	break;
 

@@ -1,4 +1,5 @@
 #include "win32_compat.h"
+#include "sdl_fs.h"
 #include "mmsystem.h"
 #include "SDLINPUT.H"
 
@@ -147,196 +148,7 @@ void compat_trace(const char* format, ...)
     va_end(arguments);
 }
 
-std::string compat_base_directory()
-{
-    static const std::string path = []() {
-        const char* base_path = SDL_GetBasePath();
-        if (base_path && *base_path) {
-            std::string path_string(base_path);
-            while (!path_string.empty() && (path_string.back() == '/' || path_string.back() == '\\')) {
-                path_string.pop_back();
-            }
-            return path_string.empty() ? std::string(".") : path_string;
-        }
-
-        return std::string(".");
-    }();
-
-    return path;
-}
-
-bool compat_path_exists(const char* path)
-{
-    if (!path || !*path) {
-        return false;
-    }
-
-    SDL_PathInfo info;
-    return SDL_GetPathInfo(path, &info);
-}
-
-std::string append_compat_path_component(const std::string& base, const std::string& component)
-{
-    if (base.empty()) {
-        return component;
-    }
-
-    if (base == "/" || base.back() == '/' || base.back() == '\\') {
-        return base + component;
-    }
-
-    return base + "/" + component;
-}
-
-struct CaseMatchContext {
-    const char* requested_name;
-    std::string matched_name;
-    std::string folded_match;
-    bool exact_found;
-};
-
-SDL_EnumerationResult case_match_callback(void* userdata, const char* dirname, const char* fname)
-{
-    (void)dirname;
-    auto* ctx = static_cast<CaseMatchContext*>(userdata);
-
-    if (SDL_strcmp(fname, ctx->requested_name) == 0) {
-        ctx->matched_name = fname;
-        ctx->exact_found = true;
-        return SDL_ENUM_SUCCESS;
-    }
-
-    if (ctx->folded_match.empty() && SDL_strcasecmp(fname, ctx->requested_name) == 0) {
-        ctx->folded_match = fname;
-    }
-
-    return SDL_ENUM_CONTINUE;
-}
-
-std::string resolve_existing_case_insensitive_path(const std::string& path)
-{
-    if (path.empty()) {
-        return {};
-    }
-
-    if (compat_path_exists(path.c_str())) {
-        return path;
-    }
-
-    std::string current = path.front() == '/' ? std::string("/") : std::string();
-    std::string::size_type cursor = (path.front() == '/') ? 1 : 0;
-
-    while (cursor <= path.size()) {
-        const std::string::size_type separator = path.find('/', cursor);
-        const std::string requested_name = path.substr(cursor, separator - cursor);
-        cursor = (separator == std::string::npos) ? path.size() + 1 : separator + 1;
-
-        if (requested_name.empty() || requested_name == ".") {
-            continue;
-        }
-
-        if (requested_name == "..") {
-            current = append_compat_path_component(current, requested_name);
-            continue;
-        }
-
-        const std::string search_directory = current.empty() ? std::string(".") : current;
-
-        CaseMatchContext ctx;
-        ctx.requested_name = requested_name.c_str();
-        ctx.exact_found = false;
-
-        if (!SDL_EnumerateDirectory(search_directory.c_str(), case_match_callback, &ctx)) {
-            return {};
-        }
-
-        std::string final_match = ctx.exact_found ? ctx.matched_name : ctx.folded_match;
-        if (final_match.empty()) {
-            return {};
-        }
-
-        current = append_compat_path_component(current, final_match);
-    }
-
-    return current.empty() ? path : current;
-}
-
-int virtual_cd_index_for_drive_letter(char drive_letter)
-{
-    const int index = std::tolower(static_cast<unsigned char>(drive_letter)) - 'c';
-    if (index < 0 || index >= 4) {
-        return -1;
-    }
-
-    char mix_name[16];
-    std::snprintf(mix_name, sizeof(mix_name), "MAIN%d.MIX", index + 1);
-
-    std::string mix_path = compat_base_directory();
-    if (!mix_path.empty() && mix_path.back() != '/' && mix_path.back() != '\\') {
-        mix_path.push_back('/');
-    }
-    mix_path += mix_name;
-
-    if (!compat_path_exists(mix_path.c_str())) {
-        return -1;
-    }
-
-    return index;
-}
-
-bool resolve_virtual_cd_path(const char* windows_path, std::string& resolved_path, int* cd_index = nullptr)
-{
-    if (!windows_path || std::strlen(windows_path) < 2 || windows_path[1] != ':') {
-        return false;
-    }
-
-    const int index = virtual_cd_index_for_drive_letter(windows_path[0]);
-    if (index < 0) {
-        return false;
-    }
-
-    std::string relative = windows_path + 2;
-    std::replace(relative.begin(), relative.end(), '\\', '/');
-    while (!relative.empty() && relative.front() == '/') {
-        relative.erase(relative.begin());
-    }
-
-    const std::string base_path = compat_base_directory();
-    if (relative.empty()) {
-        resolved_path = base_path;
-    } else if (SDL_strcasecmp(relative.c_str(), "main.mix") == 0) {
-        char mix_name[16];
-        std::snprintf(mix_name, sizeof(mix_name), "MAIN%d.MIX", index + 1);
-        resolved_path = base_path + "/" + mix_name;
-    } else {
-        resolved_path = base_path + "/" + relative;
-    }
-
-    if (cd_index) {
-        *cd_index = index;
-    }
-    return true;
-}
-
 } // end anonymous namespace
-
-std::string normalize_compat_path(const char* windows_path)
-{
-    std::string resolved_path;
-    if (resolve_virtual_cd_path(windows_path, resolved_path)) {
-        return resolved_path;
-    }
-
-    std::string normalized = windows_path ? windows_path : "";
-    std::replace(normalized.begin(), normalized.end(), '\\', '/');
-
-    const std::string resolved_existing = resolve_existing_case_insensitive_path(normalized);
-    if (!resolved_existing.empty()) {
-        return resolved_existing;
-    }
-
-    return normalized;
-}
 
 namespace {
 
@@ -1422,7 +1234,7 @@ BOOL ResetEvent(HANDLE handle)
 HANDLE CreateFile(LPCSTR file_name, DWORD desired_access, DWORD, LPVOID, DWORD creation_disposition, DWORD, HANDLE)
 {
     auto mode = create_file_mode(desired_access, creation_disposition);
-    const std::string normalized_path = normalize_compat_path(file_name);
+    const std::string normalized_path = WWFS_NormalizePath(file_name);
     SDL_IOStream* io = SDL_IOFromFile(normalized_path.c_str(), mode.c_str());
     if (!io) {
         set_last_error(ERROR_FILE_NOT_FOUND);
@@ -1555,12 +1367,12 @@ UINT GetDriveType(LPCSTR root_path_name)
         return DRIVE_NO_ROOT_DIR;
     }
 
-    if (virtual_cd_index_for_drive_letter(root_path_name[0]) >= 0) {
+    if (WWFS_GetVirtualCDIndexForDriveLetter(root_path_name[0]) >= 0) {
         return DRIVE_CDROM;
     }
 
-    const std::string normalized_path = normalize_compat_path(root_path_name);
-    if (!compat_path_exists(normalized_path.c_str())) {
+    const std::string normalized_path = WWFS_NormalizePath(root_path_name);
+    if (!WWFS_GetPathInfo(normalized_path.c_str(), nullptr)) {
         return DRIVE_NO_ROOT_DIR;
     }
 
@@ -1580,8 +1392,8 @@ BOOL GetVolumeInformation(LPCSTR root_path_name, LPSTR volume_name_buffer, DWORD
 
     int virtual_cd_index = -1;
     std::string virtual_path;
-    std::string normalized_path = normalize_compat_path(root_path_name);
-    if (resolve_virtual_cd_path(root_path_name, virtual_path, &virtual_cd_index) && virtual_cd_index >= 0) {
+    std::string normalized_path = WWFS_NormalizePath(root_path_name);
+    if (WWFS_ResolveVirtualCDPath(root_path_name, virtual_path, &virtual_cd_index) && virtual_cd_index >= 0) {
         if (volume_name_buffer && volume_name_size > 0) {
             std::snprintf(volume_name_buffer, volume_name_size, "CD%d", virtual_cd_index + 1);
         }
@@ -1600,7 +1412,7 @@ BOOL GetVolumeInformation(LPCSTR root_path_name, LPSTR volume_name_buffer, DWORD
         return TRUE;
     }
 
-    if (!compat_path_exists(normalized_path.c_str())) {
+    if (!WWFS_GetPathInfo(normalized_path.c_str(), nullptr)) {
         return FALSE;
     }
 

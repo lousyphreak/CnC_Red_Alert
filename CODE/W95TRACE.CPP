@@ -22,6 +22,7 @@
 */
 
 #include "win32_compat.h"
+#include "sdl_fs.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include <process.h>
@@ -60,10 +61,10 @@ void OutputDebugStringW95( LPCTSTR /*lpOutputString*/, ...)
 #endif
 
 	//	added by ajw
-	//FILE* pFile = fopen( "debugout.wri", "a" );
-	FILE* pFile = fopen( "wolapi.out", "a" );
-	fprintf( pFile, achBuffer );
-	fclose( pFile );
+	//SDL_IOStream* pFile = WWFS_FOpen( "debugout.wri", "a" );
+	SDL_IOStream* pFile = WWFS_FOpen( "wolapi.out", "a" );
+	WWFS_FPrintf( pFile, achBuffer );
+	WWFS_FClose( pFile );
 
 //    /* bail if it's not Win95 */
 //    {

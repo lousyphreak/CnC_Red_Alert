@@ -51,7 +51,6 @@
 #include	<direct.h>
 #include	<fcntl.h>
 #include <unistd.h>
-#include	<dos.h>
 #include	<errno.h>
 #include	<share.h>
 #include	"ccfile.h"

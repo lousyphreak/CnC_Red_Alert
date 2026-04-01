@@ -20,32 +20,33 @@
 #define FILED_HEADER
 
 #include "odevice.h"
+#include "sdl_fs.h"
 
 class FileD : public OutputDevice
 {
  public:
    FileD(char *filename)
    { 
-     out=fopen(filename,"w");
+     out=WWFS_FOpen(filename,"w");
      if (out==NULL)
-       out=fopen("FileDev.out","w");
+       out=WWFS_FOpen("FileDev.out","w");
    }
 
    virtual ~FileD()
-   { fclose(out); }
+   { WWFS_FClose(out); }
 
    virtual int print(const char *str,int len)
    {
      char *string=new char[len+1];
      memset(string,0,len+1);
      memcpy(string,str,len);
-     fprintf(out,"%s",string);
+     WWFS_FPrintf(out,"%s",string);
      delete[](string);
      fflush(out);
      return(len);
    }
 
-   FILE      *out;
+   SDL_IOStream *out;
 };
 
 #endif

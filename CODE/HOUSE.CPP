@@ -134,6 +134,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include	"FUNCTION.H"
+#include "sdl_fs.h"
 #include	"VORTEX.H"
 
 //#include "WOLDEBUG.H"
@@ -3731,17 +3732,17 @@ void HouseClass::MPlayer_Defeated(void)
 		// Tell the MPATH server who won
 		//
 		if (Session.Type == GAME_MPATH) {
-			FILE *fp;
+			SDL_IOStream *fp;
 
-			fp = fopen("winner.txt","wt");
+			fp = WWFS_FOpen("winner.txt","wt");
 			if (fp) {
 				for (i = 0; i < Session.Players.Count(); i++) {
 					hptr = HouseClass::As_Pointer(Session.Players[i]->Player.ID);
 					if (!hptr->IsDefeated) {
-						fprintf(fp,"%s\n",hptr->IniName);
+						WWFS_FPrintf(fp,"%s\n",hptr->IniName);
 					}
 				}
-				fclose(fp);
+				WWFS_FClose(fp);
 			}
 		}
 #endif	// MPATH

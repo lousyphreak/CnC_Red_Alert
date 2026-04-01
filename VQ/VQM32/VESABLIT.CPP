@@ -44,7 +44,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <dos.h>
 #include "video.h"
 #include "vesavid.h"
 #include "vesablit.h"

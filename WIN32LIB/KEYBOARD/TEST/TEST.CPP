@@ -41,7 +41,9 @@
 
 #include <wwlib32.h>
 #include	<direct.h>
+#include <string.h>
 #include "..\mouse.h"
+#include "sdl_fs.h"
 #define NAME "KEYBOARD/MOUSE test"
 #define TITLE "KEYBOARD/MOUSE library test"
 
@@ -107,31 +109,26 @@ int PASCAL WinMain (HANDLE hInstance, HANDLE hPrevInstance,
 	char				path_to_exe[132];
 	char				drive[_MAX_DRIVE];
 	char				path[_MAX_PATH];
-	unsigned 		drivecount;
-	unsigned 		olddrive;
-	char				oldpath[PATH_MAX];
+	char				working_directory[_MAX_PATH];
 
 	/*
 	** Get a path to the executable and make sure that we are pointing
 	** at the location our datafiles are located at.
 	*/
 	GetModuleFileName (hInstance, &path_to_exe[0], 132);
-	getcwd(oldpath, sizeof(oldpath));
-	_dos_getdrive(&olddrive);
-
-
 	_splitpath(path_to_exe, drive, path, NULL, NULL);
-	if (!drive[0]) {
-		drive[0] = (char)(('A' + olddrive)-1);
-	}
 	if (!path[0]) {
 		strcpy(path, ".");
 	}
-	_dos_setdrive(toupper((drive[0])-'A')+1, &drivecount);
 	if (path[strlen(path)-1] == '\\') {
 		path[strlen(path)-1] = '\0';
 	}
-	chdir(path);
+	working_directory[0] = '\0';
+	if (drive[0]) {
+		strcat(working_directory, drive);
+	}
+	strcat(working_directory, path);
+	WWFS_ChangeDirectory(working_directory);
 
 
 	//
@@ -333,7 +330,6 @@ long FAR PASCAL _export WndProc (HWND hwnd, UINT message, UINT wParam,
 
 	return DefWindowProc (hwnd, message, wParam, lParam) ;
 }
-
 
 
 

@@ -1,69 +1,56 @@
 #ifndef RA_DIRECT_WRAPPER_H
 #define RA_DIRECT_WRAPPER_H
 
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-
+#include <cctype>
 #include <cstring>
+#include <limits.h>
+
+#include "sdl_fs.h"
 
 inline void _splitpath(const char* path, char* drive, char* dir, char* fname, char* ext)
 {
-	if (drive) drive[0] = '\0';
-	if (dir) dir[0] = '\0';
-	if (fname) fname[0] = '\0';
-	if (ext) ext[0] = '\0';
-	if (!path) return;
-
-	const char* start = path;
-	const char* colon = std::strchr(path, ':');
-	if (colon) {
-		if (drive) {
-			const size_t drive_len = static_cast<size_t>(colon - path + 1);
-			std::memcpy(drive, path, drive_len);
-			drive[drive_len] = '\0';
-		}
-		start = colon + 1;
-	}
-
-	const char* slash = std::strrchr(start, '/');
-	const char* backslash = std::strrchr(start, '\\');
-	if (!slash || (backslash && backslash > slash)) {
-		slash = backslash;
-	}
-
-	const char* dot = std::strrchr(start, '.');
-	if (dot && slash && dot < slash) {
-		dot = nullptr;
-	}
-
-	if (dir && slash) {
-		const size_t dir_len = static_cast<size_t>(slash - start + 1);
-		std::memcpy(dir, start, dir_len);
-		dir[dir_len] = '\0';
-	}
-
-	const char* fname_start = slash ? slash + 1 : start;
-	const char* fname_end = dot ? dot : path + std::strlen(path);
-	if (fname && fname_end >= fname_start) {
-		const size_t fname_len = static_cast<size_t>(fname_end - fname_start);
-		std::memcpy(fname, fname_start, fname_len);
-		fname[fname_len] = '\0';
-	}
-
-	if (ext && dot) {
-		std::strcpy(ext, dot);
-	}
+	WWFS_SplitPath(path, drive, dir, fname, ext);
 }
 
 inline int _mkdir(const char* path)
 {
-	return mkdir(path, 0777);
+	return WWFS_MakeDirectory(path);
 }
 
 inline char* _getcwd(char* buffer, int max_length)
 {
-	return getcwd(buffer, max_length);
+	return WWFS_GetCurrentDirectory(buffer, max_length);
+}
+
+inline int _chdir(const char* path)
+{
+	return WWFS_ChangeDirectory(path);
+}
+
+inline unsigned WWFS_GetCurrentDriveNumber()
+{
+	char cwd[PATH_MAX];
+	if (WWFS_GetCurrentDirectory(cwd, sizeof(cwd)) != nullptr) {
+		const unsigned char drive = static_cast<unsigned char>(cwd[0]);
+		if (std::isalpha(drive) && cwd[1] == ':') {
+			return static_cast<unsigned>(std::toupper(drive) - 'A' + 1);
+		}
+	}
+	return 3;
+}
+
+inline unsigned WWFS_GetDriveCount()
+{
+	return 26;
+}
+
+inline void WWFS_ChangeToDrive(unsigned drive)
+{
+	if (drive >= 1 && drive <= WWFS_GetDriveCount()) {
+		char root[4] = {'A', ':', '\\', '\0'};
+		root[0] = static_cast<char>('A' + drive - 1);
+		WWFS_ChangeDirectory(root);
+	}
 }
 
 inline void _makepath(char* path, const char* drive, const char* dir, const char* fname, const char* ext)

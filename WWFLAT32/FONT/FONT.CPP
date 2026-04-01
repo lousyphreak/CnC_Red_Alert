@@ -38,7 +38,6 @@
 #include <wwstd.h>
 #include "font.h"
 #include <malloc.h>
-#include <dos.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys\stat.h>

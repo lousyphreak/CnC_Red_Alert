@@ -237,23 +237,6 @@ int __cdecl Find_File_Index(char const *filename);
 
 
 
-/*=========================================================================*/
-/* The following prototypes are for the file: FFIRST.ASM							*/
-/*=========================================================================*/
-
-#include <dos.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-extern int __cdecl Find_First(unsigned char *fname, unsigned int mode, struct find_t *ffblk);
-extern int __cdecl Find_Next(struct find_t *ffblk);
-
-#ifdef __cplusplus
-}
-#endif
-
 
 
 

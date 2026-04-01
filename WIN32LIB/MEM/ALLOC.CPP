@@ -43,9 +43,6 @@
 #include <malloc.h>
 #include <string.h>
 #include <stdlib.h>
-#include <dos.h>
-
-
 #ifndef WWMEM_H
 #include "wwmem.h"
 #endif

@@ -932,6 +932,5 @@ inline unsigned long _lrotl(unsigned long value, int shift)
     return _rotl(value, shift);
 }
 
-std::string normalize_compat_path(const char* windows_path);
 
 #endif

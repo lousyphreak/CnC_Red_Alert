@@ -78,6 +78,7 @@
  *   Check_Mirror -- Checks mirror memory                                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #include	"function.h"
+#include "sdl_fs.h"
 
 #ifdef WOLAPI_INTEGRATION
 //#include "WOLDEBUG.H"
@@ -980,20 +981,20 @@ static RetcodeType Wait_For_Players(int first_time, ConnManClass *net,
 		//---------------------------------------------------------------------
 		if (!dialog_timer && SpecialDialog==SDLG_NONE) {
 			if (reconnect_dlg == 0 && first_time == 0) {
-				FILE *fp;
+				SDL_IOStream *fp;
 				int i;
 				HouseClass *housep;
 
-				fp = fopen("recon.txt","wt");
+				fp = WWFS_FOpen("recon.txt","wt");
 				if (fp) {
-					fprintf(fp,"# Connections: %d\n",net->Num_Connections());
-					fprintf(fp,"   My Frame #: %d\n",Frame);
+					WWFS_FPrintf(fp,"# Connections: %d\n",net->Num_Connections());
+					WWFS_FPrintf(fp,"   My Frame #: %d\n",Frame);
 					for (i = 0; i < net->Num_Connections(); i++) {
 						housep = HouseClass::As_Pointer((HousesType)(net->Connection_ID(i)));
-						fprintf(fp,"%15s: Their Sent:%d  Their Recv:%d  Their Frame:%d\n",
+						WWFS_FPrintf(fp,"%15s: Their Sent:%d  Their Recv:%d  Their Frame:%d\n",
 							housep->IniName, their_sent[i], their_recv[i], their_frame[i]);
 					}
-					fclose(fp);
+					WWFS_FClose(fp);
 				}
 
 #ifdef WOLAPI_INTEGRATION
@@ -1838,18 +1839,18 @@ static RetcodeType Process_Receive_Packet(ConnManClass *net,
 	if (event->Data.FrameInfo.CommandCount > their_sent[index]) {
 
 		if ( abs(their_sent[index] - event->Data.FrameInfo.CommandCount) > 500) {
-			FILE *fp;
-			fp = fopen("badcount.txt","wt");
+			SDL_IOStream *fp;
+			fp = WWFS_FOpen("badcount.txt","wt");
 			if (fp) {
-				fprintf(fp,"Event Type:%s\n",EventClass::EventNames[event->Type]);
-				fprintf(fp,"Frame:%d  ID:%d  IsExec:%d\n",
+				WWFS_FPrintf(fp,"Event Type:%s\n",EventClass::EventNames[event->Type]);
+				WWFS_FPrintf(fp,"Frame:%d  ID:%d  IsExec:%d\n",
 					event->Frame,
 					event->ID,
 					event->IsExecuted);
 				if (event->Type != EventClass::FRAMEINFO) {
-					fprintf(fp,"Wrong Event Type!\n");
+					WWFS_FPrintf(fp,"Wrong Event Type!\n");
 				} else {
-					fprintf(fp,"CRC:%x  CommandCount:%d  Delay:%d\n",
+					WWFS_FPrintf(fp,"CRC:%x  CommandCount:%d  Delay:%d\n",
 						event->Data.FrameInfo.CRC,
 						event->Data.FrameInfo.CommandCount,
 						event->Data.FrameInfo.Delay);
@@ -3919,20 +3920,20 @@ static void Print_CRCs(EventClass *ev)
 	VesselClass *vesselp;
 	BuildingClass *bldgp;
 	ObjectClass *objp;
-	FILE *fp;
+	SDL_IOStream *fp;
 	HouseClass *housep;
 	HousesType house;
 	int color;
 
 	Mono_Clear_Screen();
 	Mono_Set_Cursor (0,0);
-	fp = fopen("OUT.TXT","wt");
+	fp = WWFS_FOpen("OUT.TXT","wt");
 	if (fp==NULL) {
 		return;
 	}
 
 	for (i = 0; i < 32; i++) {
-		fprintf(fp,"CRC[%d]=%x\n",i,CRC[i]);
+		WWFS_FPrintf(fp,"CRC[%d]=%x\n",i,CRC[i]);
 	}
 
 	//
@@ -3944,7 +3945,7 @@ static void Print_CRCs(EventClass *ev)
 		if (housep) {
 			HousesType actlike = housep->ActLike;
 			color = housep->RemapColor;
-			fprintf(fp,"%s: IsHuman:%d  Color:%s  ID:%d  ActLike:%s\n",
+			WWFS_FPrintf(fp,"%s: IsHuman:%d  Color:%s  ID:%d  ActLike:%s\n",
 				housep->IniName,
 				housep->IsHuman,
 				ColorNames[color],
@@ -3963,7 +3964,7 @@ static void Print_CRCs(EventClass *ev)
 		housep = HouseClass::As_Pointer (house);
 		if (housep) {
 			GameCRC = 0;
-			fprintf(fp,"-------------------- %s Infantry -------------------\n",
+			WWFS_FPrintf(fp,"-------------------- %s Infantry -------------------\n",
 				housep->Class->Name());
 			for (i = 0; i < Infantry.Count(); i++) {
 				infp = (InfantryClass *)Infantry.Active_Ptr(i);
@@ -3971,7 +3972,7 @@ static void Print_CRCs(EventClass *ev)
 					Add_CRC (&GameCRC, (int)infp->Coord + (int)infp->PrimaryFacing);
 					Add_CRC (&GameCRC, (int)infp->Speed + (int)infp->NavCom);
 					Add_CRC (&GameCRC, (int)infp->Mission + (int)infp->TarCom);
-					fprintf(fp,"COORD:%x   Facing:%d   Mission:%d   Type:%d   Tgt:%x Speed:%d NavCom:%x\n",
+					WWFS_FPrintf(fp,"COORD:%x   Facing:%d   Mission:%d   Type:%d   Tgt:%x Speed:%d NavCom:%x\n",
 						infp->Coord,(int)infp->PrimaryFacing,infp->Get_Mission(),
 						infp->Class->Type, infp->As_Target(), infp->Speed, infp->NavCom);
 				}
@@ -3987,14 +3988,14 @@ static void Print_CRCs(EventClass *ev)
 		housep = HouseClass::As_Pointer (house);
 		if (housep) {
 			GameCRC = 0;
-			fprintf(fp,"-------------------- %s Units -------------------\n",
+			WWFS_FPrintf(fp,"-------------------- %s Units -------------------\n",
 				housep->Class->Name());
 			for (i = 0; i < Units.Count(); i++) {
 				unitp = (UnitClass *)Units.Active_Ptr(i);
 				if (unitp->Owner()==house) {
 					Add_CRC (&GameCRC, (int)unitp->Coord + (int)unitp->PrimaryFacing +
 						(int)unitp->SecondaryFacing);
-					fprintf(fp,
+					WWFS_FPrintf(fp,
 						"COORD:%x   Facing:%d   Facing2:%d   Mission:%d   Type:%d   Tgt:%x\n",
 						unitp->Coord,(int)unitp->PrimaryFacing,
 						(int)unitp->SecondaryFacing,unitp->Get_Mission(),
@@ -4012,7 +4013,7 @@ static void Print_CRCs(EventClass *ev)
 		housep = HouseClass::As_Pointer (house);
 		if (housep) {
 			GameCRC = 0;
-			fprintf(fp,"-------------------- %s Vessels -------------------\n",
+			WWFS_FPrintf(fp,"-------------------- %s Vessels -------------------\n",
 				housep->Class->Name());
 			for (i = 0; i < Vessels.Count(); i++) {
 				vesselp = (VesselClass *)Vessels.Active_Ptr(i);
@@ -4021,7 +4022,7 @@ static void Print_CRCs(EventClass *ev)
 					Add_CRC (&GameCRC, (int)vesselp->Speed + (int)vesselp->NavCom);
 					Add_CRC (&GameCRC, (int)vesselp->Strength);
 					Add_CRC (&GameCRC, (int)vesselp->Mission + (int)vesselp->TarCom);
-					fprintf(fp,
+					WWFS_FPrintf(fp,
 						"COORD:%x   Facing:%d   Mission:%d   Strength:%d Type:%d   Tgt:%x\n",
 						vesselp->Coord,(int)vesselp->PrimaryFacing,
 						vesselp->Get_Mission(), vesselp->Strength,
@@ -4039,13 +4040,13 @@ static void Print_CRCs(EventClass *ev)
 		housep = HouseClass::As_Pointer (house);
 		if (housep) {
 			GameCRC = 0;
-			fprintf(fp,"-------------------- %s Buildings -------------------\n",
+			WWFS_FPrintf(fp,"-------------------- %s Buildings -------------------\n",
 				housep->Class->Name());
 			for (i = 0; i < Buildings.Count(); i++) {
 				bldgp = (BuildingClass *)Buildings.Active_Ptr(i);
 				if (bldgp->Owner()==house) {
 					Add_CRC (&GameCRC, (int)bldgp->Coord + (int)bldgp->PrimaryFacing);
-					fprintf(fp,"COORD:%x   Facing:%d   Mission:%d   Type:%d   Tgt:%x\n",
+					WWFS_FPrintf(fp,"COORD:%x   Facing:%d   Mission:%d   Type:%d   Tgt:%x\n",
 						bldgp->Coord,(int)bldgp->PrimaryFacing,bldgp->Get_Mission(),
 						bldgp->Class->Type, bldgp->As_Target());
 				}
@@ -4058,10 +4059,10 @@ static void Print_CRCs(EventClass *ev)
 	// Animations
 	//
 	AnimClass *animp;
-		fprintf(fp,"-------------------- Animations -------------------\n");
+		WWFS_FPrintf(fp,"-------------------- Animations -------------------\n");
 	for (i = 0; i < Anims.Count(); i++) {
 		animp = (AnimClass *)Anims.Active_Ptr(i);
-		fprintf(fp,"Target:%x OwnerHouse:%d Loops:%d\n",
+		WWFS_FPrintf(fp,"Target:%x OwnerHouse:%d Loops:%d\n",
 			animp->xObject,
 			animp->OwnerHouse,
 			animp->Loops);
@@ -4072,53 +4073,53 @@ static void Print_CRCs(EventClass *ev)
 	//------------------------------------------------------------------------
 	GameCRC = 0;
 	for (i = 0; i < LAYER_COUNT; i++) {
-		fprintf(fp,">>>> MAP LAYER %d <<<<\n",i);
+		WWFS_FPrintf(fp,">>>> MAP LAYER %d <<<<\n",i);
 		for (j = 0; j < Map.Layer[i].Count(); j++) {
 			objp = Map.Layer[i][j];
 			Add_CRC (&GameCRC, (int)objp->Coord + (int)objp->What_Am_I());
-			fprintf(fp,"Object %d: %x ",j,objp->Coord);
+			WWFS_FPrintf(fp,"Object %d: %x ",j,objp->Coord);
 
 			if (objp->What_Am_I() == RTTI_AIRCRAFT)
-				fprintf(fp,"Aircraft  (Type:%d) ",
+				WWFS_FPrintf(fp,"Aircraft  (Type:%d) ",
 					(AircraftType)(*((AircraftClass *)objp)));
 			else if (objp->What_Am_I() == RTTI_ANIM)
-				fprintf(fp,"Anim      (Type:%d) ",
+				WWFS_FPrintf(fp,"Anim      (Type:%d) ",
 					(AnimType)(*((AnimClass *)objp)));
 			else if (objp->What_Am_I() == RTTI_BUILDING)
-				fprintf(fp,"Building  (Type:%d) ",
+				WWFS_FPrintf(fp,"Building  (Type:%d) ",
 					(StructType)(*((BuildingClass *)objp)));
 			else if (objp->What_Am_I() == RTTI_BULLET)
-				fprintf(fp,"Bullet    (Type:%d) ",
+				WWFS_FPrintf(fp,"Bullet    (Type:%d) ",
 					(BulletType)(*((BulletClass *)objp)));
 			else if (objp->What_Am_I() == RTTI_INFANTRY)
-				fprintf(fp,"Infantry  (Type:%d) ",
+				WWFS_FPrintf(fp,"Infantry  (Type:%d) ",
 					(InfantryType)(*((InfantryClass *)objp)));
 			else if (objp->What_Am_I() == RTTI_OVERLAY)
-				fprintf(fp,"Overlay   (Type:%d) ",
+				WWFS_FPrintf(fp,"Overlay   (Type:%d) ",
 					(OverlayType)(*((OverlayClass *)objp)));
 			else if (objp->What_Am_I() == RTTI_SMUDGE)
-				fprintf(fp,"Smudge    (Type:%d) ",
+				WWFS_FPrintf(fp,"Smudge    (Type:%d) ",
 					(SmudgeType)(*((SmudgeClass *)objp)));
 			else if (objp->What_Am_I() == RTTI_TEMPLATE)
-				fprintf(fp,"Template  (Type:%d) ",
+				WWFS_FPrintf(fp,"Template  (Type:%d) ",
 					(TemplateType)(*((TemplateClass *)objp)));
 			else if (objp->What_Am_I() == RTTI_TERRAIN)
-				fprintf(fp,"Terrain   (Type:%d) ",
+				WWFS_FPrintf(fp,"Terrain   (Type:%d) ",
 					(TerrainType)(*((TerrainClass *)objp)));
 			else if (objp->What_Am_I() == RTTI_UNIT)
-				fprintf(fp,"Unit      (Type:%d) ",
+				WWFS_FPrintf(fp,"Unit      (Type:%d) ",
 					(UnitType)(*((UnitClass *)objp)));
 			else if (objp->What_Am_I() == RTTI_VESSEL)
-				fprintf(fp,"Vessel    (Type:%d) ",
+				WWFS_FPrintf(fp,"Vessel    (Type:%d) ",
 					(VesselType)(*((VesselClass *)objp)));
 
 			house = objp->Owner();
 			if (house!=HOUSE_NONE) {
 				housep = HouseClass::As_Pointer (house);
-				fprintf(fp,"Owner: %s\n",housep->Class->IniName);
+				WWFS_FPrintf(fp,"Owner: %s\n",housep->Class->IniName);
 			}
 			else {
-				fprintf(fp,"Owner: NONE\n");
+				WWFS_FPrintf(fp,"Owner: NONE\n");
 			}
 		}
 	}
@@ -4128,50 +4129,50 @@ static void Print_CRCs(EventClass *ev)
 	//	Logic Layers
 	//------------------------------------------------------------------------
 	GameCRC = 0;
-	fprintf(fp,">>>> LOGIC LAYER <<<<\n");
+	WWFS_FPrintf(fp,">>>> LOGIC LAYER <<<<\n");
 	for (i = 0; i < Logic.Count(); i++) {
 		objp = Logic[i];
 		Add_CRC (&GameCRC, (int)objp->Coord + (int)objp->What_Am_I());
-		fprintf(fp,"Object %d: %x ",i,objp->Coord);
+		WWFS_FPrintf(fp,"Object %d: %x ",i,objp->Coord);
 
 		if (objp->What_Am_I() == RTTI_AIRCRAFT)
-			fprintf(fp,"Aircraft  (Type:%d) ",
+			WWFS_FPrintf(fp,"Aircraft  (Type:%d) ",
 				(AircraftType)(*((AircraftClass *)objp)));
 		else if (objp->What_Am_I() == RTTI_ANIM)
-			fprintf(fp,"Anim      (Type:%d) ",
+			WWFS_FPrintf(fp,"Anim      (Type:%d) ",
 				(AnimType)(*((AnimClass *)objp)));
 		else if (objp->What_Am_I() == RTTI_BUILDING)
-			fprintf(fp,"Building  (Type:%d) ",
+			WWFS_FPrintf(fp,"Building  (Type:%d) ",
 				(StructType)(*((BuildingClass *)objp)));
 		else if (objp->What_Am_I() == RTTI_BULLET)
-			fprintf(fp,"Bullet    (Type:%d) ",
+			WWFS_FPrintf(fp,"Bullet    (Type:%d) ",
 				(BulletType)(*((BulletClass *)objp)));
 		else if (objp->What_Am_I() == RTTI_INFANTRY)
-			fprintf(fp,"Infantry  (Type:%d) ",
+			WWFS_FPrintf(fp,"Infantry  (Type:%d) ",
 				(InfantryType)(*((InfantryClass *)objp)));
 		else if (objp->What_Am_I() == RTTI_OVERLAY)
-			fprintf(fp,"Overlay   (Type:%d) ",
+			WWFS_FPrintf(fp,"Overlay   (Type:%d) ",
 				(OverlayType)(*((OverlayClass *)objp)));
 		else if (objp->What_Am_I() == RTTI_SMUDGE)
-			fprintf(fp,"Smudge    (Type:%d) ",
+			WWFS_FPrintf(fp,"Smudge    (Type:%d) ",
 				(SmudgeType)(*((SmudgeClass *)objp)));
 		else if (objp->What_Am_I() == RTTI_TEMPLATE)
-			fprintf(fp,"Template  (Type:%d) ",
+			WWFS_FPrintf(fp,"Template  (Type:%d) ",
 				(TemplateType)(*((TemplateClass *)objp)));
 		else if (objp->What_Am_I() == RTTI_TERRAIN)
-			fprintf(fp,"Terrain   (Type:%d) ",
+			WWFS_FPrintf(fp,"Terrain   (Type:%d) ",
 				(TerrainType)(*((TerrainClass *)objp)));
 		else if (objp->What_Am_I() == RTTI_UNIT)
-			fprintf(fp,"Unit      (Type:%d) ",
+			WWFS_FPrintf(fp,"Unit      (Type:%d) ",
 				(UnitType)(*((UnitClass *)objp)));
 
 		house = objp->Owner();
 		if (house!=HOUSE_NONE) {
 			housep = HouseClass::As_Pointer (house);
-			fprintf(fp,"Owner: %s\n",housep->Class->IniName);
+			WWFS_FPrintf(fp,"Owner: %s\n",housep->Class->IniName);
 		}
 		else {
-			fprintf(fp,"Owner: NONE\n");
+			WWFS_FPrintf(fp,"Owner: NONE\n");
 		}
 	}
 	Mono_Printf("Logic:%x  \n",GameCRC);
@@ -4181,29 +4182,29 @@ static void Print_CRCs(EventClass *ev)
 	//------------------------------------------------------------------------
 	Mono_Printf("Random Number:%x  \n",Scen.RandomNumber.Seed);
 #ifdef RANDOM_COUNT
-	fprintf(fp,"\nRandom Number:%x (Count1:%d, Count2:%d)\n",
+	WWFS_FPrintf(fp,"\nRandom Number:%x (Count1:%d, Count2:%d)\n",
 		Scen.RandomNumber.Seed,
 		Scen.RandomNumber.Count1,
 		Scen.RandomNumber.Count2);
 #else
-	fprintf(fp,"\nRandom Number:%x\n",Scen.RandomNumber.Seed);
+	WWFS_FPrintf(fp,"\nRandom Number:%x\n",Scen.RandomNumber.Seed);
 #endif
 
 	Mono_Printf("My Frame:%d  \n",Frame);
-	fprintf(fp,"My Frame:%d\n",Frame);
+	WWFS_FPrintf(fp,"My Frame:%d\n",Frame);
 
 	if (ev) {
-		fprintf(fp,"\n");
-		fprintf(fp,"Offending event:\n");
-		fprintf(fp,"  Type:         %d\n",ev->Type);
-		fprintf(fp,"  Frame:        %d\n",ev->Frame);
-		fprintf(fp,"  ID:           %x\n",ev->ID);
-		fprintf(fp,"  CRC:          %x\n",ev->Data.FrameInfo.CRC);
-		fprintf(fp,"  CommandCount: %d\n",ev->Data.FrameInfo.CommandCount);
-		fprintf(fp,"  Delay:        %d\n",ev->Data.FrameInfo.Delay);
+		WWFS_FPrintf(fp,"\n");
+		WWFS_FPrintf(fp,"Offending event:\n");
+		WWFS_FPrintf(fp,"  Type:         %d\n",ev->Type);
+		WWFS_FPrintf(fp,"  Frame:        %d\n",ev->Frame);
+		WWFS_FPrintf(fp,"  ID:           %x\n",ev->ID);
+		WWFS_FPrintf(fp,"  CRC:          %x\n",ev->Data.FrameInfo.CRC);
+		WWFS_FPrintf(fp,"  CommandCount: %d\n",ev->Data.FrameInfo.CommandCount);
+		WWFS_FPrintf(fp,"  Delay:        %d\n",ev->Data.FrameInfo.Delay);
 	}
 
-	fclose(fp);
+	WWFS_FClose(fp);
 
 }	/* end of Print_CRCs */
 
@@ -4413,36 +4414,36 @@ static void Print_Framesync_Values(long curframe, unsigned long max_ahead,
 void Dump_Packet_Too_Late_Stuff(EventClass *event, ConnManClass *net,
 	long *their_frame, unsigned short *their_sent, unsigned short *their_recv)
 {
-	FILE *fp;
+	SDL_IOStream *fp;
 	int i;
 	HousesType house;
 
-	fp = fopen("toolate.txt", "wt");
+	fp = WWFS_FOpen("toolate.txt", "wt");
 	if (!fp) {
 		return;
 	}
-	fprintf(fp,"----------------- Event data: ----------------------\n");
-	fprintf(fp,"Type:       %s\n",EventClass::EventNames[event->Type]);
-	fprintf(fp,"Frame:      %d\n",event->Frame);
-	fprintf(fp,"ID:         %d\n",event->ID);
+	WWFS_FPrintf(fp,"----------------- Event data: ----------------------\n");
+	WWFS_FPrintf(fp,"Type:       %s\n",EventClass::EventNames[event->Type]);
+	WWFS_FPrintf(fp,"Frame:      %d\n",event->Frame);
+	WWFS_FPrintf(fp,"ID:         %d\n",event->ID);
 
 	for (i = 0; i < Session.Players.Count(); i++) {
 		if (event->ID == Session.Players[i]->Player.ID) {
-			fprintf(fp,"Player's Name: %s",Session.Players[i]->Name);
+			WWFS_FPrintf(fp,"Player's Name: %s",Session.Players[i]->Name);
 		}
 	}
-	fprintf(fp,"\n");
+	WWFS_FPrintf(fp,"\n");
 
-	fprintf(fp,"--------------------- My data: ---------------------\n");
-	fprintf(fp,"My Frame:%d\n",Frame);
-	fprintf(fp,"My MaxAhead:%d\n",Session.MaxAhead);
+	WWFS_FPrintf(fp,"--------------------- My data: ---------------------\n");
+	WWFS_FPrintf(fp,"My Frame:%d\n",Frame);
+	WWFS_FPrintf(fp,"My MaxAhead:%d\n",Session.MaxAhead);
 
 	if (net) {
-		fprintf(fp,"-------------------- Frame Stats: ------------------\n");
-		fprintf(fp,"Name          ID  TheirFrame  TheirSent  TheirRecv\n");
+		WWFS_FPrintf(fp,"-------------------- Frame Stats: ------------------\n");
+		WWFS_FPrintf(fp,"Name          ID  TheirFrame  TheirSent  TheirRecv\n");
 		for (i = 0; i < net->Num_Connections(); i++) {
 			house = (HousesType)(net->Connection_ID(i));
-			fprintf(fp,"%12s  %2d    %6d      %6d      %6d\n",
+			WWFS_FPrintf(fp,"%12s  %2d    %6d      %6d      %6d\n",
 				(HouseClass::As_Pointer(house))->IniName,
 				net->Connection_ID(i),
 				their_frame[i],
@@ -4451,7 +4452,7 @@ void Dump_Packet_Too_Late_Stuff(EventClass *event, ConnManClass *net,
 		}
 	}
 
-	fclose(fp);
+	WWFS_FClose(fp);
 }
 
 /***************************************************************************

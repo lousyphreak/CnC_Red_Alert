@@ -22,8 +22,7 @@
 *
 *----------------------------------------------------------------------------
 *
-* FILE
-*     profile.c
+* SDL_IOStream *     profile.c
 *
 * DESCRIPTION
 *     INI file processing. (32-Bit protected mode)
@@ -48,6 +47,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "profile.h"
+#include "sdl_fs.h"
 
 /*---------------------------------------------------------------------------
  * PRIVATE DECLARATIONS
@@ -63,7 +63,7 @@
 #define isspace(c) ((c==' ')||(c=='\t')||(c=='\n')||(c=='\r')?1:0)
 
 static char *strtrim(char *string);
-static long FileGets(FILE *fp, char *buf, long buflen);
+static long FileGets(SDL_IOStream *fp, char *buf, long buflen);
 
 
 /****************************************************************************
@@ -262,7 +262,7 @@ long GetINIInt(char const *section, char const *entry, long deflt,
 long GetINIString(char const *section, char const *entry, 
 		char const *def, char *retbuffer, long retlen, char *fname)
 {
-	FILE *fp;
+	SDL_IOStream *fp;
 	long retval;
 	char txt[80];
 	char secname[40];
@@ -275,7 +275,7 @@ long GetINIString(char const *section, char const *entry,
 	retval = min(strlen(def), (unsigned)retlen);
 
 	/* Open the file */
-	if ((fp = fopen(fname, "rt")) == NULL) {
+	if ((fp = WWFS_FOpen(fname, "rt")) == NULL) {
 		return (retval);
 	}
 
@@ -288,7 +288,7 @@ long GetINIString(char const *section, char const *entry,
 
 		/* Read line; return if end-of-file */
 		if (FileGets(fp,txt,80)!=0) {
-			fclose(fp);
+			WWFS_FClose(fp);
 			return (retval);
 		}
 
@@ -308,7 +308,7 @@ long GetINIString(char const *section, char const *entry,
 
 		/* Read line; return if end-of-file */
 		if (FileGets(fp, txt, 80) != 0) {
-			fclose(fp);
+			WWFS_FClose(fp);
 			return (retval);
 		}
 
@@ -317,7 +317,7 @@ long GetINIString(char const *section, char const *entry,
 
 		/* Return if start of next section reached */
 		if (txt[0] == '[') {
-			fclose(fp);
+			WWFS_FClose(fp);
 			return (retval);
 		}
 
@@ -325,7 +325,7 @@ long GetINIString(char const *section, char const *entry,
 		if (!memicmp(entry, txt, len) && (isspace(txt[len])
 				|| txt[len] == '=')) {
 
-			fclose(fp);
+			WWFS_FClose(fp);
 
 			/* Find '=' character */
 			workptr = strchr(txt, '=');
@@ -405,7 +405,7 @@ static char *strtrim(char *string)
 * SYNOPSIS
 *     Error = FileGets(FilePtr, Buffer, Length)
 *
-*     long FileGets(FILE *, char *, long);
+*     long FileGets(SDL_IOStream *, char *, long);
 *
 * FUNCTION
 *
@@ -419,9 +419,9 @@ static char *strtrim(char *string)
 *
 ****************************************************************************/
 
-static long FileGets(FILE *fp, char *buf, long buflen)
+static long FileGets(SDL_IOStream *fp, char *buf, long buflen)
 {
-	if (fgets(buf, buflen, fp)) {
+	if (WWFS_FGets(buf, buflen, fp)) {
 		buf[(strlen(buf) - 1)] = 0;
 		return (0);
 	} else {

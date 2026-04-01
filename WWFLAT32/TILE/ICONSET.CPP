@@ -37,7 +37,6 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 //#include	"function.h"
-#include	<dos.h>
 #include	<stdlib.h>
 #include	<stdio.h>
 #include <string.h>

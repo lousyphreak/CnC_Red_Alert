@@ -22,8 +22,7 @@
 *
 *----------------------------------------------------------------------------
 *
-* FILE
-*     mixfile.c
+* SDL_IOStream *     mixfile.c
 *
 * DESCRIPTION
 *     A mix file is basically a group of files concatinated together
@@ -70,6 +69,7 @@
 #include <string.h>
 #include "mixfile.h"
 #include "crc.h"
+#include "sdl_fs.h"
 
 /*---------------------------------------------------------------------------
  * PRIVATE DECLARATIONS
@@ -108,8 +108,8 @@ MIXHandle *OpenMix(char *name)
 	long      size;
 
 	/* Open mix file and read in header. */
-	if ((fh = open(name, (O_RDONLY|O_BINARY))) != -1) {
-		if (read(fh, &mfhdr, sizeof(MIXHeader)) == sizeof(MIXHeader)) {
+	if ((fh = WWFS_Open(name, (O_RDONLY|O_BINARY))) != -1) {
+		if (WWFS_Read(fh, &mfhdr, sizeof(MIXHeader)) == sizeof(MIXHeader)) {
 
 			/* Allocate handle based on the number of SubBlocks. */
 			sbsize = (mfhdr.Count * sizeof(MIXSubBlock));
@@ -122,14 +122,14 @@ MIXHandle *OpenMix(char *name)
 				mix->Count = mfhdr.Count;
 
 				/* Read in the SubBlock entries. */
-				if (read(fh, &mix->Entries[0], sbsize) != sbsize) {
+				if (WWFS_Read(fh, &mix->Entries[0], sbsize) != sbsize) {
 					free(mix);
 					mix = NULL;
 				}
 			}
 		}
 
-		close(fh);
+		WWFS_Close(fh);
 	}
 
 	return (mix);
@@ -174,7 +174,7 @@ void CloseMix(MIXHandle *mix)
 *     short OpenMixEntry(MIXHandle *, char *);
 *
 * FUNCTION
-*     Opens an entry from the specified mix file handle. Use close() to close
+*     Opens an entry from the specified mix file handle. Use WWFS_Close() to close
 *     the file when done.
 *
 * INPUTS
@@ -205,11 +205,11 @@ long OpenMixEntry(MIXHandle *mix, char *name)
 		key.Offset += (mix->Count * sizeof(MIXSubBlock)) + sizeof(MIXHeader);
 
 		/* Open the mix file. */
-		if ((fh = open(mix->Name, (O_RDONLY|O_BINARY))) != -1) {
+		if ((fh = WWFS_Open(mix->Name, (O_RDONLY|O_BINARY))) != -1) {
 
 			/* Seek to the start of the file. */
-			if (lseek(fh, key.Offset, SEEK_SET) == -1) {
-				close(fh);
+			if (WWFS_Seek(fh, key.Offset, SEEK_SET) == -1) {
+				WWFS_Close(fh);
 				fh = -1;
 			}
 		}

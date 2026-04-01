@@ -60,7 +60,6 @@
 
 #include <stdio.h>
 #include <malloc.h>
-#include <dos.h>
 #include <string.h>
 #include <sys\timeb.h>
 #include <vqm32\all.h>

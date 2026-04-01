@@ -43,7 +43,6 @@
 #include	<cstdio>
 #include	<cstdlib>
 #include <fcntl.h>
-#include <unistd.h>
 
 #include  "CCDDE.H"
 #include	"IPX95.H"
@@ -237,37 +236,30 @@ int PASCAL WinMain ( HINSTANCE instance , HINSTANCE , char * command_line , int 
 
 
 	/*
-	**	Remember the current working directory and drive.
-	*/
-	unsigned olddrive;
-	char oldpath[PATH_MAX];
-	getcwd(oldpath, sizeof(oldpath));
-	_dos_getdrive(&olddrive);
-
-	/*
 	**	Change directory to the where the executable is located. Handle the
 	**	case where there is no path attached to argv[0].
 	*/
 	char drive[_MAX_DRIVE];
 	char path[_MAX_PATH];
-	unsigned drivecount;
+	char working_directory[_MAX_PATH];
 	_splitpath(argv[0], drive, path, NULL, NULL);
-	if (!drive[0]) {
-		drive[0] = ('A' + olddrive)-1;
-	}
 	if (!path[0]) {
 		strcpy(path, ".");
 	}
-	_dos_setdrive(toupper((drive[0])-'A')+1, &drivecount);
 	if (path[strlen(path)-1] == '\\') {
 		path[strlen(path)-1] = '\0';
 	}
-	chdir(path);
+	working_directory[0] = '\0';
+	if (drive[0]) {
+		strcat(working_directory, drive);
+	}
+	strcat(working_directory, path);
+	WWFS_SetCurrentDirectory(working_directory);
 
 #ifdef WOLAPI_INTEGRATION
 	//	Look for special wolapi install program, used after the patch to version 3, to install "Shared Internet Components".
 	SDL_PathInfo wfd_info;
-	bool bWOLSetupFile = SDL_GetPathInfo("wolsetup.exe", &wfd_info);
+	bool bWOLSetupFile = WWFS_GetPathInfo("wolsetup.exe", &wfd_info);
 //	if( bWOLSetupFile )
 //		debugprint( "Found wolsetup.exe\n" );
 	//	Look for special registry entry that tells us when the setup exe has done its thing.
@@ -281,7 +273,7 @@ int PASCAL WinMain ( HINSTANCE instance , HINSTANCE , char * command_line , int 
 		//	Setup has finished. Delete the setup exe and remove reg key.
 		if( bWOLSetupFile )
 		{
-			if( SDL_RemovePath("wolsetup.exe") )
+			if( WWFS_RemovePath("wolsetup.exe") )
 				RegDeleteValue( hKey, "WolapiInstallComplete" );
 		}
 		else
@@ -293,8 +285,8 @@ int PASCAL WinMain ( HINSTANCE instance , HINSTANCE , char * command_line , int 
 	//	directory for 1.08, but which must NOT be present for this version (Aftermath mix files provide the
 	//	string overrides that the 1.08 separate conquer.eng did before Aftermath).
 	//	Delete conquer.eng if it's found.
-	if( SDL_GetPathInfo( "conquer.eng", &wfd_info ) )
-		SDL_RemovePath( "conquer.eng" );
+	if( WWFS_GetPathInfo( "conquer.eng", &wfd_info ) )
+		WWFS_RemovePath( "conquer.eng" );
 
 #endif
 
@@ -951,5 +943,4 @@ void Get_OS_Version (void)
 #endif	//(0)
 
 }
-
 

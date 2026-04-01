@@ -51,6 +51,7 @@
 #include <fcntl.h>
 #include <malloc.h>
 #include <unistd.h>
+#include "sdl_fs.h"
 
 #define bool int
 #define true 1
@@ -313,7 +314,7 @@ int Load_File(char *file_name , unsigned *load_addr , unsigned mode)
 	unsigned file_length;
 	void		*buffer;
 
-	handle=open (file_name , O_RDONLY | mode);
+	handle=WWFS_Open(file_name , O_RDONLY | mode);
 
 	if (handle==-1){
 		File_Error(file_name);
@@ -331,13 +332,13 @@ int Load_File(char *file_name , unsigned *load_addr , unsigned mode)
 		return (false);
 	}
 
-	if (read (handle , buffer , file_length)!=file_length){
+	if (WWFS_Read(handle , buffer , file_length)!=file_length){
 		File_Error(file_name);
 		free(buffer);
 		return (false);
 	}
 
-	close (handle);
+	WWFS_Close(handle);
 	*load_addr = (unsigned)buffer;
 	return (file_length);
 }

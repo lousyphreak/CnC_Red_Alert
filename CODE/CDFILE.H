@@ -38,7 +38,7 @@
 #ifndef CDFILE_H
 #define CDFILE_H
 
-#include	<dos.h>
+#include	"win32_compat.h"
 #include	"BFIOFILE.H"
 
 /*

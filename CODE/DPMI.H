@@ -37,7 +37,6 @@
 
 #ifndef DPMI_Hx
 #define DPMI_Hx
-#include	<dos.h>
 #include	<stdlib.h>
 #include	<stdio.h>
 #include <string.h>

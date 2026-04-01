@@ -44,7 +44,6 @@
 
 #include "FUNCTION.H"
 #include <fcntl.h>
-#include <unistd.h>				// for unlink
 
 
 /***********************************************************************************************
@@ -482,7 +481,7 @@ int LoadOptionsClass::Process(void)
 				game_num = Files[game_idx]->Num;
 				if (WWMessageBox().Process(TXT_DELETE_FILE_QUERY, TXT_YES, TXT_NO)==0) {
 					sprintf(fname, "SAVEGAME.%03d", game_num);
-					SDL_RemovePath(fname);
+					WWFS_RemovePath(fname);
 					Clear_List(&listbtn);
 					Fill_List(&listbtn);
 					if (listbtn.Count() == 0) {
@@ -640,7 +639,7 @@ void LoadOptionsClass::Fill_List(ListClass * list)
 	** Find all savegame files
 	*/
 	int save_count = 0;
-	char **save_files = SDL_GlobDirectory(".", "SAVEGAME.*", SDL_GLOB_CASEINSENSITIVE, &save_count);
+	char **save_files = WWFS_GlobDirectory(".", "SAVEGAME.*", SDL_GLOB_CASEINSENSITIVE, &save_count);
 
 	for (int si = 0; si < save_count; si++) {
 

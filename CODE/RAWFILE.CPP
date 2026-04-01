@@ -60,6 +60,7 @@
 #include	<errno.h>
 
 #include	"win32_compat.h"
+#include "sdl_fs.h"
 
 #include	"rawfile.h"
 
@@ -231,7 +232,7 @@ int RawFileClass::Open(int rights)
 	**	Normalize the path for case-insensitive filesystem support and
 	**	drive letter translation.
 	*/
-	std::string normalized = normalize_compat_path(Filename);
+	std::string normalized = WWFS_NormalizePath(Filename);
 
 	/*
 	**	Try to open the file according to the access rights specified.
@@ -323,7 +324,7 @@ int RawFileClass::Is_Available(int forced)
 	/*
 	**	Use SDL_GetPathInfo to check whether the file exists without actually opening it.
 	*/
-	std::string normalized = normalize_compat_path(Filename);
+	std::string normalized = WWFS_NormalizePath(Filename);
 	SDL_PathInfo info;
 	return SDL_GetPathInfo(normalized.c_str(), &info) ? true : false;
 }
@@ -718,7 +719,7 @@ int RawFileClass::Delete(void)
 		return(false);
 	}
 
-	std::string normalized = normalize_compat_path(Filename);
+	std::string normalized = WWFS_NormalizePath(Filename);
 	if (!SDL_RemovePath(normalized.c_str())) {
 		Error(EACCES, false, Filename);
 		return(false);
@@ -751,7 +752,7 @@ unsigned long RawFileClass::Get_Date_Time(void)
 {
 	if (Filename == NULL) return(0);
 
-	std::string normalized = normalize_compat_path(Filename);
+	std::string normalized = WWFS_NormalizePath(Filename);
 	SDL_PathInfo info;
 	if (!SDL_GetPathInfo(normalized.c_str(), &info)) {
 		return(0);

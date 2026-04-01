@@ -18,6 +18,7 @@
 
 /* $Header: /CounterStrike/CONQUER.CPP 6     3/13/97 2:05p Steve_tall $ */
 #include <cstdlib>
+#include <SDL3/SDL_storage.h>
 
 // disable leak detection
 #ifdef __cplusplus
@@ -110,7 +111,6 @@ B<A> test;
 #include	<direct.h>
 #include	<fcntl.h>
 #include <unistd.h>
-#include	<dos.h>
 #include	<share.h>
 #include	"CCDDE.H"
 #include	"VORTEX.H"
@@ -4230,7 +4230,7 @@ int Get_CD_Index (int cd_drive, int timeout)
 			sprintf(buffer, "%c:\\main.mix", 'A' + cd_drive);
 
 			SDL_PathInfo path_info;
-			if (SDL_GetPathInfo(normalize_compat_path(buffer).c_str(), &path_info))
+			if (SDL_GetPathInfo(WWFS_NormalizePath(buffer).c_str(), &path_info))
 				{
 
 				/*
@@ -5038,15 +5038,14 @@ bool Force_CD_Available(int cd)
  *=========================================================================*/
 uint64_t Disk_Space_Available(void)
 {
-	struct diskfree_t diskdata;
-	unsigned drive;
+	SDL_Storage* storage = WWFS_OpenFileStorage(".");
+	if (storage == NULL) {
+		return 0;
+	}
 
-	_dos_getdrive(&drive);
-	_dos_getdiskfree(drive, &diskdata);
-
-	return(static_cast<uint64_t>(diskdata.avail_clusters) *
-		static_cast<uint64_t>(diskdata.sectors_per_cluster) *
-		static_cast<uint64_t>(diskdata.bytes_per_sector));
+	uint64_t remaining = static_cast<uint64_t>(SDL_GetStorageSpaceRemaining(storage));
+	SDL_CloseStorage(storage);
+	return remaining;
 }
 
 

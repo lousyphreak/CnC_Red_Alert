@@ -22,8 +22,7 @@
 *
 *---------------------------------------------------------------------------
 *
-* FILE
-*     font.c
+* SDL_IOStream *     font.c
 *
 * DESCRIPTION
 *     Font manipulation.
@@ -49,6 +48,7 @@
 #include <string.h>
 #include <malloc.h>
 #include "font.h"
+#include "sdl_fs.h"
 
 
 /*---------------------------------------------------------------------------
@@ -103,17 +103,17 @@ void *cdecl Load_Font(char const *name)
 	short valid;
 
 	/* Open the font. */
-	if ((fh = open(name, (O_RDONLY|O_BINARY))) != -1) {
+	if ((fh = WWFS_Open(name, (O_RDONLY|O_BINARY))) != -1) {
 
 		/* Get the size of the font. */
-		if (read(fh, &size, 2) == 2) {
+		if (WWFS_Read(fh, &size, 2) == 2) {
 
 			/* Allocate memory to contain the font. */
 			if ((font = (Font *)malloc((unsigned long)size)) != NULL) {
 				valid = 0;	
 
 				/* Read in the body of the font. */
-				if (read(fh, &font->CompMethod, (unsigned long)(size - 2))
+				if (WWFS_Read(fh, &font->CompMethod, (unsigned long)(size - 2))
 						== (unsigned long)(size - 2)) {
 					
 					/* Verify the validity of the font. */
@@ -132,7 +132,7 @@ void *cdecl Load_Font(char const *name)
 		}
 
 		/* Close the font. */
-		close(fh);
+		WWFS_Close(fh);
 	}
 
 	return ((char *)font);

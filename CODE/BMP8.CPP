@@ -19,6 +19,7 @@
 
 #include "bmp8.h"
 #include <SDL3/SDL.h>
+#include "win32_compat.h"
 
 //***********************************************************************************************
 BMP8::~BMP8()
@@ -52,7 +53,7 @@ bool BMP8::Init( const char* szFile, HWND hWnd )
 	this->hWnd = hWnd;
 
 	//	Retrieve a handle identifying the file. 
-	SDL_IOStream* hFile = SDL_IOFromFile(szFile, "rb");
+	SDL_IOStream* hFile = WWFS_OpenFile(szFile, "rb");
 
 	if(	!hFile )
 		return false;

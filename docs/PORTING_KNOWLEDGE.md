@@ -23,6 +23,35 @@ _Last updated: 2026-04-01_
 - Repository-wide search found no remaining Red Alert-owned source file that still includes `<io.h>`.
 - The only remaining repository `<io.h>` include is SDL upstream's Windows-only `extern/SDL3/test/childprocess.c`, and that target is outside the supported build here because the top-level CMake forces `SDL_TESTS OFF`. Do not reintroduce an `io.h` wrapper just for that upstream test file.
 
+## Removed dos wrapper
+
+- `SDL3_COMPAT/wrappers/dos.h` and `SDL3_COMPAT/wrappers/dos_compat.cpp` are gone. The full cleanup had two parts:
+  - replace the few still-live DOS-era seams in the supported build (`CODE/CONQUER.CPP` free-space query, `CODE/SESSION.CPP` station-ID entropy, `CODE/STARTUP.CPP`/`WIN32LIB/KEYBOARD/TEST/TEST.CPP` drive-directory setup, and the stray `CDFILE`/`WWSTD` transitive include assumptions);
+  - strip the much larger pile of stale `<dos.h>` include lines and dead `find_t`-based declarations from archive/backup headers and sources.
+- Do not reintroduce `find_t`, `diskfree_t`, `_dos_getdrive`, `_dos_setdrive`, `_dos_getdiskfree`, `_harderr`, `_hardresume`, or the old `_A_*` / `_HARDERR_*` macro surface for the supported SDL3 port. The live game/file-system code already uses direct SDL/native helpers instead.
+- If a file still needs Win32 compatibility typedefs/macros such as `LONG`, `BYTE`, `FALSE`, `cdecl`, or `_MAX_PATH`, include `win32_compat.h` directly. Do not rely on a removed DOS shim to drag those definitions in transitively.
+- If a future change needs disk-space or path checks, keep that logic at the actual call site and route it through SDL helpers (`SDL_OpenFileStorage`, `SDL_GetStorageSpaceRemaining`, `SDL_GetPathInfo`, etc.) instead of reviving a DOS-shaped compatibility layer or adding `std::filesystem` back in.
+
+## SDL filesystem helper layer
+
+- SDL3 intentionally does **not** provide a real `SetCurrentDirectory` API. Do not sneak raw `chdir()` back into the port to compensate.
+- The durable seam is now:
+  - `SDL3_COMPAT/wrappers/sdl_fs.cpp` owns the WWFS filesystem implementation: virtual current-directory state, relative/case-insensitive path resolution, virtual-CD path mapping, and the SDL-backed path/storage helpers (`WWFS_SetCurrentDirectory()`, `WWFS_GetCurrentDirectory()`, `WWFS_OpenFile()`, `WWFS_OpenFileStorage()`, `WWFS_GetPathInfo()`, `WWFS_RemovePath()`, `WWFS_CreateDirectory()`, `WWFS_NormalizePath()`, `WWFS_GlobDirectory()`, `WWFS_SplitPath()`, and the virtual-CD helpers used by Win32 drive shims);
+  - `SDL3_COMPAT/wrappers/sdl_fs.h` provides the public WWFS-prefixed path plus stdio/fd compatibility surface (`WWFS_NormalizePath`, `WWFS_GlobDirectory`, `WWFS_SplitPath`, `WWFS_FOpen`, `WWFS_FRead`, `WWFS_FWrite`, `WWFS_FSeek`, `WWFS_FTell`, `WWFS_Open`, `WWFS_Read`, `WWFS_Write`, `WWFS_Seek`, `WWFS_Close`, `WWFS_ChangeDirectory`, `WWFS_GetCurrentDirectory`, etc.) for legacy code that still expects those APIs;
+  - `SDL3_COMPAT/wrappers/win32_compat.cpp` should stay a consumer of that layer for Win32-facing drive/window shims, not the home of the filesystem implementation itself.
+  - `SDL3_COMPAT/wrappers/direct.h` now forwards `_splitpath()` to `WWFS_SplitPath()` so even the legacy DOS-shaped path decomposition stays inside the SDL-backed filesystem layer instead of carrying a separate hand-rolled parser.
+  - Any wildcard scan that is meant to follow the game's virtual cwd must use `WWFS_GlobDirectory()`, not raw `SDL_GlobDirectory(".")`. The latter uses the host process cwd and will miss files such as `GameData/SAVEGAME.###` when startup has only redirected the WWFS virtual cwd.
+- When porting more filesystem code:
+  - route new file operations through SDL or these compat helpers;
+  - prefer the low-level helper layer over scattering direct `SDL_IOFromFile` / `SDL_GetPathInfo` / `SDL_RemovePath` calls when the code needs relative-path behavior that historically depended on the process cwd;
+  - keep upper layers unaware of case sensitivity and cwd semantics; that logic belongs in the file/path abstraction, not in gameplay code.
+- Repository-wide searches for direct filesystem/file-I/O calls will still show some benign leftovers:
+  - comments/documentation snippets,
+  - helper definitions in `direct.h`,
+  - container/member-function `remove(...)` calls,
+  - socket `close(...)` in `winsock.h`.
+  Treat those as non-file-I/O false positives, not as reasons to reintroduce POSIX/stdio access.
+
 ## Removed conio surface
 
 - The supported build no longer relies on global `WIN32` compatibility defines, and the old `conio.h` fallback branches were removed during that cleanup. Keep keyboard input on the supported port routed through `WWKeyboardClass` / SDL-backed input; do not reintroduce `<conio.h>` or wrapper shims for `getch()`, `kbhit()`, `getche()`, or `cprintf()`.
@@ -190,7 +219,7 @@ _Last updated: 2026-04-01_
     - the loose override on disk was lowercase `GameData/bmap.vqp`;
     - the Win32 `CreateFile()` wrapper only did exact-case opens, so the loose file was skipped on case-sensitive filesystems and `CCFileClass` fell back to a different archived `BMAP.VQP`;
     - the wrong interpolation table then poisoned `Interpolate_2X_Scale()` and produced the recognizable-image-plus-speckle symptom.
-  - `SDL3_COMPAT/wrappers/win32_compat.cpp::normalize_compat_path()` now resolves existing paths case-insensitively on non-Windows hosts before opening them, which restores Windows-style loose-file override behavior at the lowest file-system layer where the rest of the port expects it.
+  - `SDL3_COMPAT/wrappers/win32_compat.cpp::WWFS_NormalizePath()` now resolves existing paths case-insensitively on non-Windows hosts before opening them, which restores Windows-style loose-file override behavior at the lowest file-system layer where the rest of the port expects it.
   - A practical low-resolution movie smoke test on the current data set is: break on `Play_Intro()` under `gdb` and call `Try_Play_Movie("SIZZLE", THEME_NONE, true)`; this forces the buffered `320x200` movie path even when the old sequenced-debug intro route lands on unavailable assets such as `ANTINTRO.VQA`.
 
 ## SDL3 movie-audio integration
@@ -241,7 +270,7 @@ _Last updated: 2026-04-01_
 ## Startup/runtime porting notes
 
 - The Linux build no longer forces `WIN32=1` / `_WIN32=1`, but the runtime still expects Win32-era behavior from the remaining compatibility wrappers. Preserve those semantics directly instead of reviving dual-branch `#ifdef WIN32` code.
-- For file enumeration and similar wrappers, prefer direct POSIX `opendir` / `readdir` / `stat` / `statvfs` logic on non-Windows hosts instead of `std::filesystem` in startup-critical compat paths.
+- For file enumeration and similar wrappers, prefer SDL filesystem/storage helpers in startup-critical compat paths instead of `std::filesystem` or direct POSIX filesystem APIs.
 - `SDL3_COMPAT/wrappers/win32_compat.cpp` virtual-CD probing (`virtual_cd_index_for_drive_letter()` / `GetDriveType()`) is part of static startup through `GetCDClass`. Avoid `std::filesystem::path` composition there on Linux; it can still trip early-startup allocator/path issues before the game reaches normal runtime.
 - Linux must enter the real `WinMain(...)` startup path. If the Unix stub `main()` is left in place, the program only prints the old placeholder message (`Run C&C.COM.`) instead of running the game.
 - `GetModuleFileName()` must return a real executable path on Linux because `CODE/STARTUP.CPP` uses it during startup.
@@ -249,9 +278,7 @@ _Last updated: 2026-04-01_
   - normal builds refresh `GameData/redalert`;
   - ASan builds refresh `GameData/redalert-asan`.
   Smoke tests should launch those `GameData/` copies so the executable directory still contains the real assets.
-- `_dos_getdiskfree()` compatibility data is still fundamentally a 32-bit DOS/Win32-shaped interface.
-  - `struct diskfree_t` fields such as `avail_clusters`, `sectors_per_cluster`, and `bytes_per_sector` are 32-bit values.
-  - Any helper that converts those fields into free bytes (notably `CODE/CONQUER.CPP::Disk_Space_Available()`) must promote the multiply to `uint64_t`; otherwise modern large disks wrap modulo `4 GiB` and can falsely trip the `INIT_FREE_DISK_SPACE` / `SAVE_GAME_DISK_SPACE` checks even when hundreds of gigabytes are free.
+- The old `_dos_getdiskfree()` bridge is removed. Keep free-space checks on the supported path in direct 64-bit byte math at the call site; do not revive DOS cluster-count structs/functions just to answer startup/save disk-space queries.
 - The DDE compatibility layer cannot keep startup-critical mutable state in ordinary file-scope globals. Game-side global constructors may call into DDE before those globals are safely initialized.
 - SDL/Wayland startup can deliver focus gained and focus lost in the same early pump cycle. The bootstrap path needs a sticky "focus seen once" latch instead of waiting only on the live `GameInFocus` bit.
 - On the SDL3 port, that first activation is now also the last time ordinary OS focus changes should touch the legacy pause/resume path.

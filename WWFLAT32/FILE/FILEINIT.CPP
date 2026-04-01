@@ -58,6 +58,7 @@
 #include <direct.h>
 #include <search.h>
 #include <string.h>
+#include "sdl_fs.h"
 
 /*=========================================================================*/
 /* The following PRIVATE functions are in this file:                       */
@@ -170,7 +171,7 @@ VOID cdecl WWDOS_Shutdown(VOID)
 	}
 	FileDataPtr = NULL;
 
-	chdir(StartPath);
+	WWFS_ChangeDirectory(StartPath);
 	ibm_setdisk(*StartPath - 'A');
 
 	// This has not been completed yet, when it is, uncomment it and add errors.
@@ -385,7 +386,7 @@ PRIVATE FileInitErrorType cdecl Set_Search_Drives( BYTE *cdpath )
 	}
 
 	// Finnally, set the starting path.
-	getcwd(StartPath, XMAXPATH);
+	WWFS_GetCurrentDirectory(StartPath, XMAXPATH);
 
 	// Make sure they are all uppercase.
 	strupr(StartPath);
@@ -393,13 +394,13 @@ PRIVATE FileInitErrorType cdecl Set_Search_Drives( BYTE *cdpath )
 	strupr(ExecPath);
 
 	// Change directories to the secondary search path (DataPath).
-	if (*DataPath && chdir(DataPath)) {
+	if (*DataPath && WWFS_ChangeDirectory(DataPath)) {
 		return (FI_SEARCH_PATH_NOT_FOUND);
 	}
 
 	// Lastley, Make sure we are in the startup directory.  This will overide
 	// the secondary data path if they are on the same drive.
-	if (chdir(StartPath)) {
+	if (WWFS_ChangeDirectory(StartPath)) {
 		return (FI_STARTUP_PATH_NOT_FOUND);
 	}
 

@@ -22,8 +22,7 @@
 *
 *----------------------------------------------------------------------------
 *
-* FILE
-*     iff.c
+* SDL_IOStream *     iff.c
 *
 * DESCRIPTION
 *     IFF manager. (32-Bit protected mode)
@@ -60,6 +59,7 @@
 #include <sys\stat.h>
 #include <string.h>
 #include "iff.h"
+#include "sdl_fs.h"
 
 
 /****************************************************************************
@@ -98,18 +98,18 @@ IFFHandle *OpenIFF(char *name, long mode)
 
 		switch (mode) {
 			case IFFF_READ:
-				iff->fh = open(name, O_RDONLY|O_BINARY);
+				iff->fh = WWFS_Open(name, O_RDONLY|O_BINARY);
 				break;
 
 			case IFFF_WRITE:
-				iff->fh = open(name, (O_CREAT|O_TRUNC|O_WRONLY|O_BINARY),
+				iff->fh = WWFS_Open(name, (O_CREAT|O_TRUNC|O_WRONLY|O_BINARY),
 						(S_IREAD|S_IWRITE));
 
 				printf("\r");
 				break;
 
 			case (IFFF_READ|IFFF_WRITE):
-				iff->fh = open(name, (O_RDWR|O_BINARY), (S_IREAD|S_IWRITE));
+				iff->fh = WWFS_Open(name, (O_RDWR|O_BINARY), (S_IREAD|S_IWRITE));
 				break;
 
 			default:
@@ -159,12 +159,12 @@ void CloseIFF(IFFHandle *iff)
 	if ((iff->flags & IFFF_WRITE) && ((iff->form.size == 0)
 			|| (iff->scan > iff->form.size))) {
 
-		lseek(iff->fh, 4, SEEK_SET);
+		WWFS_Seek(iff->fh, 4, SEEK_SET);
 		length = REVERSE_LONG(iff->scan);
-		write(iff->fh, &length, 4);
+		WWFS_Write(iff->fh, &length, 4);
 	}
 
-	close(iff->fh);
+	WWFS_Close(iff->fh);
 	free(iff);
 }
 
@@ -206,7 +206,7 @@ long ReadForm(IFFHandle *iff, FormHeader *form)
 	}
 
 	/* Read in IFF FORM from the file stream.. */
-	if ((error = read(iff->fh, ptr, 12)) == 12) {
+	if ((error = WWFS_Read(iff->fh, ptr, 12)) == 12) {
 		ptr->size = REVERSE_LONG(ptr->size);
 		iff->scan = 4;
 		error = 0;
@@ -262,7 +262,7 @@ long WriteForm(IFFHandle *iff, FormHeader *form)
 	if (iff->flags & IFFF_WRITE) {
 		ptr->size = REVERSE_LONG(ptr->size);
 
-		if (write(iff->fh, ptr, 12) == 12) {
+		if (WWFS_Write(iff->fh, ptr, 12) == 12) {
 			iff->scan = 4;
 		} else {
 			error = IFFERR_WRITE;
@@ -302,7 +302,7 @@ long ReadChunkHeader(IFFHandle *iff)
 
 	/* Skip any part of the previous chunk that hasn't been processed. */
 	if ((iff->cn.size != 0) && (iff->cn.scan < PADSIZE(iff->cn.size))) {
-		error = lseek(iff->fh, (PADSIZE(iff->cn.size) - iff->cn.scan), SEEK_CUR);
+		error = WWFS_Seek(iff->fh, (PADSIZE(iff->cn.size) - iff->cn.scan), SEEK_CUR);
 
 		if (error == -1) {
 			error = IFFERR_READ;
@@ -313,7 +313,7 @@ long ReadChunkHeader(IFFHandle *iff)
 
 	/* Read in the next chunk header context. */
 	if (!error) {
-		if ((error = read(iff->fh, &iff->cn, 8)) == 8) {
+		if ((error = WWFS_Read(iff->fh, &iff->cn, 8)) == 8) {
 			error = 0;
 			iff->scan += 8;
 			iff->cn.size = REVERSE_LONG(iff->cn.size);
@@ -364,7 +364,7 @@ long WriteChunkHeader(IFFHandle *iff, long id, long size)
 		iff->cn.size = REVERSE_LONG(size);
 		iff->cn.scan = 0;
 
-		if (write(iff->fh, &iff->cn, 8) == 8) {
+		if (WWFS_Write(iff->fh, &iff->cn, 8) == 8) {
 			iff->scan += 8;
 		} else {
 			error = IFFERR_WRITE;
@@ -410,12 +410,12 @@ long WriteChunk(IFFHandle *iff, long id, char *buffer, long size)
 	  cn.size = REVERSE_LONG(size);
 
 		/* Write chunk header. */
-		if (write(iff->fh, &cn, 8) == 8) {
+		if (WWFS_Write(iff->fh, &cn, 8) == 8) {
 			iff->scan += 8;
 			iff->cn.scan += 8;
 
 			/* Write chunk data. */
-			actual = write(iff->fh, buffer, size);
+			actual = WWFS_Write(iff->fh, buffer, size);
 
 			if (actual == size) {
 				iff->scan += actual;
@@ -425,7 +425,7 @@ long WriteChunk(IFFHandle *iff, long id, char *buffer, long size)
 				if (PADSIZE(size) > size) {
 					id = 0;
 
-					if (write(iff->fh, &id, 1) == 1) {
+					if (WWFS_Write(iff->fh, &id, 1) == 1) {
 						iff->scan++;
 						iff->cn.scan++;
 					} else {
@@ -477,7 +477,7 @@ long WriteChunkBytes(IFFHandle *iff, char *buffer, long size)
 	if (iff->flags & IFFF_WRITE) {
 
 		/* Write data. */
-		if ((actual = (unsigned short)write(iff->fh, buffer, size)) == size) {
+		if ((actual = (unsigned short)WWFS_Write(iff->fh, buffer, size)) == size) {
 			iff->scan += actual;
 			iff->cn.scan += actual;
 		} else {
@@ -533,7 +533,7 @@ long ReadChunkBytes(IFFHandle *iff, char *buffer, long size)
 	}
 
 	/* Read in the requested number of bytes. */
-	if ((actual = read(iff->fh, buffer, size)) != size) {
+	if ((actual = WWFS_Read(iff->fh, buffer, size)) != size) {
 		actual = IFFERR_READ;
 	} else {
 		iff->scan += actual;
@@ -570,7 +570,7 @@ long SkipChunkBytes(IFFHandle *iff, long skip)
 {
 	long error = 0;
 
-	if (lseek(iff->fh, skip, SEEK_CUR) == -1) {
+	if (WWFS_Seek(iff->fh, skip, SEEK_CUR) == -1) {
 		error = IFFERR_READ;
 	} else {
 		iff->scan += skip;
@@ -690,7 +690,7 @@ long CurrentFilePos(IFFHandle *iff)
 {
 	long offset;
 
-	if ((offset = lseek(iff->fh, 0, SEEK_CUR)) == -1) {
+	if ((offset = WWFS_Seek(iff->fh, 0, SEEK_CUR)) == -1) {
 		offset = IFFERR_READ;
 	}
 

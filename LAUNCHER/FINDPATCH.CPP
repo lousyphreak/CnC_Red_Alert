@@ -17,6 +17,7 @@
 */
 
 #include "findpatch.h"
+#include "sdl_fs.h"
 
 //
 // Locate a patch file
@@ -58,14 +59,14 @@ int Find_Patch(OUT char *filename,int maxlen, ConfigFile &config)
     i=0;
     while(extensions[i++])
     {
-      _chdir(gamePath);  // goto the directory with the game
+      WWFS_ChangeDirectory(gamePath);  // goto the directory with the game
 
       // should probably get the registry entry for the wchat install path
       sprintf(string,"patches\\*.%s",extensions[i]);
       hFile=FindFirstFile(string,&findData);
       if (hFile!=INVALID_HANDLE_VALUE)
       {
-        _getcwd(filename,MAX_PATH);
+        WWFS_GetCurrentDirectory(filename,MAX_PATH);
         strcat(filename,"\\patches\\");
         strcat(filename,findData.cFileName);
         FindClose(hFile);
@@ -185,14 +186,14 @@ void Delete_Patches(ConfigFile &config)
     {
       if (findData.cFileName[0]!='.')
       {
-        //_unlink(findData.cFileName);
+        //WWFS_Unlink(findData.cFileName);
         DBGMSG("UNLINK: "<<findData.cFileName);
       }
       while(FindNextFile(hFile,&findData))
       {
         if (findData.cFileName[0]!='.')
         {
-          //_unlink(findData.cFileName);
+          //WWFS_Unlink(findData.cFileName);
           DBGMSG("UNLINK: "<<findData.cFileName);
         }
       }

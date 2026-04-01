@@ -52,8 +52,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <dos.h>
-
+#include "win32_compat.h"
 //================================
 
 // TRUE and FALSE are defined in pltypes.h

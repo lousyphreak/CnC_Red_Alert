@@ -23,6 +23,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
+#include "sdl_fs.h"
 
 
 unsigned char thunk_file[1000000];
@@ -83,18 +84,18 @@ int main(int argc, char *argv[])
 	int	copy_length;
 	int	file_length;
 
-	handle = open ("thipx.asm", O_RDONLY | O_BINARY);
+	handle = WWFS_Open("thipx.asm", O_RDONLY | O_BINARY);
 
 	if (handle==-1)return (1);
 
 	file_length = filelength(handle);
 
-	if (read (handle, thunk_file, file_length) != file_length){
-		close (handle);
+	if (WWFS_Read(handle, thunk_file, file_length) != file_length){
+		WWFS_Close(handle);
 		return (1);
 	}
 
-	close (handle);
+	WWFS_Close(handle);
 
 	pointer = (unsigned char*)Search_For_String(find_string, (char*)thunk_file, file_length);
 
@@ -126,17 +127,17 @@ int main(int argc, char *argv[])
 					file_length-((int)pointer2-(int)&thunk_file[0]));
 
 
-		handle = open ("thipx.asm", O_WRONLY | O_BINARY | O_TRUNC);
+		handle = WWFS_Open("thipx.asm", O_WRONLY | O_BINARY | O_TRUNC);
 
 		if (handle == -1) return (1);
 
-		write (handle, thunk_file_out, file_length+ strlen(insert_string1)
+		WWFS_Write(handle, thunk_file_out, file_length+ strlen(insert_string1)
 																+ strlen(insert_string2)
 																+ strlen(insert_string3)
 																+ strlen(insert_string4)
 																+ strlen(insert_string5));
 
-		close (handle);
+		WWFS_Close(handle);
 	}
 
 	return (0);

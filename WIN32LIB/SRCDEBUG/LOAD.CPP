@@ -45,7 +45,6 @@
 #include <cstring>
 #include <misc.h>
 #include <wwstd.h>
-#include <dos.h>
 #include <wwmem.h>
 
 namespace {

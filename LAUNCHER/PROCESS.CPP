@@ -17,6 +17,7 @@
 */
 
 #include "process.h"
+#include "sdl_fs.h"
 
 Process::Process()
 { 
@@ -91,15 +92,15 @@ bit8 Read_Process_Info(ConfigFile &config,OUT Process &info)
  
 
 /*********************************************************
-  FILE     *in;
+  SDL_IOStream *in;
   char      string[256];
   bit8      found_space;
   int       i;
 
-  if ((in=fopen(config,"r"))==NULL)
+  if ((in=WWFS_FOpen(config,"r"))==NULL)
     return(FALSE);
 
-  while(fgets(string,256,in))
+  while(WWFS_FGets(string,256,in))
   {
     i=0;
     while ((isspace(string[i]))&&(i<int(strlen(string))))
@@ -132,7 +133,7 @@ bit8 Read_Process_Info(ConfigFile &config,OUT Process &info)
     // We only have 1 process for this
     break;
   }
-  fclose(in);
+  WWFS_FClose(in);
   return(TRUE);
 **********************************************/
 }

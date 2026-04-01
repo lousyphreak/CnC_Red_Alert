@@ -974,7 +974,6 @@ BOOL cdecl File_Exists(char const *file_name)
 		**	If the file could not be found then request for proper disk.
 		*/
 		do {
-			//struct	find_t ffblk;
 			//char		path[MAXPATH];
 			
 			if (!Do_Open_Error(COULD_NOT_OPEN, file_name)) {
@@ -983,7 +982,6 @@ BOOL cdecl File_Exists(char const *file_name)
 			ibm_setdisk(*DataPath - 'A');
 
 			// Search for the volume ID so that the disk information get read in again.
-			//_dos_findfirst("*.*", _A_VOLID, &ffblk);
 		} while (CHANGEDIR( DataPath ));
 	}
 	return (TRUE);

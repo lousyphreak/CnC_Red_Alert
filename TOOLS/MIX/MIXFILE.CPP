@@ -47,6 +47,7 @@
 #include	<ctype.h>
 #include	<dir.h>
 #include	<string.h>
+#include "sdl_fs.h"
 
 #define	FALSE	0
 #define	TRUE	1
@@ -185,9 +186,9 @@ int main(int argc, char ** argv)
 					default:
 						if (outfile) throw "Unrecognized parameter";
 						if (!infile) {
-							FILE *file = fopen(arg, "r");
+							SDL_IOStream *file = WWFS_FOpen(arg, "r");
 							if (!file) throw "Unable to open input file";
-							fclose(file);
+							WWFS_FClose(file);
 							infile = arg;
 							continue;
 						}
@@ -273,7 +274,7 @@ int main(int argc, char ** argv)
  *=============================================================================================*/
 void DataClass::Process_Input(char const *infile, int quiet, int paths)
 {
-	FILE	*file;		//	Input file.
+	SDL_IOStream *file;		//	Input file.
 	static char buffer[MAXFILE];
 
 	Quiet = quiet;
@@ -281,7 +282,7 @@ void DataClass::Process_Input(char const *infile, int quiet, int paths)
 
 	if (!infile) throw "No input file specified";
 
-	file = fopen(infile, "ra");
+	file = WWFS_FOpen(infile, "r");
 	if (!file) throw "Could not open input file";
 
 	if (!Quiet) {
@@ -306,11 +307,11 @@ void DataClass::Process_Input(char const *infile, int quiet, int paths)
 	**	source filename errors as well as missing source files themselves.
 	*/
 	catch (char *message) {
-		fclose(file);
+		WWFS_FClose(file);
 		throw message;
 	}
 
-	fclose(file);
+	WWFS_FClose(file);
 }
 
 
@@ -342,7 +343,7 @@ DataClass::DataClass(char const *filename)
 	/*
 	**	Try to find the data file.
 	*/
-	FILE *datafile = fopen(Filename, "rb");
+	SDL_IOStream *datafile = WWFS_FOpen(Filename, "rb");
 	if (!datafile) {
 
 		/*
@@ -353,7 +354,7 @@ DataClass::DataClass(char const *filename)
 		for (int index = 0; index < AltPathCount; index++) {
 			strcpy(buffer, AltPath[index]);
 			strcat(buffer, Filename);
-			datafile = fopen(buffer, "rb");
+			datafile = WWFS_FOpen(buffer, "rb");
 			if (datafile) {
 				free(Filename);
 				Filename = strdup(buffer);
@@ -378,9 +379,9 @@ DataClass::DataClass(char const *filename)
 	/*
 	**	Find out the size of the source data file.
 	*/
-	fseek(datafile, 0, SEEK_END);
-	long size = ftell(datafile);
-	fclose(datafile);
+	WWFS_FSeek(datafile, 0, SEEK_END);
+	long size = WWFS_FTell(datafile);
+	WWFS_FClose(datafile);
 
 	if (size == -1) throw "Seek failure";
 	Size = size;
@@ -479,7 +480,7 @@ int compfunc(const void *ptr1, const void *ptr2)
  *=============================================================================================*/
 void DataClass::Process_Output(char const *outname)
 {
-	FILE *outfile;
+	SDL_IOStream *outfile;
 
 	if (Count) {
 		DataClass **array = new DataClass *[Count];
@@ -488,7 +489,7 @@ void DataClass::Process_Output(char const *outname)
 		**	Open the output file for creation.
 		*/
 		if (!outname) throw "Missing output filename";
-		outfile = fopen(outname, "wb");
+		outfile = WWFS_FOpen(outname, "wb");
 		if (!outfile) {
 			throw "Unable to open output file";
 		}
@@ -525,12 +526,12 @@ void DataClass::Process_Output(char const *outname)
 		**	Output the header section of the data file.  This contains
 		**	the count of objects contained, the CRC, and offset for each.
 		*/
-		fwrite(&Count, sizeof(Count), 1, outfile);
-		fwrite(&TotalSize, sizeof(TotalSize), 1, outfile);
+		WWFS_FWrite(&Count, sizeof(Count), 1, outfile);
+		WWFS_FWrite(&TotalSize, sizeof(TotalSize), 1, outfile);
 		for (index = 0; index < Count; index++) {
-			fwrite(&array[index]->CRC, sizeof(array[index]->CRC), 1, outfile);
-			fwrite(&array[index]->Offset, sizeof(array[index]->Offset), 1, outfile);
-			fwrite(&array[index]->Size, sizeof(array[index]->Size), 1, outfile);
+			WWFS_FWrite(&array[index]->CRC, sizeof(array[index]->CRC), 1, outfile);
+			WWFS_FWrite(&array[index]->Offset, sizeof(array[index]->Offset), 1, outfile);
+			WWFS_FWrite(&array[index]->Size, sizeof(array[index]->Size), 1, outfile);
 		}
 
 		TotalSize += sizeof(Count) + sizeof(TotalSize) + (Count*12);
@@ -549,7 +550,7 @@ void DataClass::Process_Output(char const *outname)
 				DataClass * entry = array[index];
 
 				if (entry->Index == order) {
-					FILE	*infile;
+					SDL_IOStream *infile;
 					long	size;
 					static char buffer[1024*30];
 
@@ -558,23 +559,23 @@ void DataClass::Process_Output(char const *outname)
 					}
 
 					size = entry->Size;
-					infile = fopen(entry->Input_Filename(), "rb");
+					infile = WWFS_FOpen(entry->Input_Filename(), "rb");
 					while (size > 0) {
 						int count;
 
 						count = (size < sizeof(buffer)) ? (int)size : sizeof(buffer);
-						count = fread(buffer, sizeof(buffer[0]), count, infile);
-						fwrite(buffer, sizeof(buffer[0]), count, outfile);
+						count = WWFS_FRead(buffer, sizeof(buffer[0]), count, infile);
+						WWFS_FWrite(buffer, sizeof(buffer[0]), count, outfile);
 						size -= count;
 						if (!count) break;		// Hmm..
 					}
-					fclose(infile);
+					WWFS_FClose(infile);
 					break;
 				}
 			}
 		}
 
-		fclose(outfile);
+		WWFS_FClose(outfile);
 	}
 }
 

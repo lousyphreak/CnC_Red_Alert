@@ -59,6 +59,7 @@
 #include "filed.h"
 #include "configfile.h"
 #include "win32_compat.h"
+#include "sdl_fs.h"
 
 #define UPDATE_RETVAL 123456789  // if a program returns this it means it wants to check for patches
 
@@ -75,7 +76,7 @@ int main(int argc, char *argv[])
   bit8      ok;
   int       skuIndex=0;
   char      cwd[MAX_PATH];  // save current directory before game start
-  _getcwd(cwd,MAX_PATH);
+  WWFS_GetCurrentDirectory(cwd,MAX_PATH);
 
   InitCommonControls();
 
@@ -105,7 +106,7 @@ int main(int argc, char *argv[])
   DBGMSG("Config Name: "<<configName);
 
   ConfigFile config;
-  FILE *in=fopen(configName,"r");
+  SDL_IOStream *in=WWFS_FOpen(configName,"r");
   if (in==NULL)
   {
     MessageBox(NULL,"You must run the game from its install directory.",
@@ -113,7 +114,7 @@ int main(int argc, char *argv[])
     exit(-1);
   }
   ok=config.readFile(in);
-  fclose(in);
+  WWFS_FClose(in);
   if(ok==FALSE)
   {
      MessageBox(NULL,"File 'launcher.cfg' is corrupt","Error",MB_OK);
@@ -256,7 +257,7 @@ void myChdir(char *path)
   abc = (unsigned)( toupper( filepath[0] ) - 'A' + 1 ); 
   if ( !_chdrive( abc )) 
   {
-    abc = chdir( filepath );  // Will fail with ending '\\'
+    abc = WWFS_ChangeDirectory( filepath );  // Will fail with ending '\\'
   }
   // should be in proper folder now....
 }

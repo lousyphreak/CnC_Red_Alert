@@ -59,7 +59,6 @@
 #include	<direct.h>
 #include	<fcntl.h>
 #include	<unistd.h>
-#include	<dos.h>
 #include	<share.h>
 #include	<sys\stat.h>
 #include	<wwstd.h>
@@ -67,6 +66,7 @@
 //#include "wwlib32.h"
 //#include	"compat.h"
 #include	"rawfile.h"
+#include "sdl_fs.h"
 
 
 /***********************************************************************************************
@@ -448,17 +448,17 @@ int RawFileClass::Open(int rights)
 
 			case READ:
 				Handle = (int)mmioOpen((char*)Filename, NULL, MMIO_READ);
-				//Handle = open(Filename, O_RDONLY|O_BINARY);
+				//Handle = WWFS_Open(Filename, O_RDONLY|O_BINARY);
 				break;
 
 			case WRITE:
 				Handle = (int)mmioOpen((char*)Filename, NULL, MMIO_WRITE | MMIO_CREATE);
-				//Handle = open(Filename, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY , S_IWRITE);
+				//Handle = WWFS_Open(Filename, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY , S_IWRITE);
 				break;
 
 			case READ|WRITE:
 				Handle = (int)mmioOpen((char*)Filename, NULL, MMIO_READWRITE);
-				//Handle = open(Filename, O_RDWR|O_CREAT|O_BINARY);
+				//Handle = WWFS_Open(Filename, O_RDWR|O_CREAT|O_BINARY);
 				break;
 		}
 
@@ -550,7 +550,7 @@ int RawFileClass::Is_Available(int forced)
 	for (;;) {
 
 //		Hard_Error_Occured = 0;
-		file = open(Filename, O_RDONLY|O_BINARY);
+		file = WWFS_Open(Filename, O_RDONLY|O_BINARY);
 		open_failed = (file == -1);
 
 		/*
@@ -592,7 +592,7 @@ int RawFileClass::Is_Available(int forced)
 	/*
 	**	Since the file could be opened, then close it and return that the file exists.
 	*/
-	if (close(file)) {
+	if (WWFS_Close(file)) {
 		Error(errno, false, Filename);
 	}
 	return(true);
@@ -719,7 +719,7 @@ long RawFileClass::Read(void *buffer, long size)
 //		Hard_Error_Occured = 0;
 		readresult = 0;
 		actual = mmioRead((HMMIO)Handle, (char*)buffer, desired);
-		//actual = read(Handle, buffer, desired);
+		//actual = WWFS_Read(Handle, buffer, desired);
 		if (actual != desired) readresult = errno;
 
 		/*
@@ -810,7 +810,7 @@ long RawFileClass::Write(void const *buffer, long size)
 		desired = size;
 		writeresult = 0;
 		actual = mmioWrite((HMMIO)Handle, (char*)buffer, desired);
-		//actual = write(Handle, buffer, desired);
+		//actual = WWFS_Write(Handle, buffer, desired);
 		if (actual != desired) writeresult = errno;
 
 		/*
@@ -904,7 +904,7 @@ long RawFileClass::Seek(long pos, int dir)
 		*/
 //		Hard_Error_Occured = 0;
 		pos = mmioSeek((HMMIO)Handle, pos, dir);
-		//pos = lseek(Handle, pos, dir);
+		//pos = WWFS_Seek(Handle, pos, dir);
 
 		/*
 		**	If a hard error occurred, then assume that it is the case of removed media. Display
@@ -967,10 +967,10 @@ long RawFileClass::Size(void)
 		for (;;) {
 //			Hard_Error_Occured = 0;
 
-			handle = open(Filename, O_RDONLY|O_BINARY);
+			handle = WWFS_Open(Filename, O_RDONLY|O_BINARY);
 			if (handle > 0){
 				size = filelength(handle);
-				close(handle);
+				WWFS_Close(handle);
 			}
 
 			/*
@@ -1083,7 +1083,7 @@ int RawFileClass::Delete(void)
 		}
 
 //		Hard_Error_Occured = 0;
-		if (remove(Filename) == -1) {
+		if (WWFS_Remove(Filename) == -1) {
 
 			/*
 			**	If a hard error occurred, then assume that the media has been removed. Display

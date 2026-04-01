@@ -37,9 +37,9 @@
 #include	<stdio.h>
 #include	<stdlib.h>
 #include	<dir.h>
-#include	<dos.h>
 #include	<string.h>
 #include	<ctype.h>
+#include "sdl_fs.h"
 
 #define	FALSE	0
 #define	TRUE	1
@@ -131,10 +131,10 @@ typedef struct {
 int main(int argc, char **argv);
 void Process(char const *src, char const *name, char const *dest);
 void Convert(char const *src, char const *dst);
-int Is_WAV(FILE *src);
-void Convert_WAV(FILE * src, FILE * dst);
-int Is_VOC(FILE *src);
-void Convert_VOC(FILE *src, FILE *dst);
+int Is_WAV(SDL_IOStream *src);
+void Convert_WAV(SDL_IOStream * src, SDL_IOStream * dst);
+int Is_VOC(SDL_IOStream *src);
+void Convert_VOC(SDL_IOStream *src, SDL_IOStream *dst);
 long Compress_Frame(void * source, void * dest, long size);
 
 extern "C" {
@@ -400,17 +400,17 @@ void Process(char const *src, char const *name, char const *dest)
 
 void Convert(char const *src, char const *dst)
 {
-	FILE	*srcfile = 0;
-	FILE	*dstfile = 0;
+	SDL_IOStream *srcfile = 0;
+	SDL_IOStream *dstfile = 0;
 
-	srcfile = fopen(src, "rb");
+	srcfile = WWFS_FOpen(src, "rb");
 	if (!srcfile) {
 		perror(src);
 		exit(EXIT_FAILURE);
 	}
 
 	if (Is_WAV(srcfile)) {
-		dstfile = fopen(dst, "wb");
+		dstfile = WWFS_FOpen(dst, "wb");
 		if (!dstfile) {
 			perror(dst);
 			exit(EXIT_FAILURE);
@@ -420,7 +420,7 @@ void Convert(char const *src, char const *dst)
 		Stat_Dump();
 	} else {
 		if (Is_VOC(srcfile)) {
-			dstfile = fopen(dst, "wb");
+			dstfile = WWFS_FOpen(dst, "wb");
 			if (!dstfile) {
 				perror(dst);
 				exit(EXIT_FAILURE);
@@ -433,23 +433,23 @@ void Convert(char const *src, char const *dst)
 			exit(EXIT_FAILURE);
 		}
 	}
-	if (dstfile) fclose(dstfile);
-	fclose(srcfile);
+	if (dstfile) WWFS_FClose(dstfile);
+	WWFS_FClose(srcfile);
 }
 
 
-int Is_WAV(FILE *src)
+int Is_WAV(SDL_IOStream *src)
 {
 	long	size;
 	RIFFHeaderType	header;
 
-	fseek(src, 0, SEEK_SET);
+	WWFS_FSeek(src, 0, SEEK_SET);
 
 	/*
 	**	Determine if this is a WAV file.  Examining the file extension is
 	**	not foolproof.  The actual data must be looked at.
 	*/
-	size = fread(&header, 1, sizeof(header), src);
+	size = WWFS_FRead(&header, 1, sizeof(header), src);
 	if (size == sizeof(header)) {
 		if (memcmp(header.szRIFF, "RIFF", 4) == 0) {
 			if (memcmp(header.szWAVE, "WAVE", 4) == 0) {
@@ -460,7 +460,7 @@ int Is_WAV(FILE *src)
 	return(FALSE);
 }
 
-void Convert_WAV(FILE * src, FILE * dst)
+void Convert_WAV(SDL_IOStream * src, SDL_IOStream * dst)
 {
 	RIFFBlockType block;
 	RIFFfmtType fmt;
@@ -470,14 +470,14 @@ void Convert_WAV(FILE * src, FILE * dst)
 
 	raw.pad = 0;
 	raw.Size = 0;
-	fwrite(&raw, 1, sizeof(raw), dst);
+	WWFS_FWrite(&raw, 1, sizeof(raw), dst);
 	Log_Overhead(sizeof(raw));
 
 	/*
 	**	At this point, we already know that it is a RIFF (wav) file, so
 	**	skip the identifier bytes at the beginning.
 	*/
-	fseek(src, sizeof(RIFFHeaderType), SEEK_SET);
+	WWFS_FSeek(src, sizeof(RIFFHeaderType), SEEK_SET);
 
 	/*
 	**	Process all the blocks in the RIFF file.
@@ -485,14 +485,14 @@ void Convert_WAV(FILE * src, FILE * dst)
 	for (;;) {
 		long s;
 
-		s = fread(&block, sizeof(block), 1, src);
+		s = WWFS_FRead(&block, sizeof(block), 1, src);
 		if (!s) break;
 
 		/*
 		**	If this is the format control block, the process it.
 		*/
 		if (memcmp(block.szDATA, "fmt ", sizeof("fmt ")-1) == 0) {
-			s = fread(&fmt, 1, sizeof(fmt), src);
+			s = WWFS_FRead(&fmt, 1, sizeof(fmt), src);
 			if (s != sizeof(fmt)) break;
 
 			raw.Rate = (short)fmt.dwSamplesPerSec;
@@ -521,7 +521,7 @@ void Convert_WAV(FILE * src, FILE * dst)
 			**	Skip any extra format bytes.  For a Sonarc file, there are
 			**	extra bytes to skip.
 			*/
-			fseek(src, block.dwDataLength - sizeof(fmt), SEEK_CUR);
+			WWFS_FSeek(src, block.dwDataLength - sizeof(fmt), SEEK_CUR);
 
 		} else if (memcmp(block.szDATA, "data", sizeof("data")-1) == 0) {
 
@@ -532,7 +532,7 @@ void Convert_WAV(FILE * src, FILE * dst)
 			**	cares, so skip it.
 			*/
 			if (raw.Compression == SCOMP_SONARC) {
-				fseek(src, 4, SEEK_CUR);
+				WWFS_FSeek(src, 4, SEEK_CUR);
 				block.dwDataLength -= sizeof(raw.Size);
 			}
 
@@ -547,7 +547,7 @@ void Convert_WAV(FILE * src, FILE * dst)
 				if (block.dwDataLength < desired) {
 					desired = block.dwDataLength;
 				}
-				actual = fread(StageBuffer, 1, (unsigned)desired, src);
+				actual = WWFS_FRead(StageBuffer, 1, (unsigned)desired, src);
 				Log_Original(actual);
 				block.dwDataLength -= actual;
 
@@ -578,22 +578,22 @@ void Convert_WAV(FILE * src, FILE * dst)
 						if (comped < tocomp) {
 							Decompress_Frame(AltBuffer, sptr, (short)tocomp);
 						}
-						raw.Size += fwrite(sptr, 1, (size_t)tocomp, dst);
+						raw.Size += WWFS_FWrite(sptr, 1, (size_t)tocomp, dst);
 						(char*)sptr += (unsigned)tocomp;
 						#else 
 
 						(char*)sptr += (unsigned)tocomp;
-						raw.Size += fwrite(&comped, 1, sizeof(short), dst);
-						raw.Size += fwrite(&tocomp, 1, sizeof(short), dst);
-						raw.Size += fwrite(&MagicNumber, 1, sizeof(MagicNumber), dst);
-						raw.Size += fwrite(&AltBuffer[0], 1, (size_t)comped, dst);
+						raw.Size += WWFS_FWrite(&comped, 1, sizeof(short), dst);
+						raw.Size += WWFS_FWrite(&tocomp, 1, sizeof(short), dst);
+						raw.Size += WWFS_FWrite(&MagicNumber, 1, sizeof(MagicNumber), dst);
+						raw.Size += WWFS_FWrite(&AltBuffer[0], 1, (size_t)comped, dst);
 						#endif
 						fcount++;
 					}
 
 				} else {
 					raw.Size += actual;
-					fwrite(StageBuffer, 1, (unsigned)actual, dst);
+					WWFS_FWrite(StageBuffer, 1, (unsigned)actual, dst);
 					Log_Compressed(actual);
 					fcount++;
 				}
@@ -605,25 +605,25 @@ void Convert_WAV(FILE * src, FILE * dst)
 			/*
 			**	Unrecognized blocks are skipped.
 			*/
-			fseek(src, block.dwDataLength, SEEK_CUR);
+			WWFS_FSeek(src, block.dwDataLength, SEEK_CUR);
 		}
 	}
 
 	/*
 	**	Output the finalized raw header structure.
 	*/
-	fseek(dst, 0, SEEK_SET);
-	fwrite(&raw, 1, sizeof(raw), dst);
+	WWFS_FSeek(dst, 0, SEEK_SET);
+	WWFS_FWrite(&raw, 1, sizeof(raw), dst);
 }
 
 
-int Is_VOC(FILE *src)
+int Is_VOC(SDL_IOStream *src)
 {
 	long 				size;
 	VocHeaderType	voc;
 
-	fseek(src, 0, SEEK_SET);
-	size = fread(&voc, 1, sizeof(voc), src);
+	WWFS_FSeek(src, 0, SEEK_SET);
+	size = WWFS_FRead(&voc, 1, sizeof(voc), src);
 	if (size != sizeof(voc)) {
 		return(FALSE);
 	}
@@ -636,7 +636,7 @@ int Is_VOC(FILE *src)
 }
 
 
-void Convert_VOC(FILE *src, FILE *dst)
+void Convert_VOC(SDL_IOStream *src, SDL_IOStream *dst)
 {
 //	long				size = 0;
 	VocHeaderType	voc;
@@ -649,9 +649,9 @@ void Convert_VOC(FILE *src, FILE *dst)
 		raw.Compression = SCOMP_WESTWOOD;
 	}
 
-	fseek(src, 0, SEEK_SET);
-	fread(&voc, 1, sizeof(voc), src);
-	fseek(src, voc.Offset, SEEK_SET);
+	WWFS_FSeek(src, 0, SEEK_SET);
+	WWFS_FRead(&voc, 1, sizeof(voc), src);
+	WWFS_FSeek(src, voc.Offset, SEEK_SET);
 
 	/*
 	**	Output a dummy raw header (will be updated later).
@@ -660,7 +660,7 @@ void Convert_VOC(FILE *src, FILE *dst)
 	raw.Rate = 11025;
 	raw.Stereo = FALSE;
 	raw.Bits = FALSE;
-	fwrite(&raw, sizeof(raw), 1, dst);
+	WWFS_FWrite(&raw, sizeof(raw), 1, dst);
 
 	/*
 	**	Loop through all the VOC chunks in order to build the correct
@@ -674,7 +674,7 @@ void Convert_VOC(FILE *src, FILE *dst)
 		unsigned char	pack=0;
 		ldiv_t	result;
 
-		fread(&code, 1, sizeof(code), src);
+		WWFS_FRead(&code, 1, sizeof(code), src);
 		switch (code) {
 
 			/*
@@ -683,7 +683,7 @@ void Convert_VOC(FILE *src, FILE *dst)
 			**	ignore the control bytes in this file.
 			*/
 			case 1:
-				fread(&blocksize, 3, 1, src);
+				WWFS_FRead(&blocksize, 3, 1, src);
 
 				/*
 				**	Determine the sample rate from the special code provided
@@ -692,7 +692,7 @@ void Convert_VOC(FILE *src, FILE *dst)
 				**	When dealing with odd sample rates, then just figure out
 				**	the rate based on the formula.
 				*/
-				fread(&rate, 1, 1, src);
+				WWFS_FRead(&rate, 1, 1, src);
 				switch (256-rate) {
 					case 22:
 					case 23:
@@ -718,7 +718,7 @@ void Convert_VOC(FILE *src, FILE *dst)
 						break;
 				}
 				Log_Rate(raw.Rate);
-				fread(&pack, 1, 1, src);
+				WWFS_FRead(&pack, 1, 1, src);
 
 				/*
 				**	Copy over the raw data.  If the data is packed, then
@@ -733,7 +733,7 @@ void Convert_VOC(FILE *src, FILE *dst)
 					//raw.Size += blocksize;
 					while (blocksize) {
 						desired = MIN(blocksize, sizeof(StageBuffer));
-						actual = fread(StageBuffer, 1, (unsigned)desired, src);
+						actual = WWFS_FRead(StageBuffer, 1, (unsigned)desired, src);
 						Log_Original(actual);
 
 						/*
@@ -760,25 +760,25 @@ void Convert_VOC(FILE *src, FILE *dst)
 								Log_Compressed(comped);
 
 								(char*)sptr += (unsigned)tocomp;
-								raw.Size += fwrite(&comped, 1, sizeof(short), dst);
-								raw.Size += fwrite(&tocomp, 1, sizeof(short), dst);
-								raw.Size += fwrite(&MagicNumber, 1, sizeof(MagicNumber), dst);
-								raw.Size += fwrite(&AltBuffer[0], 1, (size_t)comped, dst);
+								raw.Size += WWFS_FWrite(&comped, 1, sizeof(short), dst);
+								raw.Size += WWFS_FWrite(&tocomp, 1, sizeof(short), dst);
+								raw.Size += WWFS_FWrite(&MagicNumber, 1, sizeof(MagicNumber), dst);
+								raw.Size += WWFS_FWrite(&AltBuffer[0], 1, (size_t)comped, dst);
 							}
 
 						} else {
 
 							raw.Size += actual;
-							fwrite(StageBuffer, 1, (unsigned)actual, dst);
+							WWFS_FWrite(StageBuffer, 1, (unsigned)actual, dst);
 							Log_Compressed(actual);
 						}
 
-						//fwrite(StageBuffer, 1, (unsigned)actual, dst);
+						//WWFS_FWrite(StageBuffer, 1, (unsigned)actual, dst);
 						blocksize -= actual;
 						if (actual != desired) break;
 					}
 				} else {
-					fseek(src, blocksize-2, SEEK_CUR);
+					WWFS_FSeek(src, blocksize-2, SEEK_CUR);
 				}
 				break;
 
@@ -787,7 +787,7 @@ void Convert_VOC(FILE *src, FILE *dst)
 			** inherited from the previous data block.
 			*/
 			case 2:
-				fread(&blocksize, 1, 3, src);
+				WWFS_FRead(&blocksize, 1, 3, src);
 				if (pack == 0) {
 					long	desired;
 					long	actual;
@@ -796,15 +796,15 @@ void Convert_VOC(FILE *src, FILE *dst)
 					raw.Size += blocksize;
 					while (blocksize) {
 						desired = MIN(blocksize, sizeof(StageBuffer));
-						actual = fread(StageBuffer, 1, (unsigned)desired, src);
-						fwrite(StageBuffer, 1, (unsigned)actual, dst);
+						actual = WWFS_FRead(StageBuffer, 1, (unsigned)desired, src);
+						WWFS_FWrite(StageBuffer, 1, (unsigned)actual, dst);
 						Log_Original(actual);
 						Log_Compressed(actual);
 						blocksize -= actual;
 						if (actual != desired) break;
 					}
 				} else {
-					fseek(src, blocksize-2, SEEK_CUR);
+					WWFS_FSeek(src, blocksize-2, SEEK_CUR);
 				}
 				break;
 
@@ -813,10 +813,10 @@ void Convert_VOC(FILE *src, FILE *dst)
 			** stereo samples.
 			*/
 			case 8:
-				fseek(src, 3, SEEK_CUR);
-				fread(&rate, 2, 1, src);
-				fread(&pack, 1, 1, src);
-				fread(&c, 1, 1, src);
+				WWFS_FSeek(src, 3, SEEK_CUR);
+				WWFS_FRead(&rate, 2, 1, src);
+				WWFS_FRead(&pack, 1, 1, src);
+				WWFS_FRead(&c, 1, 1, src);
 				raw.Stereo = (c == 1);
 
 				if (raw.Stereo) {
@@ -836,8 +836,8 @@ void Convert_VOC(FILE *src, FILE *dst)
 			case 5:		// Embedded string.
 			case 6:		// Loop start block.
 			case 7:		// End of loop block.
-				fread(&blocksize, 1, 3, src);
-				fseek(src, blocksize, SEEK_CUR);
+				WWFS_FRead(&blocksize, 1, 3, src);
+				WWFS_FSeek(src, blocksize, SEEK_CUR);
 				break;
 
 			case 0:		// End of file block.
@@ -849,8 +849,8 @@ void Convert_VOC(FILE *src, FILE *dst)
 		}
 	}
 
-	fseek(dst, 0, SEEK_SET);
-	fwrite(&raw, sizeof(raw), 1, dst);
+	WWFS_FSeek(dst, 0, SEEK_SET);
+	WWFS_FWrite(&raw, sizeof(raw), 1, dst);
 }
 
 

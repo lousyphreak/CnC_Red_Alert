@@ -56,6 +56,7 @@
 #include <sys\types.h>
 #include <sys\stat.h>
 #include <fcntl.h>
+#include "sdl_fs.h"
 
 
 /*
@@ -994,11 +995,11 @@ int WinModemClass::Read_From_Serial_Port (unsigned char *dest_ptr, int buffer_le
 
 		int	handle;
 
-		handle = open("COMMLOG.TXT",O_WRONLY | O_CREAT | O_APPEND | O_TEXT);
+		handle = WWFS_Open("COMMLOG.TXT",O_WRONLY | O_CREAT | O_APPEND | O_TEXT);
 
 		if (handle != -1){
-			write(handle, original_dest, bytes_read);
-			close(handle);
+			WWFS_Write(handle, original_dest, bytes_read);
+			WWFS_Close(handle);
 		}
 	}
 #endif	//LOG_MODEM
@@ -1093,11 +1094,11 @@ void WinModemClass::Write_To_Serial_Port (unsigned char *buffer, int length)
 
 		int	handle;
 
-		handle = open("COMMLOG.TXT",O_WRONLY | O_CREAT | O_APPEND | O_TEXT);
+		handle = WWFS_Open("COMMLOG.TXT",O_WRONLY | O_CREAT | O_APPEND | O_TEXT);
 
 		if (handle != -1){
-			write(handle, buffer, length);
-			close(handle);
+			WWFS_Write(handle, buffer, length);
+			WWFS_Close(handle);
 		}
 	}
 #endif	//LOG_MODEM

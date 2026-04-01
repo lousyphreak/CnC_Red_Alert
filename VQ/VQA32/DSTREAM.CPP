@@ -50,6 +50,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include "vqaplayp.h"
+#include "sdl_fs.h"
 
 /*---------------------------------------------------------------------------
  * PRIVATE DECLARATIONS
@@ -128,7 +129,7 @@ static long VQADOSHandler(VQAHandle *vqa, long action, void *buffer,
 		 * VQAERR_READ.
 		 */
 		case VQACMD_READ:
-			error = (read(fh, buffer, nbytes) != nbytes);
+			error = (WWFS_Read(fh, buffer, nbytes) != nbytes);
 			break;
 
 		/* VQACMD_WRITE is analogous to VQACMD_READ.
@@ -149,12 +150,12 @@ static long VQADOSHandler(VQAHandle *vqa, long action, void *buffer,
 		 * VQAERR_SEEK.
 		 */
 		case VQACMD_SEEK:
-			error = (lseek(fh, nbytes, (long)buffer) == -1);
+			error = (WWFS_Seek(fh, nbytes, (long)buffer) == -1);
 			break;
 
 		/* VQACMD_OPEN asks that you open the file for access. */
 		case VQACMD_OPEN:
-			error = open((char *)buffer, (O_RDONLY|O_BINARY));
+			error = WWFS_Open((char *)buffer, (O_RDONLY|O_BINARY));
 
 			if (error != -1) {
 				vqa->VQAio = error;
@@ -163,7 +164,7 @@ static long VQADOSHandler(VQAHandle *vqa, long action, void *buffer,
 			break;
 
 		case VQACMD_CLOSE:
-			close(fh);
+			WWFS_Close(fh);
 			error = 0;
 			break;
 

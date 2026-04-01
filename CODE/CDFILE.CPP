@@ -44,6 +44,7 @@
 
 
 #include	"CDFILE.H"
+#include "sdl_fs.h"
 #include	<stdio.h>
 #include	<string.h>
 
@@ -90,7 +91,7 @@ extern int Get_CD_Index (int cd_drive, int timeout);
  *=============================================================================================*/
 int harderr_handler(unsigned int , unsigned int , unsigned int *)
 {
-	return(_HARDERR_FAIL);
+	return(3);
 }
 
 
@@ -115,7 +116,7 @@ int cdecl Is_Disk_Inserted(int disk)
 
 	scan[0] = (char)('A' + disk);
 	SDL_PathInfo path_info;
-	return SDL_GetPathInfo(normalize_compat_path(scan).c_str(), &path_info) ? 1 : 0;
+	return SDL_GetPathInfo(WWFS_NormalizePath(scan).c_str(), &path_info) ? 1 : 0;
 }
 
 

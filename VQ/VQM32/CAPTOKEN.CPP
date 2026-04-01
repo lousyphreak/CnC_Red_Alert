@@ -22,8 +22,7 @@
 *
 *----------------------------------------------------------------------------
 *
-* FILE
-*     captoken.c
+* SDL_IOStream *     captoken.c
 *
 * DESCRIPTION
 *     Tokenize a caption script for playback processing.
@@ -42,6 +41,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "captoken.h"
+#include "sdl_fs.h"
 
 /*---------------------------------------------------------------------------
  * PRIVATE DECLARATIONS
@@ -143,7 +143,7 @@ static void FormatString(char *string);
 
 long BuildCaptions(char *name, char *buffer)
 {
-	FILE        *fp;
+	SDL_IOStream *fp;
 	char        *ptr;
 	char        *ptr1;
 	long        size = 0;
@@ -157,13 +157,13 @@ long BuildCaptions(char *name, char *buffer)
 	memset(&caption, 0, sizeof(CaptionText));
 
 	/* Open the captions script file. */
-	fp = fopen(name, "r");
+	fp = WWFS_FOpen(name, "r");
 
 	if (fp != NULL) {
 		error = 0;
 
 		while (!error) {
-			if (fgets(string, STRING_LENGTH, fp) == NULL) {
+			if (WWFS_FGets(string, STRING_LENGTH, fp) == NULL) {
 				if (errno == 0) {
 					error = 1;
 				}
@@ -307,7 +307,7 @@ long BuildCaptions(char *name, char *buffer)
 		}
 
 		/* Close the script file. */
-		fclose(fp);
+		WWFS_FClose(fp);
 	}
 
 	return (size);

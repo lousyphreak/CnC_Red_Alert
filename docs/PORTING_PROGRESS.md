@@ -8,6 +8,20 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Removed the remaining repo-owned direct filesystem/file-I/O calls from the SDL3 port:
+  - `SDL3_COMPAT/wrappers/sdl_fs.cpp` now owns the WWFS filesystem layer: virtual current-directory state, case-insensitive path normalization, virtual-CD path resolution, and the SDL-backed helpers (`WWFS_SetCurrentDirectory()`, `WWFS_GetCurrentDirectory()`, `WWFS_OpenFile()`, `WWFS_OpenFileStorage()`, `WWFS_RemovePath()`, `WWFS_GetPathInfo()`, `WWFS_GlobDirectory()`, `WWFS_SplitPath()`, etc.), so relative path resolution no longer depends on the process calling real `chdir()`;
+  - `SDL3_COMPAT/wrappers/sdl_fs.h` now provides the matching WWFS-prefixed path plus stdio/fd shims (`WWFS_NormalizePath` / `WWFS_GlobDirectory` / `WWFS_SplitPath` / `WWFS_FOpen` / `WWFS_FRead` / `WWFS_FWrite` / `WWFS_Open` / `WWFS_Read` / `WWFS_Write` / `WWFS_Seek` / `WWFS_Close` / `WWFS_ChangeDirectory` / `WWFS_GetCurrentDirectory`) for the legacy launcher/tool/archive code that still expects those call shapes;
+  - active supported code no longer uses direct filesystem APIs for startup/logging/VQA override paths: `CODE/STARTUP.CPP`, `CODE/NETDLG.CPP`, `CODE/TENMGR.CPP`, `CODE/HOUSE.CPP`, `CODE/QUEUE.CPP`, `CODE/W95TRACE.CPP`, `CODE/BMP8.CPP`, `CODE/DIBFILE.CPP`, `CODE/WINSTUB.CPP`, `CODE/LOADDLG.CPP`, `CODE/CONQUER.CPP`, `WIN32LIB/WINCOMM/WINCOMM.CPP`, and `VQ/VQA32/{DSTREAM,LOADER}.CPP` now route through SDL-backed helpers instead of `chdir`, stdio, or POSIX fd calls;
+  - the same helper layer now also covers the remaining repo-owned launcher/tool/archive trees (`LAUNCHER/`, `TOOLS/`, `IPX/FIXTHUNK*`, `VQ/VQM32/`, `WINVQ/VQA32/`, `WINVQ/VQM32/`, `WIN32LIB/SRCDEBUG/`, `WIN32LIB/RAWFILE/RAWFILE.CPP`, `WIN32LIB/PROFILE/UTIL/PROFILE.CPP`, `WWFLAT32/FILE/`, and `WIN32LIB/KEYBOARD/TEST/TEST.CPP`);
+  - active wildcard scans that historically depended on the current game directory (`SAVEGAME.*`, loose `*.PKT` / `*.MPR`, `SC*.MIX`, `SS*.MIX`) now go through `WWFS_GlobDirectory()` so they see the WWFS virtual cwd instead of the host process cwd;
+  - repository-wide search now only reports helper definitions, comments, or non-filesystem uses such as container `remove()` methods and socket `close()`;
+  - the WWFS rename/move is complete: the old generic `compat_*`/`sdl_file_compat.h` naming is gone from the active tree, the filesystem layer lives in `sdl_fs.*`, and `win32_compat.cpp` now only consumes WWFS helpers where legacy Win32 shims still need path/drive behavior;
+  - `cmake --build build --target redalert -j4` and `cmake --build build-asan --target redalert -j4` both succeed after the cleanup.
+- Deleted the dead `SDL3_COMPAT/wrappers/dos.h` compatibility surface completely:
+  - the repository-wide audit turned up two categories of leftovers: a small number of real DOS-era seams still active in the supported tree (`CODE/CONQUER.CPP`, `CODE/SESSION.CPP`, `CODE/STARTUP.CPP`, `CODE/CDFILE.*`) plus a much larger set of stale include-only references and dead `find_t` declarations in legacy/archive headers and sources;
+  - the supported path now uses direct/free-standing replacements instead of DOS wrapper APIs (`Disk_Space_Available()` now goes through SDL file storage instead of `std::filesystem`, startup/test directory setup now goes through the compat virtual working-directory layer instead of `_dos_getdrive` / `_dos_setdrive`, and the old `CDFILE`/`WWSTD` seams now include the real compat headers they actually need);
+  - removed `SDL3_COMPAT/wrappers/dos.h`, removed `SDL3_COMPAT/wrappers/dos_compat.cpp`, dropped the unused `sdl3_compat` CMake source entry, and stripped every remaining in-repo code include/declaration/reference to the deleted DOS wrapper surface;
+  - `cmake --build build --target redalert -j4` and `cmake --build build-asan --target redalert -j4` still succeed after the deletion.
 - Fixed the building-placement cursor ASan global-buffer-overflow in `CODE/DISPLAY.CPP`:
   - `DisplayClass::Set_Cursor_Shape()` was copying a fixed 50-entry buffer with `memcpy()`, but valid cursor-shape inputs are variable-length `REFRESH_EOL`-terminated cell-offset lists;
   - the traced placement path (`SidebarClass::StripClass::SelectClass::Action()` -> `HouseClass::Manual_Place()` -> `BuildingTypeClass::Occupy_List(true)`) can hand back the temporary 25-entry `_list` from `CODE/BDATA.CPP` when a building placement cursor includes a bib/smudge footprint;
@@ -53,7 +67,7 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - **`CODE/STARTUP.CPP`**: replaced `FindFirstFile`/`FindClose`/`DeleteFile` with `SDL_GetPathInfo`/`SDL_RemovePath`.
   - **`CODE/LOADDLG.CPP`**: replaced `unlink` with `SDL_RemovePath`; `_dos_findfirst`/`_dos_findnext` with `SDL_GlobDirectory`.
   - **`CODE/INIT.CPP`**: replaced `_dos_findfirst`/`_dos_findnext` for MIX file scanning with `SDL_GlobDirectory`.
-  - **`CODE/CDFILE.CPP`**: replaced `_dos_findfirst` disk check with `SDL_GetPathInfo` + `normalize_compat_path`.
+  - **`CODE/CDFILE.CPP`**: replaced `_dos_findfirst` disk check with `SDL_GetPathInfo` + `WWFS_NormalizePath`.
   - **`CODE/CONQUER.CPP`**: replaced `CreateFile`/`CloseHandle` file existence check with `SDL_GetPathInfo`.
   - **`CODE/WOL_MAIN.CPP`**: replaced `FindFirstFile`/`FindClose` with `SDL_GetPathInfo`.
   - **`CODE/WOLAPIOB.CPP`**: replaced `CreateFile`/`CloseHandle`/`DeleteFile` with `SDL_IOFromFile`/`SDL_CloseIO`/`SDL_RemovePath`.
@@ -65,8 +79,6 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - `cmake --build build-asan --target redalert -j16` completes successfully with ASan/UBSan enabled.
 - Removed unused Win32 file compatibility functions from the SDL3 compat layer:
   - **`win32_compat.h/cpp`**: removed `DeleteFile`, `GetFileInformationByHandle`, `GetFileTime`, `SetFileTime`, `FileTimeToDosDateTime`, `DosDateTimeToFileTime`, `FindFirstFile`, `FindNextFile`, `FindClose`, plus all internal helpers only used by them (`SearchMatch`, `SearchHandle`, FILETIME conversion helpers, `wildcard_to_regex`, `fill_find_data`, `make_search_match`, etc.); removed `WIN32_FIND_DATA`, `LPWIN32_FIND_DATA`, `BY_HANDLE_FILE_INFORMATION` structs (zero callers in game code); kept `FILETIME` struct (still used by `RegQueryInfoKey`/`RegEnumKeyEx` signatures).
-  - **`dos_compat.cpp`**: removed `_dos_findfirst`/`_dos_findnext` and all their helpers; kept `_dos_getdrive`, `_dos_setdrive`, `_dos_getdiskfree`, `_harderr`, `_hardresume`.
-  - **`dos.h`**: removed `_dos_findfirst`/`_dos_findnext` declarations; kept `find_t` (still referenced in `CODE/CONQUER.CPP`), `_A_*` constants, `_HARDERR_*` constants (`_HARDERR_FAIL` used in `CODE/CDFILE.CPP`), `diskfree_t`.
   - **`io.h`**: removed `filelength()` (zero callers). That left only `<fcntl.h>` / `<unistd.h>` passthroughs, and the header has now been deleted entirely after confirming there are no remaining in-tree Red Alert users.
 - The active WSA animation loader is now LP64-safe again on the SDL/Linux path:
   - `WIN32LIB/WSA/WSA.CPP` now reads the WSA on-disk header plus frame-0 offsets with packed fixed-width `uint16_t` / `uint32_t` fields instead of host-sized `unsigned long`;
@@ -87,7 +99,7 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - The empty forwarding-wrapper cleanup is now applied across the in-tree compat surface:
   - deleted `SDL3_COMPAT/wrappers/mem.h`, `modem.h`, `new.h`, `objbase.h`, `windows.h`, `WINDOWS.H`, and `windowsx.h`;
   - active C/C++ sources now include `win32_compat.h`, `<string.h>`, or `<new>` directly instead of routing through those forwarding headers;
-  - surviving compat headers such as `dos.h`, `ddraw.h`, `mmsystem.h`, `process.h`, and `winsock.h` now include `win32_compat.h` directly.
+  - surviving compat headers such as `ddraw.h`, `mmsystem.h`, `process.h`, and `winsock.h` now include `win32_compat.h` directly.
   - only the legacy Windows-only `LAUNCHER/256BMP.C` and `WINVQ/VQAVIEW/DIALOGS.RC` artifacts still include the real SDK `windows.h`; the active SDL/Linux compat path no longer depends on the deleted forwarding headers.
   - `cmake --build build --target redalert -j16` and `cmake --build build-asan --target redalert -j16` still succeed after this cleanup.
 - The Linux build now enters the real game startup path instead of the old Unix stub path:
@@ -372,7 +384,7 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - Fixed `GetModuleFileName()` so the legacy startup code can locate the executable correctly on Linux.
 - Fixed leaked struct packing from the sound headers so unrelated runtime/data structures no longer inherit 1-byte packing.
 - Fixed `DSBUFFERDESC` layout and primary-buffer handling in the DirectSound compatibility layer.
-- Replaced `_dos_getdiskfree()` with a `std::filesystem::space(".")` implementation suitable for Linux.
+- Replaced `_dos_getdiskfree()` with SDL file-storage-based free-space querying via `SDL_OpenFileStorage(".")` + `SDL_GetStorageSpaceRemaining()`.
 - Fixed `strtrim()` overlap handling in `CODE/READLINE.CPP` by switching the leading-trim copy to `memmove()` and tightening whitespace handling.
 - Fixed CRC accumulation to use explicit `uint32_t` wraparound semantics instead of relying on signed overflow.
 - Fixed typed list-node deletion so derived nodes are deleted through the correct static type.
@@ -543,7 +555,7 @@ Converted all remaining Win32 file I/O calls in the game-layer source files to S
 - **`CODE/STARTUP.CPP`**: `FindFirstFile`/`FindClose`/`DeleteFile` for `wolsetup.exe` and `conquer.eng` → `SDL_GetPathInfo` + `SDL_RemovePath` (inside `WOLAPI_INTEGRATION` guard).
 - **`CODE/LOADDLG.CPP`**: `unlink()` → `SDL_RemovePath()`; `_dos_findfirst`/`_dos_findnext` for `SAVEGAME.*` → `SDL_GlobDirectory` with `SDL_GLOB_CASEINSENSITIVE`.
 - **`CODE/INIT.CPP`**: `_dos_findfirst`/`_dos_findnext` for `SC*.MIX` and `SS*.MIX` expansion files → `SDL_GlobDirectory`.
-- **`CODE/CDFILE.CPP`**: `_dos_findfirst` disk-inserted check → `SDL_GetPathInfo` with `normalize_compat_path()`.
+- **`CODE/CDFILE.CPP`**: `_dos_findfirst` disk-inserted check → `SDL_GetPathInfo` with `WWFS_NormalizePath()`.
 - **`CODE/BMP8.CPP`**: Full `CreateFile`/`ReadFile`/`CloseHandle` BMP loading → `SDL_IOFromFile`/`SDL_ReadIO`/`SDL_CloseIO` (not in active build).
 - **`CODE/DIBFILE.CPP`**: old excluded disk-DIB path converted from `OpenFile`/`_lread`/`_lwrite`/`_llseek`/`_lclose` to SDL I/O, removed the dead unused `lseek()` file-size probe, removed dead local `LoadDIB_FromMemory()` duplication (active implementation remains in `CODE/DIBCOMPAT.CPP`), and fixed DIB header include casing.
 - **`CODE/WOL_LOGN.CPP`**: Commented-out `LoadShpFile` → SDL3 equivalents in comment.

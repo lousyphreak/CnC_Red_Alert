@@ -63,6 +63,7 @@
  *   doPlayerJoins -- Callback: player joins                               * 
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #include "function.h"
+#include "sdl_fs.h"
 
 #define WINDOWS
 
@@ -945,11 +946,11 @@ static void debugMessage(int /*msgLevel*/, char *msg)
 		Mono_Printf("%s\n",msg);
 	} else {
 		//printf("%s\n",msg);
-		FILE *fp;
-		fp = fopen("tendebug.log","at");
+		SDL_IOStream *fp;
+		fp = WWFS_FOpen("tendebug.log","at");
 		if (fp) {
-			fprintf(fp,"%s\n",msg);
-			fclose(fp);
+			WWFS_FPrintf(fp,"%s\n",msg);
+			WWFS_FClose(fp);
 		}
 	}
 
@@ -991,11 +992,11 @@ static void doAlert(int, int, char * msg)
 		Mono_Printf("%s\n",msg);
 	} else {
 		//printf("%s\n",msg);
-		FILE *fp;
-		fp = fopen("tenalert.log","at");
+		SDL_IOStream *fp;
+		fp = WWFS_FOpen("tenalert.log","at");
 		if (fp) {
-			fprintf(fp,"%s\n",msg);
-			fclose(fp);
+			WWFS_FPrintf(fp,"%s\n",msg);
+			WWFS_FClose(fp);
 		}
 	}
 

@@ -95,7 +95,6 @@ TcpipManagerClass	Winsock;
 #include	<direct.h>
 #include	<fcntl.h>
 #include <unistd.h>
-#include	<dos.h>
 #include	<share.h>
 #include	"ccdde.h"
 #include	"vortex.h"
@@ -3532,9 +3531,9 @@ int Get_CD_Index (int cd_drive, int )
 	** actually attempt to read a file from the drive.
 	*/
 	if(cd_drive) for (int count = 0; count < 2; count ++) {
-		struct find_t ft;
-		int file;
-		int open_failed;
+		char volume_name[32];
+		DWORD filename_length;
+		DWORD misc_dword;
 
 		/*
 		** Create a path for the cd drive and attempt to read the volume label from
@@ -3546,7 +3545,10 @@ int Get_CD_Index (int cd_drive, int )
 		** If we are able to read the volume label, this is good but not enough.
 		** Further verification must be done.
 		*/
-		if (!_dos_findfirst(buffer, _A_VOLID, &ft)) {
+		if (GetVolumeInformation ((char const *)buffer, &volume_name[0] ,
+				static_cast<DWORD>(sizeof(volume_name)), static_cast<DWORD*>(NULL) ,
+				&filename_length, &misc_dword,
+				(char *)NULL, static_cast<DWORD>(0))) {
 
 			/*
 			** Since some versions of disk cacheing software will cache the CD's
@@ -3556,24 +3558,14 @@ int Get_CD_Index (int cd_drive, int )
 			** (suposedly).
 			*/
 			sprintf(buffer, "%c:\\main.mix", 'A' + cd_drive);
-			open_failed = _dos_open(buffer, O_RDONLY|SH_DENYNO, &file);
-			if (!open_failed) {
-				_dos_close(file);
-
-				/*
-				** Hey some times the stupid dos driver appends a period to the
-				** name if it is eight characters long.  If the last char is a
-				** period then erase it.
-				*/
-				if (ft.name[strlen(ft.name)-1] == '.') {
-					ft.name[strlen(ft.name)-1] = 0;
-				}
+			SDL_PathInfo path_info;
+			if (SDL_GetPathInfo(WWFS_NormalizePath(buffer).c_str(), &path_info)) {
 
 				/*
 				** Match the volume label to the list of known C&C volume labels.
 				*/
 				for (int i=0 ; i < _Num_Volumes ; i++) {
-					if (!stricmp(_CD_Volume_Label[i], ft.name)) return (i);
+					if (!stricmp(_CD_Volume_Label[i], volume_name)) return (i);
 				}
 			}
 		}
@@ -3820,13 +3812,14 @@ bool Force_CD_Available(int cd)
  *=========================================================================*/
 unsigned long Disk_Space_Available(void)
 {
-	struct diskfree_t diskdata;
-	unsigned drive;
+	SDL_Storage* storage = WWFS_OpenFileStorage(".");
+	if (storage == NULL) {
+		return 0;
+	}
 
-	_dos_getdrive(&drive);
-	_dos_getdiskfree(drive, &diskdata);
-
-	return(diskdata.avail_clusters * diskdata.sectors_per_cluster * diskdata.bytes_per_sector);
+	unsigned long remaining = static_cast<unsigned long>(SDL_GetStorageSpaceRemaining(storage));
+	SDL_CloseStorage(storage);
+	return remaining;
 }
 
 
@@ -4183,3 +4176,4 @@ void Crummy(int crumb1, int crumb2)
 	}
 }
 #endif
+#include <SDL3/SDL_storage.h>

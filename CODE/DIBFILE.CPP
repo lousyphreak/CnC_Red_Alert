@@ -129,7 +129,7 @@ HDIB FAR LoadDIB(LPSTR lpFileName)
     */
 
    SetCursor(LoadCursor(NULL, NULL));
-   if ((hFile = SDL_IOFromFile(lpFileName, "rb")) != NULL)
+   if ((hFile = WWFS_OpenFile(lpFileName, "rb")) != NULL)
    {
       hDIB = ReadDIBFile(hFile);
       SDL_CloseIO(hFile);
@@ -189,7 +189,7 @@ WORD FAR SaveDIB(HDIB hDib, LPSTR lpFileName)
 
    if (!hDib)
       return ERR_INVALIDHANDLE;
-   fh = SDL_IOFromFile(lpFileName, "wb");
+   fh = WWFS_OpenFile(lpFileName, "wb");
    if (fh == NULL)
       return ERR_OPEN;
 

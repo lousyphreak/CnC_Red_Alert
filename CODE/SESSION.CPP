@@ -50,7 +50,6 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "function.h"
-#include <dos.h>			// for station ID computation
 #include <time.h>			// for station ID computation
 
 //#include "WOLDEBUG.H"
@@ -1312,7 +1311,7 @@ void SessionClass::Read_Scenario_Descriptions (void)
 	*/
 	{
 		int pkt_count = 0;
-		char **pkt_files = SDL_GlobDirectory(".", "*.PKT", SDL_GLOB_CASEINSENSITIVE, &pkt_count);
+		char **pkt_files = WWFS_GlobDirectory(".", "*.PKT", SDL_GLOB_CASEINSENSITIVE, &pkt_count);
 		if (pkt_files) {
 			for (int fi = 0; fi < pkt_count; fi++) {
 				char const * name = pkt_files[fi];
@@ -1429,7 +1428,7 @@ void SessionClass::Read_Scenario_Descriptions (void)
 
 	{
 		int mpr_count = 0;
-		char **mpr_files = SDL_GlobDirectory(".", "*.MPR", SDL_GLOB_CASEINSENSITIVE, &mpr_count);
+		char **mpr_files = WWFS_GlobDirectory(".", "*.MPR", SDL_GLOB_CASEINSENSITIVE, &mpr_count);
 		if (mpr_files) {
 			for (int fi = 0; fi < mpr_count; fi++) {
 				file_name = mpr_files[fi];
@@ -1663,7 +1662,6 @@ unsigned long SessionClass::Compute_Unique_ID(void)
 {
 	time_t tm;
 	unsigned long id;
-	struct diskfree_t dtable;
 	char *path;
 	int i;
 
@@ -1676,11 +1674,10 @@ unsigned long SessionClass::Compute_Unique_ID(void)
 	//------------------------------------------------------------------------
 	// Now add in the free space on the hard drive
 	//------------------------------------------------------------------------
-	if (_dos_getdiskfree(3, &dtable) == 0) {
-		Add_CRC(&id, (unsigned long)dtable.avail_clusters);
-		Add_CRC(&id, (unsigned long)dtable.total_clusters);
-		Add_CRC(&id, (unsigned long)dtable.bytes_per_sector);
-		Add_CRC(&id, (unsigned long)dtable.sectors_per_cluster);
+	const uint64_t free_space = Disk_Space_Available();
+	if (free_space != 0) {
+		Add_CRC(&id, static_cast<unsigned long>(free_space & 0xFFFFFFFFULL));
+		Add_CRC(&id, static_cast<unsigned long>(free_space >> 32));
 	}
 
 	//------------------------------------------------------------------------

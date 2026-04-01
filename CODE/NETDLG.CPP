@@ -107,6 +107,7 @@
 //	Warning - Most disgusting cpp file of all time. ajw
 
 #include "FUNCTION.H"
+#include "sdl_fs.h"
 #ifdef WINSOCK_IPX
 #include	"WSPROTO.H"
 #else	//WINSOCK_IPX
@@ -115,8 +116,6 @@
 #include "CCDDE.H"
 
 #include <time.h>
-#include <dos.h>
-
 #include "WOLDEBUG.H"
 
 #define SHOW_MONO		0
@@ -5961,7 +5960,7 @@ int Update_WWChat(void)
 /*****************************************************************************/
 void Start_Logging(void)
 {
-	FILE *fp;
+	SDL_IOStream *fp;
 	static char *ColorNames[6] = {
 		"Yellow",
 		"Red",
@@ -5985,7 +5984,7 @@ void Start_Logging(void)
 		};
 	time_t t;
 
-	fp = fopen("NETPLAY.LOG","at");
+	fp = WWFS_FOpen("NETPLAY.LOG","at");
 	if (!fp)
 		return;
 
@@ -5993,12 +5992,12 @@ void Start_Logging(void)
 	**	Print game header
 	*/
 	t = time(NULL);
-	fprintf (fp,"==============================================================\n");
-	fprintf (fp,"Date:            %s",ctime(&t));
-	fprintf (fp,"Scenario:        %s\n",
+	WWFS_FPrintf(fp,"==============================================================\n");
+	WWFS_FPrintf(fp,"Date:            %s",ctime(&t));
+	WWFS_FPrintf(fp,"Scenario:        %s\n",
 		Session.Scenarios[Session.Options.ScenarioIndex].Description());
-	fprintf (fp,"Total # players: %d\n",Session.NumPlayers);
-	fprintf (fp,"==============================================================\n");
+	WWFS_FPrintf(fp,"Total # players: %d\n",Session.NumPlayers);
+	WWFS_FPrintf(fp,"==============================================================\n");
 
 	/*
 	**	Print connection info
@@ -6007,52 +6006,52 @@ void Start_Logging(void)
 	/*
 	**	Print player data
 	*/
-	fprintf(fp,"Local Player:\n");
-	fprintf (fp,"             Name:%s\n", Session.Handle);
-	fprintf (fp,"            Color:%s\n", ColorNames[Session.ColorIdx]);
-	fprintf (fp,"            House:%s\n", housenames[Session.House]);
-	fprintf (fp,"\n");
+	WWFS_FPrintf(fp,"Local Player:\n");
+	WWFS_FPrintf(fp,"             Name:%s\n", Session.Handle);
+	WWFS_FPrintf(fp,"            Color:%s\n", ColorNames[Session.ColorIdx]);
+	WWFS_FPrintf(fp,"            House:%s\n", housenames[Session.House]);
+	WWFS_FPrintf(fp,"\n");
 
 	for (i = 0; i < Ipx.Num_Connections(); i++) {
 		id = Ipx.Connection_ID(i);
 		house = (HouseClass)id;
-		fprintf(fp,"Connection %d:\n",i);
-		fprintf (fp,"             Name:%s\n", Ipx.Connection_Name(id));
-		fprintf (fp,"            Color:%s\n",
+		WWFS_FPrintf(fp,"Connection %d:\n",i);
+		WWFS_FPrintf(fp,"             Name:%s\n", Ipx.Connection_Name(id));
+		WWFS_FPrintf(fp,"            Color:%s\n",
 			ColorNames[HouseClass::As_Pointer(house)->RemapColor);
-		fprintf (fp,"            House:%s\n", housenames[house]);
-		fprintf (fp,"\n");
+		WWFS_FPrintf(fp,"            House:%s\n", housenames[house]);
+		WWFS_FPrintf(fp,"\n");
 	}
 
 	/*
 	**	Print game options
 	*/
-	fprintf(fp,"Game Options:\n");
-	fprintf(fp,"             Bases:%d\n",Session.Options.Bases);
-	fprintf(fp,"           Credits:%d\n",Session.Options.Credits);
-	fprintf(fp,"          Tiberium:%d\n",Session.Options.Tiberium);
-	fprintf(fp,"            Crates:%d\n",Session.Options.Goodies);
-	fprintf(fp,"        AI Players:%d\n",Session.Options.AIPlayers);
-	fprintf(fp,"       Build Level:%d\n",BuildLevel);
-	fprintf(fp,"        Unit Count:%d\n",Session.Options.UnitCount);
-	fprintf(fp,"              Seed:%d\n",Seed);
-	fprintf (fp,"\n");
+	WWFS_FPrintf(fp,"Game Options:\n");
+	WWFS_FPrintf(fp,"             Bases:%d\n",Session.Options.Bases);
+	WWFS_FPrintf(fp,"           Credits:%d\n",Session.Options.Credits);
+	WWFS_FPrintf(fp,"          Tiberium:%d\n",Session.Options.Tiberium);
+	WWFS_FPrintf(fp,"            Crates:%d\n",Session.Options.Goodies);
+	WWFS_FPrintf(fp,"        AI Players:%d\n",Session.Options.AIPlayers);
+	WWFS_FPrintf(fp,"       Build Level:%d\n",BuildLevel);
+	WWFS_FPrintf(fp,"        Unit Count:%d\n",Session.Options.UnitCount);
+	WWFS_FPrintf(fp,"              Seed:%d\n",Seed);
+	WWFS_FPrintf(fp,"\n");
 
-	fclose(fp);
+	WWFS_FClose(fp);
 
 }	/* end of Start_Logging */
 
 
 void Log_Message(char *msg)
 {
-	FILE *fp;
+	SDL_IOStream *fp;
 
-	fp = fopen("NETPLAY.LOG","at");
+	fp = WWFS_FOpen("NETPLAY.LOG","at");
 	if (!fp)
 		return;
 
-	fprintf(fp,"%s (Frame:%d)\n",msg,Frame);
-	fclose(fp);
+	WWFS_FPrintf(fp,"%s (Frame:%d)\n",msg,Frame);
+	WWFS_FClose(fp);
 	flushall();
 
 }	/* end of Log_Message */

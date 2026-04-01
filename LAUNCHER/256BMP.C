@@ -18,6 +18,7 @@
 
 #include <windows.h>
 #include <alloc.h>
+#include "sdl_fs.h"
 
 DWORD GetDibInfoHeaderSize (BYTE huge *);
 WORD GetDibWidth (BYTE huge *);
@@ -153,7 +154,7 @@ long FAR PASCAL _export MainWndProc(HWND hWnd,UINT message,UINT wParam,LONG lPar
 	HDC hdc;
 	RECT rect;
 	unsigned char r,g,b,x;
-	FILE *fi;
+	SDL_IOStream *fi;
 	int i;
 
 	static BYTE huge *lpDib;
@@ -165,7 +166,7 @@ long FAR PASCAL _export MainWndProc(HWND hWnd,UINT message,UINT wParam,LONG lPar
 	switch(message)
 	{
 		case WM_CREATE:
-			fi=fopen("somefile.bmp","r");
+			fi=WWFS_FOpen("somefile.bmp","r");
 			if(fi==NULL)
 				return 0;
 
@@ -173,7 +174,7 @@ long FAR PASCAL _export MainWndProc(HWND hWnd,UINT message,UINT wParam,LONG lPar
 			LogPal->palVersion=0x300;
 			LogPal->palNumEntries=256;
 
-			fseek(fi,54L,0);
+			WWFS_FSeek(fi,54L,0);
 			for(i=0;i<256;i++)
 			{
 				fscanf(fi,"%c%c%c%c",&b,&g,&r,&x);
@@ -182,7 +183,7 @@ long FAR PASCAL _export MainWndProc(HWND hWnd,UINT message,UINT wParam,LONG lPar
 				LogPal->palPalEntry[i].peBlue=b;
 				LogPal->palPalEntry[i].peFlags=x;
 			}
-			fclose(fi);
+			WWFS_FClose(fi);
 			hLogPal=CreatePalette(LogPal);
 			return 0;
 		case WM_PAINT:

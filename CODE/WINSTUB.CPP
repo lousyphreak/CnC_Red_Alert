@@ -833,7 +833,7 @@ void Assert_Failure (char *expression, int line, char *file)
 																		assertbuf);
 
 
-	SDL_IOStream * assert_io = SDL_IOFromFile("ASSERT.TXT", "ab");
+	SDL_IOStream * assert_io = WWFS_OpenFile("ASSERT.TXT", "ab");
 	if (assert_io) {
 		SDL_WriteIO(assert_io, timebuff, strlen(timebuff));
 		SDL_CloseIO(assert_io);

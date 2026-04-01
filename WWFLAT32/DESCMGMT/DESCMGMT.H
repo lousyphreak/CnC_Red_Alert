@@ -48,8 +48,6 @@
 extern "C" {
 #endif
 
-#include <dos.h>
-
 #ifdef __cplusplus
 }
 #endif
@@ -58,7 +56,7 @@ extern "C" {
 
 
 // types
-// These where taken from dos.h
+// These were taken from the legacy DOS header
 //==========================================
 
 // external functions

@@ -34,7 +34,6 @@
  * Functions:                                                              *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include <dos.h>
 #include <string.h>
 #include "soundint.h"
 #include "wwmem.h"

@@ -74,8 +74,6 @@
 #include	"TCPIP.H"
 #endif	//WINSOCK_IPX
 
-#include	<dos.h>
-
 extern BOOL BootstrapFocusSeen;
 #include  "CCDDE.H"
 
@@ -2697,7 +2695,7 @@ static void Init_Expansion_Files(void)
 	*/
 	{
 		int mix_count = 0;
-		char **mix_files = SDL_GlobDirectory(".", "SC*.MIX", SDL_GLOB_CASEINSENSITIVE, &mix_count);
+		char **mix_files = WWFS_GlobDirectory(".", "SC*.MIX", SDL_GLOB_CASEINSENSITIVE, &mix_count);
 		if (mix_files) {
 			for (int i = 0; i < mix_count; i++) {
 				char * ptr = strdup(mix_files[i]);
@@ -2709,7 +2707,7 @@ static void Init_Expansion_Files(void)
 	}
 	{
 		int mix_count = 0;
-		char **mix_files = SDL_GlobDirectory(".", "SS*.MIX", SDL_GLOB_CASEINSENSITIVE, &mix_count);
+		char **mix_files = WWFS_GlobDirectory(".", "SS*.MIX", SDL_GLOB_CASEINSENSITIVE, &mix_count);
 		if (mix_files) {
 			for (int i = 0; i < mix_count; i++) {
 				char * ptr = strdup(mix_files[i]);

@@ -42,8 +42,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <dos.h>
-
 #include "wwstd.h"
 #include "playcd.h"
 #include "wwmem.h"

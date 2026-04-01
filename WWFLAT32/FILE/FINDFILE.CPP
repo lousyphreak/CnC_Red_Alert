@@ -55,7 +55,6 @@
 #endif
 
 #include <direct.h>
-#include <dos.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -63,6 +62,7 @@
 #include <string.h>
 #include <search.h>
 #include <sys\stat.h>
+#include "sdl_fs.h"
 
 
 
@@ -134,17 +134,13 @@ int cdecl Find_File(char const *file_name)
 		WORD	handle;
 		
 		CallingDOSInt++;
-		handle = open(file_name, O_RDONLY | O_BINARY, S_IREAD);
+		handle = WWFS_Open(file_name, O_RDONLY | O_BINARY, S_IREAD);
 		CallingDOSInt--;
 		if (handle != ERROR) 
 		{
-		   //	WORD	d;
-			unsigned d ;
-
 			CallingDOSInt++;
-			close(handle);
-			// d = getdisk();
-			_dos_getdrive ( & d) ;
+			WWFS_Close(handle);
+			const unsigned d = WWFS_GetCurrentDriveNumber();
 			CallingDOSInt--;
 			return(d);
 		}
@@ -219,11 +215,11 @@ int cdecl Find_File(char const *file_name)
 					WORD	handle;
 
 					CallingDOSInt++;
-					handle = open(file_name, O_RDONLY | O_BINARY, S_IREAD);
+					handle = WWFS_Open(file_name, O_RDONLY | O_BINARY, S_IREAD);
 					CallingDOSInt--;
 					if (handle != ERROR) {
 						CallingDOSInt++;
-						close(handle);
+						WWFS_Close(handle);
 						CallingDOSInt--;
 						DiskNumber = index+1;
 						return (DiskNumber);

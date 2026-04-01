@@ -42,10 +42,10 @@
 #include "_file.h"
 #endif
 
-#include <dos.h>
 #include <direct.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include "sdl_fs.h"
 
 /*=========================================================================*/
 /* The following PRIVATE functions are in this file:                       */
@@ -56,25 +56,18 @@
 
 WORD ibm_getdisk(VOID)
 {
-	unsigned disk;
-
 	CallingDOSInt++;
-  //	disk = getdisk();
-	_dos_getdrive ( & disk ) ;
+	const unsigned disk = WWFS_GetCurrentDriveNumber();
 	CallingDOSInt--;
 	return(disk-1);
 }
 
 WORD ibm_setdisk(WORD drive)
 {
-//	WORD disk;
-	unsigned disk ;
-
 	CallingDOSInt++;
-//	disk = setdisk(drive);
-	_dos_setdrive ( drive+1 , & disk ) ;
+	WWFS_ChangeToDrive(static_cast<unsigned>(drive + 1));
 	CallingDOSInt--;
-	return(disk);
+	return(static_cast<WORD>(WWFS_GetDriveCount()));
 }
 
 WORD ibm_close(WORD handle)
@@ -82,7 +75,7 @@ WORD ibm_close(WORD handle)
 	WORD success;
 
 	CallingDOSInt++;
-	success = close(handle);
+	success = WWFS_Close(handle);
 	CallingDOSInt--;
 	return(success);
 }
@@ -92,7 +85,7 @@ WORD ibm_unlink(BYTE const *name)
 	WORD success;
 
 	CallingDOSInt++;
-	success = unlink(name);
+	success = WWFS_Unlink(name);
 	CallingDOSInt--;
 	return(success);
 }
@@ -102,7 +95,7 @@ LONG ibm_lseek(WORD handle, LONG offset, WORD where)
 	LONG new_offset;
 
 	CallingDOSInt++;
-	new_offset = lseek(handle, offset, where);
+	new_offset = WWFS_Seek(handle, offset, where);
 	CallingDOSInt--;
 	return(new_offset);
 }
@@ -112,7 +105,7 @@ UWORD ibm_read(WORD handle, VOID *ptr, UWORD bytes)
 	UWORD bytes_read;
 
 	CallingDOSInt++;
-	bytes_read = read(handle, ptr, bytes);
+	bytes_read = WWFS_Read(handle, ptr, bytes);
 	CallingDOSInt--;
 	return(bytes_read);
 }
@@ -122,7 +115,7 @@ UWORD ibm_write(WORD handle, VOID *ptr, UWORD bytes)
 	UWORD bytes_written;
 
 	CallingDOSInt++;
-	bytes_written = write(handle, ptr, bytes);
+	bytes_written = WWFS_Write(handle, ptr, bytes);
 	CallingDOSInt--;
 	return(bytes_written);
 }
@@ -132,7 +125,7 @@ WORD ibm_open(BYTE const *name, UWORD mode, WORD attrib)
 	WORD handle;
 
 	CallingDOSInt++;
-	handle = open(name, mode, attrib);
+	handle = WWFS_Open(name, mode, attrib);
 	CallingDOSInt--;
 	return(handle);
 }
@@ -142,7 +135,7 @@ WORD ibm_chdir(BYTE const *path)
 	WORD retval;
 
 	CallingDOSInt++;
-	retval = chdir(path);
+	retval = WWFS_ChangeDirectory(path);
 	CallingDOSInt--;
 	return(retval);
 }
