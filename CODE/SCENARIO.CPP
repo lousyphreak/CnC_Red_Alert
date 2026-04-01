@@ -64,9 +64,7 @@
 
 #include	"function.h"
 #include "tcpip.h"
-#include "ccdde.h"
 
-extern bool SpawnedFromWChat;
 extern int PreserveVQAScreen;
 
 //#include "WOLDEBUG.H"
@@ -431,7 +429,7 @@ bool Read_Scenario(char * name)
 			case GAME_INTERNET:
 #ifndef FIXIT_VERSION_3			//	Loading of Aftermath rules depends on bAftermathMultiplayer now.
 				if (Is_Mission_Counterstrike(name)) {
-					readini = false;	// Don't allow AM units on a CS map in WChat
+					readini = false;	// Don't allow AM units on a CS map in internet mode
 					break;
 				}
 #endif		//	( Note lack of break; )
@@ -458,12 +456,6 @@ bool Read_Scenario(char * name)
 				GamePalette.Set(FADE_PALETTE_FAST, Call_Back);
 				RequiredCD = 3;
 				if (!Force_CD_Available(RequiredCD)) {	// force Aftermath CD in drive.
-#ifndef WOLAPI_INTEGRATION
-					if(Special.IsFromWChat || SpawnedFromWChat) {
-						char packet[10] = {"Hello"};
-					Send_Data_To_DDE_Server (packet, strlen(packet), DDEServerClass::DDE_CONNECTION_FAILED);
-						}
-#endif
 					Emergency_Exit(EXIT_FAILURE);
 		     	}
 			}

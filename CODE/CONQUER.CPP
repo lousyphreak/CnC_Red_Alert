@@ -112,7 +112,6 @@ B<A> test;
 #include	<fcntl.h>
 #include <unistd.h>
 #include	<share.h>
-#include	"CCDDE.H"
 #include	"VORTEX.H"
 
 #ifdef WOLAPI_INTEGRATION
@@ -166,7 +165,6 @@ static void Conquer_Trace(char const * format, ...)
 #define SHAPE_TRANS		0x40
 
 void * Get_Shape_Header_Data(void * ptr);
-extern bool Spawn_WChat(bool can_launch);
 
 #ifdef FIXIT_CSII	//	checked - ajw 9/28/98
 void Enable_Secret_Units(void);
@@ -306,10 +304,6 @@ void Main_Game(int argc, char * argv[])
 			GameStatisticsPacketSent = false;
 			PacketLater = NULL;
 			ConnectionLost = false;
-		} else {
-#ifndef WOLAPI_INTEGRATION
-			DDEServer.Disable();
-#endif	//	!WOLAPI_INTEGRATION
 		}
 
 #ifdef SCENARIO_EDITOR
@@ -455,7 +449,7 @@ void Main_Game(int argc, char * argv[])
 
 
 		/*
-		** Send the game stats to WChat if we haven't already done so
+		** Send the game stats if we haven't already done so.
 		*/
 		if (!GameStatisticsPacketSent && PacketLater) {
 			Send_Statistics_Packet();		//	After game sending if PacketLater set.
@@ -519,19 +513,6 @@ void Main_Game(int argc, char * argv[])
 			Session.Type = GAME_NORMAL;
 			Session.Play = 0;
 		}
-#ifndef WOLAPI_INTEGRATION
-		if (Special.IsFromWChat) {
-			Shutdown_Network();		      // Clear up the pseudo IPX stuff
-#ifndef WINSOCK_IPX
-			Winsock.Close();
-#endif	//WINSOCK_IPX
-			Special.IsFromWChat = false;
-			SpawnedFromWChat = false;
-			DDEServer.Delete_MPlayer_Game_Info();	//Make sure we dont use the same start packet twice
-			Session.Type = GAME_NORMAL;			//Have to do this or we will got straight to the multiplayer menu
-			Spawn_WChat(false);		//Will switch back to Wchat. It must be there because its been poking us
-		}
-#endif	//	!WOLAPI_INTEGRATION
 	}
 
 	/*

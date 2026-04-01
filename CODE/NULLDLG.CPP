@@ -4822,7 +4822,6 @@ int Com_Show_Scenario_Dialog(void)
 		20, MAX_MESSAGE_LENGTH - 5, d_message_w);
 	Session.Messages.Add_Edit ((Session.ColorIdx == PCOLOR_DIALOG_BLUE) ? PCOLOR_REALLY_BLUE : Session.ColorIdx,
 										TPF_TEXT, NULL, '_', d_message_w);
-	Session.WWChat = 0;
 
 	/*........................................................................
 	Init version number clipping system

@@ -15,7 +15,6 @@
 **	You should have received a copy of the GNU General Public License
 **	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-
 /* $Header: /counterstrike/STARTUP.CPP 6     3/15/97 7:18p Steve_tall $ */
 /***********************************************************************************************
  ***              C O N F I D E N T I A L  ---  W E S T W O O D  S T U D I O S               ***
@@ -44,7 +43,6 @@
 #include	<cstdlib>
 #include <fcntl.h>
 
-#include  "CCDDE.H"
 #include	"IPX95.H"
 
 #ifdef MCIMPEG // Denzil 6/15/98
@@ -85,7 +83,6 @@ void startup_trace(const char* format, ...)
 
 //WinTimerClass * WinTimer;
 extern void Create_Main_Window ( HANDLE instance , int command_show , int width , int height);
-extern bool RA95AlreadyRunning;
 HINSTANCE	ProgramInstance;
 void Check_Use_Compressed_Shapes (void);
 void Read_Setup_Options(RawFileClass *config_file);
@@ -134,25 +131,6 @@ int PASCAL WinMain ( HINSTANCE instance , HINSTANCE , char * command_line , int 
 	#endif
 
 	startup_trace("WinMain entered command_line=\"%s\"", command_line ? command_line : "");
-
-	/*
-	** First thing to do is check if there is another instance of Red Alert already running
-	**  and if so, switch to the existing instance and terminate ourselves.
-	*/
-	SpawnedFromWChat = false;
-
-	if (RA95AlreadyRunning) {	//Set in the DDEServer constructor
-		//MessageBox (NULL, "Error - attempt to restart Red Alert 95 when already running.", "Red Alert", MB_ICONEXCLAMATION|MB_OK);
-
-		HWND ccwindow;
-    	ccwindow = FindWindow (WINDOW_NAME, WINDOW_NAME);
-    	if (ccwindow) {
-    		SetForegroundWindow ( ccwindow );
-    		ShowWindow ( ccwindow, SW_RESTORE );
-    	}
-
-		return (EXIT_SUCCESS);
-	}
 
 	if (Ram_Free(MEM_NORMAL) < 7000000) {
 		printf (TEXT_NO_RAM);
@@ -522,20 +500,6 @@ int PASCAL WinMain ( HINSTANCE instance , HINSTANCE , char * command_line , int 
 				ini.Save(cfile);
 			}
 
-#ifndef WOLAPI_INTEGRATION
-			/*
-			** If WChat has been trying to send us a game start packet then receive it and
-			** flag that we were spawned from WCHat so we dont play the into movie.
-			*/
-			if (DDEServer.Get_MPlayer_Game_Info()){
-				Check_From_WChat(NULL);
-			}else{
-				//Check_From_WChat("C&CSPAWN.INI");
-				//if (Special.IsFromWChat){
-				//	DDEServer.Disable();
-				//}
-			}
-#endif
 			/*
 			**	If the intro is being run for the first time, then don't
 			**	allow breaking out of it with the <ESC> key.
@@ -943,4 +907,3 @@ void Get_OS_Version (void)
 #endif	//(0)
 
 }
-

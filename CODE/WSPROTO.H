@@ -55,7 +55,7 @@
 #define WS_RECEIVE_BUFFER_LEN	1024		// Length of our temporary receive buffer.
 #define SOCKET_BUFFER_SIZE		1024*128	// Length of winsocks internal buffer.
 
-#define PLANET_WESTWOOD_HANDLE_MAX 20	// Max length of a WChat handle
+#define PLANET_WESTWOOD_HANDLE_MAX 20	// Max length of a Planet Westwood handle
 
 /*
 ** Define events for Winsock callbacks

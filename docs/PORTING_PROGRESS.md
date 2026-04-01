@@ -8,6 +8,12 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Removed the remaining non-WOL WChat/DDE integration and deleted the DDE wrapper surface it required:
+  - removed the WChat-facing runtime hooks from the active game code, including the single-instance/DDE handoff path in `CODE/STARTUP.CPP`, the WChat launch/startup flow in `CODE/INIT.CPP` and `CODE/INTERNET.CPP`, the old WChat heartbeat/max-ahead adjustment in `CODE/EVENT.CPP`, the WChat failure/reporting handoff in `CODE/SCENARIO.CPP`, `CODE/SAVELOAD.CPP`, `CODE/NETDLG.CPP`, and `CODE/CONQUER.CPP`, and the remaining `Special.IsFromWChat` / `SpawnedFromWChat` / `ShowCommand` state that only existed for that path;
+  - removed the separate fake/internal `WWChat` mode from the multiplayer dialog/session flow so there is no longer an in-engine WChat simulation path alongside the deleted DDE bridge;
+  - deleted `CODE/{CCDDE.CPP,CCDDE.H,DDE.CPP,DDE.H}`, deleted `SDL3_COMPAT/wrappers/{ddeml.h,ddeml_compat.cpp}`, and removed the `ddeml_compat.cpp` build entry from `CMakeLists.txt`;
+  - cleaned up the last stale `ccdde.h` includes and dead `ShowCommand` assignment that surfaced during rebuild validation;
+  - `cmake --build build --target redalert -j4` and `cmake --build build-asan --target redalert -j4` both succeed after the removal.
 - Removed the remaining repo-owned `SDL3_COMPAT/wrappers/direct.h` shim and folded its WWFS-backed surface into `sdl_fs`:
   - `SDL3_COMPAT/wrappers/sdl_fs.h/.cpp` now own the remaining supported filesystem/path compatibility surface under `WWFS_*` names (`WWFS_SplitPath`, `WWFS_MakePath`, `WWFS_MakeDirectory`, `WWFS_GetCurrentDirectory`, `WWFS_ChangeDirectory`, `WWFS_GetCurrentDriveNumber`, `WWFS_GetDriveCount`, `WWFS_ChangeToDrive`) plus the legacy `_MAX_{DRIVE,DIR,FNAME,EXT}` sizing macros still used by active headers;
   - the active in-repo include sites now include `sdl_fs.h` directly instead of relying on `<direct.h>` (`CODE/FUNCTION.H`, `CODE/TYPE.H`, `CODE/CONQUER.CPP`, `CODE/MIXFILE.CPP`, and `WIN32LIB/AUDIO/SOUNDIO.CPP`), and the old direct-style `_splitpath` / `_makepath` / `_mkdir` / `_getcwd` / `_chdir` entry points were dropped once no active code still used them;

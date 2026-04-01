@@ -45,7 +45,6 @@
 #include	"function.h"
 #include "tcpip.h"
 #include "packet.h"
-#include "ccdde.h"
 
 #define FIELD_PACKET_TYPE						"TYPE"
 #define FIELD_GAME_ID							"IDNO"
@@ -272,7 +271,7 @@ void Send_Statistics_Packet(void)
 #endif
 
 		/*
-		** Game ID. A unique game identifier assigned by WChat.
+		** Game ID used by the online stats flow.
 		*/
 		stats.Add_Field(FIELD_GAME_ID, PlanetWestwoodGameID);
 
@@ -542,9 +541,7 @@ void Send_Statistics_Packet(void)
 
 
 		/*
-		** Game start time (GMT or Pacific?)
-		**
-		** Passed from WChat
+		** Game start time (GMT or Pacific?).
 		*/
 		stats.Add_Field (FIELD_START_TIME, (long) PlanetWestwoodStartTime);
 
@@ -913,5 +910,3 @@ extern void Register_Game_End_Time(void)
 	GameEndTime = GameTimer.Time();
 	GameTimerInUse = false;
 }
-
-

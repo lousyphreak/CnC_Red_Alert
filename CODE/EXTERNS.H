@@ -448,23 +448,16 @@ void WWDebugString (char *string);
 ** Internet specific externs
 */
 
-extern char PlanetWestwoodHandle[];			//Planet WW user name
-extern char PlanetWestwoodPassword[];		//Planet WW password
 extern char PlanetWestwoodIPAddress[];		//IP of server or other player
 extern long PlanetWestwoodPortNumber;		//Port number to send to
 extern bool PlanetWestwoodIsHost;				//Flag true if player has control of game options
 extern unsigned long PlanetWestwoodGameID;	//Game ID
-extern HWND	WChatHWND;							//Handle to Wchat window.
 extern bool	GameStatisticsPacketSent;
 extern bool	ConnectionLost;
 extern void *PacketLater;
-extern bool SpawnedFromWChat;
-extern int ShowCommand;
 void	Register_Game_Start_Time(void);
 void	Register_Game_End_Time(void);
 void	Send_Statistics_Packet(void);
-void 	Check_From_WChat(char *wchat_name);
-bool 	Do_The_Internet_Menu_Thang (void);
 bool 	Server_Remote_Connect(void);
 bool 	Client_Remote_Connect(void);
 extern	int UnitBuildPenalty;

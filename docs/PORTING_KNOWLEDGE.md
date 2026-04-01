@@ -55,6 +55,20 @@ _Last updated: 2026-04-01_
 - Repository-wide search found no remaining Red Alert-owned source file that still includes `<io.h>`.
 - The only remaining repository `<io.h>` include is SDL upstream's Windows-only `extern/SDL3/test/childprocess.c`, and that target is outside the supported build here because the top-level CMake forces `SDL_TESTS OFF`. Do not reintroduce an `io.h` wrapper just for that upstream test file.
 
+## Removed DDE/WChat surface
+
+- `SDL3_COMPAT/wrappers/ddeml.h` and `SDL3_COMPAT/wrappers/ddeml_compat.cpp` are now deleted.
+- The old engine-side DDE layer (`CODE/DDE.*`) and the game-facing bridge (`CODE/CCDDE.*`) were removed together with the non-`WOLAPI_INTEGRATION` WChat integration that depended on them.
+- The removed WChat path previously covered:
+  - single-instance/DDE handoff in `CODE/STARTUP.CPP`;
+  - WChat startup/start-packet handling in `CODE/INIT.CPP` and `CODE/INTERNET.CPP`;
+  - WChat-specific timing/state adjustments in `CODE/EVENT.CPP` and `CODE/IPXMGR.CPP`;
+  - WChat failure/return/reporting hooks in `CODE/SCENARIO.CPP`, `CODE/SAVELOAD.CPP`, `CODE/NETDLG.CPP`, and `CODE/CONQUER.CPP`;
+  - the separate fake/internal `WWChat` session mode in the multiplayer dialog flow.
+- Practical rule going forward:
+  - do **not** reintroduce `ddeml.h`, `ddeml_compat.cpp`, `CODE/DDE*`, `CODE/CCDDE*`, `SpawnedFromWChat`, `Special.IsFromWChat`, or the internal `WWChat` mode for the supported SDL3 port;
+  - if later internet/session work needs replacement behavior, implement it directly on supported SDL/network abstractions instead of reviving DDE-era launcher glue.
+
 ## Removed dos wrapper
 
 - `SDL3_COMPAT/wrappers/dos.h` and `SDL3_COMPAT/wrappers/dos_compat.cpp` are gone. The full cleanup had two parts:

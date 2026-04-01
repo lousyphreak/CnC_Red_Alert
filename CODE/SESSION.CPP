@@ -181,7 +181,6 @@ SessionClass::SessionClass(void)
 	EmergencySave = 0;
 
 	LastMessage[0] = 0;
-	WWChat = 0;
 
 	RecordFile.Set_Name("RECORD.BIN");		// always uses this name
 	Record= 0;										// set via command line

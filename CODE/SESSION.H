@@ -613,7 +613,6 @@ class SessionClass
 		MessageListClass Messages;
 		IPXAddressClass MessageAddress;
 		char LastMessage[MAX_MESSAGE_LENGTH];
-		unsigned WWChat		: 1;	// 1 = go into special WW Chat mode
 
 		//.....................................................................
 		// This is the multiplayer scorekeeping system

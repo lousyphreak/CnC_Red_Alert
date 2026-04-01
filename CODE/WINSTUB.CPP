@@ -513,7 +513,6 @@ width = width; height = height;
 // End
 
 	ShowWindow (hwnd, command_show );
-	ShowCommand = command_show;
 	UpdateWindow (hwnd);
 	SetFocus (hwnd);
 	MainWindow=hwnd;			//Save the handle to our main window
