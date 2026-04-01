@@ -70,7 +70,6 @@ extern	void Colour_Debug (int call_number);
 #include	<string.h>
 #include "sdl_fs.h"
 #include	<stdlib.h>
-#include <process.h>
 #include	<KEYBOARD.H>
 #include	<FILE.H>
 #include	<TIMER.H>

@@ -446,10 +446,12 @@ _Last updated: 2026-04-01_
   - Genuine Windows SDK `windows.h` includes should stay confined to legacy Windows-only C/resource artifacts, not the active portable compat path.
 - The codebase still leans on compatibility wrappers for:
   - file I/O (`CreateFile`, `ReadFile`, `WriteFile`, `CloseHandle`);
-  - threading and timing (`Sleep`, generic thread helpers, thread priority helpers);
+  - timing / Win32 scheduling helpers (`Sleep`, thread priority helpers);
   - registry access (`RegOpenKeyEx`, `RegQueryValueEx`, `RegCloseKey`);
   - directory enumeration (`FindFirstFile`, `FindNextFile`, `FindClose`);
   - DirectDraw compatibility types used by legacy rendering code.
+- `SDL3_COMPAT/wrappers/process.h` was removed after confirming there were no remaining non-generated source includes or `_beginthread()` call sites in the tree.
+  - Keep new porting work off detached compatibility threads unless a subsystem is proven to need one on the active SDL path.
 - The active gameplay audio path no longer depends on the DirectSound compatibility wrapper; any remaining DirectSound-shaped code is archival or inactive.
 
 ## Startup/runtime porting notes

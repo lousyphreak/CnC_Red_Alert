@@ -228,7 +228,6 @@ typedef struct {
 #include	<ctype.h>
 #include	<assert.h>
 #include	<algorithm>
-#include	<process.h>
 #include <new>
 
 using std::max;

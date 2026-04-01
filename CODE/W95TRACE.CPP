@@ -25,7 +25,6 @@
 #include "sdl_fs.h"
 #include <stdio.h>
 #include <stdarg.h>
-#include <process.h>
 #include "W95TRACE.H"
 
 
