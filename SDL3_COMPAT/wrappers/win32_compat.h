@@ -14,52 +14,11 @@
 #include <mutex>
 #include <string>
 
-#ifndef stricmp
-#define stricmp SDL_strcasecmp
-#endif
-#ifndef _stricmp
-#define _stricmp SDL_strcasecmp
-#endif
-#ifndef strnicmp
-#define strnicmp SDL_strncasecmp
-#endif
-#ifndef strcmpi
-#define strcmpi SDL_strcasecmp
-#endif
-#ifndef _strnicmp
-#define _strnicmp SDL_strncasecmp
-#endif
-#ifndef memicmp
-#define memicmp SDL_strncasecmp
-#endif
-#ifndef strrev
-#define strrev SDL_strrev
-#endif
-#ifndef strupr
-#define strupr SDL_strupr
-#endif
-inline char* _strlwr(char* string)
-{
-    if (!string) {
-        return nullptr;
-    }
-    for (char* cursor = string; *cursor; ++cursor) {
-        *cursor = static_cast<char>(SDL_tolower(static_cast<unsigned char>(*cursor)));
-    }
-    return string;
-}
-#ifndef strlwr
-#define strlwr _strlwr
-#endif
-
 #ifndef WINAPI
 #define WINAPI
 #endif
 #ifndef CALLBACK
 #define CALLBACK
-#endif
-#ifndef APIENTRY
-#define APIENTRY
 #endif
 #ifndef PASCAL
 #define PASCAL
@@ -101,7 +60,6 @@ using HRESULT = LONG;
 using LPARAM = intptr_t;
 using WPARAM = uintptr_t;
 using LRESULT = intptr_t;
-using MMRESULT = UINT;
 using MCIDEVICEID = UINT;
 using ATOM = WORD;
 using COLORREF = DWORD;
@@ -111,8 +69,6 @@ using HGLOBAL = void*;
 using HINSTANCE = void*;
 using HMODULE = void*;
 using FARPROC = void (*)();
-using HDC = void*;
-using HPALETTE = void*;
 using HGDIOBJ = void*;
 using HKEY = void*;
 using LPVOID = void*;
@@ -438,10 +394,6 @@ using HWND = RAWindow*;
 #define DRIVE_CDROM 5U
 #define DRIVE_RAMDISK 6U
 
-#define DUPLICATE_SAME_ACCESS 0x00000002U
-#define THREAD_ALL_ACCESS 0x001F03FFU
-#define THREAD_PRIORITY_TIME_CRITICAL 15
-
 #define GHND 0x0042
 #define GMEM_FIXED 0x0000
 #define GMEM_MOVEABLE 0x0002
@@ -491,8 +443,6 @@ using HWND = RAWindow*;
 #define ERROR_INVALID_PARAMETER 87L
 #define ERROR_IO_PENDING 997L
 #define ERROR_IO_INCOMPLETE 996L
-#define STILL_ACTIVE 259L
-
 #define SEM_FAILCRITICALERRORS 0x0001
 #define SEM_NOOPENFILEERRORBOX 0x8000
 
@@ -528,15 +478,6 @@ struct RECT {
     LONG top;
     LONG right;
     LONG bottom;
-};
-
-struct PAINTSTRUCT {
-    HDC hdc;
-    BOOL fErase;
-    RECT rcPaint;
-    BOOL fRestore;
-    BOOL fIncUpdate;
-    BYTE rgbReserved[32];
 };
 
 struct tagMSG {
@@ -671,11 +612,6 @@ struct BITMAPINFOHEADER {
     DWORD biClrImportant;
 };
 
-struct BITMAPINFO {
-    BITMAPINFOHEADER bmiHeader;
-    RGBQUAD bmiColors[1];
-};
-using LPBITMAPINFO = BITMAPINFO*;
 using LPBITMAPINFOHEADER = BITMAPINFOHEADER*;
 
 struct PALETTEENTRY {
@@ -683,41 +619,6 @@ struct PALETTEENTRY {
     BYTE peGreen;
     BYTE peBlue;
     BYTE peFlags;
-};
-
-struct LOGPALETTE {
-    WORD palVersion;
-    WORD palNumEntries;
-    PALETTEENTRY palPalEntry[1];
-};
-using LPLOGPALETTE = LOGPALETTE*;
-
-struct STARTUPINFO {
-    DWORD cb;
-    LPSTR lpReserved;
-    LPSTR lpDesktop;
-    LPSTR lpTitle;
-    DWORD dwX;
-    DWORD dwY;
-    DWORD dwXSize;
-    DWORD dwYSize;
-    DWORD dwXCountChars;
-    DWORD dwYCountChars;
-    DWORD dwFillAttribute;
-    DWORD dwFlags;
-    WORD wShowWindow;
-    WORD cbReserved2;
-    LPBYTE lpReserved2;
-    HANDLE hStdInput;
-    HANDLE hStdOutput;
-    HANDLE hStdError;
-};
-
-struct PROCESS_INFORMATION {
-    HANDLE hProcess;
-    HANDLE hThread;
-    DWORD dwProcessId;
-    DWORD dwThreadId;
 };
 
 struct RAWindow {
@@ -736,12 +637,9 @@ bool RA_GameRectToWindowRect(HWND window, const RECT* game_rect, SDL_Rect* windo
 extern "C" {
 
 ATOM RegisterClass(const WNDCLASS* wndclass);
-BOOL UnregisterClass(LPCSTR class_name, HINSTANCE instance);
 HWND CreateWindowEx(DWORD ex_style, LPCSTR class_name, LPCSTR window_name, DWORD style,
     INT x, INT y, INT width, INT height, HWND parent, HANDLE menu, HINSTANCE instance, LPVOID param);
 HWND FindWindow(LPCSTR class_name, LPCSTR window_name);
-BOOL IsWindow(HWND window);
-BOOL DestroyWindow(HWND window);
 BOOL ShowWindow(HWND window, INT command);
 BOOL SetForegroundWindow(HWND window);
 BOOL UpdateWindow(HWND window);
@@ -757,7 +655,6 @@ UINT RegisterWindowMessage(LPCSTR string);
 int GetSystemMetrics(int index);
 HWND SetFocus(HWND window);
 HGDIOBJ LoadIcon(HINSTANCE instance, LPCSTR icon_name);
-HGDIOBJ LoadCursor(HINSTANCE instance, LPCSTR cursor_name);
 INT_PTR DialogBox(HINSTANCE instance, LPCTSTR template_name, HWND owner, DLGPROC dialog_proc);
 void ExitProcess(UINT exit_code);
 
@@ -765,7 +662,6 @@ int MessageBox(HWND window, LPCSTR text, LPCSTR caption, UINT type);
 void OutputDebugString(LPCSTR text);
 DWORD GetLastError(void);
 DWORD GetVersion(void);
-void SetLastError(DWORD error_code);
 UINT SetErrorMode(UINT mode);
 void Sleep(DWORD milliseconds);
 DWORD GetTickCount(void);
@@ -779,31 +675,14 @@ UINT MapVirtualKey(UINT code, UINT map_type);
 int ToAscii(UINT virtual_key_code, UINT scan_code, PBYTE key_state, LPWORD translated_char, UINT flags);
 HANDLE SetCursor(HANDLE cursor);
 int ShowCursor(BOOL show);
-MMRESULT timeBeginPeriod(UINT period);
-MMRESULT timeEndPeriod(UINT period);
 BOOL ClipCursor(const RECT* rect);
 BOOL GetCursorPos(POINT* point);
-DWORD GetCurrentThreadId(void);
-HANDLE GetCurrentThread(void);
-HANDLE GetCurrentProcess(void);
-BOOL DuplicateHandle(HANDLE source_process_handle, HANDLE source_handle, HANDLE target_process_handle,
-    HANDLE* target_handle, DWORD desired_access, BOOL inherit_handle, DWORD options);
-BOOL SetThreadPriority(HANDLE thread, int priority);
-HANDLE CreateThread(LPVOID thread_attributes, size_t stack_size, DWORD (WINAPI *start_address)(LPVOID),
-    LPVOID parameter, DWORD creation_flags, DWORD* thread_id);
 DWORD WaitForSingleObject(HANDLE handle, DWORD milliseconds);
-DWORD WaitForInputIdle(HANDLE handle, DWORD milliseconds);
-BOOL GetExitCodeProcess(HANDLE handle, LPDWORD exit_code);
 BOOL CloseHandle(HANDLE handle);
-HANDLE CreateMutex(LPVOID attributes, BOOL initial_owner, LPCSTR name);
-BOOL ReleaseMutex(HANDLE handle);
 HANDLE CreateEvent(LPVOID attributes, BOOL manual_reset, BOOL initial_state, LPCSTR name);
 HANDLE OpenEvent(DWORD desired_access, BOOL inherit_handle, LPCSTR name);
 BOOL SetEvent(HANDLE handle);
 BOOL ResetEvent(HANDLE handle);
-BOOL CreateProcess(LPCSTR application_name, LPSTR command_line, LPVOID process_attributes,
-    LPVOID thread_attributes, BOOL inherit_handles, DWORD creation_flags, LPVOID environment,
-    LPCSTR current_directory, STARTUPINFO* startup_info, PROCESS_INFORMATION* process_information);
 void InitializeCriticalSection(CRITICAL_SECTION* critical_section);
 void DeleteCriticalSection(CRITICAL_SECTION* critical_section);
 void EnterCriticalSection(CRITICAL_SECTION* critical_section);
@@ -825,7 +704,6 @@ BOOL GetOverlappedResult(HANDLE handle, LPOVERLAPPED overlapped, LPDWORD number_
 BOOL ClearCommError(HANDLE handle, LPDWORD errors, COMSTAT* status);
 BOOL GetCommModemStatus(HANDLE handle, LPDWORD modem_status);
 DWORD SetFilePointer(HANDLE handle, LONG distance_to_move, LONG* distance_to_move_high, DWORD move_method);
-DWORD GetFileSize(HANDLE handle, DWORD* file_size_high);
 UINT GetDriveType(LPCSTR root_path_name);
 BOOL GetVolumeInformation(LPCSTR root_path_name, LPSTR volume_name_buffer, DWORD volume_name_size, DWORD* volume_serial_number,
     DWORD* maximum_component_length, DWORD* file_system_flags, LPSTR file_system_name_buffer, DWORD file_system_name_size);
@@ -844,7 +722,6 @@ HANDLE CreateFileMapping(HANDLE file, LPVOID attributes, DWORD protect, DWORD ma
     DWORD maximum_size_low, LPCSTR name);
 LPVOID MapViewOfFile(HANDLE file_mapping_object, DWORD desired_access, DWORD file_offset_high,
     DWORD file_offset_low, size_t number_of_bytes_to_map);
-BOOL UnmapViewOfFile(LPCVOID base_address);
 
 LONG RegOpenKeyEx(HKEY key, LPCSTR sub_key, DWORD options, DWORD sam_desired, HKEY* result);
 LONG RegQueryInfoKey(HKEY key, LPSTR class_name, LPDWORD class_size, LPDWORD reserved, LPDWORD sub_keys,
@@ -852,23 +729,8 @@ LONG RegQueryInfoKey(HKEY key, LPSTR class_name, LPDWORD class_size, LPDWORD res
     LPDWORD max_value_len, LPDWORD security_descriptor, FILETIME* last_write_time);
 LONG RegEnumKeyEx(HKEY key, DWORD index, LPSTR name, DWORD* name_size, DWORD* reserved,
     LPSTR class_name, DWORD* class_size, FILETIME* last_write_time);
-LONG RegQueryValue(HKEY key, LPCSTR sub_key, LPSTR data, LPLONG data_size);
 LONG RegQueryValueEx(HKEY key, LPCSTR value_name, DWORD* reserved, DWORD* type, LPBYTE data, DWORD* data_size);
 LONG RegCloseKey(HKEY key);
-
-HDC BeginPaint(HWND window, PAINTSTRUCT* paint);
-BOOL EndPaint(HWND window, const PAINTSTRUCT* paint);
-HDC GetDC(HWND window);
-INT ReleaseDC(HWND window, HDC dc);
-HPALETTE CreatePalette(const LOGPALETTE* palette);
-HPALETTE SelectPalette(HDC dc, HPALETTE palette, BOOL force_background);
-UINT RealizePalette(HDC dc);
-BOOL DeleteObject(HGDIOBJ object);
-int StretchDIBits(HDC dc, int x_dest, int y_dest, int dest_width, int dest_height,
-    int x_src, int y_src, int src_width, int src_height, const VOID* bits, const BITMAPINFO* bits_info,
-    UINT usage, DWORD rop);
-int SetDIBitsToDevice(HDC dc, int x_dest, int y_dest, DWORD width, DWORD height,
-    int x_src, int y_src, UINT start_scan, UINT scan_lines, const VOID* bits, const BITMAPINFO* bits_info, UINT usage);
 
 }
 

@@ -1185,7 +1185,7 @@ void Destroy_Connection(int id, int error)
 	// Remove this player from the Players vector
 	//------------------------------------------------------------------------
 	for (i = 0; i < Session.Players.Count(); i++) {
-		if (!stricmp(Session.Players[i]->Name,housep->IniName)) {
+		if (!SDL_strcasecmp(Session.Players[i]->Name,housep->IniName)) {
 			delete Session.Players[i];
 			Session.Players.Delete(Session.Players[i]);
 			break;
@@ -2292,7 +2292,7 @@ static int Net_Join_Dialog(void)
 				//...............................................................
 				found = 0;
 				for (i = 1; i < Session.Games.Count(); i++) {
-					if (!stricmp(Session.Games[i]->Name, namebuf)) {
+					if (!SDL_strcasecmp(Session.Games[i]->Name, namebuf)) {
 						found = 1;
 						Session.Messages.Add_Message(NULL, 0, (char *)Text_String(TXT_GAMENAME_MUSTBE_UNIQUE), PCOLOR_BROWN, TPF_TEXT, 1200);
 						Sound_Effect(VOC_SYS_ERROR);
@@ -2841,7 +2841,7 @@ static int Net_Join_Dialog(void)
 					playerlist.Flag_To_Redraw();
 				}
 				for (i = 0; i < Session.Chat.Count(); i++) {
-					if (stricmp(Session.Chat[i]->Name,playerlist.Get_Item(i)) ||
+					if (SDL_strcasecmp(Session.Chat[i]->Name,playerlist.Get_Item(i)) ||
 						&ColorRemaps[ (Session.Chat[i]->Chat.Color == PCOLOR_DIALOG_BLUE) ?
 											PCOLOR_REALLY_BLUE : Session.Chat[i]->Chat.Color] !=
 						playerlist.Colors[i]) {
@@ -5519,7 +5519,7 @@ unsigned long Compute_Name_CRC(char *name)
 	int i;
 
 	strcpy (buf, name);
-	strupr (buf);
+	SDL_strupr(buf);
 
 	for (i = 0; i < strlen(buf); i++) {
 		Add_CRC (&crc, (unsigned long)buf[i]);

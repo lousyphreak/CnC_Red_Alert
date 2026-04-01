@@ -675,7 +675,7 @@ OverlayType OverlayTypeClass::From_Name(char const * name)
 	if (name != NULL) {
 		for (int value = OVERLAY_FIRST; value < OVERLAY_COUNT; ++value) {
 			OverlayType index = (OverlayType)value;
-			if (stricmp(As_Reference(index).IniName, name) == 0) {
+			if (SDL_strcasecmp(As_Reference(index).IniName, name) == 0) {
 				return(index);
 			}
 		}

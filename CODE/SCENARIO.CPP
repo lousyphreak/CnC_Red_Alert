@@ -1971,7 +1971,7 @@ bool Read_Scenario_INI(char * fname, bool )
 	** have already verified its existance. ST 3/1/97 4:52PM.
 	*/
 #ifdef FIXIT_VERSION_3		//	Avoid CD check if official scenario was downloaded.
-	if( ( Session.Type == GAME_NORMAL || Session.ScenarioIsOfficial ) && _stricmp( Scen.ScenarioName, "download.tmp" ) ){
+	if( ( Session.Type == GAME_NORMAL || Session.ScenarioIsOfficial ) && SDL_strcasecmp( Scen.ScenarioName, "download.tmp" ) ){
 #else
 	if (Session.Type == GAME_NORMAL || Session.ScenarioIsOfficial){
 #endif

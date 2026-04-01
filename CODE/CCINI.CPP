@@ -734,7 +734,7 @@ WarheadType CCINIClass::Get_WarheadType(char const * section, char const * entry
 	if (Get_String(section, entry, "", buffer, sizeof(buffer))) {
 		for (int index = WARHEAD_FIRST; index < WARHEAD_COUNT; ++index) {
 			WarheadType wh = (WarheadType)index;
-			if (stricmp(WarheadTypeClass::As_Pointer(wh)->Name(), buffer) == 0) {
+			if (SDL_strcasecmp(WarheadTypeClass::As_Pointer(wh)->Name(), buffer) == 0) {
 				return(wh);
 			}
 		}
@@ -852,8 +852,8 @@ BulletType CCINIClass::Get_BulletType(char const * section, char const * entry, 
 	if (Get_String(section, entry, "", buffer, sizeof(buffer))) {
 		for (int index = BULLET_FIRST; index < BULLET_COUNT; ++index) {
 			BulletType proj = (BulletType)index;
-			if (stricmp(BulletTypeClass::As_Reference(proj).Name(), buffer) == 0) {
-//			if (stricmp(ProjectileNames[proj], buffer) == 0) {
+			if (SDL_strcasecmp(BulletTypeClass::As_Reference(proj).Name(), buffer) == 0) {
+//			if (SDL_strcasecmp(ProjectileNames[proj], buffer) == 0) {
 				return(proj);
 			}
 		}
@@ -970,7 +970,7 @@ VQType CCINIClass::Get_VQType(char const * section, char const * entry, VQType d
 
 	if (Get_String(section, entry, "", buffer, sizeof(buffer))) {
 		for (VQType vq = VQ_FIRST; vq < VQ_COUNT; vq++) {
-			if (stricmp(buffer, VQName[vq]) == 0) {
+			if (SDL_strcasecmp(buffer, VQName[vq]) == 0) {
 				return(vq);
 			}
 		}

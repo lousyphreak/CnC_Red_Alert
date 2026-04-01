@@ -46,12 +46,12 @@
 *
 ****************************************************************************/
 
+#include <SDL3/SDL_stdinc.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #if !defined(_MSC_VER)
 #include <strings.h>
-#define stricmp strcasecmp
 #endif
 #include <VQM32/PROFILE.H>
 #include "VQAPLAYP.H"
@@ -300,7 +300,7 @@ void VQA_INIConfig(VQAConfig *config)
 	i = 0;
 
 	while (VideoModeTags[i].token != NULL) {
-		if (stricmp(buf, VideoModeTags[i].token) == 0) {
+		if (SDL_strcasecmp(buf, VideoModeTags[i].token) == 0) {
 			break;
 		}
 		i++;
@@ -397,7 +397,7 @@ void VQA_INIConfig(VQAConfig *config)
 
 	GetINIString("Player", "DrawRate", "Variable", buf, 80, ininame);
 
-	if (!stricmp(buf, "Variable")) {
+	if (!SDL_strcasecmp(buf, "Variable")) {
 		config->DrawRate = -1;
 	} else {
 		config->DrawRate = 0;
@@ -412,7 +412,7 @@ void VQA_INIConfig(VQAConfig *config)
 	/* OptionFlags */
 	GetINIString("Player", "SoundEnabled", "True", buf, 80, ininame);
 
-	if (!stricmp(buf, "True") || !stricmp(buf, "1")) {
+	if (!SDL_strcasecmp(buf, "True") || !SDL_strcasecmp(buf, "1")) {
 		config->OptionFlags |= VQAOPTF_AUDIO;
 	} else {
 		config->OptionFlags &= (~VQAOPTF_AUDIO);
@@ -431,7 +431,7 @@ void VQA_INIConfig(VQAConfig *config)
 	/* Configure sound hardware */
 	GetINIString("Player", "Port", "-1", buf, 80, ininame);
 
-	if (!stricmp(buf, "-1")) {
+	if (!SDL_strcasecmp(buf, "-1")) {
 		config->DigiPort = -1;
 	} else {
 		sscanf(buf, "%x", &config->DigiPort);
@@ -449,7 +449,7 @@ void VQA_INIConfig(VQAConfig *config)
 	/* Enable/Disable single stepping */ 
 	GetINIString("Player", "SingleStep", "False", buf, 80, ininame);
 
-	if (!stricmp(buf, "True") || !stricmp(buf, "1")) {
+	if (!SDL_strcasecmp(buf, "True") || !SDL_strcasecmp(buf, "1")) {
 		config->OptionFlags |= VQAOPTF_STEP;
 		config->DrawFlags |= VQACFGF_NOSKIP;
 	} else {
@@ -459,7 +459,7 @@ void VQA_INIConfig(VQAConfig *config)
 	/* Enable/Disable Slowpalette */
 	GetINIString("Player", "SlowPalette", "False", buf, 80, ininame);
 
-	if (!stricmp(buf, "True") || !stricmp(buf, "1")) {
+	if (!SDL_strcasecmp(buf, "True") || !SDL_strcasecmp(buf, "1")) {
 		config->OptionFlags |= VQAOPTF_SLOWPAL;
 	} else {
 		config->OptionFlags &= (~VQAOPTF_SLOWPAL);
@@ -468,7 +468,7 @@ void VQA_INIConfig(VQAConfig *config)
 	/* Enable/Disable monochrome display */
 	GetINIString("Player", "MonoOutput", "False", buf, 80, ininame);
 
-	if (!stricmp(buf, "True") || !stricmp(buf, "1")) {
+	if (!SDL_strcasecmp(buf, "True") || !SDL_strcasecmp(buf, "1")) {
 		config->OptionFlags |= VQAOPTF_MONO;
 	} else {
 		config->OptionFlags &= (~VQAOPTF_MONO);
@@ -505,4 +505,3 @@ void VQA_DefaultConfig(VQAConfig *config)
 {
 	memcpy(config, &_defaultconfig, sizeof(VQAConfig));
 }
-

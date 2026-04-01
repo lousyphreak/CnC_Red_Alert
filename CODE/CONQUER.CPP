@@ -1974,7 +1974,7 @@ SourceType Source_From_Name(char const * name)
 {
 	if (name) {
 		for (SourceType source = SOURCE_FIRST; source < SOURCE_COUNT; source++) {
-			if (stricmp(SourceName[source], name) == 0) {
+			if (SDL_strcasecmp(SourceName[source], name) == 0) {
 				return(source);
 			}
 		}
@@ -2028,7 +2028,7 @@ TheaterType Theater_From_Name(char const * name)
 
 	if (name) {
 		for (index = THEATER_FIRST; index < THEATER_COUNT; index++) {
-			if (stricmp(name, Theaters[index].Name) == 0) {
+			if (SDL_strcasecmp(name, Theaters[index].Name) == 0) {
 				return(index);
 			}
 		}
@@ -4025,7 +4025,7 @@ int Get_CD_Index (int cd_drive, int timeout)
 				*/
 				for (int i = 0 ; i < _Num_Volumes; i++)
 					{
-					if (!stricmp(_CD_Volume_Label[i], volume_name))
+					if (!SDL_strcasecmp(_CD_Volume_Label[i], volume_name))
 						return(i);
 					}
 				}
@@ -5045,7 +5045,7 @@ CrateType Crate_From_Name(char const * name)
 	if (name != NULL) {
 		for (int index = CRATE_FIRST; index < CRATE_COUNT; ++index) {
 			CrateType crate = (CrateType)index;
-			if (stricmp(name, CrateNames[crate]) == 0) return(crate);
+			if (SDL_strcasecmp(name, CrateNames[crate]) == 0) return(crate);
 		}
 	}
 	return(CRATE_MONEY);
@@ -5072,10 +5072,10 @@ CrateType Crate_From_Name(char const * name)
 int Owner_From_Name(char const * text)
 {
 	int ownable = 0;
-	if (stricmp(text, "soviet") == 0) {
+	if (SDL_strcasecmp(text, "soviet") == 0) {
 		ownable |= HOUSEF_SOVIET;
 	} else {
-		if (stricmp(text, "allies") == 0 || stricmp(text, "allied") == 0) {
+		if (SDL_strcasecmp(text, "allies") == 0 || SDL_strcasecmp(text, "allied") == 0) {
 			ownable |= HOUSEF_ALLIES;
 		} else {
 			HousesType h = HouseTypeClass::From_Name(text);

@@ -259,7 +259,7 @@ WeaponType Weapon_From_Name(char const * name)
 	if (!name) return(WEAPON_NONE);
 
 	for (int index = 0; index < Weapons.Count(); index++) {
-		if (stricmp(Weapons.Ptr(index)->Name(), name) == 0) {
+		if (SDL_strcasecmp(Weapons.Ptr(index)->Name(), name) == 0) {
 			return(WeaponType(Weapons.Ptr(index)->ID));
 		}
 	}
@@ -290,7 +290,7 @@ ArmorType Armor_From_Name(char const * name)
 
 	for (int value = ARMOR_FIRST; value < ARMOR_COUNT; ++value) {
 		ArmorType index = (ArmorType)value;
-		if (stricmp(ArmorName[index], name) == 0) {
+		if (SDL_strcasecmp(ArmorName[index], name) == 0) {
 			return(index);
 		}
 	}

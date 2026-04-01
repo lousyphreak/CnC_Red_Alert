@@ -1216,7 +1216,7 @@ InfantryType InfantryTypeClass::From_Name(char const * name)
 	if (name != NULL) {
 		for (int value = INFANTRY_FIRST; value < INFANTRY_COUNT; ++value) {
 			InfantryType classid = (InfantryType)value;
-			if (stricmp(As_Reference(classid).IniName, name) == 0) {
+			if (SDL_strcasecmp(As_Reference(classid).IniName, name) == 0) {
 				return(classid);
 			}
 		}

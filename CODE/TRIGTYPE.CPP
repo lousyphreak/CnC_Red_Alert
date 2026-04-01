@@ -2115,7 +2115,7 @@ TriggerTypeClass * TriggerTypeClass::From_Name(char const * name)
 {
 	if (name != NULL) {
 		for (int index = 0; index < TriggerTypes.Count(); index++) {
-			if (stricmp(TriggerTypes.Ptr(index)->Name(), name) == 0) {
+			if (SDL_strcasecmp(TriggerTypes.Ptr(index)->Name(), name) == 0) {
 				return(TriggerTypes.Ptr(index));
 			}
 		}

@@ -71,7 +71,7 @@ CCPtr<T>::CCPtr(T * ptr) : ID(-1)
 template<class T>
 bool CCPtr<T>::operator > (CCPtr<T> const & rvalue) const
 {
-	return (stricmp((*this)->Name(), rvalue->Name()) > 0);
+	return (SDL_strcasecmp((*this)->Name(), rvalue->Name()) > 0);
 }
 
 template class CCPtr<AircraftClass>;

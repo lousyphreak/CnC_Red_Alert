@@ -650,7 +650,7 @@ void LoadOptionsClass::Fill_List(ListClass * list)
 
 	for (int si = 0; si < save_count; si++) {
 
-		if (stricmp(save_files[si], NET_SAVE_FILE_NAME) != 0) {
+		if (SDL_strcasecmp(save_files[si], NET_SAVE_FILE_NAME) != 0) {
 
 			/*
 			** Extract the game ID from the filename

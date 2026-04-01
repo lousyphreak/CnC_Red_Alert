@@ -39,6 +39,7 @@
 #ifndef TEVENT_H
 #define TEVENT_H
 
+#include <SDL3/SDL_stdinc.h>
 #include <cstdint>
 
 /*
@@ -174,10 +175,10 @@ class EventChoiceClass {
 		operator TEventType (void) const {return(Event);}
 		bool operator == (EventChoiceClass const & rvalue) const {return(Event == rvalue.Event);}
 		bool operator != (EventChoiceClass const & rvalue) const {return(Event != rvalue.Event);}
-		bool operator > (EventChoiceClass const & rvalue) const {return(stricmp(Description(), rvalue.Description()) > 0);}
-		bool operator < (EventChoiceClass const & rvalue) const {return(stricmp(Description(), rvalue.Description()) < 0);}
-		bool operator <= (EventChoiceClass const & rvalue) const {return(Event == rvalue.Event || stricmp(Description(), rvalue.Description()) < 0);}
-		bool operator >= (EventChoiceClass const & rvalue) const {return(Event == rvalue.Event || stricmp(Description(), rvalue.Description()) > 0);}
+		bool operator > (EventChoiceClass const & rvalue) const {return(SDL_strcasecmp(Description(), rvalue.Description()) > 0);}
+		bool operator < (EventChoiceClass const & rvalue) const {return(SDL_strcasecmp(Description(), rvalue.Description()) < 0);}
+		bool operator <= (EventChoiceClass const & rvalue) const {return(Event == rvalue.Event || SDL_strcasecmp(Description(), rvalue.Description()) < 0);}
+		bool operator >= (EventChoiceClass const & rvalue) const {return(Event == rvalue.Event || SDL_strcasecmp(Description(), rvalue.Description()) > 0);}
 		char const * Description(void) const {return(Name_From_Event(Event));}
 		void Draw_It(int index, int x, int y, int width, int height, bool selected, TextPrintType flags) const;
 

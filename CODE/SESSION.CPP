@@ -343,7 +343,7 @@ int SessionClass::Create_Connections(void)
 		//.....................................................................
 		// Make sure the name matches before creating the connection
 		//.....................................................................
-		if (!stricmp (Players[i]->Name,
+		if (!SDL_strcasecmp(Players[i]->Name,
 			HouseClass::As_Pointer(Players[i]->Player.ID)->IniName)) {
 			Ipx.Create_Connection((int)Players[i]->Player.ID, Players[i]->Name,
 				&(Players[i]->Address) );
@@ -396,7 +396,7 @@ int SessionClass::Create_TEN_Connections(void)
 		//.....................................................................
 		// Make sure the name matches before creating the connection
 		//.....................................................................
-		if (!stricmp (Players[i]->Name,
+		if (!SDL_strcasecmp(Players[i]->Name,
 			HouseClass::As_Pointer(Players[i]->Player.ID)->IniName)) {
 			Ten->Create_Connection((int)Players[i]->Player.ID, Players[i]->Name,
 				Players[i]->TenAddress);
@@ -451,7 +451,7 @@ int SessionClass::Create_MPATH_Connections(void)
 		//.....................................................................
 		// Make sure the name matches before creating the connection
 		//.....................................................................
-		if (!stricmp (Players[i]->Name,
+		if (!SDL_strcasecmp(Players[i]->Name,
 			HouseClass::As_Pointer(Players[i]->Player.ID)->IniName)) {
 			MPath->Create_Connection((int)Players[i]->Player.ID, Players[i]->Name,
 				Players[i]->MPathAddress);
@@ -778,7 +778,7 @@ void SessionClass::Read_MultiPlayer_Settings (void)
 
 		// find dial method
 		for (i = 0; i < DIAL_METHODS; i++) {
-			if ( !strcmpi( buf, DialMethodCheck[ i ]) ) {
+			if ( !SDL_strcasecmp( buf, DialMethodCheck[ i ]) ) {
 				SerialDefaults.DialMethod = (DialMethodType)i;
 				break;
 			}
@@ -806,7 +806,7 @@ void SessionClass::Read_MultiPlayer_Settings (void)
 			entry = new char[ INITSTRBUF_MAX ];
 			entry[0] = 0;
 			ini.Get_String("InitStrings", ini.Get_Entry("InitStrings", index), NULL, entry, INITSTRBUF_MAX);
-			strupr( entry );
+			SDL_strupr( entry );
 			InitStrings.Add( entry );
 		}
 
@@ -832,7 +832,7 @@ void SessionClass::Read_MultiPlayer_Settings (void)
 			tokenptr = strtok( buf, "|" );
 			if (tokenptr) {
 				strcpy( phone->Name, tokenptr );
-				strupr( phone->Name );
+				SDL_strupr( phone->Name );
 			} else {
 				phone->Name[0] = 0;
 			}
@@ -840,7 +840,7 @@ void SessionClass::Read_MultiPlayer_Settings (void)
 			tokenptr = strtok( NULL, "|" );
 			if (tokenptr) {
 				strcpy( phone->Number, tokenptr );
-				strupr( phone->Number );
+				SDL_strupr( phone->Number );
 			} else {
 				phone->Number[0] = 0;
 			}
@@ -881,7 +881,7 @@ void SessionClass::Read_MultiPlayer_Settings (void)
 				// find dial method
 
 				for (i = 0; i < DIAL_METHODS; i++) {
-					if ( !strcmpi( buf, DialMethodCheck[ i ]) ) {
+					if ( !SDL_strcasecmp( buf, DialMethodCheck[ i ]) ) {
 						/*
 						** This must be an old phonebook entry
 						*/
@@ -918,7 +918,7 @@ void SessionClass::Read_MultiPlayer_Settings (void)
 
 				//	find dial method
 				for (i = 0; i < DIAL_METHODS; i++) {
-					if ( !strcmpi( buf, DialMethodCheck[ i ]) ) {
+					if ( !SDL_strcasecmp( buf, DialMethodCheck[ i ]) ) {
 						phone->Settings.DialMethod = (DialMethodType)i;
 						break;
 					}
@@ -962,17 +962,17 @@ void SessionClass::Read_MultiPlayer_Settings (void)
 
 		ini.Get_String("SyncBug", "Type", "NONE", buf, 80);
 
-		if (!stricmp(buf,"AIRCRAFT"))
+		if (!SDL_strcasecmp(buf,"AIRCRAFT"))
 			TrapObjType = RTTI_AIRCRAFT;
-		else if (!stricmp(buf,"ANIM"))
+		else if (!SDL_strcasecmp(buf,"ANIM"))
 			TrapObjType = RTTI_ANIM;
-		else if (!stricmp(buf,"BUILDING"))
+		else if (!SDL_strcasecmp(buf,"BUILDING"))
 			TrapObjType = RTTI_BUILDING;
-		else if (!stricmp(buf,"BULLET"))
+		else if (!SDL_strcasecmp(buf,"BULLET"))
 			TrapObjType = RTTI_BULLET;
-		else if (!stricmp(buf,"INFANTRY"))
+		else if (!SDL_strcasecmp(buf,"INFANTRY"))
 			TrapObjType = RTTI_INFANTRY;
-		else if (!stricmp(buf,"UNIT"))
+		else if (!SDL_strcasecmp(buf,"UNIT"))
 			TrapObjType = RTTI_UNIT;
 		else {
 			TrapObjType = RTTI_NONE;
@@ -1205,7 +1205,7 @@ bool Is_Mission_Aftermath (char *file_name)
 	//	Must start with "scm".
 	char szCopy[ _MAX_PATH + 1 ];
 	strcpy( szCopy, file_name );
-	_strlwr( szCopy );
+	SDL_strlwr( szCopy );
 	if( strstr( szCopy, "scm" ) != szCopy )
 		return false;
 

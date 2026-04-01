@@ -962,7 +962,7 @@ void ListClass::Set_Selected_Index(char const * text)
 {
 	if (text && List.Count() > 0) {
 		for (int index = 0; index < List.Count(); index++) {
-			if (stricmp(List[index], text) == 0) {
+			if (SDL_strcasecmp(List[index], text) == 0) {
 				Set_Selected_Index(index);
 				break;
 			}

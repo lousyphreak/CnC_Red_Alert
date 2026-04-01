@@ -1463,7 +1463,7 @@ static int Reconcile_Players(void)
 				continue;
 			}
 
-			if (!stricmp(Session.Players[i]->Name, housep->IniName)) {
+			if (!SDL_strcasecmp(Session.Players[i]->Name, housep->IniName)) {
 				found = 1;
 				break;
 			}
@@ -1496,7 +1496,7 @@ static int Reconcile_Players(void)
 		//
 		found = 0;
 		for (i = 0; i < Session.Players.Count(); i++) {
-			if (!stricmp(Session.Players[i]->Name, housep->IniName)) {
+			if (!SDL_strcasecmp(Session.Players[i]->Name, housep->IniName)) {
 				found = 1;
 				Session.Players[i]->Player.ID = house;
 				break;

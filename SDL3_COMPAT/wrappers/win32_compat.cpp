@@ -6,9 +6,7 @@
 
 #include <algorithm>
 #include <array>
-#include <cctype>
 #include <cstdint>
-#include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -17,10 +15,7 @@
 #include <cmath>
 #include <condition_variable>
 #include <ctime>
-#include <memory>
 #include <mutex>
-#include <string_view>
-#include <thread>
 #include <unordered_map>
 #include <unordered_set>
 #include <utility>
@@ -32,10 +27,7 @@ namespace {
 enum class HandleKind {
     None,
     File,
-    Process,
-    Thread,
     Event,
-    Mutex,
     Mapping,
     Global,
 };
@@ -53,33 +45,12 @@ struct FileHandle final : HandleBase {
     std::string path;
 };
 
-struct ProcessHandle final : HandleBase {
-    explicit ProcessHandle(SDL_Process* process) : HandleBase(HandleKind::Process), process(process) {}
-    SDL_Process* process;
-    bool exited = false;
-    DWORD exit_code = STILL_ACTIVE;
-};
-
-struct ThreadHandle final : HandleBase {
-    ThreadHandle() : HandleBase(HandleKind::Thread) {}
-    std::thread worker;
-    std::mutex mutex;
-    std::condition_variable condition;
-    bool finished = false;
-    DWORD thread_id = 0;
-};
-
 struct EventHandle final : HandleBase {
     EventHandle(bool manual_reset, bool initial_state) : HandleBase(HandleKind::Event), manual(manual_reset), signaled(initial_state) {}
     std::mutex mutex;
     std::condition_variable condition;
     bool manual;
     bool signaled;
-};
-
-struct MutexHandle final : HandleBase {
-    MutexHandle() : HandleBase(HandleKind::Mutex) {}
-    std::timed_mutex mutex;
 };
 
 struct MappingHandle final : HandleBase {
@@ -103,39 +74,15 @@ std::deque<MSG> g_message_queue;
 std::mutex g_registered_message_mutex;
 std::unordered_map<std::string, UINT> g_registered_messages;
 std::atomic<UINT> g_next_registered_message{0xC000};
-std::mutex g_registry_mutex;
-std::unordered_map<std::string, std::unordered_map<std::string, std::string>> g_registry_values;
 std::mutex g_named_event_mutex;
 std::unordered_map<std::string, EventHandle*> g_named_events;
-std::atomic<DWORD> g_next_thread_id{1};
 std::chrono::steady_clock::time_point g_start_time = std::chrono::steady_clock::now();
 std::atomic<UINT> g_error_mode{0};
-
-bool compat_trace_enabled()
-{
-    static const bool enabled = std::getenv("RA_TRACE_STARTUP") != nullptr;
-    return enabled;
-}
 
 bool compat_uses_wayland_video_driver()
 {
     const char* video_driver = SDL_GetCurrentVideoDriver();
     return video_driver != nullptr && SDL_strcasecmp(video_driver, "wayland") == 0;
-}
-
-void compat_trace(const char* format, ...)
-{
-    if (!compat_trace_enabled()) {
-        return;
-    }
-
-    va_list arguments;
-    va_start(arguments, format);
-    std::fputs("[win32_compat] ", stderr);
-    std::vfprintf(stderr, format, arguments);
-    std::fputc('\n', stderr);
-    std::fflush(stderr);
-    va_end(arguments);
 }
 
 } // end anonymous namespace
@@ -214,37 +161,6 @@ void fill_current_system_time(SYSTEMTIME* system_time, bool local_time)
 #endif
 
     populate_system_time(system_time, time_info, milliseconds);
-}
-
-std::vector<std::string> split_command_line(const char* command_line)
-{
-    std::vector<std::string> arguments;
-    if (!command_line) {
-        return arguments;
-    }
-
-    std::string current;
-    bool in_quotes = false;
-    for (const char* cursor = command_line; *cursor; ++cursor) {
-        const char ch = *cursor;
-        if (ch == '"') {
-            in_quotes = !in_quotes;
-            continue;
-        }
-        if (!in_quotes && std::isspace(static_cast<unsigned char>(ch))) {
-            if (!current.empty()) {
-                arguments.push_back(current);
-                current.clear();
-            }
-            continue;
-        }
-        current += ch;
-    }
-
-    if (!current.empty()) {
-        arguments.push_back(current);
-    }
-    return arguments;
 }
 
 std::string create_file_mode(DWORD desired_access, DWORD creation_disposition)
@@ -386,12 +302,6 @@ ATOM RegisterClass(const WNDCLASS* wndclass)
     return 1;
 }
 
-BOOL UnregisterClass(LPCSTR class_name, HINSTANCE)
-{
-    std::scoped_lock lock(g_window_class_mutex);
-    return g_window_classes.erase(class_name ? class_name : "") ? TRUE : FALSE;
-}
-
 HWND CreateWindowEx(DWORD, LPCSTR class_name, LPCSTR window_name, DWORD, INT, INT, INT width, INT height, HWND, HANDLE, HINSTANCE, LPVOID)
 {
     WNDCLASS klass{};
@@ -433,26 +343,6 @@ HWND FindWindow(LPCSTR class_name, LPCSTR window_name)
         return window;
     }
     return nullptr;
-}
-
-BOOL IsWindow(HWND window)
-{
-    std::scoped_lock lock(g_window_mutex);
-    return g_windows.find(window) != g_windows.end() ? TRUE : FALSE;
-}
-
-BOOL DestroyWindow(HWND window)
-{
-    if (!window) return FALSE;
-    {
-        std::scoped_lock lock(g_window_mutex);
-        g_windows.erase(window);
-    }
-    if (window->sdl_window) {
-        SDL_DestroyWindow(window->sdl_window);
-    }
-    delete window;
-    return TRUE;
 }
 
 BOOL ShowWindow(HWND window, INT command)
@@ -612,11 +502,6 @@ HGDIOBJ LoadIcon(HINSTANCE, LPCSTR)
     return nullptr;
 }
 
-HGDIOBJ LoadCursor(HINSTANCE, LPCSTR)
-{
-    return nullptr;
-}
-
 INT_PTR DialogBox(HINSTANCE, LPCTSTR, HWND, DLGPROC)
 {
     return 0;
@@ -682,11 +567,6 @@ DWORD GetLastError(void)
 DWORD GetVersion(void)
 {
     return 0;
-}
-
-void SetLastError(DWORD error_code)
-{
-    set_last_error(error_code);
 }
 
 UINT SetErrorMode(UINT mode)
@@ -865,16 +745,6 @@ int ShowCursor(BOOL show)
     return was_visible ? 1 : 0;
 }
 
-MMRESULT timeBeginPeriod(UINT)
-{
-    return 0;
-}
-
-MMRESULT timeEndPeriod(UINT)
-{
-    return 0;
-}
-
 BOOL ClipCursor(const RECT* rect)
 {
     HWND window = first_window();
@@ -955,101 +825,11 @@ BOOL GetCursorPos(POINT* point)
     return SDL_GameInput_GetCursorPos(point);
 }
 
-DWORD GetCurrentThreadId(void)
-{
-    return g_next_thread_id.load();
-}
-
-HANDLE GetCurrentThread(void)
-{
-    return nullptr;
-}
-
-HANDLE GetCurrentProcess(void)
-{
-    return nullptr;
-}
-
-BOOL DuplicateHandle(HANDLE, HANDLE source_handle, HANDLE, HANDLE* target_handle, DWORD, BOOL, DWORD)
-{
-    if (!target_handle) return FALSE;
-    *target_handle = source_handle;
-    return TRUE;
-}
-
-BOOL SetThreadPriority(HANDLE, int)
-{
-    return TRUE;
-}
-
-HANDLE CreateThread(LPVOID, size_t, DWORD (WINAPI *start_address)(LPVOID), LPVOID parameter, DWORD, DWORD* thread_id)
-{
-    auto* handle = new ThreadHandle();
-    handle->thread_id = g_next_thread_id.fetch_add(1);
-    if (thread_id) {
-        *thread_id = handle->thread_id;
-    }
-    handle->worker = std::thread([handle, start_address, parameter]() {
-        if (start_address) {
-            start_address(parameter);
-        }
-        {
-            std::scoped_lock lock(handle->mutex);
-            handle->finished = true;
-        }
-        handle->condition.notify_all();
-    });
-    return handle;
-}
-
 DWORD WaitForSingleObject(HANDLE handle, DWORD milliseconds)
 {
     if (!handle) return WAIT_FAILED;
     auto* base = static_cast<HandleBase*>(handle);
     switch (base->kind) {
-        case HandleKind::Process: {
-            auto* process = static_cast<ProcessHandle*>(base);
-            if (process->exited) {
-                return WAIT_OBJECT_0;
-            }
-
-            int exit_code = 0;
-            if (milliseconds == INFINITE) {
-                if (!SDL_WaitProcess(process->process, true, &exit_code)) {
-                    return WAIT_FAILED;
-                }
-                process->exited = true;
-                process->exit_code = static_cast<DWORD>(exit_code);
-                return WAIT_OBJECT_0;
-            }
-
-            const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(milliseconds);
-            do {
-                if (SDL_WaitProcess(process->process, false, &exit_code)) {
-                    process->exited = true;
-                    process->exit_code = static_cast<DWORD>(exit_code);
-                    return WAIT_OBJECT_0;
-                }
-                SDL_Delay(1);
-            } while (std::chrono::steady_clock::now() < deadline);
-            return WAIT_TIMEOUT;
-        }
-        case HandleKind::Thread: {
-            auto* thread = static_cast<ThreadHandle*>(base);
-            std::unique_lock lock(thread->mutex);
-            if (!thread->finished) {
-                if (milliseconds == INFINITE) {
-                    thread->condition.wait(lock, [thread]() { return thread->finished; });
-                } else if (!thread->condition.wait_for(lock, std::chrono::milliseconds(milliseconds), [thread]() { return thread->finished; })) {
-                    return WAIT_TIMEOUT;
-                }
-            }
-            lock.unlock();
-            if (thread->worker.joinable()) {
-                thread->worker.join();
-            }
-            return WAIT_OBJECT_0;
-        }
         case HandleKind::Event: {
             auto* event = static_cast<EventHandle*>(base);
             std::unique_lock lock(event->mutex);
@@ -1065,53 +845,9 @@ DWORD WaitForSingleObject(HANDLE handle, DWORD milliseconds)
             }
             return WAIT_OBJECT_0;
         }
-        case HandleKind::Mutex: {
-            auto* mutex = static_cast<MutexHandle*>(base);
-            if (milliseconds == INFINITE) {
-                mutex->mutex.lock();
-                return WAIT_OBJECT_0;
-            }
-            return mutex->mutex.try_lock_for(std::chrono::milliseconds(milliseconds)) ? WAIT_OBJECT_0 : WAIT_TIMEOUT;
-        }
         default:
             return WAIT_FAILED;
     }
-}
-
-DWORD WaitForInputIdle(HANDLE handle, DWORD milliseconds)
-{
-    if (!handle) {
-        return WAIT_FAILED;
-    }
-
-    if (milliseconds != INFINITE) {
-        SDL_Delay(milliseconds > 10 ? 10 : milliseconds);
-    }
-    return WAIT_OBJECT_0;
-}
-
-BOOL GetExitCodeProcess(HANDLE handle, LPDWORD exit_code)
-{
-    if (!handle || !exit_code) {
-        return FALSE;
-    }
-
-    auto* base = static_cast<HandleBase*>(handle);
-    if (base->kind != HandleKind::Process) {
-        return FALSE;
-    }
-
-    auto* process = static_cast<ProcessHandle*>(base);
-    if (!process->exited) {
-        int current_exit_code = 0;
-        if (SDL_WaitProcess(process->process, false, &current_exit_code)) {
-            process->exited = true;
-            process->exit_code = static_cast<DWORD>(current_exit_code);
-        }
-    }
-
-    *exit_code = process->exited ? process->exit_code : STILL_ACTIVE;
-    return TRUE;
 }
 
 BOOL CloseHandle(HANDLE handle)
@@ -1123,36 +859,8 @@ BOOL CloseHandle(HANDLE handle)
         if (file->io) {
             SDL_CloseIO(file->io);
         }
-    } else if (base->kind == HandleKind::Process) {
-        auto* process = static_cast<ProcessHandle*>(base);
-        if (process->process) {
-            SDL_DestroyProcess(process->process);
-        }
-    } else if (base->kind == HandleKind::Thread) {
-        auto* thread = static_cast<ThreadHandle*>(base);
-        if (thread->worker.joinable()) {
-            thread->worker.join();
-        }
     }
     delete base;
-    return TRUE;
-}
-
-HANDLE CreateMutex(LPVOID, BOOL initial_owner, LPCSTR)
-{
-    auto* handle = new MutexHandle();
-    if (initial_owner) {
-        handle->mutex.lock();
-    }
-    return handle;
-}
-
-BOOL ReleaseMutex(HANDLE handle)
-{
-    if (!handle) return FALSE;
-    auto* base = static_cast<HandleBase*>(handle);
-    if (base->kind != HandleKind::Mutex) return FALSE;
-    static_cast<MutexHandle*>(base)->mutex.unlock();
     return TRUE;
 }
 
@@ -1341,16 +1049,6 @@ DWORD SetFilePointer(HANDLE handle, LONG distance_to_move, LONG*, DWORD move_met
     return result < 0 ? 0xffffffffu : static_cast<DWORD>(result);
 }
 
-DWORD GetFileSize(HANDLE handle, DWORD*)
-{
-    if (!handle || handle == INVALID_HANDLE_VALUE) return 0xffffffffu;
-    auto* file = static_cast<FileHandle*>(handle);
-    Sint64 current = SDL_TellIO(file->io);
-    Sint64 end = SDL_SeekIO(file->io, 0, SDL_IO_SEEK_END);
-    SDL_SeekIO(file->io, current, SDL_IO_SEEK_SET);
-    return end < 0 ? 0xffffffffu : static_cast<DWORD>(end);
-}
-
 UINT GetDriveType(LPCSTR root_path_name)
 {
     if (!root_path_name || !*root_path_name) {
@@ -1507,11 +1205,6 @@ LPVOID MapViewOfFile(HANDLE file_mapping_object, DWORD, DWORD, DWORD file_offset
     return mapping->bytes.data() + file_offset_low;
 }
 
-BOOL UnmapViewOfFile(LPCVOID)
-{
-    return TRUE;
-}
-
 LONG RegOpenKeyEx(HKEY, LPCSTR sub_key, DWORD, DWORD, HKEY* result)
 {
     if (!result) return ERROR_INVALID_HANDLE;
@@ -1537,18 +1230,6 @@ LONG RegQueryInfoKey(HKEY, LPSTR, LPDWORD, LPDWORD, LPDWORD sub_keys,
 LONG RegEnumKeyEx(HKEY, DWORD, LPSTR, DWORD*, DWORD*, LPSTR, DWORD*, FILETIME*)
 {
     return ERROR_FILE_NOT_FOUND;
-}
-
-LONG RegQueryValue(HKEY key, LPCSTR sub_key, LPSTR data, LPLONG data_size)
-{
-    if (!data_size) {
-        return ERROR_INVALID_HANDLE;
-    }
-
-    DWORD size = static_cast<DWORD>(*data_size);
-    const LONG result = RegQueryValueEx(key, sub_key, nullptr, nullptr, reinterpret_cast<LPBYTE>(data), &size);
-    *data_size = static_cast<LONG>(size);
-    return result;
 }
 
 LONG RegQueryValueEx(HKEY key, LPCSTR value_name, DWORD*, DWORD* type, LPBYTE data, DWORD* data_size)
@@ -1602,106 +1283,6 @@ LONG RegCloseKey(HKEY key)
 {
     delete static_cast<std::string*>(key);
     return ERROR_SUCCESS;
-}
-
-BOOL CreateProcess(LPCSTR application_name, LPSTR command_line, LPVOID, LPVOID, BOOL, DWORD, LPVOID, LPCSTR,
-    STARTUPINFO*, PROCESS_INFORMATION* process_information)
-{
-    if (process_information) {
-        ZeroMemory(process_information, sizeof(*process_information));
-    }
-
-    std::vector<std::string> owned_arguments;
-    if (application_name && *application_name) {
-        owned_arguments.emplace_back(application_name);
-    }
-
-    if (command_line && *command_line) {
-        std::vector<std::string> parsed_arguments = split_command_line(command_line);
-        if (!parsed_arguments.empty() && !owned_arguments.empty() && parsed_arguments.front() == owned_arguments.front()) {
-            parsed_arguments.erase(parsed_arguments.begin());
-        }
-        owned_arguments.insert(owned_arguments.end(), parsed_arguments.begin(), parsed_arguments.end());
-    }
-
-    if (owned_arguments.empty()) {
-        return FALSE;
-    }
-
-    std::vector<const char*> arguments;
-    arguments.reserve(owned_arguments.size() + 1);
-    for (const std::string& argument : owned_arguments) {
-        arguments.push_back(argument.c_str());
-    }
-    arguments.push_back(nullptr);
-
-    SDL_Process* process = SDL_CreateProcess(arguments.data(), false);
-    if (!process) {
-        return FALSE;
-    }
-
-    auto* process_handle = new ProcessHandle(process);
-    if (process_information) {
-        process_information->hProcess = process_handle;
-        process_information->hThread = nullptr;
-        process_information->dwProcessId = 0;
-        process_information->dwThreadId = 0;
-    }
-    return TRUE;
-}
-
-HDC BeginPaint(HWND, PAINTSTRUCT* paint)
-{
-    if (paint) {
-        ZeroMemory(paint, sizeof(*paint));
-    }
-    return nullptr;
-}
-
-BOOL EndPaint(HWND, const PAINTSTRUCT*)
-{
-    return TRUE;
-}
-
-HDC GetDC(HWND)
-{
-    return nullptr;
-}
-
-INT ReleaseDC(HWND, HDC)
-{
-    return 1;
-}
-
-HPALETTE CreatePalette(const LOGPALETTE* palette)
-{
-    return palette ? new std::vector<std::byte>(sizeof(LOGPALETTE) + (palette->palNumEntries * sizeof(PALETTEENTRY))) : nullptr;
-}
-
-HPALETTE SelectPalette(HDC, HPALETTE palette, BOOL)
-{
-    return palette;
-}
-
-UINT RealizePalette(HDC)
-{
-    return 256;
-}
-
-BOOL DeleteObject(HGDIOBJ object)
-{
-    delete static_cast<std::vector<std::byte>*>(object);
-    return TRUE;
-}
-
-int StretchDIBits(HDC, int, int, int, int, int, int, int, int, const VOID*, const BITMAPINFO*, UINT, DWORD)
-{
-    return 1;
-}
-
-int SetDIBitsToDevice(HDC, int, int, DWORD width, DWORD height, int, int, UINT, UINT, const VOID*, const BITMAPINFO*, UINT)
-{
-    return static_cast<int>(width * height);
 }
 
 } // extern "C"

@@ -267,7 +267,7 @@ VocType Voc_From_Name(char const * name)
 	if (name == NULL) return(VOC_NONE);
 
 	for (VocType voc = VOC_FIRST; voc < VOC_COUNT; voc++) {
-		if (stricmp(name, SoundEffectName[voc].Name) == 0) {
+		if (SDL_strcasecmp(name, SoundEffectName[voc].Name) == 0) {
 			return(voc);
 		}
 	}

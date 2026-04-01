@@ -627,7 +627,7 @@ TEventType Event_From_Name (char const * name)
 {
 	if (name) {
 		for (TEventType i = TEVENT_NONE; i < TEVENT_COUNT; i++) {
-			if (!stricmp(name, EventText[i])) {
+			if (!SDL_strcasecmp(name, EventText[i])) {
 				return(i);
 			}
 		}

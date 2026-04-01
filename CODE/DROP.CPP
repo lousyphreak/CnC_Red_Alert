@@ -200,7 +200,7 @@ void DropListClass::Set_Selected_Index(char const * text)
 {
 	if (text) {
 		for (int index = 0; index < Count(); index++) {
-			if (stricmp(text, List.Get_Item(index)) == 0) {
+			if (SDL_strcasecmp(text, List.Get_Item(index)) == 0) {
 				Set_Selected_Index(index);
 				break;
 			}

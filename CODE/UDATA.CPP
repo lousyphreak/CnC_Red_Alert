@@ -984,7 +984,7 @@ UnitType UnitTypeClass::From_Name(char const * name)
 	if (name != NULL) {
 		for (int index = UNIT_FIRST; index < UNIT_COUNT; ++index) {
 			UnitType classid = (UnitType)index;
-			if (stricmp(As_Reference(classid).IniName, name) == 0) {
+			if (SDL_strcasecmp(As_Reference(classid).IniName, name) == 0) {
 				return(classid);
 			}
 		}

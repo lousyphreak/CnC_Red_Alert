@@ -1495,12 +1495,12 @@ bool Parse_Command_Line(int argc, char * argv[])
 		char * string;		// Pointer to argument.
 		long code = 0;
 
-		string = strupr(argv[index]);
+		string = SDL_strupr(argv[index]);
 
 		/*
 		**	Print usage text only if requested.
 		*/
-		if (stricmp("/?", string) == 0 || stricmp("-?", string) == 0 || stricmp("-h", string) == 0 || stricmp("/h", string) == 0) {
+		if (SDL_strcasecmp("/?", string) == 0 || SDL_strcasecmp("-?", string) == 0 || SDL_strcasecmp("-h", string) == 0 || SDL_strcasecmp("/h", string) == 0) {
 			/*
 			**	Unrecognized command line parameter... Display usage
 			**	and then exit.
@@ -1592,7 +1592,7 @@ bool Parse_Command_Line(int argc, char * argv[])
 		/*
 		**	Scenario Editor Mode
 		*/
-		if (stricmp(string, "-CHECKMAP") == 0) {
+		if (SDL_strcasecmp(string, "-CHECKMAP") == 0) {
 			Debug_Check_Map = true;
 			continue;
 		}
@@ -1810,7 +1810,7 @@ bool Parse_Command_Line(int argc, char * argv[])
 		/*
 		**	Special command line control parsing.
 		*/
-		if (strnicmp(string, "-X", strlen("-O")) == 0) {
+		if (SDL_strncasecmp(string, "-X", strlen("-O")) == 0) {
 			string += strlen("-X");
 			while (*string) {
 				char code = *string++;
@@ -1929,7 +1929,7 @@ long Obfuscate(char const * string)
 	/*
 	**	Only upper case letters are significant.
 	*/
-	strupr(buffer);
+	SDL_strupr(buffer);
 
 	/*
 	**	Ensure that only visible ASCII characters compose the key phrase. This
@@ -1976,7 +1976,7 @@ long Obfuscate(char const * string)
 	**	Reverse the character string and combine with the previous transformation.
 	**	This doubles the workload of trying to reverse engineer the CRC calculation.
 	*/
-	strrev(buffer);
+	SDL_strrev(buffer);
 	code ^= Calculate_CRC(buffer, length);
 
 	/*
@@ -1991,7 +1991,7 @@ long Obfuscate(char const * string)
 	**	process, it gives the sophisticated hacker false hope since the strong
 	**	cypher process occurs later.
 	*/
-	strrev(buffer);		// Restore original string order.
+	SDL_strrev(buffer);		// Restore original string order.
 	for (index = 0; index < length; index++) {
 		code ^= (unsigned char)buffer[index];
 		unsigned char temp = (unsigned char)code;

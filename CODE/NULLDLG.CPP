@@ -807,7 +807,7 @@ void Destroy_Null_Connection(int id, int error)
 	** Remove this player from the Players vector
 	*/
 	for (i = 0; i < Session.Players.Count(); i++) {
-		if (!stricmp(Session.Players[i]->Name,housep->IniName)) {
+		if (!SDL_strcasecmp(Session.Players[i]->Name,housep->IniName)) {
 			delete Session.Players[i];
 			Session.Players.Delete(Session.Players[i]);
 			break;
@@ -1886,7 +1886,7 @@ static int Com_Settings_Dialog( SerialSettingsType *settings )
 	port_index = -1;
 	if (tempsettings.ModemName[0]) {
 		for ( i=0 ; i<port_custom_index ; i++) {
-			if (!stricmp (portlist.Get_Item(i), tempsettings.ModemName)) {
+			if (!SDL_strcasecmp(portlist.Get_Item(i), tempsettings.ModemName)) {
 				port_index = i;
 				strcpy (portbuf, tempsettings.ModemName);
 				break;
@@ -2136,26 +2136,26 @@ static int Com_Settings_Dialog( SerialSettingsType *settings )
 					port_edt.Set_Text( portbuf, PORTBUF_MAX );
 					port_edt.Flag_To_Redraw();
 				} else {
-					strupr( portbuf );
-					if ( stricmp(portbuf, "3F8") == 0 ) {
+					SDL_strupr( portbuf );
+					if ( SDL_strcasecmp(portbuf, "3F8") == 0 ) {
 						port_index = 0;
 						portlist.Set_Selected_Index( port_index );
 						strcpy (portbuf, "COM1");
 						display = REDRAW_BUTTONS;
 
-					} else if ( stricmp(portbuf, "2F8") == 0 ) {
+					} else if ( SDL_strcasecmp(portbuf, "2F8") == 0 ) {
 						port_index = 1;
 						portlist.Set_Selected_Index( port_index );
 						strcpy (portbuf, "COM2");
 						display = REDRAW_BUTTONS;
 
-					} else if ( stricmp(portbuf, "3E8") == 0 ) {
+					} else if ( SDL_strcasecmp(portbuf, "3E8") == 0 ) {
 						port_index = 2;
 						portlist.Set_Selected_Index( port_index );
 						strcpy (portbuf, "COM3");
 						display = REDRAW_BUTTONS;
 
-					} else if ( stricmp(portbuf, "2E8") == 0 ) {
+					} else if ( SDL_strcasecmp(portbuf, "2E8") == 0 ) {
 						port_index = 3;
 						portlist.Set_Selected_Index( port_index );
 						strcpy (portbuf, "COM4");
@@ -2281,7 +2281,7 @@ static int Com_Settings_Dialog( SerialSettingsType *settings )
 
 #if 0
 			case (BUTTON_INITSTR | KN_BUTTON):
-				strupr( initstrbuf );
+				SDL_strupr( initstrbuf );
 				strncpy( Session.InitStrings[ initstr_index ], initstrbuf, INITSTRBUF_MAX );
 				Build_Init_String_Listbox(&initstrlist, &initstr_edt, initstrbuf,
 					&initstr_index);
@@ -2311,7 +2311,7 @@ static int Com_Settings_Dialog( SerialSettingsType *settings )
 				item = new char[ INITSTRBUF_MAX ];
 				memset (item, 0, INITSTRBUF_MAX);
 
-				strupr ( initstrbuf );
+				SDL_strupr( initstrbuf );
 				strncpy ( item, initstrbuf, INITSTRBUF_MAX-1 );
 
 				Session.InitStrings.Add ( item );
@@ -6848,7 +6848,7 @@ static int Edit_Phone_Dialog (PhoneEntryClass *phone)
 	If 'Save', save all current settings
 	------------------------------------------------------------------------*/
 	if (rc) {
-		strcpy( phone->Name, strupr( namebuf ) );
+		strcpy( phone->Name, SDL_strupr( namebuf ) );
 
 		// if nothing was entered then make if NONAME
 
@@ -6856,7 +6856,7 @@ static int Edit_Phone_Dialog (PhoneEntryClass *phone)
 			strcpy( phone->Name, "NONAME" );
 		}
 
-		strcpy( phone->Number, strupr( numbuf ) );
+		strcpy( phone->Number, SDL_strupr( numbuf ) );
 
 		if (custom) {
 			phone->Settings = settings;

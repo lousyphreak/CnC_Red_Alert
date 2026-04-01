@@ -3053,7 +3053,7 @@ TemplateType TemplateTypeClass::From_Name(char const * name)
 	if (name != NULL) {
 		for (int value = TEMPLATE_FIRST; value < TEMPLATE_COUNT; ++value) {
 			TemplateType index = (TemplateType)value;
-			if (stricmp(As_Reference(index).IniName, name) == 0) {
+			if (SDL_strcasecmp(As_Reference(index).IniName, name) == 0) {
 				return(index);
 			}
 		}

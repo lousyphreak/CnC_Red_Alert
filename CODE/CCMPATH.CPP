@@ -376,7 +376,7 @@ void Destroy_MPATH_Connection(int id, int error)
 	// Remove this player from the Players vector
 	//------------------------------------------------------------------------
 	for (i = 0; i < Session.Players.Count(); i++) {
-		if (!stricmp(Session.Players[i]->Name,housep->IniName)) {
+		if (!SDL_strcasecmp(Session.Players[i]->Name,housep->IniName)) {
 			delete Session.Players[i];
 			Session.Players.Delete(Session.Players[i]);
 			break;

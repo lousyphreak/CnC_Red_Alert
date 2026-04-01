@@ -231,7 +231,7 @@ HKEY Get_Registry_Sub_Key (HKEY base_key, char *search_key, BOOL close)
 						&longest_class_string,
 						&last_write_time);
 
-		if (!stricmp(search_key, sub_key_buffer)){
+		if (!SDL_strcasecmp(search_key, sub_key_buffer)){
 
 			if (RegOpenKeyEx(	base_key,
 									sub_key_buffer,

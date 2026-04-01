@@ -3799,7 +3799,7 @@ void HouseClass::Tally_Score(void)
 		*/
 		score_index = -1;
 		for (i = 0; i < Session.NumScores; i++) {
-			if (!stricmp(hptr->IniName, Session.Score[i].Name)) {
+			if (!SDL_strcasecmp(hptr->IniName, Session.Score[i].Name)) {
 				score_index = i;
 				break;
 			}

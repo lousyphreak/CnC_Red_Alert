@@ -683,7 +683,7 @@ VesselType VesselTypeClass::From_Name(char const * name)
 	if (name != NULL) {
 		for (int value = VESSEL_FIRST; value < VESSEL_COUNT; ++value) {
 			VesselType classid = (VesselType)value;
-			if (stricmp(As_Reference(classid).IniName, name) == 0) {
+			if (SDL_strcasecmp(As_Reference(classid).IniName, name) == 0) {
 				return(classid);
 			}
 		}

@@ -724,7 +724,7 @@ TerrainType TerrainTypeClass::From_Name(char const * name)
 	if (name != NULL) {
 		for (int value = TERRAIN_FIRST; value < TERRAIN_COUNT; ++value) {
 			TerrainType index = (TerrainType)value;
-			if (stricmp(name, As_Reference(index).IniName) == 0) {
+			if (SDL_strcasecmp(name, As_Reference(index).IniName) == 0) {
 				return(index);
 			}
 		}

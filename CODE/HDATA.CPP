@@ -425,8 +425,8 @@ HousesType HouseTypeClass::From_Name(char const * name)
 	if (name != NULL) {
 		for (int index = HOUSE_FIRST; index < HOUSE_COUNT; ++index) {
 			HousesType house = (HousesType)index;
-			if (stricmp(As_Reference(house).IniName, name) == 0) {
-//			if (stricmp(Pointers[house]->IniName, name) == 0) {
+			if (SDL_strcasecmp(As_Reference(house).IniName, name) == 0) {
+//			if (SDL_strcasecmp(Pointers[house]->IniName, name) == 0) {
 				return(house);
 			}
 		}

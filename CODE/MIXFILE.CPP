@@ -353,7 +353,7 @@ MixFileClass<T> * MixFileClass<T>::Finder(char const * filename)
 		WWFS_SplitPath(ptr->Filename, NULL, NULL, name, ext);
 		WWFS_MakePath(path, NULL, NULL, name, ext);
 
-		if (stricmp(path, filename) == 0) {
+		if (SDL_strcasecmp(path, filename) == 0) {
 			return(ptr);
 		}
 		ptr = ptr->Next();
@@ -572,7 +572,7 @@ assert(filename != NULL);//BG
 	size_t filename_length = std::strlen(filename);
 	char* uppercase_filename = new char[filename_length + 1];
 	std::memcpy(uppercase_filename, filename, filename_length + 1);
-	int32_t crc = static_cast<int32_t>(Calculate_CRC(strupr(uppercase_filename), filename_length));
+	int32_t crc = static_cast<int32_t>(Calculate_CRC(SDL_strupr(uppercase_filename), filename_length));
 	delete [] uppercase_filename;
 	SubBlock key;
 	key.CRC = crc;

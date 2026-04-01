@@ -38,6 +38,8 @@
 #ifndef JSHELL_H
 #define JSHELL_H
 
+#include <SDL3/SDL_stdinc.h>
+
 class SystemTimerClass
 {
 	public:
@@ -410,7 +412,7 @@ void PNBubble_Sort(T * array, int count)
 		do {
 			swapflag = false;
 			for (int index = 0; index < count-1; index++) {
-				if (stricmp(array[index]->Name(), array[index+1]->Name()) > 0) {
+				if (SDL_strcasecmp(array[index]->Name(), array[index+1]->Name()) > 0) {
 					T temp = array[index];
 					array[index] = array[index+1];
 					array[index+1] = temp;

@@ -323,7 +323,7 @@ SmudgeType SmudgeTypeClass::From_Name(char const * name)
 	if (name != NULL) {
 		for (int value = SMUDGE_FIRST; value < SMUDGE_COUNT; ++value) {
 			SmudgeType index = (SmudgeType)value;
-			if (stricmp(As_Reference(index).IniName, name) == 0) {
+			if (SDL_strcasecmp(As_Reference(index).IniName, name) == 0) {
 				return(index);
 			}
 		}

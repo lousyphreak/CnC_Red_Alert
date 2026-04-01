@@ -577,7 +577,7 @@ ThemeType ThemeClass::From_Name(char const * name) const
 		*/
 		for (int index = THEME_FIRST; index < THEME_COUNT; ++index) {
 			ThemeType theme = (ThemeType)index;
-			if (stricmp(_themes[theme].Name, name) == 0) {
+			if (SDL_strcasecmp(_themes[theme].Name, name) == 0) {
 				return(theme);
 			}
 		}

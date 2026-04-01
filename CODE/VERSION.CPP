@@ -230,7 +230,7 @@ unsigned short VersionClass::Major_Version(void)
 	//........................................................................
 	//	Fetch the month and place in the high byte.
 	//........................................................................
-	strupr(date);
+	SDL_strupr(date);
 	tok = strtok(date, " ");
 	ptr = strstr(months, tok);
 	if (ptr) {
@@ -741,7 +741,7 @@ char const * Version_Name(void)
 	**	build date.
 	*/
 	static char * date = __DATE__;		// format: Mmm dd yyyy
-	strupr(date);
+	SDL_strupr(date);
 	char const * tok = strtok(date, " ");
 	static char const * months = "JANFEBMARAPRMAYJUNJULAUGSEPOCTNOVDEC";
 	char const * ptr = strstr(months, tok);

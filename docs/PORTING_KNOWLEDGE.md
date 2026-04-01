@@ -157,6 +157,43 @@ _Last updated: 2026-04-01_
 - Repository-wide search found no remaining Red Alert-owned source file that still includes `<io.h>`.
 - The only remaining repository `<io.h>` include is SDL upstream's Windows-only `extern/SDL3/test/childprocess.c`, and that target is outside the supported build here because the top-level CMake forces `SDL_TESTS OFF`. Do not reintroduce an `io.h` wrapper just for that upstream test file.
 
+## Reduced win32_compat surface
+
+- `SDL3_COMPAT/wrappers/win32_compat.h/.cpp` had accumulated a lot of early-port compatibility baggage that no longer belongs in the active SDL3 build.
+- Safe audit method for this wrapper:
+  - start from the active compile database / actual build outputs, not from raw repository text search alone;
+  - then confirm candidate call sites with repo searches, because some rare-looking symbols are still genuinely live in supported code;
+  - specifically, `CODE/W95TRACE.CPP` still depends on the named-event / file-mapping / wait subset, and `WIN32LIB/WINCOMM/{MODEMREG,WINCOMM}.CPP` still depends on the registry-enumeration plus overlapped/event-style serial surface.
+- The current port no longer needs the old process/thread/mutex/GDI shim layer in `win32_compat`.
+  - Removed dead exports included: `UnregisterClass`, `IsWindow`, `DestroyWindow`, `LoadCursor`, `SetLastError`, `timeBeginPeriod`, `timeEndPeriod`, `GetCurrentThreadId`, `GetCurrentThread`, `GetCurrentProcess`, `DuplicateHandle`, `SetThreadPriority`, `CreateThread`, `WaitForInputIdle`, `GetExitCodeProcess`, `CreateMutex`, `ReleaseMutex`, `CreateProcess`, `GetFileSize`, `UnmapViewOfFile`, `RegQueryValue`, and the unused paint/palette/DIB stubs (`BeginPaint`, `EndPaint`, `GetDC`, `ReleaseDC`, `CreatePalette`, `SelectPalette`, `RealizePalette`, `DeleteObject`, `StretchDIBits`, `SetDIBitsToDevice`).
+  - Matching dead internal baggage was also removable: `ProcessHandle`, `ThreadHandle`, `MutexHandle`, their `HandleKind` cases, the unused command-line splitter, dormant startup trace helpers, and the unused registry cache globals.
+  - Matching dead header baggage was removable too: `MMRESULT`, `HDC`, `HPALETTE`, `PAINTSTRUCT`, `BITMAPINFO`, `LOGPALETTE`, `STARTUPINFO`, `PROCESS_INFORMATION`, `STILL_ACTIVE`, `DUPLICATE_SAME_ACCESS`, `THREAD_ALL_ACCESS`, and `THREAD_PRIORITY_TIME_CRITICAL`.
+- After that cleanup, `WaitForSingleObject()` only needs to handle the kinds that are still real in the supported build: events. File handles, mappings, global allocations, registry handles, and windows still keep their own active helper paths where needed, but there is no longer a fake process/thread/mutex emulation layer underneath.
+- Practical rule going forward:
+  - if a future porting change is tempted to add a Win32 symbol to `win32_compat`, first prove that an active supported code path still needs it;
+  - if the only hits are old comments, dead branches, or unused declarations in the wrapper itself, delete that baggage instead of extending the shim;
+  - keep filesystem behavior in `sdl_fs`, drawing in `sdl_draw`, audio in the SDL audio backend, and only leave genuinely shared Win32-shaped glue in `win32_compat`.
+- The adjacent calling-convention/storage-class macro block also needs symbol-by-symbol auditing, not bulk deletion.
+  - In the current tree, `WINAPI`, `CALLBACK`, `PASCAL`, `FAR`, `far`, `near`, `__cdecl`, `cdecl`, `__stdcall`, and `_export` are still justified by live compiled declarations.
+  - Important concrete live anchors:
+    - `WINAPI`: the still-compiled `Sound_Thread` declaration in `WIN32LIB/AUDIO/SOUNDIO.CPP`;
+    - `CALLBACK`: `WIN32LIB/TIMER/TIMERINI.CPP::Timer_Callback`;
+    - `PASCAL` / `FAR` / `_export`: `CODE/WINSTUB.CPP::Windows_Procedure`;
+    - `__stdcall`: active `CODE/IPX95.H` declarations and function-pointer typedefs;
+    - `far` / `near`: surviving HMI/SOS-era headers and declarations that are still compiled.
+  - `APIENTRY` was the only macro in that contiguous block that had no surviving in-repo usage beyond its own definition, so it was safe to remove.
+  - `__declspec` is currently only referenced by the inactive `CODE/MOVIE.H` DLL interface (`DLLCALL`). That makes it a follow-up cleanup candidate tied to the dead movie-DLL surface, not evidence that `APIENTRY` or the rest of the block must remain.
+- The old string helper aliases in `win32_compat.h` should be treated the same way: direct SDL callers are better than keeping Win32/C-runtime spellings alive when they only forward to SDL.
+  - In this tree, a quick local search undercounted the real usage because some live callers were in less-obvious `.CPP` paths and one VQA file had its own local `stricmp` compatibility define. The reliable method was: make the obvious replacements, rebuild, then use repo-wide `git grep` on `CODE/`, `WIN32LIB/`, `VQ/`, and `SDL3_COMPAT/` to sweep the remaining compiled callers.
+  - The active migration set for this pass was: `stricmp` / `_stricmp` / `strcmpi` -> `SDL_strcasecmp()`, `strnicmp` / `_strnicmp` / `memicmp` -> `SDL_strncasecmp()`, `strupr` -> `SDL_strupr()`, `strrev` -> `SDL_strrev()`, and `_strlwr` / `strlwr` -> `SDL_strlwr()`.
+  - `VQ/VQA32/CONFIG.CPP` had a private non-MSVC `#define stricmp strcasecmp` fallback. Once the callers were switched to SDL, that local macro could be deleted too; add `#include <SDL3/SDL_stdinc.h>` there rather than keeping a second compatibility shim.
+  - Safe cleanup rule: when a legacy helper name is just a thin alias for an SDL API, update the active callers to spell the SDL function directly and add an explicit SDL include at the use site if needed; then delete the alias from `win32_compat.h` instead of preserving it as permanent baggage. Treat comments and obsolete text snippets separately so the code cleanup stays behavior-neutral.
+- `WIN32LIB/AUDIO/SOUNDIO.CPP` is still a live implementation file and must not be deleted yet.
+  - It is still compiled by the active CMake build.
+  - It still provides live entry points used directly by the game: `Audio_Init`, `Sound_End`, `Sound_Callback`, `Play_Sample`, `Stop_Sample`, `Sample_Status`, `Fade_Sample`, `File_Stream_Sample_Vol`, `Set_Primary_Buffer_Format`, `Start_Primary_Sound_Buffer`, `Stop_Primary_Sound_Buffer`, `Suspend_Audio_Thread`, and `Resume_Audio_Thread`.
+  - Concrete callers include `CODE/{STARTUP,NULLDLG,CONQUER,EGOS,THEME,AUDIO,ENDING,INTRO,MAPSEL,SCENARIO,SCORE,OPTIONS,WINSTUB}.CPP` plus `WIN32LIB/PALETTE/PALETTE.CPP`.
+  - Safe cleanup direction for later work is **inside** `SOUNDIO.CPP`: trim dead helper paths or stale thread-era leftovers after proving they have no remaining callers. Do not treat the whole translation unit as dead just because some old compatibility internals inside it are no longer needed.
+
 ## Removed DDE/WChat surface
 
 - `SDL3_COMPAT/wrappers/ddeml.h` and `SDL3_COMPAT/wrappers/ddeml_compat.cpp` are now deleted.

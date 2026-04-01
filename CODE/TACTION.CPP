@@ -814,7 +814,7 @@ TActionType Action_From_Name (char const * name)
 	}
 
 	for (TActionType i = TACTION_NONE; i < TACTION_COUNT; i++) {
-		if (!stricmp(name, ActionText[i])) {
+		if (!SDL_strcasecmp(name, ActionText[i])) {
 			return(i);
 		}
 	}

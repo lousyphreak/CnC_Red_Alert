@@ -225,7 +225,7 @@ TeamTypeClass * TeamTypeClass::As_Pointer(char const * name)
 {
 	if (name) {
 		for (int index = 0; index < TeamTypes.Count(); index++) {
-			if (!stricmp(name, TeamTypes.Ptr(index)->IniName)) {
+			if (!SDL_strcasecmp(name, TeamTypes.Ptr(index)->IniName)) {
 				return(TeamTypes.Ptr(index));
 			}
 		}
@@ -253,7 +253,7 @@ TeamMissionType TeamTypeClass::Mission_From_Name(char const * name)
 {
 	if (name) {
 		for (TeamMissionType order = TMISSION_FIRST; order < TMISSION_COUNT; order++) {
-			if (stricmp(TMissions[order], name) == 0) {
+			if (SDL_strcasecmp(TMissions[order], name) == 0) {
 				return(order);
 			}
 		}
@@ -511,7 +511,7 @@ TeamTypeClass * TeamTypeClass::From_Name(char const * name)
 {
 	if (name) {
 		for (int index = 0; index < TeamTypes.Count(); index++) {
-			if (stricmp(name, TeamTypes.Ptr(index)->IniName) == 0) {
+			if (SDL_strcasecmp(name, TeamTypes.Ptr(index)->IniName) == 0) {
 				return(TeamTypes.Ptr(index));
 			}
 		}

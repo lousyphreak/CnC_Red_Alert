@@ -386,7 +386,7 @@ AircraftType AircraftTypeClass::From_Name(char const * name)
 	if (name != NULL) {
 		for (int value = AIRCRAFT_FIRST; value < AIRCRAFT_COUNT; ++value) {
 			AircraftType classid = (AircraftType)value;
-			if (stricmp(As_Reference(classid).IniName, name) == 0) {
+			if (SDL_strcasecmp(As_Reference(classid).IniName, name) == 0) {
 				return(classid);
 			}
 		}

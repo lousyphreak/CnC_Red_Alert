@@ -80,7 +80,7 @@ AnimType Anim_From_Name(char const * name)
 
 	for (int index = ANIM_FIRST; index < ANIM_COUNT; ++index) {
 		AnimType anim = (AnimType)index;
-		if (stricmp(AnimTypeClass::As_Reference(anim).IniName, name) == 0) {
+		if (SDL_strcasecmp(AnimTypeClass::As_Reference(anim).IniName, name) == 0) {
 			return(anim);
 		}
 	}
