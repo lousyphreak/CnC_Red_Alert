@@ -516,10 +516,11 @@ _Last updated: 2026-04-01_
 
 - The active keyboard queue path in this build is `CODE/KEY.CPP`, not `CODE/KEYBOARD.CPP`.
 - The active SDL input architecture is now:
-  - `CODE/SDLINPUT.CPP` / `CODE/SDLINPUT.H` own SDL event pumping/waiting, track key/button/toggle state, keep async low-bit latches, and maintain the shared mouse position snapshot;
+  - `CODE/SDLINPUT.CPP` / `CODE/SDLINPUT.H` own SDL event pumping/waiting, track key/button/toggle state, and maintain the shared mouse position snapshot;
   - `CODE/CONQUER.CPP::Call_Back()` pumps SDL every front-end loop iteration and now also runs `WWMouse->Process_Mouse()` on that same main thread;
   - `SDL3_COMPAT/wrappers/win32_compat.cpp::next_message()` only drains posted lifecycle/focus/quit messages and uses `SDL_GameInput_Wait()` when the legacy message loop blocks;
-  - `WWKeyboardClass` still owns the legacy circular key/mouse queue, but SDL key/button events are now fed into it directly instead of being translated into fake `WM_KEY*` / `WM_MOUSE*` messages first.
+  - `WWKeyboardClass` still owns the legacy circular key/mouse queue, but SDL key/button events are now fed into it directly instead of being translated into fake `WM_KEY*` / `WM_MOUSE*` messages first;
+  - the state/query side of that path is now SDL-native (`SDL_Scancode`, `SDL_Keymod`, SDL mouse buttons), and the conversion to legacy `KN_*` values happens only at the queue boundary.
 - Main-menu hover logic and click logic still use different legacy consumers, but they now read the same SDL-backed mouse state:
   - hover/selection tracking uses `Get_Mouse_X()` / `Get_Mouse_Y()` from `WIN32LIB/KEYBOARD/MOUSE.CPP`, which poll `GetCursorPos()`;
   - click selection uses `Keyboard->MouseQX` / `Keyboard->MouseQY` from `CODE/KEY.CPP`;
@@ -531,11 +532,17 @@ _Last updated: 2026-04-01_
 - `CODE/WINSTUB.CPP::Windows_Procedure()` no longer forwards `WM_*` input messages into `Keyboard->Message_Handler()`, and `CODE/KEY.CPP` no longer carries that old Win32 input translation path.
   - focus and close still flow through `WM_ACTIVATEAPP` / `WM_CLOSE`, but post-bootstrap `WM_ACTIVATEAPP(active=0)` is intentionally ignored so ordinary unfocus does not pause the game;
   - key and mouse delivery now stay on the SDL-backed path end-to-end, which removes the old split between queued menu input and polled software-cursor motion.
-- `GetKeyState()` / `GetAsyncKeyState()` in the SDL compat layer must report ordinary keys and mouse buttons, not just modifiers.
-  - `CODE/KEY.CPP::Down()` is just `GetAsyncKeyState(key & 0xFF) != 0`, so returning `0` for non-modifier keys makes the UI look frozen even when the menu loop is still running.
-  - Mouse buttons must also drive the shared virtual-key down counts, not just the raw `g_mouse_buttons` mask.
-  - `CODE/GADGET.CPP::Input()` synthesizes `LEFTHELD` / `RIGHTHELD` from `Keyboard->Down(KN_LMOUSE)` / `Keyboard->Down(KN_RMOUSE)`, so if `CODE/SDLINPUT.CPP::SDL_GameInput_Handle_Mouse_Button()` only records the click latch and never calls `press_virtual_key_locked()` / `release_virtual_key_locked()`, mission-map drag behavior breaks even though ordinary click/release events still arrive.
-  - The concrete symptom is that `DisplayClass::Mouse_Left_Held()` never runs, `Map.IsRubberBand` never becomes true, and no drag-select rectangle appears while the button is held.
+- The SDL3 port no longer needs Win32 virtual-key polling helpers in the compat wrapper.
+  - `CODE/KEY.CPP::Down()` and the WOL/UI polling sites now query SDL-backed helpers directly instead of routing through `GetAsyncKeyState()` / `GetKeyState()`;
+  - mouse buttons still have to drive the held-state checks that gameplay/UI rely on, because `CODE/GADGET.CPP::Input()` synthesizes `LEFTHELD` / `RIGHTHELD` from `Keyboard->Down(KN_LMOUSE)` / `Keyboard->Down(KN_RMOUSE)`;
+  - the practical rule is: keep stored/queryable state in SDL terms, and only emit the old `KN_*` values when pushing into `WWKeyboardClass`.
+- Exact `KN_*` comparisons are sensitive to how `CODE/KEY.CPP::Put_Key_Message()` synthesizes modifier bits.
+  - `VQ_Call_Back()` checks `key == KN_ESC` exactly when deciding whether to break out of intro/video playback;
+  - many dialogs and front-end flows also switch directly on `KN_ESC` / `KN_RETURN`, so CapsLock/NumLock must not set `WWKEY_SHIFT_BIT` on unrelated keys;
+  - only alpha keys should inherit CapsLock-derived shift state, and only keypad-style keys should inherit NumLock-derived shift state.
+- `Keyboard->Down(...)` compatibility depends on the reverse mapping in `CODE/SDLINPUT.CPP::SDL_GameInput_IsLegacyKeyPressed()`, not just the event queue.
+  - special keys alone are not enough; gameplay and UI hotkeys also poll letters, digits, space, and punctuation through legacy `KN_*` values;
+  - if those ordinary keys are not mapped back to SDL scancodes, features like letter-bound orders, number shortcuts, and modifier combos such as `Ctrl+Q` silently stop working even though queued input still looks fine.
 - `CODE/MAPSEL.CPP::Map_Selection()` can look “hung” even when the intro loop has already finished.
   - A focused live probe on the active SDL/Linux build showed the map-select intro does reach its end (`frame == Get_Animation_Frame_Count(anim) == 70`) and the mouse hidden-count is already clear (`Get_Mouse_State() == 0`) immediately after `Show_Mouse()`.
   - The visible stall came from `WIN32LIB/WSA/WSA.CPP`, not from the mouse/input path: the resident `MSAA.WSA` offset table goes bad mid-animation, so `Apply_Delta()` starts rejecting later frames with impossible resident `frame_offset` / `frame_data_size` values around frame `34`.

@@ -10,7 +10,6 @@
 #include <atomic>
 #include <mutex>
 #include <thread>
-#include <unordered_map>
 
 extern HWND MainWindow;
 extern BOOL GameInFocus;
@@ -19,17 +18,17 @@ extern GraphicViewPortClass SeenBuff;
 
 namespace {
 
-constexpr SHORT KEY_DOWN_MASK = static_cast<SHORT>(0x8000);
-constexpr SHORT TOGGLE_MASK = static_cast<SHORT>(0x0001);
 constexpr uint32_t MOUSE_LEFT_MASK = 0x01u;
 constexpr uint32_t MOUSE_RIGHT_MASK = 0x02u;
 constexpr uint32_t MOUSE_MIDDLE_MASK = 0x04u;
+constexpr unsigned short LEGACY_MIDDLE_MOUSE = 0x04;
+constexpr unsigned short LEGACY_NUMPAD0 = 0x60;
+constexpr unsigned short LEGACY_NUMPAD5 = 0x65;
+constexpr unsigned short LEGACY_DECIMAL = 0x6E;
 
 std::mutex g_input_mutex;
-std::unordered_map<int, int> g_pressed_keys;
-std::array<uint16_t, 256> g_virtual_key_down_counts{};
-std::array<uint8_t, 256> g_toggle_state{};
-std::array<uint8_t, 256> g_async_latches{};
+std::array<uint16_t, SDL_SCANCODE_COUNT> g_scancode_down_counts{};
+SDL_Keymod g_mod_state = SDL_KMOD_NONE;
 int g_mouse_x = 0;
 int g_mouse_y = 0;
 uint32_t g_mouse_buttons = 0;
@@ -39,14 +38,9 @@ std::atomic<bool> g_is_pumping{false};
 bool g_cursor_clip_active = false;
 RECT g_cursor_clip{};
 
-bool valid_virtual_key(int virtual_key)
+bool valid_scancode(SDL_Scancode scancode)
 {
-	return (virtual_key >= 0 && virtual_key <= 0xFF);
-}
-
-bool is_toggle_key(int virtual_key)
-{
-	return (virtual_key == VK_CAPITAL || virtual_key == VK_NUMLOCK || virtual_key == VK_SCROLL);
+	return (scancode >= SDL_SCANCODE_UNKNOWN && scancode < SDL_SCANCODE_COUNT);
 }
 
 bool get_viewport_rect(RECT& rect)
@@ -91,15 +85,15 @@ uint32_t translate_mouse_button_state(uint32_t button_state)
 	return (state);
 }
 
-int mouse_button_to_virtual_key(int button)
+unsigned short mouse_button_to_legacy_key(int button)
 {
 	switch (button) {
 		case SDL_BUTTON_LEFT:
-			return (VK_LBUTTON);
+			return (KN_LMOUSE);
 		case SDL_BUTTON_RIGHT:
-			return (VK_RBUTTON);
+			return (KN_RMOUSE);
 		case SDL_BUTTON_MIDDLE:
-			return (VK_MBUTTON);
+			return (LEGACY_MIDDLE_MOUSE);
 		default:
 			return (0);
 	}
@@ -141,153 +135,437 @@ void update_mouse_position_locked(int x, int y)
 	g_mouse_y = y;
 }
 
-void note_async_press_locked(int virtual_key)
+unsigned short legacy_key_from_scancode(SDL_Scancode scancode)
 {
-	if (valid_virtual_key(virtual_key)) {
-		g_async_latches[virtual_key] = 1;
+	switch (scancode) {
+		case SDL_SCANCODE_LSHIFT:
+		case SDL_SCANCODE_RSHIFT:
+			return KN_LSHIFT;
+		case SDL_SCANCODE_LCTRL:
+		case SDL_SCANCODE_RCTRL:
+			return KN_LCTRL;
+		case SDL_SCANCODE_LALT:
+		case SDL_SCANCODE_RALT:
+			return KN_LALT;
+		case SDL_SCANCODE_RETURN:
+			return KN_RETURN;
+		case SDL_SCANCODE_ESCAPE:
+			return KN_ESC;
+		case SDL_SCANCODE_BACKSPACE:
+			return KN_BACKSPACE;
+		case SDL_SCANCODE_TAB:
+			return KN_TAB;
+		case SDL_SCANCODE_DELETE:
+			return KN_DELETE;
+		case SDL_SCANCODE_INSERT:
+			return KN_INSERT;
+		case SDL_SCANCODE_HOME:
+			return KN_HOME;
+		case SDL_SCANCODE_END:
+			return KN_END;
+		case SDL_SCANCODE_PAGEUP:
+			return KN_PGUP;
+		case SDL_SCANCODE_PAGEDOWN:
+			return KN_PGDN;
+		case SDL_SCANCODE_UP:
+			return KN_UP;
+		case SDL_SCANCODE_DOWN:
+			return KN_DOWN;
+		case SDL_SCANCODE_LEFT:
+			return KN_LEFT;
+		case SDL_SCANCODE_RIGHT:
+			return KN_RIGHT;
+		case SDL_SCANCODE_CAPSLOCK:
+			return KN_CAPSLOCK;
+		case SDL_SCANCODE_SCROLLLOCK:
+			return KN_SCROLLLOCK;
+		case SDL_SCANCODE_NUMLOCKCLEAR:
+			return KN_NUMLOCK;
+		case SDL_SCANCODE_PAUSE:
+			return KN_PAUSE;
+		case SDL_SCANCODE_F1:
+			return KN_F1;
+		case SDL_SCANCODE_F2:
+			return KN_F2;
+		case SDL_SCANCODE_F3:
+			return KN_F3;
+		case SDL_SCANCODE_F4:
+			return KN_F4;
+		case SDL_SCANCODE_F5:
+			return KN_F5;
+		case SDL_SCANCODE_F6:
+			return KN_F6;
+		case SDL_SCANCODE_F7:
+			return KN_F7;
+		case SDL_SCANCODE_F8:
+			return KN_F8;
+		case SDL_SCANCODE_F9:
+			return KN_F9;
+		case SDL_SCANCODE_F10:
+			return KN_F10;
+		case SDL_SCANCODE_F11:
+			return KN_F11;
+		case SDL_SCANCODE_F12:
+			return KN_F12;
+		case SDL_SCANCODE_KP_0:
+			return LEGACY_NUMPAD0;
+		case SDL_SCANCODE_KP_1:
+			return KN_E_END;
+		case SDL_SCANCODE_KP_2:
+			return KN_E_DOWN;
+		case SDL_SCANCODE_KP_3:
+			return KN_E_PGDN;
+		case SDL_SCANCODE_KP_4:
+			return KN_E_LEFT;
+		case SDL_SCANCODE_KP_5:
+			return LEGACY_NUMPAD5;
+		case SDL_SCANCODE_KP_6:
+			return KN_E_RIGHT;
+		case SDL_SCANCODE_KP_7:
+			return KN_E_HOME;
+		case SDL_SCANCODE_KP_8:
+			return KN_E_UP;
+		case SDL_SCANCODE_KP_9:
+			return KN_E_PGUP;
+		case SDL_SCANCODE_KP_DIVIDE:
+			return KN_KEYPAD_SLASH;
+		case SDL_SCANCODE_KP_MULTIPLY:
+			return KN_KEYPAD_ASTERISK;
+		case SDL_SCANCODE_KP_MINUS:
+			return KN_KEYPAD_MINUS;
+		case SDL_SCANCODE_KP_PLUS:
+			return KN_KEYPAD_PLUS;
+		case SDL_SCANCODE_KP_ENTER:
+			return KN_KEYPAD_RETURN;
+		case SDL_SCANCODE_KP_PERIOD:
+			return LEGACY_DECIMAL;
+		default:
+			return 0;
 	}
 }
 
-void press_virtual_key_locked(int virtual_key)
+unsigned short legacy_key_from_keycode(SDL_Keycode keycode)
 {
-	if (!valid_virtual_key(virtual_key)) {
-		return;
+	if (keycode >= SDLK_A && keycode <= SDLK_Z) {
+		return static_cast<unsigned short>(KN_A + static_cast<unsigned short>(keycode - SDLK_A));
+	}
+	if (keycode >= SDLK_0 && keycode <= SDLK_9) {
+		return static_cast<unsigned short>(KN_0 + static_cast<unsigned short>(keycode - SDLK_0));
 	}
 
-	++g_virtual_key_down_counts[virtual_key];
-	note_async_press_locked(virtual_key);
+	switch (keycode) {
+		case SDLK_BACKSPACE: return KN_BACKSPACE;
+		case SDLK_TAB: return KN_TAB;
+		case SDLK_CLEAR: return KN_CENTER;
+		case SDLK_RETURN:
+		case SDLK_RETURN2:
+		case SDLK_KP_ENTER: return KN_RETURN;
+		case SDLK_PAUSE: return KN_PAUSE;
+		case SDLK_CAPSLOCK: return KN_CAPSLOCK;
+		case SDLK_ESCAPE: return KN_ESC;
+		case SDLK_SPACE: return KN_SPACE;
+		case SDLK_PAGEUP: return KN_PGUP;
+		case SDLK_PAGEDOWN: return KN_PGDN;
+		case SDLK_END: return KN_END;
+		case SDLK_HOME: return KN_HOME;
+		case SDLK_LEFT: return KN_LEFT;
+		case SDLK_UP: return KN_UP;
+		case SDLK_RIGHT: return KN_RIGHT;
+		case SDLK_DOWN: return KN_DOWN;
+		case SDLK_PRINTSCREEN: return KN_PRNTSCRN;
+		case SDLK_INSERT: return KN_INSERT;
+		case SDLK_DELETE: return KN_DELETE;
+		case SDLK_LSHIFT:
+		case SDLK_RSHIFT: return KN_LSHIFT;
+		case SDLK_LCTRL:
+		case SDLK_RCTRL: return KN_LCTRL;
+		case SDLK_LALT:
+		case SDLK_RALT: return KN_LALT;
+		case SDLK_SCROLLLOCK: return KN_SCROLLLOCK;
+		case SDLK_NUMLOCKCLEAR: return KN_NUMLOCK;
+		case SDLK_F1: return KN_F1;
+		case SDLK_F2: return KN_F2;
+		case SDLK_F3: return KN_F3;
+		case SDLK_F4: return KN_F4;
+		case SDLK_F5: return KN_F5;
+		case SDLK_F6: return KN_F6;
+		case SDLK_F7: return KN_F7;
+		case SDLK_F8: return KN_F8;
+		case SDLK_F9: return KN_F9;
+		case SDLK_F10: return KN_F10;
+		case SDLK_F11: return KN_F11;
+		case SDLK_F12: return KN_F12;
+		case SDLK_KP_0: return LEGACY_NUMPAD0;
+		case SDLK_KP_1: return KN_E_END;
+		case SDLK_KP_2: return KN_E_DOWN;
+		case SDLK_KP_3: return KN_E_PGDN;
+		case SDLK_KP_4: return KN_E_LEFT;
+		case SDLK_KP_5: return LEGACY_NUMPAD5;
+		case SDLK_KP_6: return KN_E_RIGHT;
+		case SDLK_KP_7: return KN_E_HOME;
+		case SDLK_KP_8: return KN_E_UP;
+		case SDLK_KP_9: return KN_E_PGUP;
+		case SDLK_KP_MULTIPLY: return KN_KEYPAD_ASTERISK;
+		case SDLK_KP_PLUS: return KN_KEYPAD_PLUS;
+		case SDLK_KP_MINUS: return KN_KEYPAD_MINUS;
+		case SDLK_KP_PERIOD: return LEGACY_DECIMAL;
+		case SDLK_KP_DIVIDE: return KN_KEYPAD_SLASH;
+		case SDLK_SEMICOLON: return KN_SEMICOLON;
+		case SDLK_EQUALS: return KN_EQUAL;
+		case SDLK_COMMA: return KN_COMMA;
+		case SDLK_MINUS: return KN_MINUS;
+		case SDLK_PERIOD: return KN_PERIOD;
+		case SDLK_SLASH: return KN_SLASH;
+		case SDLK_GRAVE: return KN_GRAVE;
+		case SDLK_LEFTBRACKET: return KN_LBRACKET;
+		case SDLK_BACKSLASH: return KN_BACKSLASH;
+		case SDLK_RIGHTBRACKET: return KN_RBRACKET;
+		case SDLK_APOSTROPHE: return KN_SQUOTE;
+		default: return 0;
+	}
 }
 
-void release_virtual_key_locked(int virtual_key)
+void update_modifier_state_locked(SDL_Keymod mod_state)
 {
-	if (!valid_virtual_key(virtual_key)) {
+	g_mod_state = mod_state;
+}
+
+void note_key_event_locked(SDL_Scancode scancode, SDL_Keymod mod_state, bool repeat, bool release)
+{
+	update_modifier_state_locked(mod_state);
+	if (!valid_scancode(scancode)) {
 		return;
 	}
-
-	if (g_virtual_key_down_counts[virtual_key] != 0) {
-		--g_virtual_key_down_counts[virtual_key];
+	if (release) {
+		if (g_scancode_down_counts[scancode] != 0) {
+			--g_scancode_down_counts[scancode];
+		}
+		return;
+	}
+	if (!repeat) {
+		++g_scancode_down_counts[scancode];
 	}
 }
 
 void clear_held_input_locked(void)
 {
-	g_pressed_keys.clear();
-	g_virtual_key_down_counts.fill(0);
+	g_scancode_down_counts.fill(0);
+	g_mod_state = static_cast<SDL_Keymod>(g_mod_state & (SDL_KMOD_CAPS | SDL_KMOD_NUM | SDL_KMOD_SCROLL));
 	g_mouse_buttons = 0;
 }
 
-SHORT key_state_locked(int virtual_key, bool consume_async)
+bool scancode_down_locked(SDL_Scancode scancode)
 {
-	if (!valid_virtual_key(virtual_key)) {
-		return (0);
-	}
-
-	SHORT state = 0;
-	if (g_virtual_key_down_counts[virtual_key] != 0) {
-		state = static_cast<SHORT>(state | KEY_DOWN_MASK);
-	}
-
-	if (consume_async) {
-		if (g_async_latches[virtual_key] != 0) {
-			state = static_cast<SHORT>(state | TOGGLE_MASK);
-			g_async_latches[virtual_key] = 0;
-		}
-	} else if (is_toggle_key(virtual_key) && g_toggle_state[virtual_key] != 0) {
-		state = static_cast<SHORT>(state | TOGGLE_MASK);
-	}
-
-	return (state);
+	return valid_scancode(scancode) && g_scancode_down_counts[scancode] != 0;
 }
 
-int sdl_keycode_to_virtual_key(SDL_Keycode keycode)
+bool modifier_pressed_locked(SDL_Keymod mod_mask)
 {
-	if (keycode >= SDLK_A && keycode <= SDLK_Z) {
-		return (VK_A + static_cast<int>(keycode - SDLK_A));
-	}
-	if (keycode >= SDLK_0 && keycode <= SDLK_9) {
-		return (static_cast<int>(keycode));
-	}
+	return (g_mod_state & mod_mask) != 0;
+}
 
-	switch (keycode) {
-		case SDLK_BACKSPACE: return (VK_BACK);
-		case SDLK_TAB: return (VK_TAB);
-		case SDLK_CLEAR: return (VK_CLEAR);
-		case SDLK_RETURN:
-		case SDLK_RETURN2:
-		case SDLK_KP_ENTER: return (VK_RETURN);
-		case SDLK_PAUSE: return (VK_PAUSE);
-		case SDLK_CAPSLOCK: return (VK_CAPITAL);
-		case SDLK_ESCAPE: return (VK_ESCAPE);
-		case SDLK_SPACE: return (VK_SPACE);
-		case SDLK_PAGEUP: return (VK_PRIOR);
-		case SDLK_PAGEDOWN: return (VK_NEXT);
-		case SDLK_END: return (VK_END);
-		case SDLK_HOME: return (VK_HOME);
-		case SDLK_LEFT: return (VK_LEFT);
-		case SDLK_UP: return (VK_UP);
-		case SDLK_RIGHT: return (VK_RIGHT);
-		case SDLK_DOWN: return (VK_DOWN);
-		case SDLK_PRINTSCREEN: return (VK_SNAPSHOT);
-		case SDLK_INSERT: return (VK_INSERT);
-		case SDLK_DELETE: return (VK_DELETE);
-		case SDLK_LSHIFT:
-		case SDLK_RSHIFT: return (VK_SHIFT);
-		case SDLK_LCTRL:
-		case SDLK_RCTRL: return (VK_CONTROL);
-		case SDLK_LALT:
-		case SDLK_RALT: return (VK_MENU);
-		case SDLK_SCROLLLOCK: return (VK_SCROLL);
-		case SDLK_NUMLOCKCLEAR: return (VK_NUMLOCK);
-		case SDLK_F1: return (VK_F1);
-		case SDLK_F2: return (VK_F2);
-		case SDLK_F3: return (VK_F3);
-		case SDLK_F4: return (VK_F4);
-		case SDLK_F5: return (VK_F5);
-		case SDLK_F6: return (VK_F6);
-		case SDLK_F7: return (VK_F7);
-		case SDLK_F8: return (VK_F8);
-		case SDLK_F9: return (VK_F9);
-		case SDLK_F10: return (VK_F10);
-		case SDLK_F11: return (VK_F11);
-		case SDLK_F12: return (VK_F12);
-		case SDLK_KP_0: return (VK_NUMPAD0);
-		case SDLK_KP_1: return (VK_NUMPAD1);
-		case SDLK_KP_2: return (VK_NUMPAD2);
-		case SDLK_KP_3: return (VK_NUMPAD3);
-		case SDLK_KP_4: return (VK_NUMPAD4);
-		case SDLK_KP_5: return (VK_NUMPAD5);
-		case SDLK_KP_6: return (VK_NUMPAD6);
-		case SDLK_KP_7: return (VK_NUMPAD7);
-		case SDLK_KP_8: return (VK_NUMPAD8);
-		case SDLK_KP_9: return (VK_NUMPAD9);
-		case SDLK_KP_MULTIPLY: return (VK_MULTIPLY);
-		case SDLK_KP_PLUS: return (VK_ADD);
-		case SDLK_KP_MINUS: return (VK_SUBTRACT);
-		case SDLK_KP_PERIOD: return (VK_DECIMAL);
-		case SDLK_KP_DIVIDE: return (VK_DIVIDE);
-		case SDLK_SEMICOLON: return (VK_OEM_1);
-		case SDLK_EQUALS: return (VK_OEM_PLUS);
-		case SDLK_COMMA: return (VK_OEM_COMMA);
-		case SDLK_MINUS: return (VK_OEM_MINUS);
-		case SDLK_PERIOD: return (VK_OEM_PERIOD);
-		case SDLK_SLASH: return (VK_OEM_2);
-		case SDLK_GRAVE: return (VK_OEM_3);
-		case SDLK_LEFTBRACKET: return (VK_OEM_4);
-		case SDLK_BACKSLASH: return (VK_OEM_5);
-		case SDLK_RIGHTBRACKET: return (VK_OEM_6);
-		case SDLK_APOSTROPHE: return (VK_OEM_7);
-		default: return (0);
+bool mouse_button_down_locked(uint8_t button)
+{
+	switch (button) {
+		case SDL_BUTTON_LEFT:
+			return (g_mouse_buttons & MOUSE_LEFT_MASK) != 0;
+		case SDL_BUTTON_RIGHT:
+			return (g_mouse_buttons & MOUSE_RIGHT_MASK) != 0;
+		case SDL_BUTTON_MIDDLE:
+			return (g_mouse_buttons & MOUSE_MIDDLE_MASK) != 0;
+		default:
+			return false;
 	}
 }
 
-int sdl_keyboard_event_to_virtual_key(const SDL_KeyboardEvent &event)
+SDL_Scancode scancode_from_legacy_key(unsigned short key)
 {
-	SDL_Keycode keycode = SDL_GetKeyFromScancode(event.scancode, SDL_KMOD_NONE, true);
-	int virtual_key = sdl_keycode_to_virtual_key(keycode);
-	if (virtual_key != 0) {
-		return (virtual_key);
+	key &= 0xFFu;
+
+	if (key >= KN_A && key <= KN_Z) {
+		return static_cast<SDL_Scancode>(SDL_SCANCODE_A + (key - KN_A));
 	}
-	return (sdl_keycode_to_virtual_key(event.key));
+	if (key >= KN_0 && key <= KN_9) {
+		return static_cast<SDL_Scancode>(SDL_SCANCODE_0 + (key - KN_0));
+	}
+
+	switch (key) {
+		case KN_SPACE: return SDL_SCANCODE_SPACE;
+		case KN_SEMICOLON: return SDL_SCANCODE_SEMICOLON;
+		case KN_EQUAL: return SDL_SCANCODE_EQUALS;
+		case KN_COMMA: return SDL_SCANCODE_COMMA;
+		case KN_MINUS: return SDL_SCANCODE_MINUS;
+		case KN_PERIOD: return SDL_SCANCODE_PERIOD;
+		case KN_SLASH: return SDL_SCANCODE_SLASH;
+		case KN_GRAVE: return SDL_SCANCODE_GRAVE;
+		case KN_LBRACKET: return SDL_SCANCODE_LEFTBRACKET;
+		case KN_BACKSLASH: return SDL_SCANCODE_BACKSLASH;
+		case KN_RBRACKET: return SDL_SCANCODE_RIGHTBRACKET;
+		case KN_SQUOTE: return SDL_SCANCODE_APOSTROPHE;
+		default: return SDL_SCANCODE_UNKNOWN;
+	}
+}
+
+bool legacy_key_down_locked(unsigned short key)
+{
+	const SDL_Scancode direct_scancode = scancode_from_legacy_key(key);
+	if (direct_scancode != SDL_SCANCODE_UNKNOWN) {
+		return scancode_down_locked(direct_scancode);
+	}
+
+	switch (key & 0xFFu) {
+		case KN_LMOUSE:
+			return mouse_button_down_locked(SDL_BUTTON_LEFT);
+		case KN_RMOUSE:
+			return mouse_button_down_locked(SDL_BUTTON_RIGHT);
+		case LEGACY_MIDDLE_MOUSE:
+			return mouse_button_down_locked(SDL_BUTTON_MIDDLE);
+		case KN_LSHIFT:
+			return scancode_down_locked(SDL_SCANCODE_LSHIFT) || scancode_down_locked(SDL_SCANCODE_RSHIFT);
+		case KN_LCTRL:
+			return scancode_down_locked(SDL_SCANCODE_LCTRL) || scancode_down_locked(SDL_SCANCODE_RCTRL);
+		case KN_LALT:
+			return scancode_down_locked(SDL_SCANCODE_LALT) || scancode_down_locked(SDL_SCANCODE_RALT);
+		case KN_RETURN:
+			return scancode_down_locked(SDL_SCANCODE_RETURN) || scancode_down_locked(SDL_SCANCODE_KP_ENTER);
+		case KN_ESC:
+			return scancode_down_locked(SDL_SCANCODE_ESCAPE);
+		case KN_BACKSPACE:
+			return scancode_down_locked(SDL_SCANCODE_BACKSPACE);
+		case KN_TAB:
+			return scancode_down_locked(SDL_SCANCODE_TAB);
+		case KN_DELETE:
+			return scancode_down_locked(SDL_SCANCODE_DELETE);
+		case KN_INSERT:
+			return scancode_down_locked(SDL_SCANCODE_INSERT);
+		case KN_HOME:
+			return scancode_down_locked(SDL_SCANCODE_HOME);
+		case KN_END:
+			return scancode_down_locked(SDL_SCANCODE_END);
+		case KN_PGUP:
+			return scancode_down_locked(SDL_SCANCODE_PAGEUP);
+		case KN_PGDN:
+			return scancode_down_locked(SDL_SCANCODE_PAGEDOWN);
+		case KN_UP:
+			return scancode_down_locked(SDL_SCANCODE_UP);
+		case KN_DOWN:
+			return scancode_down_locked(SDL_SCANCODE_DOWN);
+		case KN_LEFT:
+			return scancode_down_locked(SDL_SCANCODE_LEFT);
+		case KN_RIGHT:
+			return scancode_down_locked(SDL_SCANCODE_RIGHT);
+		case KN_CAPSLOCK:
+			return scancode_down_locked(SDL_SCANCODE_CAPSLOCK);
+		case KN_SCROLLLOCK:
+			return scancode_down_locked(SDL_SCANCODE_SCROLLLOCK);
+		case KN_NUMLOCK:
+			return scancode_down_locked(SDL_SCANCODE_NUMLOCKCLEAR);
+		case KN_PAUSE:
+			return scancode_down_locked(SDL_SCANCODE_PAUSE);
+		case KN_F1:
+			return scancode_down_locked(SDL_SCANCODE_F1);
+		case KN_F2:
+			return scancode_down_locked(SDL_SCANCODE_F2);
+		case KN_F3:
+			return scancode_down_locked(SDL_SCANCODE_F3);
+		case KN_F4:
+			return scancode_down_locked(SDL_SCANCODE_F4);
+		case KN_F5:
+			return scancode_down_locked(SDL_SCANCODE_F5);
+		case KN_F6:
+			return scancode_down_locked(SDL_SCANCODE_F6);
+		case KN_F7:
+			return scancode_down_locked(SDL_SCANCODE_F7);
+		case KN_F8:
+			return scancode_down_locked(SDL_SCANCODE_F8);
+		case KN_F9:
+			return scancode_down_locked(SDL_SCANCODE_F9);
+		case KN_F10:
+			return scancode_down_locked(SDL_SCANCODE_F10);
+		case KN_F11:
+			return scancode_down_locked(SDL_SCANCODE_F11);
+		case KN_F12:
+			return scancode_down_locked(SDL_SCANCODE_F12);
+		case KN_E_UP:
+			return scancode_down_locked(SDL_SCANCODE_KP_8);
+		case KN_E_DOWN:
+			return scancode_down_locked(SDL_SCANCODE_KP_2);
+		case KN_E_LEFT:
+			return scancode_down_locked(SDL_SCANCODE_KP_4);
+		case KN_E_RIGHT:
+			return scancode_down_locked(SDL_SCANCODE_KP_6);
+		case KN_E_HOME:
+			return scancode_down_locked(SDL_SCANCODE_KP_7);
+		case KN_E_END:
+			return scancode_down_locked(SDL_SCANCODE_KP_1);
+		case KN_E_PGUP:
+			return scancode_down_locked(SDL_SCANCODE_KP_9);
+		case KN_E_PGDN:
+			return scancode_down_locked(SDL_SCANCODE_KP_3);
+		case KN_CENTER:
+			return scancode_down_locked(SDL_SCANCODE_CLEAR);
+		case LEGACY_NUMPAD0:
+			return scancode_down_locked(SDL_SCANCODE_KP_0);
+		case LEGACY_NUMPAD5:
+			return scancode_down_locked(SDL_SCANCODE_KP_5);
+		case LEGACY_DECIMAL:
+			return scancode_down_locked(SDL_SCANCODE_KP_PERIOD);
+		case KN_KEYPAD_SLASH:
+			return scancode_down_locked(SDL_SCANCODE_KP_DIVIDE);
+		case KN_KEYPAD_ASTERISK:
+			return scancode_down_locked(SDL_SCANCODE_KP_MULTIPLY);
+		case KN_KEYPAD_MINUS:
+			return scancode_down_locked(SDL_SCANCODE_KP_MINUS);
+		case KN_KEYPAD_PLUS:
+			return scancode_down_locked(SDL_SCANCODE_KP_PLUS);
+		default:
+			return false;
+	}
+}
+
+char translate_ascii_from_legacy_key(unsigned short key)
+{
+	if ((key & WWKEY_RLS_BIT) != 0) {
+		return '\0';
+	}
+
+	const bool shift = (key & WWKEY_SHIFT_BIT) != 0;
+	const bool ctrl = (key & WWKEY_CTRL_BIT) != 0;
+	const bool alt = (key & WWKEY_ALT_BIT) != 0;
+	const bool caps = modifier_pressed_locked(SDL_KMOD_CAPS);
+
+	if (ctrl || alt) {
+		return '\0';
+	}
+
+	const unsigned short base_key = key & 0xFFu;
+	if (base_key >= KN_A && base_key <= KN_Z) {
+		return static_cast<char>((shift ^ caps) ? ('A' + (base_key - KN_A)) : ('a' + (base_key - KN_A)));
+	}
+	if (base_key >= KN_0 && base_key <= KN_9) {
+		static constexpr char SHIFTED_DIGITS[] = ")!@#$%^&*(";
+		return shift ? SHIFTED_DIGITS[base_key - KN_0] : static_cast<char>('0' + (base_key - KN_0));
+	}
+
+	switch (base_key) {
+		case KN_SPACE: return ' ';
+		case KN_TAB: return '\t';
+		case KN_RETURN: return '\r';
+		case KN_BACKSPACE: return '\b';
+		case KN_ESC: return 27;
+		case KN_SEMICOLON: return shift ? ':' : ';';
+		case KN_EQUAL: return shift ? '+' : '=';
+		case KN_COMMA: return shift ? '<' : ',';
+		case KN_MINUS: return shift ? '_' : '-';
+		case KN_PERIOD: return shift ? '>' : '.';
+		case KN_SLASH: return shift ? '?' : '/';
+		case KN_GRAVE: return shift ? '~' : '`';
+		case KN_LBRACKET: return shift ? '{' : '[';
+		case KN_BACKSLASH: return shift ? '|' : '\\';
+		case KN_RBRACKET: return shift ? '}' : ']';
+		case KN_SQUOTE: return shift ? '"' : '\'';
+		default: return '\0';
+	}
 }
 
 void handle_focus_event(bool focused)
@@ -364,19 +642,15 @@ void handle_sdl_event(const SDL_Event &event)
 
 		case SDL_EVENT_KEY_DOWN:
 		{
-			const int virtual_key = sdl_keyboard_event_to_virtual_key(event.key);
-			if (virtual_key != 0) {
-				SDL_GameInput_Handle_Key(virtual_key, static_cast<int>(event.key.scancode), event.key.repeat, false);
-			}
+			SDL_GameInput_Handle_Key(event.key.scancode, event.key.key, static_cast<SDL_Keymod>(event.key.mod),
+				event.key.repeat, false);
 			break;
 		}
 
 		case SDL_EVENT_KEY_UP:
 		{
-			const int virtual_key = sdl_keyboard_event_to_virtual_key(event.key);
-			if (virtual_key != 0) {
-				SDL_GameInput_Handle_Key(virtual_key, static_cast<int>(event.key.scancode), false, true);
-			}
+			SDL_GameInput_Handle_Key(event.key.scancode, event.key.key, static_cast<SDL_Keymod>(event.key.mod),
+				false, true);
 			break;
 		}
 
@@ -408,48 +682,26 @@ void SDL_GameInput_Set_Main_Thread(void)
 
 	std::scoped_lock lock(g_input_mutex);
 	initialize_mouse_snapshot_locked();
-	SDL_Keymod mod_state = SDL_GetModState();
-	g_toggle_state[VK_CAPITAL] = ((mod_state & SDL_KMOD_CAPS) != 0) ? 1 : 0;
-	g_toggle_state[VK_NUMLOCK] = ((mod_state & SDL_KMOD_NUM) != 0) ? 1 : 0;
+	update_modifier_state_locked(SDL_GetModState());
 
 	g_main_thread_set.store(true);
 }
 
-void SDL_GameInput_Handle_Key(int virtual_key, int physical_key, bool repeat, bool release)
+void SDL_GameInput_Handle_Key(SDL_Scancode scancode, SDL_Keycode keycode, SDL_Keymod mod_state, bool repeat, bool release)
 {
-	if (!valid_virtual_key(virtual_key)) {
-		return;
+	unsigned short legacy_key = legacy_key_from_scancode(scancode);
+	if (legacy_key == 0) {
+		legacy_key = legacy_key_from_keycode(keycode);
 	}
 
 	{
 		std::scoped_lock lock(g_input_mutex);
-		if (release) {
-			auto it = g_pressed_keys.find(physical_key);
-			int mapped_key = virtual_key;
-			if (it != g_pressed_keys.end()) {
-				mapped_key = it->second;
-				g_pressed_keys.erase(it);
-			}
-			release_virtual_key_locked(mapped_key);
-		} else {
-			auto it = g_pressed_keys.find(physical_key);
-			if (it == g_pressed_keys.end()) {
-				g_pressed_keys.emplace(physical_key, virtual_key);
-				press_virtual_key_locked(virtual_key);
-				if (!repeat && is_toggle_key(virtual_key)) {
-					g_toggle_state[virtual_key] = g_toggle_state[virtual_key] ? 0 : 1;
-				}
-			} else if (it->second != virtual_key) {
-				release_virtual_key_locked(it->second);
-				it->second = virtual_key;
-				press_virtual_key_locked(virtual_key);
-			} else {
-				note_async_press_locked(virtual_key);
-			}
-		}
+		note_key_event_locked(scancode, mod_state, repeat, release);
 	}
 
-	Keyboard_Handle_Key_Event(static_cast<unsigned short>(virtual_key), release);
+	if (legacy_key != 0) {
+		Keyboard_Handle_Key_Event(legacy_key, release);
+	}
 }
 
 void SDL_GameInput_Handle_Mouse_Motion(int x, int y, uint32_t button_state)
@@ -470,8 +722,8 @@ void SDL_GameInput_Handle_Mouse_Motion(int x, int y, uint32_t button_state)
 
 void SDL_GameInput_Handle_Mouse_Button(int button, int x, int y, bool release)
 {
-	const int virtual_key = mouse_button_to_virtual_key(button);
-	if (virtual_key == 0) {
+	const unsigned short legacy_key = mouse_button_to_legacy_key(button);
+	if (legacy_key == 0) {
 		return;
 	}
 
@@ -484,16 +736,14 @@ void SDL_GameInput_Handle_Mouse_Button(int button, int x, int y, bool release)
 		uint32_t mask = mouse_button_mask(button);
 		if (!release) {
 			g_mouse_buttons |= mask;
-			press_virtual_key_locked(virtual_key);
 		} else {
 			g_mouse_buttons &= ~mask;
-			release_virtual_key_locked(virtual_key);
 		}
 		mouse_x = g_mouse_x;
 		mouse_y = g_mouse_y;
 	}
 
-	Keyboard_Handle_Mouse_Button_Event(static_cast<unsigned short>(virtual_key), mouse_x, mouse_y, release);
+	Keyboard_Handle_Mouse_Button_Event(legacy_key, mouse_x, mouse_y, release);
 }
 
 void SDL_GameInput_Pump(void)
@@ -552,20 +802,6 @@ void SDL_GameInput_Maybe_Pump(void)
 	SDL_GameInput_Pump();
 }
 
-SHORT SDL_GameInput_GetKeyState(int virtual_key)
-{
-	SDL_GameInput_Maybe_Pump();
-	std::scoped_lock lock(g_input_mutex);
-	return (key_state_locked(virtual_key, false));
-}
-
-SHORT SDL_GameInput_GetAsyncKeyState(int virtual_key)
-{
-	SDL_GameInput_Maybe_Pump();
-	std::scoped_lock lock(g_input_mutex);
-	return (key_state_locked(virtual_key, true));
-}
-
 BOOL SDL_GameInput_GetCursorPos(POINT* point)
 {
 	if (point == NULL) {
@@ -614,4 +850,57 @@ void SDL_GameInput_SetCursorClip(const RECT* rect)
 	g_cursor_clip_active = true;
 	g_cursor_clip = *rect;
 	update_mouse_position_locked(g_mouse_x, g_mouse_y);
+}
+
+bool SDL_GameInput_IsModifierPressed(SDL_Keymod mod_mask)
+{
+	SDL_GameInput_Maybe_Pump();
+	std::scoped_lock lock(g_input_mutex);
+	return modifier_pressed_locked(mod_mask);
+}
+
+bool SDL_GameInput_IsModifierToggled(SDL_Keymod mod_mask)
+{
+	SDL_GameInput_Maybe_Pump();
+	std::scoped_lock lock(g_input_mutex);
+	return (g_mod_state & mod_mask) != 0;
+}
+
+bool SDL_GameInput_IsScancodePressed(SDL_Scancode scancode)
+{
+	SDL_GameInput_Maybe_Pump();
+	std::scoped_lock lock(g_input_mutex);
+	return scancode_down_locked(scancode);
+}
+
+bool SDL_GameInput_IsMouseButtonPressed(uint8_t button)
+{
+	SDL_GameInput_Maybe_Pump();
+	std::scoped_lock lock(g_input_mutex);
+	return mouse_button_down_locked(button);
+}
+
+bool SDL_GameInput_IsLegacyKeyPressed(unsigned short key)
+{
+	SDL_GameInput_Maybe_Pump();
+	std::scoped_lock lock(g_input_mutex);
+	return legacy_key_down_locked(key);
+}
+
+char SDL_GameInput_KeyToASCII(unsigned short key)
+{
+	SDL_GameInput_Maybe_Pump();
+	std::scoped_lock lock(g_input_mutex);
+	return translate_ascii_from_legacy_key(key);
+}
+
+SHORT SDL_GameInput_AsciiToLegacyKey(unsigned char ch)
+{
+	if (ch >= 'a' && ch <= 'z') {
+		return static_cast<SHORT>(KN_A + static_cast<unsigned short>(ch - 'a'));
+	}
+	if (ch >= 'A' && ch <= 'Z') {
+		return static_cast<SHORT>(WWKEY_SHIFT_BIT | (KN_A + static_cast<unsigned short>(ch - 'A')));
+	}
+	return static_cast<SHORT>(ch);
 }

@@ -42,12 +42,19 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "KEYBOARD.H"
+#include "SDLINPUT.H"
 #include "TIMER.H"
 #include "MONO.H"
 
 void Message_Loop(void);
 
 WWKeyboardClass *_Kbd;
+
+namespace {
+
+constexpr int LEGACY_MIDDLE_MOUSE = 0x04;
+
+}
 
 /***********************************************************************************************
  * WWKeyboardClass::WWKeyBoardClass -- Construction for Westwood Keyboard Class                *
@@ -70,7 +77,7 @@ WWKeyboardClass::WWKeyboardClass(void)
 	memset(AsciiRemap, 0, 2048);
 	for (short lp = 31; lp < 255; lp ++) {
 		if (isprint(lp)) {
-			int vk_key = VkKeyScan((unsigned char)lp);
+			int vk_key = SDL_GameInput_AsciiToLegacyKey((unsigned char)lp);
 			if (vk_key > 0 && vk_key < 2048) {
 				AsciiRemap[vk_key] = (unsigned char)lp;
 				VKRemap[lp] 	 = (unsigned char)(vk_key & 0xFF);
@@ -87,7 +94,7 @@ WWKeyboardClass::WWKeyboardClass(void)
 		if (isalpha(lp) && isupper(lp)) {
 			ToggleKeys[lp] = 1;
 		}
-		if (lp >= VK_NUMPAD0 && lp <= VK_DIVIDE) {
+		if (lp >= 0x60 && lp <= 0x6F) {
 			ToggleKeys[lp] = 2;
 		}
 	}
@@ -142,7 +149,7 @@ int WWKeyboardClass::Buff_Get(void)
 BOOL WWKeyboardClass::Is_Mouse_Key(int key)
 {
 	key &= 0xFF;
-	return (key == VK_LBUTTON || key == VK_MBUTTON || key == VK_RBUTTON);
+	return (key == KN_LMOUSE || key == LEGACY_MIDDLE_MOUSE || key == KN_RMOUSE);
 }
 
 
@@ -242,12 +249,12 @@ BOOL WWKeyboardClass::Put_Key_Message(UINT vk_key, BOOL release, BOOL dbl)
 	// that we do not want to set the shift, ctrl and alt bits for Mouse keypresses as this
 	// would be incompatible with the dos version.
 	//
-	if (vk_key != VK_LBUTTON && vk_key != VK_MBUTTON && vk_key != VK_RBUTTON) 	{
-		int	shift		= (GetKeyState(VK_SHIFT) & 0xFF00) 		!= 0;
-		int	ctrl 		= (GetKeyState(VK_CONTROL) & 0xFF00) 	!= 0;
-		int	alt 		= (GetKeyState(VK_MENU) & 0xFF00) 		!= 0;
-		int	caps		= ((GetKeyState(VK_CAPITAL) & 0x00FF) 	!= 0) && (ToggleKeys[vk_key] == 1);
-		int	nums		= ((GetKeyState(VK_NUMLOCK) & 0x00FF) 	!= 0) && (ToggleKeys[vk_key] == 2);
+	if (vk_key != KN_LMOUSE && vk_key != LEGACY_MIDDLE_MOUSE && vk_key != KN_RMOUSE) 	{
+		int	shift		= SDL_GameInput_IsModifierPressed(SDL_KMOD_SHIFT);
+		int	ctrl 		= SDL_GameInput_IsModifierPressed(SDL_KMOD_CTRL);
+		int	alt 		= SDL_GameInput_IsModifierPressed(SDL_KMOD_ALT);
+		int	caps		= SDL_GameInput_IsModifierToggled(SDL_KMOD_CAPS) && (ToggleKeys[vk_key] == 1);
+		int	nums		= SDL_GameInput_IsModifierToggled(SDL_KMOD_NUM) && (ToggleKeys[vk_key] == 2);
 
 		//
 		// Set the proper bits for whatever the key we got is.
@@ -292,7 +299,7 @@ int WWKeyboardClass::To_ASCII(int key)
 
 int WWKeyboardClass::Down(int key)
 {
-	return(GetAsyncKeyState(key&0xFF));
+	return SDL_GameInput_IsLegacyKeyPressed(key & 0xFF);
 }
 
 VOID WWKeyboardClass::Split(int &key, int &shift, int &ctrl, int &alt, int &rls, int &dbl)
@@ -317,7 +324,7 @@ void WWKeyboardClass::Message_Handler(HWND , UINT message, UINT wParam, LONG lPa
 	switch (message) {
 		case WM_SYSKEYDOWN:
 		case WM_KEYDOWN:
-			if ( wParam==VK_SCROLL ){
+			if (wParam == KN_SCROLLLOCK) {
 				Stop_Execution();
 			} else {
 				Put_Key_Message(wParam);
@@ -330,55 +337,55 @@ void WWKeyboardClass::Message_Handler(HWND , UINT message, UINT wParam, LONG lPa
 			break;
 
 		case WM_LBUTTONDOWN:
-			Put_Key_Message(VK_LBUTTON);
+			Put_Key_Message(KN_LMOUSE);
 			Put(LOWORD(lParam));
 			Put(HIWORD(lParam));
 			break;
 
 		case WM_LBUTTONUP:
-			Put_Key_Message(VK_LBUTTON, TRUE);
+			Put_Key_Message(KN_LMOUSE, TRUE);
 			Put(LOWORD(lParam));
 			Put(HIWORD(lParam));
 			break;
 
 		case WM_LBUTTONDBLCLK:
-			Put_Key_Message(VK_LBUTTON, TRUE, TRUE);
+			Put_Key_Message(KN_LMOUSE, TRUE, TRUE);
 			Put(LOWORD(lParam));
 			Put(HIWORD(lParam));
 			break;
 
 		case WM_MBUTTONDOWN:
-			Put_Key_Message(VK_MBUTTON);
+			Put_Key_Message(LEGACY_MIDDLE_MOUSE);
 			Put(LOWORD(lParam));
 			Put(HIWORD(lParam));
 			break;
 
 		case WM_MBUTTONUP:
-			Put_Key_Message(VK_MBUTTON, TRUE);
+			Put_Key_Message(LEGACY_MIDDLE_MOUSE, TRUE);
 			Put(LOWORD(lParam));
 			Put(HIWORD(lParam));
 			break;
 
 		case WM_MBUTTONDBLCLK:
-			Put_Key_Message(VK_MBUTTON, TRUE, TRUE);
+			Put_Key_Message(LEGACY_MIDDLE_MOUSE, TRUE, TRUE);
 			Put(LOWORD(lParam));
 			Put(HIWORD(lParam));
 			break;
 
 		case WM_RBUTTONDOWN:
-			Put_Key_Message(VK_RBUTTON);
+			Put_Key_Message(KN_RMOUSE);
 			Put(LOWORD(lParam));
 			Put(HIWORD(lParam));
 			break;
 
 		case WM_RBUTTONUP:
-			Put_Key_Message(VK_RBUTTON, TRUE);
+			Put_Key_Message(KN_RMOUSE, TRUE);
 			Put(LOWORD(lParam));
 			Put(HIWORD(lParam));
 			break;
 
 		case WM_RBUTTONDBLCLK:
-			Put_Key_Message(VK_RBUTTON, TRUE, TRUE);
+			Put_Key_Message(KN_RMOUSE, TRUE, TRUE);
 			Put(LOWORD(lParam));
 			Put(HIWORD(lParam));
 			break;
@@ -491,8 +498,8 @@ int KN_To_KA(int key)
 		/*
 		** If its a numeric keypad key then fix it up
 		*/
-		if ((key & 0xff) >=VK_NUMPAD0 && (key & 0xff) <=VK_NUMPAD9){
-			key = (key & 0xff) - VK_NUMPAD0 + KA_0;
+		if ((key & 0xff) >= 0x60 && (key & 0xff) <= 0x69) {
+			key = (key & 0xff) - 0x60 + KA_0;
 		}
 	}
 	return(key);
@@ -502,7 +509,7 @@ int KN_To_VK(int key)
 {
 	if (!_Kbd) return(KN_NONE);
 	if ( key & WWKEY_RLS_BIT) {
-		return(VK_NONE);
+		return(KN_NONE);
 	}
 
 	int flags = key & 0xFF00;
@@ -530,4 +537,3 @@ int Get_Key(void)
 	}
 	return(retval);
 }
-

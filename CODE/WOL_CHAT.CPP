@@ -23,6 +23,7 @@
 
 #include "FUNCTION.H"
 #include "ICONLIST.H"
+#include "SDLINPUT.H"
 #include "SEDITDLG.H"
 #include "WOLSTRNG.H"
 #include "TOOLTIP.H"
@@ -624,7 +625,7 @@ int WOL_Chat_Dialog( WolapiObject* pWO )
 		//.....................................................................
 		//	Get user input
 		//.....................................................................
-		if( ( ::GetAsyncKeyState( KN_LMOUSE ) & 0x8000 ) || ( ::GetAsyncKeyState( KN_RMOUSE ) & 0x8000 ) )
+		if (SDL_GameInput_IsMouseButtonPressed(SDL_BUTTON_LEFT) || SDL_GameInput_IsMouseButtonPressed(SDL_BUTTON_RIGHT))
 		{
 			//	Mouse button is down.
 			timeToolTipAppear = ::timeGetTime() + TOOLTIPDELAY;
@@ -663,7 +664,7 @@ int WOL_Chat_Dialog( WolapiObject* pWO )
 				if( pToolTipHit && bLinkInList( commands, pToolTipHit->pGadget ) )	//	(Gadget must be in controls list.)
 				{
 					if( !pToolTipHit->bShowing && ::timeGetTime() > timeToolTipAppear && 
-						!( ( ::GetAsyncKeyState( KN_LMOUSE ) & 0x8000 ) || ( ::GetAsyncKeyState( KN_RMOUSE ) & 0x8000 ) ) )
+						!(SDL_GameInput_IsMouseButtonPressed(SDL_BUTTON_LEFT) || SDL_GameInput_IsMouseButtonPressed(SDL_BUTTON_RIGHT)) )
 					{
 						pToolTipHit->Show();
 					}

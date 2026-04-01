@@ -23,6 +23,7 @@
 
 #include "FUNCTION.H"
 #include "ICONLIST.H"
+#include "SDLINPUT.H"
 #include "WOLSTRNG.H"
 #include "BIGCHECK.H"
 //
@@ -40,7 +41,7 @@ bool WOL_Options_Dialog( WolapiObject* pWO, bool bCalledFromGame )
 	bool bReturnDown = false;
 
 	bool bIgnoreReturnDown = false;
-	if( ( ::GetAsyncKeyState( VK_RETURN ) & 0x8000 ) )
+	if (SDL_GameInput_IsScancodePressed(SDL_SCANCODE_RETURN) || SDL_GameInput_IsScancodePressed(SDL_SCANCODE_KP_ENTER))
 	{
 		//	The return key is already down, as we enter the dialog.
 		//	Until it comes up again, ignore this fact, so that we don't act on a return press that's not valid.
@@ -192,7 +193,7 @@ bool WOL_Options_Dialog( WolapiObject* pWO, bool bCalledFromGame )
 		//	My hack for triggering escape and return on key up instead of down...
 		//	The problem that was occurring was that the calling dialog would act on the key up,
 		//	though this dialog handled the key down. ajw
-		if( ( ::GetAsyncKeyState( VK_ESCAPE ) & 0x8000 ) )
+		if (SDL_GameInput_IsScancodePressed(SDL_SCANCODE_ESCAPE))
 		{
 			bEscapeDown = true;
 		}
@@ -201,7 +202,7 @@ bool WOL_Options_Dialog( WolapiObject* pWO, bool bCalledFromGame )
 			input = (KeyNumType)( BUTTON_OK | KN_BUTTON );
 			bEscapeDown = false;
 		}
-		if( ( ::GetAsyncKeyState( VK_RETURN ) & 0x8000 ) )
+		if (SDL_GameInput_IsScancodePressed(SDL_SCANCODE_RETURN) || SDL_GameInput_IsScancodePressed(SDL_SCANCODE_KP_ENTER))
 		{
 			if( !bIgnoreReturnDown )
 				bReturnDown = true;

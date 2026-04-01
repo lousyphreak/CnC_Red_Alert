@@ -22,6 +22,7 @@
 //	ajw 09/9/98
 
 #include "FUNCTION.H"
+#include "SDLINPUT.H"
 #ifndef FIXIT_CSII
 #error FIXIT_CSII must be defined.
 #endif
@@ -232,7 +233,7 @@ CREATEGAMEINFO WOL_CreateGame_Dialog( WolapiObject* pWO )
 		//	My hack for triggering escape and return on key up instead of down...
 		//	The problem that was occurring was that the calling dialog would act on the key up,
 		//	though this dialog handled the key down. ajw
-		if( ( ::GetAsyncKeyState( VK_ESCAPE ) & 0x8000 ) )
+		if (SDL_GameInput_IsScancodePressed(SDL_SCANCODE_ESCAPE))
 		{
 			bEscapeDown = true;
 		}
@@ -241,7 +242,7 @@ CREATEGAMEINFO WOL_CreateGame_Dialog( WolapiObject* pWO )
 			input = (KeyNumType)( BUTTON_CANCEL | KN_BUTTON );
 			bEscapeDown = false;
 		}
-		if( ( ::GetAsyncKeyState( VK_RETURN ) & 0x8000 ) )
+		if (SDL_GameInput_IsScancodePressed(SDL_SCANCODE_RETURN) || SDL_GameInput_IsScancodePressed(SDL_SCANCODE_KP_ENTER))
 		{
 			bReturnDown = true;
 		}

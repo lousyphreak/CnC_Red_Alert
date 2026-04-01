@@ -8,6 +8,16 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Removed the remaining active Win32 virtual-key dependency from the SDL input path and shrank the compat wrapper accordingly:
+  - rewired `CODE/SDLINPUT.CPP/.H` so SDL events are tracked in SDL-native terms (`SDL_Scancode`, `SDL_Keymod`, and SDL mouse buttons) instead of first being translated into fake `VK_*` state;
+  - the SDL input layer still emits the legacy `KN_*` queue values the original game expects, but it now maps SDL events directly to those legacy values instead of routing through `GetKeyState()` / `GetAsyncKeyState()` / `MapVirtualKey()` / `ToAscii()` shims in `win32_compat`;
+  - updated the active keyboard consumers in `CODE/KEY.CPP`, the WOL/UI polling sites (`CODE/{WOL_OPT,SEDITDLG,WOL_CGAM,WOL_CHAT,WOL_GSUP}.CPP`), and the compiled legacy `WIN32LIB/KEYBOARD/KEYBOARD.CPP` path to query SDL-backed helpers directly for modifiers, keys, and mouse buttons;
+  - follow-up regression audit: `CODE/KEY.CPP::Put_Key_Message()` initially over-applied the synthetic `WWKEY_SHIFT_BIT` whenever CapsLock or NumLock was on, which broke exact key comparisons like the movie-breakout `key == KN_ESC`; the queue logic now only lets CapsLock affect `A-Z` and NumLock affect keypad-style keys, restoring ESC/video breakout and protecting similar exact `KN_*` checks in dialogs/front-end code;
+  - second follow-up regression audit: `CODE/SDLINPUT.CPP::SDL_GameInput_IsLegacyKeyPressed()` was missing held-state mappings for ordinary alphanumeric and punctuation keys, which would have broken `Keyboard->Down(...)` for bindings such as `Q`, number hotkeys, space, and punctuation-backed options; the polling path now maps those legacy `KN_*` values back to SDL scancodes too;
+  - removed the input-only Win32 compat surface from `SDL3_COMPAT/wrappers/win32_compat.h/.cpp`, including the large `VK_*` define block plus the `GetKeyState`, `GetAsyncKeyState`, `VkKeyScan`, `MapVirtualKey`, and `ToAscii` shims;
+  - a repo-owned scan over active `.c/.cpp` sources now reports no remaining `VK_*` uses outside comments/headers, so the live SDL3 port no longer depends on wrapper-side Win32 virtual-key state;
+  - validation: `cmake --build build --target redalert -j8` and `cmake --build build-asan --target redalert -j8` both succeed after the input rewrite and wrapper trim.
+
 - Started trimming SDL string-forwarding baggage from `SDL3_COMPAT/wrappers/win32_compat.h` instead of keeping legacy `_str*`/`str*` aliases indefinitely:
   - after the first small header-side replacement, rebuild validation surfaced many more live users spread across `CODE/`, `WIN32LIB/`, and `VQ/`, so the cleanup was widened into a repo-owned caller sweep instead of stopping at the first three obvious sites;
   - updated the active users to call SDL directly: `stricmp` / `_stricmp` / `strcmpi` -> `SDL_strcasecmp()`, `strnicmp` / `_strnicmp` / `memicmp` -> `SDL_strncasecmp()`, `strupr` -> `SDL_strupr()`, `strrev` -> `SDL_strrev()`, and `_strlwr` / `strlwr` -> `SDL_strlwr()`;

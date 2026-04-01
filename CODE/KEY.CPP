@@ -67,6 +67,22 @@ extern WWKeyboardClass *Keyboard;
 
 #define	ARRAY_SIZE(x)		int(sizeof(x)/sizeof(x[0]))
 
+namespace {
+
+bool CapsLock_Affects_Key(unsigned short key)
+{
+	key &= 0xFF;
+	return (key >= KN_A && key <= KN_Z);
+}
+
+bool NumLock_Affects_Key(unsigned short key)
+{
+	key &= 0xFF;
+	return (key >= 0x60 && key <= 0x6F);
+}
+
+}
+
 
 /***********************************************************************************************
  * WWKeyboardClass::WWKeyBoardClass -- Construction for Westwood Keyboard Class                *
@@ -85,8 +101,6 @@ WWKeyboardClass::WWKeyboardClass(void) :
 	Tail(0)
 {
 //	_Kbd = this;
-
-	memset(KeyState, '\0', sizeof(KeyState));
 }
 
 
@@ -132,7 +146,7 @@ unsigned short WWKeyboardClass::Buff_Get(void)
 bool WWKeyboardClass::Is_Mouse_Key(unsigned short key)
 {
 	key &= 0xFF;
-	return (key == VK_LBUTTON || key == VK_MBUTTON || key == VK_RBUTTON);
+	return (key == KN_LMOUSE || key == 0x04 || key == KN_RMOUSE);
 }
 
 
@@ -219,16 +233,16 @@ bool WWKeyboardClass::Put_Key_Message(unsigned short vk_key, bool release)
 	** would be incompatible with the dos version.
 	*/
 	if (!Is_Mouse_Key(vk_key)) {
-		if (((GetKeyState(VK_SHIFT) & 0x8000) != 0) ||
-			((GetKeyState(VK_CAPITAL) & 0x0001) != 0) ||
-			((GetKeyState(VK_NUMLOCK) & 0x0001) != 0)) {
+		if (SDL_GameInput_IsModifierPressed(SDL_KMOD_SHIFT) ||
+			(SDL_GameInput_IsModifierToggled(SDL_KMOD_CAPS) && CapsLock_Affects_Key(vk_key)) ||
+			(SDL_GameInput_IsModifierToggled(SDL_KMOD_NUM) && NumLock_Affects_Key(vk_key))) {
 
 			vk_key |= WWKEY_SHIFT_BIT;
 		}
-		if ((GetKeyState(VK_CONTROL) & 0x8000) != 0) {
+		if (SDL_GameInput_IsModifierPressed(SDL_KMOD_CTRL)) {
 			vk_key |= WWKEY_CTRL_BIT;
 		}
-		if ((GetKeyState(VK_MENU) & 0x8000) != 0) {
+		if (SDL_GameInput_IsModifierPressed(SDL_KMOD_ALT)) {
 			vk_key |= WWKEY_ALT_BIT;
 		}
 	}
@@ -333,58 +347,7 @@ void Keyboard_Handle_Mouse_Motion(int x, int y)
  *=============================================================================================*/
 char WWKeyboardClass::To_ASCII(unsigned short key)
 {
-	/*
-	**	Released keys never translate into an ASCII value.
-	*/
-	if (key & WWKEY_RLS_BIT) {
-		return('\0');
-	}
-
-	/*
-	**	Set the KeyState buffer to reflect the shift bits stored in the key value.
-	*/
-	if (key & WWKEY_SHIFT_BIT) {
-		KeyState[VK_SHIFT] = 0x80;
-	}
-	if (key & WWKEY_CTRL_BIT) {
-		KeyState[VK_CONTROL] = 0x80;
-	}
-	if (key & WWKEY_ALT_BIT) {
-		KeyState[VK_MENU] = 0x80;
-	}
-
-	/*
-	**	Ask windows to translate the key into an ASCII equivalent.
-	*/
-	char buffer[10];
-	int result = 1;
-	int scancode = 0;
-
-	scancode = MapVirtualKey(key & 0xFF, 0);
-	result = ToAscii((UINT)(key & 0xFF), (UINT)scancode, (PBYTE)KeyState, (LPWORD)buffer, (UINT)0);
-
-	/*
-	**	Restore the KeyState buffer back to pristine condition.
-	*/
-	if (key & WWKEY_SHIFT_BIT) {
-		KeyState[VK_SHIFT] = 0;
-	}
-	if (key & WWKEY_CTRL_BIT) {
-		KeyState[VK_CONTROL] = 0;
-	}
-	if (key & WWKEY_ALT_BIT) {
-		KeyState[VK_MENU] = 0;
-	}
-
-	/*
-	**	If Windows could not perform the translation as expected, then
-	**	return with a null ASCII value.
-	*/
-	if (result != 1) {
-		return('\0');
-	}
-
-	return(buffer[0]);
+	return SDL_GameInput_KeyToASCII(key);
 }
 
 
@@ -404,7 +367,7 @@ char WWKeyboardClass::To_ASCII(unsigned short key)
  *=============================================================================================*/
 bool WWKeyboardClass::Down(unsigned short key)
 {
-	return((SDL_GameInput_GetAsyncKeyState(key & 0xFF) & 0x8000) != 0);
+	return SDL_GameInput_IsLegacyKeyPressed(key & 0xFF);
 }
 
 

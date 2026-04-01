@@ -19,6 +19,8 @@
 
 #include <cstring>
 
+#include "SDLINPUT.H"
+
 #ifndef WOLAPI_INTEGRATION
 bool bSpecialAftermathScenario(const char* szScenarioDescription)
 {
@@ -1152,7 +1154,7 @@ RESULT_WOLGSUP WOL_GameSetupDialog::Show()
 		//.....................................................................
 		//	Get user input
 		//.....................................................................
-		if( ( ::GetAsyncKeyState( KN_LMOUSE ) & 0x8000 ) || ( ::GetAsyncKeyState( KN_RMOUSE ) & 0x8000 ) )
+		if (SDL_GameInput_IsMouseButtonPressed(SDL_BUTTON_LEFT) || SDL_GameInput_IsMouseButtonPressed(SDL_BUTTON_RIGHT))
 		{
 			timeToolTipAppear = ::timeGetTime() + TOOLTIPDELAY;
 			if( pToolTipHitLast && pToolTipHitLast->bShowing )
@@ -1175,7 +1177,7 @@ RESULT_WOLGSUP WOL_GameSetupDialog::Show()
 			ToolTipClass* pToolTipHit = pToolTipHead->GetToolTipHit();
 			if( pToolTipHit == pToolTipHitLast )
 			{
-				if( pToolTipHit && !pToolTipHit->bShowing && ::timeGetTime() > timeToolTipAppear && !( ( ::GetAsyncKeyState( KN_LMOUSE ) & 0x8000 ) || ( ::GetAsyncKeyState( KN_RMOUSE ) & 0x8000 ) ) )
+				if( pToolTipHit && !pToolTipHit->bShowing && ::timeGetTime() > timeToolTipAppear && !(SDL_GameInput_IsMouseButtonPressed(SDL_BUTTON_LEFT) || SDL_GameInput_IsMouseButtonPressed(SDL_BUTTON_RIGHT)) )
 				{
 					pToolTipHit->Show();
 				}

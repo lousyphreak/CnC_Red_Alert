@@ -24,6 +24,7 @@
 //	ajw 07/21/98
 
 #include "SEDITDLG.H"
+#include "SDLINPUT.H"
 #include "WOLEDIT.H"
 extern bool cancel_current_msgbox;
 bool disable_current_msgbox = false;
@@ -300,7 +301,7 @@ const char* SimpleEditDlgClass::Show()
 		//	My hack for triggering escape and return on key up instead of down...
 		//	The problem that was occurring was that the calling dialog would act on the key up,
 		//	though this dialog handled the key down. ajw
-		if( ( ::GetAsyncKeyState( VK_ESCAPE ) & 0x8000 ) )
+		if (SDL_GameInput_IsScancodePressed(SDL_SCANCODE_ESCAPE))
 		{
 			bEscapeDown = true;
 		}
@@ -309,7 +310,7 @@ const char* SimpleEditDlgClass::Show()
 			input = (KeyNumType)( BUTTON_CANCEL | KN_BUTTON );
 			bEscapeDown = false;
 		}
-		if( ( ::GetAsyncKeyState( VK_RETURN ) & 0x8000 ) )
+		if (SDL_GameInput_IsScancodePressed(SDL_SCANCODE_RETURN) || SDL_GameInput_IsScancodePressed(SDL_SCANCODE_KP_ENTER))
 		{
 			bReturnDown = true;
 		}
