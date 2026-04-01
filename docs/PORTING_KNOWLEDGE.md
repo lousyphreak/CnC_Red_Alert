@@ -9,6 +9,13 @@ _Last updated: 2026-04-01_
 - Shared platform/rendering/input/audio support code lives in `WIN32LIB/`.
 - The active compatibility include order puts `SDL3_COMPAT/wrappers/` ahead of `CODE/` and `WIN32LIB/INCLUDE`.
 
+## Dead-code cleanup guardrails
+
+- "Not selected by CMake" is not sufficient proof that a file is dead in this tree.
+- `CODE/ADPCM.CPP` still directly `#include`s `CODE/ITABLE.CPP` and `CODE/DTABLE.CPP`, so those two `.CPP` files are still active implementation fragments even though they are filtered from the top-level `CODE/*.CPP` build list.
+- `CODE/2KEYFRAM.CPP` is still a live build input because the current `CMakeLists.txt` globs `CODE/*.CPP` and does **not** exclude that file. It provides the active `Build_Frame()`, `Get_Build_Frame_Count()`, `Get_Build_Frame_Width()`, `Get_Build_Frame_Height()`, `Get_Shape_Header_Data()`, and `IsTheaterShape` symbols used throughout the game.
+- The broad dead-code cleanup safely removed non-built archive/tool trees such as `LAUNCH/`, `LAUNCHER/`, `TOOLS/`, `IPX/`, `WWFLAT32/`, `VQ/VQM32/`, and the non-built `WINVQ/` source subtrees, plus non-built `WIN32LIB` archive/test trees. If more cleanup is needed later, start from those categories before touching `CODE/` implementation fragments or globbed root `.CPP` files.
+
 ## Removed objbase wrapper
 
 - Do not reintroduce `SDL3_COMPAT/wrappers/objbase.h`. Because `SDL3_COMPAT/wrappers/` is first on the include path, an `objbase.h` shim there overrides the real Windows SDK COM header for both Red Alert code and bundled SDL Windows sources.
