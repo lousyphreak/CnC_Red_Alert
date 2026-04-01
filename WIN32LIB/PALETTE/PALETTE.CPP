@@ -60,7 +60,7 @@ extern "C" {
 unsigned char CurrentPalette[768];
 }
 
-extern "C" void Set_DD_Palette(void *palette);
+extern "C" void Set_Video_Palette(void *palette);
 
 /*
 ******************************** Prototypes *********************************
@@ -388,7 +388,7 @@ extern "C" void __cdecl Set_Palette_Range(void *palette)
 	}
 
 	memcpy(CurrentPalette, palette, 768);
-	Set_DD_Palette(CurrentPalette);
+	Set_Video_Palette(CurrentPalette);
 }
 
 
@@ -404,6 +404,5 @@ extern "C" void Set_Palette_Register(int number, int red, int green, int blue)
 	entry[0] = (unsigned char)MAX(0, MIN(red, 63));
 	entry[1] = (unsigned char)MAX(0, MIN(green, 63));
 	entry[2] = (unsigned char)MAX(0, MIN(blue, 63));
-	Set_DD_Palette(CurrentPalette);
+	Set_Video_Palette(CurrentPalette);
 }
-

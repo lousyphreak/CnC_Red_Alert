@@ -38,9 +38,9 @@
 #define MISC_H
 
 #include "win32_compat.h"
-#include <ddraw.h>
+#include "sdl_draw.h"
 
-extern	LPDIRECTDRAWSURFACE	PaletteSurface;
+extern	WWSurface*	PaletteSurface;
 
 /*========================= C++ Routines ==================================*/
 
@@ -48,15 +48,16 @@ extern	LPDIRECTDRAWSURFACE	PaletteSurface;
 /*=========================================================================*/
 /* The following prototypes are for the file: DDRAW.CPP							*/
 /*=========================================================================*/
-void 		Process_DD_Result(HRESULT result, int display_ok_msg);
+void 		Process_Draw_Result(HRESULT result, int display_ok_msg);
 BOOL 		Set_Video_Mode(HWND hwnd, int w, int h, int bits_per_pixel);
 void 		Reset_Video_Mode(void);
 unsigned 	Get_Free_Video_Memory(void);
+unsigned 	Get_Total_Video_Memory(void);
 void 		Wait_Blit(void);
 unsigned 	Get_Video_Hardware_Capabilities(void);
 
 extern "C" void Wait_Vert_Blank(void);
-extern "C" void Set_DD_Palette (void *palette);
+extern "C" void Set_Video_Palette (void *palette);
 
 /*
 ** Pointer to function to call if we detect a focus loss
@@ -106,9 +107,9 @@ class SurfaceMonitorClass {
 
 		SurfaceMonitorClass();
 
-		void	Add_DD_Surface (LPDIRECTDRAWSURFACE);
-		void	Remove_DD_Surface (LPDIRECTDRAWSURFACE);
-		BOOL	Got_Surface_Already (LPDIRECTDRAWSURFACE);
+		void	Add_Surface (WWSurface*);
+		void	Remove_Surface (WWSurface*);
+		BOOL	Got_Surface_Already (WWSurface*);
 		void	Restore_Surfaces (void);
 		void	Set_Surface_Focus ( BOOL in_focus );
 		void	Release(void);
@@ -117,7 +118,7 @@ class SurfaceMonitorClass {
 
 	private:
 
-		LPDIRECTDRAWSURFACE	Surface[MAX_SURFACES];
+		WWSurface*	Surface[MAX_SURFACES];
 		BOOL						InFocus;
 
 };
@@ -128,8 +129,7 @@ extern	SurfaceMonitorClass	AllSurfaces;				//List of all direct draw surfaces
 /*=========================================================================*/
 /* The following variables are declared in: DDRAW.CPP								*/
 /*=========================================================================*/
-extern	LPDIRECTDRAW	DirectDrawObject;
-extern	LPDIRECTDRAW2	DirectDraw2Interface;
+extern	WWDraw*	VideoDrawObject;
 extern	HWND				MainWindow;
 extern BOOL 				SystemToVideoBlits;
 extern BOOL				VideoToSystemBlits;
@@ -265,4 +265,3 @@ extern WORD OperationgSystem;
 /*=========================================================================*/
 
 #endif // MISC_H
-

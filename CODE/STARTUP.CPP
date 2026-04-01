@@ -127,7 +127,7 @@ int PASCAL WinMain ( HINSTANCE instance , HINSTANCE , char * command_line , int 
 {
 
 	#ifndef MPEGMOVIE // Denzil 6/10/98
-	DDSCAPS	surface_capabilities;
+	bool surface_in_system_memory = false;
 	#endif
 
 	startup_trace("WinMain entered command_line=\"%s\"", command_line ? command_line : "");
@@ -391,9 +391,8 @@ int PASCAL WinMain ( HINSTANCE instance , HINSTANCE , char * command_line , int 
 				/*
 				** Check that we really got a video memory page. Failure is fatal.
 				*/
-				memset (&surface_capabilities, 0, sizeof(surface_capabilities));
-				VisiblePage.Get_DD_Surface()->GetCaps(&surface_capabilities);
-				if (surface_capabilities.dwCaps & DDSCAPS_SYSTEMMEMORY) {
+				surface_in_system_memory = VisiblePage.Get_Video_Surface()->IsSystemMemory();
+				if (surface_in_system_memory) {
 					/*
 					** Aaaarrgghh!
 					*/
@@ -426,19 +425,18 @@ int PASCAL WinMain ( HINSTANCE instance , HINSTANCE , char * command_line , int 
 					** Make sure we really got a video memory hid page. If we didnt then things
 					** will run very slowly.
 					*/
-					memset (&surface_capabilities, 0, sizeof(surface_capabilities));
-					HiddenPage.Get_DD_Surface()->GetCaps(&surface_capabilities);
-					if (surface_capabilities.dwCaps & DDSCAPS_SYSTEMMEMORY) {
+					surface_in_system_memory = HiddenPage.Get_Video_Surface()->IsSystemMemory();
+					if (surface_in_system_memory) {
 
 						/*
 						** Oh dear, big trub. This must be an IBM crAptiva or something similarly cruddy.
 						** We must redo the Hidden Page as system memory.
 						*/
-						AllSurfaces.Remove_DD_Surface(HiddenPage.Get_DD_Surface());  // Remove the old surface from the AllSurfaces list
-						HiddenPage.Get_DD_Surface()->Release();
+						AllSurfaces.Remove_Surface(HiddenPage.Get_Video_Surface());  // Remove the old surface from the AllSurfaces list
+						HiddenPage.Get_Video_Surface()->Release();
 						HiddenPage.Init (ScreenWidth , ScreenHeight , NULL , 0 , (GBC_Enum)0);
 					} else {
-						VisiblePage.Attach_DD_Surface(&HiddenPage);
+						VisiblePage.Attach_Surface(&HiddenPage);
 					}
 				}
 			}
@@ -571,7 +569,7 @@ int PASCAL WinMain ( HINSTANCE instance , HINSTANCE , char * command_line , int 
 /* Initialize DirectDraw and surfaces */
 bool InitDDraw(void)
 	{
-	DDSCAPS	surface_capabilities;
+	bool surface_in_system_memory = false;
 	BOOL video_success = FALSE;
 
 	/* Set 640x400 video mode. If its not available then try for 640x480 */
@@ -618,10 +616,9 @@ bool InitDDraw(void)
 		VisiblePage.Init(ScreenWidth, ScreenHeight, NULL, 0, (GBC_Enum)(GBC_VISIBLE|GBC_VIDEOMEM));
 
 		/* Check that we really got a video memory page. Failure is fatal. */
-		memset(&surface_capabilities, 0, sizeof(surface_capabilities));
-		VisiblePage.Get_DD_Surface()->GetCaps(&surface_capabilities);
+		surface_in_system_memory = VisiblePage.Get_Video_Surface()->IsSystemMemory();
 
-		if (surface_capabilities.dwCaps & DDSCAPS_SYSTEMMEMORY)
+		if (surface_in_system_memory)
 			{
 			/* Aaaarrgghh! */
 			WWDebugString(TEXT_DDRAW_ERROR);WWDebugString("\n");
@@ -657,21 +654,20 @@ bool InitDDraw(void)
 			/* Make sure we really got a video memory hid page. If we didnt then things
 			 * will run very slowly.
 			 */
-			memset(&surface_capabilities, 0, sizeof(surface_capabilities));
-			HiddenPage.Get_DD_Surface()->GetCaps(&surface_capabilities);
+			surface_in_system_memory = HiddenPage.Get_Video_Surface()->IsSystemMemory();
 			
-			if (surface_capabilities.dwCaps & DDSCAPS_SYSTEMMEMORY)
+			if (surface_in_system_memory)
 				{
 				/* Oh dear, big trub. This must be an IBM crAptiva or something similarly cruddy.
 				 * We must redo the Hidden Page as system memory.
 				 */
-				AllSurfaces.Remove_DD_Surface(HiddenPage.Get_DD_Surface());  // Remove the old surface from the AllSurfaces list
-				HiddenPage.Get_DD_Surface()->Release();
+				AllSurfaces.Remove_Surface(HiddenPage.Get_Video_Surface());  // Remove the old surface from the AllSurfaces list
+				HiddenPage.Get_Video_Surface()->Release();
 				HiddenPage.Init(ScreenWidth, ScreenHeight, NULL, 0, (GBC_Enum)0);
 				}
 			else
 				{
-				VisiblePage.Attach_DD_Surface(&HiddenPage);
+				VisiblePage.Attach_Surface(&HiddenPage);
 				}
 			}
 		}

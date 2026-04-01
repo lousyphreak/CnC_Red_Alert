@@ -35,7 +35,7 @@
 ****************************************************************************/
 
 #include "win32_compat.h"
-#include <ddraw.h>
+#include "sdl_draw.h"
 
 #ifdef MPGEXPORT		  
 #define DLLCALL __declspec(dllexport)
@@ -63,8 +63,8 @@ typedef MPG_RESPONSE (far __stdcall *LPMPGCALLBACK)(MPG_CMD cmd, LPVOID data, LP
 
 extern "C"
 	{
-	DLLCALL void __stdcall MpgPlay(const char* name, IDirectDraw* dd,
-		IDirectDrawSurface* surface, RECT* dstRect);
+	DLLCALL void __stdcall MpgPlay(const char* name, WWDraw* dd,
+		WWSurface* surface, RECT* dstRect);
 	DLLCALL void __stdcall MpgPause(void);
 	DLLCALL void __stdcall MpgResume(void);
 	DLLCALL void __stdcall MpgSetCallback(LPMPGCALLBACK callback, LPVOID user);

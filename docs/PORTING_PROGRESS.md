@@ -8,6 +8,14 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Replaced the repo-owned DirectDraw-shaped drawing wrapper with a reduced SDL drawing abstraction:
+  - deleted `SDL3_COMPAT/wrappers/ddraw.h` and `SDL3_COMPAT/wrappers/ddraw_compat.cpp`, and kept all active drawing/palette/present behavior behind `SDL3_COMPAT/wrappers/sdl_draw.h/.cpp`;
+  - the first `sdl_draw` pass only renamed the DirectDraw-shaped surface, so this follow-up pass removed the dead compatibility baggage instead of preserving it under new names;
+  - `sdl_draw.h` now exposes only the operations the game still uses: `WWDraw::SetWindow()`, `SetDisplayMode()`, `CreatePalette()`, `CreatePrimarySurface()`, `CreateSurface(width,height,system_memory,...)`, simple hardware/video-memory queries, `WaitForVerticalBlank()`, `WWSurface::Lock()/Unlock()`, `Blit()`, `FillRect()`, palette get/set, restore, and the existing `WWDraw_*` present-batch helpers;
+  - removed the unused DirectDraw-era public structs and flag surfaces from active code (`WWVideoCaps`, `WWSurfaceCaps`, `WWSurfaceDescription`, `WWBlitFx`, `GetCaps()`, `GetBltStatus()`, `WWDRAW_BLT_*`, large `WWDRAW_ERROR_*` sets, descriptor-based surface creation, and the stale `VideoDraw2Interface` path);
+  - updated the active callers in `WIN32LIB` and `CODE/` to use the smaller abstraction directly, including `WIN32LIB/DRAWBUFF/{GBUFFER,ICONCACH}`, `WIN32LIB/MISC/DDRAW.CPP`, `CODE/{STARTUP,STATS,CONQUER}.CPP`, and the duplicate headers under `WIN32LIB/INCLUDE/`;
+  - this preserves the existing SDL behavior: primary-surface lock/blit/palette presentation, queued present batching, palette expansion, focus-loss handling, and the movie/front-end presentation flow still come from the same backend logic;
+  - `cmake --build build --target redalert -j8` and `cmake --build build-asan --target redalert -j8` both succeed after the API reduction.
 - Removed the remaining non-WOL WChat/DDE integration and deleted the DDE wrapper surface it required:
   - removed the WChat-facing runtime hooks from the active game code, including the single-instance/DDE handoff path in `CODE/STARTUP.CPP`, the WChat launch/startup flow in `CODE/INIT.CPP` and `CODE/INTERNET.CPP`, the old WChat heartbeat/max-ahead adjustment in `CODE/EVENT.CPP`, the WChat failure/reporting handoff in `CODE/SCENARIO.CPP`, `CODE/SAVELOAD.CPP`, `CODE/NETDLG.CPP`, and `CODE/CONQUER.CPP`, and the remaining `Special.IsFromWChat` / `SpawnedFromWChat` / `ShowCommand` state that only existed for that path;
   - removed the separate fake/internal `WWChat` mode from the multiplayer dialog/session flow so there is no longer an in-engine WChat simulation path alongside the deleted DDE bridge;

@@ -98,6 +98,27 @@ _Last updated: 2026-04-01_
   - socket `close(...)` in `winsock.h`.
   Treat those as non-file-I/O false positives, not as reasons to reintroduce POSIX/stdio access.
 
+## SDL drawing helper layer
+
+- The repo-owned `<ddraw.h>` wrapper is gone from the supported SDL3 port. Do not reintroduce a DirectDraw-shaped public drawing surface for active code.
+- The durable drawing seam is now:
+  - `SDL3_COMPAT/wrappers/sdl_draw.cpp` owns the SDL-backed drawing implementation: software-surface storage, palette attachment/update, primary-surface presentation, queued present batching, and the SDL renderer/texture upload path;
+  - `SDL3_COMPAT/wrappers/sdl_draw.h` provides a reduced public surface under `WW*` / `WWDRAW_*` names:
+    - `WWDraw` for window binding, display-mode setup, palette/surface creation, video-memory totals, simple hardware feature booleans, and vertical-blank waits;
+    - `WWSurface` for lock/unlock, blit, fill, restore, palette attach/query, and system-memory checks;
+    - `WWPalette` for entry upload/readback;
+    - `WWDraw_*` present helpers for deferred present batching;
+  - `WIN32LIB/MISC/DDRAW.CPP` and the remaining legacy video-management code should stay consumers of that layer; the SDL renderer/present implementation belongs in `sdl_draw`, not in higher gameplay or Win32-shim code;
+  - active buffer/palette call sites should use the renamed seam (`Get_Video_Surface()`, `Get_IsVideoSurface()`, `Set_Video_Palette()`, `Process_Draw_Result()`, `VideoDrawObject`) instead of reviving `Get_DD_Surface()`, `Set_DD_Palette()`, `DirectDrawObject`, or similar compatibility names.
+- Keep the abstraction operation-based, not descriptor/caps based.
+  - Do **not** reintroduce `WWVideoCaps`, `WWSurfaceCaps`, `WWSurfaceDescription`, `WWBlitFx`, `GetCaps()`, `GetBltStatus()`, descriptor-based `CreateSurface(...)`, or old `WWDRAW_BLT_*` flag sets just to mimic DirectDraw.
+  - The remaining callers already map cleanly to direct operations such as `CreatePrimarySurface()`, `CreateSurface(width,height,system_memory,...)`, `IsSystemMemory()`, `CanBlit()`, `IsBlitDone()`, `FillRect()`, and boolean hardware capability queries on `WWDraw`.
+- The only `ddraw` references that should remain after this cleanup are outside Red Alert-owned active port code, such as SDL upstream Windows-specific sources under `extern/SDL3/`.
+- When porting more rendering code:
+  - keep upper gameplay/UI code unaware of SDL renderer details just like the filesystem code stays unaware of host cwd/case-sensitivity details;
+  - add new behavior to `sdl_draw` first, then expose the smallest necessary `WW*` surface upward rather than leaking SDL or legacy DirectDraw vocabulary across the tree;
+  - repository-wide searches for `<ddraw.h>` should only hit SDL upstream's Windows-specific sources, not Red Alert-owned active code.
+
 ## Removed conio surface
 
 - The supported build no longer relies on global `WIN32` compatibility defines, and the old `conio.h` fallback branches were removed during that cleanup. Keep keyboard input on the supported port routed through `WWKeyboardClass` / SDL-backed input; do not reintroduce `<conio.h>` or wrapper shims for `getch()`, `kbhit()`, `getche()`, or `cprintf()`.
@@ -460,22 +481,22 @@ _Last updated: 2026-04-01_
 - The same LP64 rule applies to gameplay audio sample headers: `.AUD` headers must use fixed-width 32-bit size fields instead of legacy `long`, or the loader silently reads the wrong header size on Linux/x86-64.
 - The same LP64 rule also applies to pointer-shaped bookkeeping in the old audio code: fields that really hold byte offsets must be converted to integer offsets before the SDL/Linux port can safely reuse the legacy refill logic on 64-bit hosts.
 
-## DirectDraw/SDL presentation notes
+## SDL drawing presentation notes
 
-- The software renderer can draw correctly and still show an all-black SDL window if the DirectDraw compatibility layer never presents the updated primary surface.
-- In the current compat layer, primary-surface presentation must happen after:
-  - `IDirectDrawSurface::Unlock()` on the primary surface;
-  - `IDirectDrawSurface::Blt()` when the destination is the primary surface;
-  - `IDirectDrawSurface::SetPalette()` when a primary surface palette is attached or changed.
+- The software renderer can draw correctly and still show an all-black SDL window if the SDL drawing layer never presents the updated primary surface.
+- In the current drawing layer, primary-surface presentation must happen after:
+  - `WWSurface::Unlock()` on the primary surface;
+  - `WWSurface::Blt()` when the destination is the primary surface;
+  - `WWSurface::SetPalette()` when a primary surface palette is attached or changed.
 - For front-end overlays, those primary-surface updates must be coalesced before hitting SDL.
   - Many menus and dialogs draw directly to `SeenBuff`, and the primitive helpers (`Print`, `Fill_Rect`, `Put_Pixel`, etc.) lock/unlock the destination repeatedly.
   - If every primary-surface unlock/blit triggers an immediate SDL present, overlay redraw becomes visibly incremental and buttons repaint one by one.
-  - Queue the present in the DirectDraw wrapper, flush once per callback tick, and use an explicit batch around `GadgetClass::Draw_All()` so the whole overlay lands in one SDL frame.
+  - Queue the present in `sdl_draw`, flush once per callback tick, and use an explicit batch around `GadgetClass::Draw_All()` so the whole overlay lands in one SDL frame.
 - VQA movie playback needs an explicit present flush on the Win32/SDL path.
   - `CODE/CONQUER.CPP::VQ_Call_Back()` blits each decoded movie frame to `SeenBuff`, but unlike many front-end loops it does not call `Call_Back()` afterward.
-  - After switching the DirectDraw wrapper to queued presents, movie frames therefore need `DirectDraw_Flush_Present()` directly from the callback or the SDL window stays black while the decoded frame buffer keeps updating underneath.
-- The DirectDraw compat surface needs the owning SDL window/`HWND` stored with it so presentation can target the correct window during those updates.
-- The SDL texture format must match how the compat layer packs palette-expanded pixels.
+  - After switching the drawing layer to queued presents, movie frames therefore need `WWDraw_Flush_Present()` directly from the callback or the SDL window stays black while the decoded frame buffer keeps updating underneath.
+- The SDL drawing surface needs the owning SDL window/`HWND` stored with it so presentation can target the correct window during those updates.
+- The SDL texture format must match how the drawing layer packs palette-expanded pixels.
   - The current compat presenter expands indexed pixels to `0xAARRGGBB`.
   - Feeding those values to an `SDL_PIXELFORMAT_RGBA8888` texture makes movies appear as red-tinted shades because SDL interprets the bytes as `R,G,B,A`.
   - Use `SDL_PIXELFORMAT_ARGB8888` and `SDL_BLENDMODE_NONE` for the compat movie presenter.

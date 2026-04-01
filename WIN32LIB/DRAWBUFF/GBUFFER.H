@@ -106,7 +106,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#include <ddraw.h>
+#include "sdl_draw.h"
 
 
 #ifndef GBUFFER_H
@@ -175,7 +175,7 @@ class TPoint2D
 // Defines for direct draw
 //
 //
-extern	LPDIRECTDRAW	DirectDrawObject;	//pointer to direct draw object
+extern	WWDraw*	VideoDrawObject;	//pointer to direct draw object
 extern	HWND			MainWindow;			//handle to programs main window
 
 /*
@@ -244,7 +244,7 @@ class GraphicViewPortClass {
 		int	Get_XPos(void);
 		int	Get_YPos(void);
 		int	Get_Pitch(void);
-		inline BOOL	Get_IsDirectDraw(void);
+		inline BOOL	Get_IsVideoSurface(void);
 		GraphicBufferClass	*Get_Graphic_Buffer(void);
 
 		/*===================================================================*/
@@ -313,8 +313,8 @@ class GraphicViewPortClass {
 		inline BOOL 	Unlock();
 		inline int		Get_LockCount();
 
-		// Member to blit using direct draw access to hardware blitter
-		HRESULT DD_Linear_Blit_To_Linear ( GraphicViewPortClass &dest, int source_x, int source_y, int dest_x, int dest_y, int width	, int height, BOOL mask );
+		// Member to blit using the SDL draw hardware path
+		HRESULT Video_Linear_Blit_To_Linear ( GraphicViewPortClass &dest, int source_x, int source_y, int dest_x, int dest_y, int width	, int height, BOOL mask );
 
 		/*===================================================================*/
 		/* Define functions to attach the viewport to a graphicbuffer			*/
@@ -335,7 +335,7 @@ class GraphicViewPortClass {
 		int						YPos;			// y offset in relation to graphicbuff
 		long					Pitch;			//Distance from one line to the next
 		GraphicBufferClass		*GraphicBuff;	// related graphic buff
-		BOOL					IsDirectDraw;	//Flag to let us know if it is a direct draw surface
+		BOOL					IsVideoSurface;	//Flag to let us know if it is a direct draw surface
 		int						LockCount;		// Count for stacking locks if non-zero the buffer
 };                                              //   is a locked DD surface
 
@@ -351,7 +351,7 @@ class GraphicViewPortClass {
 /*			int		XPos;		- 		will be 0 because it is graphicbuff			*/
 /*			int		YPos;		-		will be 0 because it is graphicbuff			*/
 /*			long	Pitch		-		modulo of buffer for reading and writing																						*/
-/*			BOOL	IsDirectDraw - 		flag if its a direct draw surface																						*/
+/*			BOOL	IsVideoSurface - 		flag if its a direct draw surface																						*/
 /*=========================================================================*/
 class GraphicBufferClass : public GraphicViewPortClass, public BufferClass {
 
@@ -362,21 +362,21 @@ class GraphicBufferClass : public GraphicViewPortClass, public BufferClass {
 		GraphicBufferClass(void);
 		~GraphicBufferClass();
 
-		void DD_Init(GBC_Enum flags);
+		void Video_Init(GBC_Enum flags);
 		void Init(int w, int h, void *buffer, long size, GBC_Enum flags);
 		void Un_Init(void);
-		void GraphicBufferClass::Attach_DD_Surface (GraphicBufferClass * attach_buffer);
+		void GraphicBufferClass::Attach_Surface (GraphicBufferClass * attach_buffer);
 		BOOL Lock(void);
 		BOOL Unlock(void);
 
 		void Scale_Rotate(BitmapClass &bmp,TPoint2D const &pt,long scale,unsigned char angle);
 
 		// Member to get a pointer to a direct draw surface
-		LPDIRECTDRAWSURFACE Get_DD_Surface ( void );
+		WWSurface* Get_Video_Surface ( void );
 
 	protected:
-		LPDIRECTDRAWSURFACE	VideoSurfacePtr;		//Pointer to the related direct draw surface
-		DDSURFACEDESC			VideoSurfaceDescription;//Description of the said surface
+		WWSurface*	VideoSurfacePtr;		//Pointer to the related video surface
+		WWLockData	VideoLockData;
 
 };
 
@@ -390,28 +390,28 @@ inline int GraphicViewPortClass::Get_LockCount(void)
 
 
 /***********************************************************************************************
- * GVPC::Get_IsDirectDraw -- provide read access to the IsDirectDraw flag                      *
+ * GVPC::Get_IsVideoSurface -- provide read access to the IsVideoSurface flag                      *
  *                                                                                             *
  *                                                                                             *
  *                                                                                             *
  * INPUT:    Nothing                                                                           *
  *                                                                                             *
- * OUTPUT:   IsDirectDraw                                                                      *
+ * OUTPUT:   IsVideoSurface                                                                      *
  *                                                                                             *
  * WARNINGS: None                                                                              *
  *                                                                                             *
  * HISTORY:                                                                                    *
  *    11/29/95 1:02PM ST : Created                                                             *
  *=============================================================================================*/
-inline BOOL GraphicViewPortClass::Get_IsDirectDraw(void)
+inline BOOL GraphicViewPortClass::Get_IsVideoSurface(void)
 {
-	return (IsDirectDraw);
+	return (IsVideoSurface);
 }
 
 
 
 /***********************************************************************************************
- * GBC::Get_DD_Surface -- returns a pointer to the buffer direct draw surface                  *
+ * GBC::Get_Video_Surface -- returns a pointer to the buffer direct draw surface                  *
  *                                                                                             *
  *                                                                                             *
  *                                                                                             *
@@ -424,7 +424,7 @@ inline BOOL GraphicViewPortClass::Get_IsDirectDraw(void)
  * HISTORY:                                                                                    *
  *    9/29/95 9:43AM ST : Created                                                              *
  *=============================================================================================*/
-inline LPDIRECTDRAWSURFACE GraphicBufferClass::Get_DD_Surface ( void )
+inline WWSurface* GraphicBufferClass::Get_Video_Surface ( void )
 {
 	return ( VideoSurfacePtr );
 
@@ -477,7 +477,7 @@ inline BOOL GraphicViewPortClass::Unlock(void)
 {
 	BOOL unlock = GraphicBuff->Unlock();
 	if (!unlock) return(FALSE);
-	if (this != GraphicBuff && IsDirectDraw && !GraphicBuff->LockCount) {
+	if (this != GraphicBuff && IsVideoSurface && !GraphicBuff->LockCount) {
 		Offset = 0;
 	}
 	return(TRUE);
@@ -761,8 +761,8 @@ inline HRESULT	GraphicViewPortClass::Blit(	GraphicViewPortClass& dest, int x_pix
 {
 	HRESULT		return_code=0;
 
-	if ( IsDirectDraw && dest.IsDirectDraw ){
-	return(DD_Linear_Blit_To_Linear( dest, XPos+x_pixel, YPos+y_pixel
+	if ( IsVideoSurface && dest.IsVideoSurface ){
+	return(Video_Linear_Blit_To_Linear( dest, XPos+x_pixel, YPos+y_pixel
 								, dest.Get_XPos()+dx_pixel, dest.Get_YPos()+dy_pixel
 								, pixel_width, pixel_height, trans));
 	} else {
@@ -798,8 +798,8 @@ inline HRESULT	GraphicViewPortClass::Blit(	GraphicViewPortClass& dest, int dx, i
 	HRESULT		return_code=0;
 
 
-	if ( IsDirectDraw && dest.IsDirectDraw ){
-	return(DD_Linear_Blit_To_Linear( dest, XPos, YPos
+	if ( IsVideoSurface && dest.IsVideoSurface ){
+	return(Video_Linear_Blit_To_Linear( dest, XPos, YPos
 								, dest.Get_XPos()+dx, dest.Get_YPos()+dy
 								, Width, Height, trans));
 	} else {
@@ -836,8 +836,8 @@ inline HRESULT	GraphicViewPortClass::Blit(	GraphicViewPortClass& dest, BOOL tran
 	HRESULT		return_code=0;
 
 
-	if ( IsDirectDraw && dest.IsDirectDraw ){
-	return(DD_Linear_Blit_To_Linear( dest, XPos, YPos
+	if ( IsVideoSurface && dest.IsVideoSurface ){
+	return(Video_Linear_Blit_To_Linear( dest, XPos, YPos
 								, dest.Get_XPos(), dest.Get_YPos()
 								, MAX( Width, dest.Get_Width())
 								, MAX( Height, dest.Get_Height())
@@ -1093,14 +1093,14 @@ inline void GraphicViewPortClass::Draw_Stamp(void const * icondata, int icon, in
 
    int drewit = 0;
 	if (IconCacheAllowed){
-		if (IsDirectDraw){
+		if (IsVideoSurface){
 			if (!remap){
 				cache_index = Is_Icon_Cached(icondata,icon);
 			}
 
 			if (cache_index != -1){
 				if (CachedIcons[cache_index].Get_Is_Cached()  ){
-					CachedIcons[cache_index].Draw_It (GraphicBuff->Get_DD_Surface() , x_pixel, y_pixel,
+					CachedIcons[cache_index].Draw_It (GraphicBuff->Get_Video_Surface() , x_pixel, y_pixel,
 																WindowList[clip_window][WINDOWX] + XPos,
 																WindowList[clip_window][WINDOWY] +YPos,
 																WindowList[clip_window][WINDOWWIDTH],
@@ -1158,10 +1158,9 @@ inline VOID GraphicViewPortClass::Draw_Line(int sx, int sy, int dx, int dy, unsi
 inline VOID GraphicViewPortClass::Fill_Rect(int sx, int sy, int dx, int dy, unsigned char color)
 {
 	if (  AllowHardwareBlitFills
-			&& IsDirectDraw
+			&& IsVideoSurface
 			&& ( (dx-sx) * (dy-sy) >= (32*32) )
-			&& GraphicBuff->Get_DD_Surface()->GetBltStatus(DDGBS_CANBLT) == DD_OK){
-		DDBLTFX	blit_effects;
+			&& GraphicBuff->Get_Video_Surface()->CanBlit()){
 		RECT	dest_rectangle;
 
 		dest_rectangle.left	=sx+XPos;
@@ -1191,13 +1190,7 @@ inline VOID GraphicViewPortClass::Fill_Rect(int sx, int sy, int dx, int dy, unsi
 		dest_rectangle.right++;
 		dest_rectangle.bottom++;
 
-		blit_effects.dwSize=sizeof(blit_effects);
-		blit_effects.dwFillColor = color;
-		GraphicBuff->Get_DD_Surface()->Blt(&dest_rectangle,
-														NULL,
-														NULL,
-														DDBLT_WAIT | DDBLT_ASYNC | DDBLT_COLORFILL,
-														&blit_effects);
+		GraphicBuff->Get_Video_Surface()->FillRect(&dest_rectangle, color);
 	} else {
 		if (Lock()){
 			Buffer_Fill_Rect(this, sx, sy, dx, dy, color);
@@ -1302,9 +1295,9 @@ inline long Buffer_To_Page(int x, int y, int w, int h, void *Buffer, GraphicView
  * HISTORY:                                                                *
  *   07/01/1994 PWG : Created.                                             *
  *=========================================================================*/
-inline long BufferClass::To_Page(int w, int h, GraphicViewPortClass &view)
+inline LONG BufferClass::To_Page(int w, int h, GraphicViewPortClass &view)
 {
-	long	return_code=0;
+	LONG	return_code=0;
 	if (view.Lock()){
 		return_code = (Buffer_To_Page(0, 0, w, h, Buffer, &view));
 	}
@@ -1325,9 +1318,9 @@ inline long BufferClass::To_Page(int w, int h, GraphicViewPortClass &view)
  * HISTORY:                                                                *
  *   07/01/1994 PWG : Created.                                             *
  *=========================================================================*/
-inline long BufferClass::To_Page(GraphicViewPortClass &view)
+inline LONG BufferClass::To_Page(GraphicViewPortClass &view)
 {
-	long	return_code=0;
+	LONG	return_code=0;
 	if (view.Lock()){
 		return_code = (Buffer_To_Page(0, 0, view.Get_Width(), view.Get_Height(), Buffer, &view));
 	}
@@ -1348,9 +1341,9 @@ inline long BufferClass::To_Page(GraphicViewPortClass &view)
  * HISTORY:                                                                *
  *   07/01/1994 PWG : Created.                                             *
  *=========================================================================*/
-inline long BufferClass::To_Page(int x, int y, int w, int h, GraphicViewPortClass &view)
+inline LONG BufferClass::To_Page(int x, int y, int w, int h, GraphicViewPortClass &view)
 {
-	long	return_code=0;
+	LONG	return_code=0;
 	if (view.Lock()){
 		return_code = (Buffer_To_Page(x, y, w, h, Buffer, &view));
 	}

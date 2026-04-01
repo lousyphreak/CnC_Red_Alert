@@ -51,13 +51,13 @@
 
 
 #include "win32_compat.h"
-#include "ddraw.h"
+#include "sdl_draw.h"
 #include "misc.h"
 #include "iconcach.h"
 #include "gbuffer.h"
 
 
-static	DDSURFACEDESC	VideoSurfaceDescription;
+static	WWLockData	IconLockData;
 
 IconCacheClass	CachedIcons[MAX_CACHED_ICONS];
 
@@ -416,30 +416,18 @@ void IconCacheClass::Restore (void)
  *=============================================================================================*/
 BOOL IconCacheClass::Cache_It (void *icon_ptr)
 {
-	DDSCAPS	surface_capabilities;
 	BOOL		return_value;
 
 	/*
 	** If we dont have a direct draw interface yet then just fail
 	*/
-	if (!DirectDrawObject) return(FALSE);
+	if (!VideoDrawObject) return(FALSE);
 
 	/*
 	** Set up the description of the surface we want to create
 	*/
-	memset (&VideoSurfaceDescription , 0 , sizeof ( VideoSurfaceDescription ));
-
-	VideoSurfaceDescription.dwSize			= sizeof( VideoSurfaceDescription );
-	VideoSurfaceDescription.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN;
-	VideoSurfaceDescription.dwFlags			= DDSD_CAPS |	DDSD_HEIGHT | DDSD_WIDTH;
-	VideoSurfaceDescription.dwHeight			= ICON_WIDTH;
-	VideoSurfaceDescription.dwWidth			= ICON_HEIGHT;
-
-	/*
-	** If this cache object doesnt already have a surface then create one
-	*/
 	if (!CacheSurface){
-		if (DD_OK!=DirectDrawObject->CreateSurface( &VideoSurfaceDescription , &CacheSurface , NULL)){
+		if (WWDRAW_OK!=VideoDrawObject->CreateSurface(ICON_WIDTH, ICON_HEIGHT, false, &CacheSurface)){
 			CacheMemoryExhausted = TRUE;
 			return(FALSE);
 		}
@@ -449,11 +437,7 @@ BOOL IconCacheClass::Cache_It (void *icon_ptr)
 	/*
 	** Make sure the surface we created isnt really in system memory
 	*/
-	if (DD_OK != CacheSurface->GetCaps(&surface_capabilities)){
-		return(FALSE);
-	}
-
-	if ((DDSCAPS_SYSTEMMEMORY & surface_capabilities.dwCaps) == DDSCAPS_SYSTEMMEMORY){
+	if (CacheSurface->IsSystemMemory()){
 		CacheSurface->Release();
 		return(FALSE);
 	}
@@ -462,14 +446,11 @@ BOOL IconCacheClass::Cache_It (void *icon_ptr)
 	/*
 	** Lock the surface so we can copy the icon to it
 	*/
-	if (DD_OK== CacheSurface->Lock ( NULL
-								, &(VideoSurfaceDescription)
-								, DDLOCK_WAIT
-								, NULL)){
+	if (WWDRAW_OK== CacheSurface->Lock(NULL, &IconLockData)){
 		/*
 		** Copy the icon to the surface and flag that icon is cached
 		*/
-		Cache_Copy_Icon (icon_ptr , VideoSurfaceDescription.lpSurface , VideoSurfaceDescription.lPitch);
+		Cache_Copy_Icon (icon_ptr , IconLockData.pixels , IconLockData.pitch);
 		IsCached=TRUE;
 		SurfaceLost=FALSE;
 		IconSource=icon_ptr;
@@ -528,7 +509,7 @@ void IconCacheClass::Uncache_It(void)
  * HISTORY:                                                                                    *
  *    11/13/95 9:48AM ST : Created                                                             *
  *=============================================================================================*/
-void IconCacheClass::Draw_It (LPDIRECTDRAWSURFACE dest_surface , int x_pixel, int y_pixel, int window_left , int window_top , int window_width , int window_height)
+void IconCacheClass::Draw_It (WWSurface* dest_surface , int x_pixel, int y_pixel, int window_left , int window_top , int window_width , int window_height)
 {
 	RECT		source_rectangle;
 	RECT		dest_rectangle;
@@ -584,18 +565,13 @@ void IconCacheClass::Draw_It (LPDIRECTDRAWSURFACE dest_surface , int x_pixel, in
 	/*
 	** Do the blit
 	*/
-		return_code = dest_surface->Blt (&dest_rectangle ,
-													CacheSurface ,
-													&source_rectangle ,
-													DDBLT_WAIT |
-													DDBLT_ASYNC ,
-													NULL);
+		return_code = dest_surface->Blit(&dest_rectangle, CacheSurface, &source_rectangle, false);
 
-	if (return_code == DDERR_SURFACELOST && Gbuffer_Focus_Loss_Function){
+	if (return_code == WWDRAW_ERROR_SURFACELOST && Gbuffer_Focus_Loss_Function){
 		Gbuffer_Focus_Loss_Function();
 	}
 
-	if ( return_code != DDERR_SURFACELOST && return_code != DD_OK ) {
+	if ( return_code != WWDRAW_ERROR_SURFACELOST && return_code != WWDRAW_OK ) {
 		char temp[100];
 		sprintf(temp,"DD Error code %d\n", return_code & 0xFFFF);
 		OutputDebugString(temp);
@@ -604,4 +580,3 @@ void IconCacheClass::Draw_It (LPDIRECTDRAWSURFACE dest_surface , int x_pixel, in
 	TimesDrawn++;
 
 }
-

@@ -28,7 +28,7 @@ const char* __asan_default_options() { return "detect_leaks=0"; }
 
 
 
-extern "C" void DirectDraw_Flush_Present(void);
+extern "C" void WWDraw_Flush_Present(void);
 
 /***********************************************************************************************
  ***              C O N F I D E N T I A L  ---  W E S T W O O D  S T U D I O S               ***
@@ -1716,7 +1716,7 @@ void Call_Back(void)
 		Conquer_Trace("Call_Back exit");
 	}
 
-	DirectDraw_Flush_Present();
+	WWDraw_Flush_Present();
 }
 
 
@@ -3026,7 +3026,7 @@ void Play_Movie(VQType name, ThemeType theme, bool clrscrn)
 
 // Denzil 5/18/98 - Mpeg movie playback
 #ifdef MPEGMOVIE
-extern LPDIRECTDRAWPALETTE PalettePtr;
+extern WWPalette* VideoPalette;
 
 bool PlayMpegMovie(const char* name)
 	{
@@ -3064,7 +3064,7 @@ bool PlayMpegMovie(const char* name)
 	#ifdef MCIMPEG
 	if (MciMovie && MpgSettings && (MpgSettings->GetDeviceName() != NULL))
 		{
-		DirectDrawObject->SetCooperativeLevel(MainWindow, DDSCL_NORMAL);
+		VideoDrawObject->SetWindow(MainWindow);
 
 		if (!MciMovie->Open(filename, MpgSettings->GetDeviceName()))
 			{
@@ -3075,29 +3075,21 @@ bool PlayMpegMovie(const char* name)
 			WWMessageBox().Process("Couldn't play movie.\n");
 			}
 
-		DirectDrawObject->SetCooperativeLevel(MainWindow, DDSCL_EXCLUSIVE | DDSCL_FULLSCREEN);
+		VideoDrawObject->SetWindow(MainWindow);
 		}
 	else
 	#endif
 		{
-		DDSURFACEDESC ddsd;
-		IDirectDrawSurface* primary = NULL;
-		bool modeChange = false;
+		WWSurface* primary = NULL;
 		RECT rect;
 	
-		if (FAILED(DirectDrawObject->SetDisplayMode(ScreenWidth, ScreenHeight, 16)))
+		if (FAILED(VideoDrawObject->SetDisplayMode(ScreenWidth, ScreenHeight, 16)))
 			{
 			WWMessageBox().Process("Couldn't change display mode.\n");
 			}
 		else
 			{
-			// Create primary surface reference
-			memset(&ddsd, 0, sizeof(ddsd));
-			ddsd.dwSize = sizeof(ddsd);
-			ddsd.dwFlags = DDSD_CAPS;
-			ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE;
-
-			if (FAILED(DirectDrawObject->CreateSurface(&ddsd, &primary, NULL)))
+			if (FAILED(VideoDrawObject->CreatePrimarySurface(&primary)))
 				{
 				WWMessageBox().Process("Couldn't create primary movie surface.\n");
 				}
@@ -3108,20 +3100,20 @@ bool PlayMpegMovie(const char* name)
 				rect.right = ScreenWidth;
 		
 				MpgSetCallback(MpegCallback, NULL);
-				MpgPlay(filename, DirectDrawObject, primary, &rect);
+				MpgPlay(filename, VideoDrawObject, primary, &rect);
 
 				if (primary)
 					primary->Release();
 
 				}
 
-			DirectDrawObject->SetDisplayMode(ScreenWidth, ScreenHeight, 8);
+			VideoDrawObject->SetDisplayMode(ScreenWidth, ScreenHeight, 8);
 			}
 		}
 
 	// Restore surfaces
 	VisiblePage.Init(ScreenWidth, ScreenHeight, NULL, 0, (GBC_Enum)(GBC_VISIBLE|GBC_VIDEOMEM));
-	PaletteSurface->SetPalette(PalettePtr);
+	PaletteSurface->SetPalette(VideoPalette);
 	AllSurfaces.Set_Surface_Focus(true);
 	AllSurfaces.Restore_Surfaces();
 	return true;
@@ -3130,7 +3122,7 @@ bool PlayMpegMovie(const char* name)
 
 MPG_RESPONSE far __stdcall MpegCallback(MPG_CMD cmd, LPVOID data, LPVOID user)
 	{
-	static IDirectDrawPalette* _palette = NULL;
+	static WWPalette* _palette = NULL;
 
 	user = user;
 
@@ -3162,7 +3154,7 @@ MPG_RESPONSE far __stdcall MpegCallback(MPG_CMD cmd, LPVOID data, LPVOID user)
 				}
 			else
 				{
-				if (FAILED(PaletteSurface->SetPalette((IDirectDrawPalette*)data)))
+				if (FAILED(PaletteSurface->SetPalette((WWPalette*)data)))
 					{
 					WWMessageBox().Process("Couldn't set movie palette.\n");
 					}
@@ -3764,7 +3756,7 @@ long VQ_Call_Back(unsigned char *buffer, long frame)
 #else
 	Interpolate_2X_Scale(&SysMemPage, &SeenBuff, NULL);
 #endif
-	DirectDraw_Flush_Present();
+	WWDraw_Flush_Present();
 	if (std::getenv("RA_TRACE_STARTUP") != NULL && frame < 8 && SeenBuff.Lock()) {
 		unsigned char* visible = static_cast<unsigned char*>(SeenBuff.Get_Graphic_Buffer()->Get_Buffer());
 		unsigned long nonzero = 0;

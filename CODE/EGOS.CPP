@@ -845,7 +845,7 @@ void Show_Who_Was_Responsible (void)
 		*/
 		if (frame && 3 == 3){
 			for (i=slide_number+1 ; i<NUM_SLIDES ; i++){
-				if ( !SlideBuffers[i]->Get_IsDirectDraw() ){
+				if ( !SlideBuffers[i]->Get_IsVideoSurface() ){
 					Force_VM_Page_In ((void*)SlideBuffers[i]->Get_Offset(), SeenBuff.Get_Width() * SeenBuff.Get_Height() );
 				}
 			}

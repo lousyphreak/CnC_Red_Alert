@@ -359,14 +359,14 @@ void Interpolate_2X_Scale( GraphicBufferClass * source, GraphicViewPortClass * d
 	/*
 	** Lock video surfaces if required
 	*/
-	if (source->Get_IsDirectDraw()) {
+	if (source->Get_IsVideoSurface()) {
 		if (!source->Lock()) {
 			if (dest == &SeenBuff) Show_Mouse();
 			return;
 		}
 		source_locked = TRUE;
 	}
-	if (dest->Get_IsDirectDraw()) {
+	if (dest->Get_IsVideoSurface()) {
 		if (!dest->Lock()) {
 			if (source_locked) {
 				source->Unlock();

@@ -59,8 +59,8 @@
 
 #include "function.h"
 
-extern "C" void DirectDraw_Begin_Present_Batch(void);
-extern "C" void DirectDraw_End_Present_Batch(void);
+extern "C" void WWDraw_Begin_Present_Batch(void);
+extern "C" void WWDraw_End_Present_Batch(void);
 
 
 /*
@@ -455,14 +455,14 @@ void GadgetClass::Draw_All(bool forced)
 {
 	GadgetClass * gadget = this;
 
-	DirectDraw_Begin_Present_Batch();
+	WWDraw_Begin_Present_Batch();
 
 	while (gadget != NULL) {
 		gadget->Draw_Me(forced);
 		gadget = gadget->Get_Next();
 	}
 
-	DirectDraw_End_Present_Batch();
+	WWDraw_End_Present_Batch();
 }
 
 

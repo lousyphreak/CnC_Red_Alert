@@ -1908,7 +1908,7 @@ void RadarClass::Set_Radar_Position(CELL cell)
 				** to do the blit in two stages via an intermediate buffer. The test to allow
 				** overlapped blits is done in the library at the time of setting the video mode.
 				*/
-				if (OverlappedVideoBlits || !HidPage.Get_IsDirectDraw()) {
+				if (OverlappedVideoBlits || !HidPage.Get_IsVideoSurface()) {
 
 					/*
 					** Overlapped blits are OK or we dont have a video memory hid page so blits are

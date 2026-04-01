@@ -166,7 +166,7 @@ list(FILTER RA_WIN32LIB_SOURCES EXCLUDE REGEX "/(TEST|TST|REDBOOK)\\.CPP$")
 add_library(sdl3_compat STATIC
     SDL3_COMPAT/wrappers/win32_compat.cpp
     SDL3_COMPAT/wrappers/sdl_fs.cpp
-    SDL3_COMPAT/wrappers/ddraw_compat.cpp
+    SDL3_COMPAT/wrappers/sdl_draw.cpp
     SDL3_COMPAT/wrappers/profile_compat.cpp
 )
 

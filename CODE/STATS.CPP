@@ -581,13 +581,11 @@ void Send_Statistics_Packet(void)
 		/*
 		** Video memory
 		*/
-		DDCAPS	video_capabilities;
 		long		video_memory;
 
-		if (DirectDrawObject){
-			video_capabilities.dwSize = sizeof (video_capabilities);
-			if (DD_OK == DirectDrawObject->GetCaps (&video_capabilities , NULL)){
-				video_memory = video_capabilities.dwVidMemTotal;
+		if (VideoDrawObject){
+			video_memory = VideoDrawObject->GetTotalVideoMemory();
+			if (video_memory){
 				video_memory += 1024*1024 -1;
 				video_memory &= 0xfff00000;
 				stats.Add_Field (FIELD_VIDEO_MEMORY, (long) video_memory);
