@@ -8,6 +8,13 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Removed the repo-owned DirectSound-shaped audio wrapper and kept the SDL audio backend as the only active audio abstraction:
+  - deleted `SDL3_COMPAT/wrappers/dsound.h` and `SDL3_COMPAT/wrappers/dsound_compat.cpp`; those files were dead compatibility code and were not part of the active CMake build anymore;
+  - the active sound system already lived in `WIN32LIB/INCLUDE/SDLAUDIOBACKEND.H` and `WIN32LIB/AUDIO/SDLAUDIOBACKEND.CPP`, so the cleanup focused on removing the stale wrapper rather than introducing a second SDL audio seam;
+  - updated the remaining movie-facing configuration surface in `VQ/{INCLUDE/VQA32,VQA32}/VQAPLAY.H` to name the real backend types (`AudioBackendDevice` / `AudioBackendBuffer`) instead of conditional `dsound.h` types and `VQADIRECT_SOUND` baggage, and updated `CODE/INIT.CPP` plus `VQ/VQA32/CONFIG.CPP` to match;
+  - `VQAPLAY.H` now forward-declares the backend classes instead of including `SDLAUDIOBACKEND.H` directly, because the full backend header pulls in `win32_compat.h`, which conflicts with the legacy `SOS.H` typedefs used by the VQA player internals;
+  - cleaned the remaining active audio comments in `WIN32LIB/AUDIO/{SOUNDIO,SOUNDINT}.CPP`, `WIN32LIB/{AUDIO,INCLUDE}/SOUNDINT.H`, and `WIN32LIB/INCLUDE/PROFILE.H` so the supported port no longer describes the backend as DirectSound-based;
+  - `cmake --build build --target redalert -j8` and `cmake --build build-asan --target redalert -j8` both succeed after the cleanup.
 - Replaced the repo-owned DirectDraw-shaped drawing wrapper with a reduced SDL drawing abstraction:
   - deleted `SDL3_COMPAT/wrappers/ddraw.h` and `SDL3_COMPAT/wrappers/ddraw_compat.cpp`, and kept all active drawing/palette/present behavior behind `SDL3_COMPAT/wrappers/sdl_draw.h/.cpp`;
   - the first `sdl_draw` pass only renamed the DirectDraw-shaped surface, so this follow-up pass removed the dead compatibility baggage instead of preserving it under new names;

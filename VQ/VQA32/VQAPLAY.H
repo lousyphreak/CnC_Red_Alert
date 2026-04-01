@@ -50,7 +50,6 @@
 #define VQASTANDALONE 0  /* Stand alone player */
 #define VQAVOC_ON     0  /* Enable VOC file override */
 #define	VQAMONO_ON    0  /* Mono display output enable/disable */
-#define VQADIRECT_SOUND 0	/* Use windows direct sound system */
 #define VQAAUDIO_ON   1  /* Audio playback enable/disable */
 #define VQAVIDEO_ON   0  /* Video manager enable/disable */
 #define VQAMCGA_ON    0  /* MCGA enable/disable */
@@ -65,7 +64,6 @@
 #define VQASTANDALONE 0  /* Stand alone player */
 #define VQAVOC_ON     0  /* Enable VOC file override */
 #define	VQAMONO_ON    0  /* Mono display output enable/disable */
-#define VQADIRECT_SOUND 0	/* Use windows direct sound system */
 #define VQAAUDIO_ON   1  /* Audio playback enable/disable */
 #define VQAVIDEO_ON   0  /* Video manager enable/disable */
 #define VQAMCGA_ON    0  /* MCGA enable/disable */
@@ -79,9 +77,9 @@
 #endif
 
 
-#if (VQAAUDIO_ON && VQADIRECT_SOUND)
-#include "win32_compat.h"
-#include "dsound.h"
+#if (VQAAUDIO_ON)
+class AudioBackendDevice;
+class AudioBackendBuffer;
 #endif
 
 
@@ -150,8 +148,8 @@
  * OptionFlags    - Bits control various special misc options. (See below)
  * NumFrameBufs   - Desired number of frame buffers. (Default = 6)
  * NumCBBufs      - Desired number of codebook buffers. (Default = 3)
- * SoundObject		- Ptr to callers Direct Sound Object (Default =NULL)
- * PrimaryBufferPtr- Ptr to callers Primary Sound Buffer. (Default = NULL)
+ * AudioObject    - Ptr to caller's SDL audio backend device (Default = NULL)
+ * PrimaryBuffer  - Ptr to caller's primary SDL audio backend buffer. (Default = NULL)
  * VocFile        - Name of VOC file to play instead of VQA audio track.
  * AudioBuf       - Pointer to audio buffer.
  * AudioBufSize   - Size of audio buffer. (Default = 32768)
@@ -185,13 +183,8 @@ typedef struct _VQAConfig {
 	long          OptionFlags;
 	long          NumFrameBufs;
 	long          NumCBBufs;
-#if (VQADIRECT_SOUND)
-	LPDIRECTSOUND			SoundObject;
-	LPDIRECTSOUNDBUFFER	PrimaryBufferPtr;
-#else
-	void          *SoundObject;
-	void          *PrimaryBufferPtr;
-#endif	//(VQADIRECT_SOUND)
+	AudioBackendDevice *AudioObject;
+	AudioBackendBuffer *PrimaryBuffer;
 	char          *VocFile;
 	unsigned char *AudioBuf;
 	long          AudioBufSize;

@@ -43,7 +43,7 @@
  *  threads we own not just the main thread. Another advantage is that it doesnt require a     *
  *  major recompilation.                                                                       *
  *  The disadvantage is that we dont really know what is going on when the IP is outside the   *
- *  scope of our threads - We could be in direct draw, direct sound or even something like the *
+ *  scope of our threads - We could be in the render path, audio backend, or even something like the *
  *  VMM and there is no way to tell.                                                           *
  *                                                                                             *
  *                                                                                             *
@@ -102,4 +102,3 @@ extern "C"{
 	void __cdecl Start_Profiler(void);
 	void __cdecl Stop_Profiler(void);
 }
-

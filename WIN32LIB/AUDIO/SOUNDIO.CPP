@@ -1057,7 +1057,7 @@ void Print_Sound_Error(char *sound_error, HWND window)
  *                                                                                             *
  * HISTORY:                                                                                    *
  *   Unknown....                                                                               *
- *   08-24-95 10:01am ST : Modified for Windows 95 Direct Sound                                *
+ *   08-24-95 10:01am ST : Modified for Windows 95 audio output                                *
  *=============================================================================================*/
 
 BOOL Audio_Init( HWND window , int bits_per_sample, BOOL stereo , int rate , int reverse_channels)
@@ -1215,7 +1215,7 @@ BOOL Audio_Init( HWND window , int bits_per_sample, BOOL stereo , int rate , int
     	LockedData.UncompBuffer = Alloc(LARGEST_SONARC_BLOCK + 50, (MemoryFlagType)(MEM_NORMAL|MEM_CLEAR|MEM_LOCK));
 
     	/*
-    	** Allocate once secondary direct sound buffer for each simultaneous sound effect
+    	** Allocate one backend secondary buffer for each simultaneous sound effect
 		**
 		*/
 		for (index = 0; index < MAX_SFX; index++) {
@@ -1260,7 +1260,7 @@ BOOL Audio_Init( HWND window , int bits_per_sample, BOOL stereo , int rate , int
  *                                                                                             *
  * HISTORY:                                                                                    *
  *   07/23/1991 JLB : Created.                                                                 *
- *   11/02/1995 ST  : Modified for Direct Sound                                                *
+ *   11/02/1995 ST  : Modified for backend audio                                                *
  *=============================================================================================*/
 void Sound_End(void)
 {
@@ -1272,7 +1272,7 @@ void Sound_End(void)
 
 	if (SoundObject && PrimaryBufferPtr){
 		/*
-		** Stop all sounds and release the Direct Sound secondary sound buffers
+		** Stop all sounds and release the backend secondary sound buffers
 		*/
 		for (index=0 ; index < MAX_SFX; index++){
 			if ( LockedData.SampleTracker[index].PlayBuffer ){
@@ -1291,7 +1291,7 @@ void Sound_End(void)
 	}
 
 	/*
-	** Stop and release the direct sound primary buffer
+	** Stop and release the backend primary buffer
 	*/
 	if (PrimaryBufferPtr){
 		PrimaryBufferPtr->Stop();
@@ -1300,7 +1300,7 @@ void Sound_End(void)
 	}
 
 	/*
-	** Release the Direct Sound Object
+	** Release the backend audio device
 	*/
 	if (SoundObject){
 		SoundObject->Release();
@@ -1336,7 +1336,7 @@ void Sound_End(void)
  *                                                                                             *
  * HISTORY:                                                                                    *
  *   06/02/1992 JLB : Created.                                                                 *
- *   11/2/95 4:09PM ST : Modified for Direct Sound                                             *
+ *   11/2/95 4:09PM ST : Modified for streamed audio                                           *
  *=============================================================================================*/
 void Stop_Sample(int handle)
 {
@@ -1571,11 +1571,11 @@ int Play_Sample(void const *sample, int priority, int volume, signed short panlo
 
 
 /***********************************************************************************************
- * Attempt_Audio_Restore -- tries to restore the direct sound buffers                          *
+ * Attempt_Audio_Restore -- tries to restore backend audio buffers                             *
  *                                                                                             *
  *                                                                                             *
  *                                                                                             *
- * INPUT:    ptr to direct sound buffer                                                        *
+ * INPUT:    ptr to backend audio buffer                                                       *
  *                                                                                             *
  * OUTPUT:   TRUE if buffer was successfully restored                                          *
  *                                                                                             *
@@ -1621,8 +1621,8 @@ BOOL Attempt_Audio_Restore (AudioBackendBuffer * sound_buffer)
  * Convert_HMI_To_Backend_Volume -- Converts a linear volume value into an expotential    *
  *                                        value                                                *
  *                                                                                             *
- * This function converts a linear C&C volume in the range 0-255 (255 loudest) to a direct     *
- *  sound volume in the range 0 to -10000 (with 0 being the loadest)                           *
+ * This function converts a linear C&C volume in the range 0-255 (255 loudest) to the backend  *
+ * volume scale in the range 0 to -10000 (with 0 being the loudest)                            *
  *                                                                                             *
  * INPUT:    volume in range 0-255                                                             *
  *                                                                                             *
@@ -1666,7 +1666,7 @@ int Convert_HMI_To_Backend_Volume(int volume)
  *   04/17/1992 JLB : Created.                                                                 *
  *   05/24/1992 JLB : Volume support -- Soundblaster Pro                                       *
  *   04/22/1994 JLB : Multiple sample playback rates.                                          *
- *   11/02/1995 ST  : Windows Direct Sound support                                             *
+ *   11/02/1995 ST  : Windows audio backend support                                            *
  *=============================================================================================*/
 extern BOOL Any_Locked(void);
 extern BOOL GameInFocus;
@@ -1675,8 +1675,8 @@ int Play_Sample_Handle(void const *sample, int priority, int volume, signed shor
 	AUDHeaderType                   RawHeader;
 	SampleTrackerType               *st=NULL;       // Working pointer to sample tracker structure.
 
-	LPVOID				play_buffer_ptr;		//pointer to locked direct sound buffer
-	LPVOID				dummy_buffer_ptr;		//dummy pointer to second area of locked direct sound buffer
+	LPVOID				play_buffer_ptr;		//pointer to locked backend buffer
+	LPVOID				dummy_buffer_ptr;		//dummy pointer to second area of locked backend buffer
 	DWORD					lock_length1;
 	DWORD					lock_length2;
 	DWORD					play_status;
@@ -1751,7 +1751,7 @@ int Play_Sample_Handle(void const *sample, int priority, int volume, signed shor
 
 	/*
 	** If the sample rate , bits per sample or stereo capabilities of the buffer do not
-	** match the sample then reallocate the direct sound buffer with the required capabilities
+	** match the sample then reallocate the backend buffer with the required capabilities
 	*/
 	if (  ( RawHeader.Rate != st->PlaybackRate ) ||
 			( ( RawHeader.Flags & AUD_FLAG_16BIT ) != ( st->BitSize & AUD_FLAG_16BIT ) ) ||
@@ -1838,7 +1838,7 @@ int Play_Sample_Handle(void const *sample, int priority, int volume, signed shor
 		st->PlayBuffer->Stop();
 	}
 	//
-	// Lock the direct sound buffer so we can write to it
+	// Lock the backend buffer so we can write to it
 	//
 	do {
 		return_code = st->PlayBuffer->Lock(0,
@@ -1858,7 +1858,7 @@ int Play_Sample_Handle(void const *sample, int priority, int volume, signed shor
 	}
 
 	//
-	// Decompress the sample into the direct sound buffer
+	// Decompress the sample into the backend buffer
 	//
 	st->DestPtr=(uint32_t)Sample_Copy ( 	st,
 								&st->Source,

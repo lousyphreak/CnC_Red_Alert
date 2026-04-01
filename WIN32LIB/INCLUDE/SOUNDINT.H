@@ -164,7 +164,7 @@ typedef struct {
 
 	/*
 	**	This flag indicates that the entire sample fitted inside the
-	** direct sound secondary buffer
+	** SDL audio backend secondary buffer
 	**
 	*/
 	BOOL OneShot;

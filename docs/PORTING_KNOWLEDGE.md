@@ -119,6 +119,22 @@ _Last updated: 2026-04-01_
   - add new behavior to `sdl_draw` first, then expose the smallest necessary `WW*` surface upward rather than leaking SDL or legacy DirectDraw vocabulary across the tree;
   - repository-wide searches for `<ddraw.h>` should only hit SDL upstream's Windows-specific sources, not Red Alert-owned active code.
 
+## SDL audio helper layer
+
+- The repo-owned `dsound.h` / `dsound_compat.cpp` wrapper is gone from the supported SDL3 port. Do not reintroduce a DirectSound-shaped public audio surface for active code.
+- The durable audio seam is already:
+  - `WIN32LIB/INCLUDE/SDLAUDIOBACKEND.H` for the public backend types and return/status codes used by the game (`AudioBackendDevice`, `AudioBackendBuffer`, `AudioBufferFormat`, `RAAUDIO_*`);
+  - `WIN32LIB/AUDIO/SDLAUDIOBACKEND.CPP` for the SDL-backed mixing, stream creation, primary/secondary buffer behavior, and focus handling;
+  - `WIN32LIB/AUDIO/SOUNDIO.CPP` and related audio manager code as consumers of that backend, not as owners of another compatibility layer.
+- `SDL3_COMPAT/wrappers/dsound.h` had become dead baggage: it was not part of the active CMake build, and its DirectSound-shaped types were no longer used by the supported sound path.
+- The remaining VQA/movie-facing config header should stay lightweight:
+  - `VQ/{INCLUDE/VQA32,VQA32}/VQAPLAY.H` may refer to `AudioBackendDevice*` / `AudioBackendBuffer*`, but it should do so with forward declarations only;
+  - do **not** include `SDLAUDIOBACKEND.H` directly there, because that header pulls in `win32_compat.h`, which conflicts with the legacy `SOS.H` typedefs still used by `VQAPLAYP.H` and the VQA internals.
+- Practical rule going forward:
+  - if more audio behavior is needed, add it to `SDLAUDIOBACKEND.H/.CPP` and expose the smallest necessary operation upward;
+  - do not add `IDirectSound*`, `DSBUFFERDESC`, `DirectSoundCreate`, `DSERR_*`, `DSBSTATUS_*`, or similar compatibility-shaped types back into Red Alert-owned active code;
+  - repository-wide searches for `dsound.h` / `DirectSound` should only hit SDL upstream Windows-specific sources under `extern/SDL3/` or clearly archival comments that have not been cleaned yet.
+
 ## Removed conio surface
 
 - The supported build no longer relies on global `WIN32` compatibility defines, and the old `conio.h` fallback branches were removed during that cleanup. Keep keyboard input on the supported port routed through `WWKeyboardClass` / SDL-backed input; do not reintroduce `<conio.h>` or wrapper shims for `getch()`, `kbhit()`, `getche()`, or `cprintf()`.

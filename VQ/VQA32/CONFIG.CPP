@@ -124,7 +124,7 @@ static VQAConfig _defaultconfig = {
 	/* NumCBBufs: The number of codebook buffers to allocate/use. */
 	3,
 
-	/* SoundObject, PrimaryBufferPtr: DirectSound compatibility placeholders. */
+	/* AudioObject, PrimaryBuffer: caller-owned SDL audio backend handles. */
 	NULL,
 	NULL,
 
@@ -505,5 +505,4 @@ void VQA_DefaultConfig(VQAConfig *config)
 {
 	memcpy(config, &_defaultconfig, sizeof(VQAConfig));
 }
-
 

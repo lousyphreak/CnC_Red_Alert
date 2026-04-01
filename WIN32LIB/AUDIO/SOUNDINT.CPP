@@ -268,14 +268,14 @@ extern int Convert_HMI_To_Backend_Volume(int volume);
  *                                                                                             *
  * HISTORY:                                                                                    *
  *     ....Unknown                                                                             *
- *    10/17/95 10:15PM ST : tidied up a tad for direct sound                                   *
+ *    10/17/95 10:15PM ST : tidied up a tad for streamed audio                                 *
  *=============================================================================================*/
 VOID far __cdecl maintenance_callback(VOID)
 {
 
 	int					index;				//index used in for loop
 	SampleTrackerType	*st;					//ptr to SampleTracker structure
-	DWORD					play_cursor;		//Position that direct sound is reading from
+	DWORD					play_cursor;		//Position that the backend is reading from
 	DWORD					write_cursor;		//Position in buffer that we can write to
 	int			 		bytes_copied;		//Number of bytes copied into the buffer
 	BOOL					write_more;			//Flag to set if we need to write more into the buffer
@@ -294,7 +294,7 @@ VOID far __cdecl maintenance_callback(VOID)
 
 			/*
 			**	General service routine to handle moving small blocks from the
-			**	source into the direct sound buffers.  If the source is
+			**	source into the audio backend buffers.  If the source is
 			**	compressed, then this will also uncompress it as the copy
 			**	is performed.
 			*/
@@ -305,7 +305,7 @@ VOID far __cdecl maintenance_callback(VOID)
 				st->DontTouch = TRUE;
 
 				/*
-				** Get the current position of the direct sound play cursor within the buffer
+				** Get the current position of the backend play cursor within the buffer
 				*/
 				return_code = st->PlayBuffer->GetCurrentPosition ( &play_cursor , &write_cursor );
 
@@ -327,7 +327,7 @@ VOID far __cdecl maintenance_callback(VOID)
 				if (st->MoreSource){
 
 					/*
-					** If the direct sound read pointer is less than a quarter
+					** If the backend read pointer is less than a quarter
 					** of a buffer away from the end of the data then copy some
 					** more.
 				 	*/
@@ -352,7 +352,7 @@ VOID far __cdecl maintenance_callback(VOID)
 					if (write_more){
 
 						/*
-						** Lock a 1/2 of the direct sound buffer so we can write to it
+						** Lock 1/2 of the backend buffer so we can write to it
 						*/
 						if ( RAAUDIO_OK== st->PlayBuffer->Lock (	(DWORD)st->DestPtr ,
 															(DWORD)SECONDARY_BUFFER_SIZE/2,
@@ -396,7 +396,7 @@ VOID far __cdecl maintenance_callback(VOID)
 							}
 
 							/*
-							**  Update our pointer into the direct sound buffer
+							**  Update our pointer into the backend buffer
 							**
 							*/
 							st->DestPtr += (uint32_t)bytes_copied;
@@ -407,7 +407,7 @@ VOID far __cdecl maintenance_callback(VOID)
 
 
 							/*
-							** Unlock the direct sound buffer
+							** Unlock the backend buffer
 							*/
 							st->PlayBuffer->Unlock(	play_buffer_ptr,
 													lock_length1,
