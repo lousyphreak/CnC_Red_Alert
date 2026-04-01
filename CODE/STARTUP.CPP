@@ -42,7 +42,6 @@
 #include	<cstdarg>
 #include	<cstdio>
 #include	<cstdlib>
-#include	<conio.h>
 #include	<io.h>
 
 #ifdef WIN32
@@ -167,10 +166,7 @@ int main(int argc, char * argv[])
 		return (EXIT_SUCCESS);
 	}
 
-
 #endif
-//printf("in program.\n");getch();
-//printf("ram free = %ld\n",Ram_Free(MEM_NORMAL));getch();
 #ifdef WIN32
 	if (Ram_Free(MEM_NORMAL) < 7000000) {
 #else
@@ -187,7 +183,6 @@ int main(int argc, char * argv[])
 
 #ifndef WIN32
 		printf (TEXT_USE_START_MENU);
-		getch();
 #endif
 
 #if (0)
@@ -204,8 +199,6 @@ int main(int argc, char * argv[])
 				break;
 			}
 		}
-
-		getch();
 #endif	//(0)
 		return(EXIT_FAILURE);
 	}

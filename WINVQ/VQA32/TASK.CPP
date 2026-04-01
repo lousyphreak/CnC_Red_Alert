@@ -62,7 +62,6 @@
 #include <malloc.h>
 #include <dos.h>
 #include <string.h>
-#include <conio.h>
 #include <sys\timeb.h>
 #include <vqm32\all.h>
 #include "vqaplayp.h"

@@ -51,7 +51,6 @@
 #include <fcntl.h>
 #include <malloc.h>
 #include <io.h>
-#include <conio.h>
 
 #define bool int
 #define true 1
@@ -168,30 +167,30 @@ int main(int argc, char *argv[])
 	/*
 	** Get the function names from the map file
 	*/
-	cprintf ("Extracting function data from map file.\n");
+	printf ("Extracting function data from map file.\n");
 	if (!Extract_Function_Addresses()){
-		cprintf ("Error parsing .MAP file - aborting\n\n");
+		printf ("Error parsing .MAP file - aborting\n\n");
 		return (0);
 	}
 
 	/*
 	** Sort the functions into address order to make it easier to map the functions
 	*/
-	cprintf ("Sorting function list by address");
+	printf ("Sorting function list by address");
 	Sort_Functions();
 
 	/*
 	** Map the addresses in the sample file to the function addresses
 	*/
-	cprintf ("\nMapping profiler hits to functions");
+	printf ("\nMapping profiler hits to functions");
 	Map_Profiler_Hits();
 
 	/*
 	** Sort the functions into order of usage for output
 	*/
-	cprintf ("\nSorting function list by activity");
+	printf ("\nSorting function list by activity");
 	Sort_Functions_Again();
-	cprintf ("\n\n");
+	printf ("\n\n");
 
 	/*
 	** Print the function usage statistics
@@ -224,9 +223,9 @@ int main(int argc, char *argv[])
 
 void Print_My_Name(void)
 {
-	cprintf("Westwood profile data analyzer.\n");
-	cprintf("V 1.0 - 11/17/95\n");
-	cprintf("Programmer - Steve Tall.\n\n");
+	printf("Westwood profile data analyzer.\n");
+	printf("V 1.0 - 11/17/95\n");
+	printf("Programmer - Steve Tall.\n\n");
 }
 
 
@@ -246,7 +245,7 @@ void Print_My_Name(void)
 
 void Print_Usage (void)
 {
-	cprintf("Usage: PROFILE <sample_file> <map_file)\n\n");
+	printf("Usage: PROFILE <sample_file> <map_file)\n\n");
 }
 
 
@@ -266,7 +265,7 @@ void Print_Usage (void)
 
 void File_Error (char *file_name)
 {
-	cprintf ("Error reading file:%s - aborting\n",file_name);
+	printf ("Error reading file:%s - aborting\n",file_name);
 }
 
 
@@ -287,7 +286,7 @@ void File_Error (char *file_name)
 
 void Memory_Error (void)
 {
-	cprintf ("Error - insufficient memory - aborting\n");
+	printf ("Error - insufficient memory - aborting\n");
 }
 
 
@@ -372,7 +371,7 @@ void Map_Profiler_Hits (void)
 
 		function_hit=*(samples+i);
 		if (1023==(1023 & i)){
-			cprintf (".");
+			printf (".");
 		}
 
 
@@ -412,7 +411,7 @@ void Sort_Functions (void)
 			address_swap.FunctionAddress=0;
 
 			if (127==(127 & outer)){
-				cprintf (".");
+				printf (".");
 			}
 
 			for (int inner=0 ; inner < TotalFunctions-1 ; inner++){
@@ -456,7 +455,7 @@ void Sort_Functions_Again (void)
 			address_swap.FunctionAddress=0;
 
 			if (127==(127 & outer)){
-				cprintf (".");
+				printf (".");
 			}
 
 			for (int inner=0 ; inner < TotalFunctions-1 ; inner++){

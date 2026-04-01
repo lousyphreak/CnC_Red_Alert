@@ -8,6 +8,10 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Removed the obsolete `SDL3_COMPAT/wrappers/conio.h` shim and cleaned up every remaining repository user:
+  - active game sources no longer include `conio.h`, and the dead console fallback code in `CODE/STARTUP.CPP`, `CODE/RAND.CPP`, and `CODE/JSHELL.H` is gone;
+  - surviving legacy/tool sources now either use existing headers directly (`VQ/VQM32/TESTVB.CPP`, `WINVQ/VQM32/TESTVB.CPP` now include `PORTIO.H`; `WIN32LIB/PROFILE/UTIL/PROFILE.CPP` uses `printf`) or were deleted when they were clearly backup/orphaned `conio` utilities (`WINVQ/VPLAY32/PLYVQA32.CPP`, `WWFLAT32/MISC/KEYCODE.CPP`, `*.BAK`, `WINVQ/VQA32/OLD/*`);
+  - `cmake --build build --target redalert -j16` and `cmake --build build-asan --target redalert -j16` still succeed after the cleanup.
 - Fixed the mission-select reveal animation on the SDL/Linux path in `WIN32LIB/WSA/WSA.CPP`:
   - Focused `gdb` validation showed `Map_Selection()` was not waiting forever on the intro loop: it reached the end of the `MSAA.WSA` reveal with `frame == Get_Animation_Frame_Count(anim) == 70`, and `Get_Mouse_State()` was already `0` after `Show_Mouse()`.
   - The real failure was inside the resident WSA path: `Apply_Delta()` began rejecting `MSAA.WSA` resident offsets from frame `34` onward (`frame_offset` / `frame_data_size` became garbage while `largest_frame_size` stayed `22354`), so the screen stayed stuck on a partially revealed map even though the loop kept advancing.

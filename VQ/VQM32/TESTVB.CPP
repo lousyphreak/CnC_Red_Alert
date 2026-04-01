@@ -43,11 +43,7 @@
 
 #include <sys\timeb.h>
 
-#ifdef __BORLANDC__
-#include "portio.h"
-#else
-#include <conio.h>
-#endif
+#include "PORTIO.H"
 
 /****************************************************************************
 *

@@ -9,6 +9,12 @@ _Last updated: 2026-04-01_
 - Shared platform/rendering/input/audio support code lives in `WIN32LIB/`.
 - The active compatibility include order puts `SDL3_COMPAT/wrappers/` ahead of `CODE/` and `WIN32LIB/INCLUDE`.
 
+## Removed conio surface
+
+- The supported CMake build defines `WIN32=1`, so the old non-`WIN32` `conio.h` fallback branches in active game code are dead. Keep keyboard input on the supported port routed through `WWKeyboardClass` / SDL-backed input; do not reintroduce `<conio.h>` or wrapper shims for `getch()`, `kbhit()`, `getche()`, or `cprintf()`.
+- The `TESTVB` utilities only needed `inp()`. Include `PORTIO.H` directly there instead of routing through `conio.h`.
+- Clearly orphaned backup/standalone sources that only remained around the removed `conio` utility path were deleted instead of being rewrapped.
+
 ## Removed BIOS/register surface
 
 - `SDL3_COMPAT/wrappers/bios.h` is gone. Do not reintroduce `union REGS`, `struct SREGS`, `bioskey()`, `segread()`, or `int386*`-style shims for the SDL3 port.

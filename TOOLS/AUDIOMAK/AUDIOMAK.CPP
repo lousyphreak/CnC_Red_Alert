@@ -40,7 +40,6 @@
 #include	<dos.h>
 #include	<string.h>
 #include	<ctype.h>
-#include	<conio.h>
 
 #define	FALSE	0
 #define	TRUE	1

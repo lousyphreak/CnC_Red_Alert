@@ -79,60 +79,27 @@ class SmartPtr
 #include	"SHAPE.H"
 #include	"TIMER.H"
 
-#ifdef WIN32
-//#define getch	Get_Key_Num
-//#define kbhit	Check_Key_Num
-#include	"KEY.H"
-#else
-#include	<conio.h>
-#endif
-
 /*
 **	Interface class to the keyboard. This insulates the game from library vagaries. Most
 **	notable being the return values are declared as "int" in the library whereas C&C
 **	expects it to be of KeyNumType.
 */
-#ifdef WIN32
-//#define KeyNumType	int
-//#define KeyASCIIType	int
-
 //lint -esym(1725,KeyboardClass::MouseQX,KeyboardClass::MouseQY)
 struct KeyboardClass : public WWKeyboardClass
-
-#else
-struct KeyboardClass
-#endif
 {
 
 	/*
-	**	This flag is used to indicate whether the WW library has taken over
-	**	the keyboard or not. If not, then the normal console input
-	**	takes precedence.
+	**	This flag is retained for legacy callers, but the supported port
+	**	always routes keyboard input through WWKeyboardClass.
 	*/
 	unsigned IsLibrary;
 
-#ifndef WIN32
-	int &MouseQX;
-	int &MouseQY;
-
-	KeyboardClass() :
-		IsLibrary(true),
-		MouseQX(::MouseQX),
-		MouseQY(::MouseQY)
-	{}
-	KeyNumType Get(void) {return (IsLibrary ? (KeyNumType)Get_Key_Num() : (KeyNumType)getch());};
-	KeyNumType Check(void) {return (IsLibrary ? (KeyNumType)Check_Key_Num() : (KeyNumType)kbhit());};
-	KeyASCIIType To_ASCII(KeyNumType key) {return((KeyASCIIType)KN_To_KA(key));};
-	void Clear(void) {if (IsLibrary) Clear_KeyBuffer();};
-	int Down(KeyNumType key) {return(Key_Down(key));};
-#else
 	KeyboardClass() : IsLibrary(true) {}
 	KeyNumType Get(void) {return ((KeyNumType)WWKeyboardClass::Get());};
 	KeyNumType Check(void) {return ((KeyNumType)WWKeyboardClass::Check());};
 	KeyASCIIType To_ASCII(KeyNumType key) {return((KeyASCIIType)WWKeyboardClass::To_ASCII(key));};
 	void Clear(void) {WWKeyboardClass::Clear();};
 	int Down(KeyNumType key) {return(WWKeyboardClass::Down(key));};
-#endif
 
 	int Mouse_X(void) {return(Get_Global_Mouse_X());};
 	int Mouse_Y(void) {return(Get_Global_Mouse_Y());};

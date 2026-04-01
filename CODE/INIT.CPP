@@ -76,7 +76,6 @@
 #endif	//WINSOCK_IPX
 
 #endif
-#include	<conio.h>
 #include	<dos.h>
 
 extern BOOL BootstrapFocusSeen;
