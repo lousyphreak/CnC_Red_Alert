@@ -15,6 +15,9 @@ _Last updated: 2026-04-01_
 - `CODE/ADPCM.CPP` still directly `#include`s `CODE/ITABLE.CPP` and `CODE/DTABLE.CPP`, so those two `.CPP` files are still active implementation fragments even though they are filtered from the top-level `CODE/*.CPP` build list.
 - `CODE/2KEYFRAM.CPP` is still a live build input because the current `CMakeLists.txt` globs `CODE/*.CPP` and does **not** exclude that file. It provides the active `Build_Frame()`, `Get_Build_Frame_Count()`, `Get_Build_Frame_Width()`, `Get_Build_Frame_Height()`, `Get_Shape_Header_Data()`, and `IsTheaterShape` symbols used throughout the game.
 - The broad dead-code cleanup safely removed non-built archive/tool trees such as `LAUNCH/`, `LAUNCHER/`, `TOOLS/`, `IPX/`, `WWFLAT32/`, `VQ/VQM32/`, and the non-built `WINVQ/` source subtrees, plus non-built `WIN32LIB` archive/test trees. If more cleanup is needed later, start from those categories before touching `CODE/` implementation fragments or globbed root `.CPP` files.
+- A safe second-pass target category is legacy build metadata that the SDL3/CMake build never reads: Borland/Watcom/TASM config files (`*.MAK`, `MAKEFILE*`, `*.CFG`, `*.DEF`, old batch rebuild scripts), old backup files (`*.BAK*`), and empty/obsolete assembler include stubs such as `FUNCTION.I`.
+- The remaining `CODE/*.ASM` files that were deleted in the second pass were not live build inputs on the SDL3 port. The only surviving references were comments, old project files, or archive `.INC` declarations; there were no active CMake targets or in-tree source includes depending on those assembler files.
+- Orphan headers that belonged only to already-deleted non-built implementation files (`BMP8.H`, `DIBUTIL.H`, `DPMI.H`, `TARCOM.H`, `TURRET.H`) were also safe to remove once repository-wide reference checks came back empty.
 
 ## Removed objbase wrapper
 
