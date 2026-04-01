@@ -45,10 +45,6 @@
 
 #include	"IPX95.H"
 
-#ifdef MCIMPEG // Denzil 6/15/98
-#include "MCIMOVIE.H"
-#endif
-
 #ifdef WOLAPI_INTEGRATION
 //#include "WOLDEBUG.H"
 #endif
@@ -126,9 +122,7 @@ int PASCAL WinMain ( HINSTANCE instance , HINSTANCE , char * command_line , int 
 
 {
 
-	#ifndef MPEGMOVIE // Denzil 6/10/98
 	bool surface_in_system_memory = false;
-	#endif
 
 	startup_trace("WinMain entered command_line=\"%s\"", command_line ? command_line : "");
 
@@ -351,10 +345,6 @@ int PASCAL WinMain ( HINSTANCE instance , HINSTANCE , char * command_line , int 
 			startup_trace("Audio_Init complete SoundOn=%d", SoundOn);
 
 
-			#ifdef MPEGMOVIE // Denzil 6/10/98
-			if (!InitDDraw())
-				return (EXIT_FAILURE);
-			#else
 			BOOL video_success = FALSE;
 			/*
 			** Set 640x400 video mode. If its not available then try for 640x480
@@ -450,8 +440,7 @@ int PASCAL WinMain ( HINSTANCE instance , HINSTANCE , char * command_line , int 
 				SeenBuff.Attach(&VisiblePage, 0, 0, 640, 400);
 				HidPage.Attach(&HiddenPage, 0, 0, 640, 400);
 			}
-			#endif // MPEGMOVIE - Denzil 6/10/98
-			
+
 			Options.Adjust_Variables_For_Resolution();
 
 			/*
@@ -513,16 +502,6 @@ int PASCAL WinMain ( HINSTANCE instance , HINSTANCE , char * command_line , int 
 			Main_Game(argc, argv);
 			startup_trace("Main_Game returned ReadyToQuit=%d", ReadyToQuit);
 
-			#ifdef MPEGMOVIE // Denzil 6/15/98
-			if (MpgSettings != NULL)
-				delete MpgSettings;
-	
-			#ifdef MCIMPEG
-			if (MciMovie != NULL)
-				delete MciMovie;
-			#endif
-			#endif
-			
 			VisiblePage.Clear();
 			HiddenPage.Clear();
 			Memory_Error_Exit = Print_Error_Exit;
@@ -564,130 +543,6 @@ int PASCAL WinMain ( HINSTANCE instance , HINSTANCE , char * command_line , int 
 	*/
 	return(EXIT_SUCCESS);
 }
-
-
-/* Initialize DirectDraw and surfaces */
-bool InitDDraw(void)
-	{
-	bool surface_in_system_memory = false;
-	BOOL video_success = FALSE;
-
-	/* Set 640x400 video mode. If its not available then try for 640x480 */
-	if (ScreenHeight == 400)
-		{
-		if (Set_Video_Mode(MainWindow, ScreenWidth, ScreenHeight, 8))
-			{
-			video_success = TRUE;
-			}
-		else
-			{
-			if (Set_Video_Mode(MainWindow, ScreenWidth, 480, 8))
-				{
-				video_success = TRUE;
-				ScreenHeight = 480;
-				}
-			}
-		}
-	else
-		{
-		if (Set_Video_Mode(MainWindow, ScreenWidth, ScreenHeight, 8))
-			{
-			video_success = TRUE;
-			}
-		}
-
-	if (!video_success)
-		{
-		MessageBox(MainWindow, TEXT_VIDEO_ERROR, TEXT_SHORT_TITLE, MB_ICONEXCLAMATION|MB_OK);
-
-		if (WindowsTimer)
-			delete WindowsTimer;
-
-		return false;
-		}
-
-	if (ScreenWidth == 320)
-		{
-		VisiblePage.Init(ScreenWidth, ScreenHeight, NULL, 0, (GBC_Enum)0);
-		ModeXBuff.Init(ScreenWidth, ScreenHeight, NULL, 0, (GBC_Enum)(GBC_VISIBLE|GBC_VIDEOMEM));
-		}
-	else
-		{
-		VisiblePage.Init(ScreenWidth, ScreenHeight, NULL, 0, (GBC_Enum)(GBC_VISIBLE|GBC_VIDEOMEM));
-
-		/* Check that we really got a video memory page. Failure is fatal. */
-		surface_in_system_memory = VisiblePage.Get_Video_Surface()->IsSystemMemory();
-
-		if (surface_in_system_memory)
-			{
-			/* Aaaarrgghh! */
-			WWDebugString(TEXT_DDRAW_ERROR);WWDebugString("\n");
-			MessageBox(MainWindow, TEXT_DDRAW_ERROR, TEXT_SHORT_TITLE, MB_ICONEXCLAMATION|MB_OK);
-
-			if (WindowsTimer)
-				delete WindowsTimer;
-				
-			return false;
-			}
-
-		/* If we have enough left then put the hidpage in video memory unless...
-		 *
-		 * If there is no blitter then we will get better performance with a system
-		 * memory hidpage
-		 *
-		 * Use a system memory page if the user has specified it via the ccsetup program.
-		 */
-		unsigned video_memory = Get_Free_Video_Memory();
-		unsigned video_capabilities = Get_Video_Hardware_Capabilities();
-
-		if (video_memory < ScreenWidth * ScreenHeight
-				|| (!(video_capabilities & VIDEO_BLITTER))
-				|| (video_capabilities & VIDEO_NO_HARDWARE_ASSIST)
-				|| !VideoBackBufferAllowed)
-			{
-			HiddenPage.Init(ScreenWidth, ScreenHeight, NULL, 0, (GBC_Enum)0);
-			}
-		else
-			{
-			HiddenPage.Init(ScreenWidth, ScreenHeight, NULL, 0, (GBC_Enum)GBC_VIDEOMEM);
-
-			/* Make sure we really got a video memory hid page. If we didnt then things
-			 * will run very slowly.
-			 */
-			surface_in_system_memory = HiddenPage.Get_Video_Surface()->IsSystemMemory();
-			
-			if (surface_in_system_memory)
-				{
-				/* Oh dear, big trub. This must be an IBM crAptiva or something similarly cruddy.
-				 * We must redo the Hidden Page as system memory.
-				 */
-				AllSurfaces.Remove_Surface(HiddenPage.Get_Video_Surface());  // Remove the old surface from the AllSurfaces list
-				HiddenPage.Get_Video_Surface()->Release();
-				HiddenPage.Init(ScreenWidth, ScreenHeight, NULL, 0, (GBC_Enum)0);
-				}
-			else
-				{
-				VisiblePage.Attach_Surface(&HiddenPage);
-				}
-			}
-		}
-
-	ScreenHeight = 400;
-
-	if (VisiblePage.Get_Height() == 480)
-		{
-		SeenBuff.Attach(&VisiblePage, 0, 40, 640, 400);
-		HidPage.Attach(&HiddenPage, 0, 40, 640, 400);
-		}
-	else
-		{
-		SeenBuff.Attach(&VisiblePage, 0, 0, 640, 400);
-		HidPage.Attach(&HiddenPage, 0, 0, 640, 400);
-		}
-
-	return true;
-	}
-
 
 /***********************************************************************************************
  * Prog_End -- Cleans up library systems in prep for game exit.                                *

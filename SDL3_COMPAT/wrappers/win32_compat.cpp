@@ -1,6 +1,5 @@
 #include "win32_compat.h"
 #include "sdl_fs.h"
-#include "mmsystem.h"
 #include "SDLINPUT.H"
 
 #include <SDL3/SDL_loadso.h>
@@ -111,15 +110,6 @@ std::unordered_map<std::string, EventHandle*> g_named_events;
 std::atomic<DWORD> g_next_thread_id{1};
 std::chrono::steady_clock::time_point g_start_time = std::chrono::steady_clock::now();
 std::atomic<UINT> g_error_mode{0};
-
-struct TimerHandle {
-    std::thread worker;
-    std::atomic<bool> active{true};
-};
-
-std::mutex g_timer_mutex;
-std::unordered_map<UINT, std::unique_ptr<TimerHandle>> g_timers;
-std::atomic<UINT> g_next_timer_id{1};
 
 bool compat_trace_enabled()
 {
@@ -1712,110 +1702,6 @@ int StretchDIBits(HDC, int, int, int, int, int, int, int, int, const VOID*, cons
 int SetDIBitsToDevice(HDC, int, int, DWORD width, DWORD height, int, int, UINT, UINT, const VOID*, const BITMAPINFO*, UINT)
 {
     return static_cast<int>(width * height);
-}
-
-MMRESULT timeSetEvent(UINT delay, UINT, LPTIMECALLBACK callback, DWORD user, UINT event_type)
-{
-    if (!callback) {
-        return 0;
-    }
-
-    const UINT timer_id = g_next_timer_id.fetch_add(1);
-    auto timer = std::make_unique<TimerHandle>();
-    TimerHandle* timer_ptr = timer.get();
-    timer->worker = std::thread([delay, callback, user, event_type, timer_id, timer_ptr]() {
-        if (event_type == TIME_ONESHOT) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(delay));
-            if (timer_ptr->active.load()) {
-                callback(timer_id, 0, user, 0, 0);
-            }
-            timer_ptr->active.store(false);
-            return;
-        }
-
-        while (timer_ptr->active.load()) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(delay));
-            if (!timer_ptr->active.load()) {
-                break;
-            }
-            callback(timer_id, 0, user, 0, 0);
-        }
-    });
-
-    std::scoped_lock lock(g_timer_mutex);
-    g_timers.emplace(timer_id, std::move(timer));
-    return timer_id;
-}
-
-MMRESULT timeKillEvent(UINT timer_id)
-{
-    std::unique_ptr<TimerHandle> timer;
-    {
-        std::scoped_lock lock(g_timer_mutex);
-        auto it = g_timers.find(timer_id);
-        if (it == g_timers.end()) {
-            return 1;
-        }
-        timer = std::move(it->second);
-        g_timers.erase(it);
-    }
-
-    timer->active.store(false);
-    if (timer->worker.joinable()) {
-        timer->worker.join();
-    }
-    return 0;
-}
-
-MCIERROR mciSendCommand(MCIDEVICEID device_id, UINT message, DWORD, DWORD params)
-{
-    switch (message) {
-        case MCI_SYSINFO: {
-            auto* sysinfo = reinterpret_cast<MCI_SYSINFO_PARMS*>(static_cast<uintptr_t>(params));
-            if (sysinfo) {
-                if (sysinfo->lpstrReturn && sysinfo->dwRetSize > 0) {
-                    std::snprintf(sysinfo->lpstrReturn, sysinfo->dwRetSize, "%s", "SDL3");
-                }
-                sysinfo->dwNumber = 1;
-            }
-            return 0;
-        }
-        case MCI_INFO: {
-            auto* info = reinterpret_cast<MCI_INFO_PARMS*>(static_cast<uintptr_t>(params));
-            if (info && info->lpstrReturn && info->dwRetSize > 0) {
-                std::snprintf(info->lpstrReturn, info->dwRetSize, "%s", "SDL3 Multimedia");
-            }
-            return 0;
-        }
-        case MCI_OPEN: {
-            auto* open = reinterpret_cast<MCI_OPEN_PARMS*>(static_cast<uintptr_t>(params));
-            if (open) {
-                open->wDeviceID = device_id ? device_id : 1;
-            }
-            return 0;
-        }
-        case MCI_GETDEVCAPS: {
-            auto* caps = reinterpret_cast<MCI_GETDEVCAPS_PARMS*>(static_cast<uintptr_t>(params));
-            if (caps) {
-                if (caps->dwItem == MCI_GETDEVCAPS_DEVICE_TYPE) {
-                    caps->dwReturn = MCI_DEVTYPE_DIGITAL_VIDEO;
-                } else {
-                    caps->dwReturn = 1;
-                }
-            }
-            return 0;
-        }
-        case MCI_CLOSE:
-        case MCI_PLAY:
-        case MCI_PAUSE:
-        case MCI_WHERE:
-        case MCI_PUT:
-        case MCI_WINDOW:
-        case MCI_BREAK:
-            return 0;
-        default:
-            return 1;
-    }
 }
 
 } // extern "C"

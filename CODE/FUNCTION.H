@@ -390,12 +390,6 @@ CELL Coord_Cell(COORDINATE coord);
 #include "MPMGRW.H"
 #endif
 
-// Denzil 5/18/98 - Mpeg movie playback
-#ifdef MPEGMOVIE
-bool InitDDraw(void);
-bool PlayMpegMovie(const char* name);
-#endif
-
 #include	"EXTERNS.H"
 
 extern int Get_CD_Drive(void);

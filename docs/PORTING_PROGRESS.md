@@ -211,13 +211,17 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - The empty forwarding-wrapper cleanup is now applied across the in-tree compat surface:
   - deleted `SDL3_COMPAT/wrappers/mem.h`, `modem.h`, `new.h`, `objbase.h`, `windows.h`, `WINDOWS.H`, and `windowsx.h`;
   - active C/C++ sources now include `win32_compat.h`, `<string.h>`, or `<new>` directly instead of routing through those forwarding headers;
-  - surviving compat headers such as `ddraw.h`, `mmsystem.h`, and `winsock.h` now include `win32_compat.h` directly.
+  - surviving compat headers such as `ddraw.h` and `winsock.h` now include `win32_compat.h` directly.
   - only the legacy Windows-only `LAUNCHER/256BMP.C` and `WINVQ/VQAVIEW/DIALOGS.RC` artifacts still include the real SDK `windows.h`; the active SDL/Linux compat path no longer depends on the deleted forwarding headers.
   - `cmake --build build --target redalert -j16` and `cmake --build build-asan --target redalert -j16` still succeed after this cleanup.
 - Removed the dead `SDL3_COMPAT/wrappers/process.h` `_beginthread()` shim.
   - There were no `_beginthread()` call sites left in the tree; the remaining game-side consumers were stray `#include <process.h>` lines in `WIN32LIB/AUDIO/SOUNDIO.CPP`, `WIN32LIB/MISC/FINDARGV.CPP`, `CODE/FUNCTION.H`, `CODE/W95TRACE.CPP`, and the legacy DOS stub `CODE/CWSTUB.C`.
   - `CODE/CWSTUB.C` now uses local non-`process.h` helpers for its legacy command-line / environment search path instead of depending on the deleted wrapper.
   - This keeps the SDL3/Linux port aligned with the current direction of not requiring game-owned helper threads on the active path.
+- Removed the dead WinMM/MCI movie compatibility surface.
+  - Deleted `SDL3_COMPAT/wrappers/mmsystem.h` after confirming the active SDL3/Linux build has no remaining game-side `timeSetEvent()` / `timeKillEvent()` users.
+  - Deleted the obsolete `CODE/{MCI,MCIMOVIE,MPGSET}.{CPP,H}` sources and removed the remaining `MPEGMOVIE` / `MCIMPEG` guards, globals, declarations, startup branches, and movie-call branches that were unreachable in the current build.
+  - `SDL3_COMPAT/wrappers/win32_compat.cpp` no longer carries the dead WinMM timer worker shim or the dead MCI command stub; the buffered `VQ/VQA32` movie path remains the only active movie implementation.
 - The Linux build now enters the real game startup path instead of the old Unix stub path:
   - `CODE/STUB.CPP` bridges Linux `main()` into `WinMain(...)`.
   - `SDL3_COMPAT/wrappers/win32_compat.cpp` returns a real executable path from `GetModuleFileName()`.
@@ -229,7 +233,7 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - the audio decompressor replacement in `VQ/VQA32/AUDUNZAPCOMPAT.CPP`;
   - palette/text/INI/VBlank compatibility glue in `VQ/VQA32/VQCOMPAT.CPP`;
   - an SDL3-backed movie audio/timer implementation in `VQ/VQA32/AUDIOCOMPAT.CPP`.
-- The non-portable DirectShow/DirectDraw MPEG path is now disabled by leaving `MPEGMOVIE` off in `CODE/DEFINES.H`. The buffered VQA path remains the active movie implementation.
+- The old DirectShow/DirectDraw/MCI MPEG path is now removed entirely. The buffered VQA path remains the active movie implementation.
 - Case-sensitive include fixes and DOS-header cleanup have been applied across the active `VQ/VQA32` and `VQ/INCLUDE/VQM32` surface so the portable movie sources build cleanly on Linux.
 - The runtime now reaches the real front-end path from `GameData` in both normal and ASan builds instead of dying in early startup.
 - The mission-start crash chain reported from `"New Game"` is now pushed past the original hard-failure points:

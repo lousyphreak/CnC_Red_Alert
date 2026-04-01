@@ -138,9 +138,6 @@
 // Define DVD to turn on RADVD additions/changes - Denzil
 #ifdef DVD
 //#define INTERNET_OFF
-/* DirectShow/DirectDraw MPEG playback is Windows-only and not used in the SDL3 port. */
-/* #define MPEGMOVIE */
-//#define MCIMPEG
 #endif
 
 // Test to see if partial object drawing is any faster.

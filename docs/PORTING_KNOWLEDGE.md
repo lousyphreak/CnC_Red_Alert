@@ -361,7 +361,7 @@ _Last updated: 2026-04-01_
 
 - The active Red Alert in-game movie path is buffered VQA playback (`VQACFGF_BUFFER`) into system-memory pages. The current SDL3 port does not need the old direct MCGA/XMode/VESA output paths for normal gameplay movie playback.
 - The correct movie codebase for the active build is `VQ/VQA32`, not `WINVQ/VQA32`. `WINVQ` is tied to older Win32/DirectSound assumptions that are not needed for the current buffered path.
-- The old DirectShow/DirectDraw MPEG path behind `MPEGMOVIE` is obsolete for the SDL3 port and now stays disabled in `CODE/DEFINES.H`.
+- The old DirectShow/DirectDraw/MCI MPEG path has been removed from the SDL3 port; buffered VQA playback is the only remaining movie path.
 
 ## Ported movie helpers
 
@@ -452,6 +452,9 @@ _Last updated: 2026-04-01_
   - DirectDraw compatibility types used by legacy rendering code.
 - `SDL3_COMPAT/wrappers/process.h` was removed after confirming there were no remaining non-generated source includes or `_beginthread()` call sites in the tree.
   - Keep new porting work off detached compatibility threads unless a subsystem is proven to need one on the active SDL path.
+- `SDL3_COMPAT/wrappers/mmsystem.h` and the old MCI movie compatibility layer were removed after confirming both sides were dead on the SDL3/Linux port.
+  - The active build has no remaining game-side `timeSetEvent()` / `timeKillEvent()` users.
+  - `MCIMPEG` / `MPEGMOVIE` were not enabled in the active build, so the MCI movie sources and the compat `mciSendCommand()` shim were just dead baggage.
 - The active gameplay audio path no longer depends on the DirectSound compatibility wrapper; any remaining DirectSound-shaped code is archival or inactive.
 
 ## Startup/runtime porting notes

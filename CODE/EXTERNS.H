@@ -472,14 +472,4 @@ bool Send_Remote_File ( char *file_name, int gametype );
 bool Get_Scenario_File_From_Host(char *return_name, int gametype);
 bool Find_Local_Scenario (char *description, char *filename, unsigned int length, char *digest, bool official);
 
-#ifdef MPEGMOVIE // Denzil 6/15/98
-#ifdef MCIMPEG
-#include "MCIMOVIE.H"
-extern MCIMovie* MciMovie;
-#endif
-
-#include "MPGSET.H"
-extern MPGSettings* MpgSettings;
-#endif
-
 #endif

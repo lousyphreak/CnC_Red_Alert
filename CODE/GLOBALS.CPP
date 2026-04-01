@@ -774,16 +774,6 @@ int ReadyToQuit = 0;
 GetCDClass		CDList;
 int UnitBuildPenalty = 100;
 
-#ifdef MPEGMOVIE // Denzil 6/15/98
-#ifdef MCIMPEG
-#include "MCIMOVIE.H"
-MCIMovie* MciMovie = NULL;
-#endif
-
-#include "MPGSET.H"
-MPGSettings* MpgSettings = NULL;
-#endif
-
 #ifdef FIXIT_VERSION_3			//	For endgame auto-sonar pulse.
 bool bAutoSonarPulse = false;
 #endif
