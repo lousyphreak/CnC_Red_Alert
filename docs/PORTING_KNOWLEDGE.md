@@ -18,6 +18,10 @@ _Last updated: 2026-04-01_
 - A safe second-pass target category is legacy build metadata that the SDL3/CMake build never reads: Borland/Watcom/TASM config files (`*.MAK`, `MAKEFILE*`, `*.CFG`, `*.DEF`, old batch rebuild scripts), old backup files (`*.BAK*`), and empty/obsolete assembler include stubs such as `FUNCTION.I`.
 - The remaining `CODE/*.ASM` files that were deleted in the second pass were not live build inputs on the SDL3 port. The only surviving references were comments, old project files, or archive `.INC` declarations; there were no active CMake targets or in-tree source includes depending on those assembler files.
 - Orphan headers that belonged only to already-deleted non-built implementation files (`BMP8.H`, `DIBUTIL.H`, `DPMI.H`, `TARCOM.H`, `TURRET.H`) were also safe to remove once repository-wide reference checks came back empty.
+- For later cleanup passes, use compile commands plus case-insensitive repository search together:
+  - if a file appears in `build/compile_commands.json` or `build-asan/compile_commands.json`, treat it as part of the active build even if it looks feature-dead;
+  - only treat remaining headers as safe stragglers when they are absent from compile commands **and** have no surviving case-insensitive include/reference hits elsewhere in the repo.
+- That rule is what made the third pass safe: the removable leftovers were orphan headers only, while many seemingly dormant `CODE/*.CPP` units were still compiled because the active CMake target globs almost every root-level `CODE/*.CPP`.
 
 ## Removed objbase wrapper
 
