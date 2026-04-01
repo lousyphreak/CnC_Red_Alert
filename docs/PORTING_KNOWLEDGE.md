@@ -1,6 +1,6 @@
 # Porting Knowledge
 
-_Last updated: 2026-03-31_
+_Last updated: 2026-04-01_
 
 ## Repo facts
 
@@ -257,6 +257,11 @@ _Last updated: 2026-03-31_
   - Mouse buttons must also drive the shared virtual-key down counts, not just the raw `g_mouse_buttons` mask.
   - `CODE/GADGET.CPP::Input()` synthesizes `LEFTHELD` / `RIGHTHELD` from `Keyboard->Down(KN_LMOUSE)` / `Keyboard->Down(KN_RMOUSE)`, so if `CODE/SDLINPUT.CPP::SDL_GameInput_Handle_Mouse_Button()` only records the click latch and never calls `press_virtual_key_locked()` / `release_virtual_key_locked()`, mission-map drag behavior breaks even though ordinary click/release events still arrive.
   - The concrete symptom is that `DisplayClass::Mouse_Left_Held()` never runs, `Map.IsRubberBand` never becomes true, and no drag-select rectangle appears while the button is held.
+- `CODE/MAPSEL.CPP::Map_Selection()` can look “hung” even when the intro loop has already finished.
+  - A focused live probe on the active SDL/Linux build showed the map-select intro does reach its end (`frame == Get_Animation_Frame_Count(anim) == 70`) and the mouse hidden-count is already clear (`Get_Mouse_State() == 0`) immediately after `Show_Mouse()`.
+  - The visible stall came from `WIN32LIB/WSA/WSA.CPP`, not from the mouse/input path: the resident `MSAA.WSA` offset table goes bad mid-animation, so `Apply_Delta()` starts rejecting later frames with impossible resident `frame_offset` / `frame_data_size` values around frame `34`.
+  - Because the reveal loop still increments `frame`, the function eventually reaches its input loop while leaving the screen on the last good partial reveal, which makes the map-select screen look frozen even though it is still running.
+  - The practical fix is to stop trusting the legacy `largest_frame_size` field on its own: reserve at least one full frame of XOR-delta workspace (along with the larger compressed-frame span that still has to be back-loaded into that same buffer) before placing the resident file data behind it, and keep a resident-offset sanity check as a fallback guard.
 - `CODE/MSGBOX.CPP::WWMessageBox::Process()` must keep its `retval` as an `int`, not a `bool`.
   - The chooser really returns `0`, `1`, or `2` for button 1/2/3.
   - On the active tree, a real click in the centered Soviet button of `WWMessageBox().Process(TXT_CHOOSE, TXT_ALLIES, TXT_CANCEL, TXT_SOVIET)` arrived as `BUTTON_3|BUTTON_FLAG` and set `selection = BUTTON_3`, but the final `retval = 2` was truncated to `true`, so callers received `1`.

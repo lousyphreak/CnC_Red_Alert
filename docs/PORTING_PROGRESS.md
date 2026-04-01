@@ -1,6 +1,6 @@
 # Porting Progress
 
-_Last updated: 2026-03-31_
+_Last updated: 2026-04-01_
 
 ## Goal
 
@@ -8,6 +8,10 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Fixed the mission-select reveal animation on the SDL/Linux path in `WIN32LIB/WSA/WSA.CPP`:
+  - Focused `gdb` validation showed `Map_Selection()` was not waiting forever on the intro loop: it reached the end of the `MSAA.WSA` reveal with `frame == Get_Animation_Frame_Count(anim) == 70`, and `Get_Mouse_State()` was already `0` after `Show_Mouse()`.
+  - The real failure was inside the resident WSA path: `Apply_Delta()` began rejecting `MSAA.WSA` resident offsets from frame `34` onward (`frame_offset` / `frame_data_size` became garbage while `largest_frame_size` stayed `22354`), so the screen stayed stuck on a partially revealed map even though the loop kept advancing.
+  - The underlying cause was still-too-small legacy scratch sizing for the expanded XOR-delta buffer. `Open_Animation()` now reserves the maximum of the legacy header value, the largest compressed frame span, and one full frame of pixel area before placing the resident file buffer behind that workspace; it also keeps a resident-offset sanity check as a guard rail.
 - All file I/O is now SDL3-native:
   - **`CODE/RAWFILE.H` / `CODE/RAWFILE.CPP`**: the core `RawFileClass` now uses `SDL_IOStream*` directly instead of going through Win32 compat (`CreateFile`→`ReadFile`→`WriteFile`→`CloseHandle`→`SDL_IOStream`). Methods use `SDL_IOFromFile`, `SDL_ReadIO`, `SDL_WriteIO`, `SDL_SeekIO`, `SDL_CloseIO`, `SDL_GetIOSize`, `SDL_RemovePath`, `SDL_GetPathInfo`, and `SDL_TimeToDateTime`. Handle type changed from `HANDLE`/`void*` to `SDL_IOStream*`, null from `INVALID_HANDLE_VALUE` to `nullptr`.
   - **`CODE/WWFILE.H`**: replaced `#include <io.h>` with `#include <stdio.h>` for SEEK_SET/SEEK_CUR/SEEK_END.

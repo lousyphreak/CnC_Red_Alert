@@ -169,6 +169,29 @@ static uint32_t Read_WSA_Frame_Offset(void const* offset_table, int frame)
 	return Read_Unaligned_Value<uint32_t>((char const*)offset_table + ((size_t)frame * sizeof(uint32_t)));
 }
 
+static bool Validate_Resident_WSA_Offsets(void const* offset_table, int total_frames)
+{
+	if (offset_table == NULL || total_frames <= 0) {
+		return(false);
+	}
+
+	uint32_t previous_offset = Read_WSA_Frame_Offset(offset_table, 0);
+	const int wrap_frame = total_frames + 1;
+
+	for (int frame = 1; frame <= wrap_frame; ++frame) {
+		uint32_t frame_offset = Read_WSA_Frame_Offset(offset_table, frame);
+		if (frame_offset == 0U) {
+			return(frame == wrap_frame);
+		}
+		if (frame_offset < previous_offset) {
+			return(false);
+		}
+		previous_offset = frame_offset;
+	}
+
+	return(true);
+}
+
 /*=========================================================================*/
 /* The following PRIVATE functions are in this file:                       */
 /*=========================================================================*/
@@ -206,6 +229,7 @@ void * __cdecl Open_Animation(char const *file_name, char *user_buffer, long use
 	uint32_t				largest_frame_data_size;
 	uint32_t				offsets_size;
 	uint32_t				frame0_size;
+	uint32_t				frame_pixel_count;
 	uint32_t				target_buffer_size, delta_buffer_size, file_buffer_size;
 	uint32_t				max_buffer_size,    min_buffer_size;
 	char						*sys_anim_header_buffer;
@@ -213,6 +237,7 @@ void * __cdecl Open_Animation(char const *file_name, char *user_buffer, long use
 	char						*delta_buffer, *delta_back;
 	SysAnimHeaderType		*sys_header;
 	WSA_FileHeaderType	file_header;
+	bool					has_wrap_delta;
 
 	/*======================================================================*/
 	/* Open the file to get the header information									*/
@@ -274,6 +299,7 @@ void * __cdecl Open_Animation(char const *file_name, char *user_buffer, long use
 
 	offsets_size = ((uint32_t)file_header.total_frames + 2U) * sizeof(uint32_t);
 	largest_frame_data_size = frame0_size;
+	has_wrap_delta = (Get_File_Frame_Offset(fh, file_header.total_frames + 1, palette_adjust) != 0U);
 
 	if (file_header.total_frames > 0) {
 		uint32_t largest_file_frame_data_size = Get_Largest_File_Frame_Data_Size(fh, file_header.total_frames);
@@ -301,6 +327,7 @@ void * __cdecl Open_Animation(char const *file_name, char *user_buffer, long use
 		anim_flags |= WSA_TARGET_IN_BUFFER;
 		target_buffer_size = (uint32_t)file_header.pixel_width * (uint32_t)file_header.pixel_height;
 	}
+	frame_pixel_count = (uint32_t)file_header.pixel_width * (uint32_t)file_header.pixel_height;
 
 	// NOTE:"THIS IS A BAD THING. SINCE sizeof(SysAnimHeaderType) CHANGED, THE ANIMATE.EXE
 	// UTILITY DID NOT KNOW I UPDATED IT, IT ADDS IT TO largest_frame_size BEFORE SAVING
@@ -308,7 +335,9 @@ void * __cdecl Open_Animation(char const *file_name, char *user_buffer, long use
 	// the flags field, so adjust that value to the current host-side
 	// SysAnimHeaderType size before laying out the buffers.  Some assets need
 	// additional back-load room for a compressed frame span that is larger than
-	// the recorded decoded-delta size, so reserve whichever is larger.
+	// the recorded decoded-delta size, and some legacy headers still under-report
+	// the expanded XOR-delta workspace. Reserve whichever is larger, but never
+	// less than a full frame for these 16-bit WSA scratch buffers.
 	if ((uint32_t)file_header.largest_frame_size < (uint32_t)sizeof(LegacyWSAAnimateHeaderType)) {
 		Close_File(fh);
 		return(NULL);
@@ -317,6 +346,9 @@ void * __cdecl Open_Animation(char const *file_name, char *user_buffer, long use
 	largest_frame_buffer_size = (uint32_t)file_header.largest_frame_size - (uint32_t)sizeof(LegacyWSAAnimateHeaderType);
 	if (largest_frame_data_size > largest_frame_buffer_size) {
 		largest_frame_buffer_size = largest_frame_data_size;
+	}
+	if (frame_pixel_count > largest_frame_buffer_size) {
+		largest_frame_buffer_size = frame_pixel_count;
 	}
 	if (largest_frame_buffer_size > 0xFFFFu) {
 		Close_File(fh);
@@ -433,22 +465,16 @@ void * __cdecl Open_Animation(char const *file_name, char *user_buffer, long use
 		Read_File( fh, sys_header->file_buffer + offsets_size,
 		           file_buffer_size - offsets_size);
 
-		//
-		// Find out if there is an ending value for the last frame.
-		// If there is not, then this animation will not be able to
-		// loop back to the beginning.
-		//
-		if (Get_Resident_Frame_Offset( sys_header->file_buffer, sys_header->total_frames + 1))
-			anim_flags |= WSA_RESIDENT;
-		else
-			anim_flags |= WSA_LINEAR_ONLY | WSA_RESIDENT;
+		if (Validate_Resident_WSA_Offsets(sys_header->file_buffer, sys_header->total_frames)) {
+			anim_flags |= has_wrap_delta ? WSA_RESIDENT : (WSA_LINEAR_ONLY | WSA_RESIDENT);
+		} else {
+			anim_flags |= has_wrap_delta ? WSA_FILE : (WSA_LINEAR_ONLY | WSA_FILE);
+			sys_header->file_buffer = NULL;
+		}
 	}
 	else {	// buffer cannot handle max_size of buffer
 
-		if(Get_File_Frame_Offset( fh, sys_header->total_frames + 1, palette_adjust))
-			anim_flags |= WSA_FILE;
-		else
-			anim_flags |= WSA_LINEAR_ONLY | WSA_FILE;
+		anim_flags |= has_wrap_delta ? WSA_FILE : (WSA_LINEAR_ONLY | WSA_FILE);
 ////
 		sys_header->file_buffer = NULL;
 	}
@@ -461,6 +487,18 @@ void * __cdecl Open_Animation(char const *file_name, char *user_buffer, long use
 	// Then close it.
 	Seek_File( fh, WSA_FILE_HEADER_SIZE + offsets_size + palette_adjust, SEEK_SET);
 	Read_File( fh, delta_back, frame0_size);
+
+	// Some assets can leave the resident offset table in an unusable state after
+	// the bootstrap frame decode. Fall back to the file-backed path before any
+	// later frame tries to consume the corrupted resident offsets.
+	if ((anim_flags & WSA_RESIDENT) && !Validate_Resident_WSA_Offsets(sys_header->file_buffer, sys_header->total_frames)) {
+		anim_flags &= ~(WSA_RESIDENT | WSA_LINEAR_ONLY);
+		anim_flags |= WSA_FILE;
+		if (!has_wrap_delta) {
+			anim_flags |= WSA_LINEAR_ONLY;
+		}
+		sys_header->file_buffer = NULL;
+	}
 
 	// We do not use the file handle when it is in RAM.
 	if (anim_flags & WSA_RESIDENT) {
