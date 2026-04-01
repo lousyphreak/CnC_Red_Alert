@@ -22,6 +22,24 @@ _Last updated: 2026-04-01_
   - if a file appears in `build/compile_commands.json` or `build-asan/compile_commands.json`, treat it as part of the active build even if it looks feature-dead;
   - only treat remaining headers as safe stragglers when they are absent from compile commands **and** have no surviving case-insensitive include/reference hits elsewhere in the repo.
 - That rule is what made the third pass safe: the removable leftovers were orphan headers only, while many seemingly dormant `CODE/*.CPP` units were still compiled because the active CMake target globs almost every root-level `CODE/*.CPP`.
+- Raw byte-identical duplicate headers are **not** automatically safe to delete in this tree.
+  - Cross-tree duplicates can still be removable when an earlier include root shadows them reliably (for example `WINVQ/INCLUDE/VQM32/*.H` behind `VQ/INCLUDE/VQM32/*.H`, or `VQ/INCLUDE/WWLIB32/{DESCMGMT.H,DIPTHONG.H,PLAYCD.H}` behind `WIN32LIB/INCLUDE/`).
+  - Same-library local shadow headers under `WIN32LIB/*/` must be treated more conservatively even when they match `WIN32LIB/INCLUDE/*` byte-for-byte: local `#include "HEADER.H"` in subdirectory sources can otherwise fall through to the global include path and accidentally pick same-basename headers from `CODE/` or other trees. The failed `WIN32LIB/KEYBOARD/KEYBOARD.H` / `MOUSE.H` deletion attempt is the concrete example.
+- For the active SDL3 build, `VQ/INCLUDE` is the canonical live VQA/VQM include root; `WINVQ/INCLUDE/VQA32` and `WINVQ/INCLUDE/VQM32` were fully unused.
+  - `CMakeLists.txt` adds `VQ/INCLUDE` before `WINVQ/INCLUDE` in both the casefix and game include paths.
+  - Dependency-file checks in both `build/` and `build-asan/` showed active references to `VQ/INCLUDE/VQA32` and `VQ/INCLUDE/VQM32`, but zero references to any header under `WINVQ/INCLUDE/VQA32` or `WINVQ/INCLUDE/VQM32`.
+  - Keep that evidence in mind before assuming the `WINVQ` tree is the “Windows” canonical copy. In the supported build here, it was dead duplicate baggage and was removed.
+- The same conclusion extended to the last top-level `WINVQ/INCLUDE` leftovers:
+  - active depfiles still used `VQ/INCLUDE/VQ.H`, not `WINVQ/INCLUDE/VQ.H`;
+  - `WINVQ/INCLUDE/VQFILE.H` had no surviving source or depfile references;
+  - the remaining `WINVQ/INCLUDE/VQM32/*.I` assembler include files (`VESAVID.I`, `VGA.I`, `VIDEO.I`) had no surviving repository references and were also safe to delete.
+  - Net result: `WINVQ/INCLUDE` is entirely dead for the current SDL3/CMake build and has been removed.
+- The remaining `WINVQ/LIB` bundle was dead too.
+  - No source, CMake file, depfile, or build artifact referenced `WINVQ/LIB` or any of its shipped `.LIB` names.
+  - The whole `WINVQ/` tree can now be treated as removed legacy baggage for the supported port.
+- The same archive-file rule applied to `VQ/LIB/README.TXT`.
+  - Once `WINVQ/` was gone, `VQ/LIB/` contained only an old library-naming note with no surviving build or source references.
+  - `VQ/LIB/` was safe to remove, but `VQ/INCLUDE/` and `VQ/VQA32/` are still live and must remain.
 
 ## Removed objbase wrapper
 

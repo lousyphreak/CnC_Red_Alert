@@ -8,6 +8,30 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Finished the matching `VQ/LIB` archive cleanup:
+  - after the `WINVQ/` removal, `VQ/LIB/` had only a dead `README.TXT` describing old Watcom/Borland library naming and no surviving build, depfile, or source references;
+  - deleted `VQ/LIB/README.TXT` and removed the now-empty `VQ/LIB/` directory;
+  - `VQ/INCLUDE/` and `VQ/VQA32/` remain because the active build and depfiles still reference them directly;
+  - `cmake --build build --target redalert -j4` and `cmake --build build-asan --target redalert -j4` both still succeed after the cleanup.
+- Finished the remaining `WINVQ/` archive cleanup:
+  - after the `WINVQ/INCLUDE` removal, the only remaining `WINVQ` content was `WINVQ/LIB/` with `README.TXT` and six old `.LIB` archives (`SOSDBLC.LIB`, `SOSDW1CR.LIB`, `SOSDW1CS.LIB`, `SOSDW1PR.LIB`, `SOSDW1PS.LIB`, `SOSMBLC.LIB`);
+  - repository-wide search plus both build trees showed no references to those library files or the `WINVQ/LIB` path, so they were deleted as dead archive baggage;
+  - `WINVQ/` is now fully removed from the working tree;
+  - `cmake --build build --target redalert -j4` and `cmake --build build-asan --target redalert -j4` both still succeed after the cleanup.
+- Finished the remaining `WINVQ/INCLUDE` cleanup:
+  - deleted the last two unused top-level headers `WINVQ/INCLUDE/{VQ.H,VQFILE.H}` after confirming active depfiles use `VQ/INCLUDE/VQ.H` instead and that no active source or depfile referenced `WINVQ/INCLUDE/VQFILE.H`;
+  - deleted the final three dead assembler include leftovers `WINVQ/INCLUDE/VQM32/{VESAVID.I,VGA.I,VIDEO.I}` after confirming there were no repository references and no dependency-file hits in either build tree;
+  - `WINVQ/INCLUDE` is now fully removed from the working tree as dead duplicate/archive baggage for the current SDL3/CMake port;
+  - `cmake --build build --target redalert -j4` and `cmake --build build-asan --target redalert -j4` both still succeed after the removal.
+- Finished a follow-up VQ/WINVQ include cleanup pass after checking actual compiler dependency files instead of just comparing directory contents:
+  - deleted the remaining 21 headers under `WINVQ/INCLUDE/VQA32/` and `WINVQ/INCLUDE/VQM32/`, then removed those now-empty subdirectories;
+  - both active build trees (`build/` and `build-asan/`) had dependency-file hits for `VQ/INCLUDE/VQA32` and `VQ/INCLUDE/VQM32`, but **zero** hits for any header under `WINVQ/INCLUDE/VQA32` or `WINVQ/INCLUDE/VQM32`, so the current SDL3 build is using `VQ/INCLUDE` as the live VQA/VQM include tree and not the parallel `WINVQ/INCLUDE` copies;
+  - this also matches the current CMake include order: `VQ/INCLUDE` is added before `WINVQ/INCLUDE`, so `#include <VQA32/...>` and `#include <VQM32/...>` resolve to the `VQ` headers first in the supported build;
+  - `cmake --build build --target redalert -j4` and `cmake --build build-asan --target redalert -j4` both still succeed after deleting the unused `WINVQ` copies.
+- Finished a duplicate-library cleanup pass in `VQ/`, `WIN32LIB/`, and `WINVQ/` with validation against the active include order instead of raw file identity:
+  - deleted 8 cross-tree duplicate headers that were byte-identical to earlier canonical include-tree copies and are still shadowed by the active include search order: `WINVQ/INCLUDE/VQM32/{CAPTOKEN.H,MEM.H,MIXFILE.H,PROFILE.H,REALMODE.H}` (covered by `VQ/INCLUDE/VQM32/`) plus `VQ/INCLUDE/WWLIB32/{DESCMGMT.H,DIPTHONG.H,PLAYCD.H}` (covered by `WIN32LIB/INCLUDE/`);
+  - an attempted broader deletion of byte-identical `WIN32LIB/*/*.H` duplicates had to be rolled back during the same pass: even when those files matched `WIN32LIB/INCLUDE`, local `#include "HEADER.H"` sites in subdirectory sources such as `WIN32LIB/KEYBOARD/KEYBOARD.CPP` depended on the local copy to prevent include-order fallback from picking unrelated same-basename headers under `CODE/`;
+  - `cmake --build build --target redalert -j4` and `cmake --build build-asan --target redalert -j4` both still succeed after keeping the local `WIN32LIB` shadow headers and deleting only the cross-tree duplicates.
 - Finished a third dead-code cleanup pass focused on genuinely orphaned code headers after the broader source/archive cleanup:
   - deleted 25 remaining headers that are neither compiled nor referenced anywhere else in the repository, including orphan engine headers (`CODE/LED.H`, `CODE/MEMCHECK.H`, `CODE/WWALLOC.H`), unused Win32lib include remnants (`WIN32LIB/{AUDIO,INCLUDE}/SOSRES.H`, `WIN32LIB/INCLUDE/{STRUCTS.H,_FILE.H}`), and unused VQ/WINVQ include leftovers (`VQ/INCLUDE/{VOCFILE.H,WAVEFILE.H,WWTYPES.H}`, `VQ/INCLUDE/VQM32/{ALL.H,HUFFMAN.H,TARGA.H,VESABLIT.H}`, `VQ/INCLUDE/WWLIB32/{SOSRES.H,_FILE.H}`, `VQ/VQA32/SOSRES.H`, and the matching `WINVQ/INCLUDE/...` duplicates);
   - this pass intentionally did **not** delete additional `.CPP` units just because they looked dormant: compile-command inspection confirmed that many remaining `CODE/*.CPP` files are still part of the active `redalert` target via the broad `CODE/*.CPP` CMake glob, so header-only orphan cleanup is the safe line once the obvious non-built trees are gone;
