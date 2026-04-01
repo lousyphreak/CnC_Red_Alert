@@ -242,6 +242,32 @@ bool WWFS_ResolveVirtualCDPath(const char* windows_path, std::string& resolved_p
     return resolve_virtual_cd_path(windows_path, resolved_path, cd_index);
 }
 
+unsigned WWFS_GetCurrentDriveNumber()
+{
+    char cwd[PATH_MAX];
+    if (WWFS_GetCurrentDirectory(cwd, sizeof(cwd)) != nullptr) {
+        const unsigned char drive = static_cast<unsigned char>(cwd[0]);
+        if (std::isalpha(drive) && cwd[1] == ':') {
+            return static_cast<unsigned>(std::toupper(drive) - 'A' + 1);
+        }
+    }
+    return 3;
+}
+
+unsigned WWFS_GetDriveCount()
+{
+    return 26;
+}
+
+void WWFS_ChangeToDrive(unsigned drive)
+{
+    if (drive >= 1 && drive <= WWFS_GetDriveCount()) {
+        char root[4] = {'A', ':', '\\', '\0'};
+        root[0] = static_cast<char>('A' + drive - 1);
+        WWFS_ChangeDirectory(root);
+    }
+}
+
 void WWFS_SplitPath(const char* path, char* drive, char* dir, char* fname, char* ext)
 {
     if (drive) {
@@ -298,6 +324,30 @@ void WWFS_SplitPath(const char* path, char* drive, char* dir, char* fname, char*
 
     if (ext && dot) {
         SDL_memcpy(ext, dot, SDL_strlen(dot) + 1);
+    }
+}
+
+void WWFS_MakePath(char* path, const char* drive, const char* dir, const char* fname, const char* ext)
+{
+    path[0] = '\0';
+
+    if (drive && drive[0] != '\0') {
+        std::strcat(path, drive);
+    }
+
+    if (dir && dir[0] != '\0') {
+        std::strcat(path, dir);
+    }
+
+    if (fname && fname[0] != '\0') {
+        std::strcat(path, fname);
+    }
+
+    if (ext && ext[0] != '\0') {
+        if (ext[0] != '.') {
+            std::strcat(path, ".");
+        }
+        std::strcat(path, ext);
     }
 }
 

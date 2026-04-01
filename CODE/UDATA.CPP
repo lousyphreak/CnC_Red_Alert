@@ -1088,7 +1088,7 @@ void UnitTypeClass::One_Time(void)
 			**	Fetch the supporting data files for the unit.
 			*/
 			sprintf(buffer, "%sICON", uclass.Graphic_Name());
-			_makepath(fullname, NULL, NULL, buffer, ".SHP");
+			WWFS_MakePath(fullname, NULL, NULL, buffer, ".SHP");
 			#ifndef NDEBUG
 				RawFileClass datafile(fullname);
 				if (datafile.Is_Available()) {
@@ -1104,7 +1104,7 @@ void UnitTypeClass::One_Time(void)
 		/*
 		**	Fetch a pointer to the unit's shape data.
 		*/
-		_makepath(fullname, NULL, NULL, uclass.Graphic_Name(), ".SHP");
+		WWFS_MakePath(fullname, NULL, NULL, uclass.Graphic_Name(), ".SHP");
 		#ifndef NDEBUG
 			RawFileClass shpfile(fullname);
 			if (shpfile.Is_Available()) {

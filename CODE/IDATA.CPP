@@ -1254,7 +1254,7 @@ void InfantryTypeClass::One_Time(void)
 		/*
 		**	Generic shape for all houses load method.
 		*/
-		_makepath(fullname, NULL, NULL, uclass->Graphic_Name(), ".SHP");
+		WWFS_MakePath(fullname, NULL, NULL, uclass->Graphic_Name(), ".SHP");
 
 		#ifndef NDEBUG
 			RawFileClass sfile(fullname);
@@ -1272,7 +1272,7 @@ void InfantryTypeClass::One_Time(void)
 		*/
 		char buffer[_MAX_FNAME];
 		sprintf(buffer, "%.4sICON", uclass->Graphic_Name());
-		_makepath(fullname, NULL, NULL, buffer, ".SHP");
+		WWFS_MakePath(fullname, NULL, NULL, buffer, ".SHP");
 
 		#ifndef NDEBUG
 			RawFileClass ifile(fullname);

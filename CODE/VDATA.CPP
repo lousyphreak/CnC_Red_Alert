@@ -573,14 +573,14 @@ void VesselTypeClass::One_Time(void)
 			**	Fetch the supporting data files for the unit.
 			*/
 			sprintf(buffer, "%sICON", uclass.Graphic_Name());
-			_makepath(fullname, NULL, NULL, buffer, ".SHP");
+			WWFS_MakePath(fullname, NULL, NULL, buffer, ".SHP");
 			((void const *&)uclass.CameoData) = MFCD::Retrieve(fullname);
 		}
 
 		/*
 		**	Fetch a pointer to the unit's shape data.
 		*/
-		_makepath(fullname, NULL, NULL, uclass.Graphic_Name(), ".SHP");
+		WWFS_MakePath(fullname, NULL, NULL, uclass.Graphic_Name(), ".SHP");
 		((void const *&)uclass.ImageData) = MFCD::Retrieve(fullname);
 
 		((int &)uclass.MaxSize) = 26;

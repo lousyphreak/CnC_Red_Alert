@@ -1650,7 +1650,7 @@ static void Play_Intro(bool sequenced)
 		VisiblePage.Clear();
 		Show_Mouse();
 		char fullname[_MAX_FNAME+_MAX_EXT];
-		_makepath(fullname, NULL, NULL, VQName[VQ_REDINTRO], ".VQA");
+		WWFS_MakePath(fullname, NULL, NULL, VQName[VQ_REDINTRO], ".VQA");
 		const int hires_available = CCFileClass(fullname).Is_Available();
 		init_trace("Play_Intro selecting hi-res=%d file=%s session=%d", hires_available, fullname, Session.Type);
 		if (hires_available) {

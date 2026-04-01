@@ -49,7 +49,7 @@
 
 #include	"buff.h"
 #include	"function.h"
-#include	<direct.h>
+#include "sdl_fs.h"
 #include	<cstdarg>
 #include	<cstring>
 #include	<cstdio>
@@ -352,8 +352,8 @@ MixFileClass<T> * MixFileClass<T>::Finder(char const * filename)
 		**	the full pathname in the mixfile list WILL have a path attached. Hence, this
 		** stripping of the path is necessary.
 		*/
-		_splitpath(ptr->Filename, NULL, NULL, name, ext);
-		_makepath(path, NULL, NULL, name, ext);
+		WWFS_SplitPath(ptr->Filename, NULL, NULL, name, ext);
+		WWFS_MakePath(path, NULL, NULL, name, ext);
 
 		if (stricmp(path, filename) == 0) {
 			return(ptr);

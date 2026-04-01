@@ -2268,7 +2268,7 @@ void AnimTypeClass::One_Time(void)
 
 		if (!anim.IsTheater) {
 
-			_makepath(fullname, NULL, NULL, As_Reference(index).IniName, ".SHP");
+			WWFS_MakePath(fullname, NULL, NULL, As_Reference(index).IniName, ".SHP");
 
 			#ifndef NDEBUG
 				RawFileClass file(fullname);
@@ -2309,7 +2309,7 @@ void AnimTypeClass::Init(TheaterType theater)
 
 			if (anim.IsTheater) {
 				char fullname[_MAX_FNAME+_MAX_EXT];	// Fully constructed iconset name.
-				_makepath(fullname, NULL, NULL, anim.IniName, Theaters[theater].Suffix);
+				WWFS_MakePath(fullname, NULL, NULL, anim.IniName, Theaters[theater].Suffix);
 				((void const *&)anim.ImageData) = MFCD::Retrieve(fullname);
 			}
 		}

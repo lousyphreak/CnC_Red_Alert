@@ -1093,7 +1093,7 @@ void SidebarClass::StripClass::One_Time(int )
 		sprintf(buffer, "%sICON", SpecialWeaponFile[lp]);
 
 		char	fullname[_MAX_FNAME+_MAX_EXT];
-		_makepath(fullname, NULL, NULL, buffer, ".SHP");
+		WWFS_MakePath(fullname, NULL, NULL, buffer, ".SHP");
 		SpecialShapes[lp] = MFCD::Retrieve(fullname);
 	}
 }

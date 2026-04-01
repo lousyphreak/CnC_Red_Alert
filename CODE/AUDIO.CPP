@@ -455,7 +455,7 @@ int Sound_Effect(VocType voc, fixed volume, int variation, signed short pan_valu
 			}
 		}
 	}
-	_makepath(name, NULL, NULL, SoundEffectName[voc].Name, ext);
+	WWFS_MakePath(name, NULL, NULL, SoundEffectName[voc].Name, ext);
 	void const * ptr = MFCD::Retrieve(name);
 
 	/*
@@ -693,7 +693,7 @@ void Speak_AI(void)
 
 				char name[_MAX_FNAME+_MAX_EXT];
 
-				_makepath(name, NULL, NULL, Speech[SpeakQueue], ".AUD");
+				WWFS_MakePath(name, NULL, NULL, Speech[SpeakQueue], ".AUD");
 				CCFileClass file(name);
 				if (file.Is_Available() && file.Read(SpeechBuffer[_index], SPEECH_BUFFER_SIZE)) {
 					speech = SpeechBuffer[_index];

@@ -28,6 +28,26 @@ bool WWFS_RenamePath(const char* old_path, const char* new_path);
 char** WWFS_GlobDirectory(const char* path, const char* pattern, SDL_GlobFlags flags, int* count);
 SDL_IOStream* WWFS_OpenFile(const char* path, const char* mode);
 SDL_Storage* WWFS_OpenFileStorage(const char* path);
+unsigned WWFS_GetCurrentDriveNumber();
+unsigned WWFS_GetDriveCount();
+void WWFS_ChangeToDrive(unsigned drive);
+void WWFS_MakePath(char* path, const char* drive, const char* dir, const char* fname, const char* ext);
+
+#ifndef _MAX_FNAME
+#define _MAX_FNAME 256
+#endif
+
+#ifndef _MAX_DRIVE
+#define _MAX_DRIVE 3
+#endif
+
+#ifndef _MAX_DIR
+#define _MAX_DIR 256
+#endif
+
+#ifndef _MAX_EXT
+#define _MAX_EXT 256
+#endif
 
 inline int WWFS_GetSeekWhence(int whence)
 {

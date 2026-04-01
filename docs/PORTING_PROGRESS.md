@@ -8,6 +8,11 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Removed the remaining repo-owned `SDL3_COMPAT/wrappers/direct.h` shim and folded its WWFS-backed surface into `sdl_fs`:
+  - `SDL3_COMPAT/wrappers/sdl_fs.h/.cpp` now own the remaining supported filesystem/path compatibility surface under `WWFS_*` names (`WWFS_SplitPath`, `WWFS_MakePath`, `WWFS_MakeDirectory`, `WWFS_GetCurrentDirectory`, `WWFS_ChangeDirectory`, `WWFS_GetCurrentDriveNumber`, `WWFS_GetDriveCount`, `WWFS_ChangeToDrive`) plus the legacy `_MAX_{DRIVE,DIR,FNAME,EXT}` sizing macros still used by active headers;
+  - the active in-repo include sites now include `sdl_fs.h` directly instead of relying on `<direct.h>` (`CODE/FUNCTION.H`, `CODE/TYPE.H`, `CODE/CONQUER.CPP`, `CODE/MIXFILE.CPP`, and `WIN32LIB/AUDIO/SOUNDIO.CPP`), and the old direct-style `_splitpath` / `_makepath` / `_mkdir` / `_getcwd` / `_chdir` entry points were dropped once no active code still used them;
+  - deleted `SDL3_COMPAT/wrappers/direct.h`, leaving `sdl_fs` as the single SDL-backed owner of the remaining DOS/Win32-shaped filesystem compatibility behavior;
+  - `cmake --build build --target redalert -j4` and `cmake --build build-asan --target redalert -j4` both still succeed after the cleanup.
 - Finished the matching `VQ/LIB` archive cleanup:
   - after the `WINVQ/` removal, `VQ/LIB/` had only a dead `README.TXT` describing old Watcom/Borland library naming and no surviving build, depfile, or source references;
   - deleted `VQ/LIB/README.TXT` and removed the now-empty `VQ/LIB/` directory;

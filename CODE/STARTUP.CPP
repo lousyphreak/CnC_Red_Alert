@@ -242,7 +242,7 @@ int PASCAL WinMain ( HINSTANCE instance , HINSTANCE , char * command_line , int 
 	char drive[_MAX_DRIVE];
 	char path[_MAX_PATH];
 	char working_directory[_MAX_PATH];
-	_splitpath(argv[0], drive, path, NULL, NULL);
+	WWFS_SplitPath(argv[0], drive, path, NULL, NULL);
 	if (!path[0]) {
 		strcpy(path, ".");
 	}

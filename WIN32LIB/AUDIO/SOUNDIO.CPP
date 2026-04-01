@@ -68,7 +68,7 @@ extern	void Colour_Debug (int call_number);
 #include	"SOUNDINT.H"
 #include	<stdio.h>
 #include	<string.h>
-#include	<direct.h>
+#include "sdl_fs.h"
 #include	<stdlib.h>
 #include <process.h>
 #include	<KEYBOARD.H>

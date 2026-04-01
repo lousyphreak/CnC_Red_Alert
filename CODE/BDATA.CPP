@@ -3111,7 +3111,7 @@ void BuildingTypeClass::One_Time(void)
 				buffer[3] = 'F';
 			}
 
-			_makepath(fullname, NULL, NULL, buffer, ".SHP");
+			WWFS_MakePath(fullname, NULL, NULL, buffer, ".SHP");
 			((void const *&)building.CameoData) = MFCD::Retrieve(fullname);
 		}
 
@@ -3119,7 +3119,7 @@ void BuildingTypeClass::One_Time(void)
 		**	Fetch the construction animation for this building.
 		*/
 		sprintf(buffer, "%sMAKE", building.Graphic_Name());
-		_makepath(fullname, NULL, NULL, buffer, ".SHP");
+		WWFS_MakePath(fullname, NULL, NULL, buffer, ".SHP");
 		void const * dataptr;
 		dataptr = MFCD::Retrieve(fullname);
 		((void const *&)building.BuildupData) = dataptr;
@@ -3135,15 +3135,15 @@ void BuildingTypeClass::One_Time(void)
 		/*
 		**	Fetch the normal game shape for this building.
 		*/
-		_makepath(fullname, NULL, NULL, building.Graphic_Name(), ".SHP");
+		WWFS_MakePath(fullname, NULL, NULL, building.Graphic_Name(), ".SHP");
 		((void const *&)building.ImageData) = MFCD::Retrieve(fullname);
 	}
 
 	// Try to load weap2.shp and tesla coil's lightning shapes
 	char fullname[_MAX_FNAME+_MAX_EXT];
-	_makepath(fullname, NULL, NULL, (char const *)"WEAP2",".SHP");
+	WWFS_MakePath(fullname, NULL, NULL, (char const *)"WEAP2",".SHP");
 	WarFactoryOverlay = MFCD::Retrieve(fullname);
-	_makepath(fullname, NULL, NULL, (char const *)"LITNING",".SHP");
+	WWFS_MakePath(fullname, NULL, NULL, (char const *)"LITNING",".SHP");
 	LightningShapes = MFCD::Retrieve(fullname);
 
 	/*
@@ -3359,7 +3359,7 @@ void BuildingTypeClass::Init(TheaterType theater)
 			BuildingTypeClass const * classptr = &As_Reference(sindex);
 
 			if (classptr->IsTheater) {
-				_makepath(fullname, NULL, NULL, classptr->Graphic_Name(), Theaters[theater].Suffix);
+				WWFS_MakePath(fullname, NULL, NULL, classptr->Graphic_Name(), Theaters[theater].Suffix);
 				((void const *&)classptr->ImageData) = MFCD::Retrieve(fullname);
 
 				/*

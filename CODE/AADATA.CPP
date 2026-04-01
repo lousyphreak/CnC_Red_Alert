@@ -423,13 +423,13 @@ void AircraftTypeClass::One_Time(void)
 		*/
 		char buffer[_MAX_FNAME];
 		sprintf(buffer, "%sICON", uclass.Graphic_Name());
-		_makepath(fullname, NULL, NULL, buffer, ".SHP");
+		WWFS_MakePath(fullname, NULL, NULL, buffer, ".SHP");
 		((void const *&)uclass.CameoData) = MFCD::Retrieve(fullname);
 
 		/*
 		**	Generic shape for all houses load method.
 		*/
-		_makepath(fullname, NULL, NULL, uclass.Graphic_Name(), ".SHP");
+		WWFS_MakePath(fullname, NULL, NULL, uclass.Graphic_Name(), ".SHP");
 		((void const *&)uclass.ImageData) = MFCD::Retrieve(fullname);
 	}
 

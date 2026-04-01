@@ -388,7 +388,7 @@ void SmudgeTypeClass::Init(TheaterType theater)
 			SmudgeTypeClass const & smudge = As_Reference(index);
 			char fullname[_MAX_FNAME+_MAX_EXT];	// Fully constructed smudge data set name.
 
-			_makepath(fullname, NULL, NULL, smudge.IniName, Theaters[theater].Suffix);
+			WWFS_MakePath(fullname, NULL, NULL, smudge.IniName, Theaters[theater].Suffix);
 			((void const *&)smudge.ImageData) = MFCD::Retrieve(fullname);
 		}
 	}

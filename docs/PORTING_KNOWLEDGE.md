@@ -69,9 +69,9 @@ _Last updated: 2026-04-01_
 - SDL3 intentionally does **not** provide a real `SetCurrentDirectory` API. Do not sneak raw `chdir()` back into the port to compensate.
 - The durable seam is now:
   - `SDL3_COMPAT/wrappers/sdl_fs.cpp` owns the WWFS filesystem implementation: virtual current-directory state, relative/case-insensitive path resolution, virtual-CD path mapping, and the SDL-backed path/storage helpers (`WWFS_SetCurrentDirectory()`, `WWFS_GetCurrentDirectory()`, `WWFS_OpenFile()`, `WWFS_OpenFileStorage()`, `WWFS_GetPathInfo()`, `WWFS_RemovePath()`, `WWFS_CreateDirectory()`, `WWFS_NormalizePath()`, `WWFS_GlobDirectory()`, `WWFS_SplitPath()`, and the virtual-CD helpers used by Win32 drive shims);
-  - `SDL3_COMPAT/wrappers/sdl_fs.h` provides the public WWFS-prefixed path plus stdio/fd compatibility surface (`WWFS_NormalizePath`, `WWFS_GlobDirectory`, `WWFS_SplitPath`, `WWFS_FOpen`, `WWFS_FRead`, `WWFS_FWrite`, `WWFS_FSeek`, `WWFS_FTell`, `WWFS_Open`, `WWFS_Read`, `WWFS_Write`, `WWFS_Seek`, `WWFS_Close`, `WWFS_ChangeDirectory`, `WWFS_GetCurrentDirectory`, etc.) for legacy code that still expects those APIs;
+  - `SDL3_COMPAT/wrappers/sdl_fs.h` provides the public WWFS-prefixed path plus stdio/fd compatibility surface (`WWFS_NormalizePath`, `WWFS_GlobDirectory`, `WWFS_SplitPath`, `WWFS_MakePath`, `WWFS_FOpen`, `WWFS_FRead`, `WWFS_FWrite`, `WWFS_FSeek`, `WWFS_FTell`, `WWFS_Open`, `WWFS_Read`, `WWFS_Write`, `WWFS_Seek`, `WWFS_Close`, `WWFS_ChangeDirectory`, `WWFS_GetCurrentDirectory`, `WWFS_MakeDirectory`, `WWFS_GetCurrentDriveNumber`, `WWFS_GetDriveCount`, `WWFS_ChangeToDrive`, and the `_MAX_*` constants) for legacy code that still expects those APIs;
   - `SDL3_COMPAT/wrappers/win32_compat.cpp` should stay a consumer of that layer for Win32-facing drive/window shims, not the home of the filesystem implementation itself.
-  - `SDL3_COMPAT/wrappers/direct.h` now forwards `_splitpath()` to `WWFS_SplitPath()` so even the legacy DOS-shaped path decomposition stays inside the SDL-backed filesystem layer instead of carrying a separate hand-rolled parser.
+  - `SDL3_COMPAT/wrappers/direct.h` is removed. Keep the supported surface on `WWFS_*` names inside `sdl_fs`, not in a parallel wrapper header or through revived `_foo` aliases.
   - Any wildcard scan that is meant to follow the game's virtual cwd must use `WWFS_GlobDirectory()`, not raw `SDL_GlobDirectory(".")`. The latter uses the host process cwd and will miss files such as `GameData/SAVEGAME.###` when startup has only redirected the WWFS virtual cwd.
 - When porting more filesystem code:
   - route new file operations through SDL or these compat helpers;
@@ -79,7 +79,7 @@ _Last updated: 2026-04-01_
   - keep upper layers unaware of case sensitivity and cwd semantics; that logic belongs in the file/path abstraction, not in gameplay code.
 - Repository-wide searches for direct filesystem/file-I/O calls will still show some benign leftovers:
   - comments/documentation snippets,
-  - helper definitions in `direct.h`,
+  - helper definitions in `sdl_fs.h` / `sdl_fs.cpp`,
   - container/member-function `remove(...)` calls,
   - socket `close(...)` in `winsock.h`.
   Treat those as non-file-I/O false positives, not as reasons to reintroduce POSIX/stdio access.

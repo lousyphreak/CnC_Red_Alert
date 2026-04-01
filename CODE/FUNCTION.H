@@ -226,7 +226,7 @@ typedef struct {
 #include	<stdlib.h>
 #include	<stdio.h>
 #include	<stddef.h>
-#include	<direct.h>
+#include	"sdl_fs.h"
 #include	<stdarg.h>
 #include	<ctype.h>
 #include	<assert.h>

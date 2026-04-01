@@ -406,7 +406,7 @@ char const * ThemeClass::Theme_File_Name(ThemeType theme)
 	static char name[_MAX_FNAME+_MAX_EXT];
 
 	if (theme >= THEME_FIRST && theme < THEME_COUNT) {
-		_makepath(name, NULL, NULL, _themes[theme].Name, ".AUD");
+		WWFS_MakePath(name, NULL, NULL, _themes[theme].Name, ".AUD");
 		return((char const *)(&name[0]));
 	}
 

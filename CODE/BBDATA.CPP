@@ -215,7 +215,7 @@ void BulletTypeClass::One_Time(void)
 		char	fullname[_MAX_FNAME+_MAX_EXT];
 
 		if (!bullet.IsInvisible) {
-			_makepath(fullname, NULL, NULL, bullet.GraphicName, ".SHP");
+			WWFS_MakePath(fullname, NULL, NULL, bullet.GraphicName, ".SHP");
 
 			#ifdef NDEBUG
 				((void const *&)bullet.ImageData) =	MFCD::Retrieve(fullname);

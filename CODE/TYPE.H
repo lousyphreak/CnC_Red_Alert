@@ -38,7 +38,7 @@
 #ifndef TYPE_H
 #define TYPE_H
 
-#include <direct.h>
+#include "sdl_fs.h"
 
 #include	"mission.h"
 #include	"rect.h"

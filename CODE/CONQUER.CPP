@@ -108,7 +108,7 @@ B<A> test;
 #include	<stdlib.h>
 #include	<stdio.h>
 #include	<string.h>
-#include	<direct.h>
+#include "sdl_fs.h"
 #include	<fcntl.h>
 #include <unistd.h>
 #include	<share.h>
@@ -2876,9 +2876,9 @@ bool Try_Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 		Conquer_Trace("Play_Movie begin name=%s theme=%d clrscrn=%d", name, theme, clrscrn ? 1 : 0);
 		bool played = false;
 		char fullname[_MAX_FNAME+_MAX_EXT];
-		_makepath(fullname, NULL, NULL, name, ".VQA");
+		WWFS_MakePath(fullname, NULL, NULL, name, ".VQA");
 		char palname [_MAX_FNAME+_MAX_EXT];
-		_makepath(palname , NULL, NULL, name, ".VQP");
+		WWFS_MakePath(palname , NULL, NULL, name, ".VQP");
 		#ifdef CHEAT_KEYS
 		//			Mono_Set_Cursor(0, 0);Mono_Printf("[%s]", fullname);
 		#endif
@@ -3270,7 +3270,7 @@ char const * Fading_Table_Name(char const * base, TheaterType theater)
 	char root[_MAX_FNAME];
 
 	sprintf(root, "%1.1s%s", Theaters[theater].Root, base);
-	_makepath(_buffer, NULL, NULL, root, ".MRF");
+	WWFS_MakePath(_buffer, NULL, NULL, root, ".MRF");
 	return(_buffer);
 }
 
