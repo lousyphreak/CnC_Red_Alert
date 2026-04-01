@@ -37,10 +37,6 @@
 #ifndef MISC_H
 #define MISC_H
 
-#define WIN32_LEAN_AND_MEAN	// eliminates unecessary definitions in windows.h
-#ifndef _WIN32 // Denzil 6/2/98 Watcom 11.0 complains without this check
-#define _WIN32
-#endif // _WIN32
 #include "win32_compat.h"
 #include <ddraw.h>
 

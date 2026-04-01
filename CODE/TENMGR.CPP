@@ -64,9 +64,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #include "function.h"
 
-#ifdef WIN32
 #define WINDOWS
-#endif
 
 #if(TEN)
 #include "ten.h"

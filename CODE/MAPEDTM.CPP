@@ -153,22 +153,22 @@ void MapEditClass::Handle_Teams(char const * caption)
 /***************************************************************************
  * MapEditClass::Select_Team -- user selects a team from a list            *
  *                                                                         *
- *    здддддддддддддддддддддддддддддддддддддддддддддддддддддддд©           *
- *    Ё                         Teams                          Ё           *
- *    Ё    зддддддддддддддддддддддддддддддддддддддддддддбд©    Ё           *
- *    Ё    Ё Name     House    Class:Count,Class:Count  ЁЁ    Ё           *
- *    Ё    Ё Name     House    Class:Count,Class:Count  цд╢    Ё           *
- *    Ё    Ё Name     House    Class:Count,Class:Count  Ё Ё    Ё           *
- *    Ё    Ё Name     House    Class:Count,Class:Count  Ё Ё    Ё           *
- *    Ё    Ё                                            Ё Ё    Ё           *
- *    Ё    Ё                                            Ё Ё    Ё           *
- *    Ё    Ё                                            цд╢    Ё           *
- *    Ё    Ё                                            ЁЁ    Ё           *
- *    Ё    юддддддддддддддддддддддддддддддддддддддддддддады    Ё           *
- *    Ё                                                        Ё           *
- *    Ё      [Edit]        [New]        [Delete]      [OK]     Ё           *
- *    Ё                                                        Ё           *
- *    юдддддддддддддддддддддддддддддддддддддддддддддддддддддддды           *
+ *    д©           *
+ *                             Teams                                     *
+ *        д©               *
+ *         Name     House    Class:Count,Class:Count                 *
+ *         Name     House    Class:Count,Class:Count  д╢               *
+ *         Name     House    Class:Count,Class:Count                  *
+ *         Name     House    Class:Count,Class:Count                  *
+ *                                                                    *
+ *                                                                    *
+ *                                                    д╢               *
+ *                                                                   *
+ *                       *
+ *                                                                       *
+ *          [Edit]        [New]        [Delete]      [OK]                *
+ *                                                                       *
+ *               *
  *                                                                         *
  * INPUT:                                                                  *
  *      none.                                                              *
@@ -393,24 +393,24 @@ int MapEditClass::Select_Team(char const * )
  * 10 pixels are left between rows of objects, so the # of that type of    *
  * object can be displayed underneath the object.                          *
  *                                                                         *
- *  зддддддддддддддддддддддддддддддддддддддддддддддддд©                    *
- *  Ё                 Team Members                    Ё                    *
- *  Ё                                                 Ё                    *
- *  Ё  здддбдддбдддбдддбдддбдддбдддбдддбдддбдддбддд©  Ё                    *
- *  Ё  Ё   Ё   Ё   Ё   Ё   Ё   Ё   Ё   Ё   Ё   Ё   Ё  Ё                    *
- *  Ё  цдддедддедддедддедддедддедддедддедддедддеддд╢  Ё                    *
- *  Ё  Ё   Ё   Ё   Ё   Ё   Ё   Ё   Ё   Ё   Ё   Ё   Ё  Ё                    *
- *  Ё  цдддедддедддедддедддедддедддедддедддедддеддд╢  Ё                    *
- *  Ё  Ё   Ё   Ё   Ё   Ё   Ё   Ё   Ё   Ё   Ё   Ё   Ё  Ё                    *
- *  Ё  цдддедддедддедддедддедддедддедддедддедддеддд╢  Ё                    *
- *  Ё  Ё   Ё   Ё   Ё   Ё   Ё   Ё   Ё   Ё   Ё   Ё   Ё  Ё                    *
- *  Ё  цдддедддедддедддедддедддедддедддедддедддеддд╢  Ё                    *
- *  Ё  Ё   Ё   Ё   Ё   Ё   Ё   Ё   Ё   Ё   Ё   Ё   Ё  Ё                    *
- *  Ё  цдддедддедддедддедддедддедддедддедддедддеддд╢  Ё                    *
- *  Ё  Ё   Ё   Ё   Ё   Ё   Ё   Ё   Ё   Ё   Ё   Ё   Ё  Ё                    *
- *  Ё  юдддадддадддадддадддадддадддадддадддадддаддды  Ё                    *
- *  Ё               [OK]      [Cancel]                Ё                    *
- *  юддддддддддддддддддддддддддддддддддддддддддддддддды                    *
+ *  д©                    *
+ *                   Team Members                                        *
+ *                                                                       *
+ *    д©                      *
+ *                                                           *
+ *    д╢                      *
+ *                                                           *
+ *    д╢                      *
+ *                                                           *
+ *    д╢                      *
+ *                                                           *
+ *    д╢                      *
+ *                                                           *
+ *    д╢                      *
+ *                                                           *
+ *                          *
+ *                 [OK]      [Cancel]                                    *
+ *                      *
  *                                                                         *
  * INPUT:                                                                  *
  *      house      house to display objects for                            *
@@ -531,13 +531,8 @@ int MapEditClass::Team_Members(HousesType house)
 	/*
 	**	Set up the team data arrays (ObjectTypeClass pointers & count)
 	*/
-#ifdef WIN32
 	teamclass = (const TechnoTypeClass **)SysMemPage.Get_Buffer();
 	teamcount = (int *)SysMemPage.Get_Buffer() + MAX_TEAM_CLASSES * sizeof (ObjectTypeClass *);
-#else
-	teamclass = (const TechnoTypeClass **)HidPage.Get_Buffer();
-	teamcount = (int *)HidPage.Get_Buffer() + MAX_TEAM_CLASSES * sizeof (ObjectTypeClass *);
-#endif
 
 	/*
 	**	Fill in the ObjectTypeClass array with all available object type ptrs,

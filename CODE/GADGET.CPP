@@ -59,10 +59,8 @@
 
 #include "function.h"
 
-#ifdef WIN32
 extern "C" void DirectDraw_Begin_Present_Batch(void);
 extern "C" void DirectDraw_End_Present_Batch(void);
-#endif
 
 
 /*
@@ -457,18 +455,14 @@ void GadgetClass::Draw_All(bool forced)
 {
 	GadgetClass * gadget = this;
 
-#ifdef WIN32
 	DirectDraw_Begin_Present_Batch();
-#endif
 
 	while (gadget != NULL) {
 		gadget->Draw_Me(forced);
 		gadget = gadget->Get_Next();
 	}
 
-#ifdef WIN32
 	DirectDraw_End_Present_Batch();
-#endif
 }
 
 
@@ -509,7 +503,6 @@ KeyNumType GadgetClass::Input(void)
 		key = Keyboard->Get();
 	}
 
-#ifdef WIN32
 #ifdef CHEAT_KEYS
 	if (key == KN_K && !Debug_Map && (Debug_Flag || Debug_Playtest)) {
 		/*
@@ -537,7 +530,6 @@ KeyNumType GadgetClass::Input(void)
 			Sound_Effect(VOC_BEEP);
 		}
 	}
-#endif
 #endif
 
 	/*

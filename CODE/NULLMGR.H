@@ -182,17 +182,10 @@ class NullModemClass : public ConnManClass
 		NullModemConnClass *Connection;
 		int NumConnections;						// # connection objects in use
 
-#ifdef WIN32
 		/*
 		** This is the Win95 port handle
 		*/
 		HANDLE	PortHandle;
-#else	//WIN32
-		/*
-		**	This is the Greenleaf port handle.
-		*/
-		PORT *Port;
-#endif	//WIN32
 
 		int NumSend;
 		int NumReceive;

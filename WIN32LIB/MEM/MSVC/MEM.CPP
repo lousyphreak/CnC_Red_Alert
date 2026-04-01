@@ -51,7 +51,6 @@
  *   Mem_Get_ID -- Returns ID of node.                                     *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#define WIN32_LEAN_AND_MEAN
 #include "win32_compat.h"
 #include <wwstd.h>
 #include "wwmem.h"

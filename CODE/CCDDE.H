@@ -40,7 +40,6 @@
  * Functions:                                                                                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#ifdef WIN32
 
 #include "DDE.H"
 
@@ -86,4 +85,3 @@ extern DDEServerClass DDEServer;
 extern BOOL Send_Data_To_DDE_Server (char *data, int length, int packet_type);
 
 
-#endif	//WIN32

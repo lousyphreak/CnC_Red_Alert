@@ -42,7 +42,6 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-//#define WIN32
 #include <stdio.h>
 #include	<string.h>
 

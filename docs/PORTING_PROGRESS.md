@@ -8,6 +8,11 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Removed the forced `WIN32` / `_WIN32` / `WIN32_LEAN_AND_MEAN` compatibility defines from the supported CMake build and collapsed the corresponding legacy preprocessor branches to the behavior that build was already using:
+  - active game, `win32lib`, and VQA sources no longer rely on global fake Win32 macros to compile on Linux; the selected branch is now written directly in source instead of being hidden behind `#ifdef WIN32`;
+  - SDL-facing files (`CODE/SDLINPUT.CPP`, `WIN32LIB/AUDIO/SDLAUDIOBACKEND.CPP`, `VQ/VQA32/AUDIOCOMPAT.CPP`) now include SDL directly instead of temporarily undefining/redefining `WIN32` / `_WIN32`;
+  - the remaining compat-header shims that only defined `WIN32` or `WIN32_LEAN_AND_MEAN` to reach `win32_compat.h` / DirectDraw wrappers now include the needed headers directly;
+  - `cmake --build build -- -j2` succeeds after removing those compatibility defines from `RA_COMMON_DEFINITIONS`.
 - Deleted the now-unused `SDL3_COMPAT/wrappers/io.h` wrapper completely:
   - repository-wide search found no remaining Red Alert game/compat/archive source that still includes `<io.h>` after the earlier SDL file-I/O cleanup;
   - the only remaining repository `<io.h>` include is SDL upstream's Windows-only `extern/SDL3/test/childprocess.c`, which stays outside the supported Red Alert build because `SDL_TESTS` is forced `OFF`;
@@ -368,7 +373,7 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - Restored `GameInFocus` to `BOOL` so Win32-era code stops reading past a 1-byte `bool`.
 - Fixed remaining sound-runtime alignment issues by restoring native alignment around `SampleTrackerType` / `LockedDataType` and explicitly aligning `CRITICAL_SECTION` to pointer alignment in the Win32 wrapper.
 - Fixed multiple startup and loader loops that depended on enum post-increment reaching the `COUNT` sentinel instead of wrapping back to `FIRST`.
-- Replaced unsafe `std::filesystem`-based DOS and Win32 directory enumeration wrappers with POSIX-backed implementations suitable for the Linux `_WIN32` hybrid build.
+- Replaced unsafe `std::filesystem`-based DOS and Win32 directory enumeration wrappers with POSIX-backed implementations suitable for the supported Linux/SDL3 build.
 - Fixed Linux compat virtual-CD probing in `SDL3_COMPAT/wrappers/win32_compat.cpp` by replacing `std::filesystem` path composition in `virtual_cd_index_for_drive_letter()` / `GetDriveType()` with string-plus-`stat()` checks on non-Windows hosts; this removes the immediate ASan `new-delete-type-mismatch` abort seen under `gdb` during `GetCDClass` startup.
 - Fixed `CODE/CONQUER.CPP::Disk_Space_Available()` to use 64-bit free-byte math instead of multiplying `_dos_getdiskfree()`'s 32-bit fields in 32-bit arithmetic; without that promotion, large modern disks could wrap modulo `4 GiB` and falsely trigger the startup/save low-space warnings.
 - Fixed several LP64/alignment/runtime faults uncovered by ASan/UBSan in active startup paths, including:
@@ -485,7 +490,6 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - `FIXIT_NAME_OVERRIDE`
   - `FIXIT_SCORE_CRASH`
   - `RELEASE_VERSION=0`
-  - `WIN32=1`
 
 ### Support libraries
 
@@ -529,7 +533,7 @@ The final link failure was narrowed to the movie layer and resolved by replacing
 
 Converted all remaining Win32 file I/O calls in the game-layer source files to SDL3 equivalents:
 - **`CODE/CONQUER.CPP`**: `CreateFile`/`CloseHandle` for CD existence check → `SDL_GetPathInfo`; `_dos_findfirst` with `_A_VOLID` → stubbed (volume labels not supported on modern systems).
-- **`CODE/SESSION.CPP`**: `FindFirstFile`/`FindNextFile` for `*.PKT` and `*.MPR` scenario enumeration → `SDL_GlobDirectory` with `SDL_GLOB_CASEINSENSITIVE`; `_dos_findfirst`/`_dos_findnext` in the `#else` (non-WIN32) path → same `SDL_GlobDirectory` conversion, `#error` removed.
+- **`CODE/SESSION.CPP`**: `FindFirstFile`/`FindNextFile` for `*.PKT` and `*.MPR` scenario enumeration → `SDL_GlobDirectory` with `SDL_GLOB_CASEINSENSITIVE`; the old `_dos_findfirst`/`_dos_findnext` alternate path was collapsed into the same SDL conversion, and the old `#error` is gone.
 - **`CODE/STARTUP.CPP`**: `FindFirstFile`/`FindClose`/`DeleteFile` for `wolsetup.exe` and `conquer.eng` → `SDL_GetPathInfo` + `SDL_RemovePath` (inside `WOLAPI_INTEGRATION` guard).
 - **`CODE/LOADDLG.CPP`**: `unlink()` → `SDL_RemovePath()`; `_dos_findfirst`/`_dos_findnext` for `SAVEGAME.*` → `SDL_GlobDirectory` with `SDL_GLOB_CASEINSENSITIVE`.
 - **`CODE/INIT.CPP`**: `_dos_findfirst`/`_dos_findnext` for `SC*.MIX` and `SS*.MIX` expansion files → `SDL_GlobDirectory`.

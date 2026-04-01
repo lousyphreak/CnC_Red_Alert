@@ -49,8 +49,6 @@
  *  IconCacheClass::Draw_It -- use the blitter to draw the cached icon                         *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#define	WIN32_LEAN_AND_MEAN
-#define	_WIN32
 
 #include "win32_compat.h"
 #include "ddraw.h"

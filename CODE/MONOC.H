@@ -209,9 +209,6 @@ class MonoClass {
 		static bool Enabled;
 };
 
-#ifndef WIN32
-int Mono_Printf(int string, ...);
-#else
 extern void Mono_Set_Cursor(int x, int y);
 extern int Mono_Printf(int string, ...);
 extern int Mono_Printf(char const * string, ...);
@@ -221,7 +218,6 @@ extern void Mono_Draw_Rect(int x, int y, int w, int h, int attrib, int thick);
 extern void Mono_Print(void const *text);
 extern int Mono_X(void);
 extern int Mono_Y(void);
-#endif
 
 #endif
 

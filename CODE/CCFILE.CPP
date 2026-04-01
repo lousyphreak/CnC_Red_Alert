@@ -676,14 +676,12 @@ int __cdecl Find_Disk_Number(char const *)
 //	return(CCFileClass(file).Load_Uncompress(uncomp_buff, dest_buff, reserved_data));
 //}
 
-#ifdef WIN32
 extern "C" {
 int MaxDevice;
 int DefaultDrive;
 char CallingDOSInt;
 
 }
-#endif
 
 
 void Unfragment_File_Cache(void)

@@ -44,7 +44,6 @@
  *                                                                         *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#ifdef WIN32
 
 #include <winsock.h>
 
@@ -199,4 +198,3 @@ extern int Read_Game_Options(char *);
 
 
 
-#endif	//WIN32

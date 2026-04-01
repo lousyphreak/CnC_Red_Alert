@@ -119,7 +119,6 @@ bool WOL_Download_Dialog( IDownload* pDownload, RADownloadEventSink* pDownloadSi
 	progress_meter.Set_Value(0);			// Current is 0%
 
 	do	{
-#ifdef WIN32
 		/*
 		** If we have just received input focus again after running in the background then
 		** we need to redraw.
@@ -128,7 +127,6 @@ bool WOL_Download_Dialog( IDownload* pDownload, RADownloadEventSink* pDownloadSi
 			AllSurfaces.SurfacesRestored=FALSE;
 			display = REDRAW_ALL;
 		}
-#endif
 
 		if (display){
 

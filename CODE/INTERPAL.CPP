@@ -309,7 +309,6 @@ void Increase_Palette_Luminance (unsigned char * palette , int red_percentage , 
 
 int	CopyType	=0;
 
-#ifdef WIN32
 /***************************************************************************
  * INTERPOLATE_2X_SCALE                                                    *
  *                                                                         *
@@ -456,7 +455,6 @@ void Interpolate_2X_Scale( GraphicBufferClass * source, GraphicViewPortClass * d
 //BG	long *longptr = (long *)&PaletteInterpolationTable[0][0];
 //BG	Mono_Printf("Clock cycles: %08x\n",*longptr);
 }
-#endif
 
 
 

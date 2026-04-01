@@ -56,7 +56,6 @@
  * TMC::Copy_To_In_Buffer -- copy data from our winsock buffer             *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#ifdef WIN32
 
 #include "function.h"
 #include "tcpip.h"
@@ -906,4 +905,3 @@ void TcpipManagerClass::Clear_Socket_Error(SOCKET socket)
 
 
 
-#endif	//WIN32

@@ -70,9 +70,6 @@
 #include	"FUNCTION.H"
 #include <stdio.h>
 #include <string.h>
-#ifndef WIN32
-#include <i86.h>
-#endif
 #include "IPXMGR.H"
 #include "WWLIB32.H"	// to enable mono output
 
@@ -84,11 +81,7 @@
 #else	//WINSOCK_IPX
 
 #include "IPX95.H"
-#ifdef WIN32
 #include "TCPIP.H"
-#else
-#include	"FAKESOCK.H"
-#endif	//WIN32
 
 #endif	//WINSOCK_IPX
 
@@ -267,10 +260,8 @@ IPXManagerClass::~IPXManagerClass()
 		RealMemAllocd = 0;
 	}
 #ifdef FIXIT_CSII	//	checked - ajw 9/28/98
-#ifdef WIN32
 #ifndef WINSOCK_IPX
 	Unload_IPX_Dll();
-#endif
 #endif
 #endif
 }	/* end of ~IPXManagerClass */
@@ -1081,7 +1072,6 @@ int IPXManagerClass::Service(void)
 
 #else	//WINSOCK_IPX
 
-#ifdef WIN32
 
 	unsigned char temp_receive_buffer[1024];
 	int	recv_length;
@@ -1183,89 +1173,6 @@ int IPXManagerClass::Service(void)
 	}
 
 
-#else	//WIN32
-
-
-	//------------------------------------------------------------------------
-	//	Error if IPX not installed or not Listening
-	//------------------------------------------------------------------------
-	if (!IPXStatus || !Listening) {
-		return(0);
-	}
-
-	//------------------------------------------------------------------------
-	//	Loop until there are no more packets to process.
-	//------------------------------------------------------------------------
-	while (1) {
-
-		//.....................................................................
-		//	Check the BufferFlags for the "current" buffer; if it's empty,
-		//	break; out of the loop.
-		//.....................................................................
-		if (BufferFlags[CurIndex]==0) {
-			break;
-		}
-
-		//.....................................................................
-		//	Compute the length of the packet (byte-swap the length in the IPX hdr)
-		//.....................................................................
-		packetlen = ((CurHeaderBuf->Length & 0xff) << 8) |
-			(CurHeaderBuf->Length >> 8);
-		packetlen -= sizeof(IPXHeaderType);
-
-		//.....................................................................
-		//	Extract the sender's address from the IPX header
-		//.....................................................................
-		address.Set_Address (CurHeaderBuf);
-
-		//.....................................................................
-		//	Examine the Magic Number of the received packet to determine if this
-		//	packet goes into the Global Queue, or into one of the Private Queues
-		//.....................................................................
-		packet = (CommHeaderType *)CurDataBuf;
-		if (packet->MagicNumber == GlobalChannel->Magic_Num()) {
-
-			//..................................................................
-			//	Put the packet in the Global Queue
-			//..................................................................
-			if (!GlobalChannel->Receive_Packet (packet, packetlen, &address)) {
-				ReceiveOverflows++;
-			}
-		}
-
-		//.....................................................................
-		//	Find the Private Queue that this packet is for
-		//.....................................................................
-		else if (packet->MagicNumber == ProductID) {
-			for (i = 0; i < NumConnections; i++) {
-				if (Connection[i]->Address == address) {
-					if (!Connection[i]->Receive_Packet (packet, packetlen)) {
-						ReceiveOverflows++;
-					}
-					break;
-				}
-			}
-		}
-
-		//.....................................................................
-		//	Set the current BufferFlags to 0 (since we've cleaned out this buffer)
-		//.....................................................................
-		BufferFlags[CurIndex] = 0;
-
-		//.....................................................................
-		//	Go to the next packet buffer
-		//.....................................................................
-		CurIndex++;
-		CurHeaderBuf = (IPXHeaderType *)(((char *)CurHeaderBuf) + FullPacketLen);
-		CurDataBuf = ((char *)CurDataBuf) + FullPacketLen;
-		if (CurIndex >= NumBufs) {
-			CurHeaderBuf = FirstHeaderBuf;
-			CurDataBuf = FirstDataBuf;
-			CurIndex = 0;
-		}
-	}
-
-#endif	//WIN32
 #endif	//WINSOCK_IPX
 
 	//------------------------------------------------------------------------

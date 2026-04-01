@@ -83,11 +83,7 @@ void SoundControlsClass::Process(void)
 	int listbox_y=      	LISTBOX_Y * RESFACTOR;
 	int listbox_w=      	LISTBOX_W * RESFACTOR;
 #ifdef FIXIT_CSII	//	checked - ajw 9/28/98
-#ifdef WIN32
 	int listbox_h=      	(LISTBOX_H * RESFACTOR)+2;
-#else
-	int listbox_h=      	LISTBOX_H * RESFACTOR;
-#endif
 #else
 	int listbox_h=      	LISTBOX_H * RESFACTOR;
 #endif
@@ -279,7 +275,6 @@ void SoundControlsClass::Process(void)
 			}
 		}
 
-		#ifdef WIN32
 		/*
 		** If we have just received input focus again after running in the background then
 		** we need to redraw.
@@ -288,7 +283,6 @@ void SoundControlsClass::Process(void)
 			AllSurfaces.SurfacesRestored=FALSE;
 			display = true;
 		}
-		#endif
 		/*
 		**	Refresh display if needed.
 		*/

@@ -64,9 +64,7 @@
 #include <string.h>
 #include "IPX.H"
 
-#ifdef WIN32
 #include "IPX95.H"
-#endif	//WIN32
 
 
 // Turn off "expression is not meaningful".

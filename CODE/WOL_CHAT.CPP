@@ -532,7 +532,6 @@ int WOL_Chat_Dialog( WolapiObject* pWO )
 			pWO->dwTimeNextChannelUpdate = ::timeGetTime() + CHANNELUPDATEWAIT;
 		}
 
-#ifdef WIN32
 		/*
 		** If we have just received input focus again after running in the background then
 		** we need to redraw.
@@ -541,7 +540,6 @@ int WOL_Chat_Dialog( WolapiObject* pWO )
 			AllSurfaces.SurfacesRestored=FALSE;
 			display = REDRAW_ALL;
 		}
-#endif
 
 		if( bFirsttime && !pWO->bChatShownBefore )
 		{

@@ -47,10 +47,6 @@
 #include	<stdio.h>
 #include	<string.h>
 
-#ifndef WIN32
-#include	<wwstd.h>
-#include	<playcd.h>
-#endif
 
 /*
 **	Pointer to the first search path record.
@@ -92,11 +88,7 @@ extern int Get_CD_Index (int cd_drive, int timeout);
  * HISTORY:                                                                                    *
  *   09/22/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-#ifdef WIN32
 int harderr_handler(unsigned int , unsigned int , unsigned int *)
-#else
-int harderr_handler(unsigned int , unsigned int , unsigned int __far *)
-#endif
 {
 	return(_HARDERR_FAIL);
 }
@@ -242,12 +234,7 @@ int CDFileClass::Set_Search_Drives(char * pathlist)
 		**	merely ignore this path entry.
 		*/
 		if (strncmp(path, "?:", 2) == 0) {
-			#ifndef WIN32
-				GetCDClass temp;
-				int cd = temp.GetCDDrive();
-			#else
 				int cd = 10;
-			#endif
 			found = cd;
 			empty = !Is_Disk_Inserted(cd);
 			if (!found || empty) goto nextpath;

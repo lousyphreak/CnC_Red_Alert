@@ -65,11 +65,7 @@
 #include	"options.h"
 
 
-#ifdef WIN32
 char const * const OptionsClass::HotkeyName = "WinHotkeys";
-#else
-char const * const OptionsClass::HotkeyName = "DOSHotkeys";
-#endif
 
 
 /***********************************************************************************************
@@ -90,15 +86,10 @@ char const * const OptionsClass::HotkeyName = "DOSHotkeys";
 OptionsClass::OptionsClass(void) :
 	GameSpeed(3),
 	ScrollRate(3),
-#ifdef WIN32
 	Volume(".40"),			// was .295
 	ScoreVolume(".25"),
 #ifdef FIXIT_VERSION_3
 	MultiScoreVolume("0"),
-#endif
-#else
-	Volume(".8"),
-	ScoreVolume(".6"),
 #endif
 	Brightness(fixed::_1_2),
 	Tint(fixed::_1_2),
@@ -645,7 +636,6 @@ void OptionsClass::Load_Settings(void)
 	KeyTeam10 =  (KeyNumType)ini.Get_Int(HotkeyName, "KeyTeam10", KeyTeam10);
 
 
-#ifdef WIN32
 	KeyForceMove1 = (KeyNumType)(KeyForceMove1 & ~WWKEY_VK_BIT);
 	KeyForceMove2 = (KeyNumType)(KeyForceMove2 & ~WWKEY_VK_BIT);
 	KeyForceAttack1 = (KeyNumType)(KeyForceAttack1 & ~WWKEY_VK_BIT);
@@ -695,7 +685,6 @@ void OptionsClass::Load_Settings(void)
 	KeyTeam8 = (KeyNumType)(KeyTeam8 & ~WWKEY_VK_BIT);
 	KeyTeam9 = (KeyNumType)(KeyTeam9 & ~WWKEY_VK_BIT);
 	KeyTeam10 = (KeyNumType)(KeyTeam10 & ~WWKEY_VK_BIT);
-#endif
 }
 
 

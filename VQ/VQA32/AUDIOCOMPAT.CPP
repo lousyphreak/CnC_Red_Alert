@@ -16,31 +16,11 @@
 **	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifdef WIN32
-#define VQA_RESTORE_WIN32 1
-#undef WIN32
-#endif
-
-#ifdef _WIN32
-#define VQA_RESTORE__WIN32 1
-#undef _WIN32
-#endif
-
 #include <SDL3/SDL_audio.h>
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_timer.h>
 #include <cstdio>
 #include <cstdlib>
-
-#ifdef VQA_RESTORE_WIN32
-#define WIN32 1
-#undef VQA_RESTORE_WIN32
-#endif
-
-#ifdef VQA_RESTORE__WIN32
-#define _WIN32 1
-#undef VQA_RESTORE__WIN32
-#endif
 
 #include "VQAPLAYP.H"
 

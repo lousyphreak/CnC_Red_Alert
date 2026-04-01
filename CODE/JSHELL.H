@@ -146,27 +146,6 @@ template<class T> inline T operator ~(T t1)
 	return((T)(~(int)t1));
 }
 
-#ifndef WIN32
-template<class T> inline T min(T value1, T value2)
-{
-	if (value1 < value2) {
-		return(value1);
-	}
-	return(value2);
-}
-int min(int, int);
-long min(long, long);
-
-template<class T> inline T max(T value1, T value2)
-{
-	if (value1 > value2) {
-		return(value1);
-	}
-	return(value2);
-}
-int max(int, int);
-long max(long, long);
-#endif
 
 template<class T> inline void swap(T &value1, T &value2)
 {
@@ -368,37 +347,17 @@ class FrameTimerClass
 #endif
 
 
-#ifndef WIN32
-extern bool TimerSystemOn;
-extern "C" {
-	long Get_System_Tick_Count(void);
-	long Get_User_Tick_Count(void);
-}
-//bool Init_Timer_System(unsigned int freq, int partial=false);
-bool Remove_Timer_System(void);
-#else
 extern WinTimerClass	*		WindowsTimer;
-#endif
 
-#ifdef WIN32
 inline long SystemTimerClass::operator () (void) const {if (!WindowsTimer) return(0);return(WindowsTimer->Get_System_Tick_Count());}
 inline SystemTimerClass::operator long (void) const {if (!WindowsTimer) return(0);return(WindowsTimer->Get_System_Tick_Count());}
-#else
-inline long SystemTimerClass::operator () (void) const {return(Get_System_Tick_Count());}
-inline SystemTimerClass::operator long (void) const {return(Get_System_Tick_Count());}
-#endif
 
 
 class UserTimerClass
 {
 	public:
-		#ifdef WIN32
 			long operator () (void) const {if (!WindowsTimer) return(0);return(WindowsTimer->Get_User_Tick_Count());};
 			operator long (void) const {if (!WindowsTimer) return(0);return(WindowsTimer->Get_User_Tick_Count());};
-		#else
-			long operator () (void) const {return(Get_User_Tick_Count());};
-			operator long (void) const {return(Get_User_Tick_Count());};
-		#endif
 };
 
 

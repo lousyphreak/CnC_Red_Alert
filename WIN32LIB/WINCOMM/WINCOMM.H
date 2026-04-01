@@ -44,10 +44,6 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#ifndef WIN32
-#define	WIN32
-#define	_WIN32
-#endif	//WIN32
 #include "win32_compat.h"
 
 typedef enum WinCommDialMethodType {

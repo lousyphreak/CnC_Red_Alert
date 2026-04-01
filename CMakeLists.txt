@@ -35,9 +35,6 @@ set(RA_COMMON_DEFINITIONS
     FIXIT_NAME_OVERRIDE
     FIXIT_SCORE_CRASH
     RELEASE_VERSION=0
-    WIN32=1
-    _WIN32=1
-    WIN32_LEAN_AND_MEAN
 )
 
 set(RA_COMMON_INCLUDE_DIRS
@@ -219,7 +216,7 @@ foreach(target sdl3_compat win32lib redalert)
         target_compile_definitions(${target} PRIVATE _CRT_SECURE_NO_WARNINGS)
         target_compile_options(${target} PRIVATE /w)
     else()
-        if(NOT WIN32)
+        if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
             target_compile_definitions(${target} PRIVATE __cdecl=)
         endif()
         target_compile_options(${target} PRIVATE -w -fpermissive)

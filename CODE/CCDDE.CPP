@@ -52,7 +52,6 @@
  *                                                                                             *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#ifdef WIN32
 
 #include "win32_compat.h"
 #include <winsock.h>
@@ -429,4 +428,3 @@ BOOL Send_Data_To_DDE_Server (char *data, int length, int packet_type)
 }
 
 
-#endif	//WIN32

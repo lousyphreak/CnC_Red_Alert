@@ -25,7 +25,7 @@ _Last updated: 2026-04-01_
 
 ## Removed conio surface
 
-- The supported CMake build defines `WIN32=1`, so the old non-`WIN32` `conio.h` fallback branches in active game code are dead. Keep keyboard input on the supported port routed through `WWKeyboardClass` / SDL-backed input; do not reintroduce `<conio.h>` or wrapper shims for `getch()`, `kbhit()`, `getche()`, or `cprintf()`.
+- The supported build no longer relies on global `WIN32` compatibility defines, and the old `conio.h` fallback branches were removed during that cleanup. Keep keyboard input on the supported port routed through `WWKeyboardClass` / SDL-backed input; do not reintroduce `<conio.h>` or wrapper shims for `getch()`, `kbhit()`, `getche()`, or `cprintf()`.
 - The `TESTVB` utilities only needed `inp()`. Include `PORTIO.H` directly there instead of routing through `conio.h`.
 - Clearly orphaned backup/standalone sources that only remained around the removed `conio` utility path were deleted instead of being rewrapped.
 
@@ -200,7 +200,7 @@ _Last updated: 2026-04-01_
 - In the active buffered movie path, `config->DrawerCallback(...)` returning non-zero makes `DrawFrame_Buffer()` return `VQAERR_EOF`.
   - `VQ/VQA32/TASK.CPP` must treat that as a real stop condition.
   - If the draw loop ignores it, the player keeps spinning with `VQADATF_UPDATE` / `VQADATF_DSLEEP` state still set and the process appears hard-locked when the intro is aborted with `ESC`.
-- Because the build globally defines `WIN32=1` for legacy code, SDL headers must be included with `WIN32` / `_WIN32` temporarily undefined in files that include SDL directly. Otherwise SDL takes Windows-only include paths and collides with the old SOS typedef layer.
+- The supported build no longer forces `WIN32` / `_WIN32` globally. Include SDL headers normally, and include `win32_compat.h` directly in files that still need legacy Win32 typedefs or APIs. Do not reintroduce temporary `#undef WIN32` / `#define WIN32` shims around SDL includes.
 
 ## Score screen rendering notes
 
@@ -235,9 +235,9 @@ _Last updated: 2026-04-01_
 
 ## Startup/runtime porting notes
 
-- The Linux build still compiles large parts of the game with `WIN32=1` / `_WIN32=1`, so runtime compatibility has to preserve Win32-era expectations even on SDL/Linux.
-- Because `_WIN32` remains visible in this Linux build, `std::filesystem` can take Windows-oriented code paths that are unsafe in compat wrappers. For file enumeration and similar wrappers, prefer direct POSIX `opendir` / `readdir` / `stat` / `statvfs` logic on non-Windows hosts.
-- `SDL3_COMPAT/wrappers/win32_compat.cpp` virtual-CD probing (`virtual_cd_index_for_drive_letter()` / `GetDriveType()`) is part of static startup through `GetCDClass`. On the Linux `_WIN32` hybrid build, avoid `std::filesystem::path` composition there; it can trip ASan/libstdc++ `new-delete-type-mismatch` failures before the game reaches normal startup.
+- The Linux build no longer forces `WIN32=1` / `_WIN32=1`, but the runtime still expects Win32-era behavior from the remaining compatibility wrappers. Preserve those semantics directly instead of reviving dual-branch `#ifdef WIN32` code.
+- For file enumeration and similar wrappers, prefer direct POSIX `opendir` / `readdir` / `stat` / `statvfs` logic on non-Windows hosts instead of `std::filesystem` in startup-critical compat paths.
+- `SDL3_COMPAT/wrappers/win32_compat.cpp` virtual-CD probing (`virtual_cd_index_for_drive_letter()` / `GetDriveType()`) is part of static startup through `GetCDClass`. Avoid `std::filesystem::path` composition there on Linux; it can still trip early-startup allocator/path issues before the game reaches normal runtime.
 - Linux must enter the real `WinMain(...)` startup path. If the Unix stub `main()` is left in place, the program only prints the old placeholder message (`Run C&C.COM.`) instead of running the game.
 - `GetModuleFileName()` must return a real executable path on Linux because `CODE/STARTUP.CPP` uses it during startup.
 - `CODE/STARTUP.CPP` changes the current working directory to the executable directory. The build now copies the runnable binaries into `GameData/` automatically:

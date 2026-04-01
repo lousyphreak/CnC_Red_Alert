@@ -51,8 +51,6 @@
  #define	true	1
  #define	false	0
 
-#define	WIN32
-#define	_WIN32
 #include "win32_compat.h"
 
 #include	<stdlib.h>

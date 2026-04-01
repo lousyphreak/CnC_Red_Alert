@@ -59,7 +59,6 @@ typedef struct {
 
 
 
-#ifdef WIN32
 #define	INITIAL_BIG_SHAPE_BUFFER_SIZE	20000000
 #define	UNCOMPRESS_MAGIC_NUMBER			56789
 
@@ -126,7 +125,6 @@ void Check_Use_Compressed_Shapes (void)
 	UseBigShapeBuffer = (mem_info.dwTotalPhys > 12*1024*1024) ? TRUE : FALSE;
 }
 
-#endif
 
 
 unsigned long Build_Frame(void const * dataptr, unsigned short framenumber, void * buffptr)

@@ -152,24 +152,6 @@ char PaletteLUT[256];
 
 
 
-#ifndef	WIN32
-extern void Vsync(void);
-#pragma aux Vsync modify [edx ebx eax] = \
-	"mov	edx,03DAh"				\
-	"mov	ebx,[VertBlank]"		\
-	"and	bl,001h"					\
-	"shl	bl,3"						\
-	"in_vbi:"						\
-	"in	al,dx"					\
-	"and	al,008h"					\
-	"xor	al,bl"					\
-	"je	in_vbi"					\
-	"out_vbi:"						\
-	"in	al,dx"					\
-	"and	al,008h"					\
-	"xor	al,bl"					\
-	"jne	out_vbi"
-#endif	//WIN32
 
 
 
@@ -317,7 +299,6 @@ void EgoClass::Wipe (GraphicBufferClass *background)
  *=============================================================================================*/
 void Set_Pal(char *palette)
 {
-//#ifndef WIN32
 	//Vsync();
 	//unsigned char *rgbptr = (unsigned char *) palette;
 	//outportb(0x03C8, 0);												//Start from color 0
@@ -468,9 +449,6 @@ void Show_Who_Was_Responsible (void)
 	/*
 	** In DOS we need to scroll slower so we have a bool that lets us do it every other time
 	*/
-#ifndef WIN32
-	bool	scroll_now = false;
-#endif	//WIN32
 
 	/*
 	** Read in the credits file to be displayed
@@ -696,11 +674,9 @@ void Show_Who_Was_Responsible (void)
 	** Load the reference palette for the font.
 	*/
 	//Load_Title_Page(true);
-//#ifdef WIN32
 //	Load_Picture("EGOPAL.CPS", SysMemPage, SysMemPage, CCPalette, BM_DEFAULT);
 //#else	//WIN32
 //	Load_Picture("EGOPAL.CPS", HidPage, HidPage, CCPalette, BM_DEFAULT);
-//#endif	//WIN32
 
 
 	CCFileClass("EGOPAL.PAL").Read(&CCPalette, sizeof(CCPalette));
@@ -737,26 +713,17 @@ void Show_Who_Was_Responsible (void)
 	** Loop through and load up all the slideshow pictures
 	*/
 	for (int index = 0 ; index < NUM_SLIDES ; index++){
-#ifdef WIN32
 		SlideBuffers[index] = new GraphicBufferClass;
 		SlideBuffers[index]->Init (SeenBuff.Get_Width(), SeenBuff.Get_Height(), NULL , 0 , (GBC_Enum)0);
 		Load_Title_Screen(&SlideNames[index][0], SlideBuffers[index], (unsigned char*) &SlidePals[index][0]);
-#else	//WIN32
-		SlideBuffers[index] = new GraphicBufferClass (SeenBuff.Get_Width(), SeenBuff.Get_Height(), (void*)NULL);
-		Load_Picture(&LoresSlideNames[index][0], *SlideBuffers[index], *SlideBuffers[index], (unsigned char *)&SlidePals[index][0], BM_DEFAULT);
-#endif	//WIN32
 	}
 
 	/*
 	** Create a new graphic buffer to restore the background from. Initialise it to black so
 	** we can start scrolling before the first slideshow picture is blitted.
 	*/
-#ifdef WIN32
 	BackgroundPage = new GraphicBufferClass;
 	BackgroundPage->Init (SeenBuff.Get_Width(), SeenBuff.Get_Height(), NULL , 0 , (GBC_Enum)(GBC_VIDEOMEM));
-#else	//WIN32
-	BackgroundPage = new GraphicBufferClass (SeenBuff.Get_Width(), SeenBuff.Get_Height(), (void*)NULL );
-#endif	//WIN32
 
 	SeenBuff.Blit(*BackgroundPage);
 
@@ -831,10 +798,6 @@ void Show_Who_Was_Responsible (void)
 		/*
 		** Scroll the text. If any text goes off the top then delete that object.
 		*/
-#ifndef WIN32
-		scroll_now = !scroll_now;
-		if (scroll_now){
-#endif	//WIN32
 			for (i=EgoList.Count()-1 ; i>=0 ; i--){
 				EgoList[i]->Wipe(BackgroundPage);
 				if ( EgoList[i]->Scroll(1) ){
@@ -842,9 +805,6 @@ void Show_Who_Was_Responsible (void)
 					break;
 				}
 			}
-#ifndef WIN32
-		}
-#endif	//WIN32
 		/*
 		** Render all the text strings in their new positions.
 		*/
@@ -878,16 +838,11 @@ void Show_Who_Was_Responsible (void)
 		** Blit all but the top and bottom of the hid page. This is beacuse the text print doesn't
 		** clip vertically and looks ugly when it suddenly appears and disappears.
 		*/
-#ifndef WIN32
-		Wait_Vert_Blank(VertBlank);
-		//Vsync();
-#endif	//WIN32
 		HidPage.Blit(SeenBuff, 0, 8*RESFACTOR, 0, 8*RESFACTOR, SeenBuff.Get_Width(), SeenBuff.Get_Height() - 16*RESFACTOR, false);
 
 		/*
 		** Try and prevent Win95 from swapping out pictures we havnt used yet.
 		*/
-#ifdef WIN32
 		if (frame && 3 == 3){
 			for (i=slide_number+1 ; i<NUM_SLIDES ; i++){
 				if ( !SlideBuffers[i]->Get_IsDirectDraw() ){
@@ -895,7 +850,6 @@ void Show_Who_Was_Responsible (void)
 				}
 			}
 		}
-#endif	//WIN32
 
 		/*
 		** If user hits escape then break.

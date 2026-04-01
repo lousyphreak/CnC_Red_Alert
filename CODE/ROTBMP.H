@@ -21,28 +21,6 @@
 #define MAKE_PTR(vp,x,y) (char *) (vp->Get_Offset() + ((y) * (vp->Get_Width() + vp->Get_XAdd())) + (x))
 #define MAKE_PTR2(vp,x,y) (char *) (vp->Get_Offset() + (((y)<<1) * (vp->Get_Width() + vp->Get_XAdd())) + ((x)<<1))
 
-#ifndef WIN32
-class BitmapClass
-{
-	public:
-		BitmapClass(int w, int h, unsigned char * data) :
-			Width(w), Height(h), Data(data) {};
-
-		int Width;
-		int Height;
-		unsigned char * Data;
-};
-
-class TPoint2D
-{
-	public:
-		TPoint2D(int xx, int yy) : x(xx), y(yy) {};
-		TPoint2D(void) : x(0), y(0) {};
-
-		int x;
-		int y;
-};
-#endif
 
 
 long Cos256[] = {

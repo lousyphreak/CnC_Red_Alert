@@ -40,14 +40,3 @@
  * Functions:                                                             	 			*
  *                                                                         				*
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-#ifndef WIN32
-
-class TcpipManagerClass {
-
-	public:
-		inline BOOL Get_Connected(void) {return (FALSE);}
-
-};
-
-extern TcpipManagerClass	Winsock;
-#endif

@@ -41,12 +41,6 @@
 #ifndef RAWFILE_H
 #define RAWFILE_H
 
-#ifndef WIN32
-#define WIN32 1
-#ifndef _WIN32 // Denzil 6/2/98 Watcom 11.0 complains without this check
-#define _WIN32
-#endif // _WIN32
-#endif
 #include "win32_compat.h"
 
 //#include	<wwlib32.h>

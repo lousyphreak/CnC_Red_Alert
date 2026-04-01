@@ -50,7 +50,6 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#ifdef WIN32
 
 #include "FUNCTION.H"
 #include "TCPIP.H"
@@ -959,4 +958,3 @@ bool Do_The_Internet_Menu_Thang(void)
 
 
 
-#endif	//WIN32

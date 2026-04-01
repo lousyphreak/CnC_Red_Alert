@@ -80,13 +80,6 @@
 
 
 #if (VQAAUDIO_ON && VQADIRECT_SOUND)
-#ifndef WIN32
-#define WIN32 1
-#ifndef _WIN32
-#define _WIN32
-#endif
-#endif
-#undef WIN32_LEAN_AND_MEAN
 #include "win32_compat.h"
 #include "dsound.h"
 #endif

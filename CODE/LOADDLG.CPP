@@ -275,7 +275,6 @@ int LoadOptionsClass::Process(void)
 			}
 		}
 
-		#ifdef WIN32
 		/*
 		** If we have just received input focus again after running in the background then
 		** we need to redraw.
@@ -284,7 +283,6 @@ int LoadOptionsClass::Process(void)
 			AllSurfaces.SurfacesRestored=FALSE;
 			display = true;
 		}
-		#endif
 
 		/*
 		**	Refresh display if needed.
@@ -665,17 +663,9 @@ void LoadOptionsClass::Fill_List(ListClass * list)
 				strcpy(fdata->Descr, Text_String(TXT_OLD_GAME));
 			} else {
 				if (house == HOUSE_USSR || house == HOUSE_UKRAINE) {
-#ifdef WIN32
 					sprintf(fdata->Descr, "(%s) ", Text_String(TXT_SOVIET));
-#else
-					sprintf(fdata->Descr, "(%c) ", *Text_String(TXT_SOVIET));
-#endif
 				} else {
-#ifdef WIN32
 					sprintf(fdata->Descr, "(%s) ", Text_String(TXT_ALLIES));
-#else
-					sprintf(fdata->Descr, "(%c) ", *Text_String(TXT_ALLIES));
-#endif
 				}
 			}
 			strncat(fdata->Descr, descr, (sizeof(fdata->Descr)-strlen(fdata->Descr))-1);

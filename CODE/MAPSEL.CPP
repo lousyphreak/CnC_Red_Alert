@@ -87,9 +87,6 @@ struct point {
  }
 };
 
-#ifndef WIN32
-extern short StreamLowImpact;
-#endif  //WIN32
 
 /***********************************************************************************************
  * Map_Selection -- Starts the whole process of selecting next map to go to                    *
@@ -105,9 +102,6 @@ extern short StreamLowImpact;
  *   07/18/1996 BWG : Created.                                                                 *
  *=============================================================================================*/
 extern int CopyType;
-#ifndef WIN32
-extern short StreamLowImpact;
-#endif
 char const * Map_Selection(void)
 {
 	static char scenarioname[_MAX_FNAME+_MAX_EXT];
@@ -147,9 +141,7 @@ char const * Map_Selection(void)
 	void const * scold1 =   MFCD::Retrieve("TONEY4.AUD");
 	void const * country1 = MFCD::Retrieve("TONEY10.AUD");
 
-#ifdef WIN32
 	GraphicBufferClass *pseudoseenbuff = new GraphicBufferClass(320, 200, (void*)NULL);
-#endif
 
 //	fixed oldvolume = Options.ScoreVolume;
 //	Options.Set_Score_Volume(fixed(4, 10));
@@ -161,64 +153,34 @@ char const * Map_Selection(void)
 	SeenPage.Clear();
 	mappalette.Set(FADE_PALETTE_FAST, Call_Back);
 
-#ifdef WIN32
 	pseudoseenbuff->Clear();
 	Animate_Frame(anim, *pseudoseenbuff, 1);
 	for(int x=0; x<256; x++) memset(&PaletteInterpolationTable[x][0],x,256);
 	CopyType = 1;
 	Interpolate_2X_Scale(pseudoseenbuff , &SeenBuff , 0);
-#else
-	HidPage.Clear();
-	Animate_Frame(anim, HidPage, 1);
-	HidPage.Blit(SeenPage);
-#endif
 
 
 	int frame = 1;
 	StreamLowImpact = true;
-#ifdef WIN32
 	Play_Sample(appear1, 255, Options.Normalize_Volume(170));
-#else
-	Play_Sample(appear1, 255, Options.Normalize_Volume(55));
-#endif
 	while (frame < Get_Animation_Frame_Count(anim)) {
-#ifdef WIN32
 		CopyType = 1;
 		Animate_Frame(anim, *pseudoseenbuff, frame++);
 		Interpolate_2X_Scale(pseudoseenbuff , &SeenBuff , NULL);
 		CopyType = 0;
-#else
-		Animate_Frame(anim, SeenPage, frame++);
-#endif
 		Call_Back_Delay(2);
 		switch(frame) {
 			case 16:
-#ifdef WIN32
 				Play_Sample(bleep11, 255, Options.Normalize_Volume(170));
-#else
-				Play_Sample(bleep11, 255, Options.Normalize_Volume(55));
-#endif
 				break;
 			case 30:
-#ifdef WIN32
 				Play_Sample(country4, 255, Options.Normalize_Volume(170));
-#else
-				Play_Sample(country4, 255, Options.Normalize_Volume(55));
-#endif
 				break;
 			case 51:
-#ifdef WIN32
 				Play_Sample(toney7, 255, Options.Normalize_Volume(170));
-#else
-				Play_Sample(toney7, 255, Options.Normalize_Volume(55));
-#endif
 				break;
 			case 61:
-#ifdef WIN32
 				Play_Sample(bleep17, 255, Options.Normalize_Volume(170));
-#else
-				Play_Sample(bleep17, 255, Options.Normalize_Volume(55));
-#endif
 				break;
 		}
 	}
@@ -231,7 +193,6 @@ char const * Map_Selection(void)
 	bool done = 0;
 	MouseType shape = MOUSE_NORMAL;
 	while (!done) {
-#ifdef WIN32
 		/*
 		** If we have just received input focus again after running in the background then
 		** we need to redraw.
@@ -242,7 +203,6 @@ char const * Map_Selection(void)
 			Interpolate_2X_Scale(pseudoseenbuff , &SeenBuff , NULL);
 			CopyType = 0;
 		}
-#endif
 		Cycle_Call_Back_Delay(1, mappalette);
 		int choice = Mouse_Over_Spot(house, scenario);
 		if (choice == -1) {
@@ -263,17 +223,9 @@ char const * Map_Selection(void)
 				if (choice != -1) {
 					done = 1;
 					selection = choice;
-#ifdef WIN32
 					Play_Sample(country1, 255, Options.Normalize_Volume(170));
-#else
-					Play_Sample(country1, 255, Options.Normalize_Volume(50));
-#endif
 				} else {
-#ifdef WIN32
 					Play_Sample(scold1, 255, Options.Normalize_Volume(170));
-#else
-					Play_Sample(scold1, 255, Options.Normalize_Volume(50));
-#endif
 				}
 			}
 		}

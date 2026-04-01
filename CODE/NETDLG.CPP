@@ -107,16 +107,12 @@
 //	Warning - Most disgusting cpp file of all time. ajw
 
 #include "FUNCTION.H"
-#ifdef WIN32
 #ifdef WINSOCK_IPX
 #include	"WSPROTO.H"
 #else	//WINSOCK_IPX
 #include "TCPIP.H"
 #endif	//WINSOCK_IPX
 #include "CCDDE.H"
-#else	//WIN32
-#include "FAKESOCK.H"
-#endif	//WIN32
 
 #include <time.h>
 #include <dos.h>
@@ -1743,9 +1739,7 @@ static int Net_Join_Dialog(void)
  	Ipx.Configure_Debug(-1, sizeof (GlobalHeaderType), sizeof(NetCommandType), GlobalPacketNames, 0, 13);
 	Ipx.Mono_Debug_Print(-1,1);
 	#endif
-#ifdef WIN32
 //char *fred;
-#endif
 	//------------------------------------------------------------------------
 	//	Processing loop
 	//------------------------------------------------------------------------
@@ -1777,7 +1771,6 @@ static int Net_Join_Dialog(void)
 			if (display < REDRAW_BACKGROUND) display = REDRAW_BACKGROUND;
 		}
 
-		#ifdef WIN32
 		/*
 		** If we have just received input focus again after running in the background then
 		** we need to redraw.
@@ -1786,7 +1779,6 @@ static int Net_Join_Dialog(void)
 			AllSurfaces.SurfacesRestored=FALSE;
 			display = REDRAW_ALL;
 		}
-		#endif
 		//.....................................................................
 		//	Refresh display if needed
 		//.....................................................................
@@ -4390,7 +4382,6 @@ static int Net_New_Dialog(void)
 		Ipx.Mono_Debug_Print(-1,0);
 		#endif
 
-		#ifdef WIN32
 		/*
 		** If we have just received input focus again after running in the background then
 		** we need to redraw.
@@ -4399,7 +4390,6 @@ static int Net_New_Dialog(void)
 			AllSurfaces.SurfacesRestored=FALSE;
 			display = REDRAW_ALL;
 		}
-		#endif
 		//.....................................................................
 		//	Refresh display if needed
 		//.....................................................................
@@ -5082,9 +5072,7 @@ static int Net_New_Dialog(void)
 		memset (responses, 0, sizeof (responses));
 		int num_responses = 0;
 		bool send_scenario = false;
-#ifdef WIN32
 		WWDebugString ("RA95 - About to wait for 'GO' response.");
-#endif
 		CDTimerClass<SystemTimerClass> response_timer;		// timeout timer for waiting for responses
 		response_timer = 60*10;		// Wait for 10 seconds. If we dont hear by then assume someone crashed
 
@@ -5160,13 +5148,11 @@ static int Net_New_Dialog(void)
 	//------------------------------------------------------------------------
 	Hide_Mouse();
 	Load_Title_Page(true);
-//#ifdef WIN32
 //	Load_Uncompress(CCFileClass("TITLE.CPS"), SysMemPage, SysMemPage, CCPalette);
 //	SysMemPage.Scale(SeenPage);
 //#else
 //	Load_Uncompress(CCFileClass("TITLE.CPS"), HidPage, HidPage, CCPalette);
 //	HidPage.Blit(SeenPage);
-//#endif	//WIN32
 	Show_Mouse();
 
 	if (load_game) {
@@ -5576,7 +5562,6 @@ void Net_Reconnect_Dialog(int reconn, int fresh, int oldest_index,
 
 	RemapControlType * scheme = GadgetClass::Get_Color_Scheme();
 
-#ifdef WIN32
 	/*
 	** If we have just received input focus again after running in the background then
 	** we need to redraw.
@@ -5585,7 +5570,6 @@ void Net_Reconnect_Dialog(int reconn, int fresh, int oldest_index,
 		AllSurfaces.SurfacesRestored=FALSE;
 		fresh = true;
 	}
-#endif
 
 	//------------------------------------------------------------------------
 	//	Draw the dialog from scratch
@@ -6138,7 +6122,6 @@ extern bool Spawn_WChat(bool can_launch);
  *=============================================================================================*/
 static int Net_Fake_New_Dialog(void)
 {
-#ifdef WIN32
 	//------------------------------------------------------------------------
 	//	Dialog & button dimensions
 	//------------------------------------------------------------------------
@@ -6343,7 +6326,6 @@ static int Net_Fake_New_Dialog(void)
 		Ipx.Mono_Debug_Print(-1,0);
 		#endif
 
-		#ifdef WIN32
 		/*
 		** If we have just received input focus again after running in the background then
 		** we need to redraw.
@@ -6352,7 +6334,6 @@ static int Net_Fake_New_Dialog(void)
 			AllSurfaces.SurfacesRestored=FALSE;
 			display = REDRAW_ALL;
 		}
-		#endif
 		//.....................................................................
 		//	Refresh display if needed
 		//.....................................................................
@@ -6821,11 +6802,6 @@ static int Net_Fake_New_Dialog(void)
 
 	return(rc);
 
-#else	//WIN32
-
-	return (0);
-
-#endif	//WIN32
 }	/* end of Net_Fake_New_Dialog */
 
 
@@ -6923,7 +6899,6 @@ static int Net_Fake_New_Dialog(void)
 static int Net_Fake_Join_Dialog(void)
 {
 
-#ifdef WIN32
 	//------------------------------------------------------------------------
 	//	Dialog & button dimensions
 	//------------------------------------------------------------------------
@@ -7127,7 +7102,6 @@ static int Net_Fake_Join_Dialog(void)
 	//------------------------------------------------------------------------
 	while (process) {
 
-		#ifdef WIN32
 		/*
 		** If we have just received input focus again after running in the background then
 		** we need to redraw.
@@ -7136,7 +7110,6 @@ static int Net_Fake_Join_Dialog(void)
 			AllSurfaces.SurfacesRestored=FALSE;
 			display = REDRAW_ALL;
 		}
-		#endif
 		//.....................................................................
 		//	Refresh display if needed
 		//.....................................................................
@@ -7714,11 +7687,6 @@ static int Net_Fake_Join_Dialog(void)
 
 	return(rc);
 
-#else	//WIN32
-
-	return (0);
-
-#endif	//WIN32
 
 }	/* end of Net_Join_Dialog */
 

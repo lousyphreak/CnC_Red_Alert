@@ -88,13 +88,8 @@ int WWMessageBox::Process(const char * msg, const char * b1txt, const char * b2t
 	BOOL display;									// display level
 	int  realval[5];
 
-#ifndef WIN32
-	int	preservex,preservey,preservew,preserveh;
-#endif
 
-	#ifdef WIN32
 	GraphicBufferClass seen_buff_save(VisiblePage.Get_Width(), VisiblePage.Get_Height(), (void*)NULL);
-	#endif
 
 	if (b1txt != NULL && *b1txt == '\0') b1txt = NULL;
 	if (b2txt != NULL && *b2txt == '\0') b2txt = NULL;
@@ -161,9 +156,7 @@ int WWMessageBox::Process(const char * msg, const char * b1txt, const char * b2t
 	**	Other inits.
 	*/
 	Set_Logic_Page(SeenBuff);
-	#ifdef WIN32
 	VisiblePage.Blit(seen_buff_save);
-	#endif
 
 	/*
 	**	Initialize the button structures. All are initialized, even though one (or none) may
@@ -219,17 +212,8 @@ int WWMessageBox::Process(const char * msg, const char * b1txt, const char * b2t
 	*/
 	Hide_Mouse();
 	if (preserve) {
-#ifndef WIN32
-	preservex = max(0, x-4);
-	preservey = max(0, y-4);
-	preservew = min(width+8, 320-preservex);
-	preserveh = min(height+8, 200-preservey);
-	back = new char[preservew * preserveh];
-	SeenBuff.To_Buffer(preservex, preservey, preservew, preserveh, back, preservew * preserveh);
-#else
 		back = new char[width * height];
 		SeenBuff.To_Buffer(x, y, width, height, back, width * height);
-#endif
 	}
 	Dialog_Box(x, y, width, height);
 	Draw_Caption(Caption, x, y, width);
@@ -255,7 +239,6 @@ int WWMessageBox::Process(const char * msg, const char * b1txt, const char * b2t
 		pressed = false;
 		while (process) {
 
-			#ifdef WIN32
 			/*
 			** If we have just received input focus again after running in the background then
 			** we need to redraw.
@@ -265,7 +248,6 @@ int WWMessageBox::Process(const char * msg, const char * b1txt, const char * b2t
 				seen_buff_save.Blit(VisiblePage);
 				display = true;
 			}
-			#endif
 
 			if (display) {
 				display = false;
@@ -451,11 +433,7 @@ int WWMessageBox::Process(const char * msg, const char * b1txt, const char * b2t
 	if (preserve) {
 		Hide_Mouse();
 		if (SeenBuff.Lock()) {
-			#ifdef WIN32
 				Buffer_To_Page(x, y, width, height, back, &SeenBuff);
-			#else
-				MCGA_Buffer_To_Page(preservex, preservey, preservew, preserveh, back, &SeenBuff);
-			#endif
 		}
 		SeenBuff.Unlock();
 

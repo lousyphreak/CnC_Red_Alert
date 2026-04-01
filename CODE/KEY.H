@@ -36,9 +36,6 @@
 #ifndef KEYBOARD_H
 #define KEYBOARD_H
 
-#ifndef WIN32
-#include	"..\wwflat32\include\keyboard.h"
-#else
 
 #include "win32_compat.h"
 
@@ -652,6 +649,5 @@ typedef enum KeyNumType {
 
 
 //extern WWKeyboardClass *_Kbd;
-#endif
 
 #endif

@@ -57,9 +57,6 @@
 #include <cstdio>
 #include <cstdlib>
 
-#ifndef WIN32
-extern short StreamLowImpact;
-#endif  //WIN32
 
 static bool Theme_Trace_Enabled(void)
 {

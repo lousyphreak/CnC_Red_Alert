@@ -88,11 +88,7 @@ class NullModemConnClass : public ConnectionClass
 		/*.....................................................................
 		Initialization.
 		.....................................................................*/
-#ifdef WIN32
 		void Init (HANDLE port_handle);
-#else	//WIN32
-		void Init (PORT *port);
-#endif	//WIN32
 
 		/*.....................................................................
 		Utility routines.
@@ -119,17 +115,10 @@ class NullModemConnClass : public ConnectionClass
 		This routine actually performs a hardware-dependent data send.
 		.....................................................................*/
 		virtual int Send (char *buf, int buflen, void *extrabuf, int extralen);
-#ifdef WIN32
 		/*
 		** This is the winsoze port handle
 		*/
 		HANDLE PortHandle;
-#else	//WIN32
-		/*.....................................................................
-		This is the PORT value used by the GreenLeaf calls.
-		.....................................................................*/
-		PORT *Port;
-#endif	//WIN32
 
 		/*.....................................................................
 		This buffer is a staging area for data sent out; it includes the

@@ -3,27 +3,7 @@
 #include "GBUFFER.H"
 #include "KEY.H"
 
-#ifdef WIN32
-#define RA_INPUT_RESTORE_WIN32 1
-#undef WIN32
-#endif
-
-#ifdef _WIN32
-#define RA_INPUT_RESTORE__WIN32 1
-#undef _WIN32
-#endif
-
 #include <SDL3/SDL.h>
-
-#ifdef RA_INPUT_RESTORE_WIN32
-#define WIN32 1
-#undef RA_INPUT_RESTORE_WIN32
-#endif
-
-#ifdef RA_INPUT_RESTORE__WIN32
-#define _WIN32 1
-#undef RA_INPUT_RESTORE__WIN32
-#endif
 
 #include <algorithm>
 #include <array>

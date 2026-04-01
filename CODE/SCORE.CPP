@@ -46,9 +46,6 @@
  *   ScoreClass::Print_Minutes -- Print out hours/minutes up to max                            *
  *   ScoreClass::Pulse_Bar_Graph -- Pulses the bargraph color.                                 *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-#ifndef WIN32
-extern short StreamLowImpact;
-#endif
 
 #include	"function.h"
 
@@ -70,9 +67,6 @@ extern short StreamLowImpact;
 #define NUMFAMENAMES				7
 #define MAX_FAMENAME_LENGTH	11
 
-#ifndef WIN32
-extern short StreamLowImpact;
-#endif  //WIN32
 
 GraphicBufferClass *PseudoSeenBuff;
 
@@ -103,13 +97,8 @@ void const * Beepy6;
 int ControlQ;	// cheat key to skip past score/mapsel screens
 bool StillUpdating;
 
-#ifdef WIN32
 char *ScreenNames[2]={"ALIBACKH.PCX", "SOVBACKH.PCX"};
-#else
-char *ScreenNames[2]={"ALI-TRAN.WSA", "SOV-TRAN.WSA"};
-#endif
 
-//#ifdef WIN32
 //TextBlitClass BlitList;
 //#endif
 
@@ -198,9 +187,7 @@ void ScoreAnimClass::Restore_Background(void)
 	}
 
 	Background->Blit(SeenPage, 0, 0, BackgroundX, BackgroundY, BackgroundWidth, BackgroundHeight);
-#ifdef WIN32
 	Background->Blit(*PseudoSeenBuff, 0, 0, BackgroundX, BackgroundY, BackgroundWidth, BackgroundHeight);
-#endif
 }
 
 
@@ -215,11 +202,7 @@ ScoreTimeClass::ScoreTimeClass(int xpos, int ypos, void const * data, int maxval
 
 void ScoreTimeClass::Update(void)
 {
-#ifdef WIN32
 	GraphicViewPortClass *oldpage;
-#else
-	GraphicBufferClass *oldpage;
-#endif
 	if (!Timer) {
 		Timer = TimerReset;
 		if (++Stage >= MaxStage) Stage = 0;
@@ -230,10 +213,8 @@ void ScoreTimeClass::Update(void)
 		oldpage = LogicPage;
 		Set_Logic_Page(SeenBuff);
 		CC_Draw_Shape(DataPtr, Stage, XPos, YPos, WINDOW_MAIN, SHAPE_WIN_REL, 0, 0);
-#ifdef WIN32
 		Set_Logic_Page(*PseudoSeenBuff);
 		CC_Draw_Shape(DataPtr, Stage, XPos, YPos, WINDOW_MAIN, SHAPE_WIN_REL, 0, 0);
-#endif
 		Set_Logic_Page(oldpage);
 	}
 }
@@ -252,11 +233,7 @@ ScoreCredsClass::ScoreCredsClass(int xpos, int ypos, void const * data, int maxv
 
 void ScoreCredsClass::Update(void)
 {
-#ifdef WIN32
 	GraphicViewPortClass *oldpage;
-#else
-	GraphicBufferClass *oldpage;
-#endif
 	if (!Timer) {
 		Timer = TimerReset;
 		if (++Stage >= MaxStage) Stage = 0;
@@ -266,16 +243,10 @@ void ScoreCredsClass::Update(void)
 		Restore_Background();
 		oldpage = LogicPage;
 		Set_Logic_Page(SeenBuff);
-#ifdef WIN32
 		Play_Sample(Clock1, 255, Options.Normalize_Volume(130));
-#else
-		Play_Sample(Clock1, 255, Options.Normalize_Volume(50));
-#endif
 		CC_Draw_Shape(DataPtr, Stage, XPos, YPos, WINDOW_MAIN, SHAPE_WIN_REL, 0, 0);
-#ifdef WIN32
 		Set_Logic_Page(*PseudoSeenBuff);
 		CC_Draw_Shape(DataPtr, Stage, XPos, YPos, WINDOW_MAIN, SHAPE_WIN_REL, 0, 0);
-#endif
 		Set_Logic_Page(oldpage);
 	}
 }
@@ -314,9 +285,7 @@ void ScorePrintClass::Update(void)
 		return;
 	}
 
-#ifdef WIN32
 	StillUpdating = true;
-#endif
 	if (!Timer) {
 		Timer = 1;
 
@@ -327,10 +296,8 @@ void ScorePrintClass::Update(void)
 			localstr[0]=((char *)DataPtr)[Stage-1];
 			HidPage.Print(localstr, pos-6*RESFACTOR, YPos,   TBLACK, TBLACK);
 			HidPage.Blit(SeenPage, pos-6*RESFACTOR, YPos-1*RESFACTOR, pos-6*RESFACTOR, YPos-1*RESFACTOR, 7*RESFACTOR, 8*RESFACTOR);
-#ifdef WIN32
 			HidPage.Blit(*PseudoSeenBuff, pos-6*RESFACTOR, YPos-1*RESFACTOR, pos-6*RESFACTOR, YPos-1*RESFACTOR, 7*RESFACTOR, 8*RESFACTOR);
 			PseudoSeenBuff->Print(localstr, pos-6*RESFACTOR, YPos,   TBLACK, TBLACK);
-#endif
 		}
 		if (((char *)DataPtr)[Stage]) {
 			localstr[0]=((char *)DataPtr)[Stage];
@@ -338,11 +305,9 @@ void ScorePrintClass::Update(void)
 			SeenPage.Print(localstr, pos,  YPos-1, TBLACK, TBLACK);
 			SeenPage.Print(localstr, pos,  YPos+1, TBLACK, TBLACK);
 			SeenPage.Print(localstr, pos+1, YPos  , TBLACK, TBLACK);
-#ifdef WIN32
 			PseudoSeenBuff->Print(localstr, pos,  YPos-1, TBLACK, TBLACK);
 			PseudoSeenBuff->Print(localstr, pos,  YPos+1, TBLACK, TBLACK);
 			PseudoSeenBuff->Print(localstr, pos+1, YPos  , TBLACK, TBLACK);
-#endif
 		}
 		Stage++;
 	}
@@ -353,11 +318,7 @@ ScoreScaleClass::ScoreScaleClass(void const * string, int xpos, int ypos, char c
 	ScoreAnimClass(xpos, ypos, string)
 {
 	Palette = &palette[0];
-#ifdef WIN32
 	Stage = 0;
-#else
-	Stage = 5;
-#endif
 }
 
 
@@ -371,13 +332,6 @@ void ScoreScaleClass::Update(void)
 	*/
 	if (!Timer) {
 		Timer = 1;
-#ifndef WIN32
-		if (Stage != 5) {
-			int destx = _destx[Stage+1]*RESFACTOR;
-			int destw = _destw[Stage+1]*RESFACTOR;
-			HidPage.Blit(SeenPage, destx, YPos, destx, YPos, (destx + destw) <= 320 * RESFACTOR ? destw : (320 * RESFACTOR) - destx, (YPos + destw) <= 200 * RESFACTOR ? destw : (200 * RESFACTOR) - YPos);
-		}
-#endif
 		if (Stage) {
 			Set_Font_Palette(Palette);
 			HidPage.Fill_Rect(0, 0, 7*RESFACTOR, 7*RESFACTOR, TBLACK);
@@ -391,9 +345,7 @@ void ScoreScaleClass::Update(void)
 			}
 			HidPage.Print((char *)DataPtr, XPos, YPos,   TBLACK, TBLACK);
 			HidPage.Blit(SeenPage, XPos, YPos, XPos, YPos, 6*RESFACTOR, 6*RESFACTOR);
-#ifdef WIN32
 			HidPage.Blit(*PseudoSeenBuff, XPos, YPos, XPos, YPos, 6*RESFACTOR, 6*RESFACTOR);
-#endif
 			delete this;
 			return;
 		}
@@ -438,9 +390,7 @@ static char const   _redpal[]={0xD0,0xD1,0xD7,0xD3,0xD9,0xD5,0xDA,0xD7,0xDB,0xD9
 static char const _yellowpal[]={0x0,0x0,0xEC,0x0,0xEB,0x0,0xEA,0x0,0xE9,0x0,0x0,0x0,0x0,0x0,0xED,0x0};
 void ScoreClass::Presentation(void)
 {
-#ifdef WIN32
 //	if (Keyboard != NULL) return;
-#endif
 	static int const _casuax[2]={144,150};
 	static int const _casuay[2]={ 78, 78};
 	static int const _gditxy[2]={ 90, 90};
@@ -456,7 +406,6 @@ void ScoreClass::Presentation(void)
 	static int const _bldggy[2]={138,138};
 	static int const _bldgny[2]={150,150};
 
-#ifdef WIN32
 #ifdef FIXIT_SCORE_CRASH
 	/*
 	** Fix for the score screen crash due to uncompressed shape buffer overflow.
@@ -464,7 +413,6 @@ void ScoreClass::Presentation(void)
 	Disable_Uncompressed_Shapes();
 #endif	//FIXIT
 	PseudoSeenBuff = new GraphicBufferClass(SeenBuff.Get_Width(),SeenBuff.Get_Height(),(void*)NULL);
-#endif
 	int i;
 	void const * yellowptr;
 	void const * redptr;
@@ -474,27 +422,19 @@ void ScoreClass::Presentation(void)
 	int oldfontxspacing = FontXSpacing;
 	int house = (PlayerPtr->Class->House == HOUSE_USSR || PlayerPtr->Class->House == HOUSE_UKRAINE);		// 0 or 1
 	int index;
-#ifdef WIN32
 	char inter_pal[15];
 	sprintf(inter_pal, "SCORPAL1.PAL");
-#endif
 
 	ControlQ = 0;
 	FontXSpacing = 0;
 	Map.Override_Mouse_Shape(MOUSE_NORMAL);
 	Theme.Queue_Song(THEME_SCORE);
 
-#ifdef WIN32
 	VisiblePage.Clear();
 	SysMemPage.Clear();
 	WWMouse->Erase_Mouse(&HidPage, TRUE);
 	HiddenPage.Clear();
 	Set_Logic_Page(SysMemPage);
-#else
-	SeenPage.Clear();
-	HidPage.Clear();
-	Set_Logic_Page(HidPage);
-#endif
 	BlackPalette.Set();
 
 
@@ -505,22 +445,12 @@ void ScoreClass::Presentation(void)
 	/*
 	** Load the background for the score screen
 	*/
-#ifndef WIN32
-	void *anim = Open_Animation(ScreenNames[house], NULL, 0L, (WSAOpenType)(WSA_OPEN_FROM_MEM | WSA_OPEN_TO_PAGE), ScorePalette);
-#endif
 
 	unsigned minutes = (unsigned)((ElapsedTime / (long)TIMER_MINUTE))+1;
 
 // Load up the shapes for the Nod score screen
-#ifdef WIN32
 	yellowptr = MFCD::Retrieve("BAR3BHR.SHP");
 	redptr = MFCD::Retrieve("BAR3RHR.SHP");
-#else
-	if (!house) {
-		yellowptr = MFCD::Retrieve("BAR3BLU.SHP");
-		redptr = MFCD::Retrieve("BAR3RED.SHP");
-	}
-#endif
 
 /* Change to the six-point font for Text_Print */
 	oldfont = Set_Font(ScoreFontPtr);
@@ -528,55 +458,25 @@ void ScoreClass::Presentation(void)
 
 /* --- Now display the background animation --- */
 	Hide_Mouse();
-#ifdef WIN32
 	Load_Title_Screen(ScreenNames[house], &HidPage, ScorePalette);
 	Increase_Palette_Luminance (ScorePalette , 30, 30, 30, 63);
 	HidPage.Blit(SeenPage);
 	HidPage.Blit(*PseudoSeenBuff);
-#else
-	Animate_Frame(anim, HidPage, 1);
-	HidPage.Blit(SeenPage);
-#endif
 	ScorePalette.Set(FADE_PALETTE_FAST, Call_Back);
-#ifdef WIN32
 	Play_Sample(country4, 255, Options.Normalize_Volume(150));
-#else
-	Play_Sample(country4, 255, Options.Normalize_Volume(60));
-#endif
 
-#ifndef WIN32
-	int frame = 1;
-	StreamLowImpact = true;
-	while (frame < Get_Animation_Frame_Count(anim)) {
-		Animate_Frame(anim, SeenPage, frame++);
-		Call_Back_Delay(2);
-	}
-	StreamLowImpact = false;
-	Call_Back();
-	Close_Animation(anim);
-#endif
 
 	/*
 	** Background's up, so now load various shapes and animations
 	*/
-#ifdef WIN32
 	void const * timeshape = 	  MFCD::Retrieve("TIMEHR.SHP");
 	void const * hiscore1shape = MFCD::Retrieve("HISC1-HR.SHP");
 	void const * hiscore2shape = MFCD::Retrieve("HISC2-HR.SHP");
-#else
-	void const * timeshape = 	  MFCD::Retrieve("TIME.SHP");
-	void const * hiscore1shape = MFCD::Retrieve("HISCORE1.SHP");
-	void const * hiscore2shape = MFCD::Retrieve("HISCORE2.SHP");
-#endif
 	ScoreObjs[0] = new ScoreTimeClass(238, 2, timeshape, 30, 4);
 	ScoreObjs[1] = new ScoreTimeClass(4, 89, hiscore1shape, 10, 4);
 	ScoreObjs[2] = new ScoreTimeClass(4, 180, hiscore2shape, 10, 4);
 
 	/* Now display the stuff */
-#ifdef WIN32
-#else
-	SeenPage.Blit(HidPage);
-#endif
 	Set_Logic_Page(SeenBuff);
 
 
@@ -588,11 +488,7 @@ void ScoreClass::Presentation(void)
 	Alloc_Object(new ScorePrintClass(TXT_SCORE_LEAD, 164, 26, _greenpal));
 	Alloc_Object(new ScorePrintClass(TXT_SCORE_EFFI, 164, 38, _greenpal));
 	Alloc_Object(new ScorePrintClass(TXT_SCORE_TOTA, 164, 50, _greenpal));
-#ifdef WIN32
 	Play_Sample(sfx4, 255, Options.Normalize_Volume(150));
-#else
-	Play_Sample(sfx4, 255, Options.Normalize_Volume(60));
-#endif
 	Call_Back_Delay(13);
 
 	int scorecounter = 0;
@@ -678,11 +574,7 @@ Keyboard->Clear();
 		}
 		Print_Minutes(minutes);
 		Call_Back_Delay(1);
-#ifdef WIN32
 		Play_Sample(Beepy6, 255, Options.Normalize_Volume(100));
-#else
-		Play_Sample(Beepy6, 255, Options.Normalize_Volume(40));
-#endif
 		if ( (i >= 30) && (i >= leadership) && ((i-30) >= economy) ) break;
 //BG		if (Keyboard->Check()) break;
 	}
@@ -713,15 +605,9 @@ Keyboard->Clear();
 	** Show stats on # of units killed
 	*/
 	Set_Logic_Page(SeenBuff);
-#ifdef WIN32
 	Play_Sample(sfx4, 255, Options.Normalize_Volume(150));
-#else
-	Play_Sample(sfx4, 255, Options.Normalize_Volume(60));
-#endif
 	int indx = house;
-#ifdef WIN32
 	indx = 0;
-#endif
 	Alloc_Object(new ScorePrintClass(TXT_SCORE_CASU, _casuax[indx], _casuay[indx], _greenpal));
 	Call_Back_Delay(9);
 	if (house) {
@@ -734,39 +620,16 @@ Keyboard->Clear();
 	Call_Back_Delay(6);
 
 	Set_Font_Palette(_redpal);
-#ifdef WIN32
 		Do_GDI_Graph(yellowptr, redptr, GKilled + CKilled, NKilled, 89);
-#else
-	if (house) {
-		Do_Nod_Casualties_Graph();
-	} else {
-		Do_GDI_Graph(yellowptr, redptr, GKilled + CKilled, NKilled, 89);
-	}
-#endif
 
 	Set_Logic_Page(SeenBuff);
 
 	/*
 	** Print out stats on buildings destroyed
 	*/
-#ifdef WIN32
 	Play_Sample(sfx4, 255, Options.Normalize_Volume(150));
-#else
-	Play_Sample(sfx4, 255, Options.Normalize_Volume(60));
-#endif
-#ifdef WIN32
 		Alloc_Object(new ScorePrintClass(TXT_SCORE_BUIL, 144, 126, _greenpal));
 		Call_Back_Delay(9);
-#else
-	if (!house) {
-		Alloc_Object(new ScorePrintClass(TXT_SCORE_BUIL, 144, 126, _greenpal));
-		Call_Back_Delay(9);
-	} else {
-		Alloc_Object(new ScorePrintClass(TXT_SCORE_BUIL1, 150, 118, _greenpal));
-		Alloc_Object(new ScorePrintClass(TXT_SCORE_BUIL2, 150, 126, _greenpal));
-		Call_Back_Delay(13);
-	}
-#endif
 	if(house) {
 		Alloc_Object(new ScorePrintClass(TXT_SOVIET, _gditxx[indx], _bldggy[indx], _redpal));
 		Alloc_Object(new ScorePrintClass(TXT_ALLIES, _gditxx[indx], _bldgny[indx], _bluepal));
@@ -775,24 +638,12 @@ Keyboard->Clear();
 		Alloc_Object(new ScorePrintClass(TXT_SOVIET, _gditxx[indx], _bldgny[indx], _redpal));
 	}
 	Call_Back_Delay(7);
-#ifdef WIN32
 		Do_GDI_Graph(yellowptr, redptr, GBKilled + CBKilled, NBKilled, 137);
-#else
-	if (house) {
-		Call_Back_Delay(6);
-		Set_Font_Palette(_greenpal);
-		Do_Nod_Buildings_Graph();
-	} else {
-		Do_GDI_Graph(yellowptr, redptr, GBKilled + CBKilled, NBKilled, 137);
-	}
-#endif
 
-#ifdef WIN32
 	// Wait for text printing to complete
 	while (StillUpdating) {
 		Call_Back_Delay(1);
 	}
-#endif
 
 	Keyboard->Clear();
 
@@ -800,11 +651,7 @@ Keyboard->Clear();
 	/*
 	** Hall of fame display and processing
 	*/
-#ifdef WIN32
 	Play_Sample(sfx4, 255, Options.Normalize_Volume(150));
-#else
-	Play_Sample(sfx4, 255, Options.Normalize_Volume(60));
-#endif
 	Alloc_Object(new ScorePrintClass(TXT_SCORE_TOP, 28, 110, _greenpal));
 	Call_Back_Delay(9);
 
@@ -857,19 +704,13 @@ Keyboard->Clear();
 	*/
 	Set_Logic_Page(SeenBuff);
 
-#ifdef WIN32
 	char maststr[NUMFAMENAMES*32];
-#endif
 	char const *pal;
 	for (i = 0; i < NUMFAMENAMES; i++) {
 		pal = hallfame[i].side ? _redpal : _bluepal;
 		Alloc_Object(new ScorePrintClass(hallfame[i].name, HALLFAME_X, HALLFAME_Y + (i*8), pal));
 		if (hallfame[i].score) {
-#ifdef WIN32
 			char *str = maststr + i*32;
-#else
-			char *str = (char *)(HidPage.Get_Buffer()) + i*32;
-#endif
 			sprintf(str, "%d", hallfame[i].score);
 			Alloc_Object(new ScorePrintClass(str, HALLFAME_X+(6*14), HALLFAME_Y + (i*8), pal, BLACK));
 			if (hallfame[i].level < 20) {
@@ -881,12 +722,10 @@ Keyboard->Clear();
 			Call_Back_Delay(13);
 		}
 	}
-#ifdef WIN32
 	// Wait for text printing to complete
 	while (StillUpdating) {
 		Call_Back_Delay(1);
 	}
-#endif
 	/*
 	** If the player's on the hall of fame, have him enter his name now
 	*/
@@ -915,11 +754,7 @@ Keyboard->Clear();
 		ScoreObjs[i] = 0;
 	}
 	BlackPalette.Set(FADE_PALETTE_FAST, NULL);
-#ifdef WIN32
 	VisiblePage.Clear();
-#else
-	SeenPage.Clear();
-#endif
 	Show_Mouse();
 //	Map_Selection();
 //	Scen.ScenVar = SCEN_VAR_A;
@@ -928,18 +763,13 @@ Keyboard->Clear();
 	Theme.Queue_Song(THEME_NONE);
 
 	BlackPalette.Set(FADE_PALETTE_FAST, NULL);
-#ifdef WIN32
 	VisiblePage.Clear();
-#else
-	SeenPage.Clear();
-#endif
 	GamePalette.Set();
 
 	Set_Font(oldfont);
 	FontXSpacing = oldfontxspacing;
 	ControlQ = 0;
 
-#ifdef WIN32
 	delete PseudoSeenBuff;
 #ifdef FIXIT_SCORE_CRASH
 	/*
@@ -948,7 +778,6 @@ Keyboard->Clear();
 	Enable_Uncompressed_Shapes();
 #endif	//FIXIT
 
-#endif
 }
 
 
@@ -1093,11 +922,7 @@ void ScoreClass::Do_Nod_Buildings_Graph(void)
 		Set_Font_Palette(_bluepal);
 		Count_Up_Print( "%d", q, GBKilled, BUILDING_X + 16, BUILDING_Y + 22);
 //BG		if (!Keyboard->Check()) {
-#ifdef WIN32
 			Play_Sample(Beepy6, 255, Options.Normalize_Volume(150));
-#else
-			Play_Sample(Beepy6, 255, Options.Normalize_Volume(60));
-#endif
 			Call_Back_Delay(1);
 //BG		}
 	}
@@ -1126,7 +951,6 @@ void ScoreClass::Do_Nod_Buildings_Graph(void)
 void ScoreClass::Do_GDI_Graph(void const * yellowptr, void const * redptr, int gkilled, int nkilled, int ypos)
 {
 	int i, maxval;
-#ifdef WIN32
 	int xpos = 174;
 	int house = (PlayerPtr->Class->House == HOUSE_USSR || PlayerPtr->Class->House == HOUSE_UKRAINE);		// 0 or 1
 	if(house) {
@@ -1137,9 +961,6 @@ void ScoreClass::Do_GDI_Graph(void const * yellowptr, void const * redptr, int g
 		yellowptr = redptr;
 		redptr = tempptr;
 	}
-#else
-	int xpos = 173;
-#endif
 	int gdikilled = gkilled, nodkilled=nkilled;
 
 	maxval = max(gdikilled, nodkilled);
@@ -1160,73 +981,47 @@ void ScoreClass::Do_GDI_Graph(void const * yellowptr, void const * redptr, int g
 	HidPage.Fill_Rect(0, 0, 124*RESFACTOR, 9*RESFACTOR, TBLACK);
 	CC_Draw_Shape(redptr, 119, 0, 0, WINDOW_MAIN, SHAPE_WIN_REL, 0, 0);
 	Set_Logic_Page(SeenBuff);
-#ifdef WIN32
 	Set_Font_Palette(house ? _redpal : _bluepal);
-#else
-	Set_Font_Palette(_bluepal);
-#endif
 
 	for (i = 1; i <= gdikilled; i++) {
 		if (i != gdikilled) {
-#ifdef WIN32
 			Set_Logic_Page(*PseudoSeenBuff);
 			CC_Draw_Shape(yellowptr, i, xpos*RESFACTOR, ypos*RESFACTOR, WINDOW_MAIN, SHAPE_WIN_REL, 0, 0);
 			Set_Logic_Page(SeenBuff);
-#endif
 			CC_Draw_Shape(yellowptr, i, xpos*RESFACTOR, ypos*RESFACTOR, WINDOW_MAIN, SHAPE_WIN_REL, 0, 0);
 		} else {
 			HidPage.Blit(SeenPage, 0, 0, xpos*RESFACTOR, ypos*RESFACTOR, (3+gdikilled)*RESFACTOR, 8*RESFACTOR);
-#ifdef WIN32
 			HidPage.Blit(*PseudoSeenBuff, 0, 0, xpos*RESFACTOR, ypos*RESFACTOR, (3+gdikilled)*RESFACTOR, 8*RESFACTOR);
-#endif
 		}
 
 		Count_Up_Print("%d", (i*gkilled) / maxval, gkilled, 297, ypos+2);
 //BG		if (!Keyboard->Check()) {
-#ifdef WIN32
 			Play_Sample(Beepy6, 255, Options.Normalize_Volume(150));
-#else
-			Play_Sample(Beepy6, 255, Options.Normalize_Volume(60));
-#endif
 			Call_Back_Delay(2);
 //BG		}
 	}
 	CC_Draw_Shape(yellowptr, gdikilled, xpos*RESFACTOR, ypos*RESFACTOR   , WINDOW_MAIN, SHAPE_WIN_REL, 0, 0);
-#ifdef WIN32
 	Set_Logic_Page(*PseudoSeenBuff);
 	CC_Draw_Shape(yellowptr, gdikilled, xpos*RESFACTOR, ypos*RESFACTOR   , WINDOW_MAIN, SHAPE_WIN_REL, 0, 0);
 	Set_Logic_Page(SeenBuff);
-#endif
 	Count_Up_Print("%d", gkilled, gkilled, 297, ypos+ 2);
 /*BG	if (!Keyboard->Check()) */ Call_Back_Delay(40);
 
-#ifdef WIN32
 	Set_Font_Palette(house ? _bluepal : _redpal);
-#else
-	Set_Font_Palette(_redpal);
-#endif
 	for (i = 1; i <= nodkilled; i++) {
 		if (i != nodkilled) {
-#ifdef WIN32
 			Set_Logic_Page(*PseudoSeenBuff);
 			CC_Draw_Shape(redptr, i, xpos*RESFACTOR, (ypos+12)*RESFACTOR, WINDOW_MAIN, SHAPE_WIN_REL, 0, 0);
 			Set_Logic_Page(SeenBuff);
-#endif
 			CC_Draw_Shape(redptr, i, xpos*RESFACTOR, (ypos+12)*RESFACTOR, WINDOW_MAIN, SHAPE_WIN_REL, 0, 0);
 		} else {
 			HidPage.Blit(SeenPage, 0, 0, xpos*RESFACTOR, (ypos+12)*RESFACTOR, (3+nodkilled)*RESFACTOR, 8*RESFACTOR);
-#ifdef WIN32
 			HidPage.Blit(*PseudoSeenBuff, 0, 0, xpos*RESFACTOR, (ypos+12)*RESFACTOR, (3+nodkilled)*RESFACTOR, 8*RESFACTOR);
-#endif
 		}
 
 		Count_Up_Print("%d", (i*nkilled) / maxval, nkilled, 297, ypos+14);
 //BG		if (!Keyboard->Check()) {
-#ifdef WIN32
 			Play_Sample(Beepy6, 255, Options.Normalize_Volume(150));
-#else
-			Play_Sample(Beepy6, 255, Options.Normalize_Volume(60));
-#endif
 			Call_Back_Delay(2);
 //BG		}
 	}
@@ -1236,11 +1031,9 @@ void ScoreClass::Do_GDI_Graph(void const * yellowptr, void const * redptr, int g
 	/*
 	** Make sure accurate count is printed at end
 	*/
-#ifdef WIN32
 	Set_Logic_Page(*PseudoSeenBuff);
 	CC_Draw_Shape(   redptr, nodkilled, xpos*RESFACTOR, (ypos+12)*RESFACTOR, WINDOW_MAIN, SHAPE_WIN_REL, 0, 0);
 	Set_Logic_Page(SeenBuff);
-#endif
 	CC_Draw_Shape(   redptr, nodkilled, xpos*RESFACTOR, (ypos+12)*RESFACTOR, WINDOW_MAIN, SHAPE_WIN_REL, 0, 0);
 	Count_Up_Print("%d", nkilled, nkilled, 297, ypos+14);
 /*BG	if (!Keyboard->Check()) */ Call_Back_Delay(40);
@@ -1310,11 +1103,7 @@ void ScoreClass::Do_Nod_Casualties_Graph(void)
 			Count_Up_Print("%d", (i*GKilled) / maxval, GKilled, SCORETEXT_X+64, CASUALTY_Y + 14);
 /*BG			if (!Keyboard->Check()) */ Call_Back_Delay(3);
 		}
-#ifdef WIN32
 		Play_Sample(Beepy6, 255, Options.Normalize_Volume(150));
-#else
-		Play_Sample(Beepy6, 255, Options.Normalize_Volume(60));
-#endif
 	}
 //BG	if (Keyboard->Check()) Keyboard->Clear();
 
@@ -1364,11 +1153,7 @@ void ScoreClass::Show_Credits(int house, char const pal[])
 	int credobj,i;
 	int minval,add;
 
-#ifdef WIN32
 	void const * credshape = MFCD::Retrieve(house ? "CREDSUHR.SHP" : "CREDSAHR.SHP");
-#else
-	void const * credshape = MFCD::Retrieve(house ? "CREDSU.SHP" : "CREDSA.SHP");
-#endif
 
 	Alloc_Object(new ScorePrintClass(TXT_SCORE_ENDCRED, _credtx[house], _credty[house], pal));
 	Call_Back_Delay(15);
@@ -1430,9 +1215,7 @@ void ScoreClass::Print_Minutes(int minutes)
 		sprintf(str, Text_String(TXT_SCORE_TIMEFORMAT2), minutes);
 	}
 	SeenPage.Print(str, 275*RESFACTOR, 9*RESFACTOR, TBLACK, TBLACK);
-#ifdef WIN32
 	PseudoSeenBuff->Print(str, 275*RESFACTOR, 9*RESFACTOR, TBLACK, TBLACK);
-#endif
 }
 
 
@@ -1462,9 +1245,7 @@ void ScoreClass::Count_Up_Print(char *str, int percent, int maxval, int xpos, in
 
 	sprintf(destbuf, str, percent <= maxval ? percent : maxval);
 	SeenPage.Print(	destbuf, xpos * RESFACTOR, ypos * RESFACTOR, TBLACK, BLACK);
-#ifdef WIN32
 	PseudoSeenBuff->Print(	destbuf, xpos * RESFACTOR, ypos * RESFACTOR, TBLACK, BLACK);
-#endif
 }
 
 
@@ -1531,9 +1312,7 @@ void ScoreClass::Input_Name(char str[], int xpos, int ypos, char const pal[])
 
 					int xposindex6 = (xpos+(index*6))*RESFACTOR;
 					HidPage.Blit(SeenPage, xposindex6, (ypos-100)*RESFACTOR, xposindex6, ypos*RESFACTOR, 6*RESFACTOR, 6*RESFACTOR);
-		#ifdef WIN32
 					HidPage.Blit(*PseudoSeenBuff, xposindex6, (ypos-100)*RESFACTOR, xposindex6, ypos*RESFACTOR, 6*RESFACTOR, 6*RESFACTOR);
-		#endif
 					HidPage.Blit(HidPage,  xposindex6, (ypos-100)*RESFACTOR, xposindex6, ypos*RESFACTOR, 6*RESFACTOR, 6*RESFACTOR);
 				}
 
@@ -1542,19 +1321,13 @@ void ScoreClass::Input_Name(char str[], int xpos, int ypos, char const pal[])
 				if (ascii >= 'a' && ascii <= 'z') ascii -= ('a' - 'A');
 				if ( (ascii >= '!' && ascii <= KA_TILDA) || ascii == ' ') {
 					HidPage.Blit(SeenPage, (xpos + (index*6))*RESFACTOR, (ypos-100)*RESFACTOR, (xpos + (index*6))*RESFACTOR, ypos*RESFACTOR, 6*RESFACTOR, 6*RESFACTOR);
-		#ifdef WIN32
 					HidPage.Blit(*PseudoSeenBuff, (xpos + (index*6))*RESFACTOR, (ypos-100)*RESFACTOR, (xpos + (index*6))*RESFACTOR, ypos*RESFACTOR, 6*RESFACTOR, 6*RESFACTOR);
-		#endif
 					HidPage.Blit(HidPage, (xpos + (index*6))*RESFACTOR, (ypos-100)*RESFACTOR, (xpos + (index*6))*RESFACTOR, ypos*RESFACTOR, 6*RESFACTOR, 6*RESFACTOR);
 					str[index] = ascii;
 					str[index+1] = 0;
 
 					int objindex;
-#ifdef WIN32
 					Play_Sample(keystrok, 255, Options.Normalize_Volume(150));
-#else
-					Play_Sample(keystrok, 255, Options.Normalize_Volume(105));
-#endif
 					objindex = Alloc_Object(new ScoreScaleClass(str+index, xpos+(index*6), ypos, pal));
 					while (ScoreObjs[objindex]) Call_Back_Delay(1);
 
@@ -1578,16 +1351,12 @@ void Animate_Cursor(int pos, int ypos)
 	// If they moved the cursor, erase old one and force state=0, to make green draw right away
 	if (pos != _lastpos) {
 		HidPage.Blit(SeenPage, (HALLFAME_X + (_lastpos*6))*RESFACTOR, ypos-100*RESFACTOR, (HALLFAME_X + (_lastpos*6))*RESFACTOR, ypos, 6*RESFACTOR, 1*RESFACTOR);
-#ifdef WIN32
 		HidPage.Blit(*PseudoSeenBuff, (HALLFAME_X + (_lastpos*6))*RESFACTOR, ypos-100*RESFACTOR, (HALLFAME_X + (_lastpos*6))*RESFACTOR, ypos, 6*RESFACTOR, 1*RESFACTOR);
-#endif
 		_lastpos = pos;
 		_state = 0;
 	}
 	SeenBuff.Draw_Line((HALLFAME_X + (pos*6))*RESFACTOR, ypos, (HALLFAME_X + (pos*6)+5)*RESFACTOR, ypos, _state ? LTBLUE : TBLACK);
-#ifdef WIN32
 	PseudoSeenBuff->Draw_Line((HALLFAME_X + (pos*6))*RESFACTOR, ypos, (HALLFAME_X + (pos*6)+5)*RESFACTOR, ypos, _state ? LTBLUE : TBLACK);
-#endif
 	/*
 	** Toggle the color of the cursor, green or black, if it's time to do so.
 	*/
@@ -1809,7 +1578,6 @@ void Call_Back_Delay(int time)
 
 void Animate_Score_Objs()
 {
-#ifdef WIN32
 	StillUpdating = false;
 		/*
 		** If we have just received input focus again after running in the background then
@@ -1819,7 +1587,6 @@ void Animate_Score_Objs()
 			AllSurfaces.SurfacesRestored=FALSE;
 			PseudoSeenBuff->Blit(SeenPage);
 		}
-#endif
 	for (int i = 0; i < MAXSCOREOBJS; i++) {
 		if (ScoreObjs[i]) {
 			ScoreObjs[i]->Update();
@@ -1854,10 +1621,8 @@ extern int CopyType;
 void Multi_Score_Presentation(void)
 {
 	char remap[16];
-#ifdef WIN32
 	GraphicBufferClass *pseudoseenbuff = new GraphicBufferClass(320, 200, (void*)NULL);
 	PseudoSeenBuff = new GraphicBufferClass(SeenBuff.Get_Width(),SeenBuff.Get_Height(),(void*)NULL);
-#endif
 
 	int i,k;
 	void *oldfont;
@@ -1875,37 +1640,26 @@ void Multi_Score_Presentation(void)
 	/*
 	** Display the background animation
 	*/
-#ifdef WIN32
 	pseudoseenbuff->Clear();
 	Animate_Frame(anim, *pseudoseenbuff, 1);
 for(int x=0; x<256; x++) memset(&PaletteInterpolationTable[x][0],x,256);
 CopyType = 1;
 	Interpolate_2X_Scale(pseudoseenbuff , &SeenBuff , 0);
-#else
-	Animate_Frame(anim, HidPage, 1);
-	HidPage.Blit(SeenPage);
-#endif
 	ScorePalette.Set(FADE_PALETTE_FAST, Call_Back);
 
 	int frame = 1;
 	while (frame < Get_Animation_Frame_Count(anim)) {
-#ifdef WIN32
 		Animate_Frame(anim, *pseudoseenbuff, frame++);
 		CopyType = 1;
 		Interpolate_2X_Scale(pseudoseenbuff , &SeenBuff , NULL);
 		CopyType = 0;
-#else
-		Animate_Frame(anim, SeenPage, frame++);
-#endif
 		Call_Back_Delay(2);
 	}
 	Close_Animation(anim);
 
-#ifdef WIN32
 	CopyType = 1;
 	Interpolate_2X_Scale(pseudoseenbuff , PseudoSeenBuff , NULL);
 	CopyType = 0;
-#endif
 
 	/* Change to the six-point font for Text_Print */
 	oldfont = Set_Font(ScoreFontPtr);
@@ -1990,9 +1744,7 @@ CopyType = 1;
 	BlackPalette.Set(FADE_PALETTE_FAST, NULL);
 	SeenPage.Clear();
 	GamePalette.Set();
-#ifdef WIN32
 	delete PseudoSeenBuff;
-#endif
 	Set_Font(oldfont);
 	FontXSpacing = oldfontxspacing;
 	ControlQ = 0;

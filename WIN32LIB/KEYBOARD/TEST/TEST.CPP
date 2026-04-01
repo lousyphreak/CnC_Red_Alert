@@ -39,8 +39,6 @@
 
 
 
-#define WIN32
-#define WIN32_LEAN_AND_MEAN
 #include <wwlib32.h>
 #include	<direct.h>
 #include "..\mouse.h"

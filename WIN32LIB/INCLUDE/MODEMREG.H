@@ -17,12 +17,6 @@
 */
 
 
-#ifndef WIN32
-#define WIN32
-#ifndef _WIN32 // Denzil 6/2/98 Watcom 11.0 complains without this check
-#define _WIN32
-#endif // _WIN32
-#endif	//WIN32
 #include "win32_compat.h"
 
 

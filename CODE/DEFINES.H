@@ -70,7 +70,7 @@
 //#define DONGLE
 
 
-// Enable 640x400 VQ movie capability in WIN32 mode
+// Enable 640x400 VQ movie capability in the desktop port
 #define MOVIE640
 
 
@@ -228,12 +228,7 @@
 ** This is the multiplier factor to convert low resution coordinates
 **	into their actual resolution counterparts.
 */
-#ifdef WIN32
 #define RESFACTOR	2
-#else
-//#undef SCENARIO_EDITOR
-#define RESFACTOR 1
-#endif
 
 
 #define SIDEBAR_WID	80

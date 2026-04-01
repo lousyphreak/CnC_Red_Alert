@@ -49,14 +49,12 @@
 
 #include	"function.h"
 #include	"vortex.h"
-#ifdef WIN32
 #include "tcpip.h"
 #include "ccdde.h"
 
 //#include "WOLDEBUG.H"
 
 extern bool SpawnedFromWChat;
-#endif
 
 //#define	SAVE_BLOCK_SIZE	512
 #define	SAVE_BLOCK_SIZE	4096
@@ -950,12 +948,10 @@ bool Load_Game(int id)
 				if (!Force_CD_Available(3)) {	// force Aftermath CD in drive.
    	   		//Prog_End();
 #ifndef FIXIT_VERSION_3			//	WChat eliminated.
-#ifdef WIN32
 if(Special.IsFromWChat || SpawnedFromWChat) {
 	char packet[10] = {"Hello"};
 	Send_Data_To_DDE_Server (packet, strlen(packet), DDEServerClass::DDE_CONNECTION_FAILED);
 }
-#endif
 #endif
 					Emergency_Exit(EXIT_FAILURE);
 		     	}

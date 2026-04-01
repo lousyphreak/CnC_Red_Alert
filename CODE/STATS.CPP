@@ -41,7 +41,6 @@
  * Functions:                                                                                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#ifdef WIN32
 
 #include	"function.h"
 #include "tcpip.h"
@@ -916,4 +915,3 @@ extern void Register_Game_End_Time(void)
 }
 
 
-#endif	//WIN32

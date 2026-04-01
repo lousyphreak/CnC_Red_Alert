@@ -37,7 +37,7 @@ bool bSpecialAftermathScenario(const char* szScenarioDescription)
 }
 #endif
 
-#ifdef WOLAPI_INTEGRATION			//	Now implies also WINSOCK_IPX, WIN32, and FIXIT_CSII must be true
+#ifdef WOLAPI_INTEGRATION			//	Now implies also WINSOCK_IPX and FIXIT_CSII must be true
 
 #include "WOL_GSUP.H"
 #include "FUNCTION.H"

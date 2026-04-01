@@ -775,16 +775,6 @@ void SessionClass::Read_MultiPlayer_Settings (void)
 
 		ini.Get_String("SerialDefaults", "DialMethod", "T", buf, 2);
 
-#ifndef WIN32
-		/*
-		** Ignore any modem name in DOS. This should only be nessasary if the user
-		** previously set up the modem in the windows version.
-		*/
-		if (SerialDefaults.ModemName[0] && SerialDefaults.Port == 1) {
-			SerialDefaults.Port = 0x3F8;
-			SerialDefaults.ModemName[0] = 0;
-		}
-#endif	//WIN32
 
 		// find dial method
 		for (i = 0; i < DIAL_METHODS; i++) {
@@ -1320,7 +1310,6 @@ void SessionClass::Read_Scenario_Descriptions (void)
 	/*
 	**	Fetch any scenario packet lists and apply them first.
 	*/
-#ifdef WIN32
 	{
 		int pkt_count = 0;
 		char **pkt_files = SDL_GlobDirectory(".", "*.PKT", SDL_GLOB_CASEINSENSITIVE, &pkt_count);
@@ -1457,95 +1446,6 @@ void SessionClass::Read_Scenario_Descriptions (void)
 		}
 	}
 
-#else	//WIN32
-
-	char name_buffer[128];
-	char digest_buffer[32];
-
-	{
-		int pkt_count = 0;
-		char **pkt_files = SDL_GlobDirectory(".", "*.PKT", SDL_GLOB_CASEINSENSITIVE, &pkt_count);
-		if (pkt_files) {
-			for (int fi = 0; fi < pkt_count; fi++) {
-				CCFileClass file(pkt_files[fi]);
-				INIClass ini;
-				ini.Load(file);
-				int count = ini.Entry_Count("Missions");
-				for (int index = 0; index < count; index++) {
-					char const * fname = ini.Get_Entry("Missions", index);
-					char buffer[128];
-					ini.Get_String("Missions", fname, "", buffer, sizeof(buffer));
-#ifdef FIXIT_CSII
-					bool official = Is_Mission_126x126( (char *)fname);
-					if (!official) {
-						official = !Is_Mission_Aftermath((char *)fname);
-					}
-					Scenarios.Add(new MultiMission(fname, buffer, NULL, official,
-											Is_Mission_Counterstrike ((char*)fname)));
-#else
-					Scenarios.Add(new MultiMission(fname, buffer, NULL, true,
-										Is_Mission_Counterstrike ((char*)fname)));
-#endif
-				}
-			}
-			SDL_free(pkt_files);
-		}
-	}
-
-
-	/*
-	** Scan the current directory for any loose .MPR files and build the appropriate entries
-	**  into the scenario list list
-	*/
-	{
-		int mpr_count = 0;
-		char **mpr_files = SDL_GlobDirectory(".", "*.MPR", SDL_GLOB_CASEINSENSITIVE, &mpr_count);
-		if (mpr_files) {
-			for (int fi = 0; fi < mpr_count; fi++) {
-				CCFileClass file(mpr_files[fi]);
-				INIClass ini;
-				ini.Load(file);
-				ini.Get_String ("Basic", "Name", "No Name", name_buffer, sizeof (name_buffer) );
-				ini.Get_String ("Digest", "1", "No Digest", digest_buffer, sizeof (digest_buffer) );
-				bool official = ini.Get_Bool("Basic", "Official", false);
-				Scenarios.Add (new MultiMission (mpr_files[fi], name_buffer, digest_buffer, official, false ));
-			}
-			SDL_free(mpr_files);
-		}
-	}
-
-  #ifdef FIXIT_CSII
-	/*
-	**	Fetch the Counterstrike multiplayer scenario packet data.
-	** Load the scenarios regardless of whether counterstrike's installed,
-	** and at the point of hosting a network game, enable the counterstrike
-	** maps only if they have CS installed.  If they don't, then the maps
-	** are available as a guest, but not as a host, which fixes a multitude
-	** of problems without obviously giving the maps away to non-CS owners.
-	*/
-//	if (Is_Counterstrike_Installed()) {
-		CCFileClass file2("CSTRIKE.PKT");
-		if (file2.Is_Available()) {
-			INIClass ini;
-			ini.Load(file2);
-			int count = ini.Entry_Count("Missions");
-			for (int index = 0; index < count; index++) {
-				char const * fname = ini.Get_Entry("Missions", index);
-				char buffer[128];
-				ini.Get_String("Missions", fname, "", buffer, sizeof(buffer));
-				bool official = Is_Mission_126x126( (char *)fname);
-				if (!official) {
-					official = !Is_Mission_Aftermath((char *)fname);
-				}
-
-				Scenarios.Add(new MultiMission(fname, buffer, NULL, official,
-										Is_Mission_Counterstrike ((char*)fname)));
-			}
-		}
-//	}
-  #endif
-
-#endif	//WIN32
 }
 
 

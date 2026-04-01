@@ -51,14 +51,9 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "FUNCTION.H"
-#ifdef WIN32
 #include "WINCOMM.H"
 #include "MODEMREG.H"
 extern ModemRegistryEntryClass *ModemRegistry;
-#endif	//WIN32
-#ifndef WIN32
-#include <i86.h>
-#endif
 
 
 // Turn off "expression is not meaningful".
@@ -122,11 +117,7 @@ NullModemClass::NullModemClass (int numsend, int numreceive, int maxlen,
 	/*------------------------------------------------------------------------
 	Init Port to NULL; we haven't opened Greenleaf yet.
 	------------------------------------------------------------------------*/
-#ifdef WIN32
 	PortHandle = NULL;
-#else	//WIN32
-	Port = NULL;
-#endif	//WIN32
 
 	Connection = NULL;
 
@@ -215,11 +206,7 @@ NullModemClass::~NullModemClass ()
  *=========================================================================*/
 int NullModemClass::Init (int port, int irq, char *dev_name, int baud, char parity, int wordlen, int stopbits, int flowcontrol)
 {
-#ifndef WIN32
-	int com;
-#endif
 
-#ifdef WIN32
 
 	/*
 	** Get rid of the 'no reference to' warning
@@ -236,23 +223,6 @@ int NullModemClass::Init (int port, int irq, char *dev_name, int baud, char pari
 
 	if (!Connection) {
 
-#else	//WIN32
-
-	int irqnum;
-	int address;
-	int status;
-
-	/*
-	** Get rid of the 'no reference to' warning
-	*/
-	dev_name = dev_name;
-
-	if (Port) {
-		PortClose(Port);
-		Port = NULL;
-	}else {
-
-#endif	//WIN32
 
 	/*------------------------------------------------------------------------
 	Init our Connection
@@ -285,31 +255,7 @@ int NullModemClass::Init (int port, int irq, char *dev_name, int baud, char pari
 	/*------------------------------------------------------------------------
 	This call allocates all necessary queue buffers
 	------------------------------------------------------------------------*/
-#ifndef WIN32
-	switch (port) {
-		case 0x3f8:
-			com = COM1;
-			break;
 
-		case 0x2f8:
-			com = COM2;
-			break;
-
-		case 0x3e8:
-			com = COM3;
-			break;
-
-		case 0x2e8:
-			com = COM4;
-			break;
-
-		default:
-			com = COM5;
-			break;
-	}
-#endif
-
-#ifdef WIN32
 	int	i;
 
 	/*
@@ -401,55 +347,6 @@ int NullModemClass::Init (int port, int irq, char *dev_name, int baud, char pari
 
 	Connection->Init (PortHandle);
 
-#else	//WIN32
-
-	status = FastGetPortHardware( com, &irqnum, &address );
-	if (status == ASSUCCESS) {
-		if (port != address || irq != irqnum) {
-
-			status = FastSetPortHardware( com, irq, port );
-
-			if (status < ASSUCCESS) {
-				Mono_Printf( "Unable to set Com port status %d\n", status );
-				Mono_Printf( "Com port number %d with address %x, irq %d\n",
-					com + 1, port, irq );
-			} else {
-				Mono_Printf( "Changed Com port number %d to address %x, irq %d\n",
-					com + 1, port, irq );
-			}
-		} else {
-			Mono_Printf( "No changes to Com port number %d with address %x, irq %d\n",
-				com + 1, port, irq );
-		}
-	} else {
-		Mono_Printf( "Com port number %d\n", com + 1 );
-	}
-
-	if (status != ASSUCCESS) {
-		Delete_Connection();
-		return(false);
-	}
-
-	/*------------------------------------------------------------------------
-	Open the Greenleaf port
-	------------------------------------------------------------------------*/
-	Port = PortOpenGreenleafFast (com, baud, parity, wordlen, stopbits);
-
-	if (Port->status != ASSUCCESS) {
-		Shutdown();
-		return(false);
-	}
-
-//	UseRtsCts( Port, 1 );			// use RTS CTS hardware flow control
-
-	/*------------------------------------------------------------------------
-	Init the Connection
-	------------------------------------------------------------------------*/
-	Connection->Init(Port);
-	//because Watcom is so stupid
-	flowcontrol = flowcontrol;
-
-#endif	//WIN32
 
 	NumConnections = 1;
 
@@ -567,7 +464,6 @@ int NullModemClass::Init_Send_Queue( void )
 DetectPortType NullModemClass::Detect_Port( SerialSettingsType *settings )
 {
 
-#ifdef WIN32
 
 	static char com_ids[9][5]={
 		"COM1",
@@ -671,84 +567,6 @@ DetectPortType NullModemClass::Detect_Port( SerialSettingsType *settings )
 
 
 
-#else	//WIN32
-
-	int com;
-	int irqnum;
-	int address;
-	int status;
-
-
-	// shutdown previous port
-
-	Shutdown();
-
-	if (settings->IRQ > 0xf) {
-		return( PORT_INVALID );
-	}
-
-	if (settings->IRQ < 2					// 0 timer, 1 keyboard
-		|| settings->IRQ == 6				// floppy disk
-		|| settings->IRQ == 8				// CMOS real-time clock
-		|| settings->IRQ == 0xd				// math coprocessor error
-		|| settings->IRQ == 0xe) {			// hard disk
-		return( PORT_IRQ_INUSE );
-	}
-
-	/*------------------------------------------------------------------------
-	This call allocates all necessary queue buffers
-	------------------------------------------------------------------------*/
-	switch ( settings->Port ) {
-		case 0x3f8:
-			com = COM1;
-			break;
-
-		case 0x2f8:
-			com = COM2;
-			break;
-
-		case 0x3e8:
-			com = COM3;
-			break;
-
-		case 0x2e8:
-			com = COM4;
-			break;
-
-		default:
-			com = COM5;
-			break;
-	}
-
-	status = FastGetPortHardware( com, &irqnum, &address );
-	if (status == ASSUCCESS) {
-		if (settings->Port != address || settings->IRQ != irqnum) {
-
-			status = FastSetPortHardware( com, settings->IRQ, settings->Port );
-
-			if (status < ASSUCCESS) {
-				Mono_Printf( "Unable to set Com port status %d\n", status );
-				Mono_Printf( "Com port number %d with address %x, irq %d\n",
-					com + 1, settings->Port, settings->IRQ );
-			} else {
-				Mono_Printf( "Changed Com port number %d to address %x, irq %d\n",
-					com + 1, settings->Port, settings->IRQ );
-			}
-		} else {
-			Mono_Printf( "No changes to Com port number %d with address %x, irq %d\n",
-				com + 1, settings->Port, settings->IRQ );
-		}
-	} else {
-		Mono_Printf( "Com port number %d\n", com + 1 );
-	}
-
-	if (status != ASSUCCESS) {
-		return( PORT_INVALID );
-	}
-
-	return( PORT_VALID );
-
-#endif	//WIN32
 }
 
 
@@ -769,7 +587,6 @@ DetectPortType NullModemClass::Detect_Port( SerialSettingsType *settings )
 void NullModemClass::Shutdown ( void )
 {
 
-#ifdef WIN32
 
 	if (PortHandle && SerialPort) {
 		SerialPort->Serial_Port_Close();
@@ -779,14 +596,6 @@ void NullModemClass::Shutdown ( void )
 		Delete_Connection();
 	}
 
-#else	//WIN32
-	if (Port) {
-		PortClose(Port);
-		Port = NULL;
-		Delete_Connection();
-	}
-
-#endif	//WIN32
 
 }	/* end of Shutdown */
 
@@ -928,60 +737,9 @@ int NullModemClass::Service (void)
 		return( false );
 	}
 
-#ifdef WIN32
 
 	RXCount += SerialPort->Read_From_Serial_Port((unsigned char*)(RXBuf + RXCount), int(RXSize - RXCount) );
 
-#else	//WIN32
-
-	int status;
-	static unsigned long last_time = 0;
-
-	/*------------------------------------------------------------------------
-	First, copy all the bytes we can from the Greenleaf RX buffer to our
-	own buffer.
-	(For Win95, only call GetLineStatus() 60 times a second at most.
-	Otherwise, we don't receive any packets!)
-	------------------------------------------------------------------------*/
-	if ( (TickCount - last_time) > 0) {
-		if ( GetLineStatus( Port ) ) {
-			Mono_Set_Cursor(0,0);
-			ClearLineStatus( Port );
-		}
-		last_time = TickCount;
-	}
-
-	status = SpaceUsedInRXBuffer( Port );
-
-	if ( status < ASSUCCESS) {
-//		Smart_Printf( "SpaceUsedInRXBuffer status = %d, port status = %d \n", status, Port->status );
-
-		if ( Port->status < ASSUCCESS ) {
-			ClearError( Port );
-		}
-
-	} else if (status > 0) {
-		status = ReadBuffer( Port, RXBuf + RXCount, RXSize - RXCount );
-
-#if (CONN_DEBUG)
-		printf( "ReadBuffer status = %d, port status = %d, count = %d \n", status, Port->status, Port->count );
-#endif
-//			Smart_Printf( "ReadBuffer status = %d, port status = %d, count = %d \n", status, Port->status, Port->count );
-		if (status < ASSUCCESS && status != ASBUFREMPTY) {
-//				Smart_Printf( "ReadBuffer ERRRRRRORRRRRR! \n" );
-		} else {
-			moredata = 1;
-		}
-
-		if ( Port->status < ASSUCCESS ) {
-			ClearError( Port );
-		}
-
-		RXCount += Port->count;
-	}
-
-
-#endif	//WIN32
 
 	// minimum packet size
 
@@ -1445,9 +1203,6 @@ int NullModemClass::Detect_Modem( SerialSettingsType *settings, int reconnect )
 	Show_Mouse();
 
 
-#ifndef WIN32
-	HMWaitForOK( 0, NULL );
-#endif	//WIN32
 
 
 	/*
@@ -1524,9 +1279,7 @@ int NullModemClass::Detect_Modem( SerialSettingsType *settings, int reconnect )
 					delete istr;
 					return( false );
 				}
-#ifdef WIN32
 				error_count++;
-#endif	//WIN32
 				break;
 			}
 
@@ -1535,7 +1288,6 @@ int NullModemClass::Detect_Modem( SerialSettingsType *settings, int reconnect )
 		}
 	}
 
-#ifdef WIN32
 
 	if (settings->Port == 1 && ModemRegistry) {
 		/*
@@ -1615,7 +1367,6 @@ int NullModemClass::Detect_Modem( SerialSettingsType *settings, int reconnect )
 		}
 	}
 
-#endif	//WIN32
 
 
 	/*
@@ -1673,9 +1424,6 @@ DialStatusType NullModemClass::Dial_Modem( char *string, DialMethodType method, 
 	Dialog variables
 	------------------------------------------------------------------------*/
 	bool process = true;						// process while true
-#ifndef WIN32
-	int status;
-#endif	//WIN32
 	int delay;
 	DialStatusType dialstatus;
 
@@ -1740,7 +1488,6 @@ DialStatusType NullModemClass::Dial_Modem( char *string, DialMethodType method, 
 	/*
 	** Start waiting for connection response
 	*/
-#ifdef WIN32
 	SerialPort->Set_Modem_Dial_Type((WinCommDialMethodType) method);
 	/*
 	** Clear out any old modem results that might be hanging around
@@ -1751,11 +1498,6 @@ DialStatusType NullModemClass::Dial_Modem( char *string, DialMethodType method, 
 	*/
 	SerialPort->Dial_Modem(string);
 
-#else	//WIN32
-	HMSetDialingMethod( Port, (int)method );
-	status = HMDial( Port, string );
-
-#endif	//WIN32
 
 
 	/*
@@ -1770,7 +1512,6 @@ DialStatusType NullModemClass::Dial_Modem( char *string, DialMethodType method, 
 	process = true;
 	delay = ModemWaitCarrier;
 	while (process) {
-#ifdef WIN32
 		/*
 		** If we have just received input focus again after running in the background then
 		** we need to redraw.
@@ -1781,9 +1522,6 @@ DialStatusType NullModemClass::Dial_Modem( char *string, DialMethodType method, 
 		}
 
 		delay = SerialPort->Get_Modem_Result(delay, buffer, 81);
-#else	//WIN32
-		delay = HMInputLine( Port, delay, buffer, 81 );
-#endif	//WIN32
 
 		/*.....................................................................
 		Process input
@@ -1877,9 +1615,6 @@ DialStatusType NullModemClass::Answer_Modem( int reconnect )
 	------------------------------------------------------------------------*/
 	RedrawType display = REDRAW_ALL;		// redraw level
 	bool process = true;						// process while true
-#ifndef WIN32
-	int status;
-#endif	//WIN32
 	int delay;
 	DialStatusType dialstatus;
 	bool ring = false;
@@ -1942,7 +1677,6 @@ DialStatusType NullModemClass::Answer_Modem( int reconnect )
 	process = true;
 	delay = 60000;
 	while (process) {
-#ifdef WIN32
 		/*
 		** If we have just received input focus again after running in the background then
 		** we need to redraw.
@@ -1951,7 +1685,6 @@ DialStatusType NullModemClass::Answer_Modem( int reconnect )
 			AllSurfaces.SurfacesRestored=FALSE;
 			display=REDRAW_ALL;
 		}
-#endif	//WIN32
 
 		/*.....................................................................
 		Refresh display if needed
@@ -1985,11 +1718,7 @@ DialStatusType NullModemClass::Answer_Modem( int reconnect )
 			display = REDRAW_NONE;
 		}
 
-#ifdef WIN32
 		delay = SerialPort->Get_Modem_Result(delay, comm_buffer, 81);
-#else	//WIN32
-		delay = HMInputLine( Port, delay, comm_buffer, 81 );
-#endif	//WIN32
 
 
 		/*.....................................................................
@@ -2023,13 +1752,7 @@ DialStatusType NullModemClass::Answer_Modem( int reconnect )
 				x = (SeenBuff.Get_Width() - width) / 2;
 				y = (SeenBuff.Get_Height() - height) / 2;
 
-#ifdef WIN32
 				SerialPort->Write_To_Serial_Port ((unsigned char*)"ATA\r", strlen("ATA\r"));
-#else	//WIN32
-				PortKillTime( Port, 100 );
-				HMWaitForOK( 0, NULL );
-				status = HMAnswer( Port );
-#endif	//WIN32
 
 				ring = true;
 				delay = ModemWaitCarrier;
@@ -2052,7 +1775,6 @@ DialStatusType NullModemClass::Answer_Modem( int reconnect )
 			}
 		}
 
-#ifdef WIN32
 
 		if (delay <= 0) {
 			if (ring) {
@@ -2068,16 +1790,6 @@ DialStatusType NullModemClass::Answer_Modem( int reconnect )
 				delay = 60000;
 			}
 		}
-#else	//WIN32
-
-		if (delay <= 0) {
-			if (ring) {
-				process = false;
-			} else {
-				delay = 60000;
-			}
-		}
-#endif	//WIN32
 
 	}
 
@@ -2126,16 +1838,9 @@ int NullModemClass::Hangup_Modem( void )
 	/*
 	** Toggle DTR low then high
 	*/
-#ifdef WIN32
 	SerialPort->Set_Serial_DTR(FALSE);
 	Delay(3200/60);
 	SerialPort->Set_Serial_DTR(TRUE);
-#else	//WIN32
-
-	SetDtr( Port, 0 );
-	PortKillTime( Port, 3200 );
-	SetDtr( Port, 1 );
-#endif	//WIN32
 
 	status = Send_Modem_Command( "AT", '\r', buffer, 81, DEFAULT_TIMEOUT, 1 );
 
@@ -2146,11 +1851,7 @@ int NullModemClass::Hangup_Modem( void )
 
 	delay = ModemGuardTime;
 	while ( delay > 0 ) {
-#ifdef WIN32
 		delay = SerialPort->Get_Modem_Result(delay, buffer, 81);
-#else	//WIN32
-		delay = HMInputLine( Port, delay, buffer, 81 );
-#endif	//WIN32
 	}
 
 	/*
@@ -2161,20 +1862,12 @@ int NullModemClass::Hangup_Modem( void )
 	escape[2] = ModemEscapeCode;
 	escape[3] = 0;
 
-#ifdef WIN32
 	SerialPort->Write_To_Serial_Port((unsigned char*)escape, 3);
-#else	//WIN32
-	status = HMSendStringNoWait( Port, escape, -1 );
-#endif	//WIN32
 
 
 	delay = ModemGuardTime;
 	while ( delay > 0 ) {
-#ifdef WIN32
 		delay = SerialPort->Get_Modem_Result(delay, buffer, 81);
-#else	//WIN32
-		delay = HMInputLine( Port, delay, buffer, 81 );
-#endif	//WIN32
 
 		if ( strncmp( buffer, "OK", 2 ) == 0 ) {
 			break;
@@ -2224,11 +1917,7 @@ int NullModemClass::Hangup_Modem( void )
  *=============================================================================================*/
 void NullModemClass::Setup_Modem_Echo( void ( *func )( char c) )
 {
-#ifdef WIN32
 	SerialPort->Set_Echo_Function(func);
-#else	//WIN32
-	HMSetUpEchoRoutine( func );
-#endif	//WIN32
 
 }	/* end of Setup_Modem_Echo */
 
@@ -2250,11 +1939,7 @@ void NullModemClass::Setup_Modem_Echo( void ( *func )( char c) )
 void NullModemClass::Remove_Modem_Echo( void )
 {
 //	Smart_Printf( "Remove Echo modem code\n" );
-#ifdef WIN32
 	SerialPort->Set_Echo_Function(NULL);
-#else	//WIN32
-	HMSetUpEchoRoutine( NULL );
-#endif	//WIN32
 
 }	/* end of Remove_Modem_Echo */
 
@@ -2347,18 +2032,10 @@ int NullModemClass::Abort_Modem( PORT * )
 	switch ( Input ) {
 		case (KN_ESC):
 		case (BUTTON_CANCEL | KN_BUTTON):
-#ifdef WIN32
 			return( COMMUSERABORT );
-#else	//WIN32
-			return( ASUSERABORT );
-#endif	//WIN32
 	}
 
-#ifdef WIN32
 	return( COMMSUCCESS );
-#else	//WIN32
-	return( ASSUCCESS );
-#endif	//WIN32
 
 }	/* end of Abort_Modem */
 
@@ -2380,18 +2057,9 @@ int NullModemClass::Abort_Modem( PORT * )
 void NullModemClass::Setup_Abort_Modem( void )
 {
 
-#ifdef WIN32
 
 	SerialPort->Set_Abort_Function((int(*)(void))Abort_Modem);
 
-#else	//WIN32
-	/*
-	** save off original abort modem function to later restore
-	*/
-	OrigAbortModemFunc = _AbortModemFunctionPtr;
-	HMSetUpAbortKey( ESC );
-	SetAbortModemFunctionPtr( Abort_Modem );
-#endif	//WIN32
 
 }	/* end of Setup_Abort_Modem */
 
@@ -2413,18 +2081,8 @@ void NullModemClass::Setup_Abort_Modem( void )
 void NullModemClass::Remove_Abort_Modem( void )
 {
 
-#ifdef WIN32
 	SerialPort->Set_Abort_Function(NULL);
 
-#else	//WIN32
-
-	HMSetUpAbortKey( NOKEY );
-
-	/*
-	** Restore the original abort modem function
-	*/
-	_AbortModemFunctionPtr = OrigAbortModemFunc;
-#endif	//WIN32
 
 }	/* end of Remove_Abort_Modem */
 
@@ -2447,21 +2105,10 @@ void NullModemClass::Remove_Abort_Modem( void )
  *=============================================================================================*/
 int NullModemClass::Change_IRQ_Priority( int irq )
 {
-#ifdef WIN32
 
 	irq = irq;
 	return ( COMMSUCCESS );
 
-#else	//WIN32
-
-	if (irq != OldIRQPri) {
-		OldIRQPri = irq;
-		return( Change8259Priority( irq ) );
-	} else {
-		return( ASSUCCESS );
-	}
-
-#endif	//WIN32
 
 }	/* end of Change_IRQ_Priority */
 
@@ -2487,11 +2134,7 @@ int NullModemClass::Get_Modem_Status( void )
 	int status;
 	char buffer[81];
 
-#ifdef WIN32
 	modemstatus = SerialPort->Get_Modem_Status();
-#else	//WIN32
-	modemstatus = GetModemStatus( Port );
-#endif	//WIN32
 
 	status = Send_Modem_Command( "AT", '\r', buffer, 81, DEFAULT_TIMEOUT, 1 );
 
@@ -2526,56 +2169,7 @@ int NullModemClass::Get_Modem_Status( void )
 int NullModemClass::Send_Modem_Command( char *command, char terminator, char *buffer, int buflen, int delay, int retries )
 {
 
-#ifdef WIN32
 	return (SerialPort->Send_Command_To_Modem(command, terminator, buffer, buflen, delay, retries));
-#else	//WIN32
-
-	int status, tmpdelay, retry;
-	char tempbuf[81];
-
-
-	*buffer = 0;
-
-	for ( retry = 0; retry < retries; retry++ ) {
-
-		PortKillTime( Port, 100 );
-
-		status = HMSendStringNoWait( Port, command, terminator );
-
-
-		if (status < ASSUCCESS) {
-			return( status );
-		}
-
-		tmpdelay = delay;
-		while ( tmpdelay > 0 ) {
-
-			tmpdelay = HMInputLine( Port, tmpdelay, tempbuf, 81 );
-
-			if ( strcmp( tempbuf, "OK" ) == 0 ) {
-				return( MODEM_CMD_OK );
-			} else if ( strcmp( tempbuf, "0" ) == 0 ) {
-				return( MODEM_CMD_0 );
-			} else if ( strcmp( tempbuf, "ERROR" ) == 0 ) {
-				return( MODEM_CMD_ERROR );
-			} else if ( tempbuf[0] != 0 ) {
-				strncpy( buffer, tempbuf, buflen );
-			}
-		}
-
-		PortKillTime( Port, 100 );
-
-		/*
-		**	Send and extra return to help clear out any problems with the modem (if any).
-		*/
-		HMWaitForOK( 300, NULL );
-		status = HMSendString( Port, "" );
-		HMWaitForOK( 0, NULL );
-	}
-
-	return( tmpdelay );
-
-#endif	//WIN32
 }
 
 

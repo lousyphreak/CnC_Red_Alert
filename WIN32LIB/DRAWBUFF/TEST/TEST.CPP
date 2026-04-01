@@ -53,8 +53,6 @@
 
 
 
-#define WIN32
-#define WIN32
 #include "win32_compat.h"
 #include "..\gbuffer.h"
 #include <ddraw.h>
