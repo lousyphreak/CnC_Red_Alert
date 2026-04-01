@@ -50,6 +50,9 @@ void ensure_renderer(RAWindow* window, int width, int height)
 
     if (!g_renderer) {
         g_renderer = SDL_CreateRenderer(window->sdl_window, nullptr);
+        if (g_renderer) {
+            SDL_SetRenderVSync(g_renderer, 1);
+        }
     }
 
     if (!g_renderer) {

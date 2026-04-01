@@ -939,13 +939,6 @@ static void Pump_Sound_Service(void)
 
 static DWORD WINAPI Sound_Thread(LPVOID)
 {
-	SoundThreadActive = TRUE;
-
-	while (SoundThreadShouldRun) {
-		Pump_Sound_Service();
-		Sleep(1000 / MAINTENANCE_RATE);
-	}
-
 	SoundThreadActive = FALSE;
 	return (0);
 }
@@ -953,37 +946,20 @@ static DWORD WINAPI Sound_Thread(LPVOID)
 
 static BOOL Start_Sound_Thread(void)
 {
-	DWORD thread_id = 0;
-
-	if (SoundThreadHandle != NULL) {
-		return (TRUE);
-	}
-
-	SoundThreadShouldRun = TRUE;
-	SoundThreadHandle = CreateThread(NULL, 0, Sound_Thread, NULL, 0, &thread_id);
-	if (SoundThreadHandle == NULL) {
-		SoundThreadShouldRun = FALSE;
-		return (FALSE);
-	}
-
-	SetThreadPriority(SoundThreadHandle, THREAD_PRIORITY_TIME_CRITICAL);
+	SoundThreadShouldRun = FALSE;
+	SoundThreadActive = FALSE;
+	SoundThreadHandle = NULL;
+	Pump_Sound_Service();
 	return (TRUE);
 }
 
 
 static void Stop_Sound_Thread(void)
 {
-	if (SoundThreadHandle == NULL) {
-		SoundThreadActive = FALSE;
-		SoundThreadShouldRun = FALSE;
-		return;
-	}
-
 	SoundThreadShouldRun = FALSE;
-	WaitForSingleObject(SoundThreadHandle, INFINITE);
-	CloseHandle(SoundThreadHandle);
-	SoundThreadHandle = NULL;
 	SoundThreadActive = FALSE;
+	SoundThreadHandle = NULL;
+	Pump_Sound_Service();
 }
 
 

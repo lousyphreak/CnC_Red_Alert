@@ -313,6 +313,9 @@ void PaletteClass::Set(int time, void (* callback)(void)) const
 			if (callback) {
 				callback();
 			}
+			if (timer == holdtime) {
+				Sleep(1);
+			}
 		}
 	}
 

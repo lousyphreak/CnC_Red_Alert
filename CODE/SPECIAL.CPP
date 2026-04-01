@@ -204,6 +204,9 @@ void Special_Dialog(bool simple)
 				}
 				break;
 		}
+		if (process && Session.Type == GAME_NORMAL) {
+			Sleep(16);
+		}
 	}
 
 	if (!simple) {
@@ -575,6 +578,9 @@ int Fetch_Difficulty(void)
 
 			default:
 				break;
+		}
+		if (process) {
+			Sleep(16);
 		}
 	}
 

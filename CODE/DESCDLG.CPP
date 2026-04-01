@@ -158,6 +158,8 @@ void DescriptionClass::Process(char * string)
 			default:
 				break;
 		}
+		if (process) {
+			Sleep(16);
+		}
 	}
 }
-

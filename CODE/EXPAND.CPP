@@ -522,6 +522,9 @@ bool Expansion_Dialog(void)
 			default:
 				break;
 		}
+		if (process) {
+			Sleep(16);
+		}
 	}
 
 	/*

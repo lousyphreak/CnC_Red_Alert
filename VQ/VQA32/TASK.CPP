@@ -60,6 +60,7 @@
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
+#include <SDL3/SDL_timer.h>
 #include "VQAPLAYP.H"
 
 
@@ -283,11 +284,13 @@ long VQA_Play(VQAHandle *vqa, long mode)
 			/* Load, Draw, Load, Draw, Load, Draw ... */
 			while ((vqabuf->Flags & (VQADATF_DDONE|VQADATF_LDONE))
 					!= (VQADATF_DDONE|VQADATF_LDONE)) {
+				bool made_progress = false;
 
 				/* Load a frame */
 				if (!(vqabuf->Flags & VQADATF_LDONE)) {
 					if ((rc = VQA_LoadFrame(vqa)) == 0) {
 						vqabuf->LoadedFrames++;
+						made_progress = true;
 					}
 					else if ((rc != VQAERR_NOBUFFER) && (rc != VQAERR_SLEEPING)) {
 						vqabuf->Flags |= VQADATF_LDONE;
@@ -299,6 +302,7 @@ long VQA_Play(VQAHandle *vqa, long mode)
 				if ((config->DrawFlags & VQACFGF_NODRAW) == 0) {
 					if ((rc = (*(vqabuf->Draw_Frame))(vqa)) == 0) {
 						vqabuf->DrawnFrames++;
+						made_progress = true;
 
 						if (User_Update(vqa)) {
 							vqabuf->Flags |= (VQADATF_DDONE|VQADATF_LDONE);
@@ -327,6 +331,10 @@ long VQA_Play(VQAHandle *vqa, long mode)
 
 				if (mode == VQAMODE_WALK) {
 					break;
+				}
+
+				if (!made_progress && rc != VQAERR_EOF) {
+					SDL_Delay(1);
 				}
 				#if(VQASTANDALONE)
 				else {

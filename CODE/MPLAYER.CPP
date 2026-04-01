@@ -428,6 +428,9 @@ GameType Select_MPlayer_Game (void)
 
 			pressed = false;
 		}
+		if (process) {
+			Sleep(16);
+		}
 	}
 	return(retval);
 
@@ -855,6 +858,9 @@ int Surrender_Dialog(int text)
 			default:
 				break;
 		}
+		if (process) {
+			Sleep(16);
+		}
 	}
 
 	//------------------------------------------------------------------------
@@ -1045,6 +1051,9 @@ int Abort_Dialog(void)
 
 			default:
 				break;
+		}
+		if (process) {
+			Sleep(16);
 		}
 	}
 

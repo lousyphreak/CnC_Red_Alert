@@ -424,6 +424,9 @@ int Do_Menu(char const ** strings, bool )
 		Call_Back();
 		selection = Check_Menu(0, strings, NULL, 0xFFL, 0);
 		if (UnknownKey != 0 || UnknownKey == KN_ESC || UnknownKey==KN_LMOUSE || UnknownKey==KN_RMOUSE) break;
+		if (selection == -1) {
+			Sleep(16);
+		}
 	}
 	Keyboard->Clear();
 	Hide_Mouse();
@@ -968,6 +971,10 @@ int Main_Menu(unsigned long )
 
 			default:
 				break;
+		}
+
+		if (process) {
+			Sleep(16);
 		}
 	}
 

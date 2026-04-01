@@ -574,6 +574,9 @@ void GameOptionsClass::Process(void)
 			buttonsel[curbutton-1]->Turn_Off();
 			buttonsel[curbutton-1]->Flag_To_Redraw();
 		}
+		if (process && (Session.Type == GAME_NORMAL || Session.Type == GAME_SKIRMISH)) {
+			Sleep(16);
+		}
 	}
 
 	/*

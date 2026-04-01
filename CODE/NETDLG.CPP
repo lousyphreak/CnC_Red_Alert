@@ -2261,7 +2261,9 @@ static int Net_Join_Dialog(void)
 							sizeof(GlobalPacketType), 0, &Session.BridgeNet);
 					}
 
-					while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) ;
+					while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+						Sleep(1);
+					}
 
 					//............................................................
 					// exit the dialog
@@ -2506,7 +2508,9 @@ static int Net_Join_Dialog(void)
 							Session.GPacket.Command = NET_READY_TO_GO;
 							Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 								1, &Session.HostAddress);
-							while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0);
+							while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+								Sleep(1);
+							}
 							ready_packet_was_sent = true;
 
 							if (!Force_CD_Available (RequiredCD)){
@@ -2548,7 +2552,9 @@ static int Net_Join_Dialog(void)
 						Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 							1, &Session.HostAddress);
 
-						while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0);
+						while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+							Sleep(1);
+						}
 					}
 				} else {
 #ifndef FIXIT_VERSION_3			//	Removed restriction on downloading official maps.
@@ -2857,6 +2863,9 @@ static int Net_Join_Dialog(void)
 		//	so Call_Back() doesn't intercept global messages from me!
 		//.....................................................................
 		Call_Back();
+		if (process) {
+			Sleep(16);
+		}
 
 	}	// end of while
 
@@ -2899,7 +2908,9 @@ static int Net_Join_Dialog(void)
 					0, &Session.BridgeNet);
 			}
 
-			while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) ;
+			while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+				Sleep(1);
+			}
 
 			rc = -1;
 
@@ -2923,6 +2934,7 @@ static int Net_Join_Dialog(void)
 		starttime = TickCount;
 		while (TickCount - starttime < i) {
 			Ipx.Service();
+			Sleep(1);
 		}
 	}
 
@@ -3632,7 +3644,9 @@ static JoinEventType Get_Join_Responses(JoinStateType *joinstate, ListClass *gam
 					0, &Session.BridgeNet);
 			}
 
-			while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) ;
+			while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+				Sleep(1);
+			}
 
 			Session.GameName[0] = 0;
 
@@ -4685,6 +4699,7 @@ static int Net_New_Dialog(void)
 				i = max((int)(Ipx.Global_Response_Time() * 2), 60);
 				while (TickCount - ok_timer < i) {
 					Ipx.Service();
+					Sleep(1);
 				}
 
 				//...............................................................
@@ -4723,7 +4738,9 @@ static int Net_New_Dialog(void)
 					sizeof (GlobalPacketType), 0, NULL);
 				Ipx.Send_Global_Message (&Session.GPacket,
 					sizeof (GlobalPacketType), 0, NULL);
-				while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) ;
+				while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+					Sleep(1);
+				}
 
 				//...............................................................
 				//	Broadcast my sign-off over a bridged network if there is one
@@ -4734,7 +4751,9 @@ static int Net_New_Dialog(void)
 					Ipx.Send_Global_Message (&Session.GPacket,
 						sizeof(GlobalPacketType), 0, &Session.BridgeNet);
 				}
-				while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) ;
+				while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+					Sleep(1);
+				}
 
 				//...............................................................
 				//	And now, just be absolutely sure, send my sign-off to each
@@ -4750,7 +4769,9 @@ static int Net_New_Dialog(void)
 						sizeof(GlobalPacketType), 1, &(Session.Players[i]->Address));
 					Ipx.Service();
 				}
-				while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) ;
+				while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+					Sleep(1);
+				}
 				Session.GameName[0] = 0;
 				process = false;
 				rc = false;
@@ -4987,6 +5008,9 @@ static int Net_New_Dialog(void)
 		//	so Call_Back() doesn't intercept global messages from me!
 		//.....................................................................
 		Call_Back();
+		if (process) {
+			Sleep(16);
+		}
 	}
 
 	//------------------------------------------------------------------------
@@ -5037,6 +5061,7 @@ static int Net_New_Dialog(void)
 		//.....................................................................
 		while (Ipx.Global_Num_Send() > 0) {
 			Ipx.Service();
+			Sleep(1);
 		}
 
 		/*
@@ -5073,6 +5098,7 @@ static int Net_New_Dialog(void)
 					}
 				}
 			}
+			Sleep(1);
 		} while ( num_responses < Session.Players.Count()-1 && response_timer );
 
 #ifdef FIXIT_VERSION_3
@@ -6100,7 +6126,9 @@ static int Net_Fake_New_Dialog(void)
 					sizeof (GlobalPacketType), 0, NULL);
 				Ipx.Send_Global_Message (&Session.GPacket,
 					sizeof (GlobalPacketType), 0, NULL);
-				while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) ;
+				while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+					Sleep(1);
+				}
 
 				//...............................................................
 				//	And now, just be absolutely sure, send my sign-off to each
@@ -6116,7 +6144,9 @@ static int Net_Fake_New_Dialog(void)
 						sizeof(GlobalPacketType), 1, &(Session.Players[i]->Address));
 					Ipx.Service();
 				}
-				while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) ;
+				while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+					Sleep(1);
+				}
 				Session.GameName[0] = 0;
 				process = false;
 				rc = false;
@@ -6149,6 +6179,7 @@ static int Net_Fake_New_Dialog(void)
 					i = MAX(Ipx.Global_Response_Time() * 2, 60*2);
 					while (TickCount - ok_timer < i) {
 						Ipx.Service();
+						Sleep(1);
 					}
 
 					//...............................................................
@@ -6280,7 +6311,9 @@ static int Net_Fake_New_Dialog(void)
 						Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 							0, NULL);
 
-						while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) ;
+						while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+							Sleep(1);
+						}
 
 						Clear_Listbox(&playerlist);
 
@@ -6353,6 +6386,9 @@ static int Net_Fake_New_Dialog(void)
 		//	so Call_Back() doesn't intercept global messages from me!
 		//.....................................................................
 		Call_Back();
+		if (process) {
+			Sleep(16);
+		}
 	}
 
 	//------------------------------------------------------------------------
@@ -6401,6 +6437,7 @@ static int Net_Fake_New_Dialog(void)
 		//.....................................................................
 		while (Ipx.Global_Num_Send() > 0) {
 			Ipx.Service();
+			Sleep(1);
 		}
 
 
@@ -6439,6 +6476,7 @@ static int Net_Fake_New_Dialog(void)
 					}
 				}
 			}
+			Sleep(1);
 		} while ( num_responses < Session.Players.Count()-1 && response_timer );
 
 		WWDebugString ("RA95 - Exited response wait loop.\n");
@@ -6468,6 +6506,7 @@ static int Net_Fake_New_Dialog(void)
 	int starttime = TickCount;
 	while (TickCount - starttime < i) {
 		Ipx.Service();
+		Sleep(1);
 	}
 
 	//------------------------------------------------------------------------
@@ -6914,7 +6953,9 @@ static int Net_Fake_Join_Dialog(void)
 							sizeof(GlobalPacketType), 0, &Session.BridgeNet);
 					}
 
-					while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) ;
+					while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+						Sleep(1);
+					}
 
 					//............................................................
 					// exit the dialog
@@ -7028,7 +7069,9 @@ static int Net_Fake_Join_Dialog(void)
 								Session.GPacket.Command = NET_READY_TO_GO;
 								Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 									1, &Session.HostAddress);
-								while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0);
+								while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+									Sleep(1);
+								}
 								ready_packet_was_sent = true;
 
 								if (!Force_CD_Available (RequiredCD)){
@@ -7080,7 +7123,9 @@ static int Net_Fake_Join_Dialog(void)
 							Session.GPacket.Command = NET_READY_TO_GO;
 							Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 								1, &Session.HostAddress);
-							while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0);
+							while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+								Sleep(1);
+							}
 						}
 					} else {
 #ifndef FIXIT_VERSION_3			//	Removed restriction on downloading official maps.
@@ -7121,7 +7166,9 @@ static int Net_Fake_Join_Dialog(void)
 					Session.GPacket.Command = NET_READY_TO_GO;
 					Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 						1, &Session.HostAddress);
-					while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0);
+					while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+						Sleep(1);
+					}
 				}
 
 				strcpy (Scen.ScenarioName, Session.ScenarioFileName);
@@ -7275,6 +7322,9 @@ static int Net_Fake_Join_Dialog(void)
 		//	so Call_Back() doesn't intercept global messages from me!
 		//.....................................................................
 		Call_Back();
+		if (process) {
+			Sleep(16);
+		}
 
 	}	// end of while
 
@@ -7317,7 +7367,9 @@ static int Net_Fake_Join_Dialog(void)
 					0, &Session.BridgeNet);
 			}
 
-			while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) ;
+			while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+				Sleep(1);
+			}
 
 			rc = -1;
 
@@ -7347,6 +7399,7 @@ static int Net_Fake_Join_Dialog(void)
 		starttime = TickCount;
 		while (TickCount - starttime < i) {
 			Ipx.Service();
+			Sleep(1);
 		}
 	}
 

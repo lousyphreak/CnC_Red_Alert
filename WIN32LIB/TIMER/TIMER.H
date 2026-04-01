@@ -38,6 +38,8 @@
 #define TIMER_H
 
 
+#include <stdint.h>
+
 #include "win32_compat.h"
 
 /*=========================================================================*/
@@ -143,13 +145,14 @@ class WinTimerClass {
 
 	private:
 
-		unsigned		TimerHandle;	//Handle for windows timer event
-		unsigned		Frequency;		//Frequency of our windows timer in ticks per second
+		unsigned		TimerHandle;	// Non-zero while the SDL-backed timer is active.
+		unsigned		Frequency;		// Frequency of our timer in ticks per second.
 
 		unsigned		TrueRate;		//True rate of clock. (only use word)
-		unsigned		SysTicks;		//Tick count of timer.
-		unsigned		UserTicks;		//Tick count of timer.
+		unsigned		SysTicks;		// Cached system tick count.
+		unsigned		UserTicks;		// Cached user tick count.
 		unsigned		UserRate;		//Desired rate of timer.
+		uint64_t		StartTickNanos;
 
 
 };

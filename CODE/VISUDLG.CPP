@@ -409,6 +409,8 @@ void VisualControlsClass::Process(void)
 
 			pressed = false;
 		}
+		if (process) {
+			Sleep(16);
+		}
 	}
 }
-

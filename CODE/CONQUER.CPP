@@ -2139,6 +2139,10 @@ static void Sync_Delay(void)
 			}
 			Map.Render();
 		}
+
+		if (FrameTimer) {
+			Sleep(1);
+		}
 	}
 	Color_Cycle();
 	Call_Back();

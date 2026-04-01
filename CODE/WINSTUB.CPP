@@ -173,6 +173,9 @@ void Check_For_Focus_Loss(void)
 				TranslateMessage(&msg);
 				DispatchMessage(&msg);
 			}
+			if (cd.Time()) {
+				Sleep(1);
+			}
 
 		} while (cd.Time());
 		VQA_ResumeAudio();

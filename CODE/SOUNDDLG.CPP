@@ -384,6 +384,9 @@ void SoundControlsClass::Process(void)
 				Options.Set_Repeat(repeatbtn.IsOn);
 				break;
 		}
+		if (process) {
+			Sleep(16);
+		}
 	}
 
 	/*

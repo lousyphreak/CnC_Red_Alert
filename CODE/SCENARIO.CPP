@@ -822,10 +822,14 @@ void Do_Win(void)
 		Map.Render();
 		Fancy_Text_Print(TXT_SCENARIO_WON, x, 90*RESFACTOR, &ColorRemaps[PCOLOR_RED], TBLACK, TPF_CENTER|TPF_VCR|TPF_USE_GRAD_PAL|TPF_DROPSHADOW);
 		CountDownTimer = TIMER_SECOND * 3;
-		while (Is_Speaking()) {};
+		while (Is_Speaking()) {
+			Call_Back();
+			Sleep(1);
+		}
 		Speak(VOX_ACCOMPLISHED);
 		while (CountDownTimer || Is_Speaking()) {
 			Call_Back();
+			Sleep(1);
 		}
 	}
 
@@ -1081,10 +1085,14 @@ void Do_Lose(void)
 	Set_Logic_Page(SeenBuff);
 	Fancy_Text_Print(TXT_SCENARIO_LOST, x, 90*RESFACTOR, &ColorRemaps[PCOLOR_RED], TBLACK, TPF_CENTER|TPF_VCR|TPF_USE_GRAD_PAL|TPF_DROPSHADOW);
 	CountDownTimer = TIMER_SECOND * 3;
-	while (Is_Speaking()) {};
+	while (Is_Speaking()) {
+		Call_Back();
+		Sleep(1);
+	}
 	Speak(VOX_FAIL);
 	while (CountDownTimer || Is_Speaking()) {
 		Call_Back();
+		Sleep(1);
 	}
 
 	/*
@@ -1170,10 +1178,14 @@ void Do_Draw(void)
 	Set_Logic_Page(SeenBuff);
 	Fancy_Text_Print(TXT_WOL_DRAW, x, 90*RESFACTOR, &ColorRemaps[PCOLOR_RED], TBLACK, TPF_CENTER|TPF_VCR|TPF_USE_GRAD_PAL|TPF_DROPSHADOW);
 	CountDownTimer = TIMER_SECOND * 3;
-	while (Is_Speaking()) {};
+	while (Is_Speaking()) {
+		Call_Back();
+		Sleep(1);
+	}
 	Speak(VOX_CONTROL_EXIT);
 	while (CountDownTimer || Is_Speaking()) {
 		Call_Back();
+		Sleep(1);
 	}
 
 	/*
@@ -1236,6 +1248,7 @@ void Do_Restart(void)
 	*/
 	while (timer > 0) {
 		Call_Back();
+		Sleep(1);
 	}
 	Keyboard->Clear();
 
@@ -1534,6 +1547,9 @@ int BGMessageBox(char const * msg, int btn1, int btn2)
 			cd = 5;
 			do {
 				Call_Back();
+				if (!Keyboard->Check() && cd) {
+					Sleep(1);
+				}
 			} while(!Keyboard->Check() && cd);
 		}
 	} while (buffer[++bufindex]);
@@ -1679,6 +1695,9 @@ int BGMessageBox(char const * msg, int btn1, int btn2)
 				}
 
 				pressed = false;
+			}
+			if (process) {
+				Sleep(16);
 			}
 		}
 

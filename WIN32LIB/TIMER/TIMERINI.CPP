@@ -36,8 +36,11 @@
  *   Remove_Timer_System -- Removes the timer system.                      *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+#include <stdint.h>
+
+#include <SDL3/SDL_timer.h>
+
 #include <wwstd.h>
-#include <mmsystem.h>
 #include "timer.H"
 #include <profile.h>
 
@@ -73,8 +76,22 @@ CountDownTimerClass		CountDown(BT_SYSTEM, 0);
 // Prototype for timer callback
 void CALLBACK Timer_Callback ( UINT event_id, UINT res1 , DWORD user, DWORD  res2, DWORD  res3 );
 
-HANDLE	TimerThreadHandle = 0;		//Handle of timer thread
-int		InTimerCallback	= 0;		//Flag to say if we are in a timer callback
+HANDLE	TimerThreadHandle = 0;		// Legacy callback thread handle (unused on SDL path)
+int		InTimerCallback	= 0;		//Flag to say if we are currently in a callback
+
+static unsigned Timer_Ticks_From_Nanos(uint64_t elapsed_nanos, unsigned frequency)
+{
+	if (frequency == 0) {
+		return 0;
+	}
+
+	uint64_t ticks = (elapsed_nanos * static_cast<uint64_t>(frequency)) / SDL_NS_PER_SECOND;
+	if (ticks > static_cast<uint64_t>(0xffffffffu)) {
+		ticks = static_cast<uint64_t>(0xffffffffu);
+	}
+
+	return static_cast<unsigned>(ticks);
+}
 
 /////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////// Code ////////////////////////////////////////
@@ -100,24 +117,18 @@ WinTimerClass::WinTimerClass (UINT freq, BOOL partial)
 {
 	BOOL		success;
 
-	//
-	// Inform windows that we want a higher than normal
-	// timer resolution
-	//
 #ifdef __SW_EP
-	timeBeginPeriod(1000/PROFILE_RATE);
 	Frequency = PROFILE_RATE;
 #else
-	timeBeginPeriod ( 1000/freq );
 	Frequency = freq;
 #endif
-
-
-	//
-	// Install the timer callback event handler
-	//
-	TimerHandle = timeSetEvent ( 1000/freq , 1 , Timer_Callback , 0 , TIME_PERIODIC);
-	TimerSystemOn = success = ( TimerHandle !=0 );
+	TrueRate = Frequency;
+	UserRate = Frequency;
+	SysTicks = 0;
+	UserTicks = 0;
+	StartTickNanos = SDL_GetTicksNS();
+	TimerHandle = 1;
+	TimerSystemOn = success = (Frequency != 0);
 
 	if (success)  {
 		if (!partial) {
@@ -148,13 +159,14 @@ WinTimerClass::WinTimerClass (UINT freq, BOOL partial)
  *=========================================================================*/
 WinTimerClass::~WinTimerClass( void )
 {
-
-	if ( TimerHandle ){
-		timeKillEvent ( TimerHandle );
+	if (WindowsTimer == this) {
+		WindowsTimer = NULL;
 	}
 
+	TimerHandle = 0;
 	TimerSystemOn = FALSE;
-	timeEndPeriod ( 1000/Frequency );
+	TimerThreadHandle = 0;
+	InTimerCallback = 0;
 }
 
 
@@ -183,14 +195,7 @@ WinTimerClass::~WinTimerClass( void )
 
 void CALLBACK Timer_Callback (UINT , UINT , DWORD , DWORD , DWORD)
 {
-	//CONTEXT	context;
-
 	InTimerCallback++;
-	if (!TimerThreadHandle){
-		DuplicateHandle (GetCurrentProcess(), GetCurrentThread() , GetCurrentProcess() ,&TimerThreadHandle , 0 , TRUE , DUPLICATE_SAME_ACCESS);
-	}
-
-
 	if (WindowsTimer) {
 		WindowsTimer->Update_Tick_Count();
 	}
@@ -219,14 +224,8 @@ void CALLBACK Timer_Callback (UINT , UINT , DWORD , DWORD , DWORD)
 
 void WinTimerClass::Update_Tick_Count ( void )
 {
-/*
- *
- *  Increment westwood timers
- *
- */
-	SysTicks++;
-	UserTicks++;
-
+	SysTicks = Get_System_Tick_Count();
+	UserTicks = Get_User_Tick_Count();
 }
 
 
@@ -284,6 +283,7 @@ void WinTimerClass::Update_Tick_Count ( void )
 
 unsigned WinTimerClass::Get_System_Tick_Count ( void )
 {
+	SysTicks = Timer_Ticks_From_Nanos(SDL_GetTicksNS() - StartTickNanos, Frequency);
 	return ( SysTicks );
 }
 
@@ -304,5 +304,6 @@ unsigned WinTimerClass::Get_System_Tick_Count ( void )
 
 unsigned WinTimerClass::Get_User_Tick_Count ( void )
 {
+	UserTicks = Timer_Ticks_From_Nanos(SDL_GetTicksNS() - StartTickNanos, UserRate);
 	return ( UserTicks );
 }

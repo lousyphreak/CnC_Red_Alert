@@ -9,6 +9,81 @@ _Last updated: 2026-04-01_
 - Shared platform/rendering/input/audio support code lives in `WIN32LIB/`.
 - The active compatibility include order puts `SDL3_COMPAT/wrappers/` ahead of `CODE/` and `WIN32LIB/INCLUDE`.
 
+## CPU and threading findings
+
+- On the supported SDL3/Linux port, the extra game-owned threads around startup were legacy compatibility carryovers, not the main cause of high CPU.
+  - The active timer path used to emulate WinMM `timeSetEvent()` behavior through the SDL compat layer, which created a worker thread just to advance Westwood timer state.
+  - `WIN32LIB/AUDIO/SOUNDIO.CPP` also kept a game-owned sound-maintenance thread even though regular sound pumping already happens from `Call_Back()` / `Sound_Callback()`.
+  - Those game-owned helpers were removable on the active path without changing game logic: the timer backend now derives ticks from `SDL_GetTicksNS()` and sound service is pumped on the main thread.
+- Measured runtime behavior after that cleanup showed that the main thread still dominated CPU, so the real hotspot is legacy polling on the main thread.
+  - Important hot paths are `CODE/CONQUER.CPP::Sync_Delay()`, palette fade/countdown waits, speech waits in `CODE/SCENARIO.CPP`, menu/dialog `while (process)` loops, and the focus-loss restore loop in `CODE/WINSTUB.CPP`.
+  - These loops historically assumed short waits and old Win32 timing behavior, so on a modern SDL port they can spin continuously unless they explicitly yield.
+- For the SDL renderer path, remember that SDL3 renderer vsync is **disabled by default**.
+  - `SDL3_COMPAT/wrappers/sdl_draw.cpp` presents from `WWDraw_Flush_Present()`, and `Call_Back()` reaches that path frequently.
+  - If vsync is not explicitly enabled, the front-end can run presents flat out even after timer-thread cleanup.
+- Current measured effect of the cleanup:
+  - before: roughly `~95%` CPU on the main thread with about `8` total `redalert` threads;
+  - after removing the game-owned timer/audio helpers, adding cooperative sleeps to the known busy waits, and enabling renderer vsync: roughly `~77%` CPU on the sampled startup/menu path with about `6` total threads.
+- Practical rule for further CPU reduction work:
+  - do not chase SDL/PipeWire backend threads unless they are actually active CPU users; in the samples they were sleeping in audio/event waits;
+  - focus on front-end/main-thread pacing, especially loops that repeatedly call `Call_Back()` or `commands->Input()` without a meaningful idle wait;
+  - preserve gameplay timing semantics by keeping `FrameTimer`/`WWTickCount` behavior intact and only adding cooperative yielding or present pacing around waits/idle UI loops.
+
+## Movie-player CPU findings
+
+- The VQA movie path is its own timing world and must be checked separately from the game/menu loop.
+  - Startup and briefing movies go through `CODE/CONQUER.CPP::Try_Play_Movie()`, which calls into `VQ/VQA32/TASK.CPP::VQA_Play()`.
+  - The usual `Sync_Delay()` / menu-loop pacing fixes do **not** affect this path.
+- The key movie-specific hotspot was `VQ/VQA32/TASK.CPP::VQA_Play()`.
+  - Its main loop repeatedly calls `VQA_LoadFrame()` and the configured draw function until both load and draw are done.
+  - `VQ/VQA32/DRAWER.CPP::Select_Frame()` returns `VQAERR_NOT_TIME` when playback is ahead of the desired movie frame time.
+  - The drawer and loader also return `VQAERR_SLEEPING` while waiting on `VQADATF_UPDATE` page-flip handoff or while audio blocks are still occupied.
+  - Before the fix, those states caused immediate retries with no yield, so the movie player busy-spun even when it was explicitly waiting for time, the flipper, or audio buffer space.
+- Safe fix for the SDL3 port:
+  - keep the original frame-timing logic;
+  - add a tiny cooperative delay only when a `VQA_Play()` iteration makes no progress (no frame loaded and no frame drawn).
+  - This keeps movie timing behavior intact while turning the wait state into real sleep instead of a hot poll.
+- Validation note:
+  - after adding the `SDL_Delay(1)` yield in `VQ/VQA32/TASK.CPP`, a sampled intro-movie run dropped to about `~6% CPU`, and the main thread showed `hrtimer_nanosleep` instead of running flat out.
+
+## Score-screen CPU findings
+
+- The mission-end score presentation has its own pacing path in `CODE/SCORE.CPP` and needs separate treatment from menus and movies.
+  - `Call_Back_Delay()` is the central helper used by score animations, graph step delays, and the final continue loop.
+  - Before the fix it used countdown timers but still busy-polled: it repeatedly called `Animate_Score_Objs()` until the countdown expired with no `Sleep()`, so the score screen could burn CPU during every decorative delay.
+- The hall-of-fame name-entry path also had an idle polling loop.
+  - `ScoreClass::Input_Name()` repeatedly called `Call_Back()`, `Animate_Score_Objs()`, `Animate_Cursor()`, and keyboard checks while waiting for the next key, again with no yield.
+- Safe fix for this path:
+  - add a tiny `Sleep(1)` while the score countdown is still active in `Call_Back_Delay()`;
+  - add a matching idle `Sleep(1)` in `ScoreClass::Input_Name()` while waiting for Enter/next keystroke.
+  - This preserves the original score timing and animation order while preventing end-screen hot-spin.
+
+## Remaining front-end/UI CPU findings
+
+- After the menu, movie, and score fixes, the remaining high-CPU reports still followed the same pattern: private modal/UI loops outside the normal game pacing path.
+- The most important single bug in that follow-up pass was `CODE/GOPTIONS.CPP`.
+  - The options dialog had already gained a sleep after button-press handling, but its idle path still had no yield, so simply opening the in-game options screen could keep the loop polling flat out.
+  - Fix: put the cooperative sleep on the general `process` path, not only the pressed-button path.
+- Several other active front-end dialogs use the same `while (process) { Call_Back()/Main_Loop(); ... Input(); }` structure and are safe to pace the same way when idle.
+  - Files fixed in this pass: `CODE/{SPECIAL,EXPAND,LOADDLG,GAMEDLG,CONFDLG,VISUDLG,DESCDLG,MPLAYER,SCENARIO}.CPP`.
+  - The safe rule is: if the loop is a modal/front-end wait for input and not core per-frame gameplay simulation, add a small cooperative sleep when `process` stays true after one iteration.
+- A related class of hotspots is timer/message waits that call `Call_Back()` but never yield.
+  - Additional examples fixed in this pass: timed waits in `CODE/{LOADDLG,SCENARIO,EVENT}.CPP`.
+  - Safe rule: if the code is waiting on a countdown, voice completion, or a UI message dwell timer and already calls `Call_Back()`, add a tiny `Sleep(1)` so the wait becomes scheduler-friendly without changing the logical order of operations.
+- Scope note:
+  - The broad pass focused on active single-player/front-end UI and common selector dialogs.
+  - There are still many editor, modem/null-modem, WOL, and other niche multiplayer dialogs with similar loop shapes. Those should be handled by targeted profiling if they are reported as real CPU users, rather than by blindly touching every archival or niche path.
+- `CODE/NETDLG.CPP` needed a second, more targeted audit after the broad UI pass.
+  - The main dialog loops there already matched the normal modal pattern and now yield on the `process` path, but the more important remaining hotspots were the small internal waits that do not look like UI loops at first glance.
+  - Hot examples were:
+    - `while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0)` packet-drain loops used during sign-off, join/startup handshakes, and per-player message fanout;
+    - `while (Ipx.Global_Num_Send() > 0)` ACK waits after broadcasting `NET_GO` / `NET_LOADGAME`;
+    - `while (TickCount - ok_timer < i)` grace-period waits before accepting OK/start when a new player just joined;
+    - `while (TickCount - starttime < i)` post-ACK settle windows meant to give remote systems time to receive acknowledgements before local loading begins;
+    - the `response_timer`-bounded `do { ... Ipx.Service(); ... } while (...)` loops waiting for `NET_READY_TO_GO` / `NET_REQ_SCENARIO`.
+  - Safe rule for this class of code: if the loop is only waiting for network progress or a timer window and it already calls `Ipx.Service()`, add a tiny `Sleep(1)` so it becomes scheduler-friendly without changing handshake order or timeout semantics.
+  - `CODE/{VISUDLG,SOUNDDLG}.CPP` should sleep whenever `process` remains true, not only for `GAME_NORMAL` / `GAME_SKIRMISH`; otherwise multiplayer/network invocations of the same dialogs can still spin even after the single-player pass is fixed.
+
 ## Dead-code cleanup guardrails
 
 - "Not selected by CMake" is not sufficient proof that a file is dead in this tree.

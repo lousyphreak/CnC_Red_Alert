@@ -242,6 +242,9 @@ bool ConfirmationClass::Process(char const * string)
 
 			pressed = false;
 		}
+		if (process && Session.Type == GAME_NORMAL) {
+			Sleep(16);
+		}
 	}
 	return(result);
 }
