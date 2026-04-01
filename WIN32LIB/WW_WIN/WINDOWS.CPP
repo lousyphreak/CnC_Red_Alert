@@ -50,12 +50,11 @@
 #include <string.h>
 #include	<stdio.h>
 #include	<stdarg.h>
-#include <wwstd.h>
-#include "ww_win.h"
-#include <keyboard.h>
-#include	<font.h>
-#include <dipthong.h>
-
+#include <WWSTD.H>
+#include <WW_WIN.H>
+#include <KEYBOARD.H>
+#include	<FONT.H>
+#include <DIPTHONG.H>
 PRIVATE void Scroll_Window(void);
 PRIVATE void Flush_Line(void);
 PRIVATE void In_Char(char *str);
@@ -972,4 +971,3 @@ PRIVATE char Fetch_Char(void)
 
 	return (c);
 }
-

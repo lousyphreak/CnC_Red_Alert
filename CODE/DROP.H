@@ -38,9 +38,8 @@
 #ifndef DROP_H
 #define DROP_H
 
-#include	"list.h"
-#include	"edit.h"
-
+#include	"LIST.H"
+#include	"EDIT.H"
 class DropListClass : public EditClass {
 	public:
 		DropListClass(int id, char * text, int max_len, TextPrintType flags, int x, int y, int w, int h, void const * up, void const * down);

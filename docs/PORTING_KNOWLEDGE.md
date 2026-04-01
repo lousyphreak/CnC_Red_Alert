@@ -9,6 +9,33 @@ _Last updated: 2026-04-01_
 - Shared platform/rendering/input/audio support code lives in `WIN32LIB/`.
 - The active compatibility include order puts `SDL3_COMPAT/wrappers/` ahead of `CODE/` and `WIN32LIB/INCLUDE`.
 
+## Include-case audit findings
+
+- After the generated casefix headers were removed, the remaining failures split into two different classes:
+  - true case-sensitive include misses, which were fixed by rewriting include text to the real on-disk filename casing;
+  - semantic header-resolution changes, where a formerly-lowercase quoted include had previously resolved through the generated casefix layer and include-order to a canonical public header, but an exact-case quoted include on Linux started binding to a stale local duplicate instead.
+- In this tree, "fix the include case" is therefore not just a search-and-replace problem.
+  - Example pattern: many `WIN32LIB/*` sources historically wrote lowercase quoted includes, and the build-tree casefix headers plus include order effectively redirected those names into `WIN32LIB/INCLUDE`.
+  - After the casefix layer was deleted, blindly changing those to exact-case quoted includes (`"WWMEM.H"`, `"WWSTD.H"`, `"BUFFER.H"`, `"PALETTE.H"`, `"SHAPE.H"`, `"WW_WIN.H"`, etc.) often changed which physical header was chosen on Linux.
+  - The safe recovery rule was: if the local same-basename header is stale, malformed, or semantically different, include the canonical public header directly (usually with angle brackets) instead of "fixing" the local duplicate.
+- Another large fallout class was comment-loss during the bulk rewrite/repair pass.
+  - A number of files had old commented optional blocks such as `//#include ...`, `//#define ...`, `//#else`, and `//#endif` accidentally turned live.
+  - Those lines caused cascading parse failures in files like `CODE/{DEFINES,SIDEBAR,EGOS,INIT,MENUS,MOUSE,NETDLG,NULLDLG,SCORE,SPRITE,WINSTUB}` and in headers such as `WIN32LIB/INCLUDE/RAWFILE.H` and `CODE/CCFILE.H`.
+  - When this happens, comparing against `HEAD` is usually faster and safer than reasoning from the compiler errors alone, because one uncommented `#else`/`#endif` can make the rest of the file look unrelatedly broken.
+- `WIN32LIB/WINCOMM/WINCOMM.CPP`'s `O_TEXT` usage is a legitimate portability issue, not a casefix artifact.
+  - On Linux/SDL3 the correct behavior is to treat `O_TEXT` as a no-op, so a local `#ifndef O_TEXT / #define O_TEXT 0` in that translation unit is sufficient and preserves the original intent without changing behavior.
+- The deleted `build/generated/casefix/...` headers were still masking a large amount of wrong-case repository includes. After a full source rewrite pass, the repository-owned case-only include mismatches are now down to **zero**.
+- Practical rule for future include-case work:
+  - validate against the actual compiler include roots from `build/compile_commands.json` / `build-asan/compile_commands.json`, not just the local source directory;
+  - only count repository-owned paths as include-case bugs when the exact include text does not resolve but a case-insensitive match exists somewhere under the repo;
+  - ignore standard library / system headers in these scans, otherwise names like `stdio.h` or `fcntl.h` create false positives.
+- When bulk-rewriting legacy include names in this tree, preserve line endings carefully.
+  - A naive text replacement can turn adjacent preprocessor lines into invalid glued directives such as `#include "X"#include "Y"` or `#include "X"#endif`.
+  - If that happens, repair the directive boundaries first before trusting the next compiler failure; otherwise the build noise hides the real remaining include misses.
+- Duplicate same-basename headers still need path-aware handling even after the case pass.
+  - `WIN32LIB/AUDIO/SOUND.H` is the concrete example: a bare `SOS.H` include can bind to the local `WIN32LIB/AUDIO/SOS.H` copy before the intended public include-root path, and both `SOS.H` variants still carry old HMI typedef baggage.
+  - The next sound-porting cleanup should treat the surviving `SOS*` headers as a real compatibility problem, not as another include-case issue.
+
 ## CPU and threading findings
 
 - On the supported SDL3/Linux port, the extra game-owned threads around startup were legacy compatibility carryovers, not the main cause of high CPU.

@@ -46,9 +46,9 @@
  *   MonoClass::~MonoClass -- The default destructor for a monochrome screen object.           *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-//#pragma inline
-#include	"mono.h"
-
+//
+#pragma inline
+#include	"MONO.H"
 #include	<stdlib.h>
 #include	<stdio.h>
 #include <string.h>

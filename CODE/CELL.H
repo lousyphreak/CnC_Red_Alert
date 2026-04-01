@@ -38,14 +38,13 @@
 #ifndef CELL_H
 #define CELL_H
 
-#include	"defines.h"
-#include	"ccptr.h"
-#include	"building.h"
-#include	"pipe.h"
-#include	"straw.h"
-#include	"unit.h"
-#include	"template.h"
-
+#include	"DEFINES.H"
+#include	"CCPTR.H"
+#include	"BUILDING.H"
+#include	"PIPE.H"
+#include	"STRAW.H"
+#include	"UNIT.H"
+#include	"TEMPLATE.H"
 class TriggerClass;
 
 

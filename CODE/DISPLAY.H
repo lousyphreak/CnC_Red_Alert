@@ -38,12 +38,11 @@
 #ifndef DISPLAY_H
 #define DISPLAY_H
 
-#include	"ccini.h"
-#include	"face.h"
-#include	"gadget.h"
-#include	"map.h"
-#include	"layer.h"
-
+#include	"CCINI.H"
+#include	"FACE.H"
+#include	"GADGET.H"
+#include	"MAP.H"
+#include	"LAYER.H"
 
 #define	ICON_PIXEL_W	 		24
 #define	ICON_PIXEL_H			24

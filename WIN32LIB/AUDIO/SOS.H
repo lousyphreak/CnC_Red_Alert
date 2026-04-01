@@ -34,7 +34,7 @@
 
 #ifndef  _SOS_DEFINED
 #define  _SOS_DEFINED
-#include "sosdefs.h"
+#include "SOSDEFS.H"
 #pragma pack(push, 4)
 // error definition for sound operating system
 #define  _SOS_ERR          -1
@@ -552,7 +552,6 @@ typedef struct
 
 } VDS_STRUCT;
 #pragma pack(pop)
-#include "sosdata.h"
-#include "sosfnct.h"
-
+#include "SOSDATA.H"
+#include "SOSFNCT.H"
 #endif

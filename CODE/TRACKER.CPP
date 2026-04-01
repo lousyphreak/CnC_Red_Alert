@@ -37,8 +37,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#include	"function.h"
-
+#include	"FUNCTION.H"
 
 /***********************************************************************************************
  * Detach_This_From_All -- Detaches this object from all others.                               *

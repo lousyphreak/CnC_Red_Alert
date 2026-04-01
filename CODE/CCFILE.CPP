@@ -47,10 +47,9 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#include	"function.h"
+#include	"FUNCTION.H"
 #include	<errno.h>
-#include	"ccfile.h"
-
+#include	"CCFILE.H"
 
 /***********************************************************************************************
  * CCFileClass::CCFileClass -- Filename based constructor for C&C file.                        *

@@ -38,11 +38,10 @@
 #ifndef PKPIPE_H
 #define PKPIPE_H
 
-#include	"pipe.h"
-#include	"pk.h"
-#include "rndstraw.h"
-#include	"blowpipe.h"
-
+#include	"PIPE.H"
+#include	"PK.H"
+#include "RNDSTRAW.H"
+#include	"BLOWPIPE.H"
 
 /*
 **	This pipe will encrypt/decrypt the data stream. The data is encrypted by generating a

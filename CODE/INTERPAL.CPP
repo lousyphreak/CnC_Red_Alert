@@ -42,8 +42,7 @@
  *                                                                                             *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include "function.h"
-
+#include "FUNCTION.H"
 BOOL	InterpolationPaletteChanged = FALSE;
 extern "C" {
 extern void __cdecl Asm_Interpolate (unsigned char* src_ptr ,

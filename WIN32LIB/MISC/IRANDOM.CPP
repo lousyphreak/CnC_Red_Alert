@@ -34,8 +34,7 @@
 
 #include <stdlib.h>
 #include <time.h>
-#include "misc.h"
-
+#include "MISC.H"
 
 
 

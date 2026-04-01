@@ -41,9 +41,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#include	"function.h"
-#include "statbtn.h"
-
+#include	"FUNCTION.H"
+#include "STATBTN.H"
 
 /***********************************************************************************************
  * StaticButtonClass::StaticButtonClass -- Normal constructor for a text button.               *

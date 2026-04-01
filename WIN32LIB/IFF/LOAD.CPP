@@ -39,14 +39,13 @@
  *   Uncompress_Data -- Uncompresses data from one buffer to another.      *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include "iff.h"
-#include "file.h"
+#include "IFF.H"
+#include "FILE.H"
 #include <cstddef>
 #include <cstring>
-#include <misc.h>
-#include <wwstd.h>
-#include <wwmem.h>
-
+#include <MISC.H>
+#include <WWSTD.H>
+#include <WWMEM.H>
 namespace {
 
 uint16_t Read_Comp_Skip(void const* buffer)

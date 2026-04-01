@@ -8,6 +8,21 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Finished the post-casefix build recovery and restored the source tree to a clean self-contained state after the user removed the generated build-tree casefix headers:
+  - kept the repo-wide include-case rewrite, but then walked the remaining failures until the build was clean again by restoring the original `HEAD` comment/include semantics where the rewrite had accidentally turned old commented directives into live `#include`, `#define`, `#else`, and `#endif` lines;
+  - several of the real breakages were not raw case mistakes but header-binding changes caused by turning legacy lowercase quoted includes into exact-case quoted includes on a case-sensitive filesystem; where the old casefix layer had effectively routed those includes to canonical `WIN32LIB/INCLUDE` headers, the sources were updated to include the canonical header directly instead of binding to stale local duplicates;
+  - concrete recovery fixes included restoring canonical-header usage in `WIN32LIB/{DRAWBUFF,MEM,MISC,PALETTE,SHAPE,WW_WIN}`, re-commenting accidentally re-enabled optional/legacy blocks in `CODE/{DEFINES,SIDEBAR,EGOS,INIT,MENUS,MOUSE,NETDLG,NULLDLG,SCORE,SPRITE,WINSTUB}` and `WIN32LIB/INCLUDE/{RAWFILE}`, and restoring `CODE/CCFILE.H` / `VQ` include structure so duplicate `RAWFILE.H` / `WWFILE.H` definitions no longer collided late in the build;
+  - added the minimal Linux-safe `O_TEXT` compatibility definition in `WIN32LIB/WINCOMM/WINCOMM.CPP` because the old Windows text-mode open flag is a no-op on this SDL3/Linux port but was the last genuine portability blocker after the include fallout was removed;
+  - validation: both `cmake --build build -j4` and `cmake --build build-asan -j4` now succeed again after the casefix-header deletion.
+
+- Removed the remaining repository-side dependence on generated build-tree "casefix" headers by fixing the source include directives themselves:
+  - did a repo-wide pass over `CODE/`, `WIN32LIB/`, and `VQ/` to rewrite broken include directives to the real in-tree filename casing, rather than relying on deleted `build/generated/casefix/...` forwarding headers;
+  - this touched several hundred source/header files because the tree still had many legacy lowercase include names (`function.h`, `gbuffer.h`, `wwlib32.h`, `sos.h`, etc.) that only built while the generated casefix layer existed;
+  - the pass also had to normalize a number of glued preprocessor lines created while rewriting the includes (for example `#include "X"#include "Y"` / `#include "X"#endif`) so the headers were restored to valid standalone directives before validation;
+  - final validation of the include audit used a compile-command-aware case-sensitive scan of repository-owned headers and sources, and that scan now reports `0` remaining case-only include mismatches in the repo;
+  - rebuild validation now gets past the original missing-header failures, but it surfaces a separate pre-existing audio/header compatibility problem in the active SDL3 port: `WIN32LIB/AUDIO/SOUNDINT.H` includes `win32_compat.h` and then the legacy HMI `SOS.H` family, and that older header set still redefines `WORD`/`DWORD`/`LONG`/`HANDLE` and uses `far`/`huge`/`interrupt` forms that conflict with the modern compatibility layer;
+  - important follow-up: the next porting step is **not** more case-fixing, but a targeted cleanup of the active `WIN32LIB/AUDIO/{SOUND,SOUNDINT,SOS*}` include relationship so the SDL-backed sound path no longer depends on conflicting DOS/HMI typedef baggage.
+
 - Investigated the current Linux/SDL3 high-idle-CPU and legacy-threading behavior in `redalert`, and removed the active game-owned helper threads that were no longer needed on the port:
   - the old Westwood timer backend in `WIN32LIB/TIMER/TIMERINI.CPP` no longer drives `WWTickCount` through a `timeSetEvent()`-style compatibility worker thread; it now derives ticks directly from `SDL_GetTicksNS()` so the active SDL path keeps the original timer semantics without a periodic helper thread;
   - the gameplay sound-maintenance worker in `WIN32LIB/AUDIO/SOUNDIO.CPP` is no longer started on the active path; sound service is pumped from the normal main-thread callback flow instead of a dedicated game-owned thread;

@@ -42,9 +42,8 @@
  *   TextButtonClass::TextButtonClass -- Normal constructor for a text button.                 *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-#include "textbtn.h"
-
+#include	"FUNCTION.H"
+#include "TEXTBTN.H"
 
 /***********************************************************************************************
  * TextButtonClass::TextButtonClass -- Normal constructor for a text button.                   *

@@ -37,9 +37,8 @@
  *   CheckBoxClass::Draw_Me -- Draws the checkbox imagery.                                     *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-#include	"checkbox.h"
-
+#include	"FUNCTION.H"
+#include	"CHECKBOX.H"
 
 /***********************************************************************************************
  * CheckBoxClass::Draw_Me -- Draws the checkbox imagery.                                       *

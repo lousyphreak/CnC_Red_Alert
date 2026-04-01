@@ -62,7 +62,7 @@
  *   doIncomingPacket -- Callback: packet has arrived                      * 
  *   doPlayerJoins -- Callback: player joins                               * 
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-#include "function.h"
+#include "FUNCTION.H"
 #include "sdl_fs.h"
 
 #define WINDOWS

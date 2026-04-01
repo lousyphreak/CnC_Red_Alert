@@ -92,8 +92,7 @@
 #ifndef GADGET_H
 #define GADGET_H
 
-#include "link.h"
-
+#include "LINK.H"
 class ControlClass;
 
 class GadgetClass : public LinkClass

@@ -49,10 +49,12 @@
  *   SessionClass::Compute_Unique_ID -- computes unique local ID number                        *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include "function.h"
-#include <time.h>			// for station ID computation
+#include "FUNCTION.H"
+#include <time.h>
+// for station ID computation
 
-//#include "WOLDEBUG.H"
+//
+#include "WOLDEBUG.H"
 
 /***************************** Globals *************************************/
 //---------------------------------------------------------------------------

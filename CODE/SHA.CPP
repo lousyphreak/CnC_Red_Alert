@@ -40,8 +40,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include	<stdlib.h>
-#include	"sha.h"
-
+#include	"SHA.H"
 
 
 #if !defined(__BORLANDC__) && !defined(min)

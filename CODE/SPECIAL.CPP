@@ -40,8 +40,7 @@
  *   SpecialClass::Init -- Initialize the special class of options.                            *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-
+#include	"FUNCTION.H"
 #define	OPTION_WIDTH	236*2
 #define	OPTION_HEIGHT	162*2
 #define	OPTION_X			((640 - OPTION_WIDTH) / 2)

@@ -3107,7 +3107,8 @@ int Com_Scenario_Dialog(bool skirmish)
 			SerialPacketNames, 100, 8);
 		NullModem.Mono_Debug_Print(1);
 	}
-	#endif
+	
+#endif
 
 	/*
 	---------------------------- Processing loop -----------------------------
@@ -3130,7 +3131,8 @@ oh_dear_its_a_label:
 		if (!skirmish) {
 			NullModem.Mono_Debug_Print(0);
 		}
-		#endif
+		
+#endif
 
 		if (!skirmish){
 			if (!ok_button_added && gameoptions && kludge_timer == 0){

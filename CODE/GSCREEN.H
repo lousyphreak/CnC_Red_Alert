@@ -38,11 +38,10 @@
 #ifndef GSCREEN_H
 #define GSCREEN_H
 
-#include	"gadget.h"
-#include	"gbuffer.h"
-#include	"function.h"
-#include	"cell.h"
-
+#include	"GADGET.H"
+#include	"GBUFFER.H"
+#include	"FUNCTION.H"
+#include	"CELL.H"
 class GScreenClass
 {
 	public:

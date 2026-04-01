@@ -36,16 +36,14 @@
  *   OptionsClass::Process -- Handles all the options graphic interface.                       *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include "function.h"
-
-#include "goptions.h"
-#include "loaddlg.h"
-#include "sounddlg.h"
-#include "visudlg.h"
-#include "gamedlg.h"
-#include "textbtn.h"
-#include "descdlg.h"
-
+#include "FUNCTION.H"
+#include "GOPTIONS.H"
+#include "LOADDLG.H"
+#include "SOUNDDLG.H"
+#include "VISUDLG.H"
+#include "GAMEDLG.H"
+#include "TEXTBTN.H"
+#include "DESCDLG.H"
 #ifdef FIXIT_VERSION_3		//	Stalemate games.
 #include "WOLSTRNG.H"
 #endif

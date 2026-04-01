@@ -38,8 +38,7 @@
 #ifndef BAR_H
 #define BAR_H
 
-#include "fixed.h"
-
+#include "FIXED.H"
 
 /*
 **	This is a manager for a progress (or other) bargraph. Such a graph consists of a fill

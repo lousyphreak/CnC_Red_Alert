@@ -42,10 +42,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "wwstd.h"
+#include "WWSTD.H"
 #include "PLAYCD.H"
-#include "wwmem.h"
-
+#include "WWMEM.H"
 
 /***************************************************************************
  * GetCDClass -- default constructor													*

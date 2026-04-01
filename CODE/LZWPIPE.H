@@ -39,8 +39,7 @@
 #ifndef LZWPIPE_H
 #define LZWPIPE_H
 
-#include	"pipe.h"
-
+#include	"PIPE.H"
 
 /*
 **	Performs LZW compression/decompression on the data stream that is piped through this

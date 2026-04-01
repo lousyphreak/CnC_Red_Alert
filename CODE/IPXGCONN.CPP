@@ -41,11 +41,10 @@
  *   IPXGlobalConnClass::Service_Receive_Queue -- services receive queue	*
  *   IPXGlobalConnClass::Set_Bridge -- Sets up connection to cross a bridge*
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-#include "function.h"
+#include "FUNCTION.H"
 #include <stdio.h>
 #include <string.h>
-#include "ipxgconn.h"
-
+#include "IPXGCONN.H"
 
 /***************************************************************************
  * IPXGlobalConnClass::IPXGlobalConnClass -- class constructor             *

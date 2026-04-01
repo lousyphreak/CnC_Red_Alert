@@ -52,9 +52,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#include	"function.h"
-#include	"trigtype.h"
-
+#include	"FUNCTION.H"
+#include	"TRIGTYPE.H"
 
 /***********************************************************************************************
  * TriggerTypeClass::TriggerTypeClass -- Constructor for trigger class object.                 *

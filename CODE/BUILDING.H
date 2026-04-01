@@ -38,15 +38,14 @@
 #ifndef BUILDING_H
 #define BUILDING_H
 
-#include	"ftimer.h"
-#include	"radio.h"
-#include	"cargo.h"
-#include	"mission.h"
-#include	"bullet.h"
-#include	"target.h"
-#include	"factory.h"
-#include	"techno.h"
-
+#include	"FTIMER.H"
+#include	"RADIO.H"
+#include	"CARGO.H"
+#include	"MISSION.H"
+#include	"BULLET.H"
+#include	"TARGET.H"
+#include	"FACTORY.H"
+#include	"TECHNO.H"
 #define	MAX_DOOR_STAGE	18	// # of frames of door opening on weapons factory
 #define	DOOR_OPEN_STAGE 9	// frame on which the door is entirely open
 #define	MAX_REPAIR_ANIM_STAGE	5	// # of stages of anim for repair center cycling

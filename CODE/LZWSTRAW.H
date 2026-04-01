@@ -40,8 +40,7 @@
 #define LZWSTRAW_H
 
 
-#include	"straw.h"
-
+#include	"STRAW.H"
 /*
 **	This class handles LZW compression/decompression to the data stream that is drawn through
 **	this class. Note that for compression, two internal buffers are required. For decompression

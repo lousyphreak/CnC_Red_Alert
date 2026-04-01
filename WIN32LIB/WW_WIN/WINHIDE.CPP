@@ -37,10 +37,9 @@
  *   Window_Show_Mouse -- Shows the mouse after Window_Hide_Mouse hides it.*
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	<wwstd.h>
-#include	<keyboard.h>
-#include "ww_win.h"
-
+#include	<WWSTD.H>
+#include	<KEYBOARD.H>
+#include <WW_WIN.H>
 
 #if(IBM)
 /***************************************************************************
@@ -92,4 +91,3 @@ void Window_Show_Mouse(void)
 //	Conditional_Show_Mouse();
 }
 #endif
-

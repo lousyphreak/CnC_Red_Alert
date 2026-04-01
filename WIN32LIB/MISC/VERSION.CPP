@@ -33,8 +33,7 @@
  *   Version -- Returns with current library version text.                 *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include "wwstd.h"
-
+#include <WWSTD.H>
 
 
 PRIVATE char *version = "Westwood Studios - 32 Bit Library Version "

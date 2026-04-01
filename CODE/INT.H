@@ -39,12 +39,11 @@
 #ifndef INT_H
 #define INT_H
 
-#include <memory.h>
+#include <MEMORY.H>
 #include	<limits.h>
 #include	<assert.h>
-#include	"mp.h"
-#include	"straw.h"
-
+#include	"MP.H"
+#include	"STRAW.H"
 #pragma warn -inl
 
 template<int PRECISION> class Int;

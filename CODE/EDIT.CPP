@@ -43,8 +43,7 @@
  *   EditClass::~EditClass -- Default destructor for the edit gadget.                          *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-
+#include	"FUNCTION.H"
 
 /***********************************************************************************************
  * EditClass::EditClass -- Normal constructor for edit class object.                           *

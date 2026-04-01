@@ -36,10 +36,9 @@
 #ifndef WWMEM_H
 #define WWMEM_H
 
-#include "wwstd.h"
+#include "WWSTD.H"
 #include <new>
-#include "memflag.h"
-
+#include "MEMFLAG.H"
 // Defines
 //==============
 

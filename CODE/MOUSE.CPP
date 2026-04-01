@@ -43,8 +43,7 @@
  *   MouseClass::Set_Default_Mouse -- Sets the mouse to match the shape specified.             *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-
+#include	"FUNCTION.H"
 
 /*
 **	This points to the loaded mouse shapes.
@@ -292,16 +291,19 @@ void MouseClass::One_Time(void)
 	**	Override the mouse shape file with the one in the current directory, but only if there
 	**	is an override file available.
 	*/
-	#ifndef NDEBUG
+	
+#ifndef NDEBUG
 		RawFileClass file("MOUSE.SHP");
 		if (file.Is_Available()) {
 			MouseShapes = Load_Alloc_Data(file);
 		} else {
 			MouseShapes = MFCD::Retrieve("MOUSE.SHP");
 		}
-	#else
+	
+#else
 		MouseShapes = MFCD::Retrieve("MOUSE.SHP");
-	#endif
+	
+#endif
 }
 
 

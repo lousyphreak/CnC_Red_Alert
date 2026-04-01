@@ -39,8 +39,7 @@
 #ifndef B64STRAW_H
 #define B64STRAW_H
 
-#include	"straw.h"
-
+#include	"STRAW.H"
 /*
 **	Performs Base 64 encoding/decoding on the data that is drawn through the straw. Note that
 **	encoding increases the data size by about 30%. The reverse occurs when decoding.

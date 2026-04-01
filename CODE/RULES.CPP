@@ -52,9 +52,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#include	"function.h"
-#include	"vortex.h"
-
+#include	"FUNCTION.H"
+#include	"VORTEX.H"
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>

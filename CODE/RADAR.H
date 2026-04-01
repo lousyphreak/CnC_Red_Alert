@@ -38,8 +38,7 @@
 #ifndef RADAR_H
 #define RADAR_H
 
-#include	"display.h"
-
+#include	"DISPLAY.H"
 class RadarClass: public DisplayClass
 {
 	public:

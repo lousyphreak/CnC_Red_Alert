@@ -51,8 +51,7 @@
 #include "WSPROTO.H"
 #else
 
-#include	"tcpip.h"
-
+#include	"TCPIP.H"
 #endif	//WINSOCK_IPX
 
 bool Receive_Remote_File ( char *file_name, unsigned int file_length, int gametype);

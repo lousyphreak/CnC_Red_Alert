@@ -39,11 +39,10 @@
 #define BULLET_H
 
 #include "TYPE.H"
-#include "object.h"
-#include "facing.h"
-#include	"fly.h"
-#include	"fuse.h"
-
+#include "OBJECT.H"
+#include "FACING.H"
+#include	"FLY.H"
+#include	"FUSE.H"
 
 
 class BulletClass :	public ObjectClass,

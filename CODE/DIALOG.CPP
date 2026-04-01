@@ -48,10 +48,9 @@
  *   Window_Box -- Draws a fancy box over the specified window.                                *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-
-#include   "defines.h"   //VG 10/17/96
-
+#include	"FUNCTION.H"
+#include   "DEFINES.H"
+//VG 10/17/96
 unsigned char * Font_Palette(int color);
 
 

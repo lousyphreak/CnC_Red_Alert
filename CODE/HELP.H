@@ -38,8 +38,7 @@
 #ifndef HELP_H
 #define HELP_H
 
-#include	"tab.h"
-
+#include	"TAB.H"
 #define HELP_TEXT_COLOR 80	//158		//Goldy/orange
 
 class HelpClass: public TabClass

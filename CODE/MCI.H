@@ -33,14 +33,12 @@
 *
 ****************************************************************************/
 
-#include "function.h"
-
+#include "FUNCTION.H"
 #ifdef MCIMPEG
 #include "win32_compat.h"
 #include <mmsystem.h>
 #include <digitalv.h>
-#include "watcom.h"
-
+#include "WATCOM.H"
 /* MCIDevice - MCI device capabilities and description
  *
  * name        - Name used to open device.

@@ -41,8 +41,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#include	"function.h"
-
+#include	"FUNCTION.H"
 
 /***********************************************************************************************
  * DoorClass::DoorClass -- Constructor for the DoorClass object.                               *

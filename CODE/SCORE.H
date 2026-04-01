@@ -38,9 +38,8 @@
 #ifndef SCORE_H
 #define SCORE_H
 
-#include	"unit.h"
-#include	"building.h"
-
+#include	"UNIT.H"
+#include	"BUILDING.H"
 class GraphicBufferClass;
 
 class ScoreClass {

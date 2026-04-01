@@ -42,10 +42,9 @@
 /*= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =*/
 
 
-#include "misc.h"
-#include <gbuffer.h>
-#include <palette.h>
-
+#include "MISC.H"
+#include <GBUFFER.H>
+#include <PALETTE.H>
 
 WWDraw*		VideoDrawObject=NULL;	// Pointer to the direct draw object
 HWND			MainWindow;					// Handle to programs main window

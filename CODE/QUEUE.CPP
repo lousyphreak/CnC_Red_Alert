@@ -77,7 +77,7 @@
  *   Print_Framesync_Values -- displays frame-sync variables               *
  *   Check_Mirror -- Checks mirror memory                                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-#include	"function.h"
+#include	"FUNCTION.H"
 #include "sdl_fs.h"
 
 #ifdef WOLAPI_INTEGRATION

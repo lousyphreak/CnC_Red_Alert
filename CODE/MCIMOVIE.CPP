@@ -16,12 +16,10 @@
 **	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "function.h"
-
+#include "FUNCTION.H"
 #ifdef MCIMPEG
-#include "mcimovie.h"
-#include <memory.h>
-
+#include "MCIMOVIE.H"
+#include <MEMORY.H>
 /****************************************************************************
 *
 *	NAME

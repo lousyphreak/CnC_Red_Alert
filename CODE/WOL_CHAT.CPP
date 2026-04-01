@@ -21,9 +21,9 @@
 //	wol_chat.cpp
 //	ajw 7/8/98
 
-#include "function.h"
-#include "iconlist.h"
-#include "SEditDlg.h"
+#include "FUNCTION.H"
+#include "ICONLIST.H"
+#include "SEDITDLG.H"
 #include "WOLSTRNG.H"
 #include "TOOLTIP.H"
 

@@ -40,8 +40,7 @@
 
 #include "JSHELL.H"
 
-#include	"abstract.h"
-
+#include	"ABSTRACT.H"
 class ObjectClass;
 class TechnoClass;
 class ObjectTypeClass;

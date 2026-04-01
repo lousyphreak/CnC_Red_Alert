@@ -44,7 +44,7 @@
 #include <string.h>
 #include <stdlib.h>
 #ifndef WWMEM_H
-#include "wwmem.h"
+#include <WWMEM.H>
 #endif
 
 
@@ -74,8 +74,7 @@ extern "C"{
 }
 #endif	//MEM_CHECK
 
-#include"mono.h"
-
+#include"MONO.H"
 /***************************************************************************
  * Alloc -- Allocates system RAM.                                          *
  *                                                                         *

@@ -45,8 +45,7 @@
  *   CheckListClass::~CheckListClass -- destructor                                             *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include "function.h"
-
+#include "FUNCTION.H"
 
 /***************************************************************************
  * CheckListClass::CheckListClass -- constructor                           *

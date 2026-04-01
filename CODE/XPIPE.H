@@ -38,10 +38,9 @@
 #ifndef XPIPE_H
 #define XPIPE_H
 
-#include	"pipe.h"
-#include	"wwfile.h"
-#include	"buff.h"
-
+#include	"PIPE.H"
+#include	"WWFILE.H"
+#include	"BUFF.H"
 /*
 **	This is a simple store-into-buffer pipe terminator. Use it as the final link in a pipe process
 **	that needs to store the data into a memory buffer. This can only serve as the final

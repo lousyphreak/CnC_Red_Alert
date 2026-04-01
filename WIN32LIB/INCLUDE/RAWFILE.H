@@ -43,13 +43,12 @@
 
 #include "win32_compat.h"
 
-//#include	<wwlib32.h>
+//#include	<WWLIB32.H>
 #include	<limits.h>
 #include	<errno.h>
 #include "win32_compat.h"
 //#include	<algo.h>
-#include	"wwfile.h"
-
+#include	"WWFILE.H"
 #ifdef NEVER
 	/*
 	**	This is a duplicate of the error numbers. The error handler for the RawFileClass handles

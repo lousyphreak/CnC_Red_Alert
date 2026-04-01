@@ -39,8 +39,7 @@
  *   CrateClass::Remove_It -- Removes the crate from wherever it is.                           *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-
+#include	"FUNCTION.H"
 
 /***********************************************************************************************
  * CrateClass::Remove_It -- Removes the crate from wherever it is.                             *

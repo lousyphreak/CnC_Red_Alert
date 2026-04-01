@@ -36,8 +36,7 @@
  *   									system.													*
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include "shape.h"
-
+#include <SHAPE.H>
 
 /*=========================================================================*/
 /* The following PRIVATE functions are in this file:                       */

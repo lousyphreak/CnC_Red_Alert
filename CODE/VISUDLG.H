@@ -39,8 +39,7 @@
 #ifndef VISUDLG_H
 #define VISUDLG_H
 
-#include "gadget.h"
-
+#include "GADGET.H"
 class VisualControlsClass 
 {
 	private:

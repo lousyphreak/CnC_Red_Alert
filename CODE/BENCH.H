@@ -39,9 +39,8 @@
 #ifndef BENCH_H
 #define BENCH_H
 
-#include	"mpu.h"
-#include	"ftimer.h"
-
+#include	"MPU.H"
+#include	"FTIMER.H"
 
 /*
 **	This is a timer access object that will fetch the internal Pentium

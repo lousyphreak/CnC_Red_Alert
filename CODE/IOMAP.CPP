@@ -48,8 +48,7 @@
  *   MouseClass::Save -- Saves to a save game file.                                            *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include "function.h"
-
+#include "FUNCTION.H"
 
 /***********************************************************************************************
  * CellClass::Should_Save -- Should the cell be written to disk?                               *

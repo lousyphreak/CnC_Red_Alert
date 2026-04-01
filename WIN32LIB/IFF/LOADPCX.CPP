@@ -37,8 +37,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include  <WWSTD.H>
-#include "filepcx.h"
-
+#include "FILEPCX.H"
 /***************************************************************************
  * READ_PCX_FILE -- read a pcx file into a Graphic Buffer                  *
  *                                                                         *

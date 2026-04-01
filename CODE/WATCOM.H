@@ -75,6 +75,7 @@
 #pragma warning 004 9
 
 // Turns off unreferenced function parameter warning.
-//#pragma off(unreferenced)
+//
+#pragma off(unreferenced)
 
 #endif

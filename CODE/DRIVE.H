@@ -38,9 +38,8 @@
 #ifndef DRIVE_H
 #define DRIVE_H
 
-#include	"ftimer.h"
-#include	"foot.h"
-
+#include	"FTIMER.H"
+#include	"FOOT.H"
 /****************************************************************************
 **	Movable objects are handled by this class definition. Moveable objects
 **	cover everything except buildings.

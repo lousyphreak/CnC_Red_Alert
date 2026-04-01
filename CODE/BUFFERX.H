@@ -39,8 +39,7 @@
 #ifndef BUFFERx_H
 #define BUFFERx_H
 
-#include	"wwfile.h"
-
+#include	"WWFILE.H"
 /*
 **	This is a transmuter interface designed to aid implementation of compression, encryption, or
 **	data analysis classes. The Transmuter should be derived into a class that performs the necessary

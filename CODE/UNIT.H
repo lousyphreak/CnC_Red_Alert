@@ -38,13 +38,12 @@
 #ifndef UNIT_H
 #define UNIT_H
 
-#include "facing.h"
-#include "drive.h"
-#include "radio.h"
-#include "cargo.h"
-#include "mission.h"
-#include	"target.h"
-
+#include "FACING.H"
+#include "DRIVE.H"
+#include "RADIO.H"
+#include "CARGO.H"
+#include "MISSION.H"
+#include	"TARGET.H"
 
 /****************************************************************************
 **	For each instance of a unit (vehicle) in the game, there is one of

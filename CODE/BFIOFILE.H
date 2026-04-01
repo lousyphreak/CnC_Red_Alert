@@ -38,8 +38,7 @@
 #ifndef BFIOFILE_H
 #define BFIOFILE_H
 
-#include	"rawfile.h"
-
+#include	"RAWFILE.H"
 /*
 **	This derivation of the raw file class handles buffering the input/output in order to
 **	achieve greater speed. The buffering is not active by default. It must be activated

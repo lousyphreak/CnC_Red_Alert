@@ -39,8 +39,7 @@
 #ifndef LCWPIPE_H
 #define LCWPIPE_H
 
-#include	"pipe.h"
-
+#include	"PIPE.H"
 
 /*
 **	Performs LCW compression/decompression on the data stream that is piped through this

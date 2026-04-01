@@ -43,7 +43,7 @@
 //lint -d_LINT=1
 
 
-#include	"straw.h"
+#include	"STRAW.H"
 #include	<cstdint>
 #include	<stdlib.h>
 

@@ -57,8 +57,7 @@
  *   GadgetClass::Set_Position -- Set the coordinate position of this gadget.                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include "function.h"
-
+#include "FUNCTION.H"
 extern "C" void WWDraw_Begin_Present_Batch(void);
 extern "C" void WWDraw_End_Present_Batch(void);
 

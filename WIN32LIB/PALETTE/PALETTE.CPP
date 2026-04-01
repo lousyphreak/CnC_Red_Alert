@@ -45,10 +45,9 @@
 ********************************* Includes **********************************
 */
 #include <string.h>
-#include "wwstd.h"
-#include "palette.h"
-#include "timer.h"
-
+#include <WWSTD.H>
+#include <PALETTE.H>
+#include <TIMER.H>
 /*
 ********************************* Constants *********************************
 */

@@ -42,8 +42,7 @@
 #define __PACKET_H
 
 
-#include "field.h"
-
+#include "FIELD.H"
 class PacketClass {
 	public:
 		PacketClass(short id = 0)

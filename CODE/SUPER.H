@@ -38,8 +38,7 @@
 #ifndef SUPER_H
 #define SUPER_H
 
-#include	"ftimer.h"
-
+#include	"FTIMER.H"
 class SuperClass {
 	public:
 		SuperClass(NoInitClass const & x) : Control(x) {};

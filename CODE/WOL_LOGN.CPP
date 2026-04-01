@@ -21,13 +21,11 @@
 //	Wol_Logn.cpp - WW online name/password dialog.
 //	ajw 07/16/98
 
-#include "function.h"
-
-#include "IconList.h"
+#include "FUNCTION.H"
+#include "ICONLIST.H"
 #include "PassEdit.h"
 #include "WOLSTRNG.H"
-#include "BigCheck.h"
-
+#include "BIGCHECK.H"
 bool ReadSavedNicks( WolapiObject* pWO, IconListClass& NickList, char* szNameBuffer, char* szPassBuffer );
 bool bSaveNick( WolapiObject* pWO, const char* szNickToSave, const char* szPassToSave, bool bPassIsMangled );
 void DeleteNick( WolapiObject* pWO, int iOneBasedEntryToDelete );

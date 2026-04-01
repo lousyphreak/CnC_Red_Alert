@@ -53,8 +53,7 @@
  *   MessageListClass::Reset -- Reset so no messages are visible.          * 
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include "function.h"
-
+#include "FUNCTION.H"
 
 /**************************** Globals **************************************/
 

@@ -61,7 +61,7 @@
 #include	"WSPROTO.H"
 #include	"WSPUDP.H"
 #endif	//WINSOCK_IPX
-#include "vector.h"
+#include "VECTOR.H"
 #include <stdint.h>
 #include <string.h>
 #include	<stdio.h>

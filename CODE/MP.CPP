@@ -89,8 +89,7 @@
 #include	<ctype.h>
 #include	<assert.h>
 #include	<limits.h>
-#include	"mp.h"
-
+#include	"MP.H"
 
 #ifndef __BORLANDC__
 #define	min(a, b)	(((a) < (b)) ? (a) : (b))

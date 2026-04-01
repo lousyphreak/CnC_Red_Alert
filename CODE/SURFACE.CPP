@@ -39,8 +39,7 @@
 #include <cassert>
 #include <cstring>
 
-#include "surface.h"
-
+#include "SURFACE.H"
 
 Surface::Surface(int w, int h, Buffer const * buffer, int pitch) :
 	Width(w),

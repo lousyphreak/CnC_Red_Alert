@@ -42,10 +42,9 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#include	"function.h"
-#include "tcpip.h"
-#include "packet.h"
-
+#include	"FUNCTION.H"
+#include "TCPIP.H"
+#include "PACKET.H"
 #define FIELD_PACKET_TYPE						"TYPE"
 #define FIELD_GAME_ID							"IDNO"
 #define FIELD_START_CREDITS						"CRED"

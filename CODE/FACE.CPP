@@ -37,8 +37,7 @@
  *   Desired_Facing256 -- Determines facing from one coordinate to another.                    *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include "function.h"
-
+#include "FUNCTION.H"
 
 /***********************************************************************************************
  * Desired_Facing8 -- Determines facing from one coordinate to another.                        *

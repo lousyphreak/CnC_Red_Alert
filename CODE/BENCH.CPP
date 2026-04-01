@@ -41,9 +41,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#include	"bench.h"
-#include	"mpu.h"
-
+#include	"BENCH.H"
+#include	"MPU.H"
 
 /***********************************************************************************************
  * Benchmark::Benchmark -- Constructor for the benchmark object.                               *

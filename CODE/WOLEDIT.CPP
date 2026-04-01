@@ -25,9 +25,9 @@
  * HISTORY:    07/17/1998 ajw : Created.
  *=========================================================================*/
 
-#include "WOLEdit.h"
-
-//#include "WOLDEBUG.H"
+#include "WOLEDIT.H"
+//
+#include "WOLDEBUG.H"
 
 bool bTabKeyPressedHack = false;
 

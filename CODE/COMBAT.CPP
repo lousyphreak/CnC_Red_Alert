@@ -39,8 +39,7 @@
  *   Wide_Area_Damage -- Apply wide area damage to the map.                                    *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-
+#include	"FUNCTION.H"
 
 /***********************************************************************************************
  * Modify_Damage -- Adjusts damage to reflect the nature of the target.                        *

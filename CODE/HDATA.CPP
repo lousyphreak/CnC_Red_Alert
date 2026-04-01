@@ -44,8 +44,7 @@
  *   HouseTypeClass::operator new -- Allocates a house type class object from special heap.    *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-
+#include	"FUNCTION.H"
 static HouseTypeClass const HouseEngland(
 	HOUSE_ENGLAND,
 	"England",					//	NAME:			House name.

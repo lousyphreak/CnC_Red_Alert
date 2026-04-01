@@ -59,11 +59,10 @@
  *   Mono_Y -- Fetches the Y cursor position for current mono page.                            *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-//#include	"watcom.h"
-#include	"monoc.h"
-
-#include	"function.h"
-
+//
+#include	"WATCOM.H"
+#include	"MONOC.H"
+#include	"FUNCTION.H"
 #include	<stdlib.h>
 #include	<stdio.h>
 #include <string.h>

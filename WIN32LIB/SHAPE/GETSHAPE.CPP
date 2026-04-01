@@ -48,9 +48,8 @@
 */
 #include <cstring>
 
-#include "wwstd.h"
-#include	"shape.h"
-
+#include <WWSTD.H>
+#include	<SHAPE.H>
 namespace {
 
 template <typename T>

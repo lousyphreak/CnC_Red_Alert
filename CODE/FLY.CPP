@@ -37,8 +37,7 @@
  *   FlyClass::Physics -- Performs vector physics (movement).                                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-
+#include	"FUNCTION.H"
 
 /***********************************************************************************************
  * FlyClass::Physics -- Performs vector physics (movement).                                    *

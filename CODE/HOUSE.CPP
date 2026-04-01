@@ -137,7 +137,8 @@
 #include "sdl_fs.h"
 #include	"VORTEX.H"
 
-//#include "WOLDEBUG.H"
+//
+#include "WOLDEBUG.H"
 
 TFixedIHeapClass<HouseClass::BuildChoiceClass> HouseClass::BuildChoice;
 

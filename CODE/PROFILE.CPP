@@ -39,8 +39,7 @@
  *   WWWritePrivateProfileString -- Write a string to the profile data block.                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-
+#include	"FUNCTION.H"
 
 static char * WriteBinBuffer = NULL;
 static int WriteBinBufferLen = 0;

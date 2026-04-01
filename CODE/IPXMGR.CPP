@@ -71,7 +71,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "IPXMGR.H"
-#include "WWLIB32.H"	// to enable mono output
+#include "WWLIB32.H"
+// to enable mono output
 
 #ifdef WINSOCK_IPX
 

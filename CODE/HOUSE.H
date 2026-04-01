@@ -42,10 +42,9 @@
 #include "SUPER.H"
 #include "UTRACKER.H"
 
-#include	"type.h"
-#include	"region.h"
-#include	"vector.h"
-
+#include	"TYPE.H"
+#include	"REGION.H"
+#include	"VECTOR.H"
 class TriggerClass;
 class FootClass;
 class FactoryClass;

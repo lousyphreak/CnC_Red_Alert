@@ -37,7 +37,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#include "wwstd.h"
+#include <WWSTD.H>
 #include <stdio.h>
 #include <string.h>
 #include <process.h>
@@ -81,7 +81,6 @@ char * __cdecl Find_Argv(char const *str)
 	return strstr ( command , str ) ;
 #endif
 }
-
 
 
 

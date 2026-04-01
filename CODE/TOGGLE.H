@@ -38,8 +38,7 @@
 #ifndef TOGGLE_H
 #define TOGGLE_H
 
-#include "control.h"
-
+#include "CONTROL.H"
 /*
 **	This class handles gadgets that behave like the Windows buttons. That is, once the mouse
 **	button is clicked over them, they capture the focus until the mouse button is released.

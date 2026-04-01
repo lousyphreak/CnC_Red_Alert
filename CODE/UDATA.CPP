@@ -50,8 +50,7 @@
  *   UnitTypeClass::operator new -- Allocates an object from the unit type class heap.         *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-
+#include	"FUNCTION.H"
 /*
 **	This is the list of animation stages to use when the harvester
 **	is to dump its load into the refinery. The offsets are based from the

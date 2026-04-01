@@ -41,8 +41,7 @@
  *   AbstractTypeClass::Get_Ownable -- Fetch the ownable bits for this object.                 *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-
+#include	"FUNCTION.H"
 
 /***********************************************************************************************
  * AbstractClass::Debug_Dump -- Display debug information to mono screen.                      *

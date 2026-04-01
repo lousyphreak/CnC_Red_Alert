@@ -48,8 +48,7 @@
  *   MissionClass::Is_Recruitable_Mission -- Determines if this mission is recruitable for a te*
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-
+#include	"FUNCTION.H"
 
 /***********************************************************************************************
  * MissionClass::MissionClass -- Default constructor for the mission object type.              *

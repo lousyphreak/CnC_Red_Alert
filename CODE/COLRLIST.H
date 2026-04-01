@@ -38,8 +38,7 @@
 #ifndef COLORLIST_H
 #define COLORLIST_H
 
-#include "list.h"
-
+#include "LIST.H"
 
 /***************************************************************************
 ** This class adds the ability for every list item to have a different color.

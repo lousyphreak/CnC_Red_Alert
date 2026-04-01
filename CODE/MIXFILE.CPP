@@ -47,8 +47,8 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#include	"buff.h"
-#include	"function.h"
+#include	"BUFF.H"
+#include	"FUNCTION.H"
 #include "sdl_fs.h"
 #include	<cstdarg>
 #include	<cstring>
@@ -57,9 +57,8 @@
 #include	<fcntl.h>
 #include <unistd.h>
 #include	<errno.h>
-#include	"mixfile.h"
-
-#include	"cdfile.h"
+#include	"MIXFILE.H"
+#include	"CDFILE.H"
 extern MFCD temp;
 
 namespace

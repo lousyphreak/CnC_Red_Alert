@@ -40,9 +40,8 @@
 #define SHASTRAW_H
 
 
-#include	"straw.h"
-#include	"sha.h"
-
+#include	"STRAW.H"
+#include	"SHA.H"
 /*
 **	This class serves as a straw that generates a Secure Hash from the data stream that flows
 **	through it. It doesn't modify the data stream in any fashion.

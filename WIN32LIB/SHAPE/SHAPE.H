@@ -38,7 +38,7 @@
 #include <cstdint>
 
 #ifndef GBUFFER_H
-#include "gbuffer.h"
+#include "GBUFFER.H"
 #endif
 /*
 *********************************** Types ***********************************
@@ -172,5 +172,3 @@ int  __cdecl Get_Shape_Scaled_Height(void const *shape, int scale);
 #endif // SHAPE_H
 
 /****************************** End of shape.h *****************************/
-
-

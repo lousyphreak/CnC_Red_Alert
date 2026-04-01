@@ -49,8 +49,7 @@
 
 #include	<SDL3/SDL_iostream.h>
 
-#include	"wwfile.h"
-
+#include	"WWFILE.H"
 #ifdef NEVER
 	/*
 	**	This is a duplicate of the error numbers. The error handler for the RawFileClass handles

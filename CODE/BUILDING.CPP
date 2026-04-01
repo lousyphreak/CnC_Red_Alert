@@ -107,8 +107,7 @@
  *   BuildingClass::~BuildingClass -- Destructor for building type objects.                    *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-
+#include	"FUNCTION.H"
 
 enum SAMState {
 	SAM_READY,					// Launcher can be facing any direction tracking targets.

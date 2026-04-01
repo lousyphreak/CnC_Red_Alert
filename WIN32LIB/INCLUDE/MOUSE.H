@@ -35,8 +35,7 @@
 #ifndef WW_MOUSE_H
 #define WW_MOUSE_H
 
-#include <gbuffer.h>
-
+#include <GBUFFER.H>
 extern "C" {
 	 void __cdecl Mouse_Shadow_Buffer(void *thisptr, GraphicViewPortClass *srcdst, void *buffer, int x, int y, int hotx, int hoty, int store);
 	 void __cdecl Draw_Mouse(void *thisptr, GraphicViewPortClass *srcdst, int x, int y);

@@ -43,8 +43,7 @@
  *   AnimTypeClass::operator delete -- Returns an anim type class object back to the pool.     *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-
+#include	"FUNCTION.H"
 static AnimTypeClass const AtomBomb(
 	ANIM_ATOM_BLAST,						// Animation number.
 	"ATOMSFX",								// Data name of animation.

@@ -46,9 +46,8 @@ struct PORT;
 /*
 ********************************* Includes **********************************
 */
-#include "nullconn.h"
-#include "connmgr.h"
-
+#include "NULLCONN.H"
+#include "CONNMGR.H"
 /*
 ***************************** Class Declaration *****************************
 */

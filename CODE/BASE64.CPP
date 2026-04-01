@@ -38,7 +38,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#include "base64.h"
+#include "BASE64.H"
 #include "ENDIAN.H"
 #include	<stddef.h>
 

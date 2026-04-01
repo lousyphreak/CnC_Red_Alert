@@ -65,8 +65,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#include "function.h"
-
+#include "FUNCTION.H"
 
 /***********************************************************************************************
  * VesselClass::VesselClass -- Constructor for vessel class objects.                           *

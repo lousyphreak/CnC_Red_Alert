@@ -45,8 +45,7 @@
  *   SuperClass::Suspend -- Suspend the charging of the super weapon.                          *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-
+#include	"FUNCTION.H"
 
 /***********************************************************************************************
  * SuperClass::SuperClass -- Constructor for special super weapon objects.                     *

@@ -43,8 +43,7 @@
  *   _Need_To_Take -- Examines unit to determine if it should be confiscated.                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-
+#include	"FUNCTION.H"
 
 /***********************************************************************************************
  * _Pop_Group_Out_Of_Object -- Process popping the group out of the object.                    *

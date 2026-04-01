@@ -44,8 +44,7 @@
 #ifndef	ICONCACH_H
 #define	ICONCACH_H
 
-#include	<tile.h>
-
+#include	<TILE.H>
 #define	ICON_WIDTH			24			// Icons must be this width to be cached
 #define	ICON_HEIGHT			24			// Icons must be this height to be cached
 #define	MAX_CACHED_ICONS	500		// Maximum number of icons that can be cached

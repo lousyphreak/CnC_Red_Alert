@@ -474,11 +474,11 @@ bool Find_Local_Scenario (char *description, char *filename, unsigned int length
 
 #ifdef MPEGMOVIE // Denzil 6/15/98
 #ifdef MCIMPEG
-#include "mcimovie.h"
+#include "MCIMOVIE.H"
 extern MCIMovie* MciMovie;
 #endif
 
-#include "mpgset.h"
+#include "MPGSET.H"
 extern MPGSettings* MpgSettings;
 #endif
 

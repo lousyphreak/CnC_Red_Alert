@@ -36,8 +36,7 @@
  *   Main_Menu -- Menu processing                                                              *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include "function.h"
-
+#include "FUNCTION.H"
 /*****************************
 **	Function prototypes
 ******************************/

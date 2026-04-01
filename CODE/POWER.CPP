@@ -44,8 +44,7 @@
  *   PowerClass::Flash_Power -- Flag the power bar to flash.                                   *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-
+#include	"FUNCTION.H"
 
 /*
 **	Points to the shape to use for the "desired" power level indicator.

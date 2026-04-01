@@ -38,8 +38,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#include "crcpipe.h"
-
+#include "CRCPIPE.H"
 
 /***********************************************************************************************
  * CRCPipe::Put -- Retrieves the data bytes specified and calculates CRC on it.                *

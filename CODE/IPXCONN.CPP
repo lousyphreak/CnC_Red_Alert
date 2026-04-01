@@ -49,15 +49,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <string.h>
-#include "ipxconn.h"
-
+#include "IPXCONN.H"
 #ifdef WINSOCK_IPX
 #include "WSPROTO.H"
 
 #else
 
-#include "ipx95.h"
-#include "tcpip.h"
+#include "IPX95.H"
+#include "TCPIP.H"
 #endif	//WINSOCK_IPX
 
 

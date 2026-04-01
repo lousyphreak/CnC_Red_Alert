@@ -47,11 +47,11 @@
 
 
 
-//#include "function.h"
-#include 	"wincomm.h"
-#include	"timer.h"
-#include	"keyboard.h"
-#include	"misc.h"
+//#include "FUNCTION.H"
+#include 	"WINCOMM.H"
+#include	"TIMER.H"
+#include	"KEYBOARD.H"
+#include	"MISC.H"
 #include "sdl_fs.h"
 #include <unistd.h>
 #include <sys/types.h>
@@ -1485,4 +1485,3 @@ HANDLE	WinModemClass::Get_Port_Handle(void)
 {
 	return (PortHandle);
 }
-

@@ -100,8 +100,7 @@
  *   UnitClass::~UnitClass -- Destructor for unit objects.                                     *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-
+#include	"FUNCTION.H"
 
 /***********************************************************************************************
  * Recoil_Adjust -- Adjust pixel values in direction specified.                                *

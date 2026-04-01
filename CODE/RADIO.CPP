@@ -40,8 +40,7 @@
  *   RadioClass::Transmit_Message -- Transmits a message to the object specified.              *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-
+#include	"FUNCTION.H"
 
 /*
 **	These are the text representations of the radio messages that can be transmitted.

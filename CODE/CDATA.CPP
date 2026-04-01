@@ -48,8 +48,7 @@
  *   TemplateTypeClass::operator new -- Allocates a template type from special heap.           *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-
+#include	"FUNCTION.H"
 
 static TemplateTypeClass const Empty(
 	TEMPLATE_CLEAR1,

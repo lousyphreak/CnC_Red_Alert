@@ -45,9 +45,8 @@
  *   SliderClass::~SliderClass -- Destructor for slider object.                                *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-#include "slider.h"
-
+#include	"FUNCTION.H"
+#include "SLIDER.H"
 
 /***********************************************************************************************
  * SliderClass::SliderClass -- Normal constructor for a slider (with thumb) gadget.            *

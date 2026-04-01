@@ -78,8 +78,10 @@
 //
 ************************************************************************/
 
-#include <stddef.h>			/* ptrdiff_t, size_t */
-#include <string.h>			/* memcpy, memmove, memcmp, memset */
+#include <stddef.h>
+/* ptrdiff_t, size_t */
+#include <string.h>
+/* memcpy, memmove, memcmp, memset */
 
 #if 0 && !defined(assert)
 #  error <assert.h> not included

@@ -37,7 +37,7 @@
 #ifndef WW_AUDIO_H
 #define WW_AUDIO_H
 
-#include "wwstd.h"
+#include "WWSTD.H"
 #include <stdint.h>
 
 /*=========================================================================*/

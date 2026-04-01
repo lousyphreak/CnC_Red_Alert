@@ -38,8 +38,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#include	"shapipe.h"
-
+#include	"SHAPIPE.H"
 
 /***********************************************************************************************
  * SHAPipe::Put -- Pass data through the pipe, but use it to build a SHA digest.               *

@@ -45,8 +45,7 @@
  *   ActionChoiceClass::Draw_It -- Display the action choice as part of a list box.            *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-
+#include	"FUNCTION.H"
 static int32_t Normalize_Legacy_Action_Value(TActionType action, int32_t value)
 {
 	/*

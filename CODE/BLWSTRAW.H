@@ -39,9 +39,8 @@
 #ifndef BLWSTRAW_H
 #define BLWSTRAW_H
 
-#include	"straw.h"
-#include	"blowfish.h"
-
+#include	"STRAW.H"
+#include	"BLOWFISH.H"
 
 /*
 **	Performs Blowfish encryption/decryption to the data that is drawn through this straw. The

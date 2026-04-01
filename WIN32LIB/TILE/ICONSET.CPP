@@ -36,17 +36,16 @@
  *   Free_Icon_Set -- Frees allocations made by Load_Icon_Set().           *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-//#include	"function.h"
+//#include	"FUNCTION.H"
 
 
 #include	<stdlib.h>
 #include	<stdio.h>
 #include <string.h>
-#include	<wwstd.h>
-#include	<file.h>
-#include	"tile.h"
-#include	<iff.h>
-
+#include	<WWSTD.H>
+#include	<FILE.H>
+#include	"TILE.H"
+#include	<IFF.H>
 
 
 extern int Misc;

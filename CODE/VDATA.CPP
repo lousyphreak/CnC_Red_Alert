@@ -51,8 +51,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#include "function.h"
-
+#include "FUNCTION.H"
 
 // Submarine
 static VesselTypeClass const VesselSubmarine(

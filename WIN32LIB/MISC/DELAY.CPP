@@ -32,9 +32,8 @@
  * Functions:                                                              *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"wwstd.h"
-#include <timer.h>
-
+#include	<WWSTD.H>
+#include <TIMER.H>
 void Delay(int duration)
 {
 	unsigned long count;

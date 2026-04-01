@@ -52,8 +52,7 @@
  *   FactoryClass::~FactoryClass -- Default destructor for factory objects.                    *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-
+#include	"FUNCTION.H"
 
 /***********************************************************************************************
  * FactoryClass::FactoryClass -- Default constructor for factory objects.                      *

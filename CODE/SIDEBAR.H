@@ -38,12 +38,11 @@
 #ifndef SIDEBAR_H
 #define SIDEBAR_H
 
-#include	"control.h"
-#include	"shapebtn.h"
-#include	"function.h"
-#include	"power.h"
-#include	"factory.h"
-
+#include	"CONTROL.H"
+#include	"SHAPEBTN.H"
+#include	"FUNCTION.H"
+#include	"POWER.H"
+#include	"FACTORY.H"
 class InitClass {};
 
 class SidebarClass: public PowerClass

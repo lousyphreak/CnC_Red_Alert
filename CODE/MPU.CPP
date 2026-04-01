@@ -35,7 +35,7 @@
  * Functions:                                                                                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"mpu.h"
+#include	"MPU.H"
 #include <stdint.h>
 #include <time.h>
 

@@ -48,8 +48,7 @@
 #include "FUNCTION.H"
 #include <stdio.h>
 #include <string.h>
-#include "ipxaddr.h"
-
+#include "IPXADDR.H"
 #ifdef WINSOCK_IPX
 #include	"WSPROTO.H"
 #endif	//WINSOCK_IPX

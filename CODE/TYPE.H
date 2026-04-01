@@ -40,10 +40,9 @@
 
 #include "sdl_fs.h"
 
-#include	"mission.h"
-#include	"rect.h"
-#include	"target.h"
-
+#include	"MISSION.H"
+#include	"RECT.H"
+#include	"TARGET.H"
 class MapEditClass;
 class HouseClass;
 class WeaponTypeClass;

@@ -62,8 +62,7 @@
 #include	"win32_compat.h"
 #include "sdl_fs.h"
 
-#include	"rawfile.h"
-
+#include	"RAWFILE.H"
 
 /***********************************************************************************************
  * RawFileClass::Error -- Handles displaying a file error message.                             *

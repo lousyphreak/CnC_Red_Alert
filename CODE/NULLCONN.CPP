@@ -41,12 +41,11 @@
  *   NullModemConnClass::Packet_Overhead_Size -- number of extra bytes     *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-#include "wincomm.h"
+#include	"FUNCTION.H"
+#include "WINCOMM.H"
 #include <stdio.h>
 #include <string.h>
-#include "nullconn.h"
-
+#include "NULLCONN.H"
 
 /***************************************************************************
  * NullModemConnClass::NullModemConnClass -- class constructor             *

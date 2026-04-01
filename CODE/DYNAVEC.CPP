@@ -45,7 +45,7 @@
 #include	"ICONLIST.H"
 #include	"TACTION.H"
 #include	"TEVENT.H"
-#include "vector.h"
+#include "VECTOR.H"
 #ifdef WINSOCK_IPX
 #include	"WSPROTO.H"
 #include	"WSPUDP.H"

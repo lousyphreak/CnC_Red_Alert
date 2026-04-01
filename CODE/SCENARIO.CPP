@@ -62,9 +62,8 @@
  *   ScenarioClass::Do_Fade_AI -- Process the palette fading effect.                           *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-#include "tcpip.h"
-
+#include	"FUNCTION.H"
+#include "TCPIP.H"
 extern int PreserveVQAScreen;
 
 //#include "WOLDEBUG.H"

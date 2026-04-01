@@ -30,10 +30,10 @@
 
 
 
-//#include	"function.h"
+//#include	"FUNCTION.H"
 #include "../WIN32LIB/INCLUDE/GBUFFER.H"
 #include <stdio.h>
-//#include "gbuffer.h"
+//#include "GBUFFER.H"
 //#include "math.h"
 
 

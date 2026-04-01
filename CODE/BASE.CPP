@@ -48,8 +48,7 @@
  *   BaseNodeClass::operator > -- greater-than operator                                        *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include "function.h"
-
+#include "FUNCTION.H"
 
 /***********************************************************************************************
  * BaseNodeClass::operator == -- equality operator                                             *

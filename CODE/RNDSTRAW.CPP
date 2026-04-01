@@ -47,9 +47,8 @@
 
 #include	<limits.h>
 #include	<string.h>
-#include	"rndstraw.h"
-#include	"sha.h"
-
+#include	"RNDSTRAW.H"
+#include	"SHA.H"
 
 /***********************************************************************************************
  * RandomStraw::RandomStraw -- Constructor for the random straw class.                         *

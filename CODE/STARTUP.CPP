@@ -46,7 +46,7 @@
 #include	"IPX95.H"
 
 #ifdef MCIMPEG // Denzil 6/15/98
-#include "mcimovie.h"
+#include "MCIMOVIE.H"
 #endif
 
 #ifdef WOLAPI_INTEGRATION

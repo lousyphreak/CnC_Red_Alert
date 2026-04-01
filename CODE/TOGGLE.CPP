@@ -38,9 +38,8 @@
  *   ToggleClass::Turn_On -- Turns the toggle button to the "ON" state.                        *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-#include	"toggle.h"
-
+#include	"FUNCTION.H"
+#include	"TOGGLE.H"
 
 /***********************************************************************************************
  * ToggleClass::ToggleClass -- Normal constructor for toggle button gadgets.                   *

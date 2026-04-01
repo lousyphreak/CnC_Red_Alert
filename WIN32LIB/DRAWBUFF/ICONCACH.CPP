@@ -52,10 +52,9 @@
 
 #include "win32_compat.h"
 #include "sdl_draw.h"
-#include "misc.h"
-#include "iconcach.h"
-#include "gbuffer.h"
-
+#include "MISC.H"
+#include "ICONCACH.H"
+#include "GBUFFER.H"
 
 static	WWLockData	IconLockData;
 

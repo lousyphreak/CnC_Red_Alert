@@ -38,9 +38,8 @@
 #ifndef MAP_H
 #define MAP_H
 
-#include	"gscreen.h"
-#include	"crate.h"
-
+#include	"GSCREEN.H"
+#include	"CRATE.H"
 CELL Coord_Cell(COORDINATE coord);
 
 class MapClass: public GScreenClass

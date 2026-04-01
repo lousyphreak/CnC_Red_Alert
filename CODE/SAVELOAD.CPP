@@ -47,11 +47,11 @@
  *   Save_Misc_Values -- saves miscellaneous variables                                         *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-#include	"vortex.h"
-#include "tcpip.h"
-
-//#include "WOLDEBUG.H"
+#include	"FUNCTION.H"
+#include	"VORTEX.H"
+#include "TCPIP.H"
+//
+#include "WOLDEBUG.H"
 
 
 //#define	SAVE_BLOCK_SIZE	512

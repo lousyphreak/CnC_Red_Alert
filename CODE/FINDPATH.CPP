@@ -51,8 +51,9 @@
  *   Set_Path_Overlap -- Sets the overlap bit for given cell                                   *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"function.h"
-//#include	<string.h>
+#include	"FUNCTION.H"
+//
+#include	<string.h>
 
 /*
 **	When an edge search is started, it can be performed CLOCKwise or

@@ -44,8 +44,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "misc.h"
-
+#include "MISC.H"
 //PRIVATE unsigned Divide_With_Round(unsigned num, unsigned den);
 
 
