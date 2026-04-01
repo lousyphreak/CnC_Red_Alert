@@ -52,7 +52,7 @@
 #include	"timer.h"
 #include	"keyboard.h"
 #include	"misc.h"
-#include <io.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>

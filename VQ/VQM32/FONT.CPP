@@ -45,7 +45,7 @@
 
 #include <stdlib.h>
 #include <fcntl.h>
-#include <io.h>
+#include <unistd.h>
 #include <string.h>
 #include <malloc.h>
 #include "font.h"

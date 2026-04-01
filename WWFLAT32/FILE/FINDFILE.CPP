@@ -57,7 +57,7 @@
 #include <direct.h>
 #include <dos.h>
 #include <fcntl.h>
-#include <io.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

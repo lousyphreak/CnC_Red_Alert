@@ -9,6 +9,12 @@ _Last updated: 2026-04-01_
 - Shared platform/rendering/input/audio support code lives in `WIN32LIB/`.
 - The active compatibility include order puts `SDL3_COMPAT/wrappers/` ahead of `CODE/` and `WIN32LIB/INCLUDE`.
 
+## Removed io wrapper
+
+- `SDL3_COMPAT/wrappers/io.h` is gone. After the earlier file-I/O cleanup removed `filelength()`, it had become a dead passthrough wrapper for `<fcntl.h>` and `<unistd.h>` only.
+- Repository-wide search found no remaining Red Alert-owned source file that still includes `<io.h>`.
+- The only remaining repository `<io.h>` include is SDL upstream's Windows-only `extern/SDL3/test/childprocess.c`, and that target is outside the supported build here because the top-level CMake forces `SDL_TESTS OFF`. Do not reintroduce an `io.h` wrapper just for that upstream test file.
+
 ## Removed conio surface
 
 - The supported CMake build defines `WIN32=1`, so the old non-`WIN32` `conio.h` fallback branches in active game code are dead. Keep keyboard input on the supported port routed through `WWKeyboardClass` / SDL-backed input; do not reintroduce `<conio.h>` or wrapper shims for `getch()`, `kbhit()`, `getche()`, or `cprintf()`.

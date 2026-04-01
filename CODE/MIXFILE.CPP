@@ -55,7 +55,7 @@
 #include	<cstdio>
 #include	<cstdlib>
 #include	<fcntl.h>
-#include	<io.h>
+#include <unistd.h>
 #include	<dos.h>
 #include	<errno.h>
 #include	<share.h>

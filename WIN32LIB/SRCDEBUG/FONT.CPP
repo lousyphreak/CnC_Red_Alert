@@ -39,7 +39,7 @@
 #include <malloc.h>
 #include <dos.h>
 #include <fcntl.h>
-#include <io.h>
+#include <unistd.h>
 #include <sys\stat.h>
 #include <string.h>
 #include <wwstd.h>

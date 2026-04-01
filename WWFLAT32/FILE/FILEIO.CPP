@@ -44,7 +44,8 @@
 
 #include <dos.h>
 #include <direct.h>
-#include <io.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 /*=========================================================================*/
 /* The following PRIVATE functions are in this file:                       */

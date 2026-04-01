@@ -60,7 +60,7 @@
 #include	<string.h>
 #include	<direct.h>
 #include	<fcntl.h>
-#include	<io.h>
+#include	<unistd.h>
 #include	<dos.h>
 #include	<share.h>
 #include	<sys\stat.h>
@@ -146,9 +146,9 @@ void RawFileClass::Error(int error, int , char const *)
 	if (canretry) {
 		if (GraphicMode == TXT_MODE) strcat(message, "\n");
 #ifdef GERMAN
-		strcat(message, " Beliebige Taste drcken fr erneuten Versuch.");
+		strcat(message, " Beliebige Taste drï¿½cken fï¿½r erneuten Versuch.");
 		if (GraphicMode == TXT_MODE) strcat(message, "\n");
-		strcat(message, " <ESC> drcken, um das Programm zu verlassen.");
+		strcat(message, " <ESC> drï¿½cken, um das Programm zu verlassen.");
 #else
 #ifdef FRENCH
 		strcat(message, " Appuyez sur une touche pour recommencer.");
@@ -164,7 +164,7 @@ void RawFileClass::Error(int error, int , char const *)
 	} else {
 		if (GraphicMode == TXT_MODE) strcat(message, "\n");
 #ifdef GERMAN
-		strcat(message, " Beliebige Taste drcken, um das Programm zu verlassen.");
+		strcat(message, " Beliebige Taste drï¿½cken, um das Programm zu verlassen.");
 #else
 #ifdef FRENCH
 		strcat(message, " Appuyez sur une touche pour quitter le programme.");

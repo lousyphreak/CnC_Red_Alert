@@ -50,7 +50,7 @@
 #include <sys\stat.h>
 #include <fcntl.h>
 #include <malloc.h>
-#include <io.h>
+#include <unistd.h>
 
 #define bool int
 #define true 1

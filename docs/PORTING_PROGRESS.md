@@ -8,6 +8,10 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Deleted the now-unused `SDL3_COMPAT/wrappers/io.h` wrapper completely:
+  - repository-wide search found no remaining Red Alert game/compat/archive source that still includes `<io.h>` after the earlier SDL file-I/O cleanup;
+  - the only remaining repository `<io.h>` include is SDL upstream's Windows-only `extern/SDL3/test/childprocess.c`, which stays outside the supported Red Alert build because `SDL_TESTS` is forced `OFF`;
+  - `cmake --build build --target redalert -j16` and `cmake --build build-asan --target redalert -j16` still succeed after deleting the file.
 - Removed the obsolete `SDL3_COMPAT/wrappers/conio.h` shim and cleaned up every remaining repository user:
   - active game sources no longer include `conio.h`, and the dead console fallback code in `CODE/STARTUP.CPP`, `CODE/RAND.CPP`, and `CODE/JSHELL.H` is gone;
   - surviving legacy/tool sources now either use existing headers directly (`VQ/VQM32/TESTVB.CPP`, `WINVQ/VQM32/TESTVB.CPP` now include `PORTIO.H`; `WIN32LIB/PROFILE/UTIL/PROFILE.CPP` uses `printf`) or were deleted when they were clearly backup/orphaned `conio` utilities (`WINVQ/VPLAY32/PLYVQA32.CPP`, `WWFLAT32/MISC/KEYCODE.CPP`, `*.BAK`, `WINVQ/VQA32/OLD/*`);
@@ -41,7 +45,7 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - **`win32_compat.h/cpp`**: removed `DeleteFile`, `GetFileInformationByHandle`, `GetFileTime`, `SetFileTime`, `FileTimeToDosDateTime`, `DosDateTimeToFileTime`, `FindFirstFile`, `FindNextFile`, `FindClose`, plus all internal helpers only used by them (`SearchMatch`, `SearchHandle`, FILETIME conversion helpers, `wildcard_to_regex`, `fill_find_data`, `make_search_match`, etc.); removed `WIN32_FIND_DATA`, `LPWIN32_FIND_DATA`, `BY_HANDLE_FILE_INFORMATION` structs (zero callers in game code); kept `FILETIME` struct (still used by `RegQueryInfoKey`/`RegEnumKeyEx` signatures).
   - **`dos_compat.cpp`**: removed `_dos_findfirst`/`_dos_findnext` and all their helpers; kept `_dos_getdrive`, `_dos_setdrive`, `_dos_getdiskfree`, `_harderr`, `_hardresume`.
   - **`dos.h`**: removed `_dos_findfirst`/`_dos_findnext` declarations; kept `find_t` (still referenced in `CODE/CONQUER.CPP`), `_A_*` constants, `_HARDERR_*` constants (`_HARDERR_FAIL` used in `CODE/CDFILE.CPP`), `diskfree_t`.
-  - **`io.h`**: removed `filelength()` (zero callers); header now just provides `<fcntl.h>` and `<unistd.h>`.
+  - **`io.h`**: removed `filelength()` (zero callers). That left only `<fcntl.h>` / `<unistd.h>` passthroughs, and the header has now been deleted entirely after confirming there are no remaining in-tree Red Alert users.
 - The active WSA animation loader is now LP64-safe again on the SDL/Linux path:
   - `WIN32LIB/WSA/WSA.CPP` now reads the WSA on-disk header plus frame-0 offsets with packed fixed-width `uint16_t` / `uint32_t` fields instead of host-sized `unsigned long`;
   - the runtime `largest_frame_size` accounting now translates the legacy 32-bit Animate header size to the current host `SysAnimHeaderType` size before laying out the animation buffers, so `Open_Animation()` no longer back-loads bogus frame data into `LCW_Uncompress()` on 64-bit builds;
@@ -61,7 +65,7 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - The empty forwarding-wrapper cleanup is now applied across the in-tree compat surface:
   - deleted `SDL3_COMPAT/wrappers/mem.h`, `modem.h`, `new.h`, `windows.h`, `WINDOWS.H`, and `windowsx.h`;
   - active C/C++ sources now include `win32_compat.h`, `<string.h>`, or `<new>` directly instead of routing through those forwarding headers;
-  - surviving compat headers such as `dos.h`, `ddraw.h`, `io.h`, `mmsystem.h`, `objbase.h`, `process.h`, and `winsock.h` now include `win32_compat.h` directly.
+  - surviving compat headers such as `dos.h`, `ddraw.h`, `mmsystem.h`, `objbase.h`, `process.h`, and `winsock.h` now include `win32_compat.h` directly.
   - only the legacy Windows-only `LAUNCHER/256BMP.C` and `WINVQ/VQAVIEW/DIALOGS.RC` artifacts still include the real SDK `windows.h`; the active SDL/Linux compat path no longer depends on the deleted forwarding headers.
   - `cmake --build build --target redalert -j16` and `cmake --build build-asan --target redalert -j16` still succeed after this cleanup.
 - The Linux build now enters the real game startup path instead of the old Unix stub path:

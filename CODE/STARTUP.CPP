@@ -42,7 +42,8 @@
 #include	<cstdarg>
 #include	<cstdio>
 #include	<cstdlib>
-#include	<io.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #ifdef WIN32
 #include  "CCDDE.H"

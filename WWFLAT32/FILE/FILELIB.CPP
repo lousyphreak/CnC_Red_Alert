@@ -60,7 +60,7 @@
 
 
 #include <fcntl.h>
-#include <io.h>
+#include <unistd.h>
 #include <process.h>
 #include <sys\stat.h>
 

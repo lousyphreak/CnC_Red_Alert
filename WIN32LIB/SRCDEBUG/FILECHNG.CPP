@@ -48,7 +48,8 @@
 #include <wwmem.h>
 #endif
 
-#include <io.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 /*=========================================================================*/
 /* The following PRIVATE functions are in this file:                       */

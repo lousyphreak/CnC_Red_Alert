@@ -43,7 +43,7 @@
 
 #if(IBM)
 #include <fcntl.h>
-#include <io.h>
+#include <unistd.h>
 
 #include <errno.h>
 
