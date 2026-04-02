@@ -602,6 +602,27 @@ static char const * Speech[VOX_COUNT] =  {
 static VoxType CurrentVoice = VOX_NONE;
 
 
+static bool Is_Any_Speech_Buffer_Playing(void)
+{
+	for (int index = 0; index < ARRAY_SIZE(SpeechBuffer); index++) {
+		if (SpeechBuffer[index] != NULL && Is_Sample_Playing(SpeechBuffer[index])) {
+			return(true);
+		}
+	}
+	return(false);
+}
+
+
+static void Stop_All_Speech_Buffers(void)
+{
+	for (int index = 0; index < ARRAY_SIZE(SpeechBuffer); index++) {
+		if (SpeechBuffer[index] != NULL) {
+			Stop_Sample_Playing(SpeechBuffer[index]);
+		}
+	}
+}
+
+
 /***********************************************************************************************
  * Speech_Name -- Fetches the name for the voice specified.                                    *
  *                                                                                             *
@@ -732,7 +753,8 @@ void Speak_AI(void)
 void Stop_Speaking(void)
 {
 	SpeakQueue = VOX_NONE;
-	Stop_Sample_Playing(SpeechBuffer);
+	CurrentVoice = VOX_NONE;
+	Stop_All_Speech_Buffers();
 }
 
 
@@ -755,7 +777,7 @@ void Stop_Speaking(void)
 bool Is_Speaking(void)
 {
 	Speak_AI();
-	if (!Debug_Quiet && SampleType != 0 && (SpeakQueue != VOX_NONE || Is_Sample_Playing(SpeechBuffer))) {
+	if (!Debug_Quiet && SampleType != 0 && (SpeakQueue != VOX_NONE || Is_Any_Speech_Buffer_Playing())) {
 		return(true);
 	}
 	return(false);

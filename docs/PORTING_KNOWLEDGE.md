@@ -1,5 +1,18 @@
 # Porting Knowledge
 
+## EVA speech state must track the actual speech buffers
+
+- The EVA voice path in `CODE/AUDIO.CPP` uses two reusable sample buffers: `SpeechBuffer[2]`.
+  - `Speak_AI()` starts playback from one concrete buffer (`SpeechBuffer[_index]`), and `Is_Sample_Playing(...)` / `Stop_Sample_Playing(...)` operate on the exact sample pointer that was queued into the audio system.
+  - Practical rule: never pass the `SpeechBuffer` array object itself to those helpers; iterate `SpeechBuffer[index]` and operate on each live buffer individually.
+- Practical symptom when this goes wrong:
+  - `Stop_Speaking()` can fail to stop the currently playing EVA sample even though callers think they forcibly cleared speech;
+  - `Is_Speaking()` can return false immediately after `Speak(...)` starts playback, because it is checking the wrong pointer and therefore misses the live sample;
+  - scenario/menu transition code then races ahead while EVA is still active, which can leak or glitch mission-exit speech such as `"battle control terminated"` into the front end.
+- Safe fix pattern:
+  - keep a tiny helper that answers "is any speech buffer playing?" by looping over `SpeechBuffer[index]`;
+  - make `Stop_Speaking()` clear `SpeakQueue`, reset `CurrentVoice`, and stop every loaded speech buffer explicitly.
+
 ## Movie audio volume routing
 
 - The active VQA movie playback path does **not** automatically inherit either gameplay-audio slider.
@@ -69,6 +82,9 @@ _Last updated: 2026-04-02_
   - the public VQ/VQA/VQM headers are under `WIN32LIB/INCLUDE/{VQ.H,VQA32/,VQM32/}`;
   - the old `VQ/VQA32` and `VQ/INCLUDE` paths are historical only in older notes/changelog entries and should not be treated as the active build roots anymore.
 - The active compatibility include order puts `SDL3_COMPAT/wrappers/` ahead of `CODE/` and `WIN32LIB/INCLUDE`.
+- The main menu entry point is another good audio containment boundary.
+  - `CODE/INIT.CPP::Select_Game(...)` is the first front-end step after leaving gameplay.
+  - Practical rule: stop EVA speech there as well as during scenario clearing, so no scenario-local voice can leak into the title/menu flow even if a specific exit path forgets to wait correctly.
 
 ## Integer-width audit findings
 

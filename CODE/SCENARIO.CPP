@@ -683,6 +683,11 @@ void Clear_Scenario(void)
 {
 // TCTCTC -- possibly just use in-place new of scenario object?
 
+	/*
+	**	No scenario-local EVA line should survive into the next scenario/menu state.
+	*/
+	Stop_Speaking();
+
 	Scen.MissionTimer = 0;
 	Scen.MissionTimer.Stop();
 	Scen.Timer = 0;

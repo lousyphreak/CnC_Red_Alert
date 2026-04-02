@@ -8,6 +8,13 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Fixed an intermittent EVA speech leak/loop when aborting a mission back to the main menu:
+  - reproduced the code path from the in-game quit flow through `CODE/GOPTIONS.CPP::Process(...)` -> `Queue_Exit()` -> `CODE/EVENT.CPP::EXIT`, where the engine intentionally plays `VOX_CONTROL_EXIT` (`"battle control terminated"`) while leaving the scenario and then returns to `Select_Game(...)` for the front-end;
+  - traced the real fault to `CODE/AUDIO.CPP`: `Stop_Speaking()` and `Is_Speaking()` were checking the `SpeechBuffer` array object itself instead of the actual loaded speech sample buffers (`SpeechBuffer[index]`), so the quit path could falsely believe EVA had stopped while the live sample was still playing and therefore let menu/front-end teardown race active speech;
+  - fixed the speech bookkeeping by teaching `Stop_Speaking()` / `Is_Speaking()` to iterate the real speech buffers, resetting `CurrentVoice` on forced stop, and reusing the existing sample helpers on each loaded buffer instead of inventing a separate audio shutdown path;
+  - added defensive teardown guards at the scenario/menu boundaries so no EVA line can leak into the next state even if a future caller forgets to wait properly: `CODE/SCENARIO.CPP::Clear_Scenario()` now stops speech before clearing scenario data, and `CODE/INIT.CPP::Select_Game(...)` stops speech before re-entering the title/menu flow;
+  - validation for this checkpoint: `cmake --build build --target redalert -j8`, `cmake --build build-asan --target redalert -j8`, and a timed `GameData/redalert-asan` startup smoke run all succeed after the change.
+
 - Fixed movie playback audio to follow the existing in-game volume controls:
   - traced the active VQA movie path to `CODE/CONQUER.CPP::Try_Play_Movie(...)`, where `Anim_Init()` reset `AnimControl` from the VQA defaults and left `AnimControl.Volume` at the hardcoded max value (`0x00FF`) for every movie;
   - confirmed the SDL/VQA audio backend already honors `VQAConfig::Volume`, so the missing behavior was only at the movie-launch call site rather than deeper in `WIN32LIB/VQA32`;
