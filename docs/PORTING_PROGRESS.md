@@ -8,6 +8,12 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Integrated the live VQA/VQM code into `WIN32LIB` so the active build no longer depends on duplicate `VQ` tree copies:
+  - moved the compiled VQA runtime from `VQ/VQA32/` into `WIN32LIB/VQA32/` and moved the live public VQ headers from `VQ/INCLUDE/{VQ.H,VQA32/,VQM32/}` into `WIN32LIB/INCLUDE/{VQ.H,VQA32/,VQM32/}`, keeping the existing include spellings (`<VQ.H>`, `<VQA32/...>`, `<VQM32/...>`) intact while making `WIN32LIB` the canonical home for the movie path;
+  - updated `CMakeLists.txt` so the VQA runtime now builds as part of `win32lib` instead of being appended from `VQ/VQA32`, removed the stale `VQ/INCLUDE` / `WINVQ/INCLUDE` live include-path entries, and added the new `WIN32LIB/VQA32` subtree to the case-fix/build glob setup;
+  - removed the old duplicate `VQ/INCLUDE/WWLIB32/` surface and the superseded `VQ/VQA32` local header copies that only existed to mirror the public VQA headers, so there is no longer a second VQ-owned declaration/source tree shadowing the live build;
+  - validation for this checkpoint: `cmake --build build --target redalert -j8` and `cmake --build build-asan --target redalert -j8` both succeed after the move, and regenerated compile-command spot checks show 9 active `WIN32LIB/VQA32` translation units with zero remaining `VQ/VQA32` or `VQ/INCLUDE` compile-path references.
+
 - Replaced the temporary `CCFILE` file-I/O wrappers with a direct 32-bit integration:
   - removed the stopgap overloaded `Read_File` / `Write_File` / `Seek_File` helpers from `CODE/CCFILE.CPP` and made the real exported definitions match the existing engine file contract directly (`int32_t` handles/counts and `uint32_t` seek/size values), which is also what `FileClass`, `RawFileClass`, and `CCFileClass` already use internally;
   - synced the VQ duplicate declaration surface in `VQ/INCLUDE/WWLIB32/FILE.H` back to the same 32-bit contract so the duplicated public headers no longer advertise a different ABI than the live implementation;

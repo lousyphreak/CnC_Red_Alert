@@ -47,8 +47,8 @@
 #include <VQM32/VIDEO.H>
 #include <VQM32/SOSCOMP.H>
 #include <VQM32/CAPTOKEN.H>
-#include "VQAFILE.H"
-#include "VQAPLAY.H"
+#include <VQA32/VQAFILE.H>
+#include <VQA32/VQAPLAY.H>
 #include "CAPTION.H"
 
 #if(VQAAUDIO_ON)

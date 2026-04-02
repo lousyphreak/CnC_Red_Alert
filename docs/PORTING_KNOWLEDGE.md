@@ -20,6 +20,10 @@ _Last updated: 2026-04-02_
 - The repository ships a bundled SDL3 source tree in `extern/SDL3`.
 - The main game logic lives in `CODE/`.
 - Shared platform/rendering/input/audio support code lives in `WIN32LIB/`.
+- The live movie stack now lives in `WIN32LIB` too:
+  - the compiled VQA runtime is under `WIN32LIB/VQA32/`;
+  - the public VQ/VQA/VQM headers are under `WIN32LIB/INCLUDE/{VQ.H,VQA32/,VQM32/}`;
+  - the old `VQ/VQA32` and `VQ/INCLUDE` paths are historical only in older notes/changelog entries and should not be treated as the active build roots anymore.
 - The active compatibility include order puts `SDL3_COMPAT/wrappers/` ahead of `CODE/` and `WIN32LIB/INCLUDE`.
 
 ## Integer-width audit findings
