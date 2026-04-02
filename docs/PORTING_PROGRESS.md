@@ -8,6 +8,12 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Fixed movie playback audio to follow the existing in-game volume controls:
+  - traced the active VQA movie path to `CODE/CONQUER.CPP::Try_Play_Movie(...)`, where `Anim_Init()` reset `AnimControl` from the VQA defaults and left `AnimControl.Volume` at the hardcoded max value (`0x00FF`) for every movie;
+  - confirmed the SDL/VQA audio backend already honors `VQAConfig::Volume`, so the missing behavior was only at the movie-launch call site rather than deeper in `WIN32LIB/VQA32`;
+  - updated movie launch to set `AnimControl.Volume` from the louder of the two existing user-facing sliders (`Options.Volume` for sound effects vs `Options.ScoreVolume` for music), which gives videos a sensible volume without inventing a new option or changing non-movie audio behavior;
+  - validation for this checkpoint: `cmake --build build --target redalert -j8` and `cmake --build build-asan --target redalert -j8` both succeed after the change.
+
 - Fixed the fog-of-war / shroud soft-edge regression in the shadow-table generator:
   - compared the generated `ShadowTrans` table across current `HEAD`, the earlier regressed `9ee4c9e`, and the older-good `46e5b76` with a standalone harness linked against the real in-tree game objects and run against the real `GameData/` palette data;
   - verified that current `HEAD` and `9ee4c9e` produced the same collapsed shadow rows while `46e5b76` produced the varied remap rows that feather the shroud edge, which ruled out the final SDL presentation path and pointed back at the table-generation code itself;

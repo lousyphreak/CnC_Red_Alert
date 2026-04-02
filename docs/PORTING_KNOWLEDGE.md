@@ -1,5 +1,13 @@
 # Porting Knowledge
 
+## Movie audio volume routing
+
+- The active VQA movie playback path does **not** automatically inherit either gameplay-audio slider.
+  - `CODE/INIT.CPP::Anim_Init()` seeds `AnimControl` from `VQA_DefaultConfig(...)`, and the VQA defaults still set `VQAConfig::Volume` to full scale (`0x00FF`).
+  - The SDL3 VQA audio backend in `WIN32LIB/VQA32/AUDIOCOMPAT.CPP` already applies `config->Volume` directly as a 0..255 gain scalar, so if movies sound too loud the fix belongs at the `AnimControl` setup site, not in the backend mixer.
+- Practical rule for this tree: when launching a movie from `CODE/CONQUER.CPP::Try_Play_Movie(...)`, explicitly assign `AnimControl.Volume` from game options before `VQA_Open(...)`.
+  - Current policy: use the louder of `Options.Volume` (sound effects) and `Options.ScoreVolume` (music), since the UI exposes no separate movie slider and that preserves audibility without adding a new setting.
+
 ## Fog-of-war shadow-table regression after fixed-width cleanup
 
 - The shroud/fog soft edge depends on the generated `ShadowTrans` remap table, not just on the final SDL presentation path.

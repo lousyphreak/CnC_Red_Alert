@@ -153,6 +153,12 @@ static void Conquer_Trace(char const * format, ...)
 	va_end(args);
 }
 
+static int32_t Movie_Playback_Volume(void)
+{
+	const fixed louder = (Options.ScoreVolume > Options.Volume) ? Options.ScoreVolume : Options.Volume;
+	return(louder * 256);
+}
+
 #define SHAPE_TRANS		0x40
 
 void * Get_Shape_Header_Data(void * ptr);
@@ -2843,8 +2849,9 @@ bool Try_Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 		} else {
 			AnimControl.OptionFlags &= ~VQAOPTF_AUDIO;
 		}
-		Conquer_Trace("Play_Movie prepared file=%s size=%ldx%ld audio=%d", fullname, AnimControl.ImageWidth, AnimControl.ImageHeight,
-			(AnimControl.OptionFlags & VQAOPTF_AUDIO) ? 1 : 0);
+		AnimControl.Volume = Movie_Playback_Volume();
+		Conquer_Trace("Play_Movie prepared file=%s size=%ldx%ld audio=%d volume=%ld", fullname, AnimControl.ImageWidth, AnimControl.ImageHeight,
+			(AnimControl.OptionFlags & VQAOPTF_AUDIO) ? 1 : 0, AnimControl.Volume);
 
 		if ((vqa = VQA_Alloc()) != NULL) {
 			VQA_Init(vqa, MixFileHandler);
