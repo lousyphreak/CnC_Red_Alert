@@ -312,7 +312,6 @@ template class DynamicVectorClass<EventChoiceClass *>;
 template class DynamicVectorClass<FileEntryClass *>;
 template class DynamicVectorClass<MultiMission *>;
 template class DynamicVectorClass<ObjectClass *>;
-template class DynamicVectorClass<PhoneEntryClass *>;
 template class DynamicVectorClass<RemapControlType *>;
 template class DynamicVectorClass<TeamMissionClass *>;
 template class DynamicVectorClass<TriggerClass *>;

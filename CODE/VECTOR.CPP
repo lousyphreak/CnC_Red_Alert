@@ -721,7 +721,6 @@ template class VectorClass<EventChoiceClass *>;
 template class VectorClass<FileEntryClass *>;
 template class VectorClass<MultiMission *>;
 template class VectorClass<ObjectClass *>;
-template class VectorClass<PhoneEntryClass *>;
 template class VectorClass<RemapControlType *>;
 template class VectorClass<TeamMissionClass *>;
 template class VectorClass<TriggerClass *>;

@@ -453,7 +453,7 @@ bool Select_Game(bool fade)
 		SEL_NEW_SCENARIO_AM,				// Expansion scenario to play.
 		SEL_START_NEW_GAME,			// start a new game
 		SEL_LOAD_MISSION,				// load a saved game
-		SEL_MULTIPLAYER_GAME,		// play modem/null-modem/network game
+		SEL_MULTIPLAYER_GAME,		// play a multiplayer game
 		SEL_INTRO,						// couch-potato mode
 		SEL_EXIT,						// exit to DOS
 		SEL_FAME,						// view the hall o' fame
@@ -468,7 +468,7 @@ bool Select_Game(bool fade)
 		SEL_INTERNET,
 #endif	// !INTERNET_OFF
 		SEL_LOAD_MISSION,				// load a saved game
-		SEL_MULTIPLAYER_GAME,		// play modem/null-modem/network game
+		SEL_MULTIPLAYER_GAME,		// play a multiplayer game
 		SEL_INTRO,						// couch-potato mode
 		SEL_EXIT,						// exit to DOS
 		SEL_FAME,						// view the hall o' fame
@@ -905,41 +905,6 @@ bool Select_Game(bool fade)
 							}
 							break;
 
-						case GAME_NULL_MODEM:
-						case GAME_MODEM:
-							if ( Session.Type != GAME_SKIRMISH && NullModem.Num_Connections() ) {
-								NullModem.Init_Send_Queue();
-
-								if ((Session.Type == GAME_NULL_MODEM &&
-									Session.ModemType == MODEM_NULL_HOST) ||
-									(Session.Type == GAME_MODEM &&
-									Session.ModemType == MODEM_DIALER) ) {
-
-									if ( !Com_Scenario_Dialog() ) {
-										Session.Type = Select_Serial_Dialog();
-										if (Session.Type == GAME_NORMAL) {		// user hit Cancel
-											display = true;
-											selection = SEL_NONE;
-										}
-									}
-								} else {
-									if ( !Com_Show_Scenario_Dialog() ) {
-										Session.Type = Select_Serial_Dialog();
-										if (Session.Type == GAME_NORMAL) {		// user hit Cancel
-											display = true;
-											selection = SEL_NONE;
-										}
-									}
-								}
-							} else {
-								Session.Type = Select_MPlayer_Game();
-								if (Session.Type == GAME_NORMAL) {		// 'Cancel'
-									display = true;
-									selection = SEL_NONE;
-								}
-							}
-							break;
-
 						case GAME_INTERNET:
 							Session.Type = Select_MPlayer_Game();
 							if (Session.Type == GAME_NORMAL) {		// 'Cancel'
@@ -958,13 +923,8 @@ bool Select_Game(bool fade)
 //debugprint( "Session.Type = %i\n", Session.Type );
 					switch (Session.Type) {
 						/*
-						**	Modem, Null-Modem or internet
+						**	Immediate local/portable multiplayer start paths
 						*/
-						case GAME_MODEM:
-						case GAME_NULL_MODEM:
-#ifndef WOLAPI_INTEGRATION
-						case GAME_INTERNET:
-#endif
 						case GAME_SKIRMISH:
 							Theme.Fade_Out();
 							process = false;
@@ -1201,8 +1161,6 @@ bool Select_Game(bool fade)
 
 #ifdef FIXIT_CSII	//	checked - ajw 9/28/98
 	switch(Session.Type) {
-		case GAME_MODEM:
-		case GAME_NULL_MODEM:
 		case GAME_IPX:
 #ifdef FIXIT_VERSION_3
 			if( !bAftermathMultiplayer ) {

@@ -466,15 +466,9 @@ void Main_Game(int argc, char * argv[])
 			Session.RecordFile.Close();
 		}
 
-		if (Session.Type == GAME_NULL_MODEM || Session.Type == GAME_MODEM) {
+		if (Session.Type == GAME_IPX) {
 			if (!Session.Play) {
-				Modem_Signoff();
-			}
-		} else {
-			if (Session.Type == GAME_IPX) {
-				if (!Session.Play) {
-					Shutdown_Network();
-				}
+				Shutdown_Network();
 			}
 		}
 
@@ -1133,7 +1127,6 @@ static void Message_Input(KeyNumType &input)
 	int rc;
 	char txt[MAX_MESSAGE_LENGTH+32];
 	int id;
-	SerialPacketType * serial_packet;
 	int i;
 	KeyNumType copy_input;
 	//char *msg;
@@ -1156,24 +1149,13 @@ static void Message_Input(KeyNumType &input)
 		memset (txt, 0, 40);
 
 		/*
-		**	For a serial game, send a message on F1 or F4; set 'txt' to the
-		**	"Message:" string & add an editable message to the list.
-		*/
-		if (Session.Type==GAME_NULL_MODEM || Session.Type==GAME_MODEM) {
-			if (input==KN_F1 || input==(KN_F1 + Session.MaxPlayers - 1)) {
-
-				strcpy(txt, Text_String(TXT_MESSAGE));	// "Message:"
-
-				Session.Messages.Add_Edit (Session.ColorIdx,
-					TPF_6PT_GRAD | TPF_USE_GRAD_PAL | TPF_FULLSHADOW, txt, 0, 232 * RESFACTOR);
-
-				Map.Flag_To_Redraw(false);
-			}
-		} else if ((Session.Type == GAME_IPX || Session.Type == GAME_INTERNET) && !Session.Messages.Is_Edit()) {
-		/*
 		**	For a network game:
 		**	F1-F7 = "To <name> (house):" (only allowed if we're not in ObiWan mode)
 		**	F8 = "To All:"
+		*/
+		if ((Session.Type == GAME_IPX || Session.Type == GAME_INTERNET) && !Session.Messages.Is_Edit()) {
+		/*
+		**	Network game message addressing
 		*/
 			if (input==(KN_F1 + Session.MaxPlayers - 1)) {
 
@@ -1331,40 +1313,7 @@ static void Message_Input(KeyNumType &input)
 	**	Send a message
 	*/
 	if ((rc==3 || rc==4) && Session.Type != GAME_NORMAL && Session.Type != GAME_SKIRMISH) {
-		/*
-		**	Serial game: fill in a SerialPacketType & send it.
-		**	(Note: The size of the SerialPacketType.Command must be the same as
-		**	the EventClass.Type!)
-		*/
-		if (Session.Type==GAME_NULL_MODEM || Session.Type==GAME_MODEM) {
-			serial_packet = (SerialPacketType *)NullModem.BuildBuf;
-
-			serial_packet->Command = SERIAL_MESSAGE;
-			strcpy (serial_packet->Name, Session.Players[0]->Name);
-			serial_packet->ID = Session.ColorIdx;
-
-			if (rc==3) {
-				strcpy (serial_packet->Message.Message, Session.Messages.Get_Edit_Buf());
-			} else {
-				strcpy (serial_packet->Message.Message, Session.Messages.Get_Overflow_Buf());
-				Session.Messages.Clear_Overflow_Buf();
-			}
-
-			/*
-			** Send the message, and store this message in our LastMessage
-			** buffer; the computer may send us a version of it later.
-			*/
-			NullModem.Send_Message(NullModem.BuildBuf,
-				sizeof(SerialPacketType), 1);
-
-#ifdef FIXIT_CSII	//	checked - ajw 9/28/98
-	char *ptr = &serial_packet->Message.Message[0];
-	if (!strncmp(ptr,"SECRET UNITS ON ",15) && NewUnitsEnabled) {
-		Enable_Secret_Units();
-	}
-#endif
-			strcpy(Session.LastMessage, serial_packet->Message.Message);
-		} else if (Session.Type == GAME_IPX || Session.Type == GAME_INTERNET) {
+		if (Session.Type == GAME_IPX || Session.Type == GAME_INTERNET) {
 #ifdef WOLAPI_INTEGRATION
 			NetNumType blip;
 			NetNodeType blop;
@@ -1606,7 +1555,7 @@ void Call_Back(void)
 {
 	const bool trace_callback = Conquer_Callback_Trace_Enabled();
 	if (trace_callback) {
-		Conquer_Trace("Call_Back entry SampleType=%d SessionType=%d ModemService=%d", SampleType, Session.Type, Session.ModemService);
+		Conquer_Trace("Call_Back entry SampleType=%d SessionType=%d", SampleType, Session.Type);
 	}
 
 	SDL_GameInput_Pump();
@@ -1645,12 +1594,6 @@ void Call_Back(void)
 	/*
 	**	Serial game maintenance.
 	*/
-	if (Session.Type == GAME_NULL_MODEM || ((Session.Type == GAME_MODEM) && Session.ModemService)) {
-		if (trace_callback) Conquer_Trace("Call_Back NullModem start");
-		NullModem.Service();
-		if (trace_callback) Conquer_Trace("Call_Back NullModem complete");
-	}
-
 #ifdef WOLAPI_INTEGRATION
 	//	Wolapi maintenance.
 	if( pWolapi )

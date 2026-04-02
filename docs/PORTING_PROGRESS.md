@@ -736,3 +736,27 @@ Converted all remaining Win32 file I/O calls in the game-layer source files to S
 4. Validate the same CMake target on Windows and fix any remaining case, type-width, or wrapper issues that only surface there.
 5. Continue tightening remaining legacy Win32/DirectDraw/audio assumptions only where runtime behavior or sanitizers still prove they are wrong on 64-bit/SDL3 builds.
 6. Keep the porting docs aligned with each verified runtime or cross-platform milestone.
+
+## Modem/null-modem removal
+
+- Removed the remaining legacy serial multiplayer implementation rather than just hiding its UI:
+  - deleted `CODE/{NULLMGR,NULLCONN}.{CPP,H}`;
+  - deleted `WIN32LIB/WINCOMM/{WINCOMM,MODEMREG}.{CPP,H}` and `WIN32LIB/INCLUDE/{WINCOMM,MODEMREG}.H`;
+  - updated `CMakeLists.txt` so those sources are no longer part of the build graph.
+- Reworked the active gameplay/session code so supported multiplayer paths are now skirmish, IPX, Internet, TEN, and MPATH only:
+  - removed `GAME_MODEM` / `GAME_NULL_MODEM` from `SessionClass::GameType` while preserving the surviving enum numeric values explicitly;
+  - removed the serial settings, phone book, init-string state, and related INI read/write code from `CODE/SESSION.{H,CPP}`;
+  - removed the `PhoneEntryClass *` template instantiations from `CODE/{VECTOR,DYNAVEC}.CPP`.
+- Replaced the old serial-heavy `CODE/NULLDLG.CPP` implementation with a skirmish-only scenario dialog plus the shared `Find_Local_Scenario(...)` helper that the remaining multiplayer flows still use.
+- Cleaned the runtime branches that only existed for serial play:
+  - `CODE/MPLAYER.CPP`, `CODE/INIT.CPP`, `CODE/CONQUER.CPP`, `CODE/NETDLG.CPP`, `CODE/SCORE.CPP`, and `CODE/DISPLAY.CPP` no longer offer or special-case modem/null-modem play;
+  - `CODE/QUEUE.CPP` no longer contains serial packet processing or reconnect handling;
+  - `CODE/SENDFILE.CPP` is now network-only and uses `NET_FILE_CHUNK` for scenario transfer packets.
+- Validation:
+  - `cmake --build build --target redalert -j16` succeeds after the modem/null-modem removal and source deletions.
+  - `cmake --build build-asan --target redalert -j16` also succeeds after the cleanup.
+- Cross-checked the modem removal against `SDL3_COMPAT/wrappers/win32_compat.{h,cpp}` and deleted the dead compatibility surface that only existed for the removed serial backend:
+  - removed the comm-port constants, `DCB` / `COMMTIMEOUTS` / `COMSTAT` structs, and the stubbed `GetComm*` / `SetComm*` / `PurgeComm` / `EscapeCommFunction` / overlapped-serial helpers;
+  - removed the unused `RegQueryInfoKey` / `RegEnumKeyEx` declarations and implementations that were only needed by the deleted modem registry-enumeration path;
+  - removed additional dead leftovers after a second usage pass: `OVERLAPPED` / `LPOVERLAPPED`, the uncalled `FindWindow()` wrapper plus its stored window class-name field, and several now-unused Win32 constants/aliases (`SW_NORMAL`, `COLORREF`, `HKEY_CLASSES_ROOT`, `DRIVE_UNKNOWN`, `DRIVE_REMOTE`, `DRIVE_RAMDISK`, `FILE_ATTRIBUTE_HIDDEN`, `FILE_ATTRIBUTE_SYSTEM`, `FILE_ATTRIBUTE_TEMPORARY`);
+  - kept the generic `CreateFile` / `ReadFile` / `WriteFile` and basic registry lookup wrappers because the live tree still uses them in startup, WOL, and debug/logging paths.

@@ -62,8 +62,6 @@ using WPARAM = uintptr_t;
 using LRESULT = intptr_t;
 using MCIDEVICEID = UINT;
 using ATOM = WORD;
-using COLORREF = DWORD;
-using ULONG_PTR = uintptr_t;
 using HANDLE = void*;
 using HGLOBAL = void*;
 using HINSTANCE = void*;
@@ -192,7 +190,6 @@ using HWND = RAWindow*;
 
 #define SW_HIDE 0
 #define SW_SHOWNORMAL 1
-#define SW_NORMAL 1
 #define SW_SHOWMINIMIZED 2
 #define SW_SHOWMAXIMIZED 3
 #define SW_MAXIMIZE 3
@@ -273,58 +270,21 @@ using HWND = RAWindow*;
 #define OPEN_EXISTING 3U
 #define OPEN_ALWAYS 4U
 #define TRUNCATE_EXISTING 5U
-#define FILE_ATTRIBUTE_HIDDEN 0x00000002U
-#define FILE_ATTRIBUTE_SYSTEM 0x00000004U
 #define FILE_ATTRIBUTE_DIRECTORY 0x00000010U
 #define FILE_ATTRIBUTE_NORMAL 0x00000080U
-#define FILE_ATTRIBUTE_TEMPORARY 0x00000100U
-#define FILE_FLAG_OVERLAPPED 0x40000000U
 #define FILE_BEGIN 0U
 #define FILE_CURRENT 1U
 #define FILE_END 2U
 
-#define DRIVE_UNKNOWN 0U
 #define DRIVE_NO_ROOT_DIR 1U
 #define DRIVE_REMOVABLE 2U
 #define DRIVE_FIXED 3U
-#define DRIVE_REMOTE 4U
 #define DRIVE_CDROM 5U
-#define DRIVE_RAMDISK 6U
 
 #define GHND 0x0042
 #define GMEM_FIXED 0x0000
 #define GMEM_MOVEABLE 0x0002
 #define GMEM_ZEROINIT 0x0040
-
-#define SETDTR 5U
-#define CLRDTR 6U
-#define SETRTS 3U
-#define CLRRTS 4U
-#define SETBREAK 8U
-#define CLRBREAK 9U
-
-#define DTR_CONTROL_DISABLE 0U
-#define DTR_CONTROL_ENABLE 1U
-#define RTS_CONTROL_DISABLE 0U
-#define RTS_CONTROL_ENABLE 1U
-#define RTS_CONTROL_HANDSHAKE 2U
-
-#define PURGE_TXABORT 0x0001U
-#define PURGE_RXABORT 0x0002U
-#define PURGE_TXCLEAR 0x0004U
-#define PURGE_RXCLEAR 0x0008U
-
-#define CE_RXOVER 0x0001U
-#define CE_OVERRUN 0x0002U
-#define CE_RXPARITY 0x0004U
-#define CE_FRAME 0x0008U
-#define CE_IOE 0x4000U
-#define CE_TXFULL 0x0100U
-
-#define MS_CTS_ON 0x0010U
-#define MS_DSR_ON 0x0020U
-#define MS_RING_ON 0x0040U
-#define MS_RLSD_ON 0x0080U
 
 #define ERROR_SUCCESS 0L
 #define ERROR_FILE_NOT_FOUND 2L
@@ -342,7 +302,6 @@ using HWND = RAWindow*;
 #define KEY_READ 0x20019
 #define REG_SZ 1
 #define REG_DWORD 4
-#define HKEY_CLASSES_ROOT ((HKEY)(intptr_t)0x80000000)
 #define HKEY_LOCAL_MACHINE ((HKEY)(intptr_t)0x80000002)
 
 #define WSAEWOULDBLOCK 10035
@@ -403,72 +362,6 @@ struct WNDCLASS {
     LPCSTR lpszClassName;
 };
 
-struct OVERLAPPED {
-    ULONG_PTR Internal;
-    ULONG_PTR InternalHigh;
-    union {
-        struct {
-            DWORD Offset;
-            DWORD OffsetHigh;
-        };
-        LPVOID Pointer;
-    };
-    HANDLE hEvent;
-};
-using LPOVERLAPPED = OVERLAPPED*;
-
-struct DCB {
-    DWORD DCBlength;
-    DWORD BaudRate;
-    DWORD fBinary : 1;
-    DWORD fParity : 1;
-    DWORD fOutxCtsFlow : 1;
-    DWORD fOutxDsrFlow : 1;
-    DWORD fDtrControl : 2;
-    DWORD fDsrSensitivity : 1;
-    DWORD fTXContinueOnXoff : 1;
-    DWORD fOutX : 1;
-    DWORD fInX : 1;
-    DWORD fErrorChar : 1;
-    DWORD fNull : 1;
-    DWORD fRtsControl : 2;
-    DWORD fAbortOnError : 1;
-    DWORD fDummy2 : 17;
-    WORD wReserved;
-    WORD XonLim;
-    WORD XoffLim;
-    BYTE ByteSize;
-    BYTE Parity;
-    BYTE StopBits;
-    CHAR XonChar;
-    CHAR XoffChar;
-    CHAR ErrorChar;
-    CHAR EofChar;
-    CHAR EvtChar;
-    WORD wReserved1;
-};
-
-struct COMMTIMEOUTS {
-    DWORD ReadIntervalTimeout;
-    DWORD ReadTotalTimeoutMultiplier;
-    DWORD ReadTotalTimeoutConstant;
-    DWORD WriteTotalTimeoutMultiplier;
-    DWORD WriteTotalTimeoutConstant;
-};
-
-struct COMSTAT {
-    DWORD fCtsHold : 1;
-    DWORD fDsrHold : 1;
-    DWORD fRlsdHold : 1;
-    DWORD fXoffHold : 1;
-    DWORD fXoffSent : 1;
-    DWORD fEof : 1;
-    DWORD fTxim : 1;
-    DWORD fReserved : 25;
-    DWORD cbInQue;
-    DWORD cbOutQue;
-};
-
 struct FILETIME {
     DWORD dwLowDateTime;
     DWORD dwHighDateTime;
@@ -516,7 +409,6 @@ struct PALETTEENTRY {
 
 struct RAWindow {
     SDL_Window* sdl_window;
-    std::string class_name;
     std::string title;
     WNDPROC wnd_proc;
     int width;
@@ -532,7 +424,6 @@ extern "C" {
 ATOM RegisterClass(const WNDCLASS* wndclass);
 HWND CreateWindowEx(DWORD ex_style, LPCSTR class_name, LPCSTR window_name, DWORD style,
     INT x, INT y, INT width, INT height, HWND parent, HANDLE menu, HINSTANCE instance, LPVOID param);
-HWND FindWindow(LPCSTR class_name, LPCSTR window_name);
 BOOL ShowWindow(HWND window, INT command);
 BOOL SetForegroundWindow(HWND window);
 BOOL UpdateWindow(HWND window);
@@ -573,19 +464,8 @@ void LeaveCriticalSection(CRITICAL_SECTION* critical_section);
 
 HANDLE CreateFile(LPCSTR file_name, DWORD desired_access, DWORD share_mode, LPVOID security_attributes,
     DWORD creation_disposition, DWORD flags_and_attributes, HANDLE template_file);
-BOOL ReadFile(HANDLE handle, LPVOID buffer, DWORD number_of_bytes_to_read, LPDWORD number_of_bytes_read, LPOVERLAPPED overlapped);
-BOOL WriteFile(HANDLE handle, LPCVOID buffer, DWORD number_of_bytes_to_write, LPDWORD number_of_bytes_written, LPOVERLAPPED overlapped);
-BOOL GetCommState(HANDLE handle, DCB* dcb);
-BOOL SetCommState(HANDLE handle, const DCB* dcb);
-BOOL SetCommTimeouts(HANDLE handle, const COMMTIMEOUTS* timeouts);
-BOOL SetupComm(HANDLE handle, DWORD in_queue, DWORD out_queue);
-BOOL PurgeComm(HANDLE handle, DWORD flags);
-BOOL EscapeCommFunction(HANDLE handle, DWORD function);
-BOOL SetCommBreak(HANDLE handle);
-BOOL ClearCommBreak(HANDLE handle);
-BOOL GetOverlappedResult(HANDLE handle, LPOVERLAPPED overlapped, LPDWORD number_of_bytes_transferred, BOOL wait);
-BOOL ClearCommError(HANDLE handle, LPDWORD errors, COMSTAT* status);
-BOOL GetCommModemStatus(HANDLE handle, LPDWORD modem_status);
+BOOL ReadFile(HANDLE handle, LPVOID buffer, DWORD number_of_bytes_to_read, LPDWORD number_of_bytes_read, LPVOID overlapped);
+BOOL WriteFile(HANDLE handle, LPCVOID buffer, DWORD number_of_bytes_to_write, LPDWORD number_of_bytes_written, LPVOID overlapped);
 DWORD SetFilePointer(HANDLE handle, LONG distance_to_move, LONG* distance_to_move_high, DWORD move_method);
 UINT GetDriveType(LPCSTR root_path_name);
 BOOL GetVolumeInformation(LPCSTR root_path_name, LPSTR volume_name_buffer, DWORD volume_name_size, DWORD* volume_serial_number,
@@ -602,11 +482,6 @@ BOOL FreeLibrary(HMODULE module);
 DWORD GetModuleFileName(HINSTANCE instance, LPSTR file_name, DWORD size);
 
 LONG RegOpenKeyEx(HKEY key, LPCSTR sub_key, DWORD options, DWORD sam_desired, HKEY* result);
-LONG RegQueryInfoKey(HKEY key, LPSTR class_name, LPDWORD class_size, LPDWORD reserved, LPDWORD sub_keys,
-    LPDWORD max_sub_key_len, LPDWORD max_class_len, LPDWORD values, LPDWORD max_value_name_len,
-    LPDWORD max_value_len, LPDWORD security_descriptor, FILETIME* last_write_time);
-LONG RegEnumKeyEx(HKEY key, DWORD index, LPSTR name, DWORD* name_size, DWORD* reserved,
-    LPSTR class_name, DWORD* class_size, FILETIME* last_write_time);
 LONG RegQueryValueEx(HKEY key, LPCSTR value_name, DWORD* reserved, DWORD* type, LPBYTE data, DWORD* data_size);
 LONG RegCloseKey(HKEY key);
 

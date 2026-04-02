@@ -33,7 +33,7 @@
  *                                                                                             *
  *---------------------------------------------------------------------------------------------*
  * Functions:                                                                                  *
- *   Select_MPlayer_Game -- prompts user for NULL-Modem, Modem, or Network game                *
+ *   Select_MPlayer_Game -- prompts user for skirmish or network game                           *
  *   Clear_Listbox -- clears the given list box                                                *
  *   Clear_Vector -- clears the given NodeNameType vector                                      *
  *   Computer_Message -- "sends" a message from the computer                                   *
@@ -56,7 +56,7 @@ extern bool Is_Mission_Counterstrike (char *file_name);
  *      none.                                                                                  *
  *                                                                                             *
  * OUTPUT:                                                                                     *
- *      GAME_NORMAL, GAME_MODEM, etc.                                                          *
+ *      GAME_NORMAL, GAME_IPX, etc.                                                            *
  *                                                                                             *
  * WARNINGS:                                                                                   *
  *      none.                                                                                  *
@@ -83,15 +83,10 @@ GameType Select_MPlayer_Game (void)
 	int d_txt6_h = 7 *RESFACTOR;
 	int d_margin = 7 *RESFACTOR;
 
-	int d_modemserial_w = 80 *RESFACTOR;
-	int d_modemserial_h = 9 *RESFACTOR;
-	int d_modemserial_x = d_dialog_cx - d_modemserial_w / 2;
-	int d_modemserial_y = d_dialog_y + d_margin + d_txt6_h + d_margin;
-
 	int d_skirmish_w = 80 *RESFACTOR;
 	int d_skirmish_h = 9 *RESFACTOR;
 	int d_skirmish_x = d_dialog_cx - d_skirmish_w / 2;
-	int d_skirmish_y = d_modemserial_y + d_modemserial_h + 2*RESFACTOR;
+	int d_skirmish_y = d_dialog_y + d_margin + d_txt6_h + d_margin;
 
 	int d_ipx_w = 80 *RESFACTOR;
 	int d_ipx_h = 9 *RESFACTOR;
@@ -121,8 +116,7 @@ GameType Select_MPlayer_Game (void)
 	//	Button enumerations:
 	//------------------------------------------------------------------------
 	enum {
-		BUTTON_MODEMSERIAL = 100,
-		BUTTON_SKIRMISH,
+		BUTTON_SKIRMISH = 100,
 		BUTTON_IPX,
 #ifdef WOLAPI_INTEGRATION
 		BUTTON_WOL,				//	ajw
@@ -130,9 +124,9 @@ GameType Select_MPlayer_Game (void)
 		BUTTON_CANCEL,
 
 #ifdef WOLAPI_INTEGRATION
-		NUM_OF_BUTTONS = 5,		//	ajw
+		NUM_OF_BUTTONS = 4,		//	ajw
 #else
-		NUM_OF_BUTTONS = 4,
+		NUM_OF_BUTTONS = 3,
 #endif
 	};
 
@@ -166,15 +160,12 @@ GameType Select_MPlayer_Game (void)
 
 
 	//------------------------------------------------------------------------
-	// If IPX not active then do only the modem serial dialog
+	// The legacy serial-only fallback was removed with the modem cleanup.
 	//------------------------------------------------------------------------
 //	if ( !Ipx.Is_IPX() ) {
 //		return( Select_Serial_Dialog() );
 //	}
 
-
-	TextButtonClass modemserialbtn (BUTTON_MODEMSERIAL, TXT_MODEM_SERIAL, TPF_BUTTON,
-		d_modemserial_x, d_modemserial_y, d_modemserial_w, d_modemserial_h);
 
 	TextButtonClass skirmishbtn (BUTTON_SKIRMISH, TXT_SKIRMISH, TPF_BUTTON,
 		d_skirmish_x, d_skirmish_y, d_skirmish_w, d_skirmish_h);
@@ -204,8 +195,7 @@ GameType Select_MPlayer_Game (void)
 	//------------------------------------------------------------------------
 	//	Create the list
 	//------------------------------------------------------------------------
-	commands = &modemserialbtn;
-	skirmishbtn.Add_Tail(*commands);
+	commands = &skirmishbtn;
 	if(Ipx.Is_IPX()) {
 		ipxbtn.Add_Tail(*commands);
 	}
@@ -218,22 +208,21 @@ GameType Select_MPlayer_Game (void)
 	//	Fill array of button ptrs
 	//------------------------------------------------------------------------
 	curbutton = 0;
-	buttons[0] = &modemserialbtn;
-	buttons[1] = &skirmishbtn;
+	buttons[0] = &skirmishbtn;
 	if(Ipx.Is_IPX()) {
-		buttons[2] = &ipxbtn;
-#ifdef WOLAPI_INTEGRATION
-		buttons[3] = &wolbtn;			//	ajw
-		buttons[4] = &cancelbtn;
-#else
-		buttons[3] = &cancelbtn;
-#endif
-	} else {
+		buttons[1] = &ipxbtn;
 #ifdef WOLAPI_INTEGRATION
 		buttons[2] = &wolbtn;			//	ajw
 		buttons[3] = &cancelbtn;
 #else
 		buttons[2] = &cancelbtn;
+#endif
+	} else {
+#ifdef WOLAPI_INTEGRATION
+		buttons[1] = &wolbtn;			//	ajw
+		buttons[2] = &cancelbtn;
+#else
+		buttons[1] = &cancelbtn;
 #endif
 	}
 	buttons[curbutton]->Turn_On();
@@ -304,11 +293,6 @@ GameType Select_MPlayer_Game (void)
 		//	Process input
 		//.....................................................................
 		switch (input) {
-			case (BUTTON_MODEMSERIAL | KN_BUTTON):
-				selection = BUTTON_MODEMSERIAL;
-				pressed = true;
-				break;
-
 			case (BUTTON_SKIRMISH | KN_BUTTON):
 				selection = BUTTON_SKIRMISH;
 				pressed = true;
@@ -353,7 +337,7 @@ GameType Select_MPlayer_Game (void)
 				break;
 
 			case KN_RETURN:
-				selection = curbutton + BUTTON_MODEMSERIAL;
+				selection = curbutton + BUTTON_SKIRMISH;
 				pressed = true;
 				break;
 
@@ -368,28 +352,13 @@ GameType Select_MPlayer_Game (void)
 			//..................................................................
 			buttons[curbutton]->Turn_Off();
 			buttons[curbutton]->Flag_To_Redraw();
-			curbutton = selection - BUTTON_MODEMSERIAL;
+			curbutton = selection - BUTTON_SKIRMISH;
 			if(selection == BUTTON_CANCEL && !Ipx.Is_IPX()) curbutton--;
 			buttons[curbutton]->Turn_On();
 			buttons[curbutton]->IsPressed = true;
 			buttons[curbutton]->Draw_Me(true);
 
 			switch (selection) {
-				case (BUTTON_MODEMSERIAL):
-
-					//............................................................
-					// Pop up the modem/serial/com port dialog
-					//............................................................
-					retval = Select_Serial_Dialog();
-
-					if (retval != GAME_NORMAL) {
-						process = false;
-					} else {
-						buttons[curbutton]->IsPressed = false;
-						display = REDRAW_ALL;
-					}
-					break;
-
 				case (BUTTON_SKIRMISH):
 					Session.Type = GAME_SKIRMISH;
 					if (Com_Scenario_Dialog(true)) {

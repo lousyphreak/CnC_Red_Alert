@@ -57,7 +57,6 @@ bool Debug_Playtest = false;
 bool Debug_Heap_Dump = false;			// true = print the Heap Dump
 bool Debug_Smart_Print = false;		// true = print everything that calls Smart_Printf
 bool Debug_Trap_Check_Heap = false;	// true = check the Heap
-bool Debug_Modem_Dump = false;		// true = print the Modem Stuff
 bool Debug_Print_Events = false;		// true = print event & packet processing
 
 TFixedIHeapClass<AircraftClass>		Aircraft;
@@ -619,19 +618,6 @@ bool	bAftermathMultiplayer;		//	Is multiplayer game being played with Aftermath 
 unsigned long 	PlayingAgainstVersion;		// Negotiated version number
 bool				Version107InMix;				// Is there a v1.07 in the game
 #endif
-
-/***************************************************************************
-**	This is the null modem manager class.  Declaring this class doesn't
-** perform any allocations;
-*/
-NullModemClass NullModem (
-   16,											// number of send entries
-	16,											// number of receive entries
-	(MAX_SERIAL_PACKET_SIZE / sizeof(EventClass) ) * sizeof(EventClass) + sizeof( CommHeaderType ),
-	0x1234);										// Magic number must have each digit unique
-													// and different from the queue magic number
-
-
 
 /***************************************************************************
 **	This is the network IPX manager class.  It handles multiple remote

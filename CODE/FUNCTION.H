@@ -375,8 +375,6 @@ CELL Coord_Cell(COORDINATE coord);
 // Multiplayer session class
 #include "IPXMGR.H"
 // IPX connection manager
-#include	"NULLMGR.H"
-// Modem connection manager
 #include	"READLINE.H"
 #include	"VORTEX.H"
 #include "EGOS.H"
@@ -743,15 +741,7 @@ void Net_Reconnect_Dialog(int reconn, int fresh, int oldest_index, unsigned long
 /*
 ** NULLDLG.CPP
 */
-int Init_Null_Modem( SerialSettingsType *settings );
-void Shutdown_Modem( void );
-void Modem_Signoff( void );
-int Test_Null_Modem( void );
-int Reconnect_Modem( void );
-void Destroy_Null_Connection(int id, int error);
-GameType Select_Serial_Dialog( void );
 int Com_Scenario_Dialog(bool skirmish=false);
-int Com_Show_Scenario_Dialog(void);
 
 void Smart_Printf( char *format, ... );
 void Hex_Dump_Data( char *buffer, int length );

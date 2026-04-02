@@ -571,9 +571,19 @@ _Last updated: 2026-04-01_
 
 ## General runtime correctness notes
 
-- `CODE/SESSION.CPP::Read_MultiPlayer_Settings()` allocates `InitStrings` entries with `new char[INITSTRBUF_MAX]`.
-  - `SessionClass::Free_Scenario_Descriptions()` therefore must free those entries with `delete[]`, not `delete`.
-  - ASan reports this as an `alloc-dealloc-mismatch` during shutdown after a normal startup/menu run.
+- The old serial multiplayer support was not isolated to the transport backend.
+  - `CODE/NULLDLG.CPP` historically mixed modem/null-modem setup with the still-live skirmish scenario picker, so deleting the file outright would also remove `Com_Scenario_Dialog(true)`.
+  - The safe cleanup is to keep the file in place, replace it with a skirmish-only dialog implementation, and retain `Find_Local_Scenario(...)` because `NETDLG` and `WOL_GSUP` still rely on that helper.
+- Once modem/null-modem support is removed, `SessionClass` can drop the serial settings/phone-book/init-string state entirely.
+  - Those structures were only used by the deleted serial dialogs/backend, and removing them also lets `VECTOR.CPP` / `DYNAVEC.CPP` drop their `PhoneEntryClass *` explicit template instantiations.
+  - Preserve the surviving `GameType` numeric values explicitly when deleting `GAME_MODEM` / `GAME_NULL_MODEM`; some multiplayer/session state is serialized and should not be renumbered accidentally.
+- `CODE/SENDFILE.CPP`'s scenario-transfer path is shared, but the active SDL3 port only uses the network side of it.
+  - After the serial backend is removed, keep the existing transfer flow and packet layout, but switch the command usage to the network `NET_*` file-transfer commands and treat the legacy `gametype` parameter as ignored compatibility baggage until callers are cleaned further.
+- The modem removal unlocks a useful follow-up cleanup in `SDL3_COMPAT/wrappers/win32_compat.{h,cpp}`.
+  - The live SDL3/Linux tree still needs the generic Win32-style file I/O and simple registry lookup surface (`CreateFile` / `ReadFile` / `WriteFile`, `RegOpenKeyEx` / `RegQueryValueEx` / `RegCloseKey`) for startup, WOL, and debug paths.
+  - It does not need the comm-port compatibility layer anymore: the `DCB` / `COMMTIMEOUTS` / `COMSTAT` structs, related modem-control constants, and the stubbed `GetComm*` / `SetComm*` / `PurgeComm` / `EscapeCommFunction` / overlapped-serial helpers were only there for the deleted modem/null-modem backend.
+  - The registry enumeration helpers (`RegQueryInfoKey`, `RegEnumKeyEx`) also become removable once `MODEMREG` is deleted, because the remaining code only queries a few known values directly.
+  - After those are gone, a second pass is still worthwhile: `OVERLAPPED` / `LPOVERLAPPED`, `FindWindow()`, and a handful of old Win32 constants/aliases may remain in the compat header even though nothing in the live tree references them anymore.
 - `ListClass` stores caller-provided string pointers verbatim; it does not take ownership through a copying layer.
   - Callers that populate list-box text with `new char[]` buffers (for example `SoundControlsClass::Process()` in `CODE/SOUNDDLG.CPP`) must preserve a `char *` / `char const *` pointer type all the way to `delete[]`.
   - Deleting those buffers through `void *` reproduces an `alloc-dealloc-mismatch (operator new [] vs operator delete)` under ASan when the dialog tears down its item list.

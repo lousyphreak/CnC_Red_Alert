@@ -317,14 +317,14 @@ bool Save_Game(int id, char const * descr, bool )
 	char name[_MAX_FNAME+_MAX_EXT];
 	unsigned scenario;
 	HousesType house;
-	int save_net = 0;									// 1 = save network/modem game
+	int save_net = 0;									// 1 = save multiplayer game
 
 	scenario = Scen.Scenario;						// get current scenario #
 	house = PlayerPtr->Class->House;				// get current house
 
 	/*
 	**	Generate the filename to save.  If 'id' is -1, it means save a
-	** network/modem game; otherwise, use 'id' as the file extension.
+	** multiplayer game; otherwise, use 'id' as the file extension.
 	*/
 	if (id==-1) {
 		strcpy(name, NET_SAVE_FILE_NAME);
@@ -463,12 +463,12 @@ bool Load_Game(int id)
 	unsigned scenario;
 	HousesType house;
 	char descr_buf[DESCRIP_MAX];
-	int load_net = 0;									// 1 = save network/modem game
+	int load_net = 0;									// 1 = load multiplayer game
 
 
 	/*
 	**	Generate the filename to load.  If 'id' is -1, it means save a
-	** network/modem game; otherwise, use 'id' as the file extension.
+	** multiplayer game; otherwise, use 'id' as the file extension.
 	*/
 	if (id == -1) {
 		strcpy(name, NET_SAVE_FILE_NAME);

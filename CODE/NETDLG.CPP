@@ -5581,9 +5581,6 @@ void Net_Reconnect_Dialog(int reconn, int fresh, int oldest_index,
 		switch ( Session.Type) {
 			case GAME_IPX:
 			case GAME_INTERNET:
-			case GAME_MODEM:
-			case GAME_NULL_MODEM:
-
 				if (reconn) {
 					id = Ipx.Connection_ID(oldest_index);
 					sprintf(buf1,Text_String(TXT_RECONNECTING_TO),

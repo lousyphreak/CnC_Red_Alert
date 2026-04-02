@@ -300,7 +300,6 @@ HWND CreateWindowEx(DWORD, LPCSTR class_name, LPCSTR window_name, DWORD, INT, IN
     }
 
     auto* window = new RAWindow{};
-    window->class_name = class_name ? class_name : "";
     window->title = window_name ? window_name : "Red Alert";
     window->wnd_proc = klass.lpfnWndProc;
     window->width = width > 0 ? width : 640;
@@ -311,24 +310,6 @@ HWND CreateWindowEx(DWORD, LPCSTR class_name, LPCSTR window_name, DWORD, INT, IN
         g_windows.insert(window);
     }
     return window;
-}
-
-HWND FindWindow(LPCSTR class_name, LPCSTR window_name)
-{
-    std::scoped_lock lock(g_window_mutex);
-    for (HWND window : g_windows) {
-        if (!window) {
-            continue;
-        }
-        if (class_name && window->class_name != class_name) {
-            continue;
-        }
-        if (window_name && window->title != window_name) {
-            continue;
-        }
-        return window;
-    }
-    return nullptr;
 }
 
 BOOL ShowWindow(HWND window, INT command)
@@ -707,7 +688,7 @@ HANDLE CreateFile(LPCSTR file_name, DWORD desired_access, DWORD, LPVOID, DWORD c
     return new FileHandle(io, normalized_path);
 }
 
-BOOL ReadFile(HANDLE handle, LPVOID buffer, DWORD number_of_bytes_to_read, LPDWORD number_of_bytes_read, LPOVERLAPPED)
+BOOL ReadFile(HANDLE handle, LPVOID buffer, DWORD number_of_bytes_to_read, LPDWORD number_of_bytes_read, LPVOID)
 {
     if (number_of_bytes_read) *number_of_bytes_read = 0;
     if (!handle || handle == INVALID_HANDLE_VALUE) return FALSE;
@@ -719,7 +700,7 @@ BOOL ReadFile(HANDLE handle, LPVOID buffer, DWORD number_of_bytes_to_read, LPDWO
     return TRUE;
 }
 
-BOOL WriteFile(HANDLE handle, LPCVOID buffer, DWORD number_of_bytes_to_write, LPDWORD number_of_bytes_written, LPOVERLAPPED)
+BOOL WriteFile(HANDLE handle, LPCVOID buffer, DWORD number_of_bytes_to_write, LPDWORD number_of_bytes_written, LPVOID)
 {
     if (number_of_bytes_written) *number_of_bytes_written = 0;
     if (!handle || handle == INVALID_HANDLE_VALUE) return FALSE;
@@ -729,79 +710,6 @@ BOOL WriteFile(HANDLE handle, LPCVOID buffer, DWORD number_of_bytes_to_write, LP
         *number_of_bytes_written = static_cast<DWORD>(written);
     }
     return written == number_of_bytes_to_write;
-}
-
-BOOL GetCommState(HANDLE, DCB* dcb)
-{
-    if (!dcb) return FALSE;
-    ZeroMemory(dcb, sizeof(*dcb));
-    dcb->DCBlength = sizeof(*dcb);
-    dcb->ByteSize = 8;
-    dcb->StopBits = 0;
-    dcb->fBinary = TRUE;
-    return TRUE;
-}
-
-BOOL SetCommState(HANDLE, const DCB*)
-{
-    return TRUE;
-}
-
-BOOL SetCommTimeouts(HANDLE, const COMMTIMEOUTS*)
-{
-    return TRUE;
-}
-
-BOOL SetupComm(HANDLE, DWORD, DWORD)
-{
-    return TRUE;
-}
-
-BOOL PurgeComm(HANDLE, DWORD)
-{
-    return TRUE;
-}
-
-BOOL EscapeCommFunction(HANDLE, DWORD)
-{
-    return TRUE;
-}
-
-BOOL SetCommBreak(HANDLE handle)
-{
-    return EscapeCommFunction(handle, SETBREAK);
-}
-
-BOOL ClearCommBreak(HANDLE handle)
-{
-    return EscapeCommFunction(handle, CLRBREAK);
-}
-
-BOOL GetOverlappedResult(HANDLE, LPOVERLAPPED, LPDWORD number_of_bytes_transferred, BOOL)
-{
-    if (number_of_bytes_transferred) {
-        *number_of_bytes_transferred = 0;
-    }
-    return TRUE;
-}
-
-BOOL ClearCommError(HANDLE, LPDWORD errors, COMSTAT* status)
-{
-    if (errors) {
-        *errors = 0;
-    }
-    if (status) {
-        ZeroMemory(status, sizeof(*status));
-    }
-    return TRUE;
-}
-
-BOOL GetCommModemStatus(HANDLE, LPDWORD modem_status)
-{
-    if (modem_status) {
-        *modem_status = 0;
-    }
-    return TRUE;
 }
 
 DWORD SetFilePointer(HANDLE handle, LONG distance_to_move, LONG*, DWORD move_method)
@@ -960,26 +868,6 @@ LONG RegOpenKeyEx(HKEY, LPCSTR sub_key, DWORD, DWORD, HKEY* result)
     if (!result) return ERROR_INVALID_HANDLE;
     *result = new std::string(sub_key ? sub_key : "");
     return ERROR_SUCCESS;
-}
-
-LONG RegQueryInfoKey(HKEY, LPSTR, LPDWORD, LPDWORD, LPDWORD sub_keys,
-    LPDWORD max_sub_key_len, LPDWORD max_class_len, LPDWORD values, LPDWORD max_value_name_len,
-    LPDWORD max_value_len, LPDWORD security_descriptor, FILETIME* last_write_time)
-{
-    if (sub_keys) *sub_keys = 0;
-    if (max_sub_key_len) *max_sub_key_len = 0;
-    if (max_class_len) *max_class_len = 0;
-    if (values) *values = 0;
-    if (max_value_name_len) *max_value_name_len = 0;
-    if (max_value_len) *max_value_len = 0;
-    if (security_descriptor) *security_descriptor = 0;
-    if (last_write_time) ZeroMemory(last_write_time, sizeof(*last_write_time));
-    return ERROR_SUCCESS;
-}
-
-LONG RegEnumKeyEx(HKEY, DWORD, LPSTR, DWORD*, DWORD*, LPSTR, DWORD*, FILETIME*)
-{
-    return ERROR_FILE_NOT_FOUND;
 }
 
 LONG RegQueryValueEx(HKEY key, LPCSTR value_name, DWORD*, DWORD* type, LPBYTE data, DWORD* data_size)

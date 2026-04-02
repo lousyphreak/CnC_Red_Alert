@@ -49,7 +49,6 @@ class BuildingClass;
 class BulletClass;
 class InfantryClass;
 class UnitClass;
-class PhoneEntryClass;
 class CellClass;
 
 //---------------------------------------------------------------------------
@@ -68,7 +67,7 @@ class CellClass;
 //...........................................................................
 #define	MAX_IPX_PACKET_SIZE			(((546 - sizeof(CommHeaderType)) / \
 												sizeof(EventClass) ) * sizeof(EventClass))
-#define	MAX_SERIAL_PACKET_SIZE		256
+#define	MAX_FILE_PACKET_SIZE			256
 
 //...........................................................................
 // Max length of player names fields; attempt to use the constant for the
@@ -87,10 +86,10 @@ class CellClass;
 #define	MAX_MULTI_GAMES	4		// max # games (columns) on the score screen
 
 //...........................................................................
-// Min value for MaxAhead, for both net & modem; only applies for
-// COMM_PROTOCOL_MULTI_E_COMP.
+// Min value for MaxAhead on higher-latency multiplayer transports; only
+// applies for COMM_PROTOCOL_MULTI_E_COMP.
 //...........................................................................
-#define MODEM_MIN_MAX_AHEAD			5
+#define HIGH_LATENCY_MIN_MAX_AHEAD	5
 #define NETWORK_MIN_MAX_AHEAD			2
 
 //...........................................................................
@@ -98,17 +97,8 @@ class CellClass;
 //...........................................................................
 #define DEFAULT_FRAME_SEND_RATE		3
 
-//...........................................................................
-// Modem-specific constants
-//...........................................................................
-#define	PORTBUF_MAX						64		// dialog field sizes
-#define	IRQBUF_MAX						3
-#define	BAUDBUF_MAX						7
-#define	INITSTRBUF_MAX					41
-#define	CWAITSTRBUF_MAX				16
 #define	CREDITSBUF_MAX					5
 #define	PACKET_TIMING_TIMEOUT		40		// ticks b/w sending a timing packet
-#define	MODEM_NAME_MAX					PORTBUF_MAX - 1	// Max length of modem name in list box
 
 //---------------------------------------------------------------------------
 // Enums
@@ -118,73 +108,12 @@ class CellClass;
 //...........................................................................
 typedef enum GameEnum {
 	GAME_NORMAL,									// not multiplayer
-	GAME_MODEM,										// modem game
-	GAME_NULL_MODEM,								// NULL-modem
-	GAME_IPX,										// IPX Network game
-	GAME_INTERNET,									// Internet H2H
-	GAME_SKIRMISH,									// 1 plr vs. AI's
-	GAME_TEN,										// TEN Network game
-	GAME_MPATH										// MPath Network game
+	GAME_IPX = 3,									// IPX Network game
+	GAME_INTERNET = 4,							// Internet H2H
+	GAME_SKIRMISH = 5,							// 1 plr vs. AI's
+	GAME_TEN = 6,									// TEN Network game
+	GAME_MPATH = 7								// MPath Network game
 } GameType;
-
-//...........................................................................
-// Various Modem-specific enums
-//...........................................................................
-typedef enum DetectPortType {
-	PORT_VALID = 0,
-	PORT_INVALID,
-	PORT_IRQ_INUSE
-} DetectPortType;
-
-typedef enum DialStatusType {
-	DIAL_CONNECTED			= 0,
-	DIAL_NO_CARRIER,
-	DIAL_BUSY,
-	DIAL_ERROR,
-	DIAL_NO_DIAL_TONE,
-	DIAL_CANCELED
-} DialStatusType;
-
-typedef enum DialMethodType {
-	DIAL_TOUCH_TONE = 0,
-	DIAL_PULSE,
-	DIAL_METHODS
-} DialMethodType;
-
-typedef enum CallWaitStringType {
-	CALL_WAIT_TONE_1 = 0,
-	CALL_WAIT_TONE_2,
-	CALL_WAIT_PULSE,
-	CALL_WAIT_CUSTOM,
-	CALL_WAIT_STRINGS_NUM
-} CallWaitStringType;
-
-typedef enum ModemGameType {
-	MODEM_NULL_HOST = 0,
-	MODEM_NULL_JOIN,
-	MODEM_DIALER,
-	MODEM_ANSWERER
-} ModemGameType;
-
-//...........................................................................
-// Commands sent over the serial Global Channel
-//...........................................................................
-typedef enum SerialCommandType {
-	SERIAL_CONNECT			= 100,	// Are you there?  Hello?  McFly?
-	SERIAL_GAME_OPTIONS	= 101,	// Hey, dudes, here's some new game options
-	SERIAL_SIGN_OFF		= 102,	// Bogus, dudes, my boss is coming; I'm outta here!
-	SERIAL_GO				= 103,	// OK, dudes, jump into the game loop!
-	SERIAL_MESSAGE			= 104,	// Here's a message
-	SERIAL_TIMING			= 105,	// timimg packet
-	SERIAL_SCORE_SCREEN	= 106,	// player at score screen
-	SERIAL_LOADGAME		= 107,	// Start the game, loading a saved game first
-	SERIAL_LAST_COMMAND,				// last command
-	SERIAL_REQ_SCENARIO	= 1000,	// Reqest that host sends the scenario file to the other players.
-	SERIAL_FILE_INFO		= 1001,	// Info about the file that is going to be transferred
-	SERIAL_FILE_CHUNK		= 1002,	// A chunk of scenario
-	SERIAL_READY_TO_GO	= 1003,	// Sent in response to a 'GO' command
-	SERIAL_NO_SCENARIO	= 1004	// Scenario isnt available on remote machine so we cant play
-} SerialCommandType;
 
 //...........................................................................
 // Commands sent over the network Global Channel
@@ -226,36 +155,6 @@ typedef struct {
 } MPlayerScoreType;
 
 //...........................................................................
-// Settings for the serial port
-//...........................................................................
-typedef struct {
-	int Port;
-	int IRQ;
-	int Baud;
-	DialMethodType DialMethod;
-	int InitStringIndex;
-	int CallWaitStringIndex;
-	char CallWaitString[ CWAITSTRBUF_MAX ];
-	bool Compression;
-	bool ErrorCorrection;
-	bool HardwareFlowControl;
-	char ModemName [ MODEM_NAME_MAX ];
-} SerialSettingsType;
-
-class PhoneEntryClass
-{
-public:
-	enum {
-		PHONE_MAX_NAME = 32,
-		PHONE_MAX_NUM = 32
-	};
-
-	char Name[PHONE_MAX_NAME];
-	char Number[PHONE_MAX_NUM];
-	SerialSettingsType Settings;
-};
-
-//...........................................................................
 //	This is a "node", used for the lists of available games & players.  The
 //	'Game' structure is used for games; the 'Player' structure for players.
 //...........................................................................
@@ -289,58 +188,11 @@ typedef struct NodeNameTag {
 
 
 //...........................................................................
-// Packet sent over the serial Global Channel
+// Packet sent over the network global channel (for file transfers)
 //...........................................................................
+#define MAX_SEND_FILE_PACKET_SIZE MAX_FILE_PACKET_SIZE - 64
 typedef struct {
-	SerialCommandType Command;					// One of the enum's defined above
-	char Name[MPLAYER_NAME_MAX];				// Player or Game Name
-	unsigned char ID;								// unique ID of sender of message
-	union {
-		struct {
-			HousesType House;								// player's House
-			PlayerColorType Color;						// player's color or SIGNOFF ID
-			unsigned long MinVersion;					// min version this game supports
-			unsigned long MaxVersion;					// max version this game supports
-			char Scenario[DESCRIP_MAX];				// Scenario name
-			unsigned int Credits;						// player's credits
-			unsigned int IsBases		: 1;				// 1 = bases are allowed
-			unsigned int IsTiberium	: 1;				// 1 = tiberium is allowed
-			unsigned int IsGoodies	: 1;				// 1 = goodies are allowed
-			unsigned int IsGhosties	: 1;				// 1 = ghosts are allowed
-			unsigned int OfficialScenario : 1;		//	Is this scenario an official Westwood one?
-			int CheatCheck;								// Unique ID of "rules.ini" file.
-			unsigned char BuildLevel;					// buildable level
-			unsigned char UnitCount;					// max # units
-			unsigned char AIPlayers;					// # of AI players allowed
-			int Seed;										// random number seed
-			SpecialClass Special;						// command-line options
-			unsigned int GameSpeed;						// Game Speed
-			unsigned long ResponseTime;				// packet response time
-			unsigned int FileLength;					// Length of scenario file to expect from host.
-#ifdef WOLAPI_INTEGRATION
-			char ShortFileName[13];						// Name of scenario file to expect from host
-#else
-			char ShortFileName[12];						// Name of scenario file to expect from host
-#endif
-			unsigned char FileDigest[32];				// Digest of scenario file to expect from host
-														//	ajw - This is not necessarily null-terminated.
-		} ScenarioInfo;
-		struct {
-			char Message[MAX_MESSAGE_LENGTH];		// inter-player message
-			PlayerColorType Color;						// player's color or SIGNOFF ID
-		} Message;
-		struct {
-			PlayerColorType Color;						// player's color or SIGNOFF ID
-		} Chat;
-	};
-} SerialPacketType;
-
-//...........................................................................
-// Other packet sent over the serial global channel (for file transfers)
-//...........................................................................
-#define MAX_SEND_FILE_PACKET_SIZE MAX_SERIAL_PACKET_SIZE - 64
-typedef struct {
-	SerialCommandType	Command;					// Enum defined above. Should be a file transfer enum.
+	NetCommandType	Command;					// Enum defined above. Should be a file transfer enum.
 	unsigned short 	BlockNumber;			// Index position of this file chunk in the file
 	unsigned short		BlockLength;			// Length of data in the RawData buffer
 	unsigned char 		RawData	[MAX_SEND_FILE_PACKET_SIZE];
@@ -584,7 +436,7 @@ class SessionClass
 		int LoadGame;
 
 		//.....................................................................
-		// This flag is set when the modem game saves the game due to a lost
+		// This flag is set when a multiplayer game saves due to a lost
 		// connection.
 		//.....................................................................
 		int EmergencySave;
@@ -629,7 +481,6 @@ class SessionClass
 		static int CountMin[2];
 		static int CountMax[2];
 		static char * GlobalPacketNames[];
-		static char * SerialPacketNames[];
 
 		//.....................................................................
 		// For Recording & Playing back a file
@@ -657,19 +508,6 @@ class SessionClass
 		DynamicVectorClass <NodeNameType *> Games;	// list of games
 		DynamicVectorClass <NodeNameType *> Players;	// list of players
 		DynamicVectorClass <NodeNameType *> Chat;		// list of chat nodes
-
-		//.....................................................................
-		// Modem-specific variables
-		//.....................................................................
-		unsigned ModemService		: 1;				// 1 = service modem in Call_Back
-		int CurPhoneIdx;							// phone listing index
-		SerialSettingsType SerialDefaults;	// default serial settings
-		ModemGameType ModemType;				// caller or answerer?
-
-		DynamicVectorClass<PhoneEntryClass *> PhoneBook;
-		DynamicVectorClass <char *> InitStrings;
-		static char * DialMethodCheck[ DIAL_METHODS ];
-		static char * CallWaitStrings[ CALL_WAIT_STRINGS_NUM ];
 
 		//.....................................................................
 		// For finding Sync Bugs
