@@ -75,6 +75,11 @@ std::atomic<UINT> g_error_mode{0};
 
 namespace {
 
+bool registry_reports_expansion_installed(const char* mix_name)
+{
+    return mix_name && WWFS_GetPathInfo(mix_name, nullptr);
+}
+
 HWND first_window()
 {
     std::scoped_lock lock(g_window_mutex);
@@ -904,14 +909,20 @@ LONG RegQueryValueEx(HKEY key, LPCSTR value_name, DWORD*, DWORD* type, LPBYTE da
     }
 
     if (std::strcmp(name, "DVD") == 0 ||
-        std::strcmp(name, "CStrikeInstalled") == 0 ||
-        std::strcmp(name, "AftermathInstalled") == 0 ||
         std::strcmp(name, "WolapiInstallComplete") == 0 ||
         std::strcmp(name, "WOLAPI Find Enabled") == 0 ||
         std::strcmp(name, "WOLAPI Page Enabled") == 0 ||
         std::strcmp(name, "WOLAPI Lang Filter") == 0 ||
         std::strcmp(name, "WOLAPI Show All Games") == 0) {
         return write_dword_value(0);
+    }
+
+    if (std::strcmp(name, "CStrikeInstalled") == 0) {
+        return write_dword_value(registry_reports_expansion_installed("EXPAND.MIX") ? 1u : 0u);
+    }
+
+    if (std::strcmp(name, "AftermathInstalled") == 0) {
+        return write_dword_value(registry_reports_expansion_installed("EXPAND2.MIX") ? 1u : 0u);
     }
 
     return ERROR_FILE_NOT_FOUND;

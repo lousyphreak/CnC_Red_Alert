@@ -1,5 +1,32 @@
 # Porting Knowledge
 
+## Formation/audio sanitizer pitfalls
+
+- `WIN32LIB/AUDIO/SOUNDIO.CPP::Play_Sample_Handle(...)` must validate the requested sample handle before indexing `LockedData.SampleTracker[id]`.
+  - `Get_Free_Sample_Handle(...)` legitimately returns `-1` when no slot is available.
+  - Practical symptom if the validation comes after `SampleTracker[id]`: UBSan/ASan reports an immediate `SampleTracker[-1]` out-of-bounds access even though the function later checks for `-1`.
+  - Safe rule: reject any handle where `(uint32_t)id >= MAX_SFX` before taking the tracker pointer, so both `-1` and oversized values fail cleanly through the existing `-1` return path.
+- `CODE/TEAM.CPP::TeamClass::TMission_Formation()` cannot use the 10-entry `TeamSpeed` / `TeamMaxSpeed` globals as scratch storage for AI teams.
+  - Player control groups live in `FootClass::Group` values `0..9`, which is why the shared globals are only 10 entries wide and why UI code like `TECHNO.CPP` only renders group numbers for `< 10`.
+  - AI formation groups intentionally use `ID + 10`, so a team with `ID == 0` already writes index `10` if `TMission_Formation()` uses those globals directly.
+  - Safe rule: keep AI formation speed/max-speed calculation local in `TMission_Formation()` and copy the result straight into each member's `FormationSpeed` / `FormationMaxSpeed` fields instead of widening unrelated global state or save/recording surfaces.
+
+## Mission-pack visibility is gated by compat-layer install detection
+
+- The unified executable path for Counterstrike and Aftermath is already compiled in this tree.
+  - `CODE/DEFINES.H` already enables both `FIXIT_CSII` and `FIXIT_VERSION_3`, so the expansion-aware menu flow, scenario filtering, rules loading, and packet loading are live without any extra CMake define.
+  - `CODE/MENUS.CPP`, `CODE/EXPAND.CPP`, `CODE/SESSION.CPP`, and `CODE/INIT.CPP` all route expansion visibility through `Is_Counterstrike_Installed()` / `Is_Aftermath_Installed()`, not through a build-system option.
+- On the SDL3/Linux port, the practical gate was the fake registry implementation in `SDL3_COMPAT/wrappers/win32_compat.cpp`.
+  - `RegQueryValueEx(..., "CStrikeInstalled", ...)` and `RegQueryValueEx(..., "AftermathInstalled", ...)` were hardcoded to return `0`, so the front end behaved as if neither pack was installed even when `EXPAND.MIX` and `EXPAND2.MIX` were present in `GameData/`.
+  - Practical symptoms: main-menu expansion entries disappear, `AFTRMATH.INI` never loads, and `CSTRIKE.PKT` / `AFTMATH.PKT` scenario lists stay filtered out by `Is_*_Installed()` checks.
+- Safe rule for this port: make the compat-layer install flags reflect real expansion data presence.
+  - Current fix policy: report `CStrikeInstalled=1` when `EXPAND.MIX` exists and `AftermathInstalled=1` when `EXPAND2.MIX` exists, using the low-level SDL filesystem wrapper (`WWFS_GetPathInfo(...)`).
+  - This preserves the original runtime gating model while making it work correctly on a case-sensitive, registry-free SDL3 build.
+- One startup trap becomes visible immediately once Aftermath is detected correctly.
+  - `CODE/INIT.CPP` used `Rule.Process(AftermathINI)` during boot, but `RulesClass::Process(...)` always runs `Heap_Maximums(...)`, which clears and rebuilds global type heaps such as `Weapons`.
+  - By that point the first `RULES.INI` pass has already left live pointers inside type objects (`PrimaryWeapon`, `SecondaryWeapon`, etc.), so the second full `Process(...)` creates a use-after-free during object rule loading.
+  - The safe startup path is the one already used in `CODE/SCENARIO.CPP` and `CODE/SAVELOAD.CPP`: overlay the individual rule sections from `AftermathINI` (`General`, `Recharge`, `AI`, `Powerups`, `Land_Types`, `Themes`, `IQ`, `Objects`, `Difficulty`) and do **not** call `Heap_Maximums(...)` again.
+
 ## EVA speech state must track the actual speech buffers
 
 - The EVA voice path in `CODE/AUDIO.CPP` uses two reusable sample buffers: `SpeechBuffer[2]`.

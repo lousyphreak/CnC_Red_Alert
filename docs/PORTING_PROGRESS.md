@@ -8,6 +8,13 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Fixed two new gameplay/audio sanitizer findings without changing game behavior:
+  - reproduced the audio UB in `WIN32LIB/AUDIO/SOUNDIO.CPP::Play_Sample_Handle(...)`, where the function indexed `LockedData.SampleTracker[id]` before validating the requested handle; when `Get_Free_Sample_Handle(...)` returned `-1`, ASan/UBSan reported an immediate `SampleTracker[-1]` out-of-bounds access even though the function already intended to reject invalid handles;
+  - fixed that audio path by validating `id` against `MAX_SFX` before taking the tracker pointer, preserving the existing `-1` failure contract while making the bounds check cover every invalid handle value;
+  - reproduced the formation overflow in `CODE/TEAM.CPP::TeamClass::TMission_Formation()`, where AI formation groups intentionally use `ID + 10` while the shared `TeamSpeed` / `TeamMaxSpeed` globals only have 10 entries reserved for player control groups;
+  - fixed the team path by keeping the formation speed/max-speed calculation local to `TMission_Formation()` and then copying the computed values directly into each member's `FormationSpeed` / `FormationMaxSpeed`, which preserves AI formation behavior without expanding unrelated global state or recorded-session data;
+  - validation for this checkpoint: `cmake --build build --target redalert -j8`, `cmake --build build-asan --target redalert -j8`, and a timed `GameData/redalert-asan` startup smoke run all succeed after the change with no `AddressSanitizer` or `runtime error:` matches in the startup log.
+
 - Fixed an intermittent EVA speech leak/loop when aborting a mission back to the main menu:
   - reproduced the code path from the in-game quit flow through `CODE/GOPTIONS.CPP::Process(...)` -> `Queue_Exit()` -> `CODE/EVENT.CPP::EXIT`, where the engine intentionally plays `VOX_CONTROL_EXIT` (`"battle control terminated"`) while leaving the scenario and then returns to `Select_Game(...)` for the front-end;
   - traced the real fault to `CODE/AUDIO.CPP`: `Stop_Speaking()` and `Is_Speaking()` were checking the `SpeechBuffer` array object itself instead of the actual loaded speech sample buffers (`SpeechBuffer[index]`), so the quit path could falsely believe EVA had stopped while the live sample was still playing and therefore let menu/front-end teardown race active speech;
@@ -820,6 +827,35 @@ Converted all remaining Win32 file I/O calls in the game-layer source files to S
 - **`CODE/WOLAPIOB.CPP`**: Constructor temp-file creation/deletion → `SDL_IOFromFile`/`SDL_CloseIO`/`SDL_RemovePath`; commented-out `LoadFileIntoMemory` → SDL3 equivalents in comment (inside `WOLAPI_INTEGRATION` guard).
 - **`CODE/WOL_MAIN.CPP`**: `FindFirstFile`/`FindClose` for DLL existence and file-size checks → `SDL_GetPathInfo` (inside `WOLAPI_INTEGRATION` guard).
 - `cmake --build build --target redalert -j16` still succeeds after all conversions.
+
+## Mission-pack install detection fix
+
+- Verified that the unified expansion code is already compiled in this tree:
+  - `CODE/DEFINES.H` already defines both `FIXIT_CSII` and `FIXIT_VERSION_3`, so no extra CMake option or compile-time flag was missing.
+  - The front end and scenario loaders already use the expansion-aware runtime paths in `CODE/{MENUS,EXPAND,INIT,SESSION,CONQUER}.CPP`.
+- Root-caused missing Counterstrike/Aftermath menu entries to the SDL compatibility registry shim rather than to the build:
+  - `SDL3_COMPAT/wrappers/win32_compat.cpp::RegQueryValueEx(...)` returned `0` for both `"CStrikeInstalled"` and `"AftermathInstalled"` unconditionally.
+  - That caused `CODE/CONQUER.CPP::{Is_Counterstrike_Installed,Is_Aftermath_Installed}` to report both packs absent, which in turn hid expansion menu entries, skipped `AFTRMATH.INI` loading, and filtered `CSTRIKE.PKT` / `AFTMATH.PKT` scenarios.
+- Fixed the compat layer so those registry values now reflect actual installed data:
+  - `"CStrikeInstalled"` returns `1` when `EXPAND.MIX` exists.
+  - `"AftermathInstalled"` returns `1` when `EXPAND2.MIX` exists.
+  - Detection uses `WWFS_GetPathInfo(...)`, so it follows the SDL3/case-sensitive filesystem abstraction instead of adding platform-specific code.
+- Confirmed the data-side prerequisite in the local tree:
+  - `GameData/EXPAND.MIX`
+  - `GameData/EXPAND2.MIX`
+- Validation:
+  - `cmake --build build -j2`
+  - `cmake --build build-asan -j2`
+  - both completed successfully after the change.
+- Follow-up startup regression after enabling Aftermath detection:
+  - Startup immediately hit an ASan-reproducible heap-use-after-free in `TechnoTypeClass::Read_INI(...)` while processing `AFTRMATH.INI`.
+  - Root cause: `CODE/INIT.CPP` called `Rule.Process(AftermathINI)`, and that full path re-ran `RulesClass::Heap_Maximums(...)`, which clears/rebuilds global heaps like `Weapons` after the first `RULES.INI` pass had already stored live weapon pointers in type objects.
+  - Fixed `CODE/INIT.CPP` to apply `AFTRMATH.INI` as a rule overlay only, matching the already-live pattern in `CODE/{SCENARIO,SAVELOAD}.CPP`: `General`, `Recharge`, `AI`, `Powerups`, `Land_Types`, `Themes`, `IQ`, `Objects`, and `Difficulty`, without a second `Heap_Maximums(...)`.
+  - Revalidation:
+    - `cmake --build build -j2`
+    - `cmake --build build-asan -j2`
+    - `cd GameData && ASAN_OPTIONS=abort_on_error=1:detect_leaks=0 UBSAN_OPTIONS=print_stacktrace=1 timeout 20s ./redalert-asan`
+    - the ASan run stayed up until killed by `timeout`, with no startup sanitizer crash.
 
 ## Remaining validation work
 

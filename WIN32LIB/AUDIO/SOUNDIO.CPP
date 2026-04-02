@@ -1665,18 +1665,18 @@ int32_t Play_Sample_Handle(void const *sample, int32_t priority, int32_t volume,
 
 	if (AudioDone) return (0);
 
-	st = &LockedData.SampleTracker[id];
-	//EnterCriticalSection (&GlobalAudioCriticalSection);
-
 	if (!sample || LockedData.DigiHandle == -1) {
 		//LeaveCriticalSection (&GlobalAudioCriticalSection);
 		return(-1);
 	}
 
-	if (id == -1) {
+	if ((uint32_t)id >= MAX_SFX) {
 		//LeaveCriticalSection (&GlobalAudioCriticalSection);
 		return -1;
 	}
+
+	st = &LockedData.SampleTracker[id];
+	//EnterCriticalSection (&GlobalAudioCriticalSection);
 
 	/*
 	**      Fetch the control bytes from the start of the sample data.

@@ -314,9 +314,17 @@ bool Init_Game(int , char * [])
 		init_trace("Init_Game AFTRMATH.INI load start");
 		if (AftermathINI.Load(aftermath_file, false)) {
 			init_trace("Init_Game AFTRMATH.INI load complete");
-			init_trace("Init_Game Aftermath Rule.Process start");
-			Rule.Process(AftermathINI);
-			init_trace("Init_Game Aftermath Rule.Process complete");
+			init_trace("Init_Game Aftermath rule overlay start");
+			Rule.General(AftermathINI);
+			Rule.Recharge(AftermathINI);
+			Rule.AI(AftermathINI);
+			Rule.Powerups(AftermathINI);
+			Rule.Land_Types(AftermathINI);
+			Rule.Themes(AftermathINI);
+			Rule.IQ(AftermathINI);
+			Rule.Objects(AftermathINI);
+			Rule.Difficulty(AftermathINI);
+			init_trace("Init_Game Aftermath rule overlay complete");
 		}
 	}
 #endif
