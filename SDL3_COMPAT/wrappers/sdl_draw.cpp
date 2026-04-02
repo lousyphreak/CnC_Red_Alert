@@ -123,8 +123,16 @@ void present_surface(WWSurface* surface, RAWindow* window)
     }
 
     SDL_UpdateTexture(g_texture, nullptr, rgba.data(), surface->Width() * static_cast<int>(sizeof(uint32_t)));
+    SDL_FRect source{0.0f, 0.0f, static_cast<float>(surface->Width()), static_cast<float>(surface->Height())};
     SDL_FRect destination{0.0f, 0.0f, static_cast<float>(surface->Width()), static_cast<float>(surface->Height())};
     RAWindow* present_window = window ? window : surface->Window();
+    SDL_FRect source_override{};
+    if (RA_GetRenderSourceRect(present_window, &source_override) && source_override.w > 0.0f && source_override.h > 0.0f
+        && source_override.x >= 0.0f && source_override.y >= 0.0f
+        && source_override.x + source_override.w <= static_cast<float>(surface->Width())
+        && source_override.y + source_override.h <= static_cast<float>(surface->Height())) {
+        source = source_override;
+    }
     if (!RA_GetPresentationRect(present_window, &destination)) {
         int output_width = 0;
         int output_height = 0;
@@ -140,7 +148,7 @@ void present_surface(WWSurface* surface, RAWindow* window)
     }
     SDL_SetRenderDrawColor(g_renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(g_renderer);
-    SDL_RenderTexture(g_renderer, g_texture, nullptr, &destination);
+    SDL_RenderTexture(g_renderer, g_texture, &source, &destination);
     SDL_RenderPresent(g_renderer);
 }
 

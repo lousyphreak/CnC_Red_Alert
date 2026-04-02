@@ -75,9 +75,37 @@ std::atomic<UINT> g_error_mode{0};
 
 namespace {
 
+constexpr int kStretchedGameWidth = 640;
+constexpr int kStretchedGameHeight = 400;
+constexpr int kDisplayHeightForStretchedGame = 480;
+
 bool registry_reports_expansion_installed(const char* mix_name)
 {
     return mix_name && WWFS_GetPathInfo(mix_name, nullptr);
+}
+
+bool uses_stretched_640x400_presentation(HWND window)
+{
+    return window != nullptr && window->width == kStretchedGameWidth && window->height == kDisplayHeightForStretchedGame;
+}
+
+bool get_render_source_rect(HWND window, SDL_FRect* rect)
+{
+    if (!window || !rect || window->width <= 0 || window->height <= 0) {
+        return false;
+    }
+
+    rect->x = 0.0f;
+    rect->y = 0.0f;
+    rect->w = static_cast<float>(window->width);
+    rect->h = static_cast<float>(window->height);
+
+    if (uses_stretched_640x400_presentation(window)) {
+        rect->h = static_cast<float>(kStretchedGameHeight);
+        rect->y = (static_cast<float>(window->height) - rect->h) * 0.5f;
+    }
+
+    return true;
 }
 
 HWND first_window()
@@ -231,6 +259,11 @@ bool RA_GetPresentationRect(HWND window, SDL_FRect* rect)
     return true;
 }
 
+bool RA_GetRenderSourceRect(HWND window, SDL_FRect* rect)
+{
+    return get_render_source_rect(window, rect);
+}
+
 bool RA_WindowToGamePoint(HWND window, float window_x, float window_y, int* game_x, int* game_y)
 {
     if (!game_x || !game_y) {
@@ -245,12 +278,23 @@ bool RA_WindowToGamePoint(HWND window, float window_x, float window_y, int* game
         return false;
     }
 
+    SDL_FRect source{};
+    if (!get_render_source_rect(window, &source) || source.w <= 0.0f || source.h <= 0.0f) {
+        *game_x = static_cast<int>(window_x);
+        *game_y = static_cast<int>(window_y);
+        return false;
+    }
+
     const float normalized_x = (window_x - presentation.x) / presentation.w;
     const float normalized_y = (window_y - presentation.y) / presentation.h;
-    int mapped_x = static_cast<int>(normalized_x * static_cast<float>(window->width));
-    int mapped_y = static_cast<int>(normalized_y * static_cast<float>(window->height));
-    mapped_x = std::clamp(mapped_x, 0, window->width - 1);
-    mapped_y = std::clamp(mapped_y, 0, window->height - 1);
+    const int source_left = static_cast<int>(source.x);
+    const int source_top = static_cast<int>(source.y);
+    const int source_right = source_left + static_cast<int>(source.w) - 1;
+    const int source_bottom = source_top + static_cast<int>(source.h) - 1;
+    int mapped_x = static_cast<int>(source.x + normalized_x * source.w);
+    int mapped_y = static_cast<int>(source.y + normalized_y * source.h);
+    mapped_x = std::clamp(mapped_x, source_left, source_right);
+    mapped_y = std::clamp(mapped_y, source_top, source_bottom);
     *game_x = mapped_x;
     *game_y = mapped_y;
     return true;
@@ -267,12 +311,17 @@ bool RA_GameRectToWindowRect(HWND window, const RECT* game_rect, SDL_Rect* windo
         return false;
     }
 
-    const float scale_x = presentation.w / static_cast<float>(window->width);
-    const float scale_y = presentation.h / static_cast<float>(window->height);
-    const float left = presentation.x + static_cast<float>(game_rect->left) * scale_x;
-    const float top = presentation.y + static_cast<float>(game_rect->top) * scale_y;
-    const float right = presentation.x + static_cast<float>(game_rect->right) * scale_x;
-    const float bottom = presentation.y + static_cast<float>(game_rect->bottom) * scale_y;
+    SDL_FRect source{};
+    if (!get_render_source_rect(window, &source) || source.w <= 0.0f || source.h <= 0.0f) {
+        return false;
+    }
+
+    const float scale_x = presentation.w / source.w;
+    const float scale_y = presentation.h / source.h;
+    const float left = presentation.x + (static_cast<float>(game_rect->left) - source.x) * scale_x;
+    const float top = presentation.y + (static_cast<float>(game_rect->top) - source.y) * scale_y;
+    const float right = presentation.x + (static_cast<float>(game_rect->right) - source.x) * scale_x;
+    const float bottom = presentation.y + (static_cast<float>(game_rect->bottom) - source.y) * scale_y;
     window_rect->x = static_cast<int>(std::floor(left));
     window_rect->y = static_cast<int>(std::floor(top));
     window_rect->w = std::max(0, static_cast<int>(std::ceil(right)) - window_rect->x);

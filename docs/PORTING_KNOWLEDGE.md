@@ -728,12 +728,12 @@ _Last updated: 2026-04-02_
   - In `CODE/INIT.CPP::Select_Game()` under `FIXIT_VERSION_3`, that made the Soviet choice look identical to Cancel, which matched the observed symptom: the game fell back to the main menu and only restarted the front-end `INTRO.AUD` theme instead of reaching `Start_Scenario("SCU01EA.INI")`.
 - The SDL3 port now lets the main game window resize independently from the logical game framebuffer.
   - The shared letterbox/pillarbox math lives in `RA_GetPresentationRect()`, `RA_WindowToGamePoint()`, and `RA_GameRectToWindowRect()` in `SDL3_COMPAT/wrappers/win32_compat.cpp`.
-  - `SDL3_COMPAT/wrappers/ddraw_compat.cpp` must render the primary surface into that computed presentation rectangle and clear the rest of the window to black; otherwise resize stretches or smears the indexed framebuffer.
+  - `SDL3_COMPAT/wrappers/sdl_draw.cpp` must render the primary surface into that computed presentation rectangle and clear the rest of the window to black; otherwise resize stretches or smears the indexed framebuffer.
   - `CODE/SDLINPUT.CPP` now owns `ClipCursor()` too, and it must keep converting mouse positions and clip rectangles through the same helpers, or menu hit-testing / software-cursor confinement drift away from the displayed image after a non-4:3 resize.
 - The active mouse space is not always the same as the primary-surface space.
   - `CODE/STARTUP.CPP` often leaves the primary surface at `640x480` but attaches `SeenBuff` and `HidPage` as `640x400` viewports, usually at `(0,40)`.
-  - `RA_WindowToGamePoint()` and `RA_GameRectToWindowRect()` work in primary-surface coordinates, so the SDL input layer must subtract `SeenBuff.Get_XPos()/Get_YPos()` after `RA_WindowToGamePoint()`, while `ClipCursor()` must add that origin back before calling `SDL_SetWindowMouseRect()`.
-  - If that viewport offset is ignored, the software cursor and SDL confinement both skew toward the top-left corner after resize because SDL is clipping against the wrong logical rectangle.
+  - The safe current rule is to keep one shared source-rectangle helper for the compat layer: `RA_GetRenderSourceRect()` returns the centered `640x400` source area for the `640x480` primary-surface path, and the full surface for true `640x400` paths.
+  - `RA_WindowToGamePoint()` and `RA_GameRectToWindowRect()` still work in primary-surface coordinates, but they must apply that source rectangle before SDLINPUT subtracts or re-adds the active `SeenBuff` origin; otherwise the software cursor and SDL confinement skew toward the hidden top/bottom gutters instead of the stretched picture.
 - On Wayland compositors such as Hyprland, `SDL_SetWindowMouseRect()` is not just a local cursor helper.
   - SDL maps that API to Wayland pointer-confinement behavior, which prevents compositor window-management gestures like `Meta+left-drag` move and `Meta+right-drag` resize from stealing the real pointer while the game window is clipped.
   - `SDL3_COMPAT/wrappers/win32_compat.cpp::ClipCursor()` therefore must always keep the game-side `SDL_GameInput_SetCursorClip()` state, but skip SDL window confinement and the follow-up `SDL_WarpMouseInWindow()` clamp for windowed Wayland windows.
@@ -847,6 +847,10 @@ _Last updated: 2026-04-02_
   - `CODE/CONQUER.CPP::VQ_Call_Back()` blits each decoded movie frame to `SeenBuff`, but unlike many front-end loops it does not call `Call_Back()` afterward.
   - After switching the drawing layer to queued presents, movie frames therefore need `WWDraw_Flush_Present()` directly from the callback or the SDL window stays black while the decoded frame buffer keeps updating underneath.
 - The SDL drawing surface needs the owning SDL window/`HWND` stored with it so presentation can target the correct window during those updates.
+- The desktop `640x480` path is really a square-pixel presentation wrapper around a `640x400` game image.
+  - On the original engine path, `640x400` content is intended to be vertically stretched by non-square pixels to fill a `4:3` display.
+  - In the SDL compat presenter, the equivalent behavior is: keep rendering into the original `640x400` gameplay region, crop that centered source region out of the `640x480` backing surface when needed, and then stretch it into the `4:3` destination rectangle.
+  - If the presenter instead uploads/displays the whole `640x480` backing surface, the unused 40-pixel gutters above and below the active viewport become visible as black borders and mouse/clip math starts disagreeing with what the player actually sees.
 - The SDL texture format must match how the drawing layer packs palette-expanded pixels.
   - The current compat presenter expands indexed pixels to `0xAARRGGBB`.
   - Feeding those values to an `SDL_PIXELFORMAT_RGBA8888` texture makes movies appear as red-tinted shades because SDL interprets the bytes as `R,G,B,A`.

@@ -8,6 +8,13 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Fixed the non-square-pixel presentation quirk in the SDL path so `640x480` mode now displays the intended `640x400` game image stretched to `4:3` instead of showing built-in top/bottom black borders:
+  - traced the visible bars to the SDL compat presenter using the full `640x480` primary surface as its texture source even when `CODE/STARTUP.CPP` had attached the live gameplay viewport as centered `640x400` content at `(0,40)`;
+  - kept the existing `4:3` destination-rectangle logic in `SDL3_COMPAT/wrappers/win32_compat.cpp`, but added a shared render-source helper so the compat layer now treats the `640x480` primary-surface path as a centered `640x400` source rectangle while leaving true `640x400` surfaces untouched;
+  - updated `SDL3_COMPAT/wrappers/sdl_draw.cpp` to pass that cropped source rectangle into `SDL_RenderTexture(...)`, which preserves the original `640x400` framebuffer while stretching it vertically to the square-pixel `4:3` window/presentation size;
+  - updated `RA_WindowToGamePoint()` and `RA_GameRectToWindowRect()` to use the same source rectangle, so SDL mouse mapping and `ClipCursor()` stay aligned with the stretched image instead of the hidden 40-pixel top/bottom gutters in the backing surface;
+  - validation for this checkpoint: `cmake --build build --target redalert -j8`, `cmake --build build-asan --target redalert -j8`, and a timed `GameData/redalert-asan` startup smoke run all succeed after the change with no `AddressSanitizer` or `runtime error:` matches in the startup log.
+
 - Fixed two new gameplay/audio sanitizer findings without changing game behavior:
   - reproduced the audio UB in `WIN32LIB/AUDIO/SOUNDIO.CPP::Play_Sample_Handle(...)`, where the function indexed `LockedData.SampleTracker[id]` before validating the requested handle; when `Get_Free_Sample_Handle(...)` returned `-1`, ASan/UBSan reported an immediate `SampleTracker[-1]` out-of-bounds access even though the function already intended to reject invalid handles;
   - fixed that audio path by validating `id` against `MAX_SFX` before taking the tracker pointer, preserving the existing `-1` failure contract while making the bounds check cover every invalid handle value;
@@ -523,12 +530,16 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - after the fix, the in-memory `PaletteInterpolationTable` matches `GameData/bmap.vqp` byte-for-byte, reconstructed frame-30 upscale output is clean instead of speckled, and forced `Try_Play_Movie("BMAP", THEME_NONE, true)` smoke runs complete successfully in both normal and ASan builds.
 - A compositor close request now shuts the game down cleanly through the SDL/Win32 message bridge instead of leaving the process hung until `SIGKILL`.
 - The SDL game window now behaves like a normal resizable desktop window without stretching the legacy framebuffer:
-  - `SDL3_COMPAT/wrappers/win32_compat.cpp` and `SDL3_COMPAT/wrappers/ddraw_compat.cpp` now create the main SDL window with resize support while keeping the usual decorated/movable window behavior;
-  - `SDL3_COMPAT/wrappers/ddraw_compat.cpp` now presents the primary surface into a centered letterbox/pillarbox rectangle and clears the unused window area to black;
+  - `SDL3_COMPAT/wrappers/win32_compat.cpp` and `SDL3_COMPAT/wrappers/sdl_draw.cpp` now create the main SDL window with resize support while keeping the usual decorated/movable window behavior;
+  - `SDL3_COMPAT/wrappers/sdl_draw.cpp` now presents the primary surface into a centered letterbox/pillarbox rectangle and clears the unused window area to black;
   - `CODE/SDLINPUT.CPP` and `SDL3_COMPAT/wrappers/win32_compat.cpp` now translate mouse positions and cursor-clip rectangles through that same presentation rectangle so menu hit-testing and the software cursor stay aligned after resize.
 - The resize follow-up mouse regression is fixed:
   - when the game runs with a `640x480` primary surface but attaches the active `SeenBuff` viewport as `640x400` at `(0,40)`, `CODE/SDLINPUT.CPP` now converts SDL window coordinates into primary-surface coordinates first and then subtracts the active viewport origin before storing the shared mouse position;
   - `SDL3_COMPAT/wrappers/win32_compat.cpp::ClipCursor()` now adds the active viewport origin back before asking SDL to confine the OS cursor, so SDL mouse clipping follows the displayed `SeenBuff` content instead of the raw top-left corner of the primary surface.
+ - The SDL presenter now preserves the original non-square-pixel `640x400` view in `640x480` mode:
+   - `SDL3_COMPAT/wrappers/win32_compat.cpp` now exposes a shared `RA_GetRenderSourceRect()` helper so the `640x480` primary-surface path uses the centered `640x400` gameplay area as its source image while still presenting into the usual `4:3` destination rectangle;
+   - `SDL3_COMPAT/wrappers/sdl_draw.cpp` now renders that source rect instead of the whole `640x480` backing surface, removing the built-in top/bottom black bars while keeping the `4:3` resize/letterbox behavior for real window resizes;
+   - the same helper now drives `RA_WindowToGamePoint()` and `RA_GameRectToWindowRect()`, so viewport-relative mouse coordinates and SDL cursor confinement stay aligned with the stretched picture.
 - Mission-map drag selection is restored on the SDL path:
   - `CODE/SDLINPUT.CPP::SDL_GameInput_Handle_Mouse_Button()` now updates the shared virtual-key down counts on mouse press/release instead of only updating the raw mouse-button bitmask;
   - this makes `Keyboard->Down(KN_LMOUSE)` / `Keyboard->Down(KN_RMOUSE)` report held state again, so `CODE/GADGET.CPP` emits `LEFTHELD` / `RIGHTHELD` correctly and `CODE/DISPLAY.CPP::Mouse_Left_Held()` can enter rubber-band mode.
@@ -579,7 +590,7 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - A new standalone temporary harness linked against the built `libsdl3_compat.a` now confirms the resizable-window math and the repaired mouse/clip bridge directly:
     - windows created through the compat layer now expose `SDL_WINDOW_RESIZABLE`;
     - resizing a `640x480` window to `800x700` yields the expected `800x600` centered presentation rect with `50` pixels of black padding above and below;
-    - for the common `640x480` primary-surface path with `SeenBuff` attached as `0,40,640,400`, `SDL_GameInput_GetViewportRect()` reports `0,40,640,440`, `ClipCursor()` installs an SDL mouse rect of `0,100,800,500`, and window-space mouse positions map back to viewport space as expected (`400,350 -> 320,200`, `400,100 -> 320,0`, `400,599 -> 320,399`).
+    - for the common `640x480` primary-surface path with `SeenBuff` attached as `0,40,640,400`, `SDL_GameInput_GetViewportRect()` reports `0,40,640,440`, `ClipCursor()` now installs an SDL mouse rect covering the full stretched presentation (`0,50,800,600` in that `800x700` case), and window-space mouse positions map back to viewport space as expected (`400,350 -> 320,200`, `400,50 -> 320,0`, `400,649 -> 320,399`).
   - A forced callback-abort `gdb` run now reaches `reached task shutdown`, `entered VQA_StopAudio`, and `returned from VQA_Play` instead of wedging after the callback returns early.
   - A second forced `key == KN_ESC` `gdb` run now confirms the real intro-breakout branch follows the same path:
     - `Brokeout=1` at `Play_Movie VQA_Play complete`;
