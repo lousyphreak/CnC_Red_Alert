@@ -28,7 +28,6 @@ enum class HandleKind {
     None,
     File,
     Event,
-    Mapping,
     Global,
 };
 
@@ -53,11 +52,6 @@ struct EventHandle final : HandleBase {
     bool signaled;
 };
 
-struct MappingHandle final : HandleBase {
-    MappingHandle() : HandleBase(HandleKind::Mapping) {}
-    std::vector<std::byte> bytes;
-};
-
 struct GlobalHandle final : HandleBase {
     explicit GlobalHandle(size_t size) : HandleBase(HandleKind::Global), bytes(size) {}
     std::vector<std::byte> bytes;
@@ -74,8 +68,6 @@ std::deque<MSG> g_message_queue;
 std::mutex g_registered_message_mutex;
 std::unordered_map<std::string, UINT> g_registered_messages;
 std::atomic<UINT> g_next_registered_message{0xC000};
-std::mutex g_named_event_mutex;
-std::unordered_map<std::string, EventHandle*> g_named_events;
 std::chrono::steady_clock::time_point g_start_time = std::chrono::steady_clock::now();
 std::atomic<UINT> g_error_mode{0};
 
@@ -681,19 +673,7 @@ void LeaveCriticalSection(CRITICAL_SECTION* critical_section)
 
 HANDLE CreateEvent(LPVOID, BOOL manual_reset, BOOL initial_state, LPCSTR name)
 {
-    auto* handle = new EventHandle(manual_reset != FALSE, initial_state != FALSE);
-    if (name && *name) {
-        std::scoped_lock lock(g_named_event_mutex);
-        g_named_events[name] = handle;
-    }
-    return handle;
-}
-
-HANDLE OpenEvent(DWORD, BOOL, LPCSTR name)
-{
-    std::scoped_lock lock(g_named_event_mutex);
-    auto it = g_named_events.find(name ? name : "");
-    return it == g_named_events.end() ? nullptr : it->second;
+    return new EventHandle(manual_reset != FALSE, initial_state != FALSE);
 }
 
 BOOL SetEvent(HANDLE handle)
@@ -973,22 +953,6 @@ DWORD GetModuleFileName(HINSTANCE, LPSTR file_name, DWORD size)
 
     std::snprintf(file_name, size, "%s", path.c_str());
     return static_cast<DWORD>(std::strlen(file_name));
-}
-
-HANDLE CreateFileMapping(HANDLE, LPVOID, DWORD, DWORD maximum_size_high, DWORD maximum_size_low, LPCSTR)
-{
-    auto* mapping = new MappingHandle();
-    const uint64_t size = (static_cast<uint64_t>(maximum_size_high) << 32) | maximum_size_low;
-    mapping->bytes.resize(size ? static_cast<size_t>(size) : 4096);
-    return mapping;
-}
-
-LPVOID MapViewOfFile(HANDLE file_mapping_object, DWORD, DWORD, DWORD file_offset_low, size_t)
-{
-    if (!file_mapping_object) return nullptr;
-    auto* mapping = static_cast<MappingHandle*>(file_mapping_object);
-    if (file_offset_low >= mapping->bytes.size()) return nullptr;
-    return mapping->bytes.data() + file_offset_low;
 }
 
 LONG RegOpenKeyEx(HKEY, LPCSTR sub_key, DWORD, DWORD, HKEY* result)

@@ -163,8 +163,11 @@ _Last updated: 2026-04-01_
 - Safe audit method for this wrapper:
   - start from the active compile database / actual build outputs, not from raw repository text search alone;
   - then confirm candidate call sites with repo searches, because some rare-looking symbols are still genuinely live in supported code;
-  - specifically, `CODE/W95TRACE.CPP` still depends on the named-event / file-mapping / wait subset, and `WIN32LIB/WINCOMM/{MODEMREG,WINCOMM}.CPP` still depends on the registry-enumeration plus overlapped/event-style serial surface.
+  - as of the current tree, `WIN32LIB/WINCOMM/{MODEMREG,WINCOMM}.CPP` still depends on the registry-enumeration plus overlapped/event-style serial surface, while the old named-event / file-mapping trace subset became removable once `CODE/W95TRACE.CPP` stopped using it.
 - The current port no longer needs the old process/thread/mutex/GDI shim layer in `win32_compat`.
+- Practical follow-up rule:
+  - do not keep Win32 wrapper entry points just because they belong to the same historical API family;
+  - for example, serial overlapped events are still live, but that did **not** imply that the trace-only `OpenEvent` / `CreateFileMapping` / `MapViewOfFile` subset still needed to remain once `W95TRACE` was stubbed out.
   - Removed dead exports included: `UnregisterClass`, `IsWindow`, `DestroyWindow`, `LoadCursor`, `SetLastError`, `timeBeginPeriod`, `timeEndPeriod`, `GetCurrentThreadId`, `GetCurrentThread`, `GetCurrentProcess`, `DuplicateHandle`, `SetThreadPriority`, `CreateThread`, `WaitForInputIdle`, `GetExitCodeProcess`, `CreateMutex`, `ReleaseMutex`, `CreateProcess`, `GetFileSize`, `UnmapViewOfFile`, `RegQueryValue`, and the unused paint/palette/DIB stubs (`BeginPaint`, `EndPaint`, `GetDC`, `ReleaseDC`, `CreatePalette`, `SelectPalette`, `RealizePalette`, `DeleteObject`, `StretchDIBits`, `SetDIBitsToDevice`).
   - Matching dead internal baggage was also removable: `ProcessHandle`, `ThreadHandle`, `MutexHandle`, their `HandleKind` cases, the unused command-line splitter, dormant startup trace helpers, and the unused registry cache globals.
   - Matching dead header baggage was removable too: `MMRESULT`, `HDC`, `HPALETTE`, `PAINTSTRUCT`, `BITMAPINFO`, `LOGPALETTE`, `STARTUPINFO`, `PROCESS_INFORMATION`, `STILL_ACTIVE`, `DUPLICATE_SAME_ACCESS`, `THREAD_ALL_ACCESS`, and `THREAD_PRIORITY_TIME_CRITICAL`.

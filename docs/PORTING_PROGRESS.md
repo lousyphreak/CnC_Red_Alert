@@ -47,6 +47,12 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - kept the event/mapping/registry/file/message/input parts that are still live and simplified `WaitForSingleObject()` down to the handle kinds the current port still actually waits on;
   - validation: `cmake --build build --target redalert -j8` and `cmake --build build-asan --target redalert -j8` both still succeed after the reduction.
 
+- Trimmed the trace-only named-event/file-mapping leftovers from `SDL3_COMPAT/wrappers/win32_compat.h/.cpp` after `CODE/W95TRACE.CPP` was intentionally reduced to an empty stub:
+  - reran the active-call-site audit against the current uncommitted tree and confirmed that `OpenEvent`, `CreateFileMapping`, `MapViewOfFile`, and the trace-only constants `EVENT_MODIFY_STATE`, `FILE_MAP_WRITE`, and `PAGE_READWRITE` no longer have any live repo-owned consumers;
+  - removed the corresponding wrapper declarations/definitions plus the now-unused `HandleKind::Mapping`, `MappingHandle`, and named-event registry globals from `win32_compat.cpp`;
+  - kept the ordinary unnamed event/wait surface (`CreateEvent`, `SetEvent`, `ResetEvent`, `WaitForSingleObject`) because it is still required by the active serial/overlapped path in `WIN32LIB/WINCOMM/WINCOMM.CPP`;
+  - validation: baseline and post-change `cmake --build build --target redalert -j8` and `cmake --build build-asan --target redalert -j8` succeed with the user's current `W95TRACE.CPP` cleanup in place.
+
 - Finished the post-casefix build recovery and restored the source tree to a clean self-contained state after the user removed the generated build-tree casefix headers:
   - kept the repo-wide include-case rewrite, but then walked the remaining failures until the build was clean again by restoring the original `HEAD` comment/include semantics where the rewrite had accidentally turned old commented directives into live `#include`, `#define`, `#else`, and `#endif` lines;
   - several of the real breakages were not raw case mistakes but header-binding changes caused by turning legacy lowercase quoted includes into exact-case quoted includes on a case-sensitive filesystem; where the old casefix layer had effectively routed those includes to canonical `WIN32LIB/INCLUDE` headers, the sources were updated to include the canonical header directly instead of binding to stale local duplicates;

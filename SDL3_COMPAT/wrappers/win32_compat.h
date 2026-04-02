@@ -296,10 +296,6 @@ using HWND = RAWindow*;
 #define GMEM_MOVEABLE 0x0002
 #define GMEM_ZEROINIT 0x0040
 
-#define PAGE_READWRITE 0x04
-#define FILE_MAP_WRITE 0x0002
-#define EVENT_MODIFY_STATE 0x0002
-
 #define SETDTR 5U
 #define CLRDTR 6U
 #define SETRTS 3U
@@ -568,7 +564,6 @@ void GlobalMemoryStatus(MEMORYSTATUS* memory_status);
 DWORD WaitForSingleObject(HANDLE handle, DWORD milliseconds);
 BOOL CloseHandle(HANDLE handle);
 HANDLE CreateEvent(LPVOID attributes, BOOL manual_reset, BOOL initial_state, LPCSTR name);
-HANDLE OpenEvent(DWORD desired_access, BOOL inherit_handle, LPCSTR name);
 BOOL SetEvent(HANDLE handle);
 BOOL ResetEvent(HANDLE handle);
 void InitializeCriticalSection(CRITICAL_SECTION* critical_section);
@@ -605,11 +600,6 @@ HMODULE LoadLibrary(LPCSTR file_name);
 FARPROC GetProcAddress(HMODULE module, LPCSTR proc_name);
 BOOL FreeLibrary(HMODULE module);
 DWORD GetModuleFileName(HINSTANCE instance, LPSTR file_name, DWORD size);
-
-HANDLE CreateFileMapping(HANDLE file, LPVOID attributes, DWORD protect, DWORD maximum_size_high,
-    DWORD maximum_size_low, LPCSTR name);
-LPVOID MapViewOfFile(HANDLE file_mapping_object, DWORD desired_access, DWORD file_offset_high,
-    DWORD file_offset_low, size_t number_of_bytes_to_map);
 
 LONG RegOpenKeyEx(HKEY key, LPCSTR sub_key, DWORD options, DWORD sam_desired, HKEY* result);
 LONG RegQueryInfoKey(HKEY key, LPSTR class_name, LPDWORD class_size, LPDWORD reserved, LPDWORD sub_keys,
