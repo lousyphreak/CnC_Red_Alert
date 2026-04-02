@@ -252,16 +252,16 @@ MPlayerManClass::Reset_Response_Time(void)
    // unsupported
 }
 
-unsigned long
+uint32_t
 MPlayerManClass::Response_Time(void)
 {
    return (160 * 60) / 1000;   // 160 microseconds one way (9 ticks)
 }
 
 void
-MPlayerManClass::Set_Timing(unsigned long /*retrydelta*/,
-                            unsigned long /*maxretries*/,
-                            unsigned long /*timeout*/)
+MPlayerManClass::Set_Timing(uint32_t /*retrydelta*/,
+                            uint32_t /*maxretries*/,
+                            uint32_t /*timeout*/)
 {
    // unsupported
 }

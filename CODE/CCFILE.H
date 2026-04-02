@@ -40,6 +40,8 @@
 
 //#include	<WWLIB32.H>
 #include	<limits.h>
+#include	<stdint.h>
+#include	<cstdint>
 #include	"MIXFILE.H"
 #include	"CDFILE.H"
 #include	"BUFF.H"
@@ -63,13 +65,13 @@ class CCFileClass : public CDFileClass
 		virtual int Is_Open(void) const;
 		virtual int Open(char const * filename, int rights=READ) {Set_Name(filename);return Open(rights);};
 		virtual int Open(int rights=READ);
-		virtual long Read(void * buffer, long size);
-		virtual long Seek(long pos, int dir=SEEK_CUR);
-		virtual long Size(void);
-		virtual long Write(void const * buffer, long size);
+		virtual int32_t Read(void * buffer, int32_t size);
+		virtual int32_t Seek(int32_t pos, int dir=SEEK_CUR);
+		virtual int32_t Size(void);
+		virtual int32_t Write(void const * buffer, int32_t size);
 		virtual void Close(void);
-		virtual unsigned long Get_Date_Time(void);
-		virtual bool Set_Date_Time(unsigned long datetime);
+		virtual uint32_t Get_Date_Time(void);
+		virtual bool Set_Date_Time(uint32_t datetime);
 		virtual void Error(int error, int canretry = false, char const * filename=NULL);
 
 	private:
@@ -88,15 +90,15 @@ class CCFileClass : public CDFileClass
 		**	This is the size of the file if it was embedded in a mixfile. The size must be manually
 		**	kept track of because the DOS file size is invalid.
 		*/
-		long Length;
-		long Start;
+		int32_t Length;
+		int32_t Start;
 
 		/*
 		**	This is the current seek position of the file. It is duplicated here if the file is
 		**	part of a mixfile since the DOS seek position is not accurate. This value will
 		**	range from zero to the size of the file in bytes.
 		*/
-		long Position;
+		int32_t Position;
 
 		// Force these to never be invoked.
 		CCFileClass const & operator = (CCFileClass const & c);

@@ -220,6 +220,7 @@ typedef struct {
 
 
 #include	<string.h>
+#include	<stdint.h>
 #include	<stdlib.h>
 #include	<stdio.h>
 #include	<stddef.h>
@@ -242,7 +243,7 @@ using std::min;
 #include <VQA32/VQAFILE.H>
 
 extern bool GameActive;
-extern long LParam;
+extern TARGET LParam;
 
 #include	<assert.h>
 #include	"VECTOR.H"
@@ -261,7 +262,7 @@ extern long LParam;
 */
 
 
-extern long Frame;
+extern int32_t Frame;
 CELL Coord_Cell(COORDINATE coord);
 
 #include	"UTRACKER.H"
@@ -597,7 +598,7 @@ void Assign_Houses(void);
 /*
 **	INIBIN.CPP
 */
-unsigned long Ini_Binary_Version( void );
+uint32_t Ini_Binary_Version( void );
 bool Read_Scenario_INB( CCFileClass *file, char *root, bool fresh );
 bool Valid_Scenario_INB( CCFileClass *file );
 
@@ -735,8 +736,8 @@ void Shutdown_Network (void);
 bool Remote_Connect (void);
 void Destroy_Connection(int id, int error);
 bool Process_Global_Packet(GlobalPacketType *packet, IPXAddressClass *address);
-unsigned long Compute_Name_CRC(char *name);
-void Net_Reconnect_Dialog(int reconn, int fresh, int oldest_index, unsigned long timeval);
+uint32_t Compute_Name_CRC(char *name);
+void Net_Reconnect_Dialog(int reconn, int fresh, int oldest_index, uint32_t timeval);
 
 /*
 ** NULLDLG.CPP
@@ -792,7 +793,7 @@ bool Queue_Mission(TargetClass whom, MissionType mission, TARGET target, TARGET 
 bool Queue_Options(void);
 bool Queue_Exit(void);
 void Queue_AI(void);
-void Add_CRC(unsigned long *crc, unsigned long val);
+void Add_CRC(uint32_t *crc, uint32_t val);
 
 /*
 **	RANDOM.CPP

@@ -98,8 +98,8 @@ bool bReconnectDialogCancelled;
 //	CRC[] is a record of our last 32 game CRC's.
 // ColorNames is for debug output in Print_CRCs
 //---------------------------------------------------------------------------
-static unsigned long GameCRC;
-static unsigned long CRC[32] =
+static uint32_t GameCRC;
+static uint32_t CRC[32] =
 	{0,0,0,0,0,0,0,0,0,0,
 	 0,0,0,0,0,0,0,0,0,0,
 	 0,0,0,0,0,0,0,0,0,0,
@@ -197,11 +197,11 @@ static void Queue_Playback(void);
 // Debugging:
 //...........................................................................
 static void Compute_Game_CRC(void);
-void Add_CRC(unsigned long *crc, unsigned long val);
+void Add_CRC(uint32_t *crc, uint32_t val);
 static void Print_CRCs(EventClass *ev);
 static void Init_Queue_Mono(ConnManClass *net);
 static void Update_Queue_Mono(ConnManClass *net, int flow_index);
-static void Print_Framesync_Values(long curframe, unsigned long max_ahead,
+static void Print_Framesync_Values(long curframe, uint32_t max_ahead,
 	int num_connections, unsigned short *their_recv,
 	unsigned short *their_sent, unsigned short my_sent);
 
@@ -1182,7 +1182,7 @@ static RetcodeType Wait_For_Players(int first_time, ConnManClass *net,
  *=========================================================================*/
 static void Generate_Timing_Event(ConnManClass *net, int my_sent)
 {
-	unsigned long resp_time;			// connection response time, in ticks
+	uint32_t resp_time;			// connection response time, in ticks
 	EventClass ev;
 
 	//
@@ -1263,7 +1263,7 @@ static void Generate_Timing_Event(ConnManClass *net, int my_sent)
  *=========================================================================*/
 static void Generate_Real_Timing_Event(ConnManClass *net, int my_sent)
 {
-	unsigned long resp_time;			// connection response time, in ticks
+	uint32_t resp_time;			// connection response time, in ticks
 	EventClass ev;
 	int highest_ticks;
 	int i;
@@ -1383,7 +1383,7 @@ static void Generate_Process_Time_Event(ConnManClass *net)
 {
 	EventClass ev;
 	int avgticks;
-	unsigned long resp_time;			// connection response time, in ticks
+	uint32_t resp_time;			// connection response time, in ticks
 
 	//
 	// Measure the current connection response time.  This time will be in
@@ -3608,7 +3608,7 @@ static void Compute_Game_CRC(void)
  * HISTORY:                                                                *
  *   05/09/1995 BRR : Created.                                             *
  *=========================================================================*/
-void Add_CRC(unsigned long *crc, unsigned long val)
+void Add_CRC(uint32_t *crc, uint32_t val)
 {
 	int hibit;
 
@@ -4086,7 +4086,7 @@ static void Update_Queue_Mono(ConnManClass *net, int flow_index)
  * HISTORY:                                                                *
  *   11/21/1995 BRR : Created.                                             *
  *=========================================================================*/
-static void Print_Framesync_Values(long curframe, unsigned long max_ahead,
+static void Print_Framesync_Values(long curframe, uint32_t max_ahead,
 	int num_connections, unsigned short *their_recv,
 	unsigned short *their_sent, unsigned short my_sent)
 {
@@ -4203,12 +4203,12 @@ void Check_Mirror(void)
 #ifdef MIRROR_QUEUE
 	int i;
 	char txt[80];
-	unsigned long *ptr;
+	uint32_t *ptr;
 	int found_5s = 0;
 
-	ptr = (unsigned long *)(DoList.Get_Array());
+	ptr = (uint32_t *)(DoList.Get_Array());
 	for (i = 0; i < (MAX_EVENTS * 64 * sizeof(EventClass)) /
-		sizeof(unsigned long); i++) {
+		sizeof(uint32_t); i++) {
 		if (ptr[i] == 0x55555555) {
 			sprintf(txt,"55555555 found in DoList! Addr:%p", &(ptr[i]));
 			WWMessageBox().Process (txt);
@@ -4216,9 +4216,9 @@ void Check_Mirror(void)
 		}
 	}
 
-	ptr = (unsigned long *)(MirrorList.Get_Array());
+	ptr = (uint32_t *)(MirrorList.Get_Array());
 	for (i = 0; i < (MAX_EVENTS * 64 * sizeof(EventClass)) /
-		sizeof(unsigned long); i++) {
+		sizeof(uint32_t); i++) {
 		if (ptr[i] == 0x55555555) {
 			sprintf(txt,"55555555 found in MirrorList! Addr:%p", &(ptr[i]));
 			WWMessageBox().Process (txt);
@@ -4226,9 +4226,9 @@ void Check_Mirror(void)
 		}
 	}
 
-	ptr = (unsigned long *)(DoList.Get_Array());
+	ptr = (uint32_t *)(DoList.Get_Array());
 	for (i = 0; i < (MAX_EVENTS * 64 * sizeof(EventClass)) /
-		sizeof(unsigned long); i++) {
+		sizeof(uint32_t); i++) {
 		if (ptr[i] == 0xAAAAAAAA) {
 			sprintf(txt,"AAAAAAAA found in DoList! Addr:%p", &(ptr[i]));
 			WWMessageBox().Process (txt);
@@ -4236,9 +4236,9 @@ void Check_Mirror(void)
 		}
 	}
 
-	ptr = (unsigned long *)(MirrorList.Get_Array());
+	ptr = (uint32_t *)(MirrorList.Get_Array());
 	for (i = 0; i < (MAX_EVENTS * 64 * sizeof(EventClass)) /
-		sizeof(unsigned long); i++) {
+		sizeof(uint32_t); i++) {
 		if (ptr[i] == 0xAAAAAAAA) {
 			sprintf(txt,"AAAAAAAA found in MirrorList! Addr:%p", &(ptr[i]));
 			WWMessageBox().Process (txt);

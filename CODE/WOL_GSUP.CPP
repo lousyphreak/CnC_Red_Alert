@@ -76,7 +76,7 @@ bool operator==( const GAMEPARAMS& gp1, const GAMEPARAMS& gp2 );
 bool operator==( const GlobalPacketType& gp1, const GlobalPacketType& gp2 );
 PlayerColorType PlayerColorTypeOf( RemapControlType* pColorRemap );
 
-extern unsigned long PlanetWestwoodStartTime;					//Time that game was started
+extern uint32_t PlanetWestwoodStartTime;					//Time that game was started
 
 extern bool cancel_current_msgbox;
 extern bool disable_current_msgbox;
@@ -3201,7 +3201,7 @@ void WOL_GameSetupDialog::TriggerGameStart( char* szGoMessage )
 	pWO->pChatSink->iGameID = 0;
 
 	//PlanetWestwoodStartTime = WWGetPrivateProfileInt ("Internet", "StartTime", 0, buffer);
-	PlanetWestwoodStartTime = time( NULL );
+	PlanetWestwoodStartTime = static_cast<uint32_t>(time(NULL));
 	//WChatHWND = (HWND) WWGetPrivateProfileInt("Internet", "HWND", (int)FindWindow("OWL_Window", "Westwood Chat"), buffer);
 
 //	gotit	Session.Options.AIPlayers = WWGetPrivateProfileInt("Options", "AI", 0, buffer);		//Number of AI players

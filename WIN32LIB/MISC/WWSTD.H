@@ -50,6 +50,7 @@
 #define LIB_EXTERNS_RESOLVED FALSE
 
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "win32_compat.h"
@@ -110,8 +111,7 @@ template<class T> T ABS(T a)
 {
 	return (a < 0) ? -a : a;
 }
-int ABS(int);
-long ABS(long);
+int32_t ABS(int32_t);
 
 // Returns the minimum of the two numbers.
 #ifdef MIN
@@ -121,9 +121,8 @@ template<class T> T MIN(T a, T b)
 {
 	return (b < a) ? b : a;
 };
-short MIN(short, short);
-int MIN(int, int);
-long MIN(long, long);
+int16_t MIN(int16_t, int16_t);
+int32_t MIN(int32_t, int32_t);
 
 // Returns the maximum of the two numbers.
 #ifdef MAX
@@ -133,19 +132,18 @@ template<class T> T MAX(T a, T b)
 {
 	return (b > a) ? b : a;
 };
-short MAX(short, short);
-int MAX(int, int);
-long MAX(long, long);
+int16_t MAX(int16_t, int16_t);
+int32_t MAX(int32_t, int32_t);
 #pragma option -Jgd
 
 // Returns the low word of a long
-#define	LOW_WORD(a)		((unsigned short)((long)(a) & 0x0000FFFFL))
+#define	LOW_WORD(a)		((uint16_t)((uint32_t)(a) & UINT32_C(0x0000FFFF)))
 
 // Returns the high word of a long
-#define	HIGH_WORD(a)	((unsigned long)(a) >> 16)
+#define	HIGH_WORD(a)	((uint16_t)(((uint32_t)(a) >> 16) & UINT32_C(0x0000FFFF)))
 
 // Merges to shorts to become a long
-#define	MAKE_LONG(a,b) (((long)(a) << 16) | (long)((b)&0x0000FFFFL))
+#define	MAKE_LONG(a,b) ((int32_t)(((uint32_t)(uint16_t)(a) << 16) | (uint32_t)(uint16_t)(b)))
 
 /*
 ** Macro allows our routines to act like

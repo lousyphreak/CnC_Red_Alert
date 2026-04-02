@@ -1564,7 +1564,7 @@ static int Net_Join_Dialog(void)
 	Session.Options.ScenarioDescription[0] = 0;	//Flag that we dont know the scenario name yet
 
 	char * item;
-	unsigned long starttime;
+	uint32_t starttime;
 	int load_game = 0;						// 1 = load saved game
 	int goto_lobby;
 	bool messages_have_focus = true;		// Gadget focus starts on the message system
@@ -2533,7 +2533,7 @@ static int Net_Join_Dialog(void)
 				**	need to request that it is sent. If we can identify the scenario locally then
 				**	we need to fix up the file name so we load the right one.
 				*/
-				Ipx.Set_Timing (25, (unsigned long) -1, 1000);
+				Ipx.Set_Timing(25, static_cast<uint32_t>(-1), 1000);
 				if (Find_Local_Scenario (Session.Options.ScenarioDescription,
 												Session.ScenarioFileName,
 												Session.ScenarioFileLength,
@@ -2588,7 +2588,7 @@ static int Net_Join_Dialog(void)
 #endif
 				}
 
-				Ipx.Set_Timing (30, (unsigned long) -1, 600);
+				Ipx.Set_Timing(30, static_cast<uint32_t>(-1), 600);
 				strcpy (Scen.ScenarioName, Session.ScenarioFileName);
 				rc = 0;
 				process = false;
@@ -2944,7 +2944,7 @@ static int Net_Join_Dialog(void)
 	//------------------------------------------------------------------------
 //	Ipx.Set_Timing (Ipx.Global_Response_Time() + 2, -1,
 //		Ipx.Global_Response_Time() * 4);
-	Ipx.Set_Timing(Ipx.Global_Response_Time() + 2, (unsigned long)-1, max(120UL, Ipx.Global_Response_Time() * 8));
+	Ipx.Set_Timing(Ipx.Global_Response_Time() + 2, static_cast<uint32_t>(-1), max<uint32_t>(120U, Ipx.Global_Response_Time() * 8));
 
 
 	//------------------------------------------------------------------------
@@ -3696,7 +3696,7 @@ static JoinEventType Get_Join_Responses(JoinStateType *joinstate, ListClass *gam
 #ifdef FIXIT_VERSION_3
 			//	Guest receives game version number from host.
 			//	Added to the transmitted version number is a bit indicating presence of Aftermath expansion.
-			unsigned long lVersion = Session.GPacket.ScenarioInfo.Version & ~0x80000000;	//	Actual version number.
+			uint32_t lVersion = Session.GPacket.ScenarioInfo.Version & ~0x80000000U;	//	Actual version number.
 			Session.CommProtocol = VerNum.Version_Protocol( lVersion );
 			bAftermathMultiplayer = Session.GPacket.ScenarioInfo.Version & 0x80000000;
 //			if( bAftermathMultiplayer )
@@ -4137,7 +4137,7 @@ static int Net_New_Dialog(void)
 
 	int transmit;								// 1 = re-transmit new game options
 
-	long ok_timer = 0;						// for timing OK button
+	int32_t ok_timer = 0;						// for timing OK button
 	int index;									// index for rejecting a player
 	int rc;
 	int i,j;
@@ -4146,7 +4146,7 @@ static int Net_New_Dialog(void)
 	int optiontabs[] = {8*RESFACTOR};	// tabs for option list box
 
 	NodeNameType *who;						// node to add to Players
-	long ping_timer = 0;						// for sending Ping packets
+	int32_t ping_timer = 0;						// for sending Ping packets
 
 	int color_used[MAX_MPLAYER_COLORS];	// 1 = color has been used
 	char txt[80];
@@ -5040,7 +5040,7 @@ static int Net_New_Dialog(void)
 									 NETWORK_MIN_MAX_AHEAD);
 		}
 
-		Ipx.Set_Timing (25, (unsigned long) -1, 1000);
+		Ipx.Set_Timing(25, static_cast<uint32_t>(-1), 1000);
 
 		//.....................................................................
 		//	Send all players the NET_GO packet.  Wait until all ACK's have been
@@ -5129,7 +5129,7 @@ static int Net_New_Dialog(void)
 	//	of what our retry delta & timeout should be.
 	//------------------------------------------------------------------------
 	//Ipx.Set_Timing (Ipx.Global_Response_Time() + 2, -1, Ipx.Global_Response_Time() * 4);
-	Ipx.Set_Timing(Ipx.Global_Response_Time() + 2, (unsigned long)-1, max(120UL, Ipx.Global_Response_Time() * 8));
+	Ipx.Set_Timing(Ipx.Global_Response_Time() + 2, static_cast<uint32_t>(-1), max<uint32_t>(120U, Ipx.Global_Response_Time() * 8));
 
 	//------------------------------------------------------------------------
 	//	Clear all lists, but NOT the Games or Players vectors.
@@ -5214,7 +5214,7 @@ static JoinEventType Get_NewGame_Responses(ColorListClass *playerlist,
 	int found;
 	JoinEventType retval = EV_NONE;
 	int resend;
-	unsigned long version;			// version # to use
+	uint32_t version;			// version # to use
 
 	//------------------------------------------------------------------------
 	//	If there is no incoming packet, just return
@@ -5512,17 +5512,17 @@ static JoinEventType Get_NewGame_Responses(ColorListClass *playerlist,
  * HISTORY:                                                                *
  *   06/29/1995 BRR : Created.                                             *
  *=========================================================================*/
-unsigned long Compute_Name_CRC(char *name)
+uint32_t Compute_Name_CRC(char *name)
 {
 	char buf[80];
-	unsigned long crc = 0L;
+	uint32_t crc = 0L;
 	int i;
 
 	strcpy (buf, name);
 	SDL_strupr(buf);
 
 	for (i = 0; i < strlen(buf); i++) {
-		Add_CRC (&crc, (unsigned long)buf[i]);
+		Add_CRC (&crc, (uint32_t*)buf[i]);
 	}
 
 	return (crc);
@@ -5550,7 +5550,7 @@ unsigned long Compute_Name_CRC(char *name)
  *   07/08/1995 BRR : Created.                                             *
  *=========================================================================*/
 void Net_Reconnect_Dialog(int reconn, int fresh, int oldest_index,
-	unsigned long timeval)
+	uint32_t timeval)
 {
 	static int x,y,w,h;
 	int id;
@@ -5913,7 +5913,7 @@ static int Net_Fake_New_Dialog(void)
 
 	int transmit;								// 1 = re-transmit new game options
 
-	long ok_timer = 0;						// for timing OK button
+	int32_t ok_timer = 0;						// for timing OK button
 	int rc;
 	int i;
 	char *item;
@@ -5921,7 +5921,7 @@ static int Net_Fake_New_Dialog(void)
 	int optiontabs[] = {8};					// tabs for option list box
 
 	NodeNameType *who;						// node to add to Players
-	long ping_timer = 0;						// for sending Ping packets
+	int32_t ping_timer = 0;						// for sending Ping packets
 
 	int color_used[MAX_MPLAYER_COLORS];	// 1 = color has been used
 	JoinEventType whahoppa;					// event generated by received packets
@@ -6512,7 +6512,7 @@ static int Net_Fake_New_Dialog(void)
 	//------------------------------------------------------------------------
 	//Ipx.Set_Timing (Ipx.Global_Response_Time() + 2, -1,
 	//	Ipx.Global_Response_Time() * 4);
-	Ipx.Set_Timing(Ipx.Global_Response_Time() + 2, (unsigned long)-1, max(120UL, Ipx.Global_Response_Time() * 8));
+	Ipx.Set_Timing(Ipx.Global_Response_Time() + 2, static_cast<uint32_t>(-1), max<uint32_t>(120U, Ipx.Global_Response_Time() * 8));
 
 	Clear_Listbox(&playerlist);
 
@@ -6731,7 +6731,7 @@ static int Net_Fake_Join_Dialog(void)
 	Fancy_Text_Print(TXT_NONE, 0, 0, scheme, TBLACK, TPF_6PT_GRAD | TPF_NOSHADOW);
 	Format_Window_String((char*)TXT_HACKHACK, SeenBuff.Get_Height(), width, height);
 	char * item;
-	unsigned long starttime;
+	uint32_t starttime;
 	int load_game = 0;						// 1 = load saved game
 
 	//------------------------------------------------------------------------
@@ -7406,7 +7406,7 @@ static int Net_Fake_Join_Dialog(void)
 	//------------------------------------------------------------------------
 	//Ipx.Set_Timing (Ipx.Global_Response_Time() + 2, -1,
 	//	Ipx.Global_Response_Time() * 4);
-	Ipx.Set_Timing(Ipx.Global_Response_Time() + 2, (unsigned long)-1, max(120UL, Ipx.Global_Response_Time() * 8));
+	Ipx.Set_Timing(Ipx.Global_Response_Time() + 2, static_cast<uint32_t>(-1), max<uint32_t>(120U, Ipx.Global_Response_Time() * 8));
 
 	//------------------------------------------------------------------------
 	//	Clear all lists, but NOT the Games & Players vectors.

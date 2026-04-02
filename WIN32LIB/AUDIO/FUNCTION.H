@@ -21,16 +21,16 @@
 /* The following prototypes are for the file: SOUNDIO.CPP						*/
 /*=========================================================================*/
 
-short Decompress_Frame(void * source, void * dest, short size);
-int __cdecl Stream_Sample_Vol(void *buffer, long size, BOOL (*callback);
-int __cdecl Stream_Sample(void *buffer, long size, BOOL (*callback);
+int32_t Decompress_Frame(void * source, void * dest, int32_t size);
+int __cdecl Stream_Sample_Vol(void *buffer, int32_t size, BOOL (*callback);
+int __cdecl Stream_Sample(void *buffer, int32_t size, BOOL (*callback);
 int __cdecl File_Stream_Sample(char const *filename);
 int __cdecl File_Stream_Sample_Vol(char const *filename, int volume);
 void __cdecl _saveregs _loadds Sound_Callback(void);
 void __cdecl far _saveregs _loadds maintenance_callback(void);
 void  __cdecl Load_Sample(char const *filename);
-long __cdecl Load_Sample_Into_Buffer(char const *filename, void *buffer, long size);
-long __cdecl Sample_Read(int fh, void *buffer, long size);
+int32_t __cdecl Load_Sample_Into_Buffer(char const *filename, void *buffer, int32_t size);
+int32_t __cdecl Sample_Read(int fh, void *buffer, int32_t size);
 void __cdecl Free_Sample(void const *sample);
 BOOL __cdecl Sound_Init(int sfx, int score, int sample);
 void far VQA_TimerCallback(void);

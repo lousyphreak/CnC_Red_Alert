@@ -38,6 +38,7 @@
 #ifndef BFIOFILE_H
 #define BFIOFILE_H
 
+#include	<cstdint>
 #include	"RAWFILE.H"
 /*
 **	This derivation of the raw file class handles buffering the input/output in order to
@@ -52,7 +53,7 @@ class BufferIOFileClass : public RawFileClass
 		BufferIOFileClass(void);
 		virtual ~BufferIOFileClass(void);
 
-		bool Cache( long size=0, void *ptr=NULL );
+		bool Cache(int32_t size=0, void *ptr=NULL);
 		void Free( void );
 		bool Commit( void );
 		virtual char const * Set_Name(char const *filename);
@@ -60,10 +61,10 @@ class BufferIOFileClass : public RawFileClass
 		virtual int Is_Open(void) const;
 		virtual int Open(char const *filename, int rights=READ);
 		virtual int Open(int rights=READ);
-		virtual long Read(void *buffer, long size);
-		virtual long Seek(long pos, int dir=SEEK_CUR);
-		virtual long Size(void);
-		virtual long Write(void const *buffer, long size);
+		virtual int32_t Read(void *buffer, int32_t size);
+		virtual int32_t Seek(int32_t pos, int dir=SEEK_CUR);
+		virtual int32_t Size(void);
+		virtual int32_t Write(void const *buffer, int32_t size);
 		virtual void Close(void);
 
 		enum {MINIMUM_BUFFER_SIZE=1024};
@@ -81,14 +82,14 @@ class BufferIOFileClass : public RawFileClass
 
 		void *Buffer;
 
-		long BufferSize;
-		long BufferPos;
-		long BufferFilePos;
-		long BufferChangeBeg;
-		long BufferChangeEnd;
-		long FileSize;
-		long FilePos;
-		long TrueFileStart;
+		int32_t BufferSize;
+		int32_t BufferPos;
+		int32_t BufferFilePos;
+		int32_t BufferChangeBeg;
+		int32_t BufferChangeEnd;
+		int32_t FileSize;
+		int32_t FilePos;
+		int32_t TrueFileStart;
 };
 
 #endif

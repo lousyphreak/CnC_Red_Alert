@@ -284,7 +284,7 @@ void GraphicBufferClass::Attach_Surface (GraphicBufferClass * attach_buffer)
  * HISTORY:                                                                *
  *   10/09/1995     : Created.                                             *
  *=========================================================================*/
-void GraphicBufferClass::Init(int w, int h, void *buffer, long size, GBC_Enum flags)
+void GraphicBufferClass::Init(int w, int h, void *buffer, int32_t size, GBC_Enum flags)
 {
 	Size			= size;									// find size of physical buffer
 	Width			= w;										// Record width of Buffer
@@ -306,7 +306,7 @@ void GraphicBufferClass::Init(int w, int h, void *buffer, long size, GBC_Enum fl
 			Buffer		= new BYTE[Size];				// otherwise allocate it and
 			Allocated	= TRUE;							//		mark it system alloced
 		}
-		Offset			= (long)Buffer;				// Get offset to the buffer
+		Offset			= (intptr_t)Buffer;				// Get offset to the buffer
 		IsVideoSurface	= FALSE;
 	}
 
@@ -390,7 +390,7 @@ GraphicBufferClass::GraphicBufferClass(void)
  * HISTORY:                                                                *
  *   05/13/1994 PWG : Created.                                             *
  *=========================================================================*/
-GraphicBufferClass::GraphicBufferClass(int w, int h, void *buffer, long size)
+GraphicBufferClass::GraphicBufferClass(int w, int h, void *buffer, int32_t size)
 {
 	Init(w, h, buffer, size, GBC_NONE);
 }
@@ -552,7 +552,7 @@ BOOL GraphicBufferClass::Lock(void)
 
 			switch (result){
 				case WWDRAW_OK :
-					Offset	= (unsigned long)VideoLockData.pixels;
+					Offset	= (intptr_t)VideoLockData.pixels;
 					Pitch		= VideoLockData.pitch;
 					Pitch	  -= Width;
 					LockCount++;		// increment count so we can track if

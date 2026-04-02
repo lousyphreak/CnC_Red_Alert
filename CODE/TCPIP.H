@@ -181,7 +181,7 @@ class TcpipManagerClass {
 extern TcpipManagerClass Winsock;
 
 extern char PlanetWestwoodIPAddress[IP_ADDRESS_MAX];
-extern long PlanetWestwoodPortNumber;
+extern uint16_t PlanetWestwoodPortNumber;
 extern bool PlanetWestwoodIsHost;
 
 
@@ -194,5 +194,4 @@ extern bool PlanetWestwoodIsHost;
 #define TXT_WINSOCK_UNABLE_TO_CONNECT				4567+19
 #define TXT_WINSOCK_CONNECTION_LOST					4567+20
 #define TXT_WINSOCK_RESOLVING_HOST_ADDRESS			4567+21
-
 

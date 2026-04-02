@@ -47,6 +47,8 @@
 
 #include	<stdio.h>
 #include	<stddef.h>
+#include	<stdint.h>
+#include	<cstdint>
 
 #ifndef READ
 #define READ 1
@@ -69,13 +71,13 @@ class FileClass
 		virtual int Is_Open(void) const = 0;
 		virtual int Open(char const *filename, int rights=READ) = 0;
 		virtual int Open(int rights=READ) = 0;
-		virtual long Read(void *buffer, long size) = 0;
-		virtual long Seek(long pos, int dir=SEEK_CUR) = 0;
-		virtual long Size(void) = 0;
-		virtual long Write(void const *buffer, long size) = 0;
+		virtual int32_t Read(void *buffer, int32_t size) = 0;
+		virtual int32_t Seek(int32_t pos, int dir=SEEK_CUR) = 0;
+		virtual int32_t Size(void) = 0;
+		virtual int32_t Write(void const *buffer, int32_t size) = 0;
 		virtual void Close(void) = 0;
-		virtual unsigned long Get_Date_Time(void) {return(0);}
-		virtual bool Set_Date_Time(unsigned long ) {return(false);}
+		virtual uint32_t Get_Date_Time(void) {return(0);}
+		virtual bool Set_Date_Time(uint32_t ) {return(false);}
 		virtual void Error(int error, int canretry = false, char const * filename=NULL) = 0;
 
 		operator char const * () {return File_Name();};

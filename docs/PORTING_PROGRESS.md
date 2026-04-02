@@ -1,12 +1,21 @@
 # Porting Progress
 
-_Last updated: 2026-04-01_
+_Last updated: 2026-04-02_
 
 ## Goal
 
 Port the Red Alert codebase to a reproducible cross-platform build using SDL3 for platform-specific functionality, with working builds on Linux, Windows, and other supported SDL3 platforms.
 
 ## Current status
+
+- Continued the repository-owned integer-width audit with a focused multiplayer/protocol pass and kept the current SDL3/Linux build green throughout:
+  - converted the radio-message payload path from legacy `long` references to the already-canonical `TARGET` transport type across `CODE/{RADIO,OBJECT,FOOT,TECHNO,BUILDING,AIRCRAFT,UNIT,VESSEL}.*`, after tracing the actual callers and confirming that the payload is used for encoded `TARGET` values (`NavCom`, `As_Target(cell)`, `TARGET_NONE`) rather than raw host pointers;
+  - updated the fake default radio payload storage (`LParam`) to `TARGET` as well, so the no-argument `Transmit_Message(...)` overload no longer depends on LP64 `long` size;
+  - converted the core connection/protocol state in `CODE/{CONNECT,IPXMGR,IPXGCONN,CONNMGR,TENMGR,MPMGRW,MPMGRD}.*` from Win32-style `unsigned long` to explicit `uint32_t`: packet IDs, retry/timeout parameters, response-time reporting, and related manager interfaces now carry fixed-width 32-bit values end-to-end;
+  - converted the multiplayer session/global-packet surfaces in `CODE/{SESSION,NETDLG,INTERNET,TCPIP,EXTERNS,STATS,WOL_GSUP}.CPP/.H` where the fields are true 32-bit protocol or save/load values: player/game name CRCs, version range/version fields, unique IDs, MaxAhead/FrameSendRate, per-node last-heard timestamps, PlanetWestwood start time, and the sync-bug frame markers (`TrapFrame` / `TrapPrintCRC`) now use explicit `uint32_t`/`int32_t`;
+  - tightened the `ConnectionClass::Time()` implementation so it computes from 64-bit intermediate milliseconds but returns the original 32-bit 60 Hz tick domain explicitly, preserving behavior without depending on native `unsigned long` width;
+  - fixed the related API seams that surfaced during rebuilds instead of papering over them: `ConnManClass` timing virtuals now match the fixed-width overrides, the network retry-forever sentinel paths were updated to explicit 32-bit values, and the `NETDLG.CPP` timing calls were adjusted so templated `max()` uses consistent `uint32_t` arguments;
+  - validation for this checkpoint: `cmake --build build --target redalert -j8` and `cmake --build build-asan --target redalert -j8` both succeed after the type sweep above.
 
 - Removed the remaining active Win32 virtual-key dependency from the SDL input path and shrank the compat wrapper accordingly:
   - rewired `CODE/SDLINPUT.CPP/.H` so SDL events are tracked in SDL-native terms (`SDL_Scancode`, `SDL_Keymod`, and SDL mouse buttons) instead of first being translated into fake `VK_*` state;

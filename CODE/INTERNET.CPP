@@ -59,10 +59,10 @@ extern bool Is_Mission_Counterstrike (char *file_name);
 ** Internet specific globals
 */
 char PlanetWestwoodIPAddress[IP_ADDRESS_MAX] = {"206.154.108.87"};	//IP of server or other player
-long PlanetWestwoodPortNumber = 1234;					//Port number to send to
+uint16_t PlanetWestwoodPortNumber = 1234;					//Port number to send to
 bool PlanetWestwoodIsHost = false;						//Flag true if player has control of game options
-unsigned long PlanetWestwoodGameID;						//Game ID
-unsigned long PlanetWestwoodStartTime;					//Time that game was started
+uint32_t PlanetWestwoodGameID;						//Game ID
+uint32_t PlanetWestwoodStartTime;					//Time that game was started
 bool	GameStatisticsPacketSent;							//Flag that game stats have been sent to wchat
 bool	ConnectionLost;										//Flag that the connection to the other player was lost
 
@@ -74,5 +74,4 @@ bool	ConnectionLost;										//Flag that the connection to the other player was
 #endif
 
 extern HKEY Get_Registry_Sub_Key (HKEY base_key, char *search_key, BOOL close);
-
 

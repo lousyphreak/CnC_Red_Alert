@@ -702,7 +702,7 @@ void UnitClass::Firing_AI(void)
  * HISTORY:                                                                                    *
  *   05/22/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-RadioMessageType UnitClass::Receive_Message(RadioClass * from, RadioMessageType message, long & param)
+RadioMessageType UnitClass::Receive_Message(RadioClass * from, RadioMessageType message, TARGET & param)
 {
 	assert(Units.ID(this) == ID);
 	assert(IsActive);
@@ -823,7 +823,7 @@ RadioMessageType UnitClass::Receive_Message(RadioClass * from, RadioMessageType 
 						if (cell == 0) {
 							Transmit_Message(RADIO_OVER_OUT, from);
 						} else {
-							param = (long)::As_Target(cell);
+							param = ::As_Target(cell);
 							Do_Turn(dir);
 
 							/*
@@ -858,7 +858,7 @@ RadioMessageType UnitClass::Receive_Message(RadioClass * from, RadioMessageType 
 #else
 								if (*this != UNIT_APC || Is_Door_Open()) {
 #endif
-									param = (long)As_Target();
+									param = As_Target();
 									Transmit_Message(RADIO_TETHER);
 									if (Transmit_Message(RADIO_MOVE_HERE, param, from) != RADIO_ROGER) {
 										Transmit_Message(RADIO_OVER_OUT, from);

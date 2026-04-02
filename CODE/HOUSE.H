@@ -38,6 +38,7 @@
 #ifndef HOUSE_H
 #define HOUSE_H
 
+#include	<stdint.h>
 #include "HEAP.H"
 #include "SUPER.H"
 #include "UTRACKER.H"
@@ -97,7 +98,7 @@ class HouseStaticClass {
 		**	This records the initial credits assigned to this house when the scenario
 		**	was loaded.
 		*/
-		long InitialCredits;
+		int32_t InitialCredits;
 
 		/*
 		**	For generic (unspecified) reinforcements, they arrive by a common method. This
@@ -364,9 +365,9 @@ class HouseClass {
 		**	accumulated over time, the "New" element contains the under-construction
 		**	version.
 		*/
-		unsigned long BScan;
-		unsigned long ActiveBScan;
-		unsigned long OldBScan;
+		uint32_t BScan;
+		uint32_t ActiveBScan;
+		uint32_t OldBScan;
 
 		/*
 		**	This is the last working scan bits for units. For every existing unit
@@ -374,30 +375,30 @@ class HouseClass {
 		**	the scan bits are being constructed, they are built into the "New" element
 		**	and then duplicated into the regular element at the end of every logic cycle.
 		*/
-		unsigned long UScan;
-		unsigned long ActiveUScan;
-		unsigned long OldUScan;
+		uint32_t UScan;
+		uint32_t ActiveUScan;
+		uint32_t OldUScan;
 
 		/*
 		**	Infantry type existence bits. Similar to unit and building bits.
 		*/
-		unsigned long IScan;
-		unsigned long ActiveIScan;
-		unsigned long OldIScan;
+		uint32_t IScan;
+		uint32_t ActiveIScan;
+		uint32_t OldIScan;
 
 		/*
 		**	Aircraft type existence bits. Similar to unit and building bits.
 		*/
-		unsigned long AScan;
-		unsigned long ActiveAScan;
-		unsigned long OldAScan;
+		uint32_t AScan;
+		uint32_t ActiveAScan;
+		uint32_t OldAScan;
 
 		/*
 		**	Vessel type existence bits. Similar to unit and building bits.
 		*/
-		unsigned long VScan;
-		unsigned long ActiveVScan;
-		unsigned long OldVScan;
+		uint32_t VScan;
+		uint32_t ActiveVScan;
+		uint32_t OldVScan;
 
 		/*
 		**	Record of gains and losses for this house during the course of the
@@ -420,9 +421,9 @@ class HouseClass {
 		/*
 		**	This is the running total of the number of credits this house has accumulated.
 		*/
-		long Tiberium;
-		long Credits;
-		long Capacity;
+		int32_t Tiberium;
+		int32_t Credits;
+		int32_t Capacity;
 
 		/*
 		** Stuff to keep track of the total number of units built by this house.
@@ -706,7 +707,7 @@ class HouseClass {
 		bool Does_Enemy_Building_Exist(StructType) const;
 		void Harvested(unsigned tiberium);
 		void Stole(unsigned worth);
-		long Available_Money(void) const;
+		int32_t Available_Money(void) const;
 		void Spend_Money(unsigned money);
 		void Refund_Money(unsigned money);
 		void Attacked(void);
@@ -808,7 +809,7 @@ class HouseClass {
 		friend class MapEditClass;
 
 	private:
-		void Silo_Redraw_Check(long oldtib, long oldcap);
+		void Silo_Redraw_Check(int32_t oldtib, int32_t oldcap);
 		int AI_Building(void);
 		int AI_Unit(void);
 		int AI_Vessel(void);

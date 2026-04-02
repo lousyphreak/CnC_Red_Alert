@@ -813,7 +813,7 @@ void TenConnManClass::Reset_Response_Time(void)
  * HISTORY:                                                                * 
  *   07/22/1996 BRR : Created.                                             * 
  *=========================================================================*/
-unsigned long TenConnManClass::Response_Time(void)
+uint32_t TenConnManClass::Response_Time(void)
 {
    return((Session.NetResponseTime * 60) / 1000);   // 300 milliseconds one way
 
@@ -835,8 +835,8 @@ unsigned long TenConnManClass::Response_Time(void)
  * HISTORY:                                                                * 
  *   07/22/1996 BRR : Created.                                             * 
  *=========================================================================*/
-void TenConnManClass::Set_Timing(unsigned long /*retrydelta*/, 
-	unsigned long /*maxretries*/, unsigned long /*timeout*/)
+void TenConnManClass::Set_Timing(uint32_t /*retrydelta*/, 
+	uint32_t /*maxretries*/, uint32_t /*timeout*/)
 {
 	//
 	// (This function intentionally left blank.)

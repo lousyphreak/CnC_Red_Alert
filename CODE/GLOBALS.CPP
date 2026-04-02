@@ -36,7 +36,7 @@
 
 #include "FUNCTION.H"
 bool IsVQ640 = false;
-unsigned long GameVersion = 0;
+uint32_t GameVersion = 0;
 bool Debug_MotionCapture = false;
 bool Debug_Rotate = false;				// Rotation algorithm control.
 bool Debug_Quiet = false;
@@ -342,7 +342,7 @@ bool AllowVoice = true;
 **	upward at the rate of one per game logic process. The target rate is 15
 **	per second. This value is saved and restored with the saved game.
 */
-long Frame = 0;
+int32_t Frame = 0;
 
 
 /***************************************************************************
@@ -383,11 +383,11 @@ Buffer * TheaterBuffer;
 ** This accumulates into a useful value that contributes to a
 **	histogram of game performance.
 */
-long SpareTicks;
-long PathCount;			// Number of findpaths called.
-long CellCount;			// Number of cells redrawn.
-long TargetScan;			// Number of target scans.
-long SidebarRedraws;		// Number of sidebar redraws.
+int32_t SpareTicks;
+int32_t PathCount;			// Number of findpaths called.
+int32_t CellCount;			// Number of cells redrawn.
+int32_t TargetScan;			// Number of target scans.
+int32_t SidebarRedraws;		// Number of sidebar redraws.
 
 
 /***************************************************************************
@@ -499,7 +499,7 @@ bool GameActive;
 **	a long, but the value wasn't supplied to a function. This is used
 **	specifically for the default reference value. As such, it is not stable.
 */
-long LParam;
+TARGET LParam;
 
 
 #ifdef SCENARIO_EDITOR
@@ -589,7 +589,7 @@ CarryoverClass * Carryover;
 ** This value is computed every time a new scenario is loaded; it's a
 ** CRC of the INI and binary map files.
 */
-unsigned long ScenarioCRC;
+uint32_t ScenarioCRC;
 
 
 /***************************************************************************
@@ -615,7 +615,7 @@ int NewMaxAheadFrame2;
 #ifdef FIXIT_VERSION_3
 bool	bAftermathMultiplayer;		//	Is multiplayer game being played with Aftermath rules?
 #else
-unsigned long 	PlayingAgainstVersion;		// Negotiated version number
+uint32_t 	PlayingAgainstVersion;		// Negotiated version number
 bool				Version107InMix;				// Is there a v1.07 in the game
 #endif
 
@@ -738,8 +738,8 @@ int MouseInstalled;
 // Variables for helping track how much time goes bye in routines
 //
 int LogLevel = 0;
-unsigned long LogLevelTime[ MAX_LOG_LEVEL ] = { 0 };
-unsigned long LogLastTime = 0;
+uint32_t LogLevelTime[ MAX_LOG_LEVEL ] = { 0 };
+uint32_t LogLastTime = 0;
 bool LogDump_Print = false;		// true = print the Log time Stuff
 
 

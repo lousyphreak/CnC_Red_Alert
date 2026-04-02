@@ -90,8 +90,8 @@ static char *ConnectionClass::Commands[PACKET_COUNT] = {
  *   12/20/1994 BR : Created.                                              *
  *=========================================================================*/
 ConnectionClass::ConnectionClass (int numsend, int numreceive,
-	int maxlen, unsigned short magicnum, unsigned long retry_delta,
-	unsigned long max_retries, unsigned long timeout, int extralen)
+	int maxlen, unsigned short magicnum, uint32_t retry_delta,
+	uint32_t max_retries, uint32_t timeout, int extralen)
 {
 	/*------------------------------------------------------------------------
 	Compute our maximum packet length
@@ -184,8 +184,8 @@ void ConnectionClass::Init (void)
 	NumSendNoAck = 0;
 	NumSendAck = 0;
 
-	LastSeqID = 0xffffffff;
-	LastReadID = 0xffffffff;
+	LastSeqID = static_cast<uint32_t>(-1);
+	LastReadID = static_cast<uint32_t>(-1);
 
 	Queue->Init();
 
@@ -597,7 +597,7 @@ int ConnectionClass::Service_Send_Queue (void)
 	int num_entries;
 	SendQueueType *send_entry;						// ptr to send queue entry
 	CommHeaderType *packet_hdr;					// packet header
-	unsigned long curtime;							// current time
+	uint32_t curtime;							// current time
 	int bad_conn = 0;
 
 	/*------------------------------------------------------------------------
@@ -683,11 +683,11 @@ int ConnectionClass::Service_Send_Queue (void)
 			/*..................................................................
 			Perform error detection, based on either MaxRetries or Timeout
 			..................................................................*/
-			if (MaxRetries != -1 && send_entry->SendCount > MaxRetries) {
+			if (MaxRetries != static_cast<uint32_t>(-1) && send_entry->SendCount > MaxRetries) {
 				bad_conn = 1;
 			}
 
-			if (Timeout != -1 &&
+			if (Timeout != static_cast<uint32_t>(-1) &&
 				(send_entry->LastTime - send_entry->FirstTime) > Timeout) {
 				bad_conn = 1;
 			}
@@ -771,10 +771,10 @@ int ConnectionClass::Service_Receive_Queue (void)
  * HISTORY:                                                                *
  *   12/20/1994 BR : Created.                                              *
  *=========================================================================*/
-unsigned long ConnectionClass::Time (void)
+uint32_t ConnectionClass::Time (void)
 {
 	static struct timeb mytime;			// DOS time
-	unsigned long msec;
+	uint64_t msec;
 
 #ifdef WWLIB32_H
 
@@ -782,15 +782,15 @@ unsigned long ConnectionClass::Time (void)
 	If the Westwood timer system has been activated, use TickCount's value
 	------------------------------------------------------------------------*/
 	if (TimerSystemOn) {
-		return(TickCount);				// Westwood Library time
+		return(static_cast<uint32_t>(TickCount));				// Westwood Library time
 	}
 	/*------------------------------------------------------------------------
 	Otherwise, use the DOS timer
 	------------------------------------------------------------------------*/
 	else {
 		ftime(&mytime);
-		msec = (unsigned long)mytime.time * 1000L + (unsigned long)mytime.millitm;
-		return((msec / 100) * 6);
+		msec = static_cast<uint64_t>(mytime.time) * 1000ULL + static_cast<uint64_t>(mytime.millitm);
+		return(static_cast<uint32_t>((msec / 100ULL) * 6ULL));
 	}
 
 #else
@@ -799,8 +799,8 @@ unsigned long ConnectionClass::Time (void)
 	If the Westwood library isn't being used, use the DOS timer.
 	------------------------------------------------------------------------*/
 	ftime(&mytime);
-	msec = (unsigned long)mytime.time * 1000L + (unsigned long)mytime.millitm;
-	return((msec / 100) * 6);
+	msec = static_cast<uint64_t>(mytime.time) * 1000ULL + static_cast<uint64_t>(mytime.millitm);
+	return(static_cast<uint32_t>((msec / 100ULL) * 6ULL));
 
 #endif
 
@@ -834,4 +834,3 @@ char *ConnectionClass::Command_Name(int command)
 }	/* end of Command_Name */
 
 /************************** end of connect.cpp *****************************/
-

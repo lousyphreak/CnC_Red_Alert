@@ -18,6 +18,8 @@
 
 #ifndef VQAFILE_H
 #define VQAFILE_H
+
+#include <stdint.h>
 /****************************************************************************
 *
 *         C O N F I D E N T I A L -- W E S T W O O D  S T U D I O S
@@ -70,27 +72,27 @@
  * FutureUse     - Reserved for future expansion.
  */
 typedef struct _VQAHeader {
-	unsigned short Version;
-	unsigned short Flags;
-	unsigned short Frames;
-	unsigned short ImageWidth;
-	unsigned short ImageHeight;
-	unsigned char  BlockWidth;
-	unsigned char  BlockHeight;
-	unsigned char  FPS;
-	unsigned char  Groupsize;
-	unsigned short Num1Colors;
-	unsigned short CBentries;
-	unsigned short Xpos;
-	unsigned short Ypos;
-	unsigned short MaxFramesize;
-	unsigned short SampleRate;
-	unsigned char  Channels;
-	unsigned char  BitsPerSample;
-	unsigned short AltSampleRate;
-	unsigned char  AltChannels;
-	unsigned char  AltBitsPerSample;
-	unsigned short FutureUse[5];
+	uint16_t Version;
+	uint16_t Flags;
+	uint16_t Frames;
+	uint16_t ImageWidth;
+	uint16_t ImageHeight;
+	uint8_t  BlockWidth;
+	uint8_t  BlockHeight;
+	uint8_t  FPS;
+	uint8_t  Groupsize;
+	uint16_t Num1Colors;
+	uint16_t CBentries;
+	uint16_t Xpos;
+	uint16_t Ypos;
+	uint16_t MaxFramesize;
+	uint16_t SampleRate;
+	uint8_t  Channels;
+	uint8_t  BitsPerSample;
+	uint16_t AltSampleRate;
+	uint8_t  AltChannels;
+	uint8_t  AltBitsPerSample;
+	uint16_t FutureUse[5];
 } VQAHeader;
 
 #ifdef __cplusplus
@@ -122,14 +124,14 @@ static_assert(sizeof(VQAHeader) == 42, "VQAHeader must stay 42 bytes");
 #define VQAFINB_KEY  31
 #define VQAFINB_PAL  30
 #define VQAFINB_SYNC 29
-#define VQAFINF_KEY  (1L<<VQAFINB_KEY)
-#define VQAFINF_PAL  (1L<<VQAFINB_PAL)
-#define VQAFINF_SYNC (1L<<VQAFINB_SYNC)
+#define VQAFINF_KEY  (UINT32_C(1) << VQAFINB_KEY)
+#define VQAFINF_PAL  (UINT32_C(1) << VQAFINB_PAL)
+#define VQAFINF_SYNC (UINT32_C(1) << VQAFINB_SYNC)
 
 /* FINF related defines and macros. */
-#define VQAFINF_OFFSET 0x0FFFFFFFL
-#define VQAFINF_FLAGS  0xF0000000L
-#define VQAFRAME_OFFSET(a) (((a & VQAFINF_OFFSET)<<1))
+#define VQAFINF_OFFSET UINT32_C(0x0FFFFFFF)
+#define VQAFINF_FLAGS  UINT32_C(0xF0000000)
+#define VQAFRAME_OFFSET(a) ((uint32_t)(((a) & VQAFINF_OFFSET) << 1))
 
 /* VQ vector pointer codes. */
 #define VPC_ONE_SINGLE    0xF000 /* One single color block */

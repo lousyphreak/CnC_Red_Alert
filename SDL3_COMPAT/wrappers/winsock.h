@@ -39,16 +39,16 @@ struct WSADATA {
     WORD wHighVersion;
     char szDescription[257];
     char szSystemStatus[129];
-    unsigned short iMaxSockets;
-    unsigned short iMaxUdpDg;
+    uint16_t iMaxSockets;
+    uint16_t iMaxUdpDg;
     char* lpVendorInfo;
 };
 
 struct SOCKADDR_IPX {
-    short sa_family;
+    int16_t sa_family;
     char sa_netnum[4];
     char sa_nodenum[6];
-    unsigned short sa_socket;
+    uint16_t sa_socket;
 };
 
 using SOCKADDR = struct sockaddr;
@@ -98,22 +98,22 @@ inline int closesocket(SOCKET socket_handle)
     return close(socket_handle);
 }
 
-inline int ioctlsocket(SOCKET socket_handle, long command, u_long* argp)
+inline int ioctlsocket(SOCKET socket_handle, LONG command, u_long* argp)
 {
     return ioctl(socket_handle, command, argp);
 }
 
-inline int WSAAsyncSelect(SOCKET, HWND, unsigned int, long)
+inline int WSAAsyncSelect(SOCKET, HWND, uint32_t, LONG)
 {
     return 0;
 }
 
-inline HANDLE WSAAsyncGetHostByName(HWND, unsigned int, const char*, char*, int)
+inline HANDLE WSAAsyncGetHostByName(HWND, uint32_t, const char*, char*, int)
 {
     return nullptr;
 }
 
-inline HANDLE WSAAsyncGetHostByAddr(HWND, unsigned int, const char*, int, int, char*, int)
+inline HANDLE WSAAsyncGetHostByAddr(HWND, uint32_t, const char*, int, int, char*, int)
 {
     return nullptr;
 }

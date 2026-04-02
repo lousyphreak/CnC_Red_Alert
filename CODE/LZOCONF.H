@@ -51,6 +51,7 @@
 
 
 #include <limits.h>
+#include <stdint.h>
 /* CHAR_BIT, UINT_MAX, ULONG_MAX */
 #if !defined(CHAR_BIT) || (CHAR_BIT != 8)
 #  error invalid CHAR_BIT
@@ -117,7 +118,7 @@
 
 
 /* Unsigned type that can store all bits of a lzo_voidp */
-typedef unsigned long       lzo_ptr_t;
+typedef uintptr_t           lzo_ptr_t;
 
 /* Align a pointer on a boundary that is a multiple of 'size' */
 #define LZO_ALIGN(ptr,size) \

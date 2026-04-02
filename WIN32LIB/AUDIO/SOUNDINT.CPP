@@ -85,11 +85,11 @@ extern	char DebugBuffer[];
  * HISTORY:                                                                *
  *   06/23/1995 PWG : Created.                                             *
  *=========================================================================*/
-LONG Simple_Copy(void ** source, LONG * ssize, void ** alternate, LONG * altsize, void **dest, LONG size)
+int32_t Simple_Copy(void ** source, int32_t * ssize, void ** alternate, int32_t * altsize, void **dest, int32_t size)
 {
 
 
-	LONG	out = 0;		// Number of bytes copied to the destination.
+	int32_t	out = 0;		// Number of bytes copied to the destination.
 
 	/*
 	**	It could happen that entering this routine, the source buffer
@@ -104,7 +104,7 @@ LONG Simple_Copy(void ** source, LONG * ssize, void ** alternate, LONG * altsize
 	}
 
 	if (*source && *ssize) {
-		LONG	s;				// Scratch length var.
+		int32_t	s;				// Scratch length var.
 
 		/*
 		**	Copy as much as possible from the primary source, but no
@@ -157,11 +157,11 @@ LONG Simple_Copy(void ** source, LONG * ssize, void ** alternate, LONG * altsize
  *   09/04/1994 JLB : Revamped entirely.                                                       *
  *=============================================================================================*/
 #pragma argsused
-LONG Sample_Copy(SampleTrackerType *st, void ** source, LONG * ssize, void ** alternate, LONG * altsize, void * dest, LONG size, SCompressType scomp, void * , short int *)
+int32_t Sample_Copy(SampleTrackerType *st, void ** source, int32_t * ssize, void ** alternate, int32_t * altsize, void * dest, int32_t size, SCompressType scomp, void * , int16_t *)
 {
 
-	LONG	s;
-	LONG	datasize = 0;		// Output bytes.
+	int32_t	s;
+	int32_t	datasize = 0;		// Output bytes.
 
 	switch (scomp) {
 		default:
@@ -180,8 +180,8 @@ LONG Sample_Copy(SampleTrackerType *st, void ** source, LONG * ssize, void ** al
 				*/
 				{
 					uint32_t magic;
-					unsigned short fsize;
-					unsigned short dsize;
+					uint16_t fsize;
+					uint16_t dsize;
 					void *fptr;
 					void *dptr;
 					void *mptr;
@@ -440,7 +440,7 @@ VOID far __cdecl maintenance_callback(VOID)
 			**	This allows for delays in calling the Sound_Callback function.
 			*/
 			if (!st->DontTouch && !st->QueueBuffer && st->FilePending) {
-				st->QueueBuffer = Audio_Add_Long_To_Pointer(st->FileBuffer, (long)(st->Odd%LockedData.StreamBufferCount)*(long)LockedData.StreamBufferSize);
+				st->QueueBuffer = Audio_Add_Long_To_Pointer(st->FileBuffer, (intptr_t)(st->Odd % LockedData.StreamBufferCount) * (intptr_t)LockedData.StreamBufferSize);
 				st->FilePending--;
 				st->Odd++;
 				if (!st->FilePending) {
@@ -512,7 +512,7 @@ VOID far __cdecl maintenance_callback(VOID)
  *   06/23/1995 PWG : Created.                                             *
  *=========================================================================*/
 
-void *Audio_Add_Long_To_Pointer(void const *ptr, LONG size)
+void *Audio_Add_Long_To_Pointer(void const *ptr, intptr_t size)
 {
 	return ((void *) ( (char const *) ptr + size));
 }
@@ -529,7 +529,7 @@ void *Audio_Add_Long_To_Pointer(void const *ptr, LONG size)
  * HISTORY:                                                                *
  *   06/28/1995 PWG : Created.                                             *
  *=========================================================================*/
-void Audio_Mem_Set(void const *ptr, unsigned char value, long size)
+void Audio_Mem_Set(void const *ptr, unsigned char value, intptr_t size)
 {
 	unsigned char *temp = (unsigned char *)ptr;
 	for (int lp = 0; lp < size; lp ++) {

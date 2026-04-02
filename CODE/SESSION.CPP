@@ -50,6 +50,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "FUNCTION.H"
+#include <cstdint>
 #include <time.h>
 // for station ID computation
 
@@ -1278,10 +1279,10 @@ void SessionClass::Trap_Object(void)
  * HISTORY:                                                                *
  *   12/07/1995 BRR : Created.                                             *
  *=========================================================================*/
-unsigned long SessionClass::Compute_Unique_ID(void)
+uint32_t SessionClass::Compute_Unique_ID(void)
 {
 	time_t tm;
-	unsigned long id;
+	uint32_t id;
 	char *path;
 	int i;
 
@@ -1289,15 +1290,15 @@ unsigned long SessionClass::Compute_Unique_ID(void)
 	// Start with the seconds since Jan 1, 1970 (system local time)
 	//------------------------------------------------------------------------
 	time(&tm);
-	id = (unsigned long)tm;
+	id = static_cast<uint32_t>(tm);
 
 	//------------------------------------------------------------------------
 	// Now add in the free space on the hard drive
 	//------------------------------------------------------------------------
 	const uint64_t free_space = Disk_Space_Available();
 	if (free_space != 0) {
-		Add_CRC(&id, static_cast<unsigned long>(free_space & 0xFFFFFFFFULL));
-		Add_CRC(&id, static_cast<unsigned long>(free_space >> 32));
+		Add_CRC(&id, static_cast<uint32_t>(free_space & 0xFFFFFFFFULL));
+		Add_CRC(&id, static_cast<uint32_t>(free_space >> 32));
 	}
 
 	//------------------------------------------------------------------------
@@ -1306,7 +1307,7 @@ unsigned long SessionClass::Compute_Unique_ID(void)
 	path = getenv("PATH");
 	if (path) {
 		for (i = 0; i < strlen(path); i++) {
-			Add_CRC(&id, (unsigned long)path[i]);
+			Add_CRC(&id, (uint32_t)path[i]);
 		}
 	}
 

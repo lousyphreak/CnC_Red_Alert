@@ -70,7 +70,7 @@ void _PRO(void);
 typedef MixFileClass<CCFileClass>	MFCD;
 
 extern bool IsVQ640;
-extern unsigned long GameVersion;
+extern uint32_t GameVersion;
 extern bool Debug_MotionCapture;
 extern bool Debug_Rotate;
 extern bool Debug_Quiet;
@@ -172,7 +172,7 @@ extern VoxType						SpeakQueue;
 extern bool							PlayerWins;
 extern bool							PlayerLoses;
 extern bool							PlayerRestarts;
-extern long							Frame;
+extern int32_t						Frame;
 extern VoxType						SpeechRecord[2];
 extern void *						SpeechBuffer[2];
 extern int							PreserveVQAScreen;
@@ -302,11 +302,11 @@ extern TTimerClass<SystemTimerClass> TickCount;
 extern bool							PassedProximity;	// used in display.cpp
 extern HousesType					Whom;
 extern _VQAConfig					AnimControl;
-extern long							SpareTicks;
-extern long							PathCount;
-extern long							CellCount;
-extern long							TargetScan;
-extern long							SidebarRedraws;
+extern int32_t						SpareTicks;
+extern int32_t						PathCount;
+extern int32_t						CellCount;
+extern int32_t						TargetScan;
+extern int32_t						SidebarRedraws;
 extern DMonoType					MonoPage;
 extern bool							GameActive;
 extern bool							SpecialFlag;
@@ -321,12 +321,12 @@ extern PaletteClass 				GamePalette;
 extern PaletteClass 				OriginalPalette;
 extern PaletteClass				ScorePalette;
 extern int							BuildLevel;
-extern unsigned long				ScenarioCRC;
+extern uint32_t				ScenarioCRC;
 
 #ifdef FIXIT_VERSION_3
 extern bool							bAftermathMultiplayer;		//	Is multiplayer game being played with Aftermath rules?
 #else
-extern unsigned long 				PlayingAgainstVersion;		// Negotiated version number
+extern uint32_t 				PlayingAgainstVersion;		// Negotiated version number
 extern bool							Version107InMix;				// Is there a v1.07 in the game
 #endif
 
@@ -415,8 +415,8 @@ extern int MouseInstalled;
 
 
 extern int LogLevel;
-extern unsigned long LogLevelTime[ MAX_LOG_LEVEL ];
-extern unsigned long LogLastTime;
+extern uint32_t LogLevelTime[ MAX_LOG_LEVEL ];
+extern uint32_t LogLastTime;
 
 extern class DynamicVectorClass<EventChoiceClass> test2;
 extern class DynamicVectorClass<ActionChoiceClass> test3;
@@ -447,9 +447,9 @@ void WWDebugString (char *string);
 */
 
 extern char PlanetWestwoodIPAddress[];		//IP of server or other player
-extern long PlanetWestwoodPortNumber;		//Port number to send to
+extern uint16_t PlanetWestwoodPortNumber;		//Port number to send to
 extern bool PlanetWestwoodIsHost;				//Flag true if player has control of game options
-extern unsigned long PlanetWestwoodGameID;	//Game ID
+extern uint32_t PlanetWestwoodGameID;	//Game ID
 extern bool	GameStatisticsPacketSent;
 extern bool	ConnectionLost;
 extern void *PacketLater;

@@ -1557,7 +1557,7 @@ bool FootClass::Restore_Mission(void)
  * HISTORY:                                                                                    *
  *   05/14/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-RadioMessageType FootClass::Receive_Message(RadioClass * from, RadioMessageType message, long & param)
+RadioMessageType FootClass::Receive_Message(RadioClass * from, RadioMessageType message, TARGET & param)
 {
 	assert(IsActive);
 
@@ -1610,7 +1610,7 @@ RadioMessageType FootClass::Receive_Message(RadioClass * from, RadioMessageType 
 		**	then it doesn't need further movement instructions.
 		*/
 		case RADIO_NEED_TO_MOVE:
-			param = (long)NavCom;
+			param = NavCom;
 			if (!Target_Legal(NavCom)) {
 				return(RADIO_ROGER);
 			}
@@ -1621,14 +1621,14 @@ RadioMessageType FootClass::Receive_Message(RadioClass * from, RadioMessageType 
 		**	for complex loading and unloading missions.
 		*/
 		case RADIO_MOVE_HERE:
-			if (NavCom != (TARGET)param) {
-				if (::As_Target(Coord_Cell(Coord)) == (TARGET)param) {
+			if (NavCom != param) {
+				if (::As_Target(Coord_Cell(Coord)) == param) {
 					return(RADIO_YEA_NOW_WHAT);
 				} else {
 					if (Mission == MISSION_GUARD && MissionQueue == MISSION_NONE) {
 						Assign_Mission(MISSION_MOVE);
 					}
-					Assign_Destination((TARGET)param);
+					Assign_Destination(param);
 					Shorten_Mission_Timer();
 				}
 			}

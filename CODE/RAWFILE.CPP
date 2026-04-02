@@ -384,9 +384,9 @@ void RawFileClass::Close(void)
  * HISTORY:                                                                                    *
  *   10/18/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-long RawFileClass::Read(void * buffer, long size)
+int32_t RawFileClass::Read(void * buffer, int32_t size)
 {
-	long	bytesread = 0;			// Running count of the number of bytes read into the buffer.
+	int32_t	bytesread = 0;			// Running count of the number of bytes read into the buffer.
 	int	opened = false;		// Was the file opened by this routine?
 
 	/*
@@ -409,11 +409,11 @@ long RawFileClass::Read(void * buffer, long size)
 	**	the file.
 	*/
 	if (BiasLength != -1) {
-		int remainder = BiasLength - Seek(0);
+		int32_t remainder = BiasLength - Seek(0);
 		size = size < remainder ? size : remainder;
 	}
 
-	long total = 0;
+	int32_t total = 0;
 	char* read_buffer = (char*)buffer;
 	while (size > 0) {
 		size_t actual = SDL_ReadIO(Handle, read_buffer, (size_t)size);
@@ -425,8 +425,8 @@ long RawFileClass::Read(void * buffer, long size)
 			break;
 		}
 		read_buffer += actual;
-		size -= (long)actual;
-		total += (long)actual;
+		size -= static_cast<int32_t>(actual);
+		total += static_cast<int32_t>(actual);
 	}
 	bytesread = total;
 
@@ -457,9 +457,9 @@ long RawFileClass::Read(void * buffer, long size)
  * HISTORY:                                                                                    *
  *   10/18/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-long RawFileClass::Write(void const * buffer, long size)
+int32_t RawFileClass::Write(void const * buffer, int32_t size)
 {
-	long	bytesread = 0;
+	int32_t	bytesread = 0;
 	int	opened = false;		// Was the file manually opened?
 
 	/*
@@ -478,7 +478,7 @@ long RawFileClass::Write(void const * buffer, long size)
 	if (actual < (size_t)size) {
 		Error(ENOSPC, false, Filename);
 	}
-	bytesread = (long)actual;
+	bytesread = static_cast<int32_t>(actual);
 
 	/*
 	**	Fixup the bias length if necessary.
@@ -525,7 +525,7 @@ long RawFileClass::Write(void const * buffer, long size)
  * HISTORY:                                                                                    *
  *   10/18/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-long RawFileClass::Seek(long pos, int dir)
+int32_t RawFileClass::Seek(int32_t pos, int dir)
 {
 
 	/*
@@ -556,7 +556,7 @@ long RawFileClass::Seek(long pos, int dir)
 		/*
 		**	Perform the modified raw seek into the file.
 		*/
-		long newpos = Raw_Seek(pos, dir) - BiasStart;
+		int32_t newpos = Raw_Seek(pos, dir) - BiasStart;
 
 		/*
 		**	Perform a final double check to make sure the file position fits with the bias range.
@@ -594,9 +594,9 @@ long RawFileClass::Seek(long pos, int dir)
  * HISTORY:                                                                                    *
  *   10/18/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-long RawFileClass::Size(void)
+int32_t RawFileClass::Size(void)
 {
-	long	size = 0;
+	int32_t	size = 0;
 
 	/*
 	**	A biased file already has its length determined.
@@ -618,7 +618,10 @@ long RawFileClass::Size(void)
 		if (io_size < 0) {
 			Error(EIO, false, Filename);
 		}
-		size = (long)io_size;
+		if (io_size > INT32_MAX) {
+			Error(EOVERFLOW, false, Filename);
+		}
+		size = static_cast<int32_t>(io_size);
 
 	} else {
 
@@ -747,7 +750,7 @@ int RawFileClass::Delete(void)
  *   11/14/1995 DRD : Created.                                                                 *
  *   07/13/1996 JLB : Handles win32 method.                                                    *
  *=============================================================================================*/
-unsigned long RawFileClass::Get_Date_Time(void)
+uint32_t RawFileClass::Get_Date_Time(void)
 {
 	if (Filename == NULL) return(0);
 
@@ -767,8 +770,8 @@ unsigned long RawFileClass::Get_Date_Time(void)
 	**	date: bits 0-4=day, 5-8=month, 9-15=year(since 1980)
 	**	time: bits 0-4=second/2, 5-10=minutes, 11-15=hours
 	*/
-	unsigned short dosdate = (unsigned short)(((dt.year - 1980) << 9) | (dt.month << 5) | dt.day);
-	unsigned short dostime = (unsigned short)((dt.hour << 11) | (dt.minute << 5) | (dt.second / 2));
+	uint16_t dosdate = static_cast<uint16_t>(((dt.year - 1980) << 9) | (dt.month << 5) | dt.day);
+	uint16_t dostime = static_cast<uint16_t>((dt.hour << 11) | (dt.minute << 5) | (dt.second / 2));
 	return((dosdate << 16) | dostime);
 }
 
@@ -788,7 +791,7 @@ unsigned long RawFileClass::Get_Date_Time(void)
  *   11/14/1995 DRD : Created.                                                                 *
  *   07/13/1996 JLB : Handles win 32 method                                                    *
  *=============================================================================================*/
-bool RawFileClass::Set_Date_Time(unsigned long datetime)
+bool RawFileClass::Set_Date_Time(uint32_t datetime)
 {
 	/*
 	**	SDL3 does not provide an API to set file modification times.
@@ -820,7 +823,7 @@ bool RawFileClass::Set_Date_Time(unsigned long datetime)
  * HISTORY:                                                                                    *
  *   06/02/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-void RawFileClass::Bias(int start, int length)
+void RawFileClass::Bias(int32_t start, int32_t length)
 {
 	if (start == 0) {
 		BiasStart = 0;
@@ -863,7 +866,7 @@ void RawFileClass::Bias(int start, int length)
  * HISTORY:                                                                                    *
  *   08/04/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-long RawFileClass::Raw_Seek(long pos, int dir)
+int32_t RawFileClass::Raw_Seek(int32_t pos, int dir)
 {
 	/*
 	**	If the file isn't opened, then this is a fatal error condition.
@@ -904,5 +907,8 @@ long RawFileClass::Raw_Seek(long pos, int dir)
 	**	Return with the new position of the file. This will range between zero and the number of
 	**	bytes the file contains.
 	*/
-	return((long)newpos);
+	if (newpos > INT32_MAX) {
+		Error(EOVERFLOW, false, Filename);
+	}
+	return(static_cast<int32_t>(newpos));
 }

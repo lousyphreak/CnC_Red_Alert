@@ -45,7 +45,7 @@ static inline uint8_t Clamp_Unsigned_Byte(int32_t value)
 
 }
 
-extern "C" LONG __cdecl Decompress_Frame(void *source, void *dest, LONG size)
+extern "C" int32_t __cdecl Decompress_Frame(void *source, void *dest, int32_t size)
 {
 	if (source == 0 || dest == 0 || size <= 0) {
 		return 0;
@@ -54,7 +54,7 @@ extern "C" LONG __cdecl Decompress_Frame(void *source, void *dest, LONG size)
 	uint32_t previous = 0x80U;
 	int8_t* s = (int8_t*)source;
 	uint8_t* d = (uint8_t*)dest;
-	LONG incount = 0;
+	int32_t incount = 0;
 
 	while (size > 0) {
 		const int8_t code = *s++;

@@ -58,6 +58,7 @@
 #ifndef cdecl
 #define cdecl __cdecl
 #endif
+#include <stdint.h>
 #ifdef PHARLAP_TNT
 #include <pltypes.h>
 #endif
@@ -73,74 +74,74 @@ extern "C" {
 /* unvqbuff.asm */
 #ifndef PHARLAP_TNT
 void cdecl UnVQ_2x2(unsigned char *codebook, unsigned char *pointers,
-		unsigned char *buffer, unsigned long blocksperrow,
-		unsigned long numrows, unsigned long bufwidth);
+		unsigned char *buffer, uint32_t blocksperrow,
+		uint32_t numrows, uint32_t bufwidth);
 
 void cdecl UnVQ_2x3(unsigned char *codebook, unsigned char *pointers,
-		unsigned char *buffer, unsigned long blocksperrow,
-		unsigned long numrows, unsigned long bufwidth);
+		unsigned char *buffer, uint32_t blocksperrow,
+		uint32_t numrows, uint32_t bufwidth);
 
 void cdecl UnVQ_4x2(unsigned char *codebook, unsigned char *pointers,
-		unsigned char *buffer, unsigned long blocksperrow,
-		unsigned long numrows, unsigned long bufwidth);
+		unsigned char *buffer, uint32_t blocksperrow,
+		uint32_t numrows, uint32_t bufwidth);
 
 void cdecl UnVQ_4x4(unsigned char *codebook, unsigned char *pointers,
-		unsigned char *buffer, unsigned long blocksperrow,
-		unsigned long numrows, unsigned long bufwidth);
+		unsigned char *buffer, uint32_t blocksperrow,
+		uint32_t numrows, uint32_t bufwidth);
 
 void cdecl UnVQ_4x4_V2(unsigned char *codebook, unsigned char *pointers,
-		unsigned char *buffer, unsigned long blocksperrow,
-		unsigned long numrows, unsigned long bufwidth);
+		unsigned char *buffer, uint32_t blocksperrow,
+		uint32_t numrows, uint32_t bufwidth);
 
 void cdecl UnVQ_4x2_Woofer(unsigned char *codebook, unsigned char *pointers,
-		unsigned char *buffer, unsigned long blocksperrow,
-		unsigned long numrows, unsigned long bufwidth);
+		unsigned char *buffer, uint32_t blocksperrow,
+		uint32_t numrows, uint32_t bufwidth);
 
 /* unvqvesa.asm */
 void cdecl UnVQ_4x2_VESA320_32K(unsigned char *codebook,
 		unsigned char *pointers, unsigned char *palette,
-		unsigned long grains_per_win,unsigned long dummy1,unsigned long dummy2);
+		uint32_t grains_per_win,uint32_t dummy1,uint32_t dummy2);
 
 #else /* PHARLAP_TNT */
 
 void cdecl UnVQ_2x2(unsigned char *codebook, unsigned char *pointers,
-		FARPTR buffer, unsigned long blocksperrow, unsigned long numrows,
-		unsigned long bufwidth);
+		FARPTR buffer, uint32_t blocksperrow, uint32_t numrows,
+		uint32_t bufwidth);
 
 void cdecl UnVQ_2x3(unsigned char *codebook, unsigned char *pointers,
-		FARPTR buffer, unsigned long blocksperrow, unsigned long numrows,
-		unsigned long bufwidth);
+		FARPTR buffer, uint32_t blocksperrow, uint32_t numrows,
+		uint32_t bufwidth);
 
 void cdecl UnVQ_4x2(unsigned char *codebook, unsigned char *pointers,
-		FARPTR buffer, unsigned long blocksperrow, unsigned long numrows,
-		unsigned long bufwidth);
+		FARPTR buffer, uint32_t blocksperrow, uint32_t numrows,
+		uint32_t bufwidth);
 
 void cdecl UnVQ_4x4(unsigned char *codebook, unsigned char *pointers,
-		FARPTR buffer, unsigned long blocksperrow, unsigned long numrows,
-		unsigned long bufwidth);
+		FARPTR buffer, uint32_t blocksperrow, uint32_t numrows,
+		uint32_t bufwidth);
 
 void cdecl UnVQ_4x4_V2(unsigned char *codebook, unsigned char *pointers,
-		FARPTR buffer, unsigned long blocksperrow, unsigned long numrows,
-		unsigned long bufwidth);
+		FARPTR buffer, uint32_t blocksperrow, uint32_t numrows,
+		uint32_t bufwidth);
 
 /* unvqvesa.asm */
 void cdecl UnVQ_4x2_VESA320_32K(unsigned char *codebook,
-		unsigned char *pointers, FARPTR palette, unsigned long grains_per_win,
-		unsigned long dummy1, unsigned long dummy2);
+		unsigned char *pointers, FARPTR palette, uint32_t grains_per_win,
+		uint32_t dummy1, uint32_t dummy2);
 
 #endif /* PHARLAP_TNT */
 
 /* unvqxmde.asm */
 void cdecl UnVQ_4x2_Xmode(unsigned char *codebook, unsigned char *pointers,
-		unsigned char *buffer, unsigned long blocksperrow,
-		unsigned long numrows, unsigned long dummy);
+		unsigned char *buffer, uint32_t blocksperrow,
+		uint32_t numrows, uint32_t dummy);
 
 void cdecl UnVQ_4x2_XmodeCB(unsigned char *cbdummy, unsigned char *pointers,
-		unsigned char *buffer, unsigned long blocksperrow,
-		unsigned long numrows, unsigned long dummy);
+		unsigned char *buffer, uint32_t blocksperrow,
+		uint32_t numrows, uint32_t dummy);
 
-void cdecl Upload_4x2CB(unsigned char *codebook, unsigned long numentries);
-void cdecl XlatePointers(unsigned char *pointers, unsigned long numpointers);
+void cdecl Upload_4x2CB(unsigned char *codebook, uint32_t numentries);
+void cdecl XlatePointers(unsigned char *pointers, uint32_t numpointers);
 
 #ifdef __cplusplus
 }

@@ -39,6 +39,7 @@
 #ifndef RAMFILE_H
 #define RAMFILE_H
 
+#include	<cstdint>
 #include	"WWFILE.H"
 
 class RAMFileClass : public FileClass
@@ -55,13 +56,13 @@ class RAMFileClass : public FileClass
 		virtual int Is_Open(void) const;
 		virtual int Open(char const * filename, int access=READ);
 		virtual int Open(int access=READ);
-		virtual long Read(void * buffer, long size);
-		virtual long Seek(long pos, int dir=SEEK_CUR);
-		virtual long Size(void);
-		virtual long Write(void const * buffer, long size);
+		virtual int32_t Read(void * buffer, int32_t size);
+		virtual int32_t Seek(int32_t pos, int dir=SEEK_CUR);
+		virtual int32_t Size(void);
+		virtual int32_t Write(void const * buffer, int32_t size);
 		virtual void Close(void);
-		virtual unsigned long Get_Date_Time(void) {return(0);}
-		virtual bool Set_Date_Time(unsigned long ) {return(true);}
+		virtual uint32_t Get_Date_Time(void) {return(0);}
+		virtual bool Set_Date_Time(uint32_t ) {return(true);}
 		virtual void Error(int , int = false, char const * =NULL) {}
 
 		operator char const * () {return File_Name();}
@@ -77,17 +78,17 @@ class RAMFileClass : public FileClass
 		**	The maximum size of the buffer. The file occupying the buffer
 		**	may be smaller than this size.
 		*/
-		int MaxLength;
+		int32_t MaxLength;
 
 		/*
 		**	The number of bytes in the sub-file occupying the buffer.
 		*/
-		int Length;
+		int32_t Length;
 
 		/*
 		**	The current file position offset within the buffer.
 		*/
-		int Offset;
+		int32_t Offset;
 
 		/*
 		**	The file was opened with this access mode.

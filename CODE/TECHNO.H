@@ -330,7 +330,7 @@ class TechnoClass :	public RadioClass,
 		virtual void Renovate(void);
 		virtual void AI(void);
 		virtual bool Revealed(HouseClass * house);
-		virtual RadioMessageType Receive_Message(RadioClass * from, RadioMessageType message, long & param);
+		virtual RadioMessageType Receive_Message(RadioClass * from, RadioMessageType message, TARGET & param);
 		void Cloaking_AI(void);
 
 		/*

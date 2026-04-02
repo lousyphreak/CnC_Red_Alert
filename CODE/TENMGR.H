@@ -88,9 +88,9 @@ class TenConnManClass : public ConnManClass
 		// Timing management
 		//
 		virtual void Reset_Response_Time(void);
-		virtual unsigned long Response_Time(void);
-		virtual void Set_Timing (unsigned long retrydelta, 
-			unsigned long maxretries, unsigned long timeout);
+		virtual uint32_t Response_Time(void);
+		virtual void Set_Timing (uint32_t retrydelta, 
+			uint32_t maxretries, uint32_t timeout);
 
 		//
 		// Debugging

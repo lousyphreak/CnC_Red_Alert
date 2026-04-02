@@ -62,7 +62,7 @@
  * HISTORY:                                                                *
  *   07/12/1994 SKB : Created.                                             *
  *=========================================================================*/
-CountDownTimerClass::CountDownTimerClass(BaseTimerEnum timer, long set, int on)
+CountDownTimerClass::CountDownTimerClass(BaseTimerEnum timer, int32_t set, int on)
 							:TimerClass(timer, on)
 {
 	Set(set, on);
@@ -89,9 +89,9 @@ CountDownTimerClass::CountDownTimerClass(BaseTimerEnum timer, int on)
  * HISTORY:                                                                *
  *   07/12/1994 SKB : Created.                                             *
  *=========================================================================*/
-long CountDownTimerClass::Time()
+int32_t CountDownTimerClass::Time()
 {
-	long ticks = DelayTime - TimerClass::Time();
+	int32_t ticks = DelayTime - TimerClass::Time();
 
 	if (ticks < 0) {
 		ticks = 0;
@@ -114,7 +114,7 @@ long CountDownTimerClass::Time()
  * HISTORY:                                                                *
  *   07/12/1994 SKB : Created.                                             *
  *=========================================================================*/
-long CountDownTimerClass::Set(long value, BOOL start)
+int32_t CountDownTimerClass::Set(int32_t value, BOOL start)
 {
 	DelayTime = value;
 	TimerClass::Reset(start);

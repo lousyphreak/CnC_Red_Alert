@@ -1500,7 +1500,7 @@ void ObjectClass::Detach_All(bool all)
  * HISTORY:                                                                                    *
  *   09/24/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-RadioMessageType ObjectClass::Receive_Message(RadioClass *, RadioMessageType message, long & )
+RadioMessageType ObjectClass::Receive_Message(RadioClass *, RadioMessageType message, TARGET &)
 {
 	assert(this != 0);
 	assert(IsActive);

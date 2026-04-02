@@ -151,9 +151,9 @@ enum {
 };
 
 
-extern unsigned long 	PlanetWestwoodGameID;
+extern uint32_t 	PlanetWestwoodGameID;
 extern HINSTANCE		ProgramInstance;
-extern unsigned long 	PlanetWestwoodStartTime;
+extern uint32_t 	PlanetWestwoodStartTime;
 
 extern "C" char	CPUType;
 
@@ -297,7 +297,7 @@ void Send_Statistics_Packet(void)
 		/*
 		** Start credits.
 		*/
-		stats.Add_Field(FIELD_START_CREDITS, (unsigned long)Session.Options.Credits);
+		stats.Add_Field(FIELD_START_CREDITS, (uint32_t)Session.Options.Credits);
 
 		/*
 		** Bases (On/Off)
@@ -317,7 +317,7 @@ void Send_Statistics_Packet(void)
 		/*
 		** AI Players (On/Off)
 		*/
-		stats.Add_Field(FIELD_AI_PLAYERS, (unsigned long) Session.Options.AIPlayers);
+		stats.Add_Field(FIELD_AI_PLAYERS, (uint32_t) Session.Options.AIPlayers);
 
 		/*
 		** Shadow regrowth enabled
@@ -332,12 +332,12 @@ void Send_Statistics_Packet(void)
 		/*
 		** Start unit count
 		*/
-		stats.Add_Field(FIELD_START_UNIT_COUNT, (unsigned long)Session.Options.UnitCount);
+		stats.Add_Field(FIELD_START_UNIT_COUNT, (uint32_t)Session.Options.UnitCount);
 
 		/*
 		** Tech level.
 		*/
-		stats.Add_Field(FIELD_TECH_LEVEL, (unsigned long)BuildLevel);
+		stats.Add_Field(FIELD_TECH_LEVEL, (uint32_t)BuildLevel);
 
 		/*
 		** Scenario
@@ -542,25 +542,25 @@ void Send_Statistics_Packet(void)
 		/*
 		** Game start time (GMT or Pacific?).
 		*/
-		stats.Add_Field (FIELD_START_TIME, (long) PlanetWestwoodStartTime);
+		stats.Add_Field (FIELD_START_TIME, (uint32_t) PlanetWestwoodStartTime);
 
 		/*
 		** Game duration (seconds).
 		*/
-		stats.Add_Field (FIELD_GAME_DURATION, (long) GameEndTime/60);
+		stats.Add_Field (FIELD_GAME_DURATION, (uint32_t) GameEndTime/60);
 
 		/*
 		** Avg. frame rate.
 		*/
 #ifdef FIXIT_IP_CRASH
-		long divisor = GameEndTime / 60;
+		uint32_t divisor = GameEndTime / 60;
 		if (divisor != 0) {
-			stats.Add_Field (FIELD_FRAME_RATE, (long) Frame / (GameEndTime/60) );
+			stats.Add_Field (FIELD_FRAME_RATE, (uint32_t) Frame / (uint32_t)(GameEndTime/60) );
 		} else {
-			stats.Add_Field (FIELD_FRAME_RATE, 0l);
+			stats.Add_Field (FIELD_FRAME_RATE, 0u);
 		}
 #else
-		stats.Add_Field (FIELD_FRAME_RATE, (long) Frame / (GameEndTime/60) );
+		stats.Add_Field (FIELD_FRAME_RATE, (uint32_t) Frame / (GameEndTime/60) );
 #endif
 
 
@@ -575,19 +575,19 @@ void Send_Statistics_Packet(void)
 		MEMORYSTATUS	mem_info;
 		mem_info.dwLength=sizeof(mem_info);
 		GlobalMemoryStatus(&mem_info);
-		stats.Add_Field (FIELD_MEMORY, (long)mem_info.dwTotalPhys);
+		stats.Add_Field (FIELD_MEMORY, (uint32_t)mem_info.dwTotalPhys);
 
 		/*
 		** Video memory
 		*/
-		long		video_memory;
+		uint32_t		video_memory;
 
 		if (VideoDrawObject){
 			video_memory = VideoDrawObject->GetTotalVideoMemory();
 			if (video_memory){
 				video_memory += 1024*1024 -1;
 				video_memory &= 0xfff00000;
-				stats.Add_Field (FIELD_VIDEO_MEMORY, (long) video_memory);
+				stats.Add_Field (FIELD_VIDEO_MEMORY, (uint32_t)video_memory);
 			}
 		}
 
@@ -823,7 +823,7 @@ void Send_Statistics_Packet(void)
 			** Amount of tiberium turned into credits
 			*/
 			field_player_harvested[3] = '1' + (char)house;
-			stats.Add_Field (field_player_harvested, (unsigned long) player->HarvestedCredits);
+			stats.Add_Field (field_player_harvested, player->HarvestedCredits);
 
 		}
 

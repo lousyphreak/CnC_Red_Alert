@@ -68,6 +68,7 @@ extern	void Colour_Debug (int call_number);
 #include	"SOUNDINT.H"
 #include	<stdio.h>
 #include	<string.h>
+#include <climits>
 #include "sdl_fs.h"
 #include	<stdlib.h>
 #include	<KEYBOARD.H>
@@ -144,8 +145,8 @@ extern	void (*Audio_Focus_Loss_Function)(void) = NULL;
 /* The following PRIVATE functions are in this file:                       */
 /*=========================================================================*/
 
-static BOOL File_Callback(short id, short *odd, void **buffer, long *size);
-static int __cdecl Stream_Sample_Vol(void *buffer, long size, BOOL (*callback)(short id, short *odd, void **buffer, long *size), int volume, int handle);
+static BOOL File_Callback(int16_t id, int16_t *odd, void **buffer, int32_t *size);
+static int __cdecl Stream_Sample_Vol(void *buffer, int32_t size, BOOL (*callback)(int16_t id, int16_t *odd, void **buffer, int32_t *size), int volume, int handle);
 static void Pump_Sound_Service(void);
 static DWORD WINAPI Sound_Thread(LPVOID);
 static BOOL Start_Sound_Thread(void);
@@ -185,7 +186,7 @@ static void Sound_Trace(char const* format, ...)
 // This callback is called whenever the queue buffer playback has begun
 // and another buffer is needed for queuing up.  Returns TRUE if there
 // is more data to read from the file.
-static BOOL File_Callback(short id, short *odd, void **buffer, long *size)
+static BOOL File_Callback(int16_t id, int16_t *odd, void **buffer, int32_t *size)
 {
 	SampleTrackerType       *st;            // Pointer to sample playback control struct.
 	void                    *ptr;           // Pointer to working portion of file buffer.
@@ -211,7 +212,7 @@ static BOOL File_Callback(short id, short *odd, void **buffer, long *size)
 			}
 
 			if (!*buffer && st->FilePending) {
-	 	  		*buffer = Add_Long_To_Pointer(ptr, (long)(*odd % LockedData.StreamBufferCount)*(long)LockedData.StreamBufferSize);
+	 	  		*buffer = Add_Long_To_Pointer(ptr, (intptr_t)(*odd % LockedData.StreamBufferCount) * (intptr_t)LockedData.StreamBufferSize);
 	 	  		st->FilePending--;
 	 	  		*odd = (short)(*odd + 1);
 	 	  		if (!st->FilePending) {
@@ -256,11 +257,11 @@ static BOOL File_Callback(short id, short *odd, void **buffer, long *size)
 
 				while (num_empty_buffers && (st->FileHandle != WW_ERROR)) {
 					int     tofill;
-					long    psize;
+					int32_t psize;
 
 					tofill = (*odd + st->FilePending) % LockedData.StreamBufferCount;
 
-					ptr = Add_Long_To_Pointer(st->FileBuffer, (long)tofill * (long)LockedData.StreamBufferSize);
+					ptr = Add_Long_To_Pointer(st->FileBuffer, (intptr_t)tofill * (intptr_t)LockedData.StreamBufferSize);
 					psize = Read_File(st->FileHandle, ptr, LockedData.StreamBufferSize);
 
 				 	/*
@@ -303,7 +304,7 @@ static BOOL File_Callback(short id, short *odd, void **buffer, long *size)
 				}
 				st->DontTouch = TRUE;
              if (!st->QueueBuffer && st->FilePending) {
-					st->QueueBuffer = Add_Long_To_Pointer(st->FileBuffer, (long)(st->Odd%LockedData.StreamBufferCount)*(long)LockedData.StreamBufferSize);
+					st->QueueBuffer = Add_Long_To_Pointer(st->FileBuffer, (intptr_t)(st->Odd % LockedData.StreamBufferCount) * (intptr_t)LockedData.StreamBufferSize);
 					st->FilePending--;
                 st->Odd++;
                 if (!st->FilePending) {
@@ -340,7 +341,7 @@ static BOOL File_Callback(short id, short *odd, void **buffer, long *size)
 
 
 // Generic streaming sample playback initialization.
-static int __cdecl Stream_Sample_Vol(void *buffer, long size, BOOL (*callback)(short id, short *odd, void **buffer, long *size), int volume, int handle)
+static int __cdecl Stream_Sample_Vol(void *buffer, int32_t size, BOOL (*callback)(int16_t id, int16_t *odd, void **buffer, int32_t *size), int volume, int handle)
 {
 	int								playid=-1;      // Sample play ID.
 	SampleTrackerType               *st;                    // Working pointer to sample control structure.
@@ -388,7 +389,7 @@ static int __cdecl Stream_Sample_Vol(void *buffer, long size, BOOL (*callback)(s
 
 
 #if (0)
-static int __cdecl Stream_Sample(void *buffer, long size, BOOL (*callback)(short id, short *odd, void **buffer, long *size), int handle)
+static int __cdecl Stream_Sample(void *buffer, int32_t size, BOOL (*callback)(int16_t id, int16_t *odd, void **buffer, int32_t *size), int handle)
 {
 	return Stream_Sample_Vol(buffer, size, callback, 0xFF, handle);
 }
@@ -464,7 +465,7 @@ void File_Stream_Preload(int handle)
     */
 	int index;
     for (index = st->FilePending; index < num; index++) {
-		long s = Read_File(fh, Add_Long_To_Pointer(buffer, (long)index * (long)LockedData.StreamBufferSize), LockedData.StreamBufferSize);
+		int32_t s = Read_File(fh, Add_Long_To_Pointer(buffer, (intptr_t)index * (intptr_t)LockedData.StreamBufferSize), LockedData.StreamBufferSize);
        if (s) {
          	st->FilePendingSize = s;
 	  		st->FilePending++;
@@ -782,7 +783,7 @@ void __cdecl Sound_Callback(void)
 void *Load_Sample(char const *filename)
 {
 	void *buffer = NULL;
-	long    size;
+	int32_t size;
 	int     fh;
 
 	if (LockedData.DigiHandle == -1 || !filename || !Find_File(filename)) {
@@ -825,7 +826,7 @@ void *Load_Sample(char const *filename)
  * HISTORY:                                                                                    *
  *   01/06/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-long Load_Sample_Into_Buffer(char const *filename, void *buffer, long size)
+int32_t Load_Sample_Into_Buffer(char const *filename, void *buffer, int32_t size)
 {
 	int     fh;
 
@@ -867,12 +868,12 @@ long Load_Sample_Into_Buffer(char const *filename, void *buffer, long size)
  * HISTORY:                                                                                    *
  *   01/06/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-long Sample_Read(int fh, void *buffer, long size)
+int32_t Sample_Read(int fh, void *buffer, int32_t size)
 {
 
 	AUDHeaderType	RawHeader;
 	void    			*outbuffer;				// Pointer to start of raw data.
-	long    			actual_bytes_read;	// Actual bytes read in, including header
+	int32_t			actual_bytes_read;	// Actual bytes read in, including header
 
 /*
 ** Conversion formula for TCrate and Hz rate.
@@ -886,7 +887,7 @@ long Sample_Read(int fh, void *buffer, long size)
 	size -= sizeof(RawHeader);
 	outbuffer = Add_Long_To_Pointer(buffer, sizeof(RawHeader));
   	actual_bytes_read = Read_File(fh, &RawHeader, sizeof(RawHeader));
-	actual_bytes_read +=Read_File(fh, outbuffer, MIN(size, (long)RawHeader.Size));
+	actual_bytes_read +=Read_File(fh, outbuffer, MIN(size, (int32_t)RawHeader.Size));
 	Mem_Copy(&RawHeader, buffer, sizeof(RawHeader));
 	return(actual_bytes_read);
 }
@@ -1039,9 +1040,9 @@ BOOL Audio_Init( HWND window , int bits_per_sample, BOOL stereo , int rate , int
 {
 	int	index;
 	int	sample=1;
-	short old_bits_per_sample;
-	short old_block_align;
-	long	old_bytes_per_sec;
+	int16_t old_bits_per_sample;
+	int16_t old_block_align;
+	int32_t	old_bytes_per_sec;
 
 
 	Init_Locked_Data();
@@ -1073,10 +1074,10 @@ BOOL Audio_Init( HWND window , int bits_per_sample, BOOL stereo , int rate , int
 		*/
 		memset (&DsBuffFormat , 0 , sizeof(AudioBufferFormat));
 		DsBuffFormat.wFormatTag		= RA_AUDIO_FORMAT_PCM;
-		DsBuffFormat.nChannels		= (unsigned short) (1 + stereo);
+		DsBuffFormat.nChannels		= (uint16_t)(1 + stereo);
 		DsBuffFormat.nSamplesPerSec	= rate;
-		DsBuffFormat.wBitsPerSample	= (short) bits_per_sample;
-		DsBuffFormat.nBlockAlign	= (unsigned short)( (DsBuffFormat.wBitsPerSample/8) * DsBuffFormat.nChannels);
+		DsBuffFormat.wBitsPerSample	= (int16_t)bits_per_sample;
+		DsBuffFormat.nBlockAlign	= (uint16_t)((DsBuffFormat.wBitsPerSample / 8) * DsBuffFormat.nChannels);
 		DsBuffFormat.nAvgBytesPerSec= DsBuffFormat.nSamplesPerSec * DsBuffFormat.nBlockAlign;
 		DsBuffFormat.cbSize = 0;
 
@@ -1114,7 +1115,7 @@ BOOL Audio_Init( HWND window , int bits_per_sample, BOOL stereo , int rate , int
 				** Set up the 8-bit ones
 				*/
 				DsBuffFormat.wBitsPerSample	= 8;
-				DsBuffFormat.nBlockAlign	= (unsigned short)( (DsBuffFormat.wBitsPerSample/8) * DsBuffFormat.nChannels);
+				DsBuffFormat.nBlockAlign	= (uint16_t)((DsBuffFormat.wBitsPerSample / 8) * DsBuffFormat.nChannels);
 				DsBuffFormat.nAvgBytesPerSec= DsBuffFormat.nSamplesPerSec * DsBuffFormat.nBlockAlign;
 
 				memcpy(&PrimaryBuffFormat, &DsBuffFormat, sizeof(AudioBufferFormat));
@@ -1536,7 +1537,7 @@ int Get_Free_Sample_Handle(int priority)
 	return(id);
 }
 
-int Play_Sample(void const *sample, int priority, int volume, signed short panloc)
+int Play_Sample(void const *sample, int priority, int volume, int16_t panloc)
 {
 		  return(Play_Sample_Handle(sample, priority, volume, panloc, Get_Free_Sample_Handle(priority)));
 }
@@ -1697,7 +1698,7 @@ int Play_Sample_Handle(void const *sample, int priority, int volume, signed shor
 	st->Compression 			= (SCompressType) ((unsigned char)RawHeader.Compression);
 	st->Original            = sample;
 	st->OriginalSize        = RawHeader.Size + sizeof(RawHeader);
-	st->Priority            = (short)priority;
+	st->Priority            = (int16_t)priority;
 	st->DontTouch           = TRUE;
 	st->Odd						= 0;
 	st->Reducer             = 0;
@@ -1757,10 +1758,10 @@ int Play_Sample_Handle(void const *sample, int priority, int volume, signed shor
 		st->PlayBuffer->Release();
 		st->PlayBuffer=NULL;
 
-		DsBuffFormat.nSamplesPerSec	= (unsigned short int) RawHeader.Rate;
+		DsBuffFormat.nSamplesPerSec	= (uint16_t)RawHeader.Rate;
 		DsBuffFormat.nChannels			= (RawHeader.Flags & AUD_FLAG_STEREO) ? 2 : 1 ;
 		DsBuffFormat.wBitsPerSample	= (RawHeader.Flags & AUD_FLAG_16BIT) ? 16 : 8 ;
-		DsBuffFormat.nBlockAlign	= (short) ((DsBuffFormat.wBitsPerSample/8) * DsBuffFormat.nChannels);
+		DsBuffFormat.nBlockAlign	= (int16_t)((DsBuffFormat.wBitsPerSample / 8) * DsBuffFormat.nChannels);
 		DsBuffFormat.nAvgBytesPerSec= DsBuffFormat.nSamplesPerSec * DsBuffFormat.nBlockAlign;
 
 		/*
@@ -1925,7 +1926,7 @@ int Play_Sample_Handle(void const *sample, int priority, int volume, signed shor
 					EnterCriticalSection (&GlobalAudioCriticalSection);
 				}
 				st->Active=TRUE;
-				st->Handle=(short)id;
+				st->Handle=(int16_t)id;
 				st->DontTouch = FALSE;
 				if (!AudioDone){
 					LeaveCriticalSection (&GlobalAudioCriticalSection);
@@ -2075,7 +2076,7 @@ void Fade_Sample(int handle, int ticks)
 			} else {
 				SampleTrackerType * st;
 				st = &LockedData.SampleTracker[handle];
-				st->Reducer = (short) ((st->Volume / ticks)+1);
+				st->Reducer = (int16_t)((st->Volume / ticks) + 1);
 			}
 	}
 }
@@ -2099,7 +2100,7 @@ int Get_Digi_Handle(void)
  * HISTORY:                                                                *
  *   07/05/1995 PWG : Created.                                             *
  *=========================================================================*/
-long Sample_Length(void const *sample)
+int32_t Sample_Length(void const *sample)
 {
 	AUDHeaderType	RawHeader;
 
@@ -2107,7 +2108,7 @@ long Sample_Length(void const *sample)
 
 	Mem_Copy((void *)sample, (void *)&RawHeader, sizeof(RawHeader));
 
-	long time = RawHeader.UncompSize;
+	int32_t time = RawHeader.UncompSize;
 
 	/*
 	** If the sample is a 16 bit sample, then it will take only half

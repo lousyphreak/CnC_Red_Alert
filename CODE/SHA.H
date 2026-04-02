@@ -70,7 +70,7 @@ class SHAEngine
 		// Fetch result as if source data were to stop now.
 		int Result(void * result) const;
 
-		void Hash(void const * data, long length);
+		void Hash(void const * data, int32_t length);
 
 		static int Digest_Size(void) {return(sizeof(SHADigest));}
 
@@ -149,7 +149,7 @@ class SHAEngine
 		void Process_Block(void const * source, SHADigest & acc) const;
 
 		// Processes a partially filled source accumulator buffer.
-		void Process_Partial(void const * & data, long & length);
+		void Process_Partial(void const * & data, int32_t & length);
 
 		/*
 		**	This is the running accumulator values. These values

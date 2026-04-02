@@ -62,7 +62,7 @@
  * HISTORY:                                                                *
  *   06/01/1994 PWG : Created.                                             *
  *=========================================================================*/
-BufferClass::BufferClass(VOID *buffer, LONG size)
+BufferClass::BufferClass(VOID *buffer, int32_t size)
 {
 	Size			= size;								// find size of physical buffer
 
@@ -85,7 +85,7 @@ BufferClass::BufferClass(VOID *buffer, LONG size)
  * HISTORY:                                                                *
  *   06/01/1994 PWG : Created.                                             *
  *=========================================================================*/
-BufferClass::BufferClass(LONG size)
+BufferClass::BufferClass(int32_t size)
 {
 	Size				= size;
 	Buffer			= new BYTE[Size];			// otherwise allocate it and

@@ -168,8 +168,8 @@ class IPXManagerClass : public ConnManClass
 		.....................................................................*/
 		int Init (void);
 		int Is_IPX(void);
-		virtual void Set_Timing (unsigned long retrydelta, unsigned long maxretries,
-			unsigned long timeout);
+		virtual void Set_Timing (uint32_t retrydelta, uint32_t maxretries,
+			uint32_t timeout);
 		void Set_Bridge(NetNumType bridge);
 
 		/*.....................................................................
@@ -228,8 +228,8 @@ class IPXManagerClass : public ConnManClass
 		Routines to return the largest average queue response time, and to
 		reset the response time for all queues.
 		.....................................................................*/
-		virtual unsigned long Response_Time(void);
-		unsigned long Global_Response_Time(void);
+		virtual uint32_t Response_Time(void);
+		uint32_t Global_Response_Time(void);
 		virtual void Reset_Response_Time(void);
 
 		/*.....................................................................
@@ -296,9 +296,9 @@ class IPXManagerClass : public ConnManClass
 		/*.....................................................................
 		Timing parameters for all connections
 		.....................................................................*/
-		unsigned long RetryDelta;
-		unsigned long MaxRetries;
-		unsigned long Timeout;
+		uint32_t RetryDelta;
+		uint32_t MaxRetries;
+		uint32_t Timeout;
 
 		/*---------------------------------------------------------------------
 		Real-mode memory pointers and such

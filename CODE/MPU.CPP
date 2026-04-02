@@ -41,21 +41,21 @@
 
 
 #ifdef __BORLANDC__
-unsigned long __cdecl Get_CPU_Clock(unsigned long & high)
+uint32_t __cdecl Get_CPU_Clock(uint32_t & high)
 {
 	__asm db 0fh,031h
 	__asm mov [high],edx
 	return(_EAX);
 }
 #else
-unsigned long __cdecl Get_CPU_Clock(unsigned long & high)
+uint32_t __cdecl Get_CPU_Clock(uint32_t & high)
 {
 	struct timespec spec;
 	uint64_t counter;
 
 	clock_gettime(CLOCK_MONOTONIC, &spec);
 	counter = (uint64_t)spec.tv_sec * 1000000000ull + (uint64_t)spec.tv_nsec;
-	high = (unsigned long)((counter >> 32) & 0xFFFFFFFFu);
-	return((unsigned long)(counter & 0xFFFFFFFFu));
+	high = static_cast<uint32_t>((counter >> 32) & 0xFFFFFFFFu);
+	return(static_cast<uint32_t>(counter & 0xFFFFFFFFu));
 }
 #endif

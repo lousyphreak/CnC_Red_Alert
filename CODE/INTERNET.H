@@ -47,7 +47,7 @@ bool 	Server_Remote_Connect(void);
 bool 	Client_Remote_Connect(void);
 
 extern char PlanetWestwoodIPAddress[IP_ADDRESS_MAX];
-extern long PlanetWestwoodPortNumber;
+extern uint16_t PlanetWestwoodPortNumber;
 extern bool PlanetWestwoodIsHost;
 
 #endif

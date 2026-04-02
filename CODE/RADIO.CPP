@@ -138,7 +138,7 @@ void RadioClass::Debug_Dump(MonoClass * mono) const
  *   05/22/1995 JLB : Recognized who is sending the message                                    *
  *   06/05/1996 JLB : Radio message history tracking.                                          *
  *=============================================================================================*/
-RadioMessageType RadioClass::Receive_Message(RadioClass * from, RadioMessageType message, long & param)
+RadioMessageType RadioClass::Receive_Message(RadioClass * from, RadioMessageType message, TARGET & param)
 {
 	assert(IsActive);
 
@@ -200,7 +200,7 @@ RadioMessageType RadioClass::Receive_Message(RadioClass * from, RadioMessageType
  * HISTORY:                                                                                    *
  *   05/22/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-RadioMessageType RadioClass::Transmit_Message(RadioMessageType message, long & param, RadioClass * to)
+RadioMessageType RadioClass::Transmit_Message(RadioMessageType message, TARGET & param, RadioClass * to)
 {
 	assert(IsActive);
 

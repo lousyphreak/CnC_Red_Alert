@@ -66,10 +66,10 @@ class PacketClass {
 		//
 		void Add_Field(char *field, char data) {Add_Field(new FieldClass(field, data));};
 		void Add_Field(char *field, unsigned char data) {Add_Field(new FieldClass(field, data));};
-		void Add_Field(char *field, short data) {Add_Field(new FieldClass(field, data));};
-		void Add_Field(char *field, unsigned short data) {Add_Field(new FieldClass(field, data));};
-		void Add_Field(char *field, long data) {Add_Field(new FieldClass(field, data));};
-		void Add_Field(char *field, unsigned long data) {Add_Field(new FieldClass(field, data));};
+		void Add_Field(char *field, int16_t data) {Add_Field(new FieldClass(field, data));};
+		void Add_Field(char *field, uint16_t data) {Add_Field(new FieldClass(field, data));};
+		void Add_Field(char *field, int32_t data) {Add_Field(new FieldClass(field, data));};
+		void Add_Field(char *field, uint32_t data) {Add_Field(new FieldClass(field, data));};
 		void Add_Field(char *field, char *data) {Add_Field(new FieldClass(field, data));};
 		void Add_Field(char *field, char const *data) {Add_Field(new FieldClass(field, const_cast<char*>(data)));};
 		void Add_Field(char *field, void *data, int length) {Add_Field(new FieldClass(field, data, length));};
@@ -81,10 +81,10 @@ class PacketClass {
 		FieldClass *Find_Field(char *id);
 		bool Get_Field(char *id, char &data);
 		bool Get_Field(char *id, unsigned char &data);
-		bool Get_Field(char *id, short &data);
-		bool Get_Field(char *id, unsigned short &data);
-		bool Get_Field(char *id, long &data);
-		bool Get_Field(char *id, unsigned long &data);
+		bool Get_Field(char *id, int16_t &data);
+		bool Get_Field(char *id, uint16_t &data);
+		bool Get_Field(char *id, int32_t &data);
+		bool Get_Field(char *id, uint32_t &data);
 		bool Get_Field(char *id, char *data);
 		bool Get_Field(char *id, void *data, int &length);
 

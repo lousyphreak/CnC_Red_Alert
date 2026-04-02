@@ -41,7 +41,8 @@
 #include "RANDOM.H"
 #ifdef RANDOM_COUNT
 #include <stdio.h>
-extern long Frame;
+#include <stdint.h>
+extern int32_t Frame;
 #endif
 
 /***********************************************************************************************
@@ -180,4 +181,3 @@ int RandomClass::operator() (int minval, int maxval)
 	*/
 	return(pick + minval);
 }
-

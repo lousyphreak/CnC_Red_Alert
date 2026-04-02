@@ -18,6 +18,8 @@
 
 #ifndef VQ_H
 #define VQ_H
+
+#include <stdint.h>
 /****************************************************************************
 *
 *        C O N F I D E N T I A L ---  W E S T W O O D   S T U D I O S
@@ -54,21 +56,21 @@
  * pad[5]          - Pad out to 40 bytes total
  */
 typedef struct _VQHeader {
-	unsigned long  ImageSize;
-	unsigned short ImageWidth;
-	unsigned short ImageHeight;
-	unsigned short BlockWidth;
-	unsigned short BlockHeight;
-	unsigned short BlockType;
-	unsigned short PaletteRange;
-	unsigned short Num1Color;
-	unsigned short CodebookSize;
-	unsigned short CodingFlag;
-	unsigned short FrameDiffMethod;
-	unsigned short ForcedPalette;
-	unsigned short F555Palette;
-	unsigned short VQVersion;
-	unsigned short pad[5];
+	uint32_t ImageSize;
+	uint16_t ImageWidth;
+	uint16_t ImageHeight;
+	uint16_t BlockWidth;
+	uint16_t BlockHeight;
+	uint16_t BlockType;
+	uint16_t PaletteRange;
+	uint16_t Num1Color;
+	uint16_t CodebookSize;
+	uint16_t CodingFlag;
+	uint16_t FrameDiffMethod;
+	uint16_t ForcedPalette;
+	uint16_t F555Palette;
+	uint16_t VQVersion;
+	uint16_t pad[5];
 } VQHeader;
 
 #endif /* VQ_H */

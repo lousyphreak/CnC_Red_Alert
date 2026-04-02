@@ -2664,7 +2664,7 @@ TARGET AircraftClass::New_LZ(TARGET oldlz) const
  * HISTORY:                                                                                    *
  *   06/19/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-RadioMessageType AircraftClass::Receive_Message(RadioClass * from, RadioMessageType message, long & param)
+RadioMessageType AircraftClass::Receive_Message(RadioClass * from, RadioMessageType message, TARGET & param)
 {
 	assert(Aircraft.ID(this) == ID);
 	assert(IsActive);
@@ -2707,10 +2707,10 @@ RadioMessageType AircraftClass::Receive_Message(RadioClass * from, RadioMessageT
 					return(RADIO_NEGATIVE);
 				}
 				Assign_Mission(MISSION_ENTER);
-				Assign_Destination((TARGET)param);
+				Assign_Destination(param);
 			} else {
 				Assign_Mission(MISSION_MOVE);
-				Assign_Destination((TARGET)param);
+				Assign_Destination(param);
 			}
 			Commence();
 			return(RADIO_ROGER);
@@ -2770,7 +2770,7 @@ RadioMessageType AircraftClass::Receive_Message(RadioClass * from, RadioMessageT
 						if (cell == 0) {
 							Transmit_Message(RADIO_OVER_OUT, from);
 						} else {
-							param = (long)::As_Target(cell);
+							param = ::As_Target(cell);
 
 							/*
 							**	Tell the potential passenger where it should go. If the passenger is
@@ -2778,7 +2778,7 @@ RadioMessageType AircraftClass::Receive_Message(RadioClass * from, RadioMessageT
 							**	directly.
 							*/
 							if (Transmit_Message(RADIO_MOVE_HERE, param, from) == RADIO_YEA_NOW_WHAT) {
-								param = (long)As_Target();
+								param = As_Target();
 								Transmit_Message(RADIO_TETHER);
 								if (Transmit_Message(RADIO_MOVE_HERE, param, from) != RADIO_ROGER) {
 									Transmit_Message(RADIO_OVER_OUT, from);

@@ -36,13 +36,15 @@
 #ifndef LOADDLG_H
 #define LOADDLG_H
 
+#include	<stdint.h>
+
 class FileEntryClass {
 	public:
 		char Descr[80];				// save-game description
 		unsigned Scenario;			// scenario #
 		HousesType House;				// house
 		int Num;							// save file number (from the extension)
-		unsigned long DateTime;		// date/time stamp of file
+		uint32_t DateTime;		// date/time stamp of file
 		bool Valid;						// Is the scenario valid?
 };
 

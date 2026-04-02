@@ -30,11 +30,11 @@
 namespace {
 
 static VQAHandleP *VQAP = NULL;
-static long AudioFlags = 0;
-static long TimerSysCount = 0;
-static long TimerIntCount = 0;
-static long TimerMethod = VQA_TMETHOD_DOS;
-static long TickOffset = 0;
+static uint32_t AudioFlags = 0;
+static int32_t TimerSysCount = 0;
+static int32_t TimerIntCount = 0;
+static int32_t TimerMethod = VQA_TMETHOD_DOS;
+static int32_t TickOffset = 0;
 static uint64_t TimerStartMs = 0;
 static SDL_AudioStream *VQAAudioStream = NULL;
 static uint64_t VQAAudioBytesQueued = 0;
@@ -46,8 +46,8 @@ static uint64_t Current_Time_Ms(void)
 }
 
 
-static void Set_State(unsigned long *flags, unsigned long mask, int shift,
-		unsigned long state)
+static void Set_State(uint32_t *flags, uint32_t mask, int shift,
+		uint32_t state)
 {
 	*flags = (*flags & ~mask) | (state << shift);
 }
@@ -63,7 +63,7 @@ static SDL_AudioDeviceID Get_Stream_Device(void)
 }
 
 
-static SDL_AudioFormat Resolve_Audio_Format(unsigned char bits_per_sample)
+static SDL_AudioFormat Resolve_Audio_Format(uint8_t bits_per_sample)
 {
 	switch (bits_per_sample) {
 		case 8:
@@ -78,16 +78,16 @@ static SDL_AudioFormat Resolve_Audio_Format(unsigned char bits_per_sample)
 }
 
 
-static unsigned long Effective_Audio_Rate(VQAHandleP *vqap)
+static uint32_t Effective_Audio_Rate(VQAHandleP *vqap)
 {
 	VQAAudio *audio = &vqap->VQABuf->Audio;
 	VQAConfig *config = &vqap->Config;
 
 	if (config->AudioRate > 0) {
-		return ((unsigned long)config->AudioRate);
+		return ((uint32_t)config->AudioRate);
 	}
 
-	return ((unsigned long)audio->SampleRate);
+	return ((uint32_t)audio->SampleRate);
 }
 
 
@@ -104,7 +104,7 @@ static int Queued_Audio_Bytes(void)
 }
 
 
-static unsigned long Played_Audio_Bytes(void)
+static uint32_t Played_Audio_Bytes(void)
 {
 	const uint64_t queued = (uint64_t)Queued_Audio_Bytes();
 
@@ -112,7 +112,7 @@ static unsigned long Played_Audio_Bytes(void)
 		return (0);
 	}
 
-	return ((unsigned long)(VQAAudioBytesQueued - queued));
+	return ((uint32_t)(VQAAudioBytesQueued - queued));
 }
 
 
@@ -120,7 +120,7 @@ static long Drain_Audio_Blocks(VQAHandleP *vqap)
 {
 	VQAAudio *audio;
 	VQAConfig *config;
-	unsigned long queue_limit;
+	uint32_t queue_limit;
 
 	if (vqap == NULL || VQAAudioStream == NULL || (AudioFlags & VQAAUDF_ISPLAYING) == 0) {
 		return (0);
@@ -133,14 +133,14 @@ static long Drain_Audio_Blocks(VQAHandleP *vqap)
 		return (-1);
 	}
 
-	queue_limit = (config->AudioBufSize > 0) ? (unsigned long)config->AudioBufSize
-			: (unsigned long)(config->HMIBufSize * 2);
+	queue_limit = (config->AudioBufSize > 0) ? (uint32_t)config->AudioBufSize
+			: (uint32_t)(config->HMIBufSize * 2);
 
 	while (audio->IsLoaded[audio->NextBlock] == 1) {
-		const unsigned long block = audio->NextBlock;
-		const unsigned long block_offset = block * (unsigned long)config->HMIBufSize;
+		const uint32_t block = audio->NextBlock;
+		const uint32_t block_offset = block * (uint32_t)config->HMIBufSize;
 
-		if ((unsigned long)Queued_Audio_Bytes() >= queue_limit) {
+		if ((uint32_t)Queued_Audio_Bytes() >= queue_limit) {
 			break;
 		}
 
@@ -157,7 +157,7 @@ static long Drain_Audio_Blocks(VQAHandleP *vqap)
 			audio->NextBlock = 0;
 		}
 
-		VQAAudioBytesQueued += (uint64_t)(unsigned long)config->HMIBufSize;
+		VQAAudioBytesQueued += (uint64_t)(uint32_t)config->HMIBufSize;
 	}
 
 	audio->SamplesPlayed = Played_Audio_Bytes();
@@ -165,9 +165,9 @@ static long Drain_Audio_Blocks(VQAHandleP *vqap)
 }
 
 
-static unsigned long System_Ticks(void)
+static uint32_t System_Ticks(void)
 {
-	return ((unsigned long)((Current_Time_Ms() * VQA_TIMETICKS) / 1000ULL));
+	return ((uint32_t)((Current_Time_Ms() * VQA_TIMETICKS) / 1000ULL));
 }
 
 } /* namespace */
@@ -190,8 +190,8 @@ long VQA_StartTimerInt(VQAHandleP *vqap, long init)
 	Set_State(&audio->Flags, VQAAUDF_TIMERINIT, VQAAUDB_TIMERINIT,
 			(init == 0) ? HMI_VQAINIT : HMI_APPINIT);
 	Set_State(&audio->Flags, VQAAUDF_HMITIMER, VQAAUDB_HMITIMER, HMI_VQAINIT);
-	Set_State((unsigned long *)&AudioFlags, VQAAUDF_TIMERINIT, VQAAUDB_TIMERINIT, HMI_VQAINIT);
-	Set_State((unsigned long *)&AudioFlags, VQAAUDF_HMITIMER, VQAAUDB_HMITIMER, HMI_VQAINIT);
+	Set_State(&AudioFlags, VQAAUDF_TIMERINIT, VQAAUDB_TIMERINIT, HMI_VQAINIT);
+	Set_State(&AudioFlags, VQAAUDF_HMITIMER, VQAAUDB_HMITIMER, HMI_VQAINIT);
 
 	return (0);
 }
@@ -215,11 +215,11 @@ void VQA_StopTimerInt(VQAHandleP *vqap)
 	}
 
 	if (TimerIntCount == 0) {
-		Set_State((unsigned long *)&AudioFlags, VQAAUDF_HMITIMER, VQAAUDB_HMITIMER, HMI_UNINIT);
+		Set_State(&AudioFlags, VQAAUDF_HMITIMER, VQAAUDB_HMITIMER, HMI_UNINIT);
 	}
 
 	if (TimerSysCount == 0) {
-		Set_State((unsigned long *)&AudioFlags, VQAAUDF_TIMERINIT, VQAAUDB_TIMERINIT, HMI_UNINIT);
+		Set_State(&AudioFlags, VQAAUDF_TIMERINIT, VQAAUDB_TIMERINIT, HMI_UNINIT);
 	}
 }
 
@@ -247,9 +247,9 @@ long VQA_OpenAudio(VQAHandleP *vqap)
 	if (config->AudioRate != -1) {
 		audio->sSOSInitDriver.wSampleRate = (WORD)config->AudioRate;
 	} else if (config->FrameRate != header->FPS) {
-		audio->sSOSInitDriver.wSampleRate = (WORD)(((unsigned long)audio->SampleRate
-				* (unsigned long)config->FrameRate) / (unsigned long)header->FPS);
-		config->AudioRate = (long)audio->sSOSInitDriver.wSampleRate;
+		audio->sSOSInitDriver.wSampleRate = (WORD)(((uint32_t)audio->SampleRate
+				* (uint32_t)config->FrameRate) / (uint32_t)header->FPS);
+		config->AudioRate = (int32_t)audio->sSOSInitDriver.wSampleRate;
 	} else {
 		audio->sSOSInitDriver.wSampleRate = audio->SampleRate;
 		config->AudioRate = audio->SampleRate;
@@ -303,16 +303,16 @@ long VQA_OpenAudio(VQAHandleP *vqap)
 	HMIDevName = (char *)"SDL3";
 
 	Set_State(&audio->Flags, VQAAUDF_DIGIINIT, VQAAUDB_DIGIINIT, HMI_VQAINIT);
-	Set_State((unsigned long *)&AudioFlags, VQAAUDF_DIGIINIT, VQAAUDB_DIGIINIT, HMI_VQAINIT);
+	Set_State(&AudioFlags, VQAAUDF_DIGIINIT, VQAAUDB_DIGIINIT, HMI_VQAINIT);
 
 	if (getenv("RA_TRACE_STARTUP") != NULL) {
 		fprintf(stderr,
-				"[vqa] audio open audio=%p buffer=%p tempbuf=%p isloaded=%p blocks=%lu rate=%u ch=%u bits=%u\n",
+				"[vqa] audio open audio=%p buffer=%p tempbuf=%p isloaded=%p blocks=%u rate=%u ch=%u bits=%u\n",
 				audio,
 				audio->Buffer,
 				audio->TempBuf,
 				audio->IsLoaded,
-				audio->NumAudBlocks,
+				(unsigned)audio->NumAudBlocks,
 				(unsigned)audio->sSOSInitDriver.wSampleRate,
 				(unsigned)audio->Channels,
 				(unsigned)audio->BitsPerSample);
@@ -438,11 +438,11 @@ long CopyAudio(VQAHandleP *vqap)
 {
 	VQAAudio  *audio;
 	VQAConfig *config;
-	long      startblock;
-	long      endblock;
-	long      len1;
-	long      len2;
-	long      i;
+	int32_t   startblock;
+	int32_t   endblock;
+	int32_t   len1;
+	int32_t   len2;
+	int32_t   i;
 
 	audio = &vqap->VQABuf->Audio;
 	config = &vqap->Config;
@@ -452,11 +452,11 @@ long CopyAudio(VQAHandleP *vqap)
 		return (0);
 	}
 
-	startblock = (long)(audio->AudBufPos / (unsigned long)config->HMIBufSize);
-	endblock = (long)((audio->AudBufPos + audio->TempBufLen) / (unsigned long)config->HMIBufSize);
+	startblock = (int32_t)(audio->AudBufPos / (uint32_t)config->HMIBufSize);
+	endblock = (int32_t)((audio->AudBufPos + audio->TempBufLen) / (uint32_t)config->HMIBufSize);
 
-	if (endblock >= (long)audio->NumAudBlocks) {
-		endblock -= (long)audio->NumAudBlocks;
+	if (endblock >= (int32_t)audio->NumAudBlocks) {
+		endblock -= (int32_t)audio->NumAudBlocks;
 	}
 
 	if (audio->IsLoaded[endblock] == 1) {
@@ -472,16 +472,16 @@ long CopyAudio(VQAHandleP *vqap)
 			audio->IsLoaded[i] = 1;
 		}
 	} else {
-		len1 = (long)config->AudioBufSize - (long)audio->AudBufPos;
-		len2 = (long)audio->TempBufLen - len1;
+		len1 = (int32_t)config->AudioBufSize - (int32_t)audio->AudBufPos;
+		len2 = (int32_t)audio->TempBufLen - len1;
 
 		memcpy(audio->Buffer + audio->AudBufPos, audio->TempBuf, (size_t)len1);
 		memcpy(audio->Buffer, audio->TempBuf + len1, (size_t)len2);
 
-		audio->AudBufPos = (unsigned long)len2;
+		audio->AudBufPos = (uint32_t)len2;
 		audio->TempBufLen = 0;
 
-		for (i = startblock; i < (long)audio->NumAudBlocks; ++i) {
+		for (i = startblock; i < (int32_t)audio->NumAudBlocks; ++i) {
 			audio->IsLoaded[i] = 1;
 		}
 
@@ -496,7 +496,7 @@ long CopyAudio(VQAHandleP *vqap)
 
 void VQA_SetTimer(VQAHandleP *vqap, long time, long method)
 {
-	unsigned long curtime;
+	uint32_t curtime;
 
 	if (method == VQA_TMETHOD_DEFAULT) {
 		if ((AudioFlags & VQAAUDF_ISPLAYING) != 0) {
@@ -519,14 +519,14 @@ void VQA_SetTimer(VQAHandleP *vqap, long time, long method)
 	TimerMethod = method;
 	TickOffset = 0;
 	curtime = VQA_GetTime(vqap);
-	TickOffset = (time - (long)curtime);
+	TickOffset = (time - (int32_t)curtime);
 }
 
 
 unsigned long VQA_GetTime(VQAHandleP *vqap)
 {
 	VQAAudio *audio;
-	unsigned long ticks;
+	uint32_t ticks;
 
 	switch (TimerMethod) {
 		case VQA_TMETHOD_AUDIO:
@@ -535,15 +535,15 @@ unsigned long VQA_GetTime(VQAHandleP *vqap)
 			if (audio->SampleRate == 0 || audio->Channels == 0 || audio->BitsPerSample == 0) {
 				ticks = 0;
 			} else {
-				const unsigned long bytes_per_sample = (unsigned long)audio->Channels
-						* (unsigned long)(audio->BitsPerSample >> 3);
-				const unsigned long samples = audio->SamplesPlayed / bytes_per_sample;
-				ticks = (unsigned long)((samples * VQA_TIMETICKS) / Effective_Audio_Rate(vqap));
+				const uint32_t bytes_per_sample = (uint32_t)audio->Channels
+						* (uint32_t)(audio->BitsPerSample >> 3);
+				const uint32_t samples = audio->SamplesPlayed / bytes_per_sample;
+				ticks = (uint32_t)((samples * VQA_TIMETICKS) / Effective_Audio_Rate(vqap));
 			}
 			break;
 
 		case VQA_TMETHOD_INT:
-			ticks = (unsigned long)(((Current_Time_Ms() - TimerStartMs) * VQA_TIMETICKS) / 1000ULL);
+			ticks = (uint32_t)(((Current_Time_Ms() - TimerStartMs) * VQA_TIMETICKS) / 1000ULL);
 			break;
 
 		case VQA_TMETHOD_DOS:
@@ -552,7 +552,7 @@ unsigned long VQA_GetTime(VQAHandleP *vqap)
 			break;
 	}
 
-	return ((unsigned long)((long)ticks + TickOffset));
+	return ((unsigned long)((int32_t)ticks + TickOffset));
 }
 
 

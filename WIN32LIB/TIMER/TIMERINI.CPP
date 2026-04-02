@@ -69,7 +69,7 @@ BOOL	TimerSystemOn	= FALSE;
 
 // Global timers that the library or user can count on existing.
 TimerClass					WWTickCount(BT_SYSTEM);
-CountDownTimerClass		CountDown(BT_SYSTEM, 0);
+CountDownTimerClass		CountDown(BT_SYSTEM, 0, FALSE);
 
 
 // Prototype for timer callback

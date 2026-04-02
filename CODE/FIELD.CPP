@@ -32,6 +32,7 @@
  *-------------------------------------------------------------------------*
  * Functions:                                                              *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
+#include <cstdint>
 #include <string.h>
 #include "FIELD.H"
 FieldClass::FieldClass(char *id, char data)
@@ -54,7 +55,7 @@ FieldClass::FieldClass(char *id, unsigned char data)
 	Next		= NULL;
 }
 
-FieldClass::FieldClass(char *id, short data)
+FieldClass::FieldClass(char *id, int16_t data)
 {
 	strncpy(ID, id, sizeof(ID));
 	DataType = TYPE_SHORT;
@@ -64,7 +65,7 @@ FieldClass::FieldClass(char *id, short data)
 	Next		= NULL;
 }
 
-FieldClass::FieldClass(char *id, unsigned short data)
+FieldClass::FieldClass(char *id, uint16_t data)
 {
 	strncpy(ID, id, sizeof(ID));
 	DataType = TYPE_UNSIGNED_SHORT;
@@ -74,7 +75,7 @@ FieldClass::FieldClass(char *id, unsigned short data)
 	Next		= NULL;
 }
 
-FieldClass::FieldClass(char *id, long data)
+FieldClass::FieldClass(char *id, int32_t data)
 {
 	strncpy(ID, id, sizeof(ID));
 	DataType = TYPE_LONG;
@@ -84,7 +85,7 @@ FieldClass::FieldClass(char *id, long data)
 	Next		= NULL;
 }
 
-FieldClass::FieldClass(char *id, unsigned long data)
+FieldClass::FieldClass(char *id, uint32_t data)
 {
 	strncpy(ID, id, sizeof(ID));
 	DataType = TYPE_UNSIGNED_LONG;

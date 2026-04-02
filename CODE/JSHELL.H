@@ -38,6 +38,8 @@
 #ifndef JSHELL_H
 #define JSHELL_H
 
+#include	<stdint.h>
+
 #include <SDL3/SDL_stdinc.h>
 
 class SystemTimerClass
@@ -337,14 +339,14 @@ extern void outport(int port, unsigned short data);
 **	Timer objects that fetch the appropriate timer value according to
 **	the type of timer they are.
 */
-extern long Frame;
+extern int32_t Frame;
 #ifndef FRAME_TIMER_CLASS_DEFINED
 #define FRAME_TIMER_CLASS_DEFINED
 class FrameTimerClass
 {
 	public:
-		long operator () (void) const {return(Frame);};
-		operator long (void) const {return(Frame);};
+		int32_t operator () (void) const {return(Frame);};
+		operator int32_t (void) const {return(Frame);};
 };
 #endif
 

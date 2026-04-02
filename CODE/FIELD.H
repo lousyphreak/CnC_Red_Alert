@@ -38,6 +38,7 @@
 #define __FIELD_H
 
 #include "win32_compat.h"
+#include <cstdint>
 #include <winsock.h>
 
 #define FIELD_HEADER_SIZE	(sizeof(FieldClass) - (sizeof(void *) * 2))
@@ -64,10 +65,10 @@ class FieldClass {
 		FieldClass(void) {};
 		FieldClass(char *id, char data);
 		FieldClass(char *id, unsigned char data);
-		FieldClass(char *id, short data);
-		FieldClass(char *id, unsigned short data);
-		FieldClass(char *id, long data);
-		FieldClass(char *id, unsigned long data);
+		FieldClass(char *id, int16_t data);
+		FieldClass(char *id, uint16_t data);
+		FieldClass(char *id, int32_t data);
+		FieldClass(char *id, uint32_t data);
 		FieldClass(char *id, char *data);
 		FieldClass(char *id, void *data, int length);
 

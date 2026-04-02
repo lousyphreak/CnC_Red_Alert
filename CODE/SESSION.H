@@ -170,7 +170,7 @@ typedef struct NodeNameTag {
 	union {
 		struct {
 			unsigned char IsOpen;		// is the game open?
-			unsigned long LastTime;		// last time we heard from this guy
+			uint32_t LastTime;		// last time we heard from this guy
 		} Game;
 		struct {
 			HousesType House;				// "ActLike" House of this player
@@ -179,7 +179,7 @@ typedef struct NodeNameTag {
 			int ProcessTime;				// Length of time to process players main loop
 		} Player;
 		struct {
-			unsigned long LastTime;		// last time we heard from this guy
+			uint32_t LastTime;		// last time we heard from this guy
 			unsigned char LastChance;	// we're about to remove him from the list
 			PlayerColorType Color;		// chat player's color
 		} Chat;
@@ -212,9 +212,9 @@ typedef struct GlobalPacketType {
 		struct {
 			HousesType House;						// player's House
 			PlayerColorType Color;				// player's color
-			unsigned long NameCRC;				// CRC of player's game's name
-			unsigned long MinVersion;			// game's min supported version
-			unsigned long MaxVersion;			// game's max supported version
+			uint32_t NameCRC;				// CRC of player's game's name
+			uint32_t MinVersion;			// game's min supported version
+			uint32_t MaxVersion;			// game's max supported version
 			int CheatCheck;						// Unique ID of "rules.ini" file.
 		} PlayerInfo;
 		struct {
@@ -231,7 +231,7 @@ typedef struct GlobalPacketType {
 			int Seed;								// random number seed
 			SpecialClass Special;				// command-line options
 			unsigned int GameSpeed;				// Game Speed
-			unsigned long Version;				// version # common to all players
+			uint32_t Version;				// version # common to all players
 			unsigned int FileLength;			// Length of scenario file to expect from host.
 #ifdef WOLAPI_INTEGRATION
 			char ShortFileName[13];				// Name of scenario file to expect from host
@@ -244,7 +244,7 @@ typedef struct GlobalPacketType {
 		struct {
 			char Buf[MAX_MESSAGE_LENGTH];		// inter-user message
 			PlayerColorType Color;					// color of sender of message
-			unsigned long NameCRC;				// CRC of sender's Game Name
+			uint32_t NameCRC;				// CRC of sender's Game Name
 		} Message;
 		struct {
 			int OneWay;								// one-way response time
@@ -253,7 +253,7 @@ typedef struct GlobalPacketType {
 			int Why;									// why were we rejected from the game?
 		} Reject;
 		struct {
-			unsigned long ID;						// unique ID for this chat node
+			uint32_t ID;						// unique ID for this chat node
 			PlayerColorType Color;				// my color
 		} Chat;
 	};
@@ -353,7 +353,7 @@ class SessionClass
 		//.....................................................................
 		int Create_Connections(void);
 		bool Am_I_Master(void);
-		unsigned long Compute_Unique_ID(void);
+		uint32_t Compute_Unique_ID(void);
 
 #if(TEN)
 		int Create_TEN_Connections(void);
@@ -397,7 +397,7 @@ class SessionClass
 		//.....................................................................
 		// Unique workstation ID, for detecting my own packets
 		//.....................................................................
-		unsigned long UniqueID;
+		uint32_t UniqueID;
 
 		//.....................................................................
 		// Player's local options
@@ -421,8 +421,8 @@ class SessionClass
 		// a given packet.  It's set by the RESPONSE_TIME event.
 		// 'FrameSendRate' is the # frames between data packets
 		//.....................................................................
-		unsigned long MaxAhead;
-		unsigned long FrameSendRate;
+		uint32_t MaxAhead;
+		uint32_t FrameSendRate;
 
 		int			DesiredFrameRate;
 
@@ -512,14 +512,14 @@ class SessionClass
 		//.....................................................................
 		// For finding Sync Bugs
 		//.....................................................................
-		long TrapFrame;				// frame # to start trapping 'TrapObject'
+		int32_t TrapFrame;				// frame # to start trapping 'TrapObject'
 		RTTIType TrapObjType;		// type of object to trap
 		TrapObjectType TrapObject;	// ptr to object to trap (watch)
 		COORDINATE TrapCoord;		// coord of object, 0 = ignore
 		TARGET TrapTarget;			// Target # of object, 0 = ignore
 		CellClass * TrapCell;		// Ptr to cell to trap (watch)
 		int TrapCheckHeap;			// true = check the heap as of TrapFrame
-		long TrapPrintCRC;			// Frame # to print CRC state file
+		int32_t TrapPrintCRC;			// Frame # to print CRC state file
 
 #if(TEN)
 		//

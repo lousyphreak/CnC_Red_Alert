@@ -37,6 +37,8 @@
 #ifndef VERSION_H
 #define VERSION_H
 
+#include	<stdint.h>
+
 #define	VERSION_RED_ALERT_104		0x00010000	//Shipped US version number
 #define	VERSION_RED_ALERT_107		0x00011000	//Shipped Counterstrike number
 #define	VERSION_RED_ALERT_106		0x00010500	//Patch without CS installed
@@ -74,7 +76,7 @@ typedef enum CommProtocolEnum {
 } CommProtocolType;
 
 typedef struct {
-	unsigned long Version;
+	uint32_t Version;
 	CommProtocolType Protocol;
 } VersionProtocolType;
 
@@ -91,9 +93,9 @@ class VersionClass {
 		// number contains the major version in the high word, and the minor
 		// version in the low word.  They should be interpreted in hex.
 		//.....................................................................
-		unsigned long Version_Number(void);
-		unsigned short Major_Version(void);
-		unsigned short Minor_Version(void);
+		uint32_t Version_Number(void);
+		uint16_t Major_Version(void);
+		uint16_t Minor_Version(void);
 
 		//.....................................................................
 		// Retrieves a pointer to the version # as a text string (#.#), with
@@ -109,22 +111,22 @@ class VersionClass {
 		//.....................................................................
 		// Returns the default comm protocol for a given version number.
 		//.....................................................................
-		CommProtocolType Version_Protocol(unsigned long version);
+		CommProtocolType Version_Protocol(uint32_t version);
 
 		//.....................................................................
 		// These routines support "version clipping".
 		//.....................................................................
 		void Init_Clipping(void);
-		unsigned long Clip_Version(unsigned long minver, unsigned long maxver);
-		unsigned long Get_Clipped_Version(void) {return (MaxClipVer);}
+		uint32_t Clip_Version(uint32_t minver, uint32_t maxver);
+		uint32_t Get_Clipped_Version(void) {return (MaxClipVer);}
 
 		//.....................................................................
 		// These routines return the theoretical lowest & highest version #'s
 		// that this program will connect to; this does not take any previous
 		// version clipping into account.
 		//.....................................................................
-		unsigned long Min_Version(void);
-		unsigned long Max_Version(void);
+		uint32_t Min_Version(void);
+		uint32_t Max_Version(void);
 
 	private:
 		//.....................................................................
@@ -166,7 +168,7 @@ class VersionClass {
 		//.....................................................................
 		// This is the program's version number, stored internally.
 		//.....................................................................
-		unsigned long Version;
+		uint32_t Version;
 		unsigned short MajorVer;
 		unsigned short MinorVer;
 
@@ -185,8 +187,8 @@ class VersionClass {
 		//.....................................................................
 		// Values used for "Version Clipping"
 		//.....................................................................
-		unsigned long MinClipVer;
-		unsigned long MaxClipVer;
+		uint32_t MinClipVer;
+		uint32_t MaxClipVer;
 
 		//.....................................................................
 		// Bitfield Flags

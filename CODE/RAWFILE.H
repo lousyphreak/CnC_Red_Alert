@@ -43,9 +43,11 @@
 #define RAWFILE_Hx
 
 #include	<limits.h>
+#include	<stdint.h>
 #include	<errno.h>
 #include	<stddef.h>
 #include	<stdlib.h>
+#include	<cstdint>
 
 #include	<SDL3/SDL_iostream.h>
 
@@ -148,16 +150,16 @@ class RawFileClass : public FileClass
 		virtual int Is_Open(void) const;
 		virtual int Open(char const *filename, int rights=READ);
 		virtual int Open(int rights=READ);
-		virtual long Read(void *buffer, long size);
-		virtual long Seek(long pos, int dir=SEEK_CUR);
-		virtual long Size(void);
-		virtual long Write(void const *buffer, long size);
+		virtual int32_t Read(void *buffer, int32_t size);
+		virtual int32_t Seek(int32_t pos, int dir=SEEK_CUR);
+		virtual int32_t Size(void);
+		virtual int32_t Write(void const *buffer, int32_t size);
 		virtual void Close(void);
-		virtual unsigned long Get_Date_Time(void);
-		virtual bool Set_Date_Time(unsigned long datetime);
+		virtual uint32_t Get_Date_Time(void);
+		virtual bool Set_Date_Time(uint32_t datetime);
 		virtual void Error(int error, int canretry = false, char const * filename=NULL);
 
-		void Bias(int start, int length=-1);
+		void Bias(int32_t start, int32_t length=-1);
 
 		SDL_IOStream * Get_File_Handle(void) { return (Handle); };
 
@@ -166,8 +168,8 @@ class RawFileClass : public FileClass
 		**	were the whole file. This comes in very handy for multi-part files such as
 		**	mixfiles.
 		*/
-		int BiasStart;
-		int BiasLength;
+		int32_t BiasStart;
+		int32_t BiasLength;
 
 	protected:
 
@@ -175,9 +177,9 @@ class RawFileClass : public FileClass
 		**	This function returns the largest size a low level DOS read or write may
 		**	perform. Larger file transfers are performed in chunks of this size or less.
 		*/
-		long Transfer_Block_Size(void) {return (long)((unsigned)UINT_MAX)-16L;};
+		int32_t Transfer_Block_Size(void) {return INT32_MAX - 16;};
 
-		long Raw_Seek(long pos, int dir=SEEK_CUR);
+		int32_t Raw_Seek(int32_t pos, int dir=SEEK_CUR);
 
 	private:
 
@@ -203,8 +205,8 @@ class RawFileClass : public FileClass
 		//             bits 5-10  minutes (0-59)
 		//             bits 11-15 hours (0-23)
 		//
-		unsigned short Date;
-		unsigned short Time;
+		uint16_t Date;
+		uint16_t Time;
 
 		/*
 		**	Filenames that were assigned as part of the construction process

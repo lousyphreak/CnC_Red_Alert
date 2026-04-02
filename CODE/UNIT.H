@@ -201,7 +201,7 @@ class UnitClass :	public DriveClass
 		*/
 		virtual TARGET Greatest_Threat(ThreatType threat) const;
 		virtual DirType Desired_Load_Dir(ObjectClass * passenger, CELL & moveto) const;
-		virtual RadioMessageType Receive_Message(RadioClass * from, RadioMessageType message, long & param);
+		virtual RadioMessageType Receive_Message(RadioClass * from, RadioMessageType message, TARGET & param);
 		virtual void AI(void);
 		virtual int Mission_Guard_Area(void);
 		virtual int Mission_Unload(void);

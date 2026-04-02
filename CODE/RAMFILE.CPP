@@ -297,7 +297,7 @@ int RAMFileClass::Open(int access)
  * HISTORY:                                                                                    *
  *   07/03/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-long RAMFileClass::Read(void * buffer, long size)
+int32_t RAMFileClass::Read(void * buffer, int32_t size)
 {
 	if (Buffer == NULL || buffer == NULL || size == 0) {
 		return(0);
@@ -313,7 +313,7 @@ long RAMFileClass::Read(void * buffer, long size)
 		}
 	}
 
-	int tocopy = (size < (Length-Offset)) ? size : (Length-Offset);
+	int32_t tocopy = (size < (Length-Offset)) ? size : (Length-Offset);
 	memmove(buffer, &Buffer[Offset], tocopy);
 	Offset += tocopy;
 
@@ -346,13 +346,13 @@ long RAMFileClass::Read(void * buffer, long size)
  * HISTORY:                                                                                    *
  *   07/03/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-long RAMFileClass::Seek(long pos, int dir)
+int32_t RAMFileClass::Seek(int32_t pos, int dir)
 {
 	if (Buffer == NULL || !Is_Open()) {
 		return(Offset);
 	}
 
-	int maxoffset = Length;
+	int32_t maxoffset = Length;
 	if ((Access & WRITE) != 0) {
 		maxoffset = MaxLength;
 	}
@@ -398,7 +398,7 @@ long RAMFileClass::Seek(long pos, int dir)
  * HISTORY:                                                                                    *
  *   07/03/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-long RAMFileClass::Size(void)
+int32_t RAMFileClass::Size(void)
 {
 	return(Length);
 }
@@ -422,7 +422,7 @@ long RAMFileClass::Size(void)
  * HISTORY:                                                                                    *
  *   07/03/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-long RAMFileClass::Write(void const * buffer, long size)
+int32_t RAMFileClass::Write(void const * buffer, int32_t size)
 {
 	if (Buffer == NULL || buffer == NULL || size == 0) {
 		return(0);
@@ -438,8 +438,8 @@ long RAMFileClass::Write(void const * buffer, long size)
 		}
 	}
 
-	int maxwrite = MaxLength - Offset;
-	int towrite = (size < maxwrite) ? size : maxwrite;
+	int32_t maxwrite = MaxLength - Offset;
+	int32_t towrite = (size < maxwrite) ? size : maxwrite;
 	memmove(&Buffer[Offset], buffer, towrite);
 	Offset += towrite;
 

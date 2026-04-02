@@ -64,8 +64,8 @@ public:
 
    // timing magnagement
    void Reset_Response_Time(void);
-   unsigned long Response_Time(void);
-   void Set_Timing(unsigned long retrydelta, unsigned long maxretries, unsigned long timeout);
+   uint32_t Response_Time(void);
+   void Set_Timing(uint32_t retrydelta, uint32_t maxretries, uint32_t timeout);
 
    // debug
    void Configure_Debug(int index, int type_offset, int type_size, char **names, int namestart,

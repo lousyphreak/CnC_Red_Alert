@@ -70,7 +70,7 @@
  * HISTORY:                                                                                    *
  *   07/03/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-void SHAEngine::Process_Partial(void const * & data, long & length)
+void SHAEngine::Process_Partial(void const * & data, int32_t & length)
 {
 	if (length == 0 || data == NULL) return;
 
@@ -97,7 +97,7 @@ void SHAEngine::Process_Partial(void const * & data, long & length)
 	*/
 	if (PartialCount == SRC_BLOCK_SIZE) {
 		Process_Block(&Partial[0], Acc);
-		Length += (long)SRC_BLOCK_SIZE;
+		Length += SRC_BLOCK_SIZE;
 		PartialCount = 0;
 	}
 }
@@ -121,7 +121,7 @@ void SHAEngine::Process_Partial(void const * & data, long & length)
  * HISTORY:                                                                                    *
  *   07/03/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-void SHAEngine::Hash(void const * data, long length)
+void SHAEngine::Hash(void const * data, int32_t length)
 {
 	IsCached = false;
 
@@ -140,13 +140,13 @@ void SHAEngine::Hash(void const * data, long length)
 	/*
 	**	First process all the whole blocks available in the source data.
 	*/
-	long blocks = (length / SRC_BLOCK_SIZE);
+	int32_t blocks = (length / SRC_BLOCK_SIZE);
 	uint32_t const * source = (uint32_t const *)data;
 	for (int bcount = 0; bcount < blocks; bcount++) {
 		Process_Block(source, Acc);
-		Length += (long)SRC_BLOCK_SIZE;
+		Length += SRC_BLOCK_SIZE;
 		source += SRC_BLOCK_SIZE/sizeof(uint32_t);
-		length -= (long)SRC_BLOCK_SIZE;
+		length -= SRC_BLOCK_SIZE;
 	}
 
 	/*

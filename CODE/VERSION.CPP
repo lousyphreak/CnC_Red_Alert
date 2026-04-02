@@ -152,7 +152,7 @@ VersionClass::VersionClass(void) :
 //	Version number used is now GAME_VERSION.
 //	Note also that VERSION_RA_300 is wrong, but not used.
 
-unsigned long VersionClass::Version_Number(void)
+uint32_t VersionClass::Version_Number(void)
 {
 	//------------------------------------------------------------------------
 	// Read the text description, if there is one
@@ -172,7 +172,7 @@ unsigned long VersionClass::Version_Number(void)
 	//------------------------------------------------------------------------
 	// Generate the version #
 	//------------------------------------------------------------------------
-	Version = ((Major_Version() << 16) | Minor_Version());
+	Version = (static_cast<uint32_t>(Major_Version()) << 16) | Minor_Version();
 	VersionInit = 1;
 
 	return (Version);
@@ -195,7 +195,7 @@ unsigned long VersionClass::Version_Number(void)
  * HISTORY:                                                                *
  *   10/26/1995 BRR : Created.                                             *
  *=========================================================================*/
-unsigned short VersionClass::Major_Version(void)
+uint16_t VersionClass::Major_Version(void)
 {
 #ifdef DEV_VERSION
 	static char * date = __DATE__;		// format: Mmm dd yyyy
@@ -293,7 +293,7 @@ unsigned short VersionClass::Major_Version(void)
  * HISTORY:                                                                *
  *   10/26/1995 BRR : Created.                                             *
  *=========================================================================*/
-unsigned short VersionClass::Minor_Version(void)
+uint16_t VersionClass::Minor_Version(void)
 {
 #ifdef DEV_VERSION
 	static char * time = __TIME__;		// format: hh:mm:ss
@@ -493,7 +493,7 @@ void VersionClass::Read_Text_String(void)
  * HISTORY:                                                                *
  *   10/26/1995 BRR : Created.                                             *
  *=========================================================================*/
-CommProtocolType VersionClass::Version_Protocol(unsigned long version)
+CommProtocolType VersionClass::Version_Protocol(uint32_t version)
 {
 	int i,j;
 
@@ -582,8 +582,8 @@ void VersionClass::Init_Clipping(void)
  * HISTORY:                                                                *
  *   10/26/1995 BRR : Created.                                             *
  *=========================================================================*/
-unsigned long VersionClass::Clip_Version(unsigned long minver,
-	unsigned long maxver)
+uint32_t VersionClass::Clip_Version(uint32_t minver,
+	uint32_t maxver)
 {
 	//------------------------------------------------------------------------
 	// If the given range is outside & above our own, return an error.
@@ -638,7 +638,7 @@ unsigned long VersionClass::Clip_Version(unsigned long minver,
  * HISTORY:                                                                *
  *   10/26/1995 BRR : Created.                                             *
  *=========================================================================*/
-unsigned long VersionClass::Min_Version(void)
+uint32_t VersionClass::Min_Version(void)
 {
 #ifdef DEV_VERSION
 	return (Version_Number());
@@ -693,7 +693,7 @@ unsigned long VersionClass::Min_Version(void)
  * HISTORY:                                                                *
  *   10/26/1995 BRR : Created.                                             *
  *=========================================================================*/
-unsigned long VersionClass::Max_Version(void)
+uint32_t VersionClass::Max_Version(void)
 {
 #ifdef DEV_VERSION
 	return (Version_Number());

@@ -35,6 +35,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #ifndef MEMFLAG_H
 #define MEMFLAG_H
+#include <stdint.h>
 // Memory Flags
 /*
 **	Memory allocation flags.  These are the flags that are passed into Alloc
@@ -94,7 +95,7 @@ extern "C" {
 }
 
 
-inline void *Add_Long_To_Pointer(void const *ptr, long size)
+inline void *Add_Long_To_Pointer(void const *ptr, intptr_t size)
 {
  	return ((void *) ( (char const *) ptr + size));
 }

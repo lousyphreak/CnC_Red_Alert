@@ -91,7 +91,7 @@ TimerClass::TimerClass(BaseTimerEnum timer, BOOL on)
  *              10/5/95 4:17PM ST : Created                                                    *
  *=============================================================================================*/
 
-long TimerClass::Get_Ticks ( void )
+int32_t TimerClass::Get_Ticks ( void )
 
 {
 	if ( WindowsTimer ){
@@ -124,10 +124,10 @@ long TimerClass::Get_Ticks ( void )
  * HISTORY:                                                                *
  *   05/03/1995 SKB : Created.                                             *
  *=========================================================================*/
-long TimerClass::Time(void)
+int32_t TimerClass::Time(void)
 {
 	if (Started) {
-		long ticks = Get_Ticks();
+		int32_t ticks = Get_Ticks();
 		Accumulated += ticks - (Started-1);
 		Started = ticks+1;
 	}
@@ -149,9 +149,9 @@ long TimerClass::Time(void)
  * HISTORY:                                                                *
  *   07/12/1994 SKB : Created.                                             *
  *=========================================================================*/
-long TimerClass::Stop(void)
+int32_t TimerClass::Stop(void)
 {
-	long time = Time();
+	int32_t time = Time();
 	Started = 0;
 	return(time);
 }
@@ -170,7 +170,7 @@ long TimerClass::Stop(void)
  * HISTORY:                                                                *
  *   07/12/1994 SKB : Created.                                             *
  *=========================================================================*/
-long TimerClass::Start(void)
+int32_t TimerClass::Start(void)
 {
 	if (!Started) {
 		Started = Get_Ticks()+1;
@@ -194,7 +194,7 @@ long TimerClass::Start(void)
  *   07/12/1994 SKB : Created.                                             *
  *   05/03/1995 SKB : If start return Start since it returns Time          *
  *=========================================================================*/
-long TimerClass::Set(long value, BOOL start)
+int32_t TimerClass::Set(int32_t value, BOOL start)
 {
 	Started = 0;
 	Accumulated = value;

@@ -8,6 +8,7 @@
 #include <cerrno>
 #include <climits>
 #include <cstdarg>
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <fcntl.h>
@@ -221,26 +222,26 @@ inline int WWFS_Write(int fd, const void* buffer, unsigned int count)
     return static_cast<int>(actual);
 }
 
-inline long WWFS_Seek(int fd, long offset, int whence)
+inline int64_t WWFS_Seek(int fd, int64_t offset, int whence)
 {
     SDL_IOStream* stream = WWFS_FindFD(fd);
     if (!stream) {
         errno = EBADF;
-        return -1L;
+        return -1;
     }
 
     const int sdl_whence = WWFS_GetSeekWhence(whence);
     if (sdl_whence < 0) {
         errno = EINVAL;
-        return -1L;
+        return -1;
     }
 
     const Sint64 position = SDL_SeekIO(stream, static_cast<Sint64>(offset), sdl_whence);
-    if (position < 0 || position > static_cast<Sint64>(LONG_MAX)) {
+    if (position < 0) {
         errno = EOVERFLOW;
-        return -1L;
+        return -1;
     }
-    return static_cast<long>(position);
+    return static_cast<int64_t>(position);
 }
 
 inline int WWFS_Unlink(const char* path)
@@ -294,7 +295,7 @@ inline size_t WWFS_FWrite(const void* buffer, size_t size, size_t count, SDL_IOS
     return SDL_WriteIO(stream, buffer, size * count) / size;
 }
 
-inline int WWFS_FSeek(SDL_IOStream* stream, long offset, int whence)
+inline int WWFS_FSeek(SDL_IOStream* stream, int64_t offset, int whence)
 {
     if (!stream) {
         errno = EBADF;
@@ -310,19 +311,19 @@ inline int WWFS_FSeek(SDL_IOStream* stream, long offset, int whence)
     return (SDL_SeekIO(stream, static_cast<Sint64>(offset), sdl_whence) < 0) ? -1 : 0;
 }
 
-inline long WWFS_FTell(SDL_IOStream* stream)
+inline int64_t WWFS_FTell(SDL_IOStream* stream)
 {
     if (!stream) {
         errno = EBADF;
-        return -1L;
+        return -1;
     }
 
     const Sint64 position = SDL_TellIO(stream);
-    if (position < 0 || position > static_cast<Sint64>(LONG_MAX)) {
+    if (position < 0) {
         errno = EOVERFLOW;
-        return -1L;
+        return -1;
     }
-    return static_cast<long>(position);
+    return static_cast<int64_t>(position);
 }
 
 inline void WWFS_Rewind(SDL_IOStream* stream)

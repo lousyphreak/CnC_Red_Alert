@@ -142,7 +142,7 @@ void CCFileClass::Error(int , int , char const * )
  * HISTORY:                                                                                    *
  *   08/08/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-long CCFileClass::Write(void const * buffer, long size)
+int32_t CCFileClass::Write(void const * buffer, int32_t size)
 {
 	/*
 	**	If this is part of a mixfile, then writing is not allowed. Error out with a fatal
@@ -174,7 +174,7 @@ long CCFileClass::Write(void const * buffer, long size)
  * HISTORY:                                                                                    *
  *   08/08/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-long CCFileClass::Read(void * buffer, long size)
+int32_t CCFileClass::Read(void * buffer, int32_t size)
 {
 	bool opened = false;
 
@@ -192,7 +192,7 @@ long CCFileClass::Read(void * buffer, long size)
 	**	all that is required for the read.
 	*/
 	if (Is_Resident()) {
-		long	maximum = Data.Get_Size() - Position;
+		int32_t	maximum = Data.Get_Size() - Position;
 
 		size = maximum < size ? maximum : size;
 //		size = MIN(maximum, size);
@@ -205,7 +205,7 @@ long CCFileClass::Read(void * buffer, long size)
 		return(size);
 	}
 
-	long s = CDFileClass::Read(buffer, size);
+	int32_t s = CDFileClass::Read(buffer, size);
 
 	/*
 	**	If the file was opened by this routine, then close it at this time.
@@ -239,7 +239,7 @@ long CCFileClass::Read(void * buffer, long size)
  * HISTORY:                                                                                    *
  *   08/08/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-long CCFileClass::Seek(long pos, int dir)
+int32_t CCFileClass::Seek(int32_t pos, int dir)
 {
 	/*
 	**	When the file is resident, a mere adjustment of the virtual file position is
@@ -286,7 +286,7 @@ long CCFileClass::Seek(long pos, int dir)
  *   08/08/1994 JLB : Created.                                                                 *
  *   08/05/1996 JLB : Handles returning size of embedded file.                                 *
  *=============================================================================================*/
-long CCFileClass::Size(void)
+int32_t CCFileClass::Size(void)
 {
 	/*
 	**	If the file is resident, the the size is already known. Just return the size in this
@@ -301,7 +301,7 @@ long CCFileClass::Size(void)
 	if (!CDFileClass::Is_Available()) {
 		long length = 0;
 		MFCD::Offset(File_Name(), NULL, NULL, NULL, &length);
-		return(length);
+		return(static_cast<int32_t>(length));
 	}
 
 	return(CDFileClass::Size());
@@ -461,10 +461,10 @@ int CCFileClass::Open(int rights)
 			Searching(true);
 			free(dupfile);
 			Bias(0);
-			Bias(start, length);
+			Bias(static_cast<int32_t>(start), static_cast<int32_t>(length));
 			Seek(0, SEEK_SET);
 		} else {
-			new (&Data) ::Buffer(pointer, length);
+			new (&Data) ::Buffer(pointer, static_cast<int32_t>(length));
 			Position = 0;
 		}
 
@@ -495,9 +495,9 @@ int CCFileClass::Open(int rights)
  * HISTORY:                                                                                    *
  *   11/14/1995 DRD : Created.                                                                 *
  *=============================================================================================*/
-unsigned long CCFileClass::Get_Date_Time(void)
+uint32_t CCFileClass::Get_Date_Time(void)
 {
-	unsigned long datetime;
+	uint32_t datetime;
 	MFCD * mixfile;
 
 	datetime = CDFileClass::Get_Date_Time();
@@ -530,7 +530,7 @@ unsigned long CCFileClass::Get_Date_Time(void)
  * HISTORY:                                                                                    *
  *   11/14/1995 DRD : Created.                                                                 *
  *=============================================================================================*/
-bool CCFileClass::Set_Date_Time( unsigned long datetime )
+bool CCFileClass::Set_Date_Time(uint32_t datetime)
 {
 	bool status;
 	MFCD * mixfile;
@@ -559,7 +559,7 @@ bool CCFileClass::Set_Date_Time( unsigned long datetime )
 
 static CCFileClass Handles[10];
 
-int __cdecl Open_File(char const * file_name, int mode)
+int Open_File(char const * file_name, int mode)
 {
 	for (int index = 0; index < ARRAY_SIZE(Handles); index++) {
 		if (!Handles[index].Is_Open()) {
@@ -572,14 +572,14 @@ int __cdecl Open_File(char const * file_name, int mode)
 	return(WWERROR);
 }
 
-void __cdecl Close_File(int handle)
+void Close_File(int handle)
 {
 	if (handle != WWERROR && Handles[handle].Is_Open()) {
 		Handles[handle].Close();
 	}
 }
 
-long __cdecl Read_File(int handle, void * buf, unsigned long bytes)
+uint64_t Read_File(int handle, void * buf, uint64_t bytes)
 {
 	if (handle != WWERROR && Handles[handle].Is_Open()) {
 		return(Handles[handle].Read(buf, bytes));
@@ -587,7 +587,7 @@ long __cdecl Read_File(int handle, void * buf, unsigned long bytes)
 	return(0);
 }
 
-long __cdecl Write_File(int handle, void const * buf, unsigned long bytes)
+uint64_t Write_File(int handle, void const * buf, uint64_t bytes)
 {
 	if (handle != WWERROR && Handles[handle].Is_Open()) {
 		return(Handles[handle].Write(buf, bytes));
@@ -595,37 +595,37 @@ long __cdecl Write_File(int handle, void const * buf, unsigned long bytes)
 	return(0);
 }
 
-int __cdecl Find_File(char const * file_name)
+int Find_File(char const * file_name)
 {
 	CCFileClass file(file_name);
 	return(file.Is_Available());
 }
 
 #ifdef NEVER
-int __cdecl Delete_File(char const * file_name)
+int Delete_File(char const * file_name)
 {
 	return(CCFileClass(file_name).Delete());
 }
 
-int __cdecl Create_File(char const * file_name)
+int Create_File(char const * file_name)
 {
 	return(CCFileClass(file_name).Create());
 }
 
-unsigned long __cdecl Load_Data(char const * name, void * ptr, unsigned long size)
+unsigned long Load_Data(char const * name, void * ptr, unsigned long size)
 {
 	return(CCFileClass(name).Read(ptr, size));
 }
 #endif
 
-void * __cdecl Load_Alloc_Data(char const * name, int )
+void * Load_Alloc_Data(char const * name, int )
 {
 	CCFileClass file(name);
 
 	return(Load_Alloc_Data(file));
 }
 
-unsigned long __cdecl File_Size(int handle)
+uint64_t File_Size(int handle)
 {
 	if (handle != WWERROR && Handles[handle].Is_Open()) {
 		return(Handles[handle].Size());
@@ -634,13 +634,13 @@ unsigned long __cdecl File_Size(int handle)
 }
 
 #ifdef NEVER
-unsigned long __cdecl Write_Data(char const * name, void const * ptr, unsigned long size)
+unsigned long Write_Data(char const * name, void const * ptr, unsigned long size)
 {
 	return(CCFileClass(name).Write(ptr, size));
 }
 #endif
 
-unsigned long __cdecl Seek_File(int handle, long offset, int starting)
+uint64_t Seek_File(int handle, int64_t offset, int starting)
 {
 	if (handle != WWERROR && Handles[handle].Is_Open()) {
 		return(Handles[handle].Seek(offset, starting));
@@ -649,27 +649,27 @@ unsigned long __cdecl Seek_File(int handle, long offset, int starting)
 }
 
 #ifdef NEVER
-bool __cdecl Multi_Drive_Search(bool on)
+bool Multi_Drive_Search(bool on)
 {
 //	return(CCFileClass::Multi_Drive_Search(on));
 	return(on);
 }
 
-void __cdecl WWDOS_Init(void)
+void WWDOS_Init(void)
 {
 }
 
-void __cdecl WWDOS_Shutdown(void)
+void WWDOS_Shutdown(void)
 {
 }
 
-int __cdecl Find_Disk_Number(char const *)
+int Find_Disk_Number(char const *)
 {
 	return(0);
 }
 #endif
 
-//unsigned long __cdecl Load_Uncompress(char const * file, BuffType uncomp_buff, BuffType dest_buff, void * reserved_data)
+//unsigned long Load_Uncompress(char const * file, BuffType uncomp_buff, BuffType dest_buff, void * reserved_data)
 //{
 //	return(Load_Uncompress(CCFileClass(file), uncomp_buff, dest_buff, reserved_data));
 //	return(CCFileClass(file).Load_Uncompress(uncomp_buff, dest_buff, reserved_data));
@@ -686,5 +686,3 @@ char CallingDOSInt;
 void Unfragment_File_Cache(void)
 {
 }
-
-

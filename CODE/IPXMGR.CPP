@@ -417,8 +417,8 @@ int IPXManagerClass::Is_IPX(void)
  * HISTORY:                                                                *
  *   07/02/1995 BR : Created.                                              *
  *=========================================================================*/
-void IPXManagerClass::Set_Timing (unsigned long retrydelta,
-	unsigned long maxretries, unsigned long timeout)
+void IPXManagerClass::Set_Timing (uint32_t retrydelta,
+	uint32_t maxretries, uint32_t timeout)
 {
 	int i;
 
@@ -1437,10 +1437,10 @@ void IPXManagerClass::Set_Socket(unsigned short socket)
  * HISTORY:                                                                *
  *   05/04/1995 BRR : Created.                                             *
  *=========================================================================*/
-unsigned long IPXManagerClass::Response_Time(void)
+uint32_t IPXManagerClass::Response_Time(void)
 {
-	unsigned long resp;
-	unsigned long maxresp = 0;
+	uint32_t resp;
+	uint32_t maxresp = 0;
 	int i;
 
 	for (i = 0; i < NumConnections; i++) {
@@ -1470,7 +1470,7 @@ unsigned long IPXManagerClass::Response_Time(void)
  * HISTORY:                                                                *
  *   05/04/1995 BRR : Created.                                             *
  *=========================================================================*/
-unsigned long IPXManagerClass::Global_Response_Time(void)
+uint32_t IPXManagerClass::Global_Response_Time(void)
 {
 	if (GlobalChannel) {
 		return (GlobalChannel->Queue->Avg_Response_Time());

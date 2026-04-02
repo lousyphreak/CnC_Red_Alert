@@ -1,6 +1,6 @@
 # Porting Knowledge
 
-_Last updated: 2026-04-01_
+_Last updated: 2026-04-02_
 
 ## Repo facts
 
@@ -8,6 +8,31 @@ _Last updated: 2026-04-01_
 - The main game logic lives in `CODE/`.
 - Shared platform/rendering/input/audio support code lives in `WIN32LIB/`.
 - The active compatibility include order puts `SDL3_COMPAT/wrappers/` ahead of `CODE/` and `WIN32LIB/INCLUDE`.
+
+## Integer-width audit findings
+
+- Do not classify every remaining `long` in gameplay/network code the same way; the recent multiplayer sweep split into at least three distinct categories:
+  - radio-message payload carriers, where the old code used `long & param` but the payload is actually the engine's encoded `TARGET` token rather than a native pointer;
+  - true 32-bit protocol/state/file-format values such as packet IDs, CRCs, version numbers, retry timers, last-heard timestamps, and frame counters;
+  - genuine pointer/address-like legacy paths, which still need separate handling and must **not** be blindly collapsed to 32-bit integers.
+- The radio path is a concrete example of why the audit must follow call sites instead of the spelling alone.
+  - `Transmit_Message(..., techno)` uses the separate `RadioClass *to` overload for object pointers.
+  - The `param` payload itself is assigned values like `NavCom`, `TARGET_NONE`, `As_Target(cell)`, and `As_Target()` and is later consumed through `Assign_Destination(param)` / `As_Techno(param)`.
+  - Safe rule: for `Receive_Message` / `Transmit_Message` payload references, use `TARGET`, not `long` and not `intptr_t`.
+- `LParam` in this codebase is not Windows message `LPARAM`.
+  - In the active radio code it is just a fallback storage slot for the no-parameter `Transmit_Message(...)` helper.
+  - Safe rule: keep it aligned with the real radio payload type (`TARGET`), not with host pointer width.
+- The connection/session layer still carries a lot of original Win32-32-bit assumptions, but most of them are legitimate 32-bit data model fields and should become `uint32_t`/`int32_t`, not pointer-width types.
+  - Confirmed-safe 32-bit categories in the current pass:
+    - `ConnectionClass` packet IDs, retry intervals, retry counts, timeout windows, sequence tracking, and response-time values;
+    - `SessionClass` unique IDs, per-node last-heard timestamps, multiplayer version/CRC fields, `MaxAhead`, `FrameSendRate`, and sync-debug frame markers;
+    - PlanetWestwood start-time and port globals used by the networking/statistics path.
+- When changing a base timing/protocol API, check the whole inheritance surface before declaring success.
+  - `ConnManClass::Response_Time()` / `Set_Timing()` still used `unsigned long` after the first `IPXManagerClass` conversion.
+  - The correct fix was to move the abstract interface and the alternate implementations (`TENMGR`, `MPMGRW`, `MPMGRD`) to fixed-width types too, not to backslide the derived SDL/Linux code.
+- The old retry-forever sentinel is still semantically required in the connection layer.
+  - Original code compared retry counts/timeouts against `-1`.
+  - After converting those fields to `uint32_t`, preserve that behavior explicitly with a 32-bit all-bits-set sentinel (`static_cast<uint32_t>(-1)` / equivalent), and update nearby templated arithmetic so mixed `unsigned long` literals do not leak back in through overload resolution.
 
 ## Include-case audit findings
 

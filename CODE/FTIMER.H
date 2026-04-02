@@ -362,7 +362,7 @@ inline uint32_t TTimerClass<T>::operator () (void) const
 
 #ifndef FRAME_TIMER_CLASS_DEFINED
 #define FRAME_TIMER_CLASS_DEFINED
-extern long Frame;
+extern int32_t Frame;
 class FrameTimerClass
 {
 	public:

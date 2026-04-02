@@ -18,6 +18,8 @@
 
 #ifndef VQAPLAY_H
 #define VQAPLAY_H
+
+#include <stdint.h>
 /****************************************************************************
 *
 *         C O N F I D E N T I A L -- W E S T W O O D  S T U D I O S
@@ -169,34 +171,34 @@ class AudioBackendBuffer;
 typedef struct _VQAConfig {
 	long          (*DrawerCallback)(unsigned char *screen, long framenum);
 	long          (*EventHandler)(unsigned long event,void *buffer,long nbytes);
-	unsigned long NotifyFlags;
-	long          Vmode;
-	long          VBIBit;
+	uint32_t      NotifyFlags;
+	int32_t       Vmode;
+	int32_t       VBIBit;
 	unsigned char *ImageBuf;
-	long          ImageWidth;
-	long          ImageHeight;
-	long          X1,Y1;
-	long          FrameRate;
-	long          DrawRate;
-	long          TimerMethod;
-	long          DrawFlags;
-	long          OptionFlags;
-	long          NumFrameBufs;
-	long          NumCBBufs;
+	int32_t       ImageWidth;
+	int32_t       ImageHeight;
+	int32_t       X1,Y1;
+	int32_t       FrameRate;
+	int32_t       DrawRate;
+	int32_t       TimerMethod;
+	int32_t       DrawFlags;
+	int32_t       OptionFlags;
+	int32_t       NumFrameBufs;
+	int32_t       NumCBBufs;
 	AudioBackendDevice *AudioObject;
 	AudioBackendBuffer *PrimaryBuffer;
 	char          *VocFile;
 	unsigned char *AudioBuf;
-	long          AudioBufSize;
-	long          AudioRate;
-	long          Volume;
-	long          HMIBufSize;
-	long          DigiHandle;
-	long          DigiCard;
-	long          DigiPort;
-	long          DigiIRQ;
-	long          DigiDMA;
-	long          Language;
+	int32_t       AudioBufSize;
+	int32_t       AudioRate;
+	int32_t       Volume;
+	int32_t       HMIBufSize;
+	int32_t       DigiHandle;
+	int32_t       DigiCard;
+	int32_t       DigiPort;
+	int32_t       DigiIRQ;
+	int32_t       DigiDMA;
+	int32_t       Language;
 	char          *CapFont;
 	char          *EVAFont; /* For C&C Only */
 } VQAConfig;
@@ -250,9 +252,9 @@ typedef struct _VQAConfig {
  * ImageBuf    - Pointer to the image buffer VQA draw into.
  */
 typedef struct _VQAInfo {
-	long NumFrames;
-	long ImageWidth;
-	long ImageHeight;
+	int32_t NumFrames;
+	int32_t ImageWidth;
+	int32_t ImageHeight;
 	unsigned char *ImageBuf;
 } VQAInfo;
 
@@ -269,14 +271,14 @@ typedef struct _VQAInfo {
  * MemUsed       - Total bytes used. (Low memory)
  */
 typedef struct _VQAStatistics {
-	long          StartTime;
-	long          EndTime;
-	long          FramesLoaded;
-	long          FramesDrawn;
-	long          FramesSkipped;
-	long          MaxFrameSize;
-	unsigned long SamplesPlayed;
-	unsigned long MemUsed;
+	int32_t       StartTime;
+	int32_t       EndTime;
+	int32_t       FramesLoaded;
+	int32_t       FramesDrawn;
+	int32_t       FramesSkipped;
+	int32_t       MaxFrameSize;
+	uint32_t      SamplesPlayed;
+	uint32_t      MemUsed;
 } VQAStatistics;
 
 

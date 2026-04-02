@@ -81,7 +81,7 @@ using LPWORD = WORD*;
 using LPLONG = LONG*;
 using LPBOOL = BOOL*;
 using CHAR = char;
-using UCHAR = unsigned char;
+using UCHAR = uint8_t;
 using TCHAR = char;
 using LPTSTR = char*;
 using LPCTSTR = const char*;
@@ -497,20 +497,20 @@ inline void CopyMemory(void* dest, const void* src, size_t size)
     std::memcpy(dest, src, size);
 }
 
-inline char* ra_integer_to_string(long long value, char* str, int radix)
+inline char* ra_integer_to_string(int64_t value, char* str, int radix)
 {
     if (!str || radix < 2 || radix > 36) {
         return str;
     }
 
     const bool negative = (radix == 10) && (value < 0);
-    unsigned long long current = negative ? static_cast<unsigned long long>(-value) : static_cast<unsigned long long>(value);
+    uint64_t current = negative ? static_cast<uint64_t>(-value) : static_cast<uint64_t>(value);
     char* out = str;
 
     do {
-        const unsigned digit_value = static_cast<unsigned>(current % static_cast<unsigned long long>(radix));
+        const uint32_t digit_value = static_cast<uint32_t>(current % static_cast<uint64_t>(radix));
         *out++ = static_cast<char>(digit_value < 10 ? ('0' + digit_value) : ('a' + (digit_value - 10)));
-        current /= static_cast<unsigned long long>(radix);
+        current /= static_cast<uint64_t>(radix);
     } while (current != 0);
 
     if (negative) {
@@ -526,23 +526,26 @@ inline char* ra_integer_to_string(long long value, char* str, int radix)
     return str;
 }
 
-inline char* itoa(int value, char* str, int radix)
+inline char* itoa(int32_t value, char* str, int radix)
 {
     return ra_integer_to_string(value, str, radix);
 }
 
-inline char* ltoa(long value, char* str, int radix)
+inline char* ltoa(int32_t value, char* str, int radix)
 {
     return ra_integer_to_string(value, str, radix);
 }
 
-inline unsigned long _rotl(unsigned long value, int shift)
+inline uint32_t _rotl(uint32_t value, int shift)
 {
     shift &= 31;
+    if (shift == 0) {
+        return value;
+    }
     return (value << shift) | (value >> (32 - shift));
 }
 
-inline unsigned long _lrotl(unsigned long value, int shift)
+inline uint32_t _lrotl(uint32_t value, int shift)
 {
     return _rotl(value, shift);
 }

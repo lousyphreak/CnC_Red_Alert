@@ -120,7 +120,7 @@ PacketID:		This is a unique numerical ID for this packet.  The Connection
 typedef struct {
 	unsigned short MagicNumber;
 	unsigned char Code;
-	unsigned long PacketID;
+	uint32_t PacketID;
 } CommHeaderType;
 
 
@@ -147,8 +147,8 @@ class ConnectionClass
 		Constructor/destructor.
 		.....................................................................*/
 		ConnectionClass (int numsend, int numrecieve, int maxlen,
-			unsigned short magicnum, unsigned long retry_delta,
-			unsigned long max_retries, unsigned long timeout, int extralen = 0);
+			unsigned short magicnum, uint32_t retry_delta,
+			uint32_t max_retries, uint32_t timeout, int extralen = 0);
 		virtual ~ConnectionClass ();
 
 		/*.....................................................................
@@ -173,19 +173,19 @@ class ConnectionClass
 		This routine is used by the retry logic; returns the current time in
 		60ths of a second.
 		.....................................................................*/
-		static unsigned long Time (void);
+		static uint32_t Time (void);
 
 		/*.....................................................................
 		Utility routines.
 		.....................................................................*/
 		unsigned short Magic_Num (void) { return (MagicNum); }
-		unsigned long Retry_Delta (void) { return (RetryDelta); }
-		void Set_Retry_Delta (unsigned long delta) { RetryDelta = delta;}
-		unsigned long Max_Retries (void) { return (MaxRetries); }
-		void Set_Max_Retries (unsigned long retries) { MaxRetries = retries;}
-		unsigned long Time_Out (void) { return (Timeout); }
-		void Set_TimeOut (unsigned long t) { Timeout = t;}
-		unsigned long Max_Packet_Len (void) { return (MaxPacketLen); }
+		uint32_t Retry_Delta (void) { return (RetryDelta); }
+		void Set_Retry_Delta (uint32_t delta) { RetryDelta = delta;}
+		uint32_t Max_Retries (void) { return (MaxRetries); }
+		void Set_Max_Retries (uint32_t retries) { MaxRetries = retries;}
+		uint32_t Time_Out (void) { return (Timeout); }
+		void Set_TimeOut (uint32_t t) { Timeout = t;}
+		uint32_t Max_Packet_Len (void) { return (static_cast<uint32_t>(MaxPacketLen)); }
 		static char * Command_Name(int command);
 
 		/*.....................................................................
@@ -233,41 +233,41 @@ class ConnectionClass
 		/*.....................................................................
 		This value determines the time delay before a packet is re-sent.
 		.....................................................................*/
-		unsigned long RetryDelta;
+		uint32_t RetryDelta;
 
 		/*.....................................................................
 		This is the maximum number of retries allowed for a packet; if this
 		value is exceeded, the connection is probably broken.
 		.....................................................................*/
-		unsigned long MaxRetries;
+		uint32_t MaxRetries;
 
 		/*.....................................................................
 		This is the total timeout for this connection; if this time is exceeded
 		on a packet, the connection is probably broken.
 		.....................................................................*/
-		unsigned long Timeout;
+		uint32_t Timeout;
 
 		/*.....................................................................
 		Running totals of # of packets we send & receive which require an ACK,
 		and those that don't.
 		.....................................................................*/
-		unsigned long NumRecNoAck;
-		unsigned long NumRecAck;
-		unsigned long NumSendNoAck;
-		unsigned long NumSendAck;
+		uint32_t NumRecNoAck;
+		uint32_t NumRecAck;
+		uint32_t NumSendNoAck;
+		uint32_t NumSendAck;
 
 		/*.....................................................................
 		This is the ID of the last consecutively-received packet; anything older
 		than this, we know is a resend.  Anything newer than this MUST be lying
 		around in the Queue for us to detect it as a resend.
 		.....................................................................*/
-		unsigned long LastSeqID;
+		uint32_t LastSeqID;
 
 		/*.....................................................................
 		This is the ID of the PACKET_DATA_ACK packet we read last; it ensures
 		that the application reads that type of packet in order.
 		.....................................................................*/
-		unsigned long LastReadID;
+		uint32_t LastReadID;
 
 		/*.....................................................................
 		Names of all packet commands

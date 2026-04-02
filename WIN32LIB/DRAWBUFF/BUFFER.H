@@ -41,6 +41,7 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
+#include <stdint.h>
 
 /*=========================================================================*/
 /* If we have not already loaded the standard library header, than we can	*/
@@ -61,22 +62,22 @@ class BufferClass {
 		/*===================================================================*/
 		/* Define the base constructor and destructors for the class			*/
 		/*===================================================================*/
-		BufferClass(void *ptr, long size);
-		BufferClass(long size);
+		BufferClass(void *ptr, int32_t size);
+		BufferClass(int32_t size);
 		BufferClass();
 		~BufferClass();
 		/*===================================================================*/
 		/* Define functions which work with the buffer class.						*/
 		/*===================================================================*/
-		long To_Page(GraphicViewPortClass &view);
-		long To_Page(int w, int h, GraphicViewPortClass &view);
-		long To_Page(int x, int y, int w, int h, GraphicViewPortClass &view);
+		int32_t To_Page(GraphicViewPortClass &view);
+		int32_t To_Page(int w, int h, GraphicViewPortClass &view);
+		int32_t To_Page(int x, int y, int w, int h, GraphicViewPortClass &view);
 
 		/*===================================================================*/
 		/* define functions to get at the protected data members					*/
 		/*===================================================================*/
 		void	*Get_Buffer(void);
-		long	Get_Size(void);
+		int32_t	Get_Size(void);
 
 	private:
 		/*===================================================================*/
@@ -90,7 +91,7 @@ class BufferClass {
 
 	protected:
 		void	*Buffer;
-		long	Size;
+		int32_t	Size;
 		BOOL	Allocated;
 };
 /***************************************************************************
@@ -103,7 +104,7 @@ class BufferClass {
  * HISTORY:                                                                *
  *   06/01/1994 PWG : Created.                                             *
  *=========================================================================*/
-inline long BufferClass::Get_Size(void)
+inline int32_t BufferClass::Get_Size(void)
 {
 	return(Size);
 }
