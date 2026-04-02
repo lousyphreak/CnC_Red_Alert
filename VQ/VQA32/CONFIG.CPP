@@ -46,6 +46,7 @@
 *
 ****************************************************************************/
 
+#include <stdint.h>
 #include <SDL3/SDL_stdinc.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -172,7 +173,7 @@ static VQAConfig _defaultconfig = {
 	-1,
 
 	/* DigiIRQ: Interrupt number of sound card. A value of -1 tells the player
-	 * to autodetect the interrupt used by the card.
+	 * to autodetect the  used by the card.
 	 */
 	-1,
 
@@ -220,7 +221,7 @@ enum VMTAGS {
 
 typedef struct _VideoModeTag {
 	char const *token;
-	long       id;
+	int32_t       id;
 } VideoModeTag;
 
 VideoModeTag VideoModeTags[] = {
@@ -277,7 +278,7 @@ void VQA_INIConfig(VQAConfig *config)
 {
 	char *ininame;
 	char buf[80];
-	long i;
+	int32_t i;
 
 	/* Set all Config entries to 0. */
 	memset(config, 0, sizeof(VQAConfig));

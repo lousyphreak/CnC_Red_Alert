@@ -120,13 +120,13 @@ void sosCODECInitStream(_SOS_COMPRESS_INFO* info)
 }
 
 
-unsigned long sosCODECDecompressData(_SOS_COMPRESS_INFO* info, unsigned long numbytes)
+uint32_t sosCODECDecompressData(_SOS_COMPRESS_INFO* info, uint32_t numbytes)
 {
 	return General_sosCODECDecompressData(info, numbytes);
 }
 
 
-unsigned long General_sosCODECDecompressData(_SOS_COMPRESS_INFO* info, unsigned long numbytes)
+uint32_t General_sosCODECDecompressData(_SOS_COMPRESS_INFO* info, uint32_t numbytes)
 {
 	if (info == 0 || info->lpSource == 0 || info->lpDest == 0) {
 		return 0;

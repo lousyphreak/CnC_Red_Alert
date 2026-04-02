@@ -17,6 +17,7 @@
 */
 
 #ifndef VQMPROFILE_H
+#include <stdint.h>
 #define VQMPROFILE_H
 /****************************************************************************
 *
@@ -39,13 +40,13 @@
 ****************************************************************************/
 
 /* Prototypes */
-long GetINIInt(char const *section, char const *entry,
-		long deflt, char *fname);
+int32_t GetINIInt(char const *section, char const *entry,
+		int32_t deflt, char *fname);
 
-long GetINIString(char const *section, char const *entry, 
-		char const *def, char *retbuffer, long retlen, char *fname);
+int32_t GetINIString(char const *section, char const *entry, 
+		char const *def, char *retbuffer, int32_t retlen, char *fname);
 
-long Get_Frame_Pathname(char *inifile,long anim_frame,char *ext,
+int32_t Get_Frame_Pathname(char *inifile,int32_t anim_frame,char *ext,
 		char *outbuf);
 
 #endif /* VQMPROFILE_H */

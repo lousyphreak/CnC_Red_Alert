@@ -17,6 +17,7 @@
 */
 
 #ifndef VQMCAPTOKEN_H
+#include <stdint.h>
 #define VQMCAPTOKEN_H
 /****************************************************************************
 *
@@ -50,16 +51,16 @@
  * Ypos     - Y pixel position to display caption.
  * BgPen    - Background pen to use.
  * FgPen    - Foreground pen to use.
- * Text     - Text string to display. (WORD aligned)
+ * Text     - Text string to display. (int16_t aligned)
  */
 typedef struct _CaptionText {
-	unsigned short Size;
-	unsigned short OnFrame;
-	unsigned short OffFrame;
-	unsigned char  Flags;
+	uint16_t Size;
+	uint16_t OnFrame;
+	uint16_t OffFrame;
+	uint8_t  Flags;
 	char           CPF;
-	unsigned short Xpos;
-	unsigned short Ypos;
+	uint16_t Xpos;
+	uint16_t Ypos;
 	char           BgPen;
 	char           FgPen;
 	char           Text[];
@@ -74,7 +75,7 @@ typedef struct _CaptionText {
 #define CTF_FLASH   (1<<4)  /* Flash text. */
 
 /* Function prototypes. */
-long BuildCaptions(char *name, char *buffer);
+int32_t BuildCaptions(char *name, char *buffer);
 
 #endif /* VQMCAPTOKEN_H */
 

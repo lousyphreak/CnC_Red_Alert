@@ -17,6 +17,7 @@
 */
 
 #ifndef VQMCOMP_H
+#include <stdint.h>
 #define VQMCOMP_H
 /****************************************************************************
 *
@@ -38,37 +39,18 @@
 *
  ****************************************************************************/
 
-#ifndef far
-#define far
-#endif
-#ifndef near
-#define near
-#endif
-#ifndef huge
-#define huge
-#endif
-#ifndef interrupt
-#define interrupt
-#endif
-#ifndef __cdecl
-#define __cdecl
-#endif
-#ifndef cdecl
-#define cdecl __cdecl
-#endif
-
 /* Prototypes */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-unsigned long cdecl LCW_Compress(char const *source, char *dest,
-		unsigned long length);
-unsigned long cdecl LCW_Uncompress(char const *source, char *dest,
-		unsigned long length);
-long AudioZap(void *source, void *dest, long size);
-long cdecl AudioUnzap(void *source, void *dest, long);
+uint32_t LCW_Compress(char const *source, char *dest,
+		uint32_t length);
+uint32_t LCW_Uncompress(char const *source, char *dest,
+		uint32_t length);
+int32_t AudioZap(void *source, void *dest, int32_t size);
+int32_t AudioUnzap(void *source, void *dest, int32_t);
 
 #ifdef __cplusplus
 }

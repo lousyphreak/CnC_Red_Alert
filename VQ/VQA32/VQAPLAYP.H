@@ -42,24 +42,6 @@
 *
 ****************************************************************************/
 
-#ifndef far
-#define far
-#endif
-#ifndef near
-#define near
-#endif
-#ifndef huge
-#define huge
-#endif
-#ifndef interrupt
-#define interrupt
-#endif
-#ifndef __cdecl
-#define __cdecl
-#endif
-#ifndef cdecl
-#define cdecl __cdecl
-#endif
 #include <stdint.h>
 
 #include <VQM32/VIDEO.H>
@@ -131,7 +113,7 @@ typedef struct _ZAPHeader {
  *            If the data is compressed, it is loaded into the end of the
  *            buffer and the compression flags is set. Otherwise the data
  *            is loaded into the start of the buffer.
- *            (Make sure this structure's size is always DWORD aligned.)
+ *            (Make sure this structure's size is always uint32_t aligned.)
  *
  * Buffer   - Pointer to Codebook data.
  * Next     - Pointer to next VQACBNode in the codebook list.
@@ -142,7 +124,7 @@ typedef struct _ZAPHeader {
  * CBOffset - Offset into the buffer of the compressed data.
  */
 typedef struct _VQACBNode {
-	unsigned char     *Buffer;
+	uint8_t     *Buffer;
 	struct _VQACBNode *Next;
 	uint32_t         Flags;
 	uint32_t         CBOffset;
@@ -159,7 +141,7 @@ typedef struct _VQACBNode {
  *               task. If the data is compressed, it is loaded into the end
  *               of the buffer and the compress flag is set. Otherwise, it's
  *               loaded into the start of the buffer.
- *               (Make sure this structure's size is always DWORD aligned.)
+ *               (Make sure this structure's size is always uint32_t aligned.)
  *
  * Pointers    - Pointer to the vector pointer data.
  * Codebook    - Pointer to VQACBNode list entry for this frame.
@@ -173,9 +155,9 @@ typedef struct _VQACBNode {
  * PaletteSize - Size of the palette for this frame (in bytes).
  */
 typedef struct _VQAFrameNode {
-	unsigned char        *Pointers;
+	uint8_t        *Pointers;
 	VQACBNode            *Codebook;
-	unsigned char        *Palette;
+	uint8_t        *Palette;
 	struct _VQAFrameNode *Next;
 	uint32_t            Flags; 
 	int32_t             FrameNum;
@@ -198,7 +180,7 @@ typedef struct _VQAFrameNode {
 
 
 /* VQALoader: Data needed exclusively by the Loader.
- *            (Make sure this structure's size is always DWORD aligned.)
+ *            (Make sure this structure's size is always uint32_t aligned.)
  *
  * CurCB         - Pointer to the current codebook node to load data into.
  * FullCB        - Pointer to the last fully-loaded codebook node.
@@ -232,12 +214,12 @@ typedef struct _VQALoader {
 
 
 /* VQADrawer: Data needed exclusively by the Drawer.
- *            (Make sure this structure's size is always DWORD aligned.)
+ *            (Make sure this structure's size is always uint32_t aligned.)
  *
  * CurFrame       - Pointer to the current frame to draw.
  * Flags          - Flags for the draw routines (IE: VQADRWF_SETPAL)
  * Display        - Pointer to DisplayInfo structure for active video mode.
- * ImageBuf       - Buffer to un-vq into, must be DWORD aligned.
+ * ImageBuf       - Buffer to un-vq into, must be uint32_t aligned.
  * ImageWidth     - Width of Image buffer (in pixels).
  * ImageHeight    - Height of Image buffer (in pixels).
  * X1,Y1,X2,Y2    - Coordinates of image corners (in pixels).
@@ -263,14 +245,14 @@ typedef struct _VQADrawer {
 	VQAFrameNode  *CurFrame;
 	uint32_t     Flags;
 	DisplayInfo   *Display;
-	unsigned char *ImageBuf;
+	uint8_t *ImageBuf;
 	int32_t       ImageWidth;
 	int32_t       ImageHeight;
 	int32_t       X1,Y1,X2,Y2;
 	int32_t       ScreenOffset;
 	int32_t       CurPalSize;
-	unsigned char Palette_24[768];
-	unsigned char Palette_15[512];
+	uint8_t Palette_24[768];
+	uint8_t Palette_15[512];
 	int32_t       BlocksPerRow;
 	int32_t       NumRows;
 	int32_t       NumBlocks;
@@ -292,11 +274,11 @@ typedef struct _VQADrawer {
 
 
 /* VQAFlipper: Data needed exclusively by the page-flipper.
- *             (Make sure this structure's size is always DWORD aligned.)
+ *             (Make sure this structure's size is always uint32_t aligned.)
  *
  * CurFrame     - Pointer to current flipper frame.
  * LastFrameNum - Number of last flipped frame
- * pad          - DWORD alignment padding.
+ * pad          - uint32_t alignment padding.
  */
 typedef struct _VQAFlipper {
 	VQAFrameNode *CurFrame;
@@ -311,7 +293,7 @@ typedef struct _VQAFlipper {
 #endif
 
 /* VQAAudio: Data needed exclusively by audio playback.
- *           (Make sure this structure's size is always DWORD aligned.)
+ *           (Make sure this structure's size is always uint32_t aligned.)
  *
  * Buffer         - Pointer to the audio buffer.
  * AudBufPos      - Current audio buffer position, for copying data in buffer.
@@ -343,13 +325,13 @@ typedef struct _VQAFlipper {
  * sSOSInitDriver - HMI driver initialization structure.
  */
 typedef struct _VQAAudio {
-	unsigned char      *Buffer;
+	uint8_t      *Buffer;
 	uint32_t           AudBufPos;
 	int16_t            *IsLoaded;
 	uint32_t           NumAudBlocks;
 	uint32_t           CurBlock;
 	uint32_t           NextBlock;
-	unsigned char      *TempBuf;
+	uint8_t      *TempBuf;
 	uint32_t           TempBufLen;
 	uint32_t           TempBufSize;
 	uint32_t           Flags;
@@ -360,9 +342,9 @@ typedef struct _VQAAudio {
 	uint8_t            Channels;
 	uint8_t            BitsPerSample;
 	uint32_t           BytesPerSec;
-	WORD               DigiHandle;
-	WORD               SampleHandle;
-	WORD               DigiTimer;
+	int16_t               DigiHandle;
+	int16_t               SampleHandle;
+	int16_t               DigiTimer;
 	_SOS_START_SAMPLE  sSOSSampleData;
 	_SOS_COMPRESS_INFO ADPCM_Info;
 	_SOS_CAPABILITIES  DigiCaps;
@@ -421,16 +403,16 @@ typedef struct _VQAAudio {
  * MemUsed      - Number of bytes allocated by VQA_AllocBuffers
  */
 typedef struct _VQAData {
-	long (*Draw_Frame)(VQAHandle *vqa);
-	long (*Page_Flip)(VQAHandle *vqa);
+	int32_t (*Draw_Frame)(VQAHandle *vqa);
+	int32_t (*Page_Flip)(VQAHandle *vqa);
 
 	#ifndef PHARLAP_TNT
-	void cdecl (*UnVQ)(unsigned char *codebook, unsigned char *pointers,
-			unsigned char *buffer, uint32_t blocksperrow,
+	void  (*UnVQ)(uint8_t *codebook, uint8_t *pointers,
+			uint8_t *buffer, uint32_t blocksperrow,
 			uint32_t numrows, uint32_t bufwidth);
 	#else
-	void cdecl (*UnVQ)(unsigned char *codebook, unsigned char *pointers,
-			FARPTR buffer, uint32_t blocksperrow, uint32_t numrows,
+	void  (*UnVQ)(uint8_t *codebook, uint8_t *pointers,
+			char * buffer, uint32_t blocksperrow, uint32_t numrows,
 			uint32_t bufwidth);
 	#endif
 
@@ -486,13 +468,13 @@ typedef struct _VQAData {
  * vocfh     - Override audiotrack file handle.
  */
 typedef struct _VQAHandleP {
-	unsigned long VQAio;
-	long          (*IOHandler)(VQAHandle *vqa, long action, void *buffer,
-	                          long nbytes);
+	uintptr_t VQAio;
+	int32_t          (*IOHandler)(VQAHandle *vqa, int32_t action, void *buffer,
+	                          int32_t nbytes);
 	VQAData       *VQABuf;
 	VQAConfig     Config;
 	VQAHeader     Header;
-	long          vocfh;
+	int32_t          vocfh;
 	CaptionInfo   *Caption;
 	CaptionInfo   *EVA;
 } VQAHandleP;
@@ -503,24 +485,24 @@ typedef struct _VQAHandleP {
  *-------------------------------------------------------------------------*/
 
 /* Loader/Drawer system. */
-long VQA_LoadFrame(VQAHandle *vqa);
+int32_t VQA_LoadFrame(VQAHandle *vqa);
 void VQA_Configure_Drawer(VQAHandleP *vqap);
-long User_Update(VQAHandle *vqa);
+int32_t User_Update(VQAHandle *vqa);
 
 /* Timer system. */
-long VQA_StartTimerInt(VQAHandleP *vqap, long init);
+int32_t VQA_StartTimerInt(VQAHandleP *vqap, int32_t init);
 void VQA_StopTimerInt(VQAHandleP *vqap);
-void VQA_SetTimer(VQAHandleP *vqap, long time, long method);
-unsigned long VQA_GetTime(VQAHandleP *vqap);
-long VQA_TimerMethod(void);
+void VQA_SetTimer(VQAHandleP *vqap, int32_t time, int32_t method);
+uint32_t VQA_GetTime(VQAHandleP *vqap);
+int32_t VQA_TimerMethod(void);
 
 /* Audio system. */
 #if(VQAAUDIO_ON)
-long VQA_OpenAudio(VQAHandleP *vqap);
+int32_t VQA_OpenAudio(VQAHandleP *vqap);
 void VQA_CloseAudio(VQAHandleP *vqap);
-long VQA_StartAudio(VQAHandleP *vqap);
+int32_t VQA_StartAudio(VQAHandleP *vqap);
 void VQA_StopAudio(VQAHandleP *vqap);
-long CopyAudio(VQAHandleP *vqap);
+int32_t CopyAudio(VQAHandleP *vqap);
 #endif
 
 /* Debugging system. */

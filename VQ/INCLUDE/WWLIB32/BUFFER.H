@@ -39,6 +39,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #ifndef BUFFER_H
+#include <stdint.h>
 #define BUFFER_H
 
 
@@ -62,25 +63,25 @@ class BufferClass {
 		/*===================================================================*/
 		/* Define the base constructor and destructors for the class			*/
 		/*===================================================================*/
-		BufferClass(void *ptr, long size);
-		BufferClass(long size);
+		BufferClass(void *ptr, int32_t size);
+		BufferClass(int32_t size);
 		BufferClass();
 		~BufferClass();
 		/*===================================================================*/
 		/* Define functions which work with the buffer class.						*/
 		/*===================================================================*/
-		long To_Page(GraphicViewPortClass &view);
-		long To_Page(int w, int h, GraphicViewPortClass &view);
-		long To_Page(int x, int y, int w, int h, GraphicViewPortClass &view);
-		long To_Page(VideoViewPortClass &view);
-		long To_Page(int w, int h, VideoViewPortClass &view);
-		long To_Page(int x, int y, int w, int h, VideoViewPortClass &view);
+		int32_t To_Page(GraphicViewPortClass &view);
+		int32_t To_Page(int w, int h, GraphicViewPortClass &view);
+		int32_t To_Page(int x, int y, int w, int h, GraphicViewPortClass &view);
+		int32_t To_Page(VideoViewPortClass &view);
+		int32_t To_Page(int w, int h, VideoViewPortClass &view);
+		int32_t To_Page(int x, int y, int w, int h, VideoViewPortClass &view);
 
 		/*===================================================================*/
 		/* define functions to get at the protected data members					*/
 		/*===================================================================*/
 		void	*Get_Buffer(void);
-		long	Get_Size(void);
+		int32_t	Get_Size(void);
 
 	private:
 		/*===================================================================*/
@@ -94,20 +95,20 @@ class BufferClass {
 
 	protected:
 		void	*Buffer;
-		long	Size;
-		BOOL	Allocated;
+		int32_t	Size;
+		int32_t	Allocated;
 };
 /***************************************************************************
  * BC::GET_SIZE -- Returns the buffer size of the BufferClass instance     *
  *                                                                         *
  * INPUT:		none                                                        *
  *                                                                         *
- * OUTPUT:     long the size of the buffer                                 *
+ * OUTPUT:     int32_t the size of the buffer                                 *
  *                                                                         *
  * HISTORY:                                                                *
  *   06/01/1994 PWG : Created.                                             *
  *=========================================================================*/
-inline long BufferClass::Get_Size(void)
+inline int32_t BufferClass::Get_Size(void)
 {
 	return(Size);
 }

@@ -44,6 +44,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #ifndef WSA_H
+#include <stdint.h>
 #define WSA_H
 
 #ifndef WWSTD_H
@@ -88,33 +89,33 @@ typedef enum {
 /* The following prototypes are for the file: WSA.CPP								*/
 /*=========================================================================*/
 
-VOID * cdecl Open_Animation(BYTE const *file_name, BYTE *user_buffer, LONG user_buffer_size, WSAOpenType user_flags, UBYTE *palette=NULL);
-VOID cdecl Close_Animation( VOID *handle );
-BOOL cdecl Animate_Frame(VOID *handle, GraphicViewPortClass& view,
-                         WORD frame_number, WORD x_pixel=0, WORD y_pixel=0,
-                         WSAType flags_and_prio = WSA_NORMAL, VOID *magic_cols=NULL, VOID *magic=NULL);
-WORD cdecl Get_Animation_Frame_Count(VOID *handle);
-BOOL cdecl Animate_Frame(VOID *handle, VideoViewPortClass& view,
-                         WORD frame_number, WORD x_pixel=0, WORD y_pixel=0,
-                         WSAType flags_and_prio = WSA_NORMAL, VOID *magic_cols=NULL, VOID *magic=NULL);
-WORD cdecl Get_Animation_Frame_Count(VOID *handle);
-WORD cdecl Get_Animation_X(VOID const *handle);
-WORD cdecl Get_Animation_Y(VOID const *handle);
-WORD cdecl Get_Animation_Width(VOID const *handle);
-WORD cdecl Get_Animation_Height(VOID const *handle);
-WORD cdecl Get_Animation_Palette(VOID const *handle);
-ULONG cdecl Get_Animation_Size(VOID const *handle);
+void *  Open_Animation(char const *file_name, char *user_buffer, int32_t user_buffer_size, WSAOpenType user_flags, uint8_t *palette=NULL);
+void  Close_Animation( void *handle );
+int32_t  Animate_Frame(void *handle, GraphicViewPortClass& view,
+                         int16_t frame_number, int16_t x_pixel=0, int16_t y_pixel=0,
+                         WSAType flags_and_prio = WSA_NORMAL, void *magic_cols=NULL, void *magic=NULL);
+int16_t  Get_Animation_Frame_Count(void *handle);
+int32_t  Animate_Frame(void *handle, VideoViewPortClass& view,
+                         int16_t frame_number, int16_t x_pixel=0, int16_t y_pixel=0,
+                         WSAType flags_and_prio = WSA_NORMAL, void *magic_cols=NULL, void *magic=NULL);
+int16_t  Get_Animation_Frame_Count(void *handle);
+int16_t  Get_Animation_X(void const *handle);
+int16_t  Get_Animation_Y(void const *handle);
+int16_t  Get_Animation_Width(void const *handle);
+int16_t  Get_Animation_Height(void const *handle);
+int16_t  Get_Animation_Palette(void const *handle);
+uint32_t  Get_Animation_Size(void const *handle);
 
 
 /***************************************************************************
  * OPEN_ANIMATION -- file name, flags, palette, system allocates buffer.   *
  *                                                                         *
  *                                                                         *
- * INPUT:   BYTE *file_name - name of file to open.                        *
+ * INPUT:   char *file_name - name of file to open.                        *
  *          WSAOpenType user_flags - flags on how to open.                 *
- *          UBYTE *palette - pointer to a palette buffer to fill.          *
+ *          uint8_t *palette - pointer to a palette buffer to fill.          *
  *                                                                         *
- * OUTPUT:  VOID *pointer to animation data.  Must be used for all 			*
+ * OUTPUT:  void *pointer to animation data.  Must be used for all 			*
  *               other WSA calls.                                          *
  *                                                                         *
  * WARNINGS:                                                               *
@@ -122,7 +123,7 @@ ULONG cdecl Get_Animation_Size(VOID const *handle);
  * HISTORY:                                                                *
  *   05/24/1994 SKB : Created.                                             *
  *=========================================================================*/
-inline VOID *cdecl Open_Animation(BYTE *file_name, WSAOpenType user_flags, UBYTE *palette=NULL) 
+inline void * Open_Animation(char *file_name, WSAOpenType user_flags, uint8_t *palette=NULL) 
 {
 	return (Open_Animation(file_name, NULL, 0L, user_flags,  palette));
 }
@@ -132,12 +133,12 @@ inline VOID *cdecl Open_Animation(BYTE *file_name, WSAOpenType user_flags, UBYTE
  * OPEN_ANIMATION -- file_name, bufferclass, flags. 								*
  *                                                                         *
  *                                                                         *
- * INPUT:   BYTE *file_name - name of file to open.                        *
+ * INPUT:   char *file_name - name of file to open.                        *
  *          GraphicBufferClass - pointer to a buffer.                      *
  *          WSAOpenType user_flags - flags on how to open.                 *
- *          UBYTE *palette - pointer to a palette buffer to fill.          *
+ *          uint8_t *palette - pointer to a palette buffer to fill.          *
  *                                                                         *
- * OUTPUT:  VOID *pointer to animation data.  Must be used for all 			*
+ * OUTPUT:  void *pointer to animation data.  Must be used for all 			*
  *               other WSA calls.                                          *
  *                                                                         *
  * WARNINGS:                                                               *
@@ -145,9 +146,9 @@ inline VOID *cdecl Open_Animation(BYTE *file_name, WSAOpenType user_flags, UBYTE
  * HISTORY:                                                                *
  *   05/24/1994 SKB : Created.                                             *
  *=========================================================================*/
-inline VOID *cdecl Open_Animation(BYTE *file_name, BufferClass& buffer, WSAOpenType user_flags,  UBYTE *palette=NULL) 
+inline void * Open_Animation(char *file_name, BufferClass& buffer, WSAOpenType user_flags,  uint8_t *palette=NULL) 
 {
-	return (Open_Animation(file_name, (BYTE *)buffer.Get_Buffer(), buffer.Get_Size(), user_flags, palette));
+	return (Open_Animation(file_name, (char *)buffer.Get_Buffer(), buffer.Get_Size(), user_flags, palette));
 }
 
 
@@ -157,8 +158,8 @@ inline VOID *cdecl Open_Animation(BYTE *file_name, BufferClass& buffer, WSAOpenT
 
 
 extern "C" {
-UWORD Apply_XOR_Delta(BYTE *source_ptr, BYTE *delta_ptr);
-VOID  Apply_XOR_Delta_To_Page_Or_Viewport(VOID *target, VOID *delta, WORD width, WORD nextrow, WORD copy);
+uint16_t Apply_XOR_Delta(char *source_ptr, char *delta_ptr);
+void  Apply_XOR_Delta_To_Page_Or_Viewport(void *target, void *delta, int16_t width, int16_t nextrow, int16_t copy);
 }
 
 

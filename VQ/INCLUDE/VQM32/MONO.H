@@ -17,6 +17,7 @@
 */
 
 #ifndef VQMMONO_H
+#include <stdint.h>
 #define VQMMONO_H
 /****************************************************************************
 *
@@ -44,20 +45,20 @@
 extern "C" {
 #endif
 
-void cdecl Mono_Enable(void);
-void cdecl Mono_Disable(void);
-void cdecl Mono_Set_Cursor(long x, long y);
-void cdecl Mono_Clear_Screen(void);
-void cdecl Mono_Scroll(long lines);
-void cdecl Mono_Put_Char(long character, long attrib);
-void cdecl Mono_Draw_Rect(long x, long y, long w, long h, long attrib,
-		long thick);
+void Mono_Enable(void);
+void Mono_Disable(void);
+void Mono_Set_Cursor(int32_t x, int32_t y);
+void Mono_Clear_Screen(void);
+void Mono_Scroll(int32_t lines);
+void Mono_Put_Char(int32_t character, int32_t attrib);
+void Mono_Draw_Rect(int32_t x, int32_t y, int32_t w, int32_t h, int32_t attrib,
+		int32_t thick);
 
-void cdecl Mono_Text_Print(void const *text, long x, long y, long attrib);
-void cdecl Mono_Print(void const *text);
-short cdecl Mono_View_Page(long page);
-short cdecl Mono_X(void);	  
-short cdecl Mono_Y(void);
+void Mono_Text_Print(void const *text, int32_t x, int32_t y, int32_t attrib);
+void Mono_Print(void const *text);
+int16_t Mono_View_Page(int32_t page);
+int16_t Mono_X(void);
+int16_t Mono_Y(void);
 
 #ifdef __cplusplus
 }

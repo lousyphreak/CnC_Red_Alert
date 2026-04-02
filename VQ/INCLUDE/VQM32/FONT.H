@@ -17,6 +17,7 @@
 */
 
 #ifndef VQMFONT_H
+#include <stdint.h>
 #define VQMFONT_H
 /****************************************************************************
 *
@@ -37,27 +38,6 @@
 *     March 9, 1995
 *
 ****************************************************************************/
-#ifndef far
-#define far
-#endif
-#ifndef near
-#define near
-#endif
-#ifndef huge
-#define huge
-#endif
-#ifndef interrupt
-#define interrupt
-#endif
-#ifndef __cdecl
-#define __cdecl
-#endif
-#ifndef cdecl
-#define cdecl __cdecl
-#endif
-#ifndef __saveregs
-#define __saveregs
-#endif
 /* Font: A Westwood style font.
  *
  * Size       - Size of font.
@@ -70,20 +50,20 @@
  * HeightBlk  - Offset to character height block.
  */
 typedef struct _Font {
-	unsigned short Size;
-	unsigned char  CompMethod;
-	unsigned char  NumBlks;
-	unsigned short InfoBlk;
-	unsigned short OffsetBlk;
-	unsigned short WidthBlk;
-	unsigned short DataBlk;
-	unsigned short HeightBlk;
+	uint16_t Size;
+	uint8_t CompMethod;
+	uint8_t NumBlks;
+	uint16_t InfoBlk;
+	uint16_t OffsetBlk;
+	uint16_t WidthBlk;
+	uint16_t DataBlk;
+	uint16_t HeightBlk;
 } Font;
 
 typedef struct _FontInfo {
-	long huh;
-	unsigned char MaxHeight;
-	unsigned char MaxWidth;
+	int32_t huh;
+	uint8_t MaxHeight;
+	uint8_t MaxWidth;
 } FontInfo;
 
 #ifdef __cplusplus
@@ -103,14 +83,10 @@ extern char FontHeight;
 extern char *FontWidthBlockPtr;
 
 /* Function prototypes. */
-void *cdecl Load_Font(char const *name);
-void *cdecl Set_Font(void const *font);
-unsigned short cdecl String_Pixel_Width(char const *string);
+void *Load_Font(char const *name);
+void *Set_Font(void const *font);
+uint16_t String_Pixel_Width(char const *string);
 
-#ifdef __WATCOMC__
-long cdecl __saveregs Char_Pixel_Width(char chr);
-#else
-long cdecl Char_Pixel_Width(char chr);
-#endif
+int32_t Char_Pixel_Width(char chr);
 
 #endif /* VQMFONT_H */

@@ -53,10 +53,11 @@
 * PRIVATE
 *     VQA_IO_Task        - Loader task for multitasking.
 *     VQA_Rendering_Task - Drawer task for multitasking.
-*     User_Update        - Page flip routine called by the task interrupt.
+*     User_Update        - Page flip routine called by the task .
 *
 ****************************************************************************/
 
+#include <stdint.h>
 #include <stdio.h>
 #include <malloc.h>
 #include <string.h>
@@ -73,8 +74,8 @@
 extern "C" {
 #endif
 
-extern int cdecl Check_Key(void);
-extern int cdecl Get_Key(void);
+extern int  Check_Key(void);
+extern int  Get_Key(void);
 
 #ifdef __cplusplus
 }
@@ -167,8 +168,8 @@ void VQA_Free(VQAHandle *vqa)
 *
 ****************************************************************************/
 
-void VQA_Init(VQAHandle *vqa, long(*iohandler)(VQAHandle *vqa, long action,
-		void *buffer, long nbytes))
+void VQA_Init(VQAHandle *vqa, int32_t(*iohandler)(VQAHandle *vqa, int32_t action,
+		void *buffer, int32_t nbytes))
 {
 	((VQAHandleP *)vqa)->IOHandler = iohandler;
 }
@@ -182,7 +183,7 @@ void VQA_Init(VQAHandle *vqa, long(*iohandler)(VQAHandle *vqa, long action,
 * SYNOPSIS
 *     Error = VQA_Play(VQA, Mode)
 *
-*     long VQA_Play(VQAHandle *, long);
+*     int32_t VQA_Play(VQAHandle *, int32_t);
 *
 * FUNCTION
 *     Playback the movie associated with the specified VQAHandle.
@@ -200,14 +201,14 @@ void VQA_Init(VQAHandle *vqa, long(*iohandler)(VQAHandle *vqa, long action,
 *
 ****************************************************************************/
 
-long VQA_Play(VQAHandle *vqa, long mode)
+int32_t VQA_Play(VQAHandle *vqa, int32_t mode)
 {
 	VQAData   *vqabuf;
 	VQAConfig *config;
 	VQADrawer *drawer;
-	long      rc;
-	long      i;
-	long      key;
+	int32_t      rc;
+	int32_t      i;
+	int32_t      key;
 
 	/* Dereference commonly used data members for quick access. */
 	vqabuf = ((VQAHandleP *)vqa)->VQABuf;
@@ -523,12 +524,12 @@ char *VQA_IDString(void)
 /****************************************************************************
 *
 * NAME
-*     User_Update - Page flip routine called by the task interrupt.
+*     User_Update - Page flip routine called by the task .
 *
 * SYNOPSIS
 *     User_Update(VQA)
 *
-*     long User_Update(VQAHandle *);
+*     int32_t User_Update(VQAHandle *);
 *
 * FUNCTION
 *
@@ -540,10 +541,10 @@ char *VQA_IDString(void)
 *
 ****************************************************************************/
 
-long User_Update(VQAHandle *vqa)
+int32_t User_Update(VQAHandle *vqa)
 {
 	VQAData *vqabuf;
-	long    rc = 0;
+	int32_t    rc = 0;
 
 	/* Dereference data members for quicker access. */
 	vqabuf = ((VQAHandleP *)vqa)->VQABuf;

@@ -37,6 +37,8 @@
 #ifndef WWSTD_H
 #define	WWSTD_H
 
+#include <stdint.h>
+
 
 // Note: SKB 4/11/94
 // Before this library is done, this needs to be able to be set to TRUE.
@@ -76,10 +78,6 @@
 #define NULL		0L
 #endif
 
-#ifdef VOID
-#undef VOID
-#endif
-
 #define PRIVATE		static
 #define PUBLIC			/* Routines & data don't have a specifier */
 
@@ -104,7 +102,7 @@ template<class T> T ABS(T a)
 	return (a < 0) ? -a : a;
 }
 int ABS(int);
-long ABS(long);
+int32_t ABS(int32_t);
 
 // Returns the minimum of the two numbers.
 #ifdef MIN
@@ -114,9 +112,9 @@ template<class T> T MIN(T a, T b)
 {
 	return (b < a) ? b : a;
 };
-short MIN(short, short);
+int16_t MIN(int16_t, int16_t);
 int MIN(int, int);
-long MIN(long, long);
+int32_t MIN(int32_t, int32_t);
 
 // Returns the maximum of the two numbers.
 #ifdef MAX
@@ -126,18 +124,18 @@ template<class T> T MAX(T a, T b)
 {
 	return (b > a) ? b : a;
 };
-short MAX(short, short);
+int16_t MAX(int16_t, int16_t);
 int MAX(int, int);
-long MAX(long, long);
+int32_t MAX(int32_t, int32_t);
 
-// Returns the low word of a long
-#define	LOW_WORD(a)		((unsigned short)((long)(a) & 0x0000FFFFL))
+// Returns the low word of a int32_t
+#define	LOW_WORD(a)		((uint16_t)((int32_t)(a) & 0x0000FFFFL))
 
-// Returns the high word of a long
-#define	HIGH_WORD(a)	((unsigned long)(a) >> 16)
+// Returns the high word of a int32_t
+#define	HIGH_WORD(a)	((uint32_t)(a) >> 16)
 
-// Merges to shorts to become a long
-#define	MAKE_LONG(a,b) (((long)(a) << 16) | (long)((b)&0x0000FFFFL))
+// Merges to shorts to become a int32_t
+#define	MAKE_LONG(a,b) (((int32_t)(a) << 16) | (int32_t)((b)&0x0000FFFFL))
 
 /*
 ** Macro allows our routines to act like
@@ -158,51 +156,14 @@ long MAX(long, long);
 		}\
 }
 
-// type definitions
-//=======================================
-typedef void 	VOID;
-
-//==================================================
-// Pharlape defines these for use so we use their
-// typedefs!
-//		typedef	unsigned char	BOOL;
-//		typedef signed long		LONG;
-//		typedef unsigned long	ULONG;
-//==================================================
-#ifndef PRIVATE
-#define  PRIVATE	static
-#endif
-
-// The purpose of the INT and UINT is for efficiency.  It says that while a short int (16 bit)
+// The purpose of the int32_t and uint32_t is for efficiency.  It says that while a int16_t (16 bit)
 // has enough precision, it is more efficient to pass in an int (32 bits).  For efficiency, most
-// WORD and UWORD should be an INT or UINT, especially on the stack and structures that will
-// not be in large arrays.  When size efficiency is more important then speed, use WORD UWORD.
-
-#define	VOID		void
+// int16_t and uint16_t should be an int32_t or uint32_t, especially on the stack and structures that will
+// not be in large arrays.  When size efficiency is more important then speed, use int16_t uint16_t.
 
 #pragma	warn -eas
 #define	TRUE		1
 #define	FALSE		0
-
-#define	BOOL		int					// 32 bits for speed. use CHAR for size optimizations.
-
-#ifndef HMI_DRIVER
-#define	INT		int
-#define	UINT		unsigned int
-#define	BYTE		char
-#define	UBYTE		unsigned char
-#define  UCHAR	   unsigned char
-#define	WORD		signed 	short
-#define	UWORD		unsigned short
-#define  USHORT	unsigned short
-
-#define	LONG		signed 	long
-#define	ULONG		unsigned long
-#define  REALPTR	unsigned long
-
-#define	FARPTR  char far *
-
-#endif
 
 
 /*
@@ -215,7 +176,7 @@ typedef void 	VOID;
 
 
 // Inline Routines
-//ÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍÍ
+//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 //
 // These Template functions are generally used 
 // by classes when they havce over loaded > and <.
@@ -236,13 +197,13 @@ template<class T> T Abs(T a)
 	return ((a<0) ? -(a) : a);
 }
 
-template<class T> VOID minimize(T &a, T b)
+template<class T> void minimize(T &a, T b)
 {
 	if( b<a )
 		a=b;
 }
 
-template<class T> VOID maximize(T &a, T b)
+template<class T> void maximize(T &a, T b)
 {
 	if( b>a )
 		a=b;
@@ -259,12 +220,12 @@ template<class T> VOID maximize(T &a, T b)
 
 // Template replacements for the user defines above
 #ifdef __cplusplus
-template<class T> VOID BitFlagsOn(T &a, T b)
+template<class T> void BitFlagsOn(T &a, T b)
 {
 	a |= (b);
 }
 
-template<class T> VOID BitFlagsOff(T &a, T b)
+template<class T> void BitFlagsOff(T &a, T b)
 {
 	a &= (~(b));
 }
@@ -274,7 +235,7 @@ template<class T> T BitFlagsValue(T a, T b)
 	return (a & (b));
 }
 
-template<class T> VOID BitFlagsFlip(T &a, T b)
+template<class T> void BitFlagsFlip(T &a, T b)
 {
 	a ^= (b);
 }
@@ -302,5 +263,4 @@ typedef enum {
 
 
 #endif
-
 

@@ -169,12 +169,12 @@ class AudioBackendBuffer;
  * EVAFont        - Pointer to font to use for E.V.A text cations. (For C&C)
  */
 typedef struct _VQAConfig {
-	long          (*DrawerCallback)(unsigned char *screen, long framenum);
-	long          (*EventHandler)(unsigned long event,void *buffer,long nbytes);
+	int32_t          (*DrawerCallback)(uint8_t *screen, int32_t framenum);
+	int32_t          (*EventHandler)(uint32_t event,void *buffer,int32_t nbytes);
 	uint32_t      NotifyFlags;
 	int32_t       Vmode;
 	int32_t       VBIBit;
-	unsigned char *ImageBuf;
+	uint8_t *ImageBuf;
 	int32_t       ImageWidth;
 	int32_t       ImageHeight;
 	int32_t       X1,Y1;
@@ -188,7 +188,7 @@ typedef struct _VQAConfig {
 	AudioBackendDevice *AudioObject;
 	AudioBackendBuffer *PrimaryBuffer;
 	char          *VocFile;
-	unsigned char *AudioBuf;
+	uint8_t *AudioBuf;
 	int32_t       AudioBufSize;
 	int32_t       AudioRate;
 	int32_t       Volume;
@@ -255,7 +255,7 @@ typedef struct _VQAInfo {
 	int32_t NumFrames;
 	int32_t ImageWidth;
 	int32_t ImageHeight;
-	unsigned char *ImageBuf;
+	uint8_t *ImageBuf;
 } VQAInfo;
 
 
@@ -289,7 +289,7 @@ typedef struct _VQAStatistics {
  * VQAio - Something meaningful to the IO manager. (See DOCS)
  */
 typedef struct _VQAHandle {
-	unsigned long VQAio;
+	uintptr_t VQAio;
 } VQAHandle;
 
 /* Possible IO command values */
@@ -314,14 +314,14 @@ void VQA_DefaultConfig(VQAConfig *config);
 VQAHandle *VQA_Alloc(void);
 void VQA_Free(VQAHandle *vqa);
 void VQA_InitAsDOS(VQAHandle *vqa);
-void VQA_Init(VQAHandle *vqa, long(*iohandler)(VQAHandle *vqa, long action,
-		void *buffer, long nbytes));
+void VQA_Init(VQAHandle *vqa, int32_t(*iohandler)(VQAHandle *vqa, int32_t action,
+		void *buffer, int32_t nbytes));
 
 /* File routines. */
-long VQA_Open(VQAHandle *vqa, char const *filename, VQAConfig *config);
+int32_t VQA_Open(VQAHandle *vqa, char const *filename, VQAConfig *config);
 void VQA_Close(VQAHandle *vqa);
-long VQA_Play(VQAHandle *vqa, long mode);
-long VQA_SeekFrame(VQAHandle *vqa, long frame, long fromwhere);
+int32_t VQA_Play(VQAHandle *vqa, int32_t mode);
+int32_t VQA_SeekFrame(VQAHandle *vqa, int32_t frame, int32_t fromwhere);
 
 /* Information/statistics access routines. */
 void VQA_GetInfo(VQAHandle *vqa, VQAInfo *info);

@@ -35,6 +35,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #ifndef SOUND_H
+#include <stdint.h>
 #define SOUND_H
 
 #define	HMI_DRIVER	TRUE
@@ -51,7 +52,7 @@
 #define	SFX_MINI_STAGE_BUFFER_SIZE		(1024*4)
 
 
-extern WORD _SoundVolume;
-extern WORD _ScoreVolume;
+extern int16_t _SoundVolume;
+extern int16_t _ScoreVolume;
 
 #endif

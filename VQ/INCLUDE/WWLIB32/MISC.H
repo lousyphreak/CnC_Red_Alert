@@ -35,6 +35,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #ifndef MISC_H
+#include <stdint.h>
 #define MISC_H
 
 /*========================= C++ Routines ==================================*/
@@ -43,8 +44,8 @@
 /* The following prototypes are for the file: EXIT.CPP							*/
 /* Prog_End Must be supplied by the user program in startup.cpp				*/
 /*=========================================================================*/
-VOID cdecl Prog_End(VOID);
-VOID cdecl Exit(INT errorval, const BYTE *message, ...);
+void  Prog_End(void);
+void  Exit(int32_t errorval, const char *message, ...);
 
 /*=========================================================================*/
 /* The following prototypes are for the file: DELAY.CPP							*/
@@ -57,22 +58,22 @@ void Vsync(void);
 /* The following prototypes are for the file: FINDARGV.CPP						*/
 /*=========================================================================*/
 
-BYTE *cdecl Find_Argv(BYTE const *str);
+char * Find_Argv(char const *str);
 
 /*=========================================================================*/
 /* The following prototypes are for the file: LIB.CPP								*/
 /*=========================================================================*/
 char *Find_Argv(char const *str);
 void Mono_Mem_Dump(void const *databuf, int bytes, int y);
-void Convert_RGB_To_HSV(unsigned int r, unsigned int g, unsigned int b, unsigned int *h, unsigned int *s, unsigned int *v);
-void Convert_HSV_To_RGB(unsigned int h, unsigned int s, unsigned int v, unsigned int *r, unsigned int *g, unsigned int *b);
+void Convert_RGB_To_HSV(uint32_t r, uint32_t g, uint32_t b, uint32_t *h, uint32_t *s, uint32_t *v);
+void Convert_HSV_To_RGB(uint32_t h, uint32_t s, uint32_t v, uint32_t *r, uint32_t *g, uint32_t *b);
 
 
 /*=========================================================================*/
 /* The following prototypes are for the file: VERSION.CPP						*/
 /*=========================================================================*/
 
-BYTE *cdecl Version(VOID);
+char * Version(void);
 
 
 /*=========================================================================*/
@@ -91,7 +92,7 @@ extern "C" {
 /* The following prototypes are for the file: RANDOM.ASM							*/
 /*=========================================================================*/
 
-UBYTE Random(VOID);
+uint8_t Random(void);
 int Get_Random_Mask(int maxval);
 
 /*=========================================================================*/
@@ -104,9 +105,9 @@ void Shake_Screen(int shakes);
 /* The following prototypes are for the file: REVERSE.ASM						*/
 /*=========================================================================*/
 
-LONG Reverse_LONG(LONG number);
-WORD Reverse_WORD(WORD number);
-LONG Swap_LONG(LONG number);
+int32_t Reverse_LONG(int32_t number);
+int16_t Reverse_WORD(int16_t number);
+int32_t Swap_LONG(int32_t number);
 
 /*=========================================================================*/
 /* The following prototype is for the file: FACING8.ASM							*/
@@ -130,21 +131,21 @@ int Desired_Facing256(int x1, int y1, int x2, int y2);
 /* The following prototype is for the file: FADING.ASM							*/
 /*=========================================================================*/
 
-void *Build_Fading_Table(void const *palette, void const *dest, long int color, long int frac);
+void *Build_Fading_Table(void const *palette, void const *dest, int32_t color, int32_t frac);
 
 /*=========================================================================*/
 /* The following prototype is for the file: CRC.ASM							*/
 /*=========================================================================*/
 
-long Calculate_CRC(void *buffer, long length);
+int32_t Calculate_CRC(void *buffer, int32_t length);
 
 /*=========================================================================*/
 /* The following prototypes are for the file: DETPROC.ASM						*/
 /*=========================================================================*/
 
-extern WORD  Processor(VOID);
-extern WORD  Operating_System(VOID);
-extern ULONG random ( ULONG mod )  ;
+extern int16_t  Processor(void);
+extern int16_t  Operating_System(void);
+extern uint32_t random ( uint32_t mod )  ;
 extern void  randomize ( void ) ;
 
 extern int Clip_Rect ( int * x , int * y , int * dw , int * dh ,
@@ -158,7 +159,7 @@ extern int Confine_Rect ( int * x , int * y , int dw , int dh ,
 /* The following prototypes are for the file: OPSYS.ASM							*/
 /*=========================================================================*/
 
-extern WORD OperationgSystem;
+extern int16_t OperationgSystem;
 										  
 #ifdef __cplusplus
 }
@@ -167,5 +168,3 @@ extern WORD OperationgSystem;
 /*=========================================================================*/
 
 #endif // MISC_H
-
-

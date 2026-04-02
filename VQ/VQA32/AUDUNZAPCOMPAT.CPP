@@ -44,13 +44,13 @@ static uint8_t Saturating_Add(uint8_t sample, int delta)
 
 } /* namespace */
 
-extern "C" long cdecl AudioUnzap(void *source, void *dest, long count)
+extern "C" int32_t  AudioUnzap(void *source, void *dest, int32_t count)
 {
 	uint8_t *src;
 	uint8_t *dst;
 	uint8_t previous;
-	long remaining;
-	long incount;
+	int32_t remaining;
+	int32_t incount;
 
 	if (source == NULL || dest == NULL || count <= 0) {
 		return (0);
@@ -76,7 +76,7 @@ extern "C" long cdecl AudioUnzap(void *source, void *dest, long count)
 				*dst++ = previous;
 				--remaining;
 			} else {
-				const long raw_count = (long)value + 1L;
+				const int32_t raw_count = (int32_t)value + 1L;
 
 				memcpy(dst, src, (size_t)raw_count);
 				src += raw_count;
@@ -89,7 +89,7 @@ extern "C" long cdecl AudioUnzap(void *source, void *dest, long count)
 		}
 
 		if (code == 1U) {
-			long packed_count = (long)value + 1L;
+			int32_t packed_count = (int32_t)value + 1L;
 
 			while (packed_count-- > 0) {
 				const uint8_t packed = *src++;
@@ -105,7 +105,7 @@ extern "C" long cdecl AudioUnzap(void *source, void *dest, long count)
 		}
 
 		if (code == 0U) {
-			long packed_count = (long)value + 1L;
+			int32_t packed_count = (int32_t)value + 1L;
 
 			while (packed_count-- > 0) {
 				const uint8_t packed = *src++;
@@ -124,9 +124,9 @@ extern "C" long cdecl AudioUnzap(void *source, void *dest, long count)
 			continue;
 		}
 
-		memset(dst, previous, (size_t)((long)value + 1L));
-		dst += (long)value + 1L;
-		remaining -= (long)value + 1L;
+		memset(dst, previous, (size_t)((int32_t)value + 1L));
+		dst += (int32_t)value + 1L;
+		remaining -= (int32_t)value + 1L;
 	}
 
 	return (incount);

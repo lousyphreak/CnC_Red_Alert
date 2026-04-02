@@ -509,7 +509,7 @@ FacingType KN_To_Facing(int input);
 void const *Get_Radar_Icon(void const * shapefile, int shapenum, int frames, int zoomfactor);
 void CC_Draw_Shape(void const * shapefile, int shapenum, int x, int y, WindowNumberType window, ShapeFlags_Type flags, void const * fadingdata=0, void const * ghostdata=0, DirType rotation=DIR_N, long scale=0x0100);
 void Go_Editor(bool flag);
-long MixFileHandler(VQAHandle * vqa, long action, void * buffer, long nbytes);
+int32_t MixFileHandler(VQAHandle * vqa, int32_t action, void * buffer, int32_t nbytes);
 char *CC_Get_Shape_Filename(void const * shapeptr );
 void CC_Add_Shape_To_Global(void const * shapeptr, char * filename, char code );
 void Bubba_Print(char * format,...);

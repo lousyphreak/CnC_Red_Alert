@@ -34,89 +34,90 @@
 
 #ifndef  _SOS_DATA
 #define  _SOS_DATA
+#include <stdint.h>
 
 #include <stddef.h>
 
-extern   WORD     _sosDIGIData_Start;
-extern   WORD     _sosDIGIData_End;
-extern   WORD     _wSOSDriverLinear[];
-extern   WORD     _wSOSTimerLinear[];
-extern   LPSTR    _lpSOSDriver[];
-extern   LPSTR    _lpSOSTimer[];
-extern   LPSTR    _lpSOSDriverCS[];
-extern   LPSTR    _lpSOSTimerCS[];
-extern   BOOL     _wSOSDriverLoaded[];
-extern   BOOL     _wSOSTimerLoaded[];
-extern   BOOL     _wSOSDriverInitialized[];
-extern   WORD     _wSOSOutputRate[];
-extern   WORD     _wSOSDMABuffersize[];
-extern   LONG     _dwSOSDMABufferPhysical[];
-extern   LPSTR    _lpSOSDMABuffer[];
-extern   BOOL     _wTimerUsed;
-extern   VOID ( far *_lpSOSFillHandler[] )( VOID );
-extern   WORD     _wSOSTimerType[];
-extern   WORD     _wSOSDriverType[];
-extern   _SOS_SAMPLE far * _lpSOSSampleList[][ _MAX_VOICES ];
-extern   LPWORD      _lpSOSDMAIrqCount[];
-extern   LPWORD      _lpSOSDMAFillCount[];
-extern   WORD        _wSOSTmrNextCount;
-extern   VOID ( interrupt far *_lpSOSOldTimer )( VOID );
-extern   WORD     _wSOSDriverID[];
+extern   uint16_t     _sosDIGIData_Start;
+extern   uint16_t     _sosDIGIData_End;
+extern   uint16_t     _wSOSDriverLinear[];
+extern   uint16_t     _wSOSTimerLinear[];
+extern   char *    _lpSOSDriver[];
+extern   char *    _lpSOSTimer[];
+extern   char *    _lpSOSDriverCS[];
+extern   char *    _lpSOSTimerCS[];
+extern   int32_t     _wSOSDriverLoaded[];
+extern   int32_t     _wSOSTimerLoaded[];
+extern   int32_t     _wSOSDriverInitialized[];
+extern   uint16_t     _wSOSOutputRate[];
+extern   uint16_t     _wSOSDMABuffersize[];
+extern   int32_t     _dwSOSDMABufferPhysical[];
+extern   char *    _lpSOSDMABuffer[];
+extern   int32_t     _wTimerUsed;
+extern   void (  *_lpSOSFillHandler[] )( void );
+extern   uint16_t     _wSOSTimerType[];
+extern   uint16_t     _wSOSDriverType[];
+extern   _SOS_SAMPLE  * _lpSOSSampleList[][ _MAX_VOICES ];
+extern   uint16_t *      _lpSOSDMAIrqCount[];
+extern   uint16_t *      _lpSOSDMAFillCount[];
+extern   uint16_t        _wSOSTmrNextCount;
+extern   void (   *_lpSOSOldTimer )( void );
+extern   uint16_t     _wSOSDriverID[];
 extern   _SOS_CAPABILITIES _sSOSDriverCaps[];
-extern   WORD        _wSOSDMAPortList[];
-extern   BYTE        _bSOSDMAChannel[];
+extern   uint16_t        _wSOSDMAPortList[];
+extern   uint8_t        _bSOSDMAChannel[];
 extern   _SOS_INIT_DRIVER     _sSOSDIGIInitDriver[];
-extern   BYTE  _pSOSDriverPath[];
-extern   BYTE  _pSOSTempDriverPath[];
-extern   BOOL  _wTIMERUsed;
-extern   WORD  _wTIMERValue;
-extern   VOID ( far * _lpTIMEREvents[] )( VOID );
-extern   WORD _wTIMEREventRate[];
-extern   WORD _dwTIMEREventFraction[];
-extern   WORD _dwTIMEREventFractionCurrent[];
-extern   BYTE  _bSOSMIDITimerSongHandler[];
-extern   BYTE  _bSOSMIDISongHandle;
-extern   WORD  _wSOSTimerMemHandle[];
-extern   WORD  _wSOSDriverMemHandle[];
-extern   WORD  _wSOSRealSeg[];
+extern   uint8_t  _pSOSDriverPath[];
+extern   uint8_t  _pSOSTempDriverPath[];
+extern   int32_t  _wTIMERUsed;
+extern   uint16_t  _wTIMERValue;
+extern   void (  * _lpTIMEREvents[] )( void );
+extern   uint16_t _wTIMEREventRate[];
+extern   uint16_t _dwTIMEREventFraction[];
+extern   uint16_t _dwTIMEREventFractionCurrent[];
+extern   uint8_t  _bSOSMIDITimerSongHandler[];
+extern   uint8_t  _bSOSMIDISongHandle;
+extern   uint16_t  _wSOSTimerMemHandle[];
+extern   uint16_t  _wSOSDriverMemHandle[];
+extern   uint16_t  _wSOSRealSeg[];
 
 extern   _FILEHEADER    _sDETFileHeader;
 extern   _DRIVERHEADER  _sDETDriverHeader;
 extern   _FILEHEADER    sLOADFileHeader;
 extern   _DRIVERHEADER  sLOADDriverHeader;
-extern   BOOL           _wDETInitialized;
-extern   WORD           _wDETLinear;
-extern   LPSTR          _lpDETDriverBuffer;
-extern   LPSTR          _lpDETDriverBufferCS;
-extern   WORD           _hDETFile;
-extern   DWORD          _dwDETDriverIndex;
-extern   WORD           _wDETDriverIndexCur;
-extern   WORD           _wDETMemHandle;
+extern   int32_t           _wDETInitialized;
+extern   uint16_t           _wDETLinear;
+extern   char *          _lpDETDriverBuffer;
+extern   char *          _lpDETDriverBufferCS;
+extern   uint16_t           _hDETFile;
+extern   uint32_t          _dwDETDriverIndex;
+extern   uint16_t           _wDETDriverIndexCur;
+extern   uint16_t           _wDETMemHandle;
 extern   LPSOSDEVICECAPS _lpDETDeviceCaps;
 extern   _SOS_CAPABILITIES _sDETCaps;
-extern   PSTR _pSOSErrorStrings[];
-extern   BOOL _wSOSBufferAllocated[];
-extern   BOOL _wSOSSystemInitialized;
+extern   char * _pSOSErrorStrings[];
+extern   int32_t _wSOSBufferAllocated[];
+extern   int32_t _wSOSSystemInitialized;
 extern   VDS_STRUCT _sSOSVDSInfo;
 extern   _SOS_FILL_INFO _sSOSFillInfo;
-extern   WORD    _wSOSTimerEventIndex;
-extern   WORD  _wSOSTimerEntered;
-extern   WORD  _wSOSDriverSize[];
-extern   WORD  _wSOSTimerSize[];
+extern   uint16_t    _wSOSTimerEventIndex;
+extern   uint16_t  _wSOSTimerEntered;
+extern   uint16_t  _wSOSDriverSize[];
+extern   uint16_t  _wSOSTimerSize[];
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-extern   WORD  _sosDIGIData1_Start;
-extern   WORD  _sosDIGIData1_End;
-extern   WORD  _sosDIGIData2_Start;
-extern   WORD  _sosDIGIData2_End;
-extern   BYTE  _bTIMERInstalled;
-extern   BYTE  _bTIMERDPMI;
-extern   WORD  wDetectPort;
-extern   WORD  wDetectIRQ;
-extern   WORD  wDetectDMA;
-extern   WORD  wDetectParam;
+extern   uint16_t  _sosDIGIData1_Start;
+extern   uint16_t  _sosDIGIData1_End;
+extern   uint16_t  _sosDIGIData2_Start;
+extern   uint16_t  _sosDIGIData2_End;
+extern   uint8_t  _bTIMERInstalled;
+extern   uint8_t  _bTIMERDPMI;
+extern   uint16_t  wDetectPort;
+extern   uint16_t  wDetectIRQ;
+extern   uint16_t  wDetectDMA;
+extern   uint16_t  wDetectParam;
 #ifdef __cplusplus
 }
 #endif

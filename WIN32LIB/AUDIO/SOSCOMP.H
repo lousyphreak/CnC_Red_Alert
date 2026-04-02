@@ -33,6 +33,8 @@
 #ifndef  _SOS_COMPRESS
 #define  _SOS_COMPRESS
 
+#include <stdint.h>
+
 /* compression types */
 enum {
 	_ADPCM_TYPE_1,
@@ -42,42 +44,42 @@ enum {
 typedef struct _tagCOMPRESS_INFO {
 	char       *lpSource;
 	char       *lpDest;
-	unsigned long dwCompSize;
-	unsigned long dwUnCompSize;
-	unsigned long dwSampleIndex;
-	long          dwPredicted;
-	long          dwDifference;
-	short         wCodeBuf;
-	short         wCode;
-	short         wStep;
-	short         wIndex;
+	uint32_t dwCompSize;
+	uint32_t dwUnCompSize;
+	uint32_t dwSampleIndex;
+	int32_t  dwPredicted;
+	int32_t  dwDifference;
+	int16_t  wCodeBuf;
+	int16_t  wCode;
+	int16_t  wStep;
+	int16_t  wIndex;
 
-	unsigned long dwSampleIndex2; //added BP for channel 2
-	long          dwPredicted2;   //added BP for channel 2
-	long          dwDifference2; 	//added BP for channel 2
-	short         wCodeBuf2; 		//added BP for channel 2
-	short         wCode2; 			//added BP for channel 2
-	short         wStep2; 			//added BP for channel 2
-	short         wIndex2; 			//added BP for channel 2
-	short         wBitSize;
-	short			  wChannels;		//added BP for # of channels
+	uint32_t dwSampleIndex2; //added BP for channel 2
+	int32_t  dwPredicted2;   //added BP for channel 2
+	int32_t  dwDifference2; 	//added BP for channel 2
+	int16_t  wCodeBuf2; 		//added BP for channel 2
+	int16_t  wCode2; 			//added BP for channel 2
+	int16_t  wStep2; 			//added BP for channel 2
+	int16_t  wIndex2; 			//added BP for channel 2
+	int16_t  wBitSize;
+	int16_t  wChannels;		//added BP for # of channels
 	} _SOS_COMPRESS_INFO;
 
 /* compressed file type header */
 typedef struct _tagCOMPRESS_HEADER {
-	unsigned long dwType;              // type of compression
-	unsigned long dwCompressedSize;    // compressed file size
-	unsigned long dwUnCompressedSize;  // uncompressed file size
-	unsigned long dwSourceBitSize;     // original bit size
+	uint32_t dwType;              // type of compression
+	uint32_t dwCompressedSize;    // compressed file size
+	uint32_t dwUnCompressedSize;  // uncompressed file size
+	uint32_t dwSourceBitSize;     // original bit size
 	char          szName[16];          // file type, for error checking
 	} _SOS_COMPRESS_HEADER;
 
 /* Prototypes */
 extern "C" {
-	void __cdecl sosCODECInitStream(_SOS_COMPRESS_INFO *);
-	unsigned long __cdecl sosCODECCompressData(_SOS_COMPRESS_INFO *,	unsigned long);
-	unsigned long __cdecl sosCODECDecompressData(_SOS_COMPRESS_INFO *, unsigned long);
-	unsigned long __cdecl General_sosCODECDecompressData(_SOS_COMPRESS_INFO *, unsigned long);
+	void sosCODECInitStream(_SOS_COMPRESS_INFO *);
+	uint32_t sosCODECCompressData(_SOS_COMPRESS_INFO *,	uint32_t);
+	uint32_t sosCODECDecompressData(_SOS_COMPRESS_INFO *, uint32_t);
+	uint32_t General_sosCODECDecompressData(_SOS_COMPRESS_INFO *, uint32_t);
 }
 
 #endif

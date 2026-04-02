@@ -33,6 +33,7 @@
 ;* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #ifndef PALETTE_H
+#include <stdint.h>
 #define PALETTE_H
 
 /*
@@ -48,20 +49,20 @@
 /*
 -------------------------------- Palette.cpp --------------------------------
 */
-VOID cdecl Set_Palette(VOID *palette);
-VOID cdecl Set_Palette_Color(VOID *palette, WORD color, VOID *data);
-VOID Fade_Palette_To(VOID *palette1, UWORD delay, VOID (*callback)() );
+void  Set_Palette(void *palette);
+void  Set_Palette_Color(void *palette, int16_t color, void *data);
+void Fade_Palette_To(void *palette1, uint16_t delay, void (*callback)() );
 
 /*
 -------------------------------- loadpal.cpp --------------------------------
 */
-VOID cdecl Load_Palette(BYTE *palette_file_name, VOID *palette_pointer);
+void  Load_Palette(char *palette_file_name, void *palette_pointer);
 
 /*
 ------------------------------- morphpal.cpp --------------------------------
 */
-VOID cdecl Morph_Palette (VOID *src_palette, VOID *dst_palette, UWORD delay,
-	VOID *callback);
+void  Morph_Palette (void *src_palette, void *dst_palette, uint16_t delay,
+	void *callback);
 
 /*
 ---------------------------------- pal.asm ----------------------------------
@@ -70,13 +71,13 @@ VOID cdecl Morph_Palette (VOID *src_palette, VOID *dst_palette, UWORD delay,
 extern "C" {
 #endif
 
-extern VOID Set_Palette_Range(VOID *palette);
-extern BOOL Bump_Color(VOID *palette, WORD changable, WORD target);
+extern void Set_Palette_Range(void *palette);
+extern int32_t Bump_Color(void *palette, int16_t changable, int16_t target);
 
 #ifdef __cplusplus
 }
 #endif
-extern "C" extern UBYTE  CurrentPalette[];		/* in pal.asm */
+extern "C" extern uint8_t  CurrentPalette[];		/* in pal.asm */
 
 
 #endif // PALETTE_H

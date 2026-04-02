@@ -17,6 +17,7 @@
 */
 
 #ifndef VQMPORTIO_H
+#include <stdint.h>
 #define VQMPORTIO_H
 /****************************************************************************
 *
@@ -44,8 +45,8 @@
 extern "C" {
 #endif
 
-short cdecl inp(unsigned short portid);
-void cdecl outp(unsigned short portid, short value);
+int16_t inp(uint16_t portid);
+void outp(uint16_t portid, int16_t value);
 
 #ifdef __cplusplus
 }

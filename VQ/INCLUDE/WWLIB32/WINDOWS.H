@@ -35,6 +35,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #ifndef WINDOWS_H
+#include <stdint.h>
 #define WINDOWS_H
 
 /*=========================================================================*/
@@ -76,15 +77,15 @@ extern int WindowList[][8];
 extern int WindowColumns;
 extern int WindowLines;
 extern int WindowWidth;
-extern unsigned int WinB;
-extern unsigned int WinC;
-extern unsigned int WinX;
-extern unsigned int WinY;
-extern unsigned int WinCx;
-extern unsigned int WinCy;
-extern unsigned int WinH;
-extern unsigned int WinW;
-extern unsigned int Window;
+extern uint32_t WinB;
+extern uint32_t WinC;
+extern uint32_t WinX;
+extern uint32_t WinY;
+extern uint32_t WinCx;
+extern uint32_t WinCy;
+extern uint32_t WinH;
+extern uint32_t WinW;
+extern uint32_t Window;
 
 extern int MoreOn;
 extern char *TXT_MoreText;

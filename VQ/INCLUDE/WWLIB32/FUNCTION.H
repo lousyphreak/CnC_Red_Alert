@@ -1,3 +1,4 @@
+#include <stdint.h>
 /*
 **	Command & Conquer Red Alert(tm)
 **	Copyright 2025 Electronic Arts Inc.
@@ -21,27 +22,27 @@
 /* The following prototypes are for the file: SOUNDIO.CPP						*/
 /*=========================================================================*/
 
-short Decompress_Frame(void * source, void * dest, short size);
-int cdecl Stream_Sample_Vol(void *buffer, long size, BOOL (*callback);
-int cdecl Stream_Sample(void *buffer, long size, BOOL (*callback);
-int cdecl File_Stream_Sample(char const *filename);
-int cdecl File_Stream_Sample_Vol(char const *filename, int volume);
-void cdecl _saveregs _loadds Sound_Callback(void);
-void cdecl far _saveregs _loadds maintenance_callback(void);
-void *cdecl Load_Sample(char const *filename);
-long cdecl Load_Sample_Into_Buffer(char const *filename, void *buffer, long size);
-long cdecl Sample_Read(int fh, void *buffer, long size);
-void cdecl Free_Sample(void const *sample);
-BOOL cdecl Sound_Init(int sfx, int score, int sample);
-void far VQA_TimerCallback(void);
-BOOL Audio_Init(int sample, int address, int inter, int dma);
-void cdecl Sound_End(void);
-void cdecl Stop_Sample(int handle);
-BOOL cdecl Sample_Status(int handle);
-BOOL cdecl Is_Sample_Playing(void const * sample);
-void cdecl Stop_Sample_Playing(void const * sample);
-int cdecl Play_Sample(void const *sample);
-int cdecl Play_Sample_Vol(void const *sample, int priority, int volume);
-int cdecl Set_Sound_Vol(int volume);
-int cdecl Set_Score_Vol(int volume);
-void cdecl Fade_Sample(int handle, int ticks);
+int16_t Decompress_Frame(void * source, void * dest, int16_t size);
+int  Stream_Sample_Vol(void *buffer, int32_t size, int32_t (*callback);
+int  Stream_Sample(void *buffer, int32_t size, int32_t (*callback);
+int  File_Stream_Sample(char const *filename);
+int  File_Stream_Sample_Vol(char const *filename, int volume);
+void    Sound_Callback(void);
+void     maintenance_callback(void);
+void * Load_Sample(char const *filename);
+int32_t  Load_Sample_Into_Buffer(char const *filename, void *buffer, int32_t size);
+int32_t  Sample_Read(int fh, void *buffer, int32_t size);
+void  Free_Sample(void const *sample);
+int32_t  Sound_Init(int sfx, int score, int sample);
+void  VQA_TimerCallback(void);
+int32_t Audio_Init(int sample, int address, int inter, int dma);
+void  Sound_End(void);
+void  Stop_Sample(int handle);
+int32_t  Sample_Status(int handle);
+int32_t  Is_Sample_Playing(void const * sample);
+void  Stop_Sample_Playing(void const * sample);
+int  Play_Sample(void const *sample);
+int  Play_Sample_Vol(void const *sample, int priority, int volume);
+int  Set_Sound_Vol(int volume);
+int  Set_Score_Vol(int volume);
+void  Fade_Sample(int handle, int ticks);

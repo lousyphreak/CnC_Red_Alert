@@ -129,8 +129,8 @@ typedef enum {
 } FileErrorType;
 
 // This is here tempararaly until library is put together.
-//extern WORD cdecl (*cdecl IO_Error)(FileErrorType error, BYTE const *filename);
-extern short (*Open_Error)(FileErrorType, BYTE const *);
+//extern int16_t  (* IO_Error)(FileErrorType error, char const *filename);
+extern int16_t (*Open_Error)(FileErrorType, char const *);
 
 /*=========================================================================*/
 /* File IO system structures																*/
@@ -142,9 +142,9 @@ typedef struct {
 	int64_t	Size;			// File size (0=indeterminate).
 	void	*Ptr;			// Resident file pointer.
 	int64_t	Start;		// Starting offset in DOS handle file.
-	unsigned char	Disk;			// Disk number location.
-	unsigned char	OpenCount;	// Count of open locks on resident file.
-	unsigned short	Flag;			// File control flags.
+	uint8_t	Disk;			// Disk number location.
+	uint8_t	OpenCount;	// Count of open locks on resident file.
+	uint16_t	Flag;			// File control flags.
 } FileDataType;
 
 
@@ -154,11 +154,11 @@ typedef struct {
 
 // These are cpp errors in funtions declarations	JULIO JEREZ
 
-// extern FileDataType cdecl FileData[];
-// extern BYTE cdecl ExecPath[XMAXPATH + 1];
-// extern BYTE cdecl DataPath[XMAXPATH + 1];
-// extern BYTE cdecl StartPath[XMAXPATH + 1];
-// extern BOOL cdecl UseCD;
+// extern FileDataType  FileData[];
+// extern char  ExecPath[XMAXPATH + 1];
+// extern char  DataPath[XMAXPATH + 1];
+// extern char  StartPath[XMAXPATH + 1];
+// extern int32_t  UseCD;
 
 // The correct syntax is  NO TYPE MODIFIER APPLY TO DATA DECLARATIONS
 extern FileDataType FileData[];
@@ -174,22 +174,22 @@ extern bool UseCD;
 /*=========================================================================*/
 
 void WWDOS_Shutdown(void);
-FileInitErrorType WWDOS_Init(unsigned long cachesize, char *filedata, char *cdpath);
+FileInitErrorType WWDOS_Init(uint32_t cachesize, char *filedata, char *cdpath);
 
 
 /*=========================================================================*/
 /* The following prototypes are for the file: FILE.CPP							*/
 /*=========================================================================*/
 
-short Open_File(char const *file_name, short mode);
-void Close_File(short handle);
-uint64_t Read_File(short handle, void *buf, uint64_t bytes);
-uint64_t Write_File(short handle, void const *buf, uint64_t bytes);
-uint64_t Seek_File(short handle, int64_t offset, short starting);
-short File_Exists(char const *file_name);
-uint64_t File_Size(short handle);
-bool Is_Handle_Valid(short handle, FileErrorType error, char const *name);
-short Open_File_With_Recovery( char const *file_name, unsigned short mode );
+int16_t Open_File(char const *file_name, int16_t mode);
+void Close_File(int16_t handle);
+uint64_t Read_File(int16_t handle, void *buf, uint64_t bytes);
+uint64_t Write_File(int16_t handle, void const *buf, uint64_t bytes);
+uint64_t Seek_File(int16_t handle, int64_t offset, int16_t starting);
+int16_t File_Exists(char const *file_name);
+uint64_t File_Size(int16_t handle);
+bool Is_Handle_Valid(int16_t handle, FileErrorType error, char const *name);
+int16_t Open_File_With_Recovery( char const *file_name, uint16_t mode );
 
 
 /*=========================================================================*/
@@ -198,7 +198,7 @@ short Open_File_With_Recovery( char const *file_name, unsigned short mode );
 
 void Unfragment_File_Cache(void);
 bool Make_File_Resident(char const *filename);
-short Flush_Unused_File_Cache(short flush_keeps);
+int16_t Flush_Unused_File_Cache(int16_t flush_keeps);
 bool Free_Resident_File(char const *file);
 
 
@@ -206,21 +206,21 @@ bool Free_Resident_File(char const *file);
 /* The following prototypes are for the file: FILECHNG.CPP						*/
 /*=========================================================================*/
 
-short Create_File(char const *file_name);
-short Delete_File(char const *file_name);
-bool Change_File_Size(short handle, uint64_t new_size);
+int16_t Create_File(char const *file_name);
+int16_t Delete_File(char const *file_name);
+bool Change_File_Size(int16_t handle, uint64_t new_size);
 
 
 /*=========================================================================*/
 /* The following prototypes are for the file: FILEINFO.CPP						*/
 /*=========================================================================*/
 
-short Get_DOS_Handle(short fh);
-short Free_Handles(void);
-short Find_Disk_Number(char const *file_name);
-short Set_File_Flags(char const *filename, short flags);
-short Clear_File_Flags(char const *filename, short flags);
-short Get_File_Flags(char const *filename);
+int16_t Get_DOS_Handle(int16_t fh);
+int16_t Free_Handles(void);
+int16_t Find_Disk_Number(char const *file_name);
+int16_t Set_File_Flags(char const *filename, int16_t flags);
+int16_t Clear_File_Flags(char const *filename, int16_t flags);
+int16_t Get_File_Flags(char const *filename);
 bool Multi_Drive_Search(bool on);
 
 
@@ -228,8 +228,8 @@ bool Multi_Drive_Search(bool on);
 /* The following prototypes are for the file: FINDFILE.CPP						*/
 /*=========================================================================*/
 
-short Find_File(char const *file_name);
-short Find_File_Index(char const *filename);
+int16_t Find_File(char const *file_name);
+int16_t Find_File_Index(char const *filename);
 
 
 
@@ -237,4 +237,3 @@ short Find_File_Index(char const *filename);
 
 
 #endif // FILE_H
-

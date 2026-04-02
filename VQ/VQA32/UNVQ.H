@@ -40,24 +40,6 @@
 *     Feburary 8, 1995
 *
 ****************************************************************************/
-#ifndef far
-#define far
-#endif
-#ifndef near
-#define near
-#endif
-#ifndef huge
-#define huge
-#endif
-#ifndef interrupt
-#define interrupt
-#endif
-#ifndef __cdecl
-#define __cdecl
-#endif
-#ifndef cdecl
-#define cdecl __cdecl
-#endif
 #include <stdint.h>
 #ifdef PHARLAP_TNT
 #include <pltypes.h>
@@ -73,75 +55,75 @@ extern "C" {
 
 /* unvqbuff.asm */
 #ifndef PHARLAP_TNT
-void cdecl UnVQ_2x2(unsigned char *codebook, unsigned char *pointers,
-		unsigned char *buffer, uint32_t blocksperrow,
+void  UnVQ_2x2(uint8_t *codebook, uint8_t *pointers,
+		uint8_t *buffer, uint32_t blocksperrow,
 		uint32_t numrows, uint32_t bufwidth);
 
-void cdecl UnVQ_2x3(unsigned char *codebook, unsigned char *pointers,
-		unsigned char *buffer, uint32_t blocksperrow,
+void  UnVQ_2x3(uint8_t *codebook, uint8_t *pointers,
+		uint8_t *buffer, uint32_t blocksperrow,
 		uint32_t numrows, uint32_t bufwidth);
 
-void cdecl UnVQ_4x2(unsigned char *codebook, unsigned char *pointers,
-		unsigned char *buffer, uint32_t blocksperrow,
+void  UnVQ_4x2(uint8_t *codebook, uint8_t *pointers,
+		uint8_t *buffer, uint32_t blocksperrow,
 		uint32_t numrows, uint32_t bufwidth);
 
-void cdecl UnVQ_4x4(unsigned char *codebook, unsigned char *pointers,
-		unsigned char *buffer, uint32_t blocksperrow,
+void  UnVQ_4x4(uint8_t *codebook, uint8_t *pointers,
+		uint8_t *buffer, uint32_t blocksperrow,
 		uint32_t numrows, uint32_t bufwidth);
 
-void cdecl UnVQ_4x4_V2(unsigned char *codebook, unsigned char *pointers,
-		unsigned char *buffer, uint32_t blocksperrow,
+void  UnVQ_4x4_V2(uint8_t *codebook, uint8_t *pointers,
+		uint8_t *buffer, uint32_t blocksperrow,
 		uint32_t numrows, uint32_t bufwidth);
 
-void cdecl UnVQ_4x2_Woofer(unsigned char *codebook, unsigned char *pointers,
-		unsigned char *buffer, uint32_t blocksperrow,
+void  UnVQ_4x2_Woofer(uint8_t *codebook, uint8_t *pointers,
+		uint8_t *buffer, uint32_t blocksperrow,
 		uint32_t numrows, uint32_t bufwidth);
 
 /* unvqvesa.asm */
-void cdecl UnVQ_4x2_VESA320_32K(unsigned char *codebook,
-		unsigned char *pointers, unsigned char *palette,
+void  UnVQ_4x2_VESA320_32K(uint8_t *codebook,
+		uint8_t *pointers, uint8_t *palette,
 		uint32_t grains_per_win,uint32_t dummy1,uint32_t dummy2);
 
 #else /* PHARLAP_TNT */
 
-void cdecl UnVQ_2x2(unsigned char *codebook, unsigned char *pointers,
-		FARPTR buffer, uint32_t blocksperrow, uint32_t numrows,
+void  UnVQ_2x2(uint8_t *codebook, uint8_t *pointers,
+		char * buffer, uint32_t blocksperrow, uint32_t numrows,
 		uint32_t bufwidth);
 
-void cdecl UnVQ_2x3(unsigned char *codebook, unsigned char *pointers,
-		FARPTR buffer, uint32_t blocksperrow, uint32_t numrows,
+void  UnVQ_2x3(uint8_t *codebook, uint8_t *pointers,
+		char * buffer, uint32_t blocksperrow, uint32_t numrows,
 		uint32_t bufwidth);
 
-void cdecl UnVQ_4x2(unsigned char *codebook, unsigned char *pointers,
-		FARPTR buffer, uint32_t blocksperrow, uint32_t numrows,
+void  UnVQ_4x2(uint8_t *codebook, uint8_t *pointers,
+		char * buffer, uint32_t blocksperrow, uint32_t numrows,
 		uint32_t bufwidth);
 
-void cdecl UnVQ_4x4(unsigned char *codebook, unsigned char *pointers,
-		FARPTR buffer, uint32_t blocksperrow, uint32_t numrows,
+void  UnVQ_4x4(uint8_t *codebook, uint8_t *pointers,
+		char * buffer, uint32_t blocksperrow, uint32_t numrows,
 		uint32_t bufwidth);
 
-void cdecl UnVQ_4x4_V2(unsigned char *codebook, unsigned char *pointers,
-		FARPTR buffer, uint32_t blocksperrow, uint32_t numrows,
+void  UnVQ_4x4_V2(uint8_t *codebook, uint8_t *pointers,
+		char * buffer, uint32_t blocksperrow, uint32_t numrows,
 		uint32_t bufwidth);
 
 /* unvqvesa.asm */
-void cdecl UnVQ_4x2_VESA320_32K(unsigned char *codebook,
-		unsigned char *pointers, FARPTR palette, uint32_t grains_per_win,
+void  UnVQ_4x2_VESA320_32K(uint8_t *codebook,
+		uint8_t *pointers, char * palette, uint32_t grains_per_win,
 		uint32_t dummy1, uint32_t dummy2);
 
 #endif /* PHARLAP_TNT */
 
 /* unvqxmde.asm */
-void cdecl UnVQ_4x2_Xmode(unsigned char *codebook, unsigned char *pointers,
-		unsigned char *buffer, uint32_t blocksperrow,
+void  UnVQ_4x2_Xmode(uint8_t *codebook, uint8_t *pointers,
+		uint8_t *buffer, uint32_t blocksperrow,
 		uint32_t numrows, uint32_t dummy);
 
-void cdecl UnVQ_4x2_XmodeCB(unsigned char *cbdummy, unsigned char *pointers,
-		unsigned char *buffer, uint32_t blocksperrow,
+void  UnVQ_4x2_XmodeCB(uint8_t *cbdummy, uint8_t *pointers,
+		uint8_t *buffer, uint32_t blocksperrow,
 		uint32_t numrows, uint32_t dummy);
 
-void cdecl Upload_4x2CB(unsigned char *codebook, uint32_t numentries);
-void cdecl XlatePointers(unsigned char *pointers, uint32_t numpointers);
+void  Upload_4x2CB(uint8_t *codebook, uint32_t numentries);
+void  XlatePointers(uint8_t *pointers, uint32_t numpointers);
 
 #ifdef __cplusplus
 }

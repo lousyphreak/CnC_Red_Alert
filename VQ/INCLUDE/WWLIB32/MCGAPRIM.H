@@ -19,6 +19,7 @@
 
 
 #ifndef MCGAPRIM_H
+#include <stdint.h>
 #define MCGAPRIM_H
 
 
@@ -40,66 +41,66 @@ extern "C" {
 	/* Externs for all of the common functions between the video buffer		*/
 	/*		class and the graphic buffer class.											*/
 	/*======================================================================*/
-	extern long MCGA_Size_Of_Region(void *thisptr, int w, int h);
+	extern int32_t MCGA_Size_Of_Region(void *thisptr, int w, int h);
 
-	extern void	MCGA_Put_Pixel(void * thisptr, int x, int y, unsigned char color);
+	extern void	MCGA_Put_Pixel(void * thisptr, int x, int y, uint8_t color);
 	extern int	MCGA_Get_Pixel(void * thisptr, int x, int y);
-	extern void	MCGA_Clear(void *thisptr, unsigned char color);
-	extern long	MCGA_To_Buffer(void *thisptr, int x, int y, int w, int h, void *buff, long size);
-	extern long MCGA_Buffer_To_Page(int x, int y, int w, int h, void *Buffer, void *view);
-	extern BOOL	Linear_Blit_To_Linear(	void *thisptr, void * dest, int x_pixel, int y_pixel, int dx_pixel, 
-													int dy_pixel, int pixel_width, int pixel_height, BOOL trans);
-	extern BOOL Linear_Scale_To_Linear(	void *, void *, int, int, int, int, int, int, int, int, BOOL, char *);
+	extern void	MCGA_Clear(void *thisptr, uint8_t color);
+	extern int32_t	MCGA_To_Buffer(void *thisptr, int x, int y, int w, int h, void *buff, int32_t size);
+	extern int32_t MCGA_Buffer_To_Page(int x, int y, int w, int h, void *Buffer, void *view);
+	extern int32_t	Linear_Blit_To_Linear(	void *thisptr, void * dest, int x_pixel, int y_pixel, int dx_pixel, 
+													int dy_pixel, int pixel_width, int pixel_height, int32_t trans);
+	extern int32_t Linear_Scale_To_Linear(	void *, void *, int, int, int, int, int, int, int, int, int32_t, char *);
 
-	extern void	Vesa_Put_Pixel(void * thisptr, int x, int y, unsigned char color);
+	extern void	Vesa_Put_Pixel(void * thisptr, int x, int y, uint8_t color);
 	extern int	Vesa_Get_Pixel(void * thisptr, int x, int y);
-	extern void	Vesa_Clear(void *thisptr, unsigned char color);
-	extern long	Vesa_To_Buffer(void *thisptr, int x, int y, int w, int h, void *buff, long size);
-	extern long Vesa_Buffer_To_Page(int x, int y, int w, int h, void *Buffer, void *view);
+	extern void	Vesa_Clear(void *thisptr, uint8_t color);
+	extern int32_t	Vesa_To_Buffer(void *thisptr, int x, int y, int w, int h, void *buff, int32_t size);
+	extern int32_t Vesa_Buffer_To_Page(int x, int y, int w, int h, void *Buffer, void *view);
 
-	extern BOOL	Linear_Blit_To_Vesa(		void *thisptr, void * dest, int x_pixel, int y_pixel, int dx_pixel, 
-													int dy_pixel, int pixel_width, int pixel_height, BOOL trans);
-	extern BOOL	Vesa_Blit_To_Linear(		void *thisptr, void * dest, int x_pixel, int y_pixel, int dx_pixel, 
-													int dy_pixel, int pixel_width, int pixel_height, BOOL trans);
-	extern BOOL	Vesa_Blit_To_Vesa(		void *thisptr, void * dest, int x_pixel, int y_pixel, int dx_pixel, 
-													int dy_pixel, int pixel_width, int pixel_height, BOOL trans);
-	extern BOOL Linear_Scale_To_Vesa(	void *, void *, int, int, int, int, int, int, int, int, BOOL, char *);
-	extern BOOL Vesa_Scale_To_Linear(	void *, void *, int, int, int, int, int, int, int, int, BOOL, char *);
-	extern BOOL Vesa_Scale_To_Vesa(		void *, void *, int, int, int, int, int, int, int, int, BOOL, char *);
-	extern LONG MCGA_Print(					void *thisptr, const char *str, int x, int y, int fcolor, int bcolor);
-	extern LONG Vesa_Print(					void *thisptr, const char *str, int x, int y, int fcolor, int bcolor);
+	extern int32_t	Linear_Blit_To_Vesa(		void *thisptr, void * dest, int x_pixel, int y_pixel, int dx_pixel, 
+													int dy_pixel, int pixel_width, int pixel_height, int32_t trans);
+	extern int32_t	Vesa_Blit_To_Linear(		void *thisptr, void * dest, int x_pixel, int y_pixel, int dx_pixel, 
+													int dy_pixel, int pixel_width, int pixel_height, int32_t trans);
+	extern int32_t	Vesa_Blit_To_Vesa(		void *thisptr, void * dest, int x_pixel, int y_pixel, int dx_pixel, 
+													int dy_pixel, int pixel_width, int pixel_height, int32_t trans);
+	extern int32_t Linear_Scale_To_Vesa(	void *, void *, int, int, int, int, int, int, int, int, int32_t, char *);
+	extern int32_t Vesa_Scale_To_Linear(	void *, void *, int, int, int, int, int, int, int, int, int32_t, char *);
+	extern int32_t Vesa_Scale_To_Vesa(		void *, void *, int, int, int, int, int, int, int, int, int32_t, char *);
+	extern int32_t MCGA_Print(					void *thisptr, const char *str, int x, int y, int fcolor, int bcolor);
+	extern int32_t Vesa_Print(					void *thisptr, const char *str, int x, int y, int fcolor, int bcolor);
 
 	/*======================================================================*/
 	/* Externs for all of the graphic buffer class only functions				*/
 	/*======================================================================*/
-	extern VOID MCGA_Draw_Line(void *thisptr, int sx, int sy, int dx, int dy, unsigned char color);
-	extern VOID MCGA_Fill_Rect(void *thisptr, int sx, int sy, int dx, int dy, unsigned char color);
-	extern VOID MCGA_Remap(void * thisptr, int sx, int sy, int width, int height, void *remap);	
-	extern VOID MCGA_Fill_Quad(void * thisptr, VOID *span_buff, int x0, int y0, int x1, int y1,
+	extern void MCGA_Draw_Line(void *thisptr, int sx, int sy, int dx, int dy, uint8_t color);
+	extern void MCGA_Fill_Rect(void *thisptr, int sx, int sy, int dx, int dy, uint8_t color);
+	extern void MCGA_Remap(void * thisptr, int sx, int sy, int width, int height, void *remap);	
+	extern void MCGA_Fill_Quad(void * thisptr, void *span_buff, int x0, int y0, int x1, int y1,
 							int x2, int y2, int x3, int y3, int color);
 	extern void MCGA_Draw_Stamp(void const *thisptr, void const *icondata, int icon, int x_pixel, int y_pixel, void const *remap);
 
-	extern void Shadow_Blit(long int xpix, long int ypix, long int width, long int height, GraphicViewPortClass &src, VideoBufferClass &dst, void *shadowbuff);
+	extern void Shadow_Blit(int32_t xpix, int32_t ypix, int32_t width, int32_t height, GraphicViewPortClass &src, VideoBufferClass &dst, void *shadowbuff);
 
-//	extern int Get_Standard_Selector(VOID);
-//	extern VOID Set_Selector(UWORD sel);
+//	extern int Get_Standard_Selector(void);
+//	extern void Set_Selector(uint16_t sel);
 #ifdef __cplusplus
 }
 #endif
 
-extern BOOL (*VVPC_Blit_to_GVPC_Func)(void *, void *, int, int, int, int, int, int, BOOL);
-extern BOOL (*VVPC_Blit_to_VVPC_Func)(void *, void *, int, int, int, int, int, int, BOOL);
-extern void (*VVPC_Clear_Func)(void *, unsigned char);
-extern long (*VVPC_To_Buffer_Func)(void *,int x, int y, int w, int h, void *buff, long size);
-extern void (*VVPC_Put_Pixel_Func)(void *,int x, int y, unsigned char color);
+extern int32_t (*VVPC_Blit_to_GVPC_Func)(void *, void *, int, int, int, int, int, int, int32_t);
+extern int32_t (*VVPC_Blit_to_VVPC_Func)(void *, void *, int, int, int, int, int, int, int32_t);
+extern void (*VVPC_Clear_Func)(void *, uint8_t);
+extern int32_t (*VVPC_To_Buffer_Func)(void *,int x, int y, int w, int h, void *buff, int32_t size);
+extern void (*VVPC_Put_Pixel_Func)(void *,int x, int y, uint8_t color);
 extern int  (*VVPC_Get_Pixel_Func)(void *, int x, int y);
-extern long (*VVPC_Buffer_To_Page)(int x, int y, int w, int h, void *buffer, void *view);
-extern BOOL (*GVPC_Blit_to_VVPC_Func)(void *, void *, int, int, int, int, int, int, BOOL);
-extern BOOL (*VVPC_Blit_to_GVPC_Func)(void *, void *, int, int, int, int, int, int, BOOL);
-extern BOOL (*VVPC_Blit_to_VVPC_Func)(void *, void *, int, int, int, int, int, int, BOOL);
-extern BOOL (*VVPC_Scale_To_GVPC)(	void *, void *, int, int, int, int, int, int, int, int, BOOL, char *);
-extern BOOL (*VVPC_Scale_To_VVPC)(	void *, void *, int, int, int, int, int, int, int, int, BOOL, char *);
-extern BOOL (*GVPC_Scale_To_VVPC)(	void *, void *, int, int, int, int, int, int, int, int, BOOL, char *);
-extern LONG (*VVPC_Print_Func)(void *, const char *, int, int, int, int);
+extern int32_t (*VVPC_Buffer_To_Page)(int x, int y, int w, int h, void *buffer, void *view);
+extern int32_t (*GVPC_Blit_to_VVPC_Func)(void *, void *, int, int, int, int, int, int, int32_t);
+extern int32_t (*VVPC_Blit_to_GVPC_Func)(void *, void *, int, int, int, int, int, int, int32_t);
+extern int32_t (*VVPC_Blit_to_VVPC_Func)(void *, void *, int, int, int, int, int, int, int32_t);
+extern int32_t (*VVPC_Scale_To_GVPC)(	void *, void *, int, int, int, int, int, int, int, int, int32_t, char *);
+extern int32_t (*VVPC_Scale_To_VVPC)(	void *, void *, int, int, int, int, int, int, int, int, int32_t, char *);
+extern int32_t (*GVPC_Scale_To_VVPC)(	void *, void *, int, int, int, int, int, int, int, int, int32_t, char *);
+extern int32_t (*VVPC_Print_Func)(void *, const char *, int, int, int, int);
 extern GraphicBufferClass *LogicPage;
 #endif

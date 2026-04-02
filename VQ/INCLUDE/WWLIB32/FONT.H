@@ -36,6 +36,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #ifndef FONT_H
+#include <stdint.h>
 #define FONT_H
 
 #ifndef GBUFFER_H
@@ -67,22 +68,22 @@
 /* The following prototypes are for the file: SET_FONT.CPP						*/
 /*=========================================================================*/
 
-VOID *cdecl Set_Font(VOID const *fontptr);
+void * Set_Font(void const *fontptr);
 
 /*=========================================================================*/
 /* The following prototypes are for the file: FONT.CPP							*/
 /*=========================================================================*/
 
-WORD cdecl Char_Pixel_Width(BYTE chr);
-UWORD cdecl String_Pixel_Width(BYTE const *string);
-VOID cdecl Get_Next_Text_Print_XY(GraphicViewPortClass& vp, ULONG offset, INT *x, INT *y);
-VOID cdecl Get_Next_Text_Print_XY(VideoViewPortClass& vp, ULONG offset, INT *x, INT *y);
+int16_t  Char_Pixel_Width(char chr);
+uint16_t  String_Pixel_Width(char const *string);
+void  Get_Next_Text_Print_XY(GraphicViewPortClass& vp, uint32_t offset, int32_t *x, int32_t *y);
+void  Get_Next_Text_Print_XY(VideoViewPortClass& vp, uint32_t offset, int32_t *x, int32_t *y);
 
 /*=========================================================================*/
 /* The following prototypes are for the file: LOADFONT.CPP	  					*/
 /*=========================================================================*/
 
-VOID *cdecl Load_Font(BYTE  const *name);
+void * Load_Font(char  const *name);
 
 /*=========================================================================*/
 /* The following prototypes are for the file: TEXTPRNT.ASM	  					*/
@@ -93,7 +94,7 @@ extern "C" {
 #endif
 
 
-VOID Set_Font_Palette_Range(VOID *palette, INT start_idx, INT end_idx);
+void Set_Font_Palette_Range(void *palette, int32_t start_idx, int32_t end_idx);
 
 
 #ifdef __cplusplus
@@ -109,12 +110,12 @@ VOID Set_Font_Palette_Range(VOID *palette, INT start_idx, INT end_idx);
 //////////////////////////////////////// External varables ///////////////////////////////////////
 extern "C" int FontXSpacing;
 extern "C" int FontYSpacing;
-extern BYTE FontWidth ;
-extern BYTE FontHeight;
-extern BYTE *FontWidthBlockPtr;
+extern char FontWidth ;
+extern char FontHeight;
+extern char *FontWidthBlockPtr;
 
 
-extern "C" VOID const *FontPtr;
+extern "C" void const *FontPtr;
 
 
 

@@ -17,6 +17,7 @@
 */
 
 #ifndef VQMCRC_H
+#include <stdint.h>
 #define VQMCRC_H
 /****************************************************************************
 *
@@ -42,7 +43,7 @@
 extern "C" {
 #endif
 
-long cdecl Calculate_CRC(void const *buffer, long length);
+int32_t Calculate_CRC(void const *buffer, int32_t length);
 
 #ifdef __cplusplus
 }

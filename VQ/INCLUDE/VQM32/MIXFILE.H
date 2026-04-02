@@ -17,6 +17,7 @@
 */
 
 #ifndef VQMMIXFILE_H
+#include <stdint.h>
 #define VQMMIXFILE_H
 /****************************************************************************
 *
@@ -56,8 +57,8 @@
  * Size  - Size of Mix file.
  */
 typedef struct _MIXHeader {
-	short Count;
-	long  Size;
+	int16_t Count;
+	int32_t  Size;
 } MIXHeader;
 
 /* MIXSubBlock: Mix file entry descriptor.
@@ -67,9 +68,9 @@ typedef struct _MIXHeader {
  * Size   - Size of entry.
  */
 typedef struct _MIXSubBlock {
-	long CRC;
-	long Offset;
-	long Size;
+	int32_t CRC;
+	int32_t Offset;
+	int32_t Size;
 } MIXSubBlock;
 
 #ifdef __WATCOMC__
@@ -86,9 +87,9 @@ typedef struct _MIXSubBlock {
  */
 typedef struct _MIXHandle {
 	char        *Name;
-	long        Size;
-	long        FH;
-	long        Count;
+	int32_t        Size;
+	int32_t        FH;
+	int32_t        Count;
 	MIXSubBlock Entries[];
 } MIXHandle;
 
@@ -98,6 +99,6 @@ typedef struct _MIXHandle {
 
 MIXHandle *OpenMix(char *name);
 void CloseMix(MIXHandle *mix);
-long OpenMixEntry(MIXHandle *mix, char *name);
+int32_t OpenMixEntry(MIXHandle *mix, char *name);
 
 #endif /* VQMMIXFILE_H */

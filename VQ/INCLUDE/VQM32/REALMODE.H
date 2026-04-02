@@ -17,6 +17,7 @@
 */
 
 #ifndef VQMREALMODE_H
+#include <stdint.h>
 #define VQMREALMODE_H
 /****************************************************************************
 *
@@ -40,43 +41,41 @@
 *
 ****************************************************************************/
 
-/* REALPTR: Real-mode pointer (segment:offset16).
+/* Real-mode pointer (segment:offset16).
  *
- * The REALPTR data type is used in protected mode to hold real-mode
- * pointers. The type is an unsigned long value, were the upper 16 bits
+ * The uint32_t data type is used in protected mode to hold real-mode
+ * pointers. The type is a uint32_t value, were the upper 16 bits
  * are the segment number and the lower 16 bit are an offset. This type
  * and the associated macros are identical to that of the PHARLAP "pltypes.h"
  * definitions for easy of conversion to WATCOM/4GW.
  */
-typedef unsigned long REALPTR;
 
-#define RP_OFF(rp) ((unsigned short)(((unsigned long)(rp)) & 0xFFFF))
-#define RP_SEG(rp) ((unsigned short)(((unsigned long)(rp)) >> 16))
-#define RP_SET(rp, off, seg) (rp = ((unsigned long)(seg) << 16) + (off))
-#define RP_INCR(rp, incr) (rp += ((unsigned long)(incr)) & 0xFFFF)
+#define RP_OFF(rp) ((uint16_t)(((uint32_t)(rp)) & 0xFFFF))
+#define RP_SEG(rp) ((uint16_t)(((uint32_t)(rp)) >> 16))
+#define RP_SET(rp, off, seg) (rp = ((uint32_t)(seg) << 16) + (off))
+#define RP_INCR(rp, incr) (rp += ((uint32_t)(incr)) & 0xFFFF)
 
-#define MK_PTR(off, seg) (void *)((((unsigned long)seg&0xFFFF)<<4)+off)
+#define MK_PTR(off, seg) (void *)((((uint32_t)seg&0xFFFF)<<4)+off)
 
-/* RMInfo: Real-mode interrupt call structure.
+/* RMInfo: Real-mode  call structure.
  *
- * Information that needs to be passed down to the real-mode interrupt is
+ * Information that needs to be passed down to the real-mode  is
  * transfered using this structure. The address to this protected-mode
  * structure (allocated by user) is passed into DPMI function 0x300. DOS/4GW
  * will then use this information to set up the real-mode registers, switch
- * to real-mode and then execute the interrupt in real-mode.
+ * to real-mode and then execute the  in real-mode.
  */
 typedef struct _RMInfo {
-	long  edi;
-	long  esi;
-	long  ebp;
-	long  reservedbysystem;
-	long  ebx;
-	long  edx;
-	long  ecx;
-	long  eax;
-	short flags;
-	short es,ds,fs,gs,ip,cs,sp,ss;
+	int32_t  edi;
+	int32_t  esi;
+	int32_t  ebp;
+	int32_t  reservedbysystem;
+	int32_t  ebx;
+	int32_t  edx;
+	int32_t  ecx;
+	int32_t  eax;
+	int16_t flags;
+	int16_t es,ds,fs,gs,ip,cs,sp,ss;
 } RMInfo;
 
 #endif /* VQMREALMODE_H */
-

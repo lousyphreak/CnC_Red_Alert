@@ -33,6 +33,7 @@
 ****************************************************************************/
 
 #ifndef  _SOS_DEFINED   
+#include <stdint.h>
 #define  _SOS_DEFINED   
 #include "SOSDEFS.H"
 #pragma pack(push, 4)
@@ -45,27 +46,27 @@
 // structure definition for the capabilities
 typedef struct _tagCAPABILITIES
 {
-   BYTE  szDeviceName[ 32 ];  // device name
-   WORD  wDeviceVersion;      // device version
-   WORD  wBitsPerSample;      // bits per sound sample
-   WORD  wChannels;           // stereo/mono sound card
-   WORD  wMinRate;            // minimum rate
-   WORD  wMaxRate;            // maximum rate
-   WORD  wMixerOnBoard;       // board contains mixer
-   WORD  wMixerFlags;         // mixer capabilities
-   WORD  wFlags;              // miscellaneous flags   
-   short far * lpPortList;         // list of usable ports
-   short far * lpDMAList;          // list of usable dma channels
-   short far * lpIRQList;          // list of usable irq channels
-   short far * lpRateList;         // list of usable rates, -1 if any in min to max
-   WORD  fBackground;         // foreground or background driver
-   WORD  wDeviceID;           // ID for the device
-   WORD  wTimerID;            // ID for the timer
+   uint8_t  szDeviceName[ 32 ];  // device name
+   uint16_t  wDeviceVersion;      // device version
+   uint16_t  wBitsPerSample;      // bits per sound sample
+   uint16_t  wChannels;           // stereo/mono sound card
+   uint16_t  wMinRate;            // minimum rate
+   uint16_t  wMaxRate;            // maximum rate
+   uint16_t  wMixerOnBoard;       // board contains mixer
+   uint16_t  wMixerFlags;         // mixer capabilities
+   uint16_t  wFlags;              // miscellaneous flags   
+   int16_t  * lpPortList;         // list of usable ports
+   int16_t  * lpDMAList;          // list of usable dma channels
+   int16_t  * lpIRQList;          // list of usable irq channels
+   int16_t  * lpRateList;         // list of usable rates, -1 if any in min to max
+   uint16_t  fBackground;         // foreground or background driver
+   uint16_t  wDeviceID;           // ID for the device
+   uint16_t  wTimerID;            // ID for the timer
    
 } _SOS_CAPABILITIES; 
 
-// far pointer to the device capabilities structure
-typedef _SOS_CAPABILITIES far *  LPSOSDEVICECAPS;
+//  pointer to the device capabilities structure
+typedef _SOS_CAPABILITIES  *  LPSOSDEVICECAPS;
 
 // flag types for driver
 #define  _FLAGS_SIGNED              0x8000
@@ -173,10 +174,10 @@ enum
 typedef  struct   _tagFillInfo
          {
 
-            LPSTR lpFillHandler;                   // pointer to fill handler
-            LPWORD lpDMAFillCount;                 // pointer to dma count
-            LPSTR lpSampleList;                    // pointer to sample list
-            LPWORD lpDMAMasterVolume;              // pointer to dma count
+            char * lpFillHandler;                   // pointer to fill handler
+            uint16_t * lpDMAFillCount;                 // pointer to dma count
+            char * lpSampleList;                    // pointer to sample list
+            uint16_t * lpDMAMasterVolume;              // pointer to dma count
 
          } _SOS_FILL_INFO;
 
@@ -184,10 +185,10 @@ typedef  struct   _tagFillInfo
 typedef  struct   _tagCapsInfo
          {
 
-            LPSTR    lpPortList;                   // pointer to port list
-            LPSTR    lpDMAList;                    // pointer to DMA list
-            LPSTR    lpIRQList;                    // pointer to IRQ list
-            LPSTR    lpRateList;                   // pointer to rate list
+            char *    lpPortList;                   // pointer to port list
+            char *    lpDMAList;                    // pointer to DMA list
+            char *    lpIRQList;                    // pointer to IRQ list
+            char *    lpRateList;                   // pointer to rate list
 
          } _SOS_CAPS_INFO;
 
@@ -197,51 +198,51 @@ typedef  struct   _tagCapsInfo
 // structure definition
 typedef  struct   _tagSAMPLE
 {
-   LPSTR    samplePtr;                 // pointer to data buffer
-   LPSTR    sampleData;                // pointer to active data
-   LPSTR    sampleLoopPtr;             // pointer for loop back
+   char *    samplePtr;                 // pointer to data buffer
+   char *    sampleData;                // pointer to active data
+   char *    sampleLoopPtr;             // pointer for loop back
 
-   WORD     sampleLength;              // length of sample
-   WORD     sampleIndex;               // index into sample
-   WORD     sampleLoopLength;          // length of loop
+   uint16_t     sampleLength;              // length of sample
+   uint16_t     sampleIndex;               // index into sample
+   uint16_t     sampleLoopLength;          // length of loop
    
-   WORD     sampleBytesLeft;           // bytes left to play in sample
+   uint16_t     sampleBytesLeft;           // bytes left to play in sample
 
-   WORD     sampleLoopPoint;           // byte count for loop point
-   WORD     sampleLoopEndLength;       // length of remaining chunk
+   uint16_t     sampleLoopPoint;           // byte count for loop point
+   uint16_t     sampleLoopEndLength;       // length of remaining chunk
 
-   short    sampleFlags;               // control sample
-   short    sampleVolume;              // volume control
-   short    sampleID;                  // sample ID
+   int16_t    sampleFlags;               // control sample
+   int16_t    sampleVolume;              // volume control
+   int16_t    sampleID;                  // sample ID
 
-   short    sampleChannel;             // channel to play sample on
-   short    sampleLoopCount;           // loop count
-   short    sampleLastFill;            // last fill position
-   VOID ( far cdecl * sampleCallback )( WORD, WORD, WORD ); // callback function for sample
+   int16_t    sampleChannel;             // channel to play sample on
+   int16_t    sampleLoopCount;           // loop count
+   int16_t    sampleLastFill;            // last fill position
+   void (   * sampleCallback )( uint16_t, uint16_t, uint16_t ); // callback function for sample
 
-   WORD     samplePitchAdd;
-   short    samplePitchFraction;
+   uint16_t     samplePitchAdd;
+   int16_t    samplePitchFraction;
 
-   short    samplePort;                // port to use for non-dma digitized
+   int16_t    samplePort;                // port to use for non-dma digitized
 
-   WORD     sampleTotalBytes;
-   WORD     sampleByteLength;
+   uint16_t     sampleTotalBytes;
+   uint16_t     sampleByteLength;
 
-   short    samplePanLocation;
-   short    samplePanSpeed;
-   short    samplePanDirection;
-   short    samplePanStart;
-   short    samplePanEnd;
+   int16_t    samplePanLocation;
+   int16_t    samplePanSpeed;
+   int16_t    samplePanDirection;
+   int16_t    samplePanStart;
+   int16_t    samplePanEnd;
    
-   short    sampleDelayBytes;
-   short    sampleDelayRepeat;
+   int16_t    sampleDelayBytes;
+   int16_t    sampleDelayRepeat;
    
-   WORD     sampleADPCMPredicted;
-   short    sampleADPCMIndex;
+   uint16_t     sampleADPCMPredicted;
+   int16_t    sampleADPCMIndex;
 
-   short    sampleRootNoteMIDI;   
+   int16_t    sampleRootNoteMIDI;   
 
-   WORD  sampleTemp1;   
+   uint16_t  sampleTemp1;   
    
 } _SOS_SAMPLE;
 
@@ -294,16 +295,16 @@ enum
 typedef struct
 {
    // name ID
-   BYTE  szName[ 32 ];
+   uint8_t  szName[ 32 ];
 
    // number of drivers in the file
-   WORD  wDrivers;
+   uint16_t  wDrivers;
 
    // offset of first driver
-   WORD  lOffset;
+   uint16_t  lOffset;
 
    // size of the file
-   WORD  lFileSize;
+   uint16_t  lFileSize;
 
 } _FILEHEADER;
 
@@ -311,19 +312,19 @@ typedef struct
 typedef struct
 {
    // name ID
-   BYTE  szName[ 32 ];
+   uint8_t  szName[ 32 ];
 
    // offset of next driver
-   WORD  lNextDriver;
+   uint16_t  lNextDriver;
 
    // size of current driver
-   WORD  wSize;
+   uint16_t  wSize;
 
    // id for the current device
-   WORD  wDeviceID;
+   uint16_t  wDeviceID;
 
    // id for the type of DOS extender
-   WORD  wExtenderType;
+   uint16_t  wExtenderType;
 
 } _DRIVERHEADER;
 
@@ -331,16 +332,16 @@ typedef struct
 typedef struct
 {
    // port to be used
-   WORD  wPort;
+   uint16_t  wPort;
 
    // irq to use
-   WORD  wIRQ;
+   uint16_t  wIRQ;
 
    // dma channel to se
-   WORD  wDMA; 
+   uint16_t  wDMA; 
   
    // extra parameter
-   WORD  wParam;
+   uint16_t  wParam;
 
 } _SOS_HARDWARE;
 
@@ -348,84 +349,84 @@ typedef struct
 typedef struct
 {
    // pointer to sample
-   LPSTR lpSamplePtr;
+   char * lpSamplePtr;
 
    // size of the sample
-   WORD  dwSampleSize;
+   uint16_t  dwSampleSize;
 
    // number of times to loop the sample -1 is infinite
-   WORD  wLoopCount;
+   uint16_t  wLoopCount;
 
    // channel to play sample on
-   WORD  wChannel;
+   uint16_t  wChannel;
 
    // volume to play sample at
-   WORD wVolume;
+   uint16_t wVolume;
 
    // id for the sample
-   WORD  wSampleID;
+   uint16_t  wSampleID;
 
-   // far pointer to the callback function
-   VOID ( far cdecl *lpCallback )( WORD, WORD, WORD );
+   //  pointer to the callback function
+   void (   *lpCallback )( uint16_t, uint16_t, uint16_t );
 
    // port to use if driver is a non-dma background driver
-   WORD  wSamplePort; 
+   uint16_t  wSamplePort; 
 
    // flags field
-   WORD  wSampleFlags;
+   uint16_t  wSampleFlags;
 
    // total length of sample including loops, etc..
-   WORD     dwSampleByteLength;
+   uint16_t     dwSampleByteLength;
 
    // loop point for the sample
-   WORD  dwSampleLoopPoint;
-   WORD  dwSampleLoopLength;
+   uint16_t  dwSampleLoopPoint;
+   uint16_t  dwSampleLoopLength;
 
    // pitch shifting components 
-   WORD     dwSamplePitchAdd;
-   WORD    wSamplePitchFraction;
+   uint16_t     dwSamplePitchAdd;
+   uint16_t    wSamplePitchFraction;
 
    // pan components
-   WORD    wSamplePanLocation;
-   WORD    wSamplePanSpeed;
-   WORD    wSamplePanDirection;
-   WORD    wSamplePanStart;
-   WORD    wSamplePanEnd;
+   uint16_t    wSamplePanLocation;
+   uint16_t    wSamplePanSpeed;
+   uint16_t    wSamplePanDirection;
+   uint16_t    wSamplePanStart;
+   uint16_t    wSamplePanEnd;
    
    // delay parts
-   WORD    wSampleDelayBytes;
-   WORD    wSampleDelayRepeat;
+   uint16_t    wSampleDelayBytes;
+   uint16_t    wSampleDelayRepeat;
 
    // compression components   
-   WORD     dwSampleADPCMPredicted;
-   WORD    wSampleADPCMIndex;
+   uint16_t     dwSampleADPCMPredicted;
+   uint16_t    wSampleADPCMIndex;
 
    // root note for pitch shifting 
-   WORD    wSampleRootNoteMIDI;   
+   uint16_t    wSampleRootNoteMIDI;   
 
    // filler for future upgrades
-   WORD  dwSampleTemp1;   
-   WORD  dwSampleTemp2;   
-   WORD  dwSampleTemp3;   
+   uint16_t  dwSampleTemp1;   
+   uint16_t  dwSampleTemp2;   
+   uint16_t  dwSampleTemp3;   
 
 } _SOS_START_SAMPLE;
 
 // structure for initializing a driver
 typedef struct
 {  
-   WORD  wBufferSize;
-   LPSTR lpBuffer;
-   BOOL  wAllocateBuffer;
-   WORD  wSampleRate;
-   WORD  wParam;
-   LONG  dwParam;
-   VOID ( far *lpFillHandler )( VOID );
-   LPSTR lpDriverMemory;
-   LPSTR lpDriverMemoryCS;
-   LPSTR lpTimerMemory;
-   LPSTR lpTimerMemoryCS;
-   WORD  wTimerID;
-   WORD  wPhysical;
+   uint16_t  wBufferSize;
+   char * lpBuffer;
+   int32_t  wAllocateBuffer;
+   uint16_t  wSampleRate;
+   uint16_t  wParam;
+   int32_t  dwParam;
+   void (  *lpFillHandler )( void );
+   char * lpDriverMemory;
+   char * lpDriverMemoryCS;
+   char * lpTimerMemory;
+   char * lpTimerMemoryCS;
+   uint16_t  wTimerID;
+   uint16_t  wPhysical;
 
 } _SOS_INIT_DRIVER;
 
@@ -474,7 +475,7 @@ enum
 };
 
 // define for no slots available
-#define  _ERR_NO_SLOTS ( WORD )-1
+#define  _ERR_NO_SLOTS ( uint16_t )-1
 
 // error codes for the system
 enum
@@ -536,8 +537,8 @@ typedef struct
 	unsigned       region_size;
 	unsigned       offset;
 	unsigned       segment;
-	unsigned short	number_available;
-	unsigned short number_used;
+	uint16_t	number_available;
+	uint16_t number_used;
 	unsigned       page0;
 
 } EVDS_STRUCT;
@@ -546,8 +547,8 @@ typedef struct
 {
 	unsigned       region_size;
 	unsigned       offset;
-	unsigned short segment;
-	unsigned short	ID;
+	uint16_t segment;
+	uint16_t	ID;
 	unsigned       physical;
 
 } VDS_STRUCT;

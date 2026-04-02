@@ -26,11 +26,11 @@
 #include "INI.H"
 #include "PALETTE.H"
 
-extern "C" unsigned char ColorXlat[256];
+extern "C" uint8_t ColorXlat[256];
 
-static unsigned short Read_Font_Word(unsigned char const *ptr)
+static uint16_t Read_Font_Word(uint8_t const *ptr)
 {
-	return (unsigned short)(ptr[0] | ((unsigned short)ptr[1] << 8));
+	return (uint16_t)(ptr[0] | ((uint16_t)ptr[1] << 8));
 }
 
 
@@ -41,15 +41,15 @@ static void Ensure_Font_Palette(void)
 	if (!initialized) {
 		memset(ColorXlat, 0, sizeof(ColorXlat));
 		for (int index = 0; index < 16; ++index) {
-			ColorXlat[index] = (unsigned char)index;
-			ColorXlat[index << 4] = (unsigned char)index;
+			ColorXlat[index] = (uint8_t)index;
+			ColorXlat[index << 4] = (uint8_t)index;
 		}
 		initialized = true;
 	}
 }
 
 
-static long Copy_Default_String(char *buffer, long buffer_len, char const *value)
+static int32_t Copy_Default_String(char *buffer, int32_t buffer_len, char const *value)
 {
 	size_t length;
 
@@ -68,22 +68,22 @@ static long Copy_Default_String(char *buffer, long buffer_len, char const *value
 
 	memcpy(buffer, value, length);
 	buffer[length] = '\0';
-	return ((long)length);
+	return ((int32_t)length);
 }
 
 
-static bool Prepare_Font(unsigned char const *&font,
-		unsigned char const *&info_block,
-		unsigned char const *&width_block,
-		unsigned char const *&height_block,
-		unsigned char const *&offset_block,
+static bool Prepare_Font(uint8_t const *&font,
+		uint8_t const *&info_block,
+		uint8_t const *&width_block,
+		uint8_t const *&height_block,
+		uint8_t const *&offset_block,
 		int &max_height)
 {
 	if (FontPtr == NULL) {
 		return (false);
 	}
 
-	font = (unsigned char const *)FontPtr;
+	font = (uint8_t const *)FontPtr;
 	info_block = font + Read_Font_Word(font + FONTINFOBLOCK);
 	width_block = font + Read_Font_Word(font + FONTWIDTHBLOCK);
 	height_block = font + Read_Font_Word(font + FONTHEIGHTBLOCK);
@@ -93,18 +93,18 @@ static bool Prepare_Font(unsigned char const *&font,
 }
 
 
-static void Draw_Char_To_View(GraphicViewPortClass *view, unsigned char character,
+static void Draw_Char_To_View(GraphicViewPortClass *view, uint8_t character,
 		int x, int y)
 {
-	unsigned char const *font;
-	unsigned char const *info_block;
-	unsigned char const *width_block;
-	unsigned char const *height_block;
-	unsigned char const *offset_block;
-	unsigned char const *data_ptr;
-	unsigned char const *char_height_ptr;
-	unsigned char *buffer;
-	unsigned char *draw_ptr;
+	uint8_t const *font;
+	uint8_t const *info_block;
+	uint8_t const *width_block;
+	uint8_t const *height_block;
+	uint8_t const *offset_block;
+	uint8_t const *data_ptr;
+	uint8_t const *char_height_ptr;
+	uint8_t *buffer;
+	uint8_t *draw_ptr;
 	int max_height;
 	int row_bytes;
 	int width;
@@ -127,7 +127,7 @@ static void Draw_Char_To_View(GraphicViewPortClass *view, unsigned char characte
 		return;
 	}
 
-	buffer = (unsigned char *)(uintptr_t)view->Get_Offset();
+	buffer = (uint8_t *)(uintptr_t)view->Get_Offset();
 	row_bytes = view->Get_Pitch();
 	data_ptr = font + Read_Font_Word(offset_block + character * 2);
 	char_height_ptr = height_block + character * 2;
@@ -146,12 +146,12 @@ static void Draw_Char_To_View(GraphicViewPortClass *view, unsigned char characte
 	}
 
 	for (int row = 0; row < char_height; ++row) {
-		unsigned char *pixel_ptr = draw_ptr;
+		uint8_t *pixel_ptr = draw_ptr;
 		int column = 0;
 
 		while (column < width) {
-			const unsigned char pair = *data_ptr++;
-			const unsigned char lo = ColorXlat[pair & 0x0F];
+			const uint8_t pair = *data_ptr++;
+			const uint8_t lo = ColorXlat[pair & 0x0F];
 			if (lo != 0) {
 				*pixel_ptr = lo;
 			}
@@ -159,7 +159,7 @@ static void Draw_Char_To_View(GraphicViewPortClass *view, unsigned char characte
 			++column;
 
 			if (column < width) {
-				const unsigned char hi = ColorXlat[(pair >> 4) & 0x0F];
+				const uint8_t hi = ColorXlat[(pair >> 4) & 0x0F];
 				if (hi != 0) {
 					*pixel_ptr = hi;
 				}
@@ -180,15 +180,15 @@ static void Draw_Char_To_View(GraphicViewPortClass *view, unsigned char characte
 }
 
 
-long cdecl GetINIInt(char const *section, char const *entry,
-		long deflt, char *fname)
+int32_t  GetINIInt(char const *section, char const *entry,
+		int32_t deflt, char *fname)
 {
 	INIClass ini;
 
 	if (fname != NULL && *fname != '\0') {
 		CCFileClass file(fname);
 		if (ini.Load(file)) {
-			return ((long)ini.Get_Int(section, entry, (int)deflt));
+			return ((int32_t)ini.Get_Int(section, entry, (int)deflt));
 		}
 	}
 
@@ -196,8 +196,8 @@ long cdecl GetINIInt(char const *section, char const *entry,
 }
 
 
-long cdecl GetINIString(char const *section, char const *entry,
-		char const *deflt, char *retbuffer, long retlen, char *fname)
+int32_t  GetINIString(char const *section, char const *entry,
+		char const *deflt, char *retbuffer, int32_t retlen, char *fname)
 {
 	INIClass ini;
 
@@ -208,7 +208,7 @@ long cdecl GetINIString(char const *section, char const *entry,
 	if (fname != NULL && *fname != '\0') {
 		CCFileClass file(fname);
 		if (ini.Load(file)) {
-			return ((long)ini.Get_String(section, entry, deflt ? deflt : "",
+			return ((int32_t)ini.Get_String(section, entry, deflt ? deflt : "",
 					retbuffer, (int)retlen));
 		}
 	}
@@ -217,18 +217,18 @@ long cdecl GetINIString(char const *section, char const *entry,
 }
 
 
-extern "C" long cdecl Text_Print(char *string, long x, long y, long fcol, long bcol)
+extern "C" int32_t  Text_Print(char *string, int32_t x, int32_t y, int32_t fcol, int32_t bcol)
 {
-	unsigned char const *font;
-	unsigned char const *info_block;
-	unsigned char const *width_block;
-	unsigned char const *height_block;
-	unsigned char const *offset_block;
+	uint8_t const *font;
+	uint8_t const *info_block;
+	uint8_t const *width_block;
+	uint8_t const *height_block;
+	uint8_t const *offset_block;
 	int max_height;
 	int current_x;
 	int current_y;
 	int original_x;
-	long lines;
+	int32_t lines;
 
 	if (LogicPage == NULL || string == NULL) {
 		return (0);
@@ -250,9 +250,9 @@ extern "C" long cdecl Text_Print(char *string, long x, long y, long fcol, long b
 	}
 
 	Ensure_Font_Palette();
-	ColorXlat[1] = (unsigned char)fcol;
-	ColorXlat[16] = (unsigned char)fcol;
-	ColorXlat[0] = (unsigned char)bcol;
+	ColorXlat[1] = (uint8_t)fcol;
+	ColorXlat[16] = (uint8_t)fcol;
+	ColorXlat[0] = (uint8_t)bcol;
 
 	current_x = (int)x;
 	current_y = (int)y;
@@ -260,7 +260,7 @@ extern "C" long cdecl Text_Print(char *string, long x, long y, long fcol, long b
 	lines = 1;
 
 	while (*string != '\0') {
-		const unsigned char ch = (unsigned char)*string++;
+		const uint8_t ch = (uint8_t)*string++;
 		const int width = width_block[ch];
 		const int advance = width + FontXSpacing;
 
@@ -298,7 +298,7 @@ extern "C" long cdecl Text_Print(char *string, long x, long y, long fcol, long b
 }
 
 
-extern "C" void cdecl Draw_Char(long character, long x, long y)
+extern "C" void  Draw_Char(int32_t character, int32_t x, int32_t y)
 {
 	if (LogicPage == NULL) {
 		return;
@@ -309,24 +309,24 @@ extern "C" void cdecl Draw_Char(long character, long x, long y)
 	}
 
 	Ensure_Font_Palette();
-	Draw_Char_To_View(LogicPage, (unsigned char)character, (int)x, (int)y);
+	Draw_Char_To_View(LogicPage, (uint8_t)character, (int)x, (int)y);
 	LogicPage->Unlock();
 }
 
 
-extern "C" void cdecl Fill_Rect(long x1, long y1, long x2, long y2, long color)
+extern "C" void  Fill_Rect(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t color)
 {
 	if (LogicPage != NULL) {
 		LogicPage->Fill_Rect((int)x1, (int)y1, (int)x2, (int)y2,
-				(unsigned char)color);
+				(uint8_t)color);
 	}
 }
 
 
-extern "C" void cdecl SetDAC(long color, long red, long green, long blue)
+extern "C" void  SetDAC(int32_t color, int32_t red, int32_t green, int32_t blue)
 {
-	unsigned char palette[PALETTE_BYTES];
-	unsigned char *entry;
+	uint8_t palette[PALETTE_BYTES];
+	uint8_t *entry;
 
 	if (color < 0 || color >= PALETTE_SIZE) {
 		return;
@@ -334,32 +334,32 @@ extern "C" void cdecl SetDAC(long color, long red, long green, long blue)
 
 	memcpy(palette, CurrentPalette, sizeof(palette));
 	entry = palette + (color * RGB_BYTES);
-	entry[0] = (unsigned char)((red > 63) ? 63 : ((red < 0) ? 0 : red));
-	entry[1] = (unsigned char)((green > 63) ? 63 : ((green < 0) ? 0 : green));
-	entry[2] = (unsigned char)((blue > 63) ? 63 : ((blue < 0) ? 0 : blue));
+	entry[0] = (uint8_t)((red > 63) ? 63 : ((red < 0) ? 0 : red));
+	entry[1] = (uint8_t)((green > 63) ? 63 : ((green < 0) ? 0 : green));
+	entry[2] = (uint8_t)((blue > 63) ? 63 : ((blue < 0) ? 0 : blue));
 	Set_Palette(palette);
 }
 
 
-long TestVBIBit(void)
+int32_t TestVBIBit(void)
 {
 	return (0);
 }
 
 
-long GetVBIBit(void)
+int32_t GetVBIBit(void)
 {
 	return (0);
 }
 
 
-extern "C" void cdecl WaitNoVB(short vbibit)
+extern "C" void  WaitNoVB(int16_t vbibit)
 {
 	(void)vbibit;
 }
 
 
-extern "C" void cdecl WaitVB(short vbibit)
+extern "C" void  WaitVB(int16_t vbibit)
 {
 	(void)vbibit;
 }

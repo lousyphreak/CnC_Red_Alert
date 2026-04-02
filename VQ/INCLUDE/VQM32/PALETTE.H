@@ -17,6 +17,7 @@
 */
 
 #ifndef VQMPALETTE_H
+#include <stdint.h>
 #define VQMPALETTE_H
 /****************************************************************************
 *
@@ -37,39 +38,21 @@
 *     Febuary 3, 1995
 *
 ****************************************************************************/
-#ifndef far
-#define far
-#endif
-#ifndef near
-#define near
-#endif
-#ifndef huge
-#define huge
-#endif
-#ifndef interrupt
-#define interrupt
-#endif
-#ifndef __cdecl
-#define __cdecl
-#endif
-#ifndef cdecl
-#define cdecl __cdecl
-#endif
 /* Prototypes */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void cdecl SetPalette(unsigned char *palette,long numbytes,unsigned long slowpal);
-void cdecl ReadPalette(void *palette);
-void cdecl SetDAC(long color, long red, long green, long blue);
-void cdecl TranslatePalette(void *pal24, void *pal15, long numbytes);
+void SetPalette(uint8_t *palette,int32_t numbytes,uint32_t slowpal);
+void ReadPalette(void *palette);
+void SetDAC(int32_t color, int32_t red, int32_t green, int32_t blue);
+void TranslatePalette(void *pal24, void *pal15, int32_t numbytes);
 
 #ifdef __cplusplus
 }
 #endif
 
-void SortPalette(unsigned char *pal, long numcolors);
+void SortPalette(uint8_t *pal, int32_t numcolors);
 
 #endif /* VQMPALETTE_H */

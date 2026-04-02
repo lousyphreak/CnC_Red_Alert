@@ -1,5 +1,18 @@
 # Porting Knowledge
 
+## VQ callback and opaque-handle gotchas on LP64
+
+- The VQA movie loader still uses two ABI-sensitive surfaces that must not be flattened blindly during the type sweep:
+  - `MixFileHandler` must exactly match the private VQ callback type in `VQAPLAYP.H` (`int32_t (*)(VQAHandle *, int32_t, void *, int32_t)`). Leaving it as `long` on Linux keeps source compatibility at the call site but breaks the callback ABI because `long` is 64-bit on LP64.
+  - `VQAHandle::VQAio` / `VQAHandleP::VQAio` are not 32-bit counters; they are opaque IO-manager storage that currently carries a live `CCFileClass*`. They must therefore be `uintptr_t`, not `uint32_t`, or startup movie playback will truncate the pointer and crash in `MixFileHandler` on the first `VQACMD_READ`.
+- Practical symptom when either of the above is wrong: startup survives general game/bootstrap init, then crashes during the first intro movie (`ENGLISH.VQA`) inside `MixFileHandler` / `VQA_Open`.
+
+## Gameplay audio still has live duplicate SOS headers
+
+- `WIN32LIB/AUDIO/` does **not** consistently compile against only the canonical `WIN32LIB/INCLUDE/SOS*.H` headers. The active gameplay audio path still has local duplicate headers in `WIN32LIB/AUDIO/`, and at least `WIN32LIB/AUDIO/SOSCOMP.H` is part of the live build through `SOUND.H` / `SOUNDINT.H`.
+- This matters on LP64 hosts because `_SOS_COMPRESS_INFO` is shared with `CODE/ADPCM.CPP`. If the audio-local copy still uses old `long`/`unsigned long` spellings while the decoder side uses fixed-width 32-bit fields, the structure layout diverges and gameplay music/SFX decoding silently breaks even though VQA movie audio still works.
+- Practical symptom when `WIN32LIB/AUDIO/SOSCOMP.H` drifts from the canonical fixed-width form: movie audio can still work, but normal music and sound effects fail because the non-movie stream/sample path in `WIN32LIB/AUDIO/{SOUNDIO,SOUNDINT}.CPP` passes a mismatched `_SOS_COMPRESS_INFO` into the shared ADPCM decoder.
+
 _Last updated: 2026-04-02_
 
 ## Repo facts
@@ -10,6 +23,26 @@ _Last updated: 2026-04-02_
 - The active compatibility include order puts `SDL3_COMPAT/wrappers/` ahead of `CODE/` and `WIN32LIB/INCLUDE`.
 
 ## Integer-width audit findings
+
+- The active VQ build does not stay entirely within `VQ/INCLUDE`; some of its SOS/HMI surface is still taken from the canonical `WIN32LIB/INCLUDE/SOS*.H` headers through include-order.
+  - Practical rule: when modernizing the VQ-side SOS declarations, validate the actual include path used by the VQ translation units before assuming the duplicated VQ headers are the only live copies.
+  - In this pass, the build only went green once the shared canonical copies (`WIN32LIB/INCLUDE/SOS{,COMP,DATA,DEFS,FNCT}.H`) were kept in sync with the VQ copies.
+- Legacy DOS/Watcom declaration modifiers in this tree are pure baggage on the SDL3/Linux build and can be removed outright once the surrounding type spellings are modernized.
+  - Confirmed removable in the active VQ/SOS surface: `far`, `near`, `huge`, `interrupt`, `cdecl`, `__cdecl`, `_saveregs`, `_loadds`, and the local no-op define blocks that used to spell them in.
+  - After stripping them, re-scan for declaration-only leftovers: old `extern` declarations are easy to miss because they often live in the duplicated SOS data/function headers even after the struct/prototype bodies are updated.
+- Old DOS EOF markers still survive in a number of legacy headers in this repository.
+  - When copying or normalizing old HMI/Westwood headers, watch for trailing `0x1A` (`^Z`) bytes; modern GCC/Clang treat them as stray characters in source and will fail the build.
+
+- The VQ tree contains at least two incompatible legacy type vocabularies, so a blind global `WORD`/`BYTE`/`BOOL` replacement is unsafe.
+  - `VQ/INCLUDE/WWLIB32/WWSTD.H` historically defined `WORD` as `signed short`, so its descendants should use `int16_t` when preserving that surface directly.
+  - The HMI/SOS headers (`VQ/**/SOS*.H`) historically defined `WORD` as unsigned, so those declarations should become `uint16_t` instead.
+- For the VQ/HMI support headers, do not blindly convert `BOOL` to `bool`.
+  - The original aliases were 32-bit integer storage, and many of those declarations sit inside packed or externally-shaped movie/audio structures.
+  - Safe rule: prefer `int32_t` for those legacy `BOOL` spellings unless the code is clearly a pure C++ semantic boolean with no layout sensitivity.
+- After the VQ sweep, the practical cleanup rule for future work there is:
+  - replace the type spellings at the use sites, not by introducing new compatibility aliases;
+  - clean the root alias headers (`WWSTD.H`, `SOSDEFS.H`) once the users are converted, otherwise the old spellings tend to creep back in;
+  - verify with both a repo-owned regex sweep and full `build` / `build-asan` rebuilds, because the duplicated VQ public/private headers make text-only spot checks easy to miss.
 
 - Do not classify every remaining `long` in gameplay/network code the same way; the recent multiplayer sweep split into at least three distinct categories:
   - radio-message payload carriers, where the old code used `long & param` but the payload is actually the engine's encoded `TARGET` token rather than a native pointer;

@@ -34,6 +34,7 @@
  * Functions:                                                              *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #ifndef MEMFLAG_H
+#include <stdint.h>
 #define MEMFLAG_H
 // Memory Flags
 /*
@@ -53,12 +54,12 @@ typedef enum {
 /* The following prototypes are for the file: ALLOC.CPP							*/
 /*=========================================================================*/
 
-void *Alloc(unsigned long bytes_to_alloc, MemoryFlagType flags);
+void *Alloc(uint32_t bytes_to_alloc, MemoryFlagType flags);
 void Free(void *pointer);
-void *Resize_Alloc(void *original_ptr, unsigned long new_size_in_bytes);
-long Ram_Free(MemoryFlagType flag);
-long Heap_Size(MemoryFlagType flag);
-long Total_Ram_Free(MemoryFlagType flag);
+void *Resize_Alloc(void *original_ptr, uint32_t new_size_in_bytes);
+int32_t Ram_Free(MemoryFlagType flag);
+int32_t Heap_Size(MemoryFlagType flag);
+int32_t Total_Ram_Free(MemoryFlagType flag);
 
 
 inline void * operator new(size_t size, MemoryFlagType flag) 
@@ -79,22 +80,22 @@ inline void * operator new[] (size_t size, MemoryFlagType flag)
 extern "C" {
 #endif
 
-	extern void Mem_Copy(void *source, void *dest, unsigned long bytes_to_copy);
+	extern void Mem_Copy(void *source, void *dest, uint32_t bytes_to_copy);
 
 #ifdef __cplusplus
 }
 #endif
 
 
-inline void *Add_Long_To_Pointer(void const *ptr, long size) 
+inline void *Add_Long_To_Pointer(void const *ptr, int32_t size) 
 {
  	return ((void *) ( (char const *) ptr + size));
 }
 
 extern void (*Memory_Error)(void);
 
-extern unsigned long MinRam;		// Record of least memory at worst case.
-extern unsigned long MaxRam;		// Record of total allocated at worst case.
+extern uint32_t MinRam;		// Record of least memory at worst case.
+extern uint32_t MaxRam;		// Record of total allocated at worst case.
 
 
 #endif

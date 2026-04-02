@@ -17,6 +17,7 @@
 */
 
 #ifndef VQMVESAVID_H
+#include <stdint.h>
 #define VQMVESAVID_H
 /****************************************************************************
 *
@@ -88,13 +89,13 @@
  * Reserved     - Pads structure to 256 bytes total
  */
 typedef struct _VESAInfo {
-	char           Signature[4];
-	unsigned short Version;
-	REALPTR        OEMString;
-	unsigned long  Capabilities;
-	REALPTR        AvailModes;
-	unsigned short TotalMemory;
-	unsigned char  Reserved[236];
+	char Signature[4];
+	uint16_t Version;
+	uint32_t OEMString;
+	uint32_t Capabilities;
+	uint32_t AvailModes;
+	uint16_t TotalMemory;
+	uint8_t Reserved[236];
 } VESAInfo;
 
 /* VESAModeInfo - Information about this VESA mode.
@@ -136,46 +137,46 @@ typedef struct _VESAInfo {
  * BankSize         - Bank size in KB
  */
 typedef struct _VESAModeInfo {
-	unsigned short Attributes;
-	unsigned char  WinA_Attributes;
-	unsigned char  WinB_Attributes;
-	unsigned short WinGranularity;
-	unsigned short WinSize;
-	unsigned short WinA_Segment;
-	unsigned short WinB_Segment;
-	REALPTR        WinFunc;
-	unsigned short BytesPerScanline;
-	unsigned short XRes;
-	unsigned short YRes;
-	unsigned char  XCharSize;
-	unsigned char  YCharSize;
-	unsigned char  NumPlanes;
-	unsigned char  BitsPerPixel;
-	unsigned char  NumBanks;
-	unsigned char  MemoryModel;
-	unsigned char  BankSize;
-	unsigned char  NumInputPages;
-	unsigned char  Reserved;
-	unsigned char  RedMaskSize;
-	unsigned char  RedFieldPosition;
-	unsigned char  GreenMaskSize;
-	unsigned char  GreenFieldPosition;
-	unsigned char  BlueMaskSize; 
-	unsigned char  BlueFieldPosition;
-	unsigned char  RsvdMaskSize;
-	unsigned char  RsvdFieldPosition;
-	unsigned char  DirectColorModeInfo;
-	unsigned char  pad[216];
+	uint16_t Attributes;
+	uint8_t WinA_Attributes;
+	uint8_t WinB_Attributes;
+	uint16_t WinGranularity;
+	uint16_t WinSize;
+	uint16_t WinA_Segment;
+	uint16_t WinB_Segment;
+	uint32_t WinFunc;
+	uint16_t BytesPerScanline;
+	uint16_t XRes;
+	uint16_t YRes;
+	uint8_t XCharSize;
+	uint8_t YCharSize;
+	uint8_t NumPlanes;
+	uint8_t BitsPerPixel;
+	uint8_t NumBanks;
+	uint8_t MemoryModel;
+	uint8_t BankSize;
+	uint8_t NumInputPages;
+	uint8_t Reserved;
+	uint8_t RedMaskSize;
+	uint8_t RedFieldPosition;
+	uint8_t GreenMaskSize;
+	uint8_t GreenFieldPosition;
+	uint8_t BlueMaskSize;
+	uint8_t BlueFieldPosition;
+	uint8_t RsvdMaskSize;
+	uint8_t RsvdFieldPosition;
+	uint8_t DirectColorModeInfo;
+	uint8_t pad[216];
 } VESAModeInfo;
 
 /*---------------------------------------------------------------------------
  * Function prototypes
  *-------------------------------------------------------------------------*/
 
-long InitVESA(void);
+int32_t InitVESA(void);
 void UninitVESA(void);
-VESAModeInfo *SetVESAMode(long mode);
-VESAModeInfo *ReadVESAModeInfo(long mode);
-void SetVESAWindow(long grain_num);
+VESAModeInfo *SetVESAMode(int32_t mode);
+VESAModeInfo *ReadVESAModeInfo(int32_t mode);
+void SetVESAWindow(int32_t grain_num);
 
 #endif /* VQMVESAVID_H */

@@ -120,10 +120,11 @@
  *   GVPC::SCALE -- stub 4 to call curr graphic mode Scale to VVPC			*
  *   VVPC::Print -- Stub function to print string on a Video View Port     *
  *   VVPC::Print -- Stub function to print an int on a Graphic Viewport Class*
- *   VVPC::Print -- Stub function to print long on a graphic viewport class*
- *   VVPC::Print -- Stub function to print a short on a Video Viewport     *
+ *   VVPC::Print -- Stub function to print int32_t on a graphic viewport class*
+ *   VVPC::Print -- Stub function to print a int16_t on a Video Viewport     *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #ifndef VBUFFER_H
+#include <stdint.h>
 #define VBUFFER_H
 
 /*=========================================================================*/
@@ -154,7 +155,7 @@
 /*=========================================================================*/
 /* Define external assembly funcs which deals with buffers and viewports.	*/
 /*=========================================================================*/
-long Buffer_To_Page(int x, int y, int w, int h, void *Buffer, VideoViewPortClass &view);
+int32_t Buffer_To_Page(int x, int y, int w, int h, void *Buffer, VideoViewPortClass &view);
 
 /*=========================================================================*/
 /* Define the screen width and height to make portability to other modules	*/
@@ -168,7 +169,7 @@ long Buffer_To_Page(int x, int y, int w, int h, void *Buffer, VideoViewPortClass
 /*=========================================================================*/
 #ifdef __cplusplus
 extern "C" {
-	extern UWORD Get_MCGA_Selector(VOID);
+	extern uint16_t Get_MCGA_Selector(void);
 }
 #endif
 
@@ -204,7 +205,7 @@ class VideoViewPortClass {
 		/*===================================================================*/
 		/* Define functions to get at the private data members					*/
 		/*===================================================================*/
-		long	Get_Offset(void);
+		int32_t	Get_Offset(void);
 		int	Get_Height(void);
 		int	Get_Width(void);
 		int	Get_XAdd(void);
@@ -216,42 +217,42 @@ class VideoViewPortClass {
 		/* Define a function which allows us to change a video viewport on	*/
 		/*		the fly.																			*/
 		/*===================================================================*/
-		BOOL Change(int x, int y, int w, int h);
+		int32_t Change(int x, int y, int w, int h);
 
 		/*===================================================================*/
 		/* Define the set of graphic functions that are members of a Video   */
 		/*		ViewPort class.																*/
 		/*===================================================================*/
-		void	Put_Pixel(int x, int y, unsigned char color);
+		void	Put_Pixel(int x, int y, uint8_t color);
 		int	Get_Pixel(int x, int y);
-		void	Clear(unsigned char color = 0);
-		long	To_Buffer(int x, int y, int w, int h, void *buff, long size);
-		long	To_Buffer(int x, int y, int w, int h, BufferClass *buff);
-		long	To_Buffer(BufferClass *buff);
-		BOOL	Blit(	GraphicViewPortClass& dest, int x_pixel, int y_pixel, int dx_pixel, 
-						int dy_pixel, int pixel_width, int pixel_height, BOOL trans = FALSE);
-		BOOL	Blit(	GraphicViewPortClass& dest, int dx, int dy, BOOL trans = FALSE);
-		BOOL	Blit(	GraphicViewPortClass& dest, BOOL trans = FALSE);
-		BOOL	Blit(	VideoViewPortClass& dest, int x_pixel, int y_pixel, int dx_pixel, 
-						int dy_pixel, int pixel_width, int pixel_height, BOOL trans = FALSE);
-		BOOL	Blit(	VideoViewPortClass& dest, int dx, int dy, BOOL trans = FALSE);
-		BOOL	Blit(	VideoViewPortClass& dest, BOOL trans = FALSE);
-		BOOL	Scale(	GraphicViewPortClass &dest, int src_x, int src_y, int dst_x, 
-							int dst_y, int src_w, int src_h, int dst_w, int dst_h, BOOL trans = FALSE, char *remap = NULL);
-		BOOL	Scale(	GraphicViewPortClass &dest, int src_x, int src_y, int dst_x, 
+		void	Clear(uint8_t color = 0);
+		int32_t	To_Buffer(int x, int y, int w, int h, void *buff, int32_t size);
+		int32_t	To_Buffer(int x, int y, int w, int h, BufferClass *buff);
+		int32_t	To_Buffer(BufferClass *buff);
+		int32_t	Blit(	GraphicViewPortClass& dest, int x_pixel, int y_pixel, int dx_pixel, 
+						int dy_pixel, int pixel_width, int pixel_height, int32_t trans = FALSE);
+		int32_t	Blit(	GraphicViewPortClass& dest, int dx, int dy, int32_t trans = FALSE);
+		int32_t	Blit(	GraphicViewPortClass& dest, int32_t trans = FALSE);
+		int32_t	Blit(	VideoViewPortClass& dest, int x_pixel, int y_pixel, int dx_pixel, 
+						int dy_pixel, int pixel_width, int pixel_height, int32_t trans = FALSE);
+		int32_t	Blit(	VideoViewPortClass& dest, int dx, int dy, int32_t trans = FALSE);
+		int32_t	Blit(	VideoViewPortClass& dest, int32_t trans = FALSE);
+		int32_t	Scale(	GraphicViewPortClass &dest, int src_x, int src_y, int dst_x, 
+							int dst_y, int src_w, int src_h, int dst_w, int dst_h, int32_t trans = FALSE, char *remap = NULL);
+		int32_t	Scale(	GraphicViewPortClass &dest, int src_x, int src_y, int dst_x, 
 							int dst_y, int src_w, int src_h, int dst_w, int dst_h, char *remap);
-		BOOL	Scale(	GraphicViewPortClass &dest, BOOL trans = FALSE, char *remap = NULL);
-		BOOL	Scale(	GraphicViewPortClass &dest, char *remap);
-		BOOL	Scale(	VideoViewPortClass &dest, int src_x, int src_y, int dst_x, 
-							int dst_y, int src_w, int src_h, int dst_w, int dst_h, BOOL trans = FALSE, char *remap = NULL);
-		BOOL	Scale(	VideoViewPortClass &dest, int src_x, int src_y, int dst_x, 
+		int32_t	Scale(	GraphicViewPortClass &dest, int32_t trans = FALSE, char *remap = NULL);
+		int32_t	Scale(	GraphicViewPortClass &dest, char *remap);
+		int32_t	Scale(	VideoViewPortClass &dest, int src_x, int src_y, int dst_x, 
+							int dst_y, int src_w, int src_h, int dst_w, int dst_h, int32_t trans = FALSE, char *remap = NULL);
+		int32_t	Scale(	VideoViewPortClass &dest, int src_x, int src_y, int dst_x, 
 							int dst_y, int src_w, int src_h, int dst_w, int dst_h, char *remap);
-		BOOL	Scale(	VideoViewPortClass &dest, BOOL trans = FALSE, char *remap = NULL);
-		BOOL	Scale(	VideoViewPortClass &dest, char *remap);
-		unsigned long  Print(char const *string, int x, int y, int fcolor, int bcolor);
-		unsigned long	Print(int num, int x, int y, int fcol, int bcol);
-		unsigned long	Print(short num, int x, int y, int fcol, int bcol);
-		unsigned long	Print(long num, int x, int y, int fcol, int bcol);
+		int32_t	Scale(	VideoViewPortClass &dest, int32_t trans = FALSE, char *remap = NULL);
+		int32_t	Scale(	VideoViewPortClass &dest, char *remap);
+		uint32_t  Print(char const *string, int x, int y, int fcolor, int bcolor);
+		uint32_t	Print(int num, int x, int y, int fcol, int bcol);
+		uint32_t	Print(int16_t num, int x, int y, int fcol, int bcol);
+		uint32_t	Print(int32_t num, int x, int y, int fcol, int bcol);
 
 	protected:
 		/*===================================================================*/
@@ -263,7 +264,7 @@ class VideoViewPortClass {
 		/*===================================================================*/
 		/* Define the data used by a GraphicViewPortClass							*/
 		/*===================================================================*/
-		long						Offset;					// offset to graphic page
+		int32_t						Offset;					// offset to graphic page
 		int						Width;					// width of graphic page
 		int						Height;					// height of graphic page
 		int						XAdd;						// xadd for graphic page (0)
@@ -293,7 +294,7 @@ class VideoBufferClass: public VideoViewPortClass {
 		/*===================================================================*/
 		/* Define the base constructor and destructors for the class			*/
 		/*===================================================================*/
-		VideoBufferClass(unsigned short selector, long offset, int w, int h);
+		VideoBufferClass(uint16_t selector, int32_t offset, int w, int h);
 		VideoBufferClass(int w = DEFAULT_SCREEN_WIDTH, int h = DEFAULT_SCREEN_HEIGHT);
 		~VideoBufferClass();
 };
@@ -303,12 +304,12 @@ class VideoBufferClass: public VideoViewPortClass {
  *                                                                         *
  * INPUT:		none                                                        *
  *                                                                         *
- * OUTPUT:     long the offset for the virtual viewport instance           *
+ * OUTPUT:     int32_t the offset for the virtual viewport instance           *
  *                                                                         *
  * HISTORY:                                                                *
  *   06/07/1994 PWG : Created.                                             *
  *=========================================================================*/
-inline long VideoViewPortClass::Get_Offset(void)
+inline int32_t VideoViewPortClass::Get_Offset(void)
 {
 	return(Offset);
 }
@@ -418,7 +419,7 @@ inline VideoBufferClass *VideoViewPortClass::Get_Video_Buffer(void)
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline void	VideoViewPortClass::Put_Pixel(int x, int y, unsigned char color)
+inline void	VideoViewPortClass::Put_Pixel(int x, int y, uint8_t color)
 {
 	VVPC_Put_Pixel_Func(this, x, y, color);
 }
@@ -452,7 +453,7 @@ inline int	VideoViewPortClass::Get_Pixel(int x, int y)
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline void	VideoViewPortClass::Clear(unsigned char color)
+inline void	VideoViewPortClass::Clear(uint8_t color)
 {
 	VVPC_Clear_Func(this, color);
 }
@@ -469,7 +470,7 @@ inline void	VideoViewPortClass::Clear(unsigned char color)
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline long	VideoViewPortClass::To_Buffer(int x, int y, int w, int h, void *buff, long size)
+inline int32_t	VideoViewPortClass::To_Buffer(int x, int y, int w, int h, void *buff, int32_t size)
 {
 	return(VVPC_To_Buffer_Func(this, x, y, w, h, buff, size));
 }
@@ -486,7 +487,7 @@ inline long	VideoViewPortClass::To_Buffer(int x, int y, int w, int h, void *buff
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline long	VideoViewPortClass::To_Buffer(int x, int y, int w, int h, BufferClass *buff)
+inline int32_t	VideoViewPortClass::To_Buffer(int x, int y, int w, int h, BufferClass *buff)
 {
 	return(VVPC_To_Buffer_Func(this, x, y, w, h, buff->Get_Buffer(), buff->Get_Size()));
 }
@@ -503,7 +504,7 @@ inline long	VideoViewPortClass::To_Buffer(int x, int y, int w, int h, BufferClas
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline long	VideoViewPortClass::To_Buffer(BufferClass *buff)
+inline int32_t	VideoViewPortClass::To_Buffer(BufferClass *buff)
 {
 	return(VVPC_To_Buffer_Func(this, 0, 0, Width, Height, buff->Get_Buffer(), buff->Get_Size()));
 }
@@ -520,8 +521,8 @@ inline long	VideoViewPortClass::To_Buffer(BufferClass *buff)
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline BOOL	VideoViewPortClass::Blit(	GraphicViewPortClass& dest, int x_pixel, int y_pixel, int dx_pixel, 
-				int dy_pixel, int pixel_width, int pixel_height, BOOL trans)
+inline int32_t	VideoViewPortClass::Blit(	GraphicViewPortClass& dest, int x_pixel, int y_pixel, int dx_pixel, 
+				int dy_pixel, int pixel_width, int pixel_height, int32_t trans)
 {
 	return(VVPC_Blit_to_GVPC_Func(this, &dest, x_pixel, y_pixel, dx_pixel, dy_pixel, pixel_width, pixel_height, trans));
 }
@@ -538,7 +539,7 @@ inline BOOL	VideoViewPortClass::Blit(	GraphicViewPortClass& dest, int x_pixel, i
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline BOOL	VideoViewPortClass::Blit(	GraphicViewPortClass& dest, int dx, int dy, BOOL trans)
+inline int32_t	VideoViewPortClass::Blit(	GraphicViewPortClass& dest, int dx, int dy, int32_t trans)
 {
 	return(VVPC_Blit_to_GVPC_Func(this, &dest, 0, 0, dx, dy, Width, Height, trans));
 }
@@ -555,7 +556,7 @@ inline BOOL	VideoViewPortClass::Blit(	GraphicViewPortClass& dest, int dx, int dy
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline BOOL	VideoViewPortClass::Blit(	GraphicViewPortClass& dest, BOOL trans)
+inline int32_t	VideoViewPortClass::Blit(	GraphicViewPortClass& dest, int32_t trans)
 {
 	return(VVPC_Blit_to_GVPC_Func(this, &dest, 0, 0, 0, 0, Width, Height, trans));
 }
@@ -572,8 +573,8 @@ inline BOOL	VideoViewPortClass::Blit(	GraphicViewPortClass& dest, BOOL trans)
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline BOOL	VideoViewPortClass::Blit(	VideoViewPortClass& dest, int x_pixel, int y_pixel, int dx_pixel, 
-				int dy_pixel, int pixel_width, int pixel_height, BOOL trans)
+inline int32_t	VideoViewPortClass::Blit(	VideoViewPortClass& dest, int x_pixel, int y_pixel, int dx_pixel, 
+				int dy_pixel, int pixel_width, int pixel_height, int32_t trans)
 {
 	return(VVPC_Blit_to_VVPC_Func(this, &dest, x_pixel, y_pixel, dx_pixel, dy_pixel, pixel_width, pixel_height, trans));
 }
@@ -590,7 +591,7 @@ inline BOOL	VideoViewPortClass::Blit(	VideoViewPortClass& dest, int x_pixel, int
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline BOOL	VideoViewPortClass::Blit(	VideoViewPortClass& dest, int dx, int dy, BOOL trans)
+inline int32_t	VideoViewPortClass::Blit(	VideoViewPortClass& dest, int dx, int dy, int32_t trans)
 {
 	return(VVPC_Blit_to_VVPC_Func(this, &dest, 0, 0, dx, dy, Width, Height, trans));
 }
@@ -607,7 +608,7 @@ inline BOOL	VideoViewPortClass::Blit(	VideoViewPortClass& dest, int dx, int dy, 
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline BOOL	VideoViewPortClass::Blit(	VideoViewPortClass& dest, BOOL trans)
+inline int32_t	VideoViewPortClass::Blit(	VideoViewPortClass& dest, int32_t trans)
 {
 	return(VVPC_Blit_to_VVPC_Func(this, &dest, 0, 0, 0, 0, Width, Height, trans));
 }
@@ -624,8 +625,8 @@ inline BOOL	VideoViewPortClass::Blit(	VideoViewPortClass& dest, BOOL trans)
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline BOOL	VideoViewPortClass::Scale(	GraphicViewPortClass &dest, int src_x, int src_y, int dst_x, 
-					int dst_y, int src_w, int src_h, int dst_w, int dst_h, BOOL trans, char *remap)
+inline int32_t	VideoViewPortClass::Scale(	GraphicViewPortClass &dest, int src_x, int src_y, int dst_x, 
+					int dst_y, int src_w, int src_h, int dst_w, int dst_h, int32_t trans, char *remap)
 {
 	return(VVPC_Scale_To_GVPC(	this, &dest, src_x, src_y, dst_x, dst_y, src_w, src_h, dst_w, dst_h, trans, remap));
 }
@@ -642,7 +643,7 @@ inline BOOL	VideoViewPortClass::Scale(	GraphicViewPortClass &dest, int src_x, in
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline BOOL	VideoViewPortClass::Scale(	GraphicViewPortClass &dest, int src_x, int src_y, int dst_x, 
+inline int32_t	VideoViewPortClass::Scale(	GraphicViewPortClass &dest, int src_x, int src_y, int dst_x, 
 					int dst_y, int src_w, int src_h, int dst_w, int dst_h, char *remap)
 {
 	return(VVPC_Scale_To_GVPC(	this, &dest, src_x, src_y, dst_x, dst_y, src_w, src_h, dst_w, dst_h, FALSE, remap));
@@ -660,7 +661,7 @@ inline BOOL	VideoViewPortClass::Scale(	GraphicViewPortClass &dest, int src_x, in
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline BOOL	VideoViewPortClass::Scale(	GraphicViewPortClass &dest, BOOL trans, char *remap)
+inline int32_t	VideoViewPortClass::Scale(	GraphicViewPortClass &dest, int32_t trans, char *remap)
 {
 	return(VVPC_Scale_To_GVPC(	this, &dest, 0, 0, 0, 0, Width, Height, dest.Get_Width(), dest.Get_Height(), trans, remap));
 }
@@ -677,7 +678,7 @@ inline BOOL	VideoViewPortClass::Scale(	GraphicViewPortClass &dest, BOOL trans, c
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline BOOL	VideoViewPortClass::Scale(	GraphicViewPortClass &dest, char *remap)
+inline int32_t	VideoViewPortClass::Scale(	GraphicViewPortClass &dest, char *remap)
 {
 	return(VVPC_Scale_To_GVPC(	this, &dest, 0, 0, 0, 0, Width, Height, dest.Get_Width(), dest.Get_Height(), FALSE, remap));
 }
@@ -693,8 +694,8 @@ inline BOOL	VideoViewPortClass::Scale(	GraphicViewPortClass &dest, char *remap)
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline BOOL	VideoViewPortClass::Scale(	VideoViewPortClass &dest, int src_x, int src_y, int dst_x, 
-					int dst_y, int src_w, int src_h, int dst_w, int dst_h, BOOL trans, char *remap)
+inline int32_t	VideoViewPortClass::Scale(	VideoViewPortClass &dest, int src_x, int src_y, int dst_x, 
+					int dst_y, int src_w, int src_h, int dst_w, int dst_h, int32_t trans, char *remap)
 {
 	return(VVPC_Scale_To_VVPC(	this, &dest, src_x, src_y, dst_x, dst_y, src_w, src_h, dst_w, dst_h, trans, remap));
 }
@@ -711,7 +712,7 @@ inline BOOL	VideoViewPortClass::Scale(	VideoViewPortClass &dest, int src_x, int 
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline BOOL	VideoViewPortClass::Scale(	VideoViewPortClass &dest, int src_x, int src_y, int dst_x, 
+inline int32_t	VideoViewPortClass::Scale(	VideoViewPortClass &dest, int src_x, int src_y, int dst_x, 
 					int dst_y, int src_w, int src_h, int dst_w, int dst_h, char *remap)
 {
 	return(VVPC_Scale_To_VVPC(	this, &dest, src_x, src_y, dst_x, dst_y, src_w, src_h, dst_w, dst_h, FALSE, remap));
@@ -729,7 +730,7 @@ inline BOOL	VideoViewPortClass::Scale(	VideoViewPortClass &dest, int src_x, int 
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline BOOL	VideoViewPortClass::Scale(	VideoViewPortClass &dest, BOOL trans, char *remap)
+inline int32_t	VideoViewPortClass::Scale(	VideoViewPortClass &dest, int32_t trans, char *remap)
 {
 	return(VVPC_Scale_To_VVPC(	this, &dest, 0, 0, 0, 0, Width, Height, dest.Get_Width(), dest.Get_Height(), trans, remap));
 }
@@ -746,7 +747,7 @@ inline BOOL	VideoViewPortClass::Scale(	VideoViewPortClass &dest, BOOL trans, cha
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline BOOL	VideoViewPortClass::Scale(	VideoViewPortClass &dest, char *remap)
+inline int32_t	VideoViewPortClass::Scale(	VideoViewPortClass &dest, char *remap)
 {
 	return(VVPC_Scale_To_VVPC(	this, &dest, 0, 0, 0, 0, Width, Height, dest.Get_Width(), dest.Get_Height(), FALSE, remap));
 }
@@ -762,7 +763,7 @@ inline BOOL	VideoViewPortClass::Scale(	VideoViewPortClass &dest, char *remap)
  *                                                                         *
  * HISTORY:                                                                *
  *=========================================================================*/
-inline unsigned long	VideoViewPortClass::Print(char const *str, int x, int y, int fcol, int bcol)
+inline uint32_t	VideoViewPortClass::Print(char const *str, int x, int y, int fcol, int bcol)
 {
 	return(VVPC_Print_Func(this, str, x, y, fcol, bcol));
 }
@@ -780,16 +781,16 @@ inline unsigned long	VideoViewPortClass::Print(char const *str, int x, int y, in
  *                                                                         *
  * HISTORY:                                                                *
  *=========================================================================*/
-inline unsigned long	VideoViewPortClass::Print(int num, int x, int y, int fcol, int bcol)
+inline uint32_t	VideoViewPortClass::Print(int num, int x, int y, int fcol, int bcol)
 {
-	BYTE str[17];
+	char str[17];
 
 	return(VVPC_Print_Func(this, itoa(num, str, 10), x, y, fcol, bcol));
 }
 
 
 /***************************************************************************
- * VVPC::PRINT -- Stub function to print a short on a Video Viewport       *
+ * VVPC::PRINT -- Stub function to print a int16_t on a Video Viewport       *
  *                                                                         *
  * INPUT:                                                                  *
  *                                                                         *
@@ -799,16 +800,16 @@ inline unsigned long	VideoViewPortClass::Print(int num, int x, int y, int fcol, 
  *                                                                         *
  * HISTORY:                                                                *
  *=========================================================================*/
-inline unsigned long	VideoViewPortClass::Print(short num, int x, int y, int fcol, int bcol)
+inline uint32_t	VideoViewPortClass::Print(int16_t num, int x, int y, int fcol, int bcol)
 {
-	BYTE str[17];
+	char str[17];
 
 	
 	return(VVPC_Print_Func(this, itoa(num, str, 10), x, y, fcol, bcol));
 }
 
 /***************************************************************************
- * VVPC::PRINT -- Stub function to print long on a Video Viewport				*
+ * VVPC::PRINT -- Stub function to print int32_t on a Video Viewport				*
  *                                                                         *
  * INPUT:																						*
  *                                                                         *
@@ -819,9 +820,9 @@ inline unsigned long	VideoViewPortClass::Print(short num, int x, int y, int fcol
  * HISTORY:                                                                *
  *   01/17/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline unsigned long	VideoViewPortClass::Print(long num, int x, int y, int fcol, int bcol)
+inline uint32_t	VideoViewPortClass::Print(int32_t num, int x, int y, int fcol, int bcol)
 {
-	BYTE str[33];
+	char str[33];
 
 	return(VVPC_Print_Func(this, ltoa(num, str, 10), x, y, fcol, bcol));
 }
@@ -848,7 +849,7 @@ inline unsigned long	VideoViewPortClass::Print(long num, int x, int y, int fcol,
  * HISTORY:                                                                *
  *   07/01/1994 PWG : Created.                                             *
  *=========================================================================*/
-inline long BufferClass::To_Page(int w, int h, VideoViewPortClass &view)
+inline int32_t BufferClass::To_Page(int w, int h, VideoViewPortClass &view)
 {
 	return(VVPC_Buffer_To_Page(0, 0, w, h, Buffer, &view));
 }
@@ -866,7 +867,7 @@ inline long BufferClass::To_Page(int w, int h, VideoViewPortClass &view)
  * HISTORY:                                                                *
  *   07/01/1994 PWG : Created.                                             *
  *=========================================================================*/
-inline long BufferClass::To_Page(VideoViewPortClass &view)
+inline int32_t BufferClass::To_Page(VideoViewPortClass &view)
 {
 	return(VVPC_Buffer_To_Page(0, 0, view.Get_Width(), view.Get_Height(), Buffer, &view));
 }
@@ -884,7 +885,7 @@ inline long BufferClass::To_Page(VideoViewPortClass &view)
  * HISTORY:                                                                *
  *   07/01/1994 PWG : Created.                                             *
  *=========================================================================*/
-inline long BufferClass::To_Page(int x, int y, int w, int h, VideoViewPortClass &view)
+inline int32_t BufferClass::To_Page(int x, int y, int w, int h, VideoViewPortClass &view)
 {
 	return(VVPC_Buffer_To_Page(x, y, w, h, Buffer, &view));
 }
@@ -901,7 +902,7 @@ inline long BufferClass::To_Page(int x, int y, int w, int h, VideoViewPortClass 
  * HISTORY:                                                                *
  *   01/12/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline long Buffer_To_Page(int x, int y, int w, int h, void *Buffer, VideoViewPortClass &view)
+inline int32_t Buffer_To_Page(int x, int y, int w, int h, void *Buffer, VideoViewPortClass &view)
 {
 	return(VVPC_Buffer_To_Page(x, y, w, h, Buffer, &view));
 }
@@ -922,8 +923,8 @@ inline long Buffer_To_Page(int x, int y, int w, int h, void *Buffer, VideoViewPo
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline BOOL	GraphicViewPortClass::Blit(	VideoViewPortClass& dest, int x_pixel, int y_pixel, int dx_pixel, 
-				int dy_pixel, int pixel_width, int pixel_height, BOOL trans)
+inline int32_t	GraphicViewPortClass::Blit(	VideoViewPortClass& dest, int x_pixel, int y_pixel, int dx_pixel, 
+				int dy_pixel, int pixel_width, int pixel_height, int32_t trans)
 {
 	return(GVPC_Blit_to_VVPC_Func(this, &dest, x_pixel, y_pixel, dx_pixel, dy_pixel, pixel_width, pixel_height, trans));
 }
@@ -940,7 +941,7 @@ inline BOOL	GraphicViewPortClass::Blit(	VideoViewPortClass& dest, int x_pixel, i
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline BOOL	GraphicViewPortClass::Blit(	VideoViewPortClass& dest, int dx, int dy, BOOL trans)
+inline int32_t	GraphicViewPortClass::Blit(	VideoViewPortClass& dest, int dx, int dy, int32_t trans)
 {
 	return(GVPC_Blit_to_VVPC_Func(this, &dest, 0, 0, dx, dy, Width, Height, trans));
 }
@@ -957,7 +958,7 @@ inline BOOL	GraphicViewPortClass::Blit(	VideoViewPortClass& dest, int dx, int dy
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline BOOL	GraphicViewPortClass::Blit(	VideoViewPortClass& dest, BOOL trans)
+inline int32_t	GraphicViewPortClass::Blit(	VideoViewPortClass& dest, int32_t trans)
 {
 	return(GVPC_Blit_to_VVPC_Func(this, &dest, 0, 0, 0, 0, Width, Height, trans));
 }
@@ -973,8 +974,8 @@ inline BOOL	GraphicViewPortClass::Blit(	VideoViewPortClass& dest, BOOL trans)
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline BOOL	GraphicViewPortClass::Scale(	VideoViewPortClass &dest, int src_x, int src_y, int dst_x, 
-					int dst_y, int src_w, int src_h, int dst_w, int dst_h, BOOL trans, char *remap)
+inline int32_t	GraphicViewPortClass::Scale(	VideoViewPortClass &dest, int src_x, int src_y, int dst_x, 
+					int dst_y, int src_w, int src_h, int dst_w, int dst_h, int32_t trans, char *remap)
 {
 	return(GVPC_Scale_To_VVPC(	this, &dest, src_x, src_y, dst_x, dst_y, src_w, src_h, dst_w, dst_h, trans, remap));
 }
@@ -991,7 +992,7 @@ inline BOOL	GraphicViewPortClass::Scale(	VideoViewPortClass &dest, int src_x, in
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline BOOL	GraphicViewPortClass::Scale(	VideoViewPortClass &dest, int src_x, int src_y, int dst_x, 
+inline int32_t	GraphicViewPortClass::Scale(	VideoViewPortClass &dest, int src_x, int src_y, int dst_x, 
 					int dst_y, int src_w, int src_h, int dst_w, int dst_h, char *remap)
 {
 	return(GVPC_Scale_To_VVPC(	this, &dest, src_x, src_y, dst_x, dst_y, src_w, src_h, dst_w, dst_h, FALSE, remap));
@@ -1009,7 +1010,7 @@ inline BOOL	GraphicViewPortClass::Scale(	VideoViewPortClass &dest, int src_x, in
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline BOOL	GraphicViewPortClass::Scale(	VideoViewPortClass &dest, BOOL trans, char *remap)
+inline int32_t	GraphicViewPortClass::Scale(	VideoViewPortClass &dest, int32_t trans, char *remap)
 {
 	return(GVPC_Scale_To_VVPC(	this, &dest, 0, 0, 0, 0, Width, Height, dest.Get_Width(), dest.Get_Height(), trans, remap));
 }
@@ -1026,7 +1027,7 @@ inline BOOL	GraphicViewPortClass::Scale(	VideoViewPortClass &dest, BOOL trans, c
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline BOOL	GraphicViewPortClass::Scale(	VideoViewPortClass &dest, char *remap)
+inline int32_t	GraphicViewPortClass::Scale(	VideoViewPortClass &dest, char *remap)
 {
 	return(GVPC_Scale_To_VVPC(	this, &dest, 0, 0, 0, 0, Width, Height, dest.Get_Width(), dest.Get_Height(), FALSE, remap));
 }

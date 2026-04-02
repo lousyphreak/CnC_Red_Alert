@@ -116,7 +116,7 @@ static uint32_t Played_Audio_Bytes(void)
 }
 
 
-static long Drain_Audio_Blocks(VQAHandleP *vqap)
+static int32_t Drain_Audio_Blocks(VQAHandleP *vqap)
 {
 	VQAAudio *audio;
 	VQAConfig *config;
@@ -174,7 +174,7 @@ static uint32_t System_Ticks(void)
 
 char *HMIDevName = (char *)"<none>";
 
-long VQA_StartTimerInt(VQAHandleP *vqap, long init)
+int32_t VQA_StartTimerInt(VQAHandleP *vqap, int32_t init)
 {
 	VQAAudio *audio;
 
@@ -224,7 +224,7 @@ void VQA_StopTimerInt(VQAHandleP *vqap)
 }
 
 
-long VQA_OpenAudio(VQAHandleP *vqap)
+int32_t VQA_OpenAudio(VQAHandleP *vqap)
 {
 	VQAData *vqabuf;
 	VQAAudio *audio;
@@ -245,9 +245,9 @@ long VQA_OpenAudio(VQAHandleP *vqap)
 	}
 
 	if (config->AudioRate != -1) {
-		audio->sSOSInitDriver.wSampleRate = (WORD)config->AudioRate;
+		audio->sSOSInitDriver.wSampleRate = (int16_t)config->AudioRate;
 	} else if (config->FrameRate != header->FPS) {
-		audio->sSOSInitDriver.wSampleRate = (WORD)(((uint32_t)audio->SampleRate
+		audio->sSOSInitDriver.wSampleRate = (int16_t)(((uint32_t)audio->SampleRate
 				* (uint32_t)config->FrameRate) / (uint32_t)header->FPS);
 		config->AudioRate = (int32_t)audio->sSOSInitDriver.wSampleRate;
 	} else {
@@ -343,7 +343,7 @@ void VQA_CloseAudio(VQAHandleP *vqap)
 }
 
 
-long VQA_StartAudio(VQAHandleP *vqap)
+int32_t VQA_StartAudio(VQAHandleP *vqap)
 {
 	VQAAudio *audio;
 
@@ -434,7 +434,7 @@ void VQA_ResumeAudio(void)
 }
 
 
-long CopyAudio(VQAHandleP *vqap)
+int32_t CopyAudio(VQAHandleP *vqap)
 {
 	VQAAudio  *audio;
 	VQAConfig *config;
@@ -494,7 +494,7 @@ long CopyAudio(VQAHandleP *vqap)
 }
 
 
-void VQA_SetTimer(VQAHandleP *vqap, long time, long method)
+void VQA_SetTimer(VQAHandleP *vqap, int32_t time, int32_t method)
 {
 	uint32_t curtime;
 
@@ -523,7 +523,7 @@ void VQA_SetTimer(VQAHandleP *vqap, long time, long method)
 }
 
 
-unsigned long VQA_GetTime(VQAHandleP *vqap)
+uint32_t VQA_GetTime(VQAHandleP *vqap)
 {
 	VQAAudio *audio;
 	uint32_t ticks;
@@ -552,11 +552,11 @@ unsigned long VQA_GetTime(VQAHandleP *vqap)
 			break;
 	}
 
-	return ((unsigned long)((int32_t)ticks + TickOffset));
+	return ((uint32_t)((int32_t)ticks + TickOffset));
 }
 
 
-long VQA_TimerMethod(void)
+int32_t VQA_TimerMethod(void)
 {
 	return (TimerMethod);
 }

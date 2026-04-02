@@ -16,35 +16,36 @@
 **	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <stdint.h>
 #include <string.h>
 #include "UNVQ.H"
 
-extern "C" void cdecl UnVQ_4x2(unsigned char *codebook, unsigned char *pointers,
-		unsigned char *buffer, uint32_t blocksperrow,
+extern "C" void  UnVQ_4x2(uint8_t *codebook, uint8_t *pointers,
+		uint8_t *buffer, uint32_t blocksperrow,
 		uint32_t numrows, uint32_t bufwidth)
 {
 	const uint32_t entry_count = blocksperrow * numrows;
-	unsigned char *lo_ptr = pointers;
-	unsigned char *hi_ptr = pointers + entry_count;
-	unsigned char *row_ptr = buffer;
+	uint8_t *lo_ptr = pointers;
+	uint8_t *hi_ptr = pointers + entry_count;
+	uint8_t *row_ptr = buffer;
 
 	if (codebook == NULL || pointers == NULL || buffer == NULL) {
 		return;
 	}
 
 	for (uint32_t row = 0; row < numrows; ++row) {
-		unsigned char *row0 = row_ptr;
-		unsigned char *row1 = row_ptr + bufwidth;
+		uint8_t *row0 = row_ptr;
+		uint8_t *row1 = row_ptr + bufwidth;
 
 		for (uint32_t column = 0; column < blocksperrow; ++column) {
-			const unsigned char low = *lo_ptr++;
-			const unsigned char high = *hi_ptr++;
+			const uint8_t low = *lo_ptr++;
+			const uint8_t high = *hi_ptr++;
 
 			if (high == 0x0F) {
 				memset(row0, low, 4);
 				memset(row1, low, 4);
 			} else {
-				unsigned char *entry = codebook + ((((uint32_t)high << 8) | low) * 8);
+				uint8_t *entry = codebook + ((((uint32_t)high << 8) | low) * 8);
 				memcpy(row0, entry, 4);
 				memcpy(row1, entry + 4, 4);
 			}
@@ -57,22 +58,22 @@ extern "C" void cdecl UnVQ_4x2(unsigned char *codebook, unsigned char *pointers,
 	}
 }
 
-extern "C" void cdecl UnVQ_4x4(unsigned char *codebook, unsigned char *pointers,
-		unsigned char *buffer, uint32_t blocksperrow,
+extern "C" void  UnVQ_4x4(uint8_t *codebook, uint8_t *pointers,
+		uint8_t *buffer, uint32_t blocksperrow,
 		uint32_t numrows, uint32_t bufwidth)
 {
 	static const uint16_t SKIP_PTR = 0x8000u;
-	unsigned char *row_ptr = buffer;
+	uint8_t *row_ptr = buffer;
 
 	if (codebook == NULL || pointers == NULL || buffer == NULL) {
 		return;
 	}
 
 	for (uint32_t row = 0; row < numrows; ++row) {
-		unsigned char *row0 = row_ptr;
-		unsigned char *row1 = row_ptr + bufwidth;
-		unsigned char *row2 = row_ptr + (bufwidth * 2);
-		unsigned char *row3 = row_ptr + (bufwidth * 3);
+		uint8_t *row0 = row_ptr;
+		uint8_t *row1 = row_ptr + bufwidth;
+		uint8_t *row2 = row_ptr + (bufwidth * 2);
+		uint8_t *row3 = row_ptr + (bufwidth * 3);
 
 		for (uint32_t column = 0; column < blocksperrow; ++column) {
 			const uint16_t code = (uint16_t)pointers[0] | ((uint16_t)pointers[1] << 8);
@@ -80,14 +81,14 @@ extern "C" void cdecl UnVQ_4x4(unsigned char *codebook, unsigned char *pointers,
 
 			if ((code & 0x8000u) != 0) {
 				if (code != SKIP_PTR) {
-					const unsigned char color = (unsigned char)(~code & 0xFFu);
+					const uint8_t color = (uint8_t)(~code & 0xFFu);
 					memset(row0, color, 4);
 					memset(row1, color, 4);
 					memset(row2, color, 4);
 					memset(row3, color, 4);
 				}
 			} else {
-				unsigned char *entry = codebook + code - 4;
+				uint8_t *entry = codebook + code - 4;
 				memcpy(row0, entry, 4);
 				memcpy(row1, entry + 4, 4);
 				memcpy(row2, entry + 8, 4);
@@ -104,28 +105,28 @@ extern "C" void cdecl UnVQ_4x4(unsigned char *codebook, unsigned char *pointers,
 	}
 }
 
-extern "C" void cdecl UnVQ_4x4_V2(unsigned char *codebook, unsigned char *pointers,
-		unsigned char *buffer, uint32_t blocksperrow,
+extern "C" void  UnVQ_4x4_V2(uint8_t *codebook, uint8_t *pointers,
+		uint8_t *buffer, uint32_t blocksperrow,
 		uint32_t numrows, uint32_t bufwidth)
 {
 	const uint32_t entry_count = blocksperrow * numrows;
-	unsigned char *lo_ptr = pointers;
-	unsigned char *hi_ptr = pointers + entry_count;
-	unsigned char *row_ptr = buffer;
+	uint8_t *lo_ptr = pointers;
+	uint8_t *hi_ptr = pointers + entry_count;
+	uint8_t *row_ptr = buffer;
 
 	if (codebook == NULL || pointers == NULL || buffer == NULL) {
 		return;
 	}
 
 	for (uint32_t row = 0; row < numrows; ++row) {
-		unsigned char *row0 = row_ptr;
-		unsigned char *row1 = row_ptr + bufwidth;
-		unsigned char *row2 = row_ptr + (bufwidth * 2);
-		unsigned char *row3 = row_ptr + (bufwidth * 3);
+		uint8_t *row0 = row_ptr;
+		uint8_t *row1 = row_ptr + bufwidth;
+		uint8_t *row2 = row_ptr + (bufwidth * 2);
+		uint8_t *row3 = row_ptr + (bufwidth * 3);
 
 		for (uint32_t column = 0; column < blocksperrow; ++column) {
-			const unsigned char low = *lo_ptr++;
-			const unsigned char high = *hi_ptr++;
+			const uint8_t low = *lo_ptr++;
+			const uint8_t high = *hi_ptr++;
 
 			if (high == 0xFFu) {
 				memset(row0, low, 4);
@@ -133,7 +134,7 @@ extern "C" void cdecl UnVQ_4x4_V2(unsigned char *codebook, unsigned char *pointe
 				memset(row2, low, 4);
 				memset(row3, low, 4);
 			} else {
-				unsigned char *entry = codebook + ((((uint32_t)high << 8) | low) * 16);
+				uint8_t *entry = codebook + ((((uint32_t)high << 8) | low) * 16);
 				memcpy(row0, entry, 4);
 				memcpy(row1, entry + 4, 4);
 				memcpy(row2, entry + 8, 4);

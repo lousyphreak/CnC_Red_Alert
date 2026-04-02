@@ -17,6 +17,7 @@
 */
 
 #ifndef VQMGRAPHICS_H
+#include <stdint.h>
 #define VQMGRAPHICS_H
 /****************************************************************************
 *
@@ -37,32 +38,14 @@
 *     April 27, 1995
 *
 ****************************************************************************/
-#ifndef far
-#define far
-#endif
-#ifndef near
-#define near
-#endif
-#ifndef huge
-#define huge
-#endif
-#ifndef interrupt
-#define interrupt
-#endif
-#ifndef __cdecl
-#define __cdecl
-#endif
-#ifndef cdecl
-#define cdecl __cdecl
-#endif
 /* Prototypes */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void cdecl Eor_Region(long sx, long sy, long dx, long dy, long color);
-void cdecl Fill_Rect(long x1, long y1, long x2, long y2, long color);
+void Eor_Region(int32_t sx, int32_t sy, int32_t dx, int32_t dy, int32_t color);
+void Fill_Rect(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t color);
 
 #ifdef __cplusplus
 }

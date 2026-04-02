@@ -17,6 +17,7 @@
 */
 
 #ifndef VQMVIDEO_H
+#include <stdint.h>
 #define VQMVIDEO_H
 /****************************************************************************
 *
@@ -37,24 +38,6 @@
 *     Febuary 3, 1995
 *
 ****************************************************************************/
-#ifndef far
-#define far
-#endif
-#ifndef near
-#define near
-#endif
-#ifndef huge
-#define huge
-#endif
-#ifndef interrupt
-#define interrupt
-#endif
-#ifndef __cdecl
-#define __cdecl
-#endif
-#ifndef cdecl
-#define cdecl __cdecl
-#endif
 #include <VQM32/VESAVID.H>
 
 /*---------------------------------------------------------------------------
@@ -86,10 +69,10 @@
  * Extended - Pointer to mode specific data structure.
  */
 typedef struct _DisplayInfo {
-	long Mode;
-	long XRes;
-	long YRes;
-	long VBIbit;
+	int32_t Mode;
+	int32_t XRes;
+	int32_t YRes;
+	int32_t VBIbit;
 	void *Extended;
 } DisplayInfo;
 
@@ -97,32 +80,32 @@ typedef struct _DisplayInfo {
  * Function prototypes
  *-------------------------------------------------------------------------*/
 
-DisplayInfo *SetVideoMode(long mode);
+DisplayInfo *SetVideoMode(int32_t mode);
 DisplayInfo *GetDisplayInfo(void);
-long TestVBIBit(void);
-long GetVBIBit(void);
+int32_t TestVBIBit(void);
+int32_t GetVBIBit(void);
 
 void SetupXPaging(void);
 void FlipXPage(void);
-unsigned char *GetXHidPage(void);
-unsigned char *GetXSeenPage(void);
-void DisplayXPage(long page);
+uint8_t *GetXHidPage(void);
+uint8_t *GetXSeenPage(void);
+void DisplayXPage(int32_t page);
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void cdecl WaitNoVB(short vbibit);
-void cdecl WaitVB(short vbibit);
-void cdecl ClearVRAM(void);
-long cdecl SetXMode(long mode);
-void cdecl ClearXMode(void);
-void cdecl ShowXPage(unsigned long StartOffset);
-void cdecl Xmode_BufferCopy_320x200(void *buff, void *screen);
-void cdecl Xmode_Blit(void *buffer, void *screen, long imgwidth, long imgheight);
-void cdecl MCGA_BufferCopy(unsigned char *buffer, unsigned char *dummy);
-void cdecl MCGA_Blit(unsigned char *buffer, unsigned char *screen,
-		long imgwidth, long imgheight);
+void WaitNoVB(int16_t vbibit);
+void WaitVB(int16_t vbibit);
+void ClearVRAM(void);
+int32_t SetXMode(int32_t mode);
+void ClearXMode(void);
+void ShowXPage(uint32_t StartOffset);
+void Xmode_BufferCopy_320x200(void *buff, void *screen);
+void Xmode_Blit(void *buffer, void *screen, int32_t imgwidth, int32_t imgheight);
+void MCGA_BufferCopy(uint8_t *buffer, uint8_t *dummy);
+void MCGA_Blit(uint8_t *buffer, uint8_t *screen,
+        int32_t imgwidth, int32_t imgheight);
 
 #ifdef __cplusplus
 }

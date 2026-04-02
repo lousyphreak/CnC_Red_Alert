@@ -39,6 +39,7 @@
 *
 ****************************************************************************/
 
+#include <stdint.h>
 #include <malloc.h>
 #include <string.h>
 #include <VQM32/FONT.H>
@@ -89,7 +90,7 @@ CaptionInfo *OpenCaptions(void *captions, void *font)
 	CaptionInfo *cap = NULL;
 	CaptionNode *node;
 	FontInfo    *fi;
-	long        i;
+	int32_t        i;
 
 	/* Allocate memory for the captioning system. */
 	cap = (CaptionInfo *)malloc(sizeof(CaptionInfo) + (sizeof(CaptionNode)
@@ -167,7 +168,7 @@ void CloseCaptions(CaptionInfo *cap)
 * SYNOPSIS
 *     DoCaption(Captions, Frame)
 *
-*     void DoCaption(CaptionInfo *, unsigned long);
+*     void DoCaption(CaptionInfo *, uint32_t);
 *
 * FUNCTION
 *     Process the caption events.
@@ -181,13 +182,13 @@ void CloseCaptions(CaptionInfo *cap)
 *
 ****************************************************************************/
 
-void DoCaptions(CaptionInfo *cap, unsigned long frame)
+void DoCaptions(CaptionInfo *cap, uint32_t frame)
 {
 	CaptionText *captext;
 	CaptionNode *node;
 	void const  *oldfont;
-	long        width;
-	long        i;
+	int32_t        width;
+	int32_t        i;
 
 	/* Initialize variables. */
 	oldfont = Set_Font((char *)cap->Font);

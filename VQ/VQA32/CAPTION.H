@@ -17,6 +17,7 @@
 */
 
 #ifndef VQACAPTION_H
+#include <stdint.h>
 #define VQACAPTION_H
 /****************************************************************************
 *
@@ -61,13 +62,13 @@
 typedef struct _CaptionNode {
 	struct _CaptionNode *Succ;
 	struct _CaptionNode *Pred;
-	unsigned short      Flags;
+	uint16_t      Flags;
 	CaptionText         *Captext;
 	char                *Char;
-	unsigned short      CurX;
-	unsigned short      CurY;
-	unsigned short      BoundW;
-	unsigned short      BoundH;
+	uint16_t      CurX;
+	uint16_t      CurY;
+	uint16_t      BoundW;
+	uint16_t      BoundH;
 } CaptionNode;
 
 /* CaptionNode flag definitions. */
@@ -115,7 +116,7 @@ typedef struct _CaptionInfo {
 
 CaptionInfo *OpenCaptions(void *captions, void *font);
 void CloseCaptions(CaptionInfo *cap);
-void DoCaptions(CaptionInfo *cap, unsigned long frame);
+void DoCaptions(CaptionInfo *cap, uint32_t frame);
 
 #endif /* VQACAPTION_H */
 

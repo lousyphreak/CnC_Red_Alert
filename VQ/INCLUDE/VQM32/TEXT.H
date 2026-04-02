@@ -37,33 +37,17 @@
 *     March 13, 1995
 *
 ****************************************************************************/
-#ifndef far
-#define far
-#endif
-#ifndef near
-#define near
-#endif
-#ifndef huge
-#define huge
-#endif
-#ifndef interrupt
-#define interrupt
-#endif
-#ifndef __cdecl
-#define __cdecl
-#endif
-#ifndef cdecl
-#define cdecl __cdecl
-#endif
+#include <stdint.h>
+
 /* Prototypes */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-long cdecl Text_Print(char *string, long x, long y, long fcol, long bcol);
-void cdecl Draw_Char(long character, long x, long y);
-void cdecl Set_Font_Palette_Range(void *palette, long start, long end);
+int32_t Text_Print(char *string, int32_t x, int32_t y, int32_t fcol, int32_t bcol);
+void Draw_Char(int32_t character, int32_t x, int32_t y);
+void Set_Font_Palette_Range(void *palette, int32_t start, int32_t end);
 
 #ifdef __cplusplus
 }

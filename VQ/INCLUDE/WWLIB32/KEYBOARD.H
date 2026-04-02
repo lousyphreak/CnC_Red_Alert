@@ -36,6 +36,7 @@
 
 
 #ifndef KEYBOARD_H
+#include <stdint.h>
 #define KEYBOARD_H
 
 /*=========================================================================*/
@@ -49,15 +50,15 @@
 
 
 extern "C" {
-	void Install_Keyboard_Interrupt(void *addr, long size);
+	void Install_Keyboard_Interrupt(void *addr, int32_t size);
 	void	*Get_RM_Keyboard_Address(void);
-	long	Get_RM_Keyboard_Size(void);
+	int32_t	Get_RM_Keyboard_Size(void);
 	void	Remove_Keyboard_Interrupt(void);
 	int	Check_Key_Num(void);
 	int	Check_Key_Bits(void);
 	int	Check_Key(void);
-	short	Get_Key_Num(void);
-	short	Get_Key_Bits(void);
+	int16_t	Get_Key_Num(void);
+	int16_t	Get_Key_Bits(void);
 	int	Get_Key(void);
 	int	KN_To_KA(int keynum);
 	int	Keyboard_Attributes_On(int key_flags);
@@ -81,7 +82,7 @@ extern "C" {
 	void	Conditional_Show_Mouse(void);
 
 
-	void  __interrupt far Keyboard_Interrupt(void);
+	void    Keyboard_Interrupt(void);
 	extern int MouseQX;
 	extern int MouseQY;
 
