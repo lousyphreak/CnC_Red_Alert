@@ -17,7 +17,6 @@
 */
 
 #include "MISC.H"
-#include <limits.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -118,7 +117,7 @@ table[0] = 0;
 
 for (int32_t source_index = 1; source_index < 256; ++source_index) {
 int32_t best_color = target;
-int32_t best_value = LONG_MAX;
+	int32_t best_value = INT32_MAX;
 int32_t base_offset = source_index * 3;
 int32_t target_offset = target * 3;
 int32_t ideal_red = (int32_t)source[base_offset + 0] - Signed_Shift_Right_8(((int32_t)source[base_offset + 0] - (int32_t)source[target_offset + 0]) * fraction);

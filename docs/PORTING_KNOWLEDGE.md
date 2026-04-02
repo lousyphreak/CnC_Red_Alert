@@ -1,5 +1,16 @@
 # Porting Knowledge
 
+## Fog-of-war shadow-table regression after fixed-width cleanup
+
+- The shroud/fog soft edge depends on the generated `ShadowTrans` remap table, not just on the final SDL presentation path.
+  - A direct current-vs-old table dump is practical with a small standalone harness linked against the existing game objects and run from the real `GameData/` directory, because it can call the real mix/key/bootstrap palette code without needing the full game loop to reach tactical mode.
+  - In this regression, current `HEAD` and `9ee4c9e` produced the same collapsed `ShadowTrans` rows, while `46e5b76` produced varied remap rows that feather the shroud edge. That proved the bug was in shadow-table generation rather than in `DisplayClass::Redraw_Shadow()` or SDL output/filtering.
+- When converting legacy search/comparison code to fixed-width integers, the initializer must be converted with it.
+  - `WIN32LIB/MISC/LEGACYCOMPAT.CPP::Build_Fading_Table(...)` originally used `long best_value = LONG_MAX;`.
+  - Changing only the variable type to `int32_t` but leaving `LONG_MAX` on LP64 Linux narrows the initializer to `-1`.
+  - Practical symptom: `match_value <= best_value` never succeeds for ordinary non-perfect matches, so the remap row stays stuck on its default destination color. For the shroud path that default is black, which turns the previously feathered edge into a hard dark edge.
+  - Safe rule: if a working variable becomes `int32_t`, seed it with `INT32_MAX` (or equivalent fixed-width limit), not `LONG_MAX`.
+
 ## CODE runtime LP64 regressions after broad type sweeps
 
 - Startup/movie/shapecache validation needs to continue past "it builds" after any large CODE-wide type cleanup.

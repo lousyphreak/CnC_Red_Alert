@@ -8,6 +8,13 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Fixed the fog-of-war / shroud soft-edge regression in the shadow-table generator:
+  - compared the generated `ShadowTrans` table across current `HEAD`, the earlier regressed `9ee4c9e`, and the older-good `46e5b76` with a standalone harness linked against the real in-tree game objects and run against the real `GameData/` palette data;
+  - verified that current `HEAD` and `9ee4c9e` produced the same collapsed shadow rows while `46e5b76` produced the varied remap rows that feather the shroud edge, which ruled out the final SDL presentation path and pointed back at the table-generation code itself;
+  - traced the regression to `WIN32LIB/MISC/LEGACYCOMPAT.CPP::Build_Fading_Table(...)`, where the fixed-width cleanup changed `best_value` from `long` to `int32_t` but left the initializer as `LONG_MAX`; on LP64 Linux that narrows to `-1`, so the closest-color search never records any non-perfect match and the remap row falls back to the default black target color;
+  - fixed the regression by initializing that search accumulator with `INT32_MAX`, which restores the exact older-good `46e5b76` `ShadowTrans` checksum/sample rows and therefore the intended soft shroud edge behavior;
+  - validation for this checkpoint: `cmake --build build --target redalert -j8` and `cmake --build build-asan --target redalert -j8` both succeed, the standalone shadowdump harness now matches the `46e5b76` checksum/sample output exactly, and a timed `GameData/redalert 'Erik Yeo'` launch stays alive until the external timeout after the fix.
+
 - Fixed the startup/runtime regressions introduced by the recent CODE type sweep and revalidated both supported launch paths:
   - reproduced the user-reported immediate startup crash from the supported `GameData/` working directory under ASan and traced the first failure to `CODE/CONQUER.CPP::MixFileHandler(...)`, where `VQACMD_OPEN` was still storing a live `CCFileClass *` in `VQAHandle::VQAio` through a `uint32_t` cast even though the active VQA handle uses `uintptr_t`;
   - fixed the VQA callback storage path to keep that opaque IO cookie pointer-sized again (`reinterpret_cast<uintptr_t>(file)`), which removed the intro-movie crash and let startup continue through `ENGLISH.VQA`, title-page load, and one-time system initialization;
