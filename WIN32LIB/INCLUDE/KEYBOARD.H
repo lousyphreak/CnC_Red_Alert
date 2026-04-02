@@ -58,63 +58,63 @@ class WWKeyboardClass
 		/*===================================================================*/
 		/* Define the functions which work with the Keyboard Class				*/
 		/*===================================================================*/
-		BOOL 	Check(void);															// checks keybuff for meta key
-		int 	Get(void);																// gets a meta key from the keybuffer
-		BOOL 	Put(int key);															// dumps a key into the keybuffer
-		BOOL	Put_Key_Message(	UINT vk_key, BOOL release = FALSE, 		// handles keyboard related message
-										BOOL dbl = FALSE);							//   and mouse clicks and dbl clicks
-		int 	Check_Num(void);														// checks keybuff for a keynum key
-		int 	Get_VK(void);															// gets keynum key from key buff
-		int 	Check_ACII(void);														// checks keybuff for an ascii key
-		int 	Get_ASCII(void);														// gets an ascii key from keybuff
-		int 	Check_Bits(void);														// checks keybuff for key w/ bits
-		int 	Get_Bits(void);														// get key from keybuff w/ bits
-		int 	To_ASCII(int num);													// converts keynum to ascii value
-		int 	Option_On(int option);												// turns specified option on
-		int 	Option_Off(int option);												// turns specified option off
+		int32_t 	Check(void);															// checks keybuff for meta key
+		int32_t 	Get(void);																// gets a meta key from the keybuffer
+		int32_t 	Put(int32_t key);															// dumps a key into the keybuffer
+		int32_t	Put_Key_Message(	uint32_t vk_key, int32_t release = FALSE, 		// handles keyboard related message
+										int32_t dbl = FALSE);							//   and mouse clicks and dbl clicks
+		int32_t 	Check_Num(void);														// checks keybuff for a keynum key
+		int32_t 	Get_VK(void);															// gets keynum key from key buff
+		int32_t 	Check_ACII(void);														// checks keybuff for an ascii key
+		int32_t 	Get_ASCII(void);														// gets an ascii key from keybuff
+		int32_t 	Check_Bits(void);														// checks keybuff for key w/ bits
+		int32_t 	Get_Bits(void);														// get key from keybuff w/ bits
+		int32_t 	To_ASCII(int32_t num);													// converts keynum to ascii value
+		int32_t 	Option_On(int32_t option);												// turns specified option on
+		int32_t 	Option_Off(int32_t option);												// turns specified option off
 		void 	Clear(void);															// clears all keys from keybuffer
-		int 	Down(int key);															// tests to see if a key is down
+		int32_t 	Down(int32_t key);															// tests to see if a key is down
 		void	AI(void);																// messaging logic for key manager
 
 		/*===================================================================*/
 		/* Define the main hook for the message processing loop.					*/
 		/*===================================================================*/
-		void Message_Handler(HWND hwnd, UINT message, UINT wParam, LONG lParam);
+		void Message_Handler(HWND hwnd, uint32_t message, uint32_t wParam, int32_t lParam);
 
 		/*===================================================================*/
 		/* Define public routines which can be used on keys in general.		*/
 		/*===================================================================*/
-		VOID Split(int &key, int &shift, int &ctrl, int &alt, int &rls, int &dbl);
-		BOOL Is_Mouse_Key(int key);
+		void Split(int32_t &key, int32_t &shift, int32_t &ctrl, int32_t &alt, int32_t &rls, int32_t &dbl);
+		int32_t Is_Mouse_Key(int32_t key);
 
 
 		/*===================================================================*/
 		/* Define the public access variables which are used with the			*/
 		/*   Keyboard Class.																	*/
 		/*===================================================================*/
-		int				MouseQX;
-		int				MouseQY;
+		int32_t				MouseQX;
+		int32_t				MouseQY;
 
-		unsigned char	VKRemap[256];		// gives vk for any ascii char
+		uint8_t	VKRemap[256];		// gives vk for any ascii char
 	private:
 		/*===================================================================*/
 		/* Define the private access functions which are used by keyboard		*/
 		/*===================================================================*/
-		int  Buff_Get(void);
+		int32_t  Buff_Get(void);
 
 
 		/*===================================================================*/
 		/* Define the private access variables which are used with the			*/
 		/*   Keyboard Class.																	*/
 		/*===================================================================*/
-		unsigned char	AsciiRemap[2048];	// remap for shft/ctrl/alt key combos
-		unsigned short Buffer[256];		// buffer which holds actual keypresses
-		unsigned char  ToggleKeys[256];	// determines toggles which affect key
-		long				Head;					// the head position in keyboard buffer
-		long				Tail;					// the tail position in keyboard buffer
-		int				MState;
-		int				Conditional;
-		HANDLE			CurrentCursor;
+		uint8_t	AsciiRemap[2048];	// remap for shft/ctrl/alt key combos
+		uint16_t Buffer[256];		// buffer which holds actual keypresses
+		uint8_t  ToggleKeys[256];	// determines toggles which affect key
+		int32_t				Head;					// the head position in keyboard buffer
+		int32_t				Tail;					// the tail position in keyboard buffer
+		int32_t				MState;
+		int32_t				Conditional;
+		void *			CurrentCursor;
 };
 
 
@@ -666,13 +666,13 @@ extern WWKeyboardClass *_Kbd;
 ** The following routines provide some compatability with the old westwood
 ** library.
 */
-int Check_Key(void);
-int Check_Key_Num(void);
-int Get_Key_Num(void);
-int Get_Key(void);
-int KN_To_KA(int key);
+int32_t Check_Key(void);
+int32_t Check_Key_Num(void);
+int32_t Get_Key_Num(void);
+int32_t Get_Key(void);
+int32_t KN_To_KA(int32_t key);
 void Clear_KeyBuffer(void);
-int Key_Down(int key);
-int KN_To_VK(int key);
+int32_t Key_Down(int32_t key);
+int32_t KN_To_VK(int32_t key);
 
 #endif

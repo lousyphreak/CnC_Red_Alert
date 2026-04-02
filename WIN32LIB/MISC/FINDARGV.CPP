@@ -59,13 +59,13 @@
 
 //static char command [ 256 ] ;
 #pragma on (argsused)
-char * __cdecl Find_Argv(char const)
+char *  Find_Argv(char const *str)
 {
 	return (NULL);
 
 
 #ifdef NOT_FOR_WIN95
-char * __cdecl Find_Argv(char const *str)
+char *  Find_Argv(char const *str)
 {
 	char   * ptr ;
 	static   startup_flag = 0 ;
@@ -80,6 +80,5 @@ char * __cdecl Find_Argv(char const *str)
 	return strstr ( command , str ) ;
 #endif
 }
-
 
 

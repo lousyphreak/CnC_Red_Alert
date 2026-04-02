@@ -61,7 +61,7 @@
 
 ////////////////////////////////////////////////////////////////////////////
 
-extern "C" void __cdecl Mem_Copy(void const *source, void *dest, unsigned long bytes_to_copy)
+extern "C" void  Mem_Copy(void const *source, void *dest, uint32_t bytes_to_copy)
 {
 	memmove(dest, source, bytes_to_copy);
 }
@@ -89,9 +89,9 @@ extern "C" void __cdecl Mem_Copy(void const *source, void *dest, unsigned long b
 typedef struct MemChain {
 	struct MemChain	*Next;	// Pointer to next memory chain node.
 	struct MemChain	*Prev;	// Pointer to previous memory chain node.
-	unsigned long		ID;		// ID number of block.
-	unsigned short		Time;		// TickCount of latest reference.
-	unsigned long		Size;		// Size of memory block (in paragraphs).
+	uint32_t		ID;		// ID number of block.
+	uint16_t		Time;		// TickCount of latest reference.
+	uint32_t		Size;		// Size of memory block (in paragraphs).
 } MemChain_Type;
 
 
@@ -101,9 +101,9 @@ typedef struct MemChain {
 typedef struct MemPool {
 	MemChain_Type	*FreeChain;	// Pointer to first node in free chain.
 	MemChain_Type	*UsedChain;	// Pointer to first node in used chain.
-	unsigned long	FreeMem;		// Current amount of free ram (in paragraphs).
-	unsigned long	TotalMem;	// Total quantity of memory.
-	long				pad2;
+	uint32_t	FreeMem;		// Current amount of free ram (in paragraphs).
+	uint32_t	TotalMem;	// Total quantity of memory.
+	int32_t				pad2;
 } MemPool_Type;
 
 
@@ -111,8 +111,8 @@ typedef struct MemPool {
 /* The following PRIVATE functions are in this file:                       */
 /*=========================================================================*/
 
-PRIVATE void MemNode_Unlink(MemPool_Type *pool, int freechain, MemChain_Type *node);
-PRIVATE void MemNode_Insert(MemPool_Type *pool, int freechain, MemChain_Type *node, unsigned int size, unsigned long id, int merge);
+PRIVATE void MemNode_Unlink(MemPool_Type *pool, int32_t freechain, MemChain_Type *node);
+PRIVATE void MemNode_Insert(MemPool_Type *pool, int32_t freechain, MemChain_Type *node, uint32_t size, uint32_t id, int32_t merge);
 
 /*= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =*/
 
@@ -136,7 +136,7 @@ PRIVATE void MemNode_Insert(MemPool_Type *pool, int freechain, MemChain_Type *no
  *   04/13/1994 SKB : Update for 32 bit library, removed XMS calls, 			*
  *							 optimized for low memory only.								*
  *=========================================================================*/
-int Mem_Init(void *buffer, long size)
+int32_t Mem_Init(void *buffer, int32_t size)
 {
 	MemChain_Type	*mem;			// Working memory chain node.
 	MemPool_Type	*pool;		// Memory pool control structure.
@@ -193,13 +193,13 @@ int Mem_Init(void *buffer, long size)
  *   04/13/1994 SKB : Update for 32 bit library, removed XMS calls, 			*
  *							 optimized for low memory only.								*
  *=========================================================================*/
-void *Mem_Alloc(void *poolptr, long lsize, unsigned long id)
+void *Mem_Alloc(void *poolptr, int32_t lsize, uint32_t id)
 {
 	MemPool_Type	*pool;
 	MemChain_Type	*node;			// Pointer to current memory node.
-	unsigned int	remainder=0;	// Remaining bytes that are still free.
-	int				found;
-	int				size;				// Paragraph size of allocation.
+	uint32_t	remainder=0;	// Remaining bytes that are still free.
+	int32_t				found;
+	int32_t				size;				// Paragraph size of allocation.
 
 
 	/*
@@ -214,7 +214,7 @@ void *Mem_Alloc(void *poolptr, long lsize, unsigned long id)
 	*/
 	lsize += sizeof(MemChain_Type);	// Account for header.
 	lsize = (lsize + 0x0FL) & 0xFFFFFFF0L;
-	size = (int)(lsize >> 4);
+	size = (int32_t)(lsize >> 4);
 
 	/*
 	**	If the total free is less than the size of the desired allocation,
@@ -269,7 +269,7 @@ void *Mem_Alloc(void *poolptr, long lsize, unsigned long id)
 	**	the free memory list.
 	*/
 	if (remainder) {
-		MemNode_Insert(pool, TRUE, (MemChain_Type *)Add_Long_To_Pointer(node, (long)size << 4), remainder, -1, FALSE);
+		MemNode_Insert(pool, TRUE, (MemChain_Type *)Add_Long_To_Pointer(node, (int32_t)size << 4), remainder, -1, FALSE);
 	}
 
 	/*
@@ -315,11 +315,11 @@ void *Mem_Alloc(void *poolptr, long lsize, unsigned long id)
  *   04/13/1994 SKB : Update for 32 bit library, removed XMS calls, 			*
  *							 optimized for low memory only.								*
  *=========================================================================*/
-int Mem_Free(void *poolptr, void *buffer)
+int32_t Mem_Free(void *poolptr, void *buffer)
 {
 	MemPool_Type	*pool;			// pointer to structure.
 	MemChain_Type	*node;			// Copy of current memory node.
-	unsigned int	size;				// Size of the block being freed.
+	uint32_t	size;				// Size of the block being freed.
 
 	/*
 	**	One can't free what isn't there.
@@ -382,7 +382,7 @@ void Mem_Reference(void *node)
 	nodeptr = (MemChain_Type *) node;
 	nodeptr--;
 
-	nodeptr->Time = (unsigned short)(WWTickCount.Time() >> 4);
+	nodeptr->Time = (uint16_t)(WWTickCount.Time() >> 4);
 
 }
 
@@ -466,7 +466,7 @@ void Mem_In_Use(void *node)
  *   04/13/1994 SKB : Update for 32 bit library, removed XMS calls, 			*
  *							 optimized for low memory only.								*
  *=========================================================================*/
-void *Mem_Find(void *poolptr, unsigned long id)
+void *Mem_Find(void *poolptr, uint32_t id)
 {
 	MemPool_Type	*pool;			// pointer to structure.
 	MemChain_Type	*node;			// Working node structure.
@@ -511,7 +511,7 @@ void *Mem_Find(void *poolptr, unsigned long id)
  * HISTORY:                                                                *
  *   04/18/1994 SKB : Created.                                             *
  *=========================================================================*/
-unsigned long Mem_Get_ID(void *node)
+uint32_t Mem_Get_ID(void *node)
 {
 	MemChain_Type	*nodeptr;		// Pointer of current memory node.
 
@@ -548,9 +548,9 @@ void *Mem_Find_Oldest(void *poolptr)
 {
 	MemChain_Type	*node; 				// Working node pointer.
 	MemChain_Type	*oldnode;			// Pointer to oldest block.
-	unsigned int	oldtime;				// Time of oldest block.
-	unsigned int	basetime;			// Time to mark our base time with.
-	unsigned int	time;					// basetime + time of node.
+	uint32_t	oldtime;				// Time of oldest block.
+	uint32_t	basetime;			// Time to mark our base time with.
+	uint32_t	time;					// basetime + time of node.
 
 	if (!poolptr) return(NULL);
 
@@ -562,7 +562,7 @@ void *Mem_Find_Oldest(void *poolptr)
 	oldtime = 0;
 	node = ((MemPool_Type*) poolptr)->UsedChain;
 
-  basetime = (unsigned int)(WWTickCount.Time() >> 4);
+  basetime = (uint32_t)(WWTickCount.Time() >> 4);
 
 	while (node) {
 
@@ -643,17 +643,17 @@ void *Mem_Free_Oldest(void *poolptr)
  * HISTORY:                                                                *
  *   04/18/1994 SKB : Created.                                             *
  *=========================================================================*/
-long Mem_Pool_Size(void *poolptr)
+int32_t Mem_Pool_Size(void *poolptr)
 {
 	MemPool_Type	*pool;			// Memory pool control structure.
-	long				memtotal;		// Total amount of memory free.
+	int32_t				memtotal;		// Total amount of memory free.
 
 	if (!poolptr) return(NULL);
 	pool = (MemPool_Type *) poolptr;
 
-	memtotal = ((long)pool->TotalMem) << 4;
+	memtotal = ((int32_t)pool->TotalMem) << 4;
 	memtotal -= sizeof(MemChain_Type);
-	memtotal = MAX(memtotal, (long)0);
+	memtotal = MAX(memtotal, (int32_t)0);
 	return(memtotal);
 }
 
@@ -677,18 +677,18 @@ long Mem_Pool_Size(void *poolptr)
  *   04/13/1994 SKB : Update for 32 bit library, removed XMS calls, 			*
  *							 optimized for low memory only.								*
  *=========================================================================*/
-long Mem_Avail(void *poolptr)
+int32_t Mem_Avail(void *poolptr)
 {
 	MemPool_Type	*pool;		// Memory pool control structure.
-	long				memtotal;	// Total amount of memory free.
+	int32_t				memtotal;	// Total amount of memory free.
 
 	if (!poolptr) return(NULL);
 	pool = (MemPool_Type *) poolptr;
 
-	memtotal = ((long)pool->FreeMem) << 4;
+	memtotal = ((int32_t)pool->FreeMem) << 4;
 	memtotal -= sizeof(MemChain_Type);
 	//memtotal -= sizeof(MemChain_Type) + 15;
-	memtotal = MAX(memtotal, (long)0);
+	memtotal = MAX(memtotal, (int32_t)0);
 	return(memtotal);
 }
 
@@ -707,11 +707,11 @@ long Mem_Avail(void *poolptr)
  * HISTORY:                                                                *
  *   04/15/1994 SKB : Created.                                             *
  *=========================================================================*/
-long Mem_Largest_Avail(void *poolptr)
+int32_t Mem_Largest_Avail(void *poolptr)
 {
 	MemChain_Type	*node;			// Pointer to current memory node.
-	unsigned int	size;
-	long				truesize;
+	uint32_t	size;
+	int32_t				truesize;
 
 	/*
 	** Make sure that it is a buffer.
@@ -734,7 +734,7 @@ long Mem_Largest_Avail(void *poolptr)
 		node = node->Next;
 	}
 
-	truesize = (long)size << 4;
+	truesize = (int32_t)size << 4;
 	truesize -= sizeof(MemChain_Type);
 	truesize = MAX(truesize, 0L);
 	return (truesize);
@@ -769,8 +769,8 @@ void Mem_Cleanup(void *poolptr)
 	MemPool_Type	*pool;  	// Memory pool control structure.
 	MemChain_Type	*free,	// Pointer to first free area.
 						*cur;		// Pointer to first used block that is after free.
-	unsigned long	size;
-	unsigned long	freesize;// Size of free heap at the end of the block.
+	uint32_t	size;
+	uint32_t	freesize;// Size of free heap at the end of the block.
 
 	if (!poolptr) return;
 
@@ -817,16 +817,16 @@ void Mem_Cleanup(void *poolptr)
 			size = (char *) cur - (char  *) free;
 			size >>= 4;
 		 	freesize -= size;
-			MemNode_Insert(pool, TRUE, free, (unsigned int) size, -1, FALSE);
+			MemNode_Insert(pool, TRUE, free, (uint32_t) size, -1, FALSE);
 
 			/*
 			** Time to find a new free position to start working from.
 			** Cur will be in the position just following.
 			*/
-			free = (MemChain_Type *) Add_Long_To_Pointer(cur, (unsigned long)cur->Size << 4);
+			free = (MemChain_Type *) Add_Long_To_Pointer(cur, (uint32_t)cur->Size << 4);
 			cur = cur->Next;
 			while (free == cur) {
-				free = (MemChain_Type *) Add_Long_To_Pointer(cur, (unsigned long)cur->Size << 4);
+				free = (MemChain_Type *) Add_Long_To_Pointer(cur, (uint32_t)cur->Size << 4);
 				cur = cur->Next;
 			}
 
@@ -837,7 +837,7 @@ void Mem_Cleanup(void *poolptr)
 		} else {
 
 			// Copy the block up.
-			size = (unsigned long)cur->Size << 4;
+			size = (uint32_t)cur->Size << 4;
 			Mem_Copy(cur, free, size);
 			cur = free;
 
@@ -887,7 +887,7 @@ void Mem_Cleanup(void *poolptr)
  *   04/13/1994 SKB : Update for 32 bit library, removed XMS calls, 			*
  *							 optimized for low memory only.								*
  *=========================================================================*/
-PRIVATE void MemNode_Unlink(MemPool_Type *pool, int freechain, MemChain_Type *node)
+PRIVATE void MemNode_Unlink(MemPool_Type *pool, int32_t freechain, MemChain_Type *node)
 {
 	MemChain_Type	*other; 		// Copy of node data to unlink.
 	MemChain_Type	**chain;		// A pointer to one of the chains pointer.
@@ -951,12 +951,12 @@ PRIVATE void MemNode_Unlink(MemPool_Type *pool, int freechain, MemChain_Type *no
  * HISTORY:                                                                *
  *   08/06/1993 JLB : Created.                                             *
  *=========================================================================*/
-PRIVATE void MemNode_Insert(MemPool_Type *pool, int freechain, MemChain_Type *node, unsigned int size, unsigned long id, int merge)
+PRIVATE void MemNode_Insert(MemPool_Type *pool, int32_t freechain, MemChain_Type *node, uint32_t size, uint32_t id, int32_t merge)
 {
 	MemChain_Type 	**chain;			// Pointer to chain that will be linked.
 	MemChain_Type 	*prev,			// Successor node pointer.
 						*next;			// Predecessor node pointer.
-	int				doit=TRUE;		// Link the node into the list.
+	int32_t				doit=TRUE;		// Link the node into the list.
 
 
 	/*
@@ -980,7 +980,7 @@ PRIVATE void MemNode_Insert(MemPool_Type *pool, int freechain, MemChain_Type *no
 		node->Next = NULL;
 		node->Prev = NULL;
 		node->Size = size;
-		node->Time = (unsigned short)(WWTickCount.Time() >> 4);
+		node->Time = (uint16_t)(WWTickCount.Time() >> 4);
 		node->ID = id;
 		*chain = node;
 		return;
@@ -1014,7 +1014,7 @@ PRIVATE void MemNode_Insert(MemPool_Type *pool, int freechain, MemChain_Type *no
 		**	that is all that is necessary.
 		*/
 		if (prev) {
-			if (((char *)prev + ((long)prev->Size << 4)) == ((char *) node)) {
+			if (((char *)prev + ((int32_t)prev->Size << 4)) == ((char *) node)) {
 				prev->Size += size;
 				size = prev->Size;
 				node = prev;
@@ -1030,7 +1030,7 @@ PRIVATE void MemNode_Insert(MemPool_Type *pool, int freechain, MemChain_Type *no
 		**	block.
 		*/
 		if (next) {
-			if (((char *)node + ((long)size << 4)) == (char *)next) {
+			if (((char *)node + ((int32_t)size << 4)) == (char *)next) {
 
 				if (!doit) {
 
@@ -1081,7 +1081,7 @@ PRIVATE void MemNode_Insert(MemPool_Type *pool, int freechain, MemChain_Type *no
 		node->Prev = prev;
 		node->Next = next;
 		node->Size = size;
-		node->Time = (unsigned short)(WWTickCount.Time() >> 4);
+		node->Time = (uint16_t)(WWTickCount.Time() >> 4);
 		node->ID = id;
 	}
 }

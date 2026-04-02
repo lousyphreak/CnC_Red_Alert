@@ -181,15 +181,15 @@ FileInitErrorType WWDOS_Init(uint32_t cachesize, char *filedata, char *cdpath);
 /* The following prototypes are for the file: FILE.CPP							*/
 /*=========================================================================*/
 
-int16_t Open_File(char const *file_name, int16_t mode);
-void Close_File(int16_t handle);
-uint64_t Read_File(int16_t handle, void *buf, uint64_t bytes);
-uint64_t Write_File(int16_t handle, void const *buf, uint64_t bytes);
-uint64_t Seek_File(int16_t handle, int64_t offset, int16_t starting);
-int16_t File_Exists(char const *file_name);
-uint64_t File_Size(int16_t handle);
-bool Is_Handle_Valid(int16_t handle, FileErrorType error, char const *name);
-int16_t Open_File_With_Recovery( char const *file_name, uint16_t mode );
+int32_t Open_File(char const *file_name, int32_t mode);
+void Close_File(int32_t handle);
+int32_t Read_File(int32_t handle, void *buf, uint32_t bytes);
+int32_t Write_File(int32_t handle, void const *buf, uint32_t bytes);
+uint32_t Seek_File(int32_t handle, int32_t offset, int32_t starting);
+int32_t File_Exists(char const *file_name);
+uint32_t File_Size(int32_t handle);
+int32_t Is_Handle_Valid(int32_t handle, FileErrorType error, char const *name);
+int32_t Open_File_With_Recovery( char const *file_name, uint32_t mode );
 
 
 /*=========================================================================*/

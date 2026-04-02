@@ -59,7 +59,7 @@
  * HISTORY:                                                                *
  *   08/03/1994 SKB : Created.                                             *
  *=========================================================================*/
-void __cdecl Exit(INT errorval, const char *message, ...)
+void  Exit(int32_t errorval, const char *message, ...)
 {
 	va_list		argptr;
 	char		errstring[256];
@@ -83,7 +83,7 @@ void randomize	( void )
 }
 
 #if(0)
-unsigned long	Random_Mod ( unsigned long mod )
+uint32_t	Random_Mod ( uint32_t mod )
 {
   return rand () * mod / RAND_MAX ;
 }

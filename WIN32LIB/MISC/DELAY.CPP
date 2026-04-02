@@ -34,9 +34,9 @@
 
 #include	<WWSTD.H>
 #include <TIMER.H>
-void Delay(int duration)
+void Delay(int32_t duration)
 {
-	unsigned long count;
+	uint32_t count;
 	TimerClass timer(BT_SYSTEM,TRUE);
 
 	while (duration--) {

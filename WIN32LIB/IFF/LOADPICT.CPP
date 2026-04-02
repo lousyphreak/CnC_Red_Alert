@@ -80,22 +80,22 @@ typedef enum {
 **	It also indicates the size and depth of the source art.
 */
 typedef struct {
-	unsigned short	W, H;				// Raster width and height in pixels.
-	short 	X, Y;						// Pixel postion for this image.
+	uint16_t	W, H;				// Raster width and height in pixels.
+	int16_t 	X, Y;						// Pixel postion for this image.
 	char	BPlanes;						// Number of bitplanes.
-	unsigned char	Masking;			// Masking control byte.
+	uint8_t	Masking;			// Masking control byte.
 											// 0 = No masking.
 											//	1 = Has a mask.
 											//	2 = Has transparent color.
 											//	3 = Lasso.
-	unsigned char	Compression;	// Compression method.
+	uint8_t	Compression;	// Compression method.
 											// 0 = No compression.
 											// 1 = Byte run compression.
 	char	pad;
-	unsigned short	Transparent;	// Transparent color number.
-	unsigned char	XAspect,			// Pixel aspect ratio of source art.
+	uint16_t	Transparent;	// Transparent color number.
+	uint8_t	XAspect,			// Pixel aspect ratio of source art.
 			YAspect;
-	short	PageWidth, 					// Source 'page' size in pixels.
+	int16_t	PageWidth, 					// Source 'page' size in pixels.
 			PageHeight;
 } BitMapHeader_Type;
 
@@ -103,9 +103,9 @@ typedef struct {
 /* The following PRIVATE functions are in this file:                       */
 /*=========================================================================*/
 
-PRIVATE void __cdecl ILBM_To_MCGA(BufferClass& src, BufferClass& dest, int planes);
-PRIVATE void __cdecl ILBM_To_Amiga(BufferClass& src, BufferClass& dest, int planes);
-PRIVATE void __cdecl PBM_To_Amiga(BufferClass& src, BufferClass& dest, int planes);
+PRIVATE void  ILBM_To_MCGA(BufferClass& src, BufferClass& dest, int32_t planes);
+PRIVATE void  ILBM_To_Amiga(BufferClass& src, BufferClass& dest, int32_t planes);
+PRIVATE void  PBM_To_Amiga(BufferClass& src, BufferClass& dest, int32_t planes);
 
 
 /*= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =*/
@@ -136,12 +136,12 @@ PRIVATE void __cdecl PBM_To_Amiga(BufferClass& src, BufferClass& dest, int plane
  *   05/16/1991 JLB : Created.                                             *
  *   04/20/1994 SKB : Update to 32 bit library and make private.           *
  *=========================================================================*/
-PRIVATE void __cdecl ILBM_To_MCGA(BufferClass& src, BufferClass& dest, int planes)
+PRIVATE void  ILBM_To_MCGA(BufferClass& src, BufferClass& dest, int32_t planes)
 {
 	char	*source;			// Source pointer.
 	char	*destination;	// Destination pointer.
-	int	index,j,i;		// Working index values.
-	int	bplane;			// Bit plane counter.
+	int32_t	index,j,i;		// Working index values.
+	int32_t	bplane;			// Bit plane counter.
 	char	bytes[8];		// Byte array holding max bitplanes (8).
 	char	value;			// Composed byte(pixel) value.
 
@@ -211,10 +211,10 @@ PRIVATE void __cdecl ILBM_To_MCGA(BufferClass& src, BufferClass& dest, int plane
  *   04/20/1994 SKB : #if out for main library.  Only used in utils maybe. *
  *=========================================================================*/
 #if MAKE_AMIGA_ART
-PRIVATE void __cdecl ILBM_To_Amiga(BufferClass& src, BufferClass& dest, int planes)
+PRIVATE void  ILBM_To_Amiga(BufferClass& src, BufferClass& dest, int32_t planes)
 {
-	int	row;			// Working row counter.
-	int	bp;			// Working bitplane counter.
+	int32_t	row;			// Working row counter.
+	int32_t	bp;			// Working bitplane counter.
 	char	*srcptr,		// Source buffer pointer.
 			*dstptr;		// Destination buffer pointer.
 
@@ -257,18 +257,18 @@ PRIVATE void __cdecl ILBM_To_Amiga(BufferClass& src, BufferClass& dest, int plan
  *   04/20/1994 SKB : #if out for main library.  Only used in utils maybe. *
  *=========================================================================*/
 #if MAKE_AMIGA_ART
-PRIVATE void __cdecl PBM_To_Amiga(BufferClass& src, BufferClass& dest, int planes)
+PRIVATE void  PBM_To_Amiga(BufferClass& src, BufferClass& dest, int32_t planes)
 {
-	int	row,							// Working row counter.
+	int32_t	row,							// Working row counter.
 			col,							// Working column (by byte) counter.
 			bit;							// Working bitplane counter.
-	unsigned char	*destptr,		// Destination byte pointer.
+	uint8_t	*destptr,		// Destination byte pointer.
 						*srcptr;			// Source byte pointer.
-	unsigned char	value;			// Working input MCGA pixel number.
+	uint8_t	value;			// Working input MCGA pixel number.
 
 
-	destptr = (unsigned char *) dest.Get_Buffer();
-	srcptr = (unsigned char *) src.Get_Buffer();
+	destptr = (uint8_t *) dest.Get_Buffer();
+	srcptr = (uint8_t *) src.Get_Buffer();
 
 	memset(destptr, 0, 32000);
 	memset(destptr+32000, 0, 32000);
@@ -280,7 +280,7 @@ PRIVATE void __cdecl PBM_To_Amiga(BufferClass& src, BufferClass& dest, int plane
 
 			for (bit = 0; bit < planes; bit++) {
 				if (value & (0x01 << bit)) {
-					destptr[(short)((8000L * (long)bit) + (col>>3))] |= 0x80 >> (col & 0x07);
+					destptr[(int16_t)((8000L * (int32_t)bit) + (col>>3))] |= 0x80 >> (col & 0x07);
 				}
 			}
 		}
@@ -327,14 +327,14 @@ PRIVATE void __cdecl PBM_To_Amiga(BufferClass& src, BufferClass& dest, int plane
  *   05/16/1991 JLB : Created.                                             *
  *   05/20/1991 JLB : Handles Amiga and IBM destination formats.           *
  *=========================================================================*/
-int __cdecl Load_Picture(char const *filename, BufferClass& scratchbuf, BufferClass& destbuf, unsigned char *palette, PicturePlaneType format)
+int32_t  Load_Picture(char const *filename, BufferClass& scratchbuf, BufferClass& destbuf, uint8_t *palette, PicturePlaneType format)
 {
-	int	fh;						// Input file handle.
-	long	ifftype;					// Iff form type.
-	int	counter;					// Count of the bytes decompressed.
-	int	value;					// Working compression code value.
-	int	len;						// int sized length value.
-	int	index;					// Working index values.
+	int32_t	fh;						// Input file handle.
+	int32_t	ifftype;					// Iff form type.
+	int32_t	counter;					// Count of the bytes decompressed.
+	int32_t	value;					// Working compression code value.
+	int32_t	len;						// int sized length value.
+	int32_t	index;					// Working index values.
 	BitMapHeader_Type	bmhd;		// BMHD chunk data.
 	IFFForm_Type	   formtype; // ILBM, PBM.
 	char	*src;						 // Working source body pointer.
@@ -350,7 +350,7 @@ int __cdecl Load_Picture(char const *filename, BufferClass& scratchbuf, BufferCl
 	Close_File(fh);
 
 	if (ifftype != ID_FORM) {
-		return((int)Load_Uncompress(filename, scratchbuf, destbuf,  palette ) / 8000 ) ;
+		return((int32_t)Load_Uncompress(filename, scratchbuf, destbuf,  palette ) / 8000 ) ;
 	} else {
 
 		fh = Open_Iff_File(filename);	// Opens and checks for IFF form.
@@ -382,7 +382,7 @@ int __cdecl Load_Picture(char const *filename, BufferClass& scratchbuf, BufferCl
 				// bmhd.YAspect = Reverse_Short(bmhd.YAspect);
 				  value = bmhd.XAspect	;
 				  bmhd.XAspect = bmhd.YAspect ;
-				  bmhd.YAspect = ( unsigned char ) value ;
+				  bmhd.YAspect = ( uint8_t ) value ;
 
 				bmhd.PageWidth = Reverse_Short(bmhd.PageWidth);
 				bmhd.PageHeight = Reverse_Short(bmhd.PageHeight);
@@ -398,22 +398,22 @@ int __cdecl Load_Picture(char const *filename, BufferClass& scratchbuf, BufferCl
 		// Load the palette if asked.
 		if (palette)
 		{
-			int	pbytes ;			       	// Number of CMAP bytes required.
-			unsigned char	color;			// Palette color value.
-			unsigned char *paletteptr;		// Allocated buffer for palette conversions.
-			unsigned char *source;		  	// Scratch source CMAP data pointer.
-			unsigned char *dest2;		  	// Scratch destination palette pointer.
+			int32_t	pbytes ;			       	// Number of CMAP bytes required.
+			uint8_t	color;			// Palette color value.
+			uint8_t *paletteptr;		// Allocated buffer for palette conversions.
+			uint8_t *source;		  	// Scratch source CMAP data pointer.
+			uint8_t *dest2;		  	// Scratch destination palette pointer.
 
 			//	Number of CMAP bytes that are needed.
 			pbytes = (1 << bmhd.BPlanes) * 3;
 
 			// Allocate the temporary palette buffer.
-			paletteptr = (unsigned char *)Alloc(pbytes, MEM_CLEAR);
+			paletteptr = (uint8_t *)Alloc(pbytes, MEM_CLEAR);
 			source = paletteptr;
 			dest2 = palette;
 
 			//	Read in only the bytes that are needed.
-			pbytes = (int)Read_Iff_Chunk(fh, ID_CMAP, (char *) paletteptr, pbytes);
+			pbytes = (int32_t)Read_Iff_Chunk(fh, ID_CMAP, (char *) paletteptr, pbytes);
 
 			if (pbytes) {
 
@@ -456,7 +456,7 @@ int __cdecl Load_Picture(char const *filename, BufferClass& scratchbuf, BufferCl
 
 		if (Read_Iff_Chunk(fh, ID_BODY, src, destbuf.Get_Size()))
 		{
-			for (index = 0; index < (short)bmhd.H; index++)
+			for (index = 0; index < (int16_t)bmhd.H; index++)
 			{
 			   /* Height of source */
 				//	Transfer (possibly uncompress) one row of data.
@@ -474,17 +474,17 @@ int __cdecl Load_Picture(char const *filename, BufferClass& scratchbuf, BufferCl
 					//	Decompress one scanline (all bitplanes) at a time.
 					while (counter)
 					{
-						value = ( signed char ) *src++; 			// Decompression code.
+						value = ( int8_t ) *src++; 			// Decompression code.
 						if (value == -128) continue;	// NOOP code.
 
 						if (value >= 0)
 						{
 							// Copy N+1 bytes.
-							len = ((short) value) + 1;
+							len = ((int16_t) value) + 1;
 
 							//	Ignore the masking bitplane.
 							if ( bmhd.Masking != 1 ||
-							     (bmhd.Masking==1 && counter > ((short)bmhd.W >> 3) ) )
+							     (bmhd.Masking==1 && counter > ((int16_t)bmhd.W >> 3) ) )
 							{
 								memcpy(dest, src, len);
 								dest += len;
@@ -496,11 +496,11 @@ int __cdecl Load_Picture(char const *filename, BufferClass& scratchbuf, BufferCl
 						else
 						{
 							// Replicate -N+1 bytes.
-							len = (-((short) value)) + 1;
+							len = (-((int16_t) value)) + 1;
 							value = *src++;
 
 							//	Ignore the masking bitplane.
-							if (bmhd.Masking != 1 || (bmhd.Masking==1 && counter > ((short)bmhd.W >> 3)))
+							if (bmhd.Masking != 1 || (bmhd.Masking==1 && counter > ((int16_t)bmhd.W >> 3)))
 							{
 								memset(dest,value,len);
 								dest += len;
@@ -548,5 +548,5 @@ int __cdecl Load_Picture(char const *filename, BufferClass& scratchbuf, BufferCl
 		Close_Iff_File(fh);
 	}
 
-	return((short)bmhd.BPlanes);			// Loaded the picture successfully.
+	return((int16_t)bmhd.BPlanes);			// Loaded the picture successfully.
 }

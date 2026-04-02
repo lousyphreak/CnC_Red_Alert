@@ -24,23 +24,23 @@
 #include <string.h>
 
 
-static inline unsigned char *View_Data(GraphicViewPortClass *view)
+static inline uint8_t *View_Data(GraphicViewPortClass *view)
 {
-	return((unsigned char *)(uintptr_t)view->Get_Offset());
+	return((uint8_t *)(uintptr_t)view->Get_Offset());
 }
 
 
-static inline int View_Row_Bytes(GraphicViewPortClass const *view)
+static inline int32_t View_Row_Bytes(GraphicViewPortClass const *view)
 {
 	return(view->Get_Width() + view->Get_XAdd() + view->Get_Pitch());
 }
 
 
-static unsigned char const *Prepare_Cursor_Data(void const *cursor, unsigned char **storage)
+static uint8_t const *Prepare_Cursor_Data(void const *cursor, uint8_t **storage)
 {
 	Shape_Type const *shape = (Shape_Type const *)cursor;
-	unsigned char *buffer;
-	int header_size;
+	uint8_t *buffer;
+	int32_t header_size;
 
 	*storage = NULL;
 	if (!cursor) {
@@ -49,32 +49,32 @@ static unsigned char const *Prepare_Cursor_Data(void const *cursor, unsigned cha
 
 	header_size = (shape->ShapeType & MAKESHAPE_COMPACT) ? 26 : 10;
 	if (shape->ShapeType & MAKESHAPE_NOCOMP) {
-		return((unsigned char const *)cursor);
+		return((uint8_t const *)cursor);
 	}
 
-	buffer = new(std::nothrow) unsigned char[header_size + Get_Shape_Uncomp_Size(cursor)];
+	buffer = new(std::nothrow) uint8_t[header_size + Get_Shape_Uncomp_Size(cursor)];
 	if (!buffer) {
 		return(NULL);
 	}
 
 	memcpy(buffer, cursor, header_size);
-	((Shape_Type *)buffer)->ShapeType = (unsigned short)(shape->ShapeType | MAKESHAPE_NOCOMP);
-	LCW_Uncompress((void *)((unsigned char const *)cursor + header_size), buffer + header_size, (unsigned long)Get_Shape_Uncomp_Size(cursor));
+	((Shape_Type *)buffer)->ShapeType = (uint16_t)(shape->ShapeType | MAKESHAPE_NOCOMP);
+	LCW_Uncompress((void *)((uint8_t const *)cursor + header_size), buffer + header_size, (uint32_t)Get_Shape_Uncomp_Size(cursor));
 	*storage = buffer;
 	return(buffer);
 }
 
 
-extern "C" void __cdecl Mouse_Shadow_Buffer(void *thisptr, GraphicViewPortClass *srcdst, void *buffer, int x, int y, int hotx, int hoty, int store)
+extern "C" void  Mouse_Shadow_Buffer(void *thisptr, GraphicViewPortClass *srcdst, void *buffer, int32_t x, int32_t y, int32_t hotx, int32_t hoty, int32_t store)
 {
 	WWMouseClass *mouse = (WWMouseClass *)thisptr;
-	unsigned char *view_ptr;
-	unsigned char *buffer_ptr;
-	int x0;
-	int y0;
-	int width;
-	int height;
-	int row_bytes;
+	uint8_t *view_ptr;
+	uint8_t *buffer_ptr;
+	int32_t x0;
+	int32_t y0;
+	int32_t width;
+	int32_t height;
+	int32_t row_bytes;
 
 	if (!mouse || !srcdst || !buffer || mouse->CursorWidth <= 0 || mouse->CursorHeight <= 0) {
 		return;
@@ -88,7 +88,7 @@ extern "C" void __cdecl Mouse_Shadow_Buffer(void *thisptr, GraphicViewPortClass 
 
 	width = mouse->CursorWidth;
 	height = mouse->CursorHeight;
-	buffer_ptr = (unsigned char *)buffer;
+	buffer_ptr = (uint8_t *)buffer;
 	if (x0 < 0) {
 		buffer_ptr += -x0;
 		width += x0;
@@ -111,7 +111,7 @@ extern "C" void __cdecl Mouse_Shadow_Buffer(void *thisptr, GraphicViewPortClass 
 
 	row_bytes = View_Row_Bytes(srcdst);
 	view_ptr = View_Data(srcdst) + y0 * row_bytes + x0;
-	for (int row = 0; row < height; ++row) {
+	for (int32_t row = 0; row < height; ++row) {
 		if (store) {
 			memcpy(buffer_ptr, view_ptr, width);
 		} else {
@@ -123,16 +123,16 @@ extern "C" void __cdecl Mouse_Shadow_Buffer(void *thisptr, GraphicViewPortClass 
 }
 
 
-extern "C" void __cdecl Draw_Mouse(void *thisptr, GraphicViewPortClass *srcdst, int x, int y)
+extern "C" void  Draw_Mouse(void *thisptr, GraphicViewPortClass *srcdst, int32_t x, int32_t y)
 {
 	WWMouseClass *mouse = (WWMouseClass *)thisptr;
-	unsigned char const *cursor_ptr;
-	unsigned char *view_ptr;
-	int x0;
-	int y0;
-	int width;
-	int height;
-	int row_bytes;
+	uint8_t const *cursor_ptr;
+	uint8_t *view_ptr;
+	int32_t x0;
+	int32_t y0;
+	int32_t width;
+	int32_t height;
+	int32_t row_bytes;
 
 	if (!mouse || !srcdst || mouse->CursorWidth <= 0 || mouse->CursorHeight <= 0 || !mouse->MouseCursor) {
 		return;
@@ -146,7 +146,7 @@ extern "C" void __cdecl Draw_Mouse(void *thisptr, GraphicViewPortClass *srcdst, 
 
 	width = mouse->CursorWidth;
 	height = mouse->CursorHeight;
-	cursor_ptr = (unsigned char const *)mouse->MouseCursor;
+	cursor_ptr = (uint8_t const *)mouse->MouseCursor;
 	if (x0 < 0) {
 		cursor_ptr += -x0;
 		width += x0;
@@ -169,9 +169,9 @@ extern "C" void __cdecl Draw_Mouse(void *thisptr, GraphicViewPortClass *srcdst, 
 
 	row_bytes = View_Row_Bytes(srcdst);
 	view_ptr = View_Data(srcdst) + y0 * row_bytes + x0;
-	for (int row = 0; row < height; ++row) {
-		for (int column = 0; column < width; ++column) {
-			unsigned char pixel = cursor_ptr[column];
+	for (int32_t row = 0; row < height; ++row) {
+		for (int32_t column = 0; column < width; ++column) {
+			uint8_t pixel = cursor_ptr[column];
 			if (pixel != 0) {
 				view_ptr[column] = pixel;
 			}
@@ -182,17 +182,17 @@ extern "C" void __cdecl Draw_Mouse(void *thisptr, GraphicViewPortClass *srcdst, 
 }
 
 
-extern "C" void * __cdecl ASM_Set_Mouse_Cursor(void *thisptr, int hotspotx, int hotspoty, void *cursor)
+extern "C" void *  ASM_Set_Mouse_Cursor(void *thisptr, int32_t hotspotx, int32_t hotspoty, void *cursor)
 {
 	WWMouseClass *mouse = (WWMouseClass *)thisptr;
 	char *previous;
-	unsigned char *storage;
-	unsigned char const *shape_data;
+	uint8_t *storage;
+	uint8_t const *shape_data;
 	Shape_Type const *shape;
-	unsigned char const *cursor_data;
-	int width;
-	int height;
-	int remaining;
+	uint8_t const *cursor_data;
+	int32_t width;
+	int32_t height;
+	int32_t remaining;
 
 	if (!mouse) {
 		return(NULL);
@@ -219,31 +219,31 @@ extern "C" void * __cdecl ASM_Set_Mouse_Cursor(void *thisptr, int hotspotx, int 
 	cursor_data = shape_data + ((shape->ShapeType & MAKESHAPE_COMPACT) ? 26 : 10);
 	remaining = width * height;
 	if (shape->ShapeType & MAKESHAPE_COMPACT) {
-		unsigned char const *lookup = shape->Colortable;
-		unsigned char *dest = (unsigned char *)mouse->MouseCursor;
+		uint8_t const *lookup = shape->Colortable;
+		uint8_t *dest = (uint8_t *)mouse->MouseCursor;
 
 		while (remaining > 0) {
-			unsigned char value = *cursor_data++;
+			uint8_t value = *cursor_data++;
 			if (value != 0) {
 				*dest++ = lookup[value];
 				--remaining;
 			} else {
-				int zeros = *cursor_data++;
+				int32_t zeros = *cursor_data++;
 				memset(dest, 0, zeros);
 				dest += zeros;
 				remaining -= zeros;
 			}
 		}
 	} else {
-		unsigned char *dest = (unsigned char *)mouse->MouseCursor;
+		uint8_t *dest = (uint8_t *)mouse->MouseCursor;
 
 		while (remaining > 0) {
-			unsigned char value = *cursor_data++;
+			uint8_t value = *cursor_data++;
 			if (value != 0) {
 				*dest++ = value;
 				--remaining;
 			} else {
-				int zeros = *cursor_data++;
+				int32_t zeros = *cursor_data++;
 				memset(dest, 0, zeros);
 				dest += zeros;
 				remaining -= zeros;

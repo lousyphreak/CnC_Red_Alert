@@ -37,7 +37,7 @@
 #include "SDLINPUT.H"
 
 static WWMouseClass *_Mouse=NULL;
-extern BOOL GameInFocus;
+extern int32_t GameInFocus;
 
 
 /***********************************************************************************************
@@ -50,7 +50,7 @@ extern BOOL GameInFocus;
  * HISTORY:                                                                                    *
  *   12/12/1995 PWG : Created.                                                                 *
  *=============================================================================================*/
-WWMouseClass::WWMouseClass(GraphicViewPortClass *scr, int mouse_max_width, int mouse_max_height)
+WWMouseClass::WWMouseClass(GraphicViewPortClass *scr, int32_t mouse_max_width, int32_t mouse_max_height)
 {
 	MouseCursor 	= new char[mouse_max_width * mouse_max_height];
 	MouseXHot		= 0;
@@ -240,7 +240,7 @@ void WWMouseClass::Process_Mouse(void)
 	//Unblock_Mouse(Screen->Get_Graphic_Buffer());
 }
 
-void *WWMouseClass::Set_Cursor(int xhotspot, int yhotspot, void *cursor)
+void *WWMouseClass::Set_Cursor(int32_t xhotspot, int32_t yhotspot, void *cursor)
 {
 	//
 	// If the pointer to the cursor we got is invalid, or its the same as the
@@ -300,7 +300,7 @@ void WWMouseClass::Hide_Mouse()
 }
 
 
-void WWMouseClass::Low_Show_Mouse(int x, int y)
+void WWMouseClass::Low_Show_Mouse(int32_t x, int32_t y)
 {
 	//
 	// If the mouse is already visible then just ignore the problem.
@@ -351,7 +351,7 @@ void WWMouseClass::Show_Mouse()
 	MouseUpdate--;
 }
 
-void WWMouseClass::Conditional_Hide_Mouse(int x1, int y1, int x2, int y2)
+void WWMouseClass::Conditional_Hide_Mouse(int32_t x1, int32_t y1, int32_t x2, int32_t y2)
 {
 	POINT	pt;
 
@@ -491,7 +491,7 @@ void WWMouseClass::Draw_Mouse(GraphicViewPortClass *scr)
 	MouseUpdate--;
 }
 
-void WWMouseClass::Erase_Mouse(GraphicViewPortClass *scr, int forced)
+void WWMouseClass::Erase_Mouse(GraphicViewPortClass *scr, int32_t forced)
 {
 	//
 	// If we are forcing the redraw of a mouse we already managed to
@@ -541,7 +541,7 @@ void WWMouseClass::Erase_Mouse(GraphicViewPortClass *scr, int forced)
   	EraseFlags = FALSE;
 }
 
-int WWMouseClass::Get_Mouse_State(void)
+int32_t WWMouseClass::Get_Mouse_State(void)
 {
 	return(State);
 }
@@ -555,7 +555,7 @@ int WWMouseClass::Get_Mouse_State(void)
  * HISTORY:                                                                                    *
  *   10/17/1995 PWG : Created.                                                                 *
  *=============================================================================================*/
-int WWMouseClass::Get_Mouse_X(void)
+int32_t WWMouseClass::Get_Mouse_X(void)
 {
 	POINT 	pt;
 	SDL_GameInput_GetCursorPos(&pt);
@@ -573,7 +573,7 @@ int WWMouseClass::Get_Mouse_X(void)
  * HISTORY:                                                                                    *
  *   10/17/1995 PWG : Created.                                                                 *
  *=============================================================================================*/
-int WWMouseClass::Get_Mouse_Y(void)
+int32_t WWMouseClass::Get_Mouse_Y(void)
 {
 	POINT 	pt;
 	SDL_GameInput_GetCursorPos(&pt);
@@ -591,7 +591,7 @@ int WWMouseClass::Get_Mouse_Y(void)
  * HISTORY:                                                                                    *
  *   10/17/1995 PWG : Created.                                                                 *
  *=============================================================================================*/
-void WWMouseClass::Get_Mouse_XY(int &x, int &y)
+void WWMouseClass::Get_Mouse_XY(int32_t &x, int32_t &y)
 {
 	POINT 	pt;
 
@@ -612,7 +612,7 @@ void Show_Mouse(void)
 	_Mouse->Show_Mouse();
 }
 
-void Conditional_Hide_Mouse(int x1, int y1, int x2, int y2)
+void Conditional_Hide_Mouse(int32_t x1, int32_t y1, int32_t x2, int32_t y2)
 {
 	if (!_Mouse) return;
 	_Mouse->Conditional_Hide_Mouse(x1, y1, x2, y2);
@@ -624,25 +624,25 @@ void Conditional_Show_Mouse(void)
 	_Mouse->Conditional_Show_Mouse();
 }
 
-int Get_Mouse_State(void)
+int32_t Get_Mouse_State(void)
 {
 	if (!_Mouse) return(0);
 	return(_Mouse->Get_Mouse_State());
 }
 
-void *Set_Mouse_Cursor(int hotx, int hoty, void *cursor)
+void *Set_Mouse_Cursor(int32_t hotx, int32_t hoty, void *cursor)
 {
 	if (!_Mouse) return(0);
 	return(_Mouse->Set_Cursor(hotx,hoty,cursor));
 }
 
-int Get_Mouse_X(void)
+int32_t Get_Mouse_X(void)
 {
 	if (!_Mouse) return(0);
 	return(_Mouse->Get_Mouse_X());
 }
 
-int Get_Mouse_Y(void)
+int32_t Get_Mouse_Y(void)
 {
 	if (!_Mouse) return(0);
 	return(_Mouse->Get_Mouse_Y());

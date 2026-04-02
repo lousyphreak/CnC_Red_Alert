@@ -63,7 +63,7 @@
  * HISTORY:                                                                *
  *   07/12/1994 SKB : Created.                                             *
  *=========================================================================*/
-TimerClass::TimerClass(BaseTimerEnum timer, BOOL on)
+TimerClass::TimerClass(BaseTimerEnum timer, int32_t on)
 {
 	Accumulated = 0;
 	Started = 0;
@@ -194,7 +194,7 @@ int32_t TimerClass::Start(void)
  *   07/12/1994 SKB : Created.                                             *
  *   05/03/1995 SKB : If start return Start since it returns Time          *
  *=========================================================================*/
-int32_t TimerClass::Set(int32_t value, BOOL start)
+int32_t TimerClass::Set(int32_t value, int32_t start)
 {
 	Started = 0;
 	Accumulated = value;

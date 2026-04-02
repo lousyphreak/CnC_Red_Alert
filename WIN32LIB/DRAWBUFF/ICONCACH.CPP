@@ -62,12 +62,12 @@ IconCacheClass	CachedIcons[MAX_CACHED_ICONS];
 
 extern "C"{
 IconSetType		IconSetList[MAX_ICON_SETS];
-short				IconCacheLookup[MAX_LOOKUP_ENTRIES];
+int16_t				IconCacheLookup[MAX_LOOKUP_ENTRIES];
 }
 
-int		CachedIconsDrawn=0;		//Counter of number of cache hits
-int		UnCachedIconsDrawn=0;	//Counter of number of cache misses
-BOOL	CacheMemoryExhausted;	//Flag set if we have run out of video RAM
+int32_t		CachedIconsDrawn=0;		//Counter of number of cache hits
+int32_t		UnCachedIconsDrawn=0;	//Counter of number of cache misses
+int32_t	CacheMemoryExhausted;	//Flag set if we have run out of video RAM
 
 
 
@@ -86,22 +86,22 @@ BOOL	CacheMemoryExhausted;	//Flag set if we have run out of video RAM
  * HISTORY:                                                                                    *
  *    11/29/95 12:47PM ST : Created                                                            *
  *=============================================================================================*/
-BOOL Optimize_Video_Memory_Cache (void)
+int32_t Optimize_Video_Memory_Cache (void)
 {
 
 	if (CacheMemoryExhausted &&
 		(UnCachedIconsDrawn+CachedIconsDrawn > 1000) &&
 		UnCachedIconsDrawn > CachedIconsDrawn){
 
-		int	cache_misses[MAX_CACHED_ICONS];
-		int	cache_hits[MAX_CACHED_ICONS];
-		int	total_cache_misses=0;
-		int	total_cache_hits=0;
-		int	counter;
-		int	i;
-		int	j;
-		int	temp;
-		BOOL	swapped;
+		int32_t	cache_misses[MAX_CACHED_ICONS];
+		int32_t	cache_hits[MAX_CACHED_ICONS];
+		int32_t	total_cache_misses=0;
+		int32_t	total_cache_hits=0;
+		int32_t	counter;
+		int32_t	i;
+		int32_t	j;
+		int32_t	temp;
+		int32_t	swapped;
 
 		/*
 		** make list of icons that have failed to cache more than 5 times
@@ -128,9 +128,9 @@ BOOL Optimize_Video_Memory_Cache (void)
 		** Sort drawn icons into order
 		*/
 		if (total_cache_hits > 1){
-			for (int i = 0 ; i<total_cache_hits ; i++){
+			for (int32_t i = 0 ; i<total_cache_hits ; i++){
 				swapped=FALSE;
-				for (int j=0 ; j<total_cache_hits-1 ; j++){
+				for (int32_t j=0 ; j<total_cache_hits-1 ; j++){
 
 					if (CachedIcons[cache_hits[j]].TimesDrawn > CachedIcons[cache_hits[j+1]].TimesDrawn){
 						temp=cache_hits[j];
@@ -180,7 +180,7 @@ BOOL Optimize_Video_Memory_Cache (void)
  * HISTORY:                                                                                    *
  *    11/13/95 9:36AM ST : Created                                                             *
  *=============================================================================================*/
-BOOL Cache_New_Icon (int icon_index, void *icon_ptr)
+int32_t Cache_New_Icon (int32_t icon_index, void *icon_ptr)
 {
 	if (!CacheMemoryExhausted){
 		return (CachedIcons[icon_index].Cache_It(icon_ptr));
@@ -214,13 +214,13 @@ BOOL Cache_New_Icon (int icon_index, void *icon_ptr)
  *=============================================================================================*/
 void Invalidate_Cached_Icons (void)
 {
-	for (int i=0 ; i<MAX_CACHED_ICONS ; i++){
+	for (int32_t i=0 ; i<MAX_CACHED_ICONS ; i++){
 		CachedIcons[i].Uncache_It();
 	}
 
 	memset (&IconCacheLookup[0] , -1 ,MAX_LOOKUP_ENTRIES*sizeof(IconCacheLookup[0]));
 
-	for (int i=0 ; i<MAX_ICON_SETS ; i++){
+	for (int32_t i=0 ; i<MAX_ICON_SETS ; i++){
 		IconSetList[i].IconSetPtr=NULL;
 	}
 
@@ -247,7 +247,7 @@ void Invalidate_Cached_Icons (void)
  *=============================================================================================*/
 void Restore_Cached_Icons (void)
 {
-	for (int i=0 ; i<MAX_CACHED_ICONS ; i++){
+	for (int32_t i=0 ; i<MAX_CACHED_ICONS ; i++){
 		CachedIcons[i].Restore();
 	}
 	CacheMemoryExhausted=FALSE;
@@ -270,16 +270,16 @@ void Restore_Cached_Icons (void)
  * HISTORY:                                                                                    *
  *    11/13/95 9:39AM ST : Created                                                             *
  *=============================================================================================*/
-void Register_Icon_Set (void *icon_data , BOOL pre_cache)
+void Register_Icon_Set (void *icon_data , int32_t pre_cache)
 {
 
-	for (int i=0 ; i<MAX_ICON_SETS ; i++){
+	for (int32_t i=0 ; i<MAX_ICON_SETS ; i++){
 		if (!IconSetList[i].IconSetPtr){
 			IconSetList[i].IconSetPtr = (IControl_Type*)icon_data;
 
 			if (i){
 				IControl_Type *previous_set = IconSetList[i-1].IconSetPtr;
-				IconSetList[i].IconListOffset = IconSetList[i-1].IconListOffset + ((int)previous_set->Count)*2;
+				IconSetList[i].IconListOffset = IconSetList[i-1].IconListOffset + ((int32_t)previous_set->Count)*2;
 				if (IconSetList[i].IconListOffset > MAX_LOOKUP_ENTRIES*2){
 					IconSetList[i].IconSetPtr = NULL;
 				}
@@ -288,7 +288,7 @@ void Register_Icon_Set (void *icon_data , BOOL pre_cache)
 			}
 
 			if (pre_cache){
-				for (int j=0 ; j<256 ; j++){
+				for (int32_t j=0 ; j<256 ; j++){
 					Is_Icon_Cached(icon_data,j);
 				}
 			}
@@ -313,9 +313,9 @@ void Register_Icon_Set (void *icon_data , BOOL pre_cache)
  * HISTORY:                                                                                    *
  *    11/13/95 9:40AM ST : Created                                                             *
  *=============================================================================================*/
-int Get_Free_Cache_Slot (void)
+int32_t Get_Free_Cache_Slot (void)
 {
-	for (int i=0 ; i<MAX_CACHED_ICONS ; i++){
+	for (int32_t i=0 ; i<MAX_CACHED_ICONS ; i++){
 		if (!CachedIcons[i].Get_Is_Cached()){
 			return (i);
 		}
@@ -413,9 +413,9 @@ void IconCacheClass::Restore (void)
  * HISTORY:                                                                                    *
  *    11/13/95 9:44AM ST : Created                                                             *
  *=============================================================================================*/
-BOOL IconCacheClass::Cache_It (void *icon_ptr)
+int32_t IconCacheClass::Cache_It (void *icon_ptr)
 {
-	BOOL		return_value;
+	int32_t		return_value;
 
 	/*
 	** If we dont have a direct draw interface yet then just fail
@@ -508,11 +508,11 @@ void IconCacheClass::Uncache_It(void)
  * HISTORY:                                                                                    *
  *    11/13/95 9:48AM ST : Created                                                             *
  *=============================================================================================*/
-void IconCacheClass::Draw_It (WWSurface* dest_surface , int x_pixel, int y_pixel, int window_left , int window_top , int window_width , int window_height)
+void IconCacheClass::Draw_It (WWSurface* dest_surface , int32_t x_pixel, int32_t y_pixel, int32_t window_left , int32_t window_top , int32_t window_width , int32_t window_height)
 {
 	RECT		source_rectangle;
 	RECT		dest_rectangle;
-	int		clip;
+	int32_t		clip;
 	HRESULT	return_code;
 
 	/*

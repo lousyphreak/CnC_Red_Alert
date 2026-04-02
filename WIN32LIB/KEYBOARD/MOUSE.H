@@ -37,31 +37,31 @@
 
 #include <GBUFFER.H>
 extern "C" {
-	 void __cdecl Mouse_Shadow_Buffer(void *thisptr, GraphicViewPortClass *srcdst, void *buffer, int x, int y, int hotx, int hoty, int store);
-	 void __cdecl Draw_Mouse(void *thisptr, GraphicViewPortClass *srcdst, int x, int y);
-	 void * __cdecl ASM_Set_Mouse_Cursor(void * thisptr, int hotspotx, int hotspoty, VOID *cursor);
+	 void  Mouse_Shadow_Buffer(void *thisptr, GraphicViewPortClass *srcdst, void *buffer, int32_t x, int32_t y, int32_t hotx, int32_t hoty, int32_t store);
+	 void  Draw_Mouse(void *thisptr, GraphicViewPortClass *srcdst, int32_t x, int32_t y);
+	 void *  ASM_Set_Mouse_Cursor(void * thisptr, int32_t hotspotx, int32_t hotspoty, void *cursor);
 }
 
 class WWMouseClass {
 	public:
-		WWMouseClass(GraphicViewPortClass *scr, int mouse_max_width, int mouse_max_height);
+		WWMouseClass(GraphicViewPortClass *scr, int32_t mouse_max_width, int32_t mouse_max_height);
 		~WWMouseClass();
-		void *Set_Cursor(int xhotspot, int yhotspot, void *cursor);
+		void *Set_Cursor(int32_t xhotspot, int32_t yhotspot, void *cursor);
 		void Process_Mouse(void);
 		void Hide_Mouse(void);
 		void Show_Mouse(void);
-		void Conditional_Hide_Mouse(int x1, int y1, int x2, int y2);
+		void Conditional_Hide_Mouse(int32_t x1, int32_t y1, int32_t x2, int32_t y2);
 		void Conditional_Show_Mouse(void);
-		int Get_Mouse_State(void);
-		int Get_Mouse_X(void);
-		int Get_Mouse_Y(void);
-		void Get_Mouse_XY(int &x, int &y);
+		int32_t Get_Mouse_State(void);
+		int32_t Get_Mouse_X(void);
+		int32_t Get_Mouse_Y(void);
+		void Get_Mouse_XY(int32_t &x, int32_t &y);
 		//
 		// The following two routines can be used to render the mouse onto a graphicbuffer
 		// other than the hidpage.
 		//
 		void Draw_Mouse(GraphicViewPortClass *scr);
-		void Erase_Mouse(GraphicViewPortClass *scr, int forced = FALSE);
+		void Erase_Mouse(GraphicViewPortClass *scr, int32_t forced = FALSE);
 
 		void Block_Mouse(GraphicBufferClass *buffer);
 		void Unblock_Mouse(GraphicBufferClass *buffer);
@@ -74,55 +74,55 @@ class WWMouseClass {
 			CONDHIDDEN 	= 2,
 		};
 		void Low_Hide_Mouse(void);
-		void Low_Show_Mouse(int x, int y);
+		void Low_Show_Mouse(int32_t x, int32_t y);
 
 		char						*MouseCursor;	// pointer to the mouse cursor in memory
-		int						MouseXHot;		// X hot spot of the current mouse cursor
-		int						MouseYHot;		// Y hot spot of the current mouse cursor
-		int						CursorWidth;	// width of the mouse cursor in pixels
-		int						CursorHeight;	// height of the mouse cursor in pixels
+		int32_t						MouseXHot;		// X hot spot of the current mouse cursor
+		int32_t						MouseYHot;		// Y hot spot of the current mouse cursor
+		int32_t						CursorWidth;	// width of the mouse cursor in pixels
+		int32_t						CursorHeight;	// height of the mouse cursor in pixels
 
 		char						*MouseBuffer;	// pointer to background buffer in memory
-		int						MouseBuffX;		// pixel x mouse buffer was preserved at
-		int						MouseBuffY;		// pixel y mouse buffer was preserved at
-		int						MaxWidth;		// maximum width of mouse background buffer
-		int						MaxHeight;		// maximum height of mouse background buffer
+		int32_t						MouseBuffX;		// pixel x mouse buffer was preserved at
+		int32_t						MouseBuffY;		// pixel y mouse buffer was preserved at
+		int32_t						MaxWidth;		// maximum width of mouse background buffer
+		int32_t						MaxHeight;		// maximum height of mouse background buffer
 
-		int						MouseCXLeft;	// left x pos if conditional hide mouse in effect
-		int						MouseCYUpper;	// upper y pos if conditional hide mouse in effect
-		int						MouseCXRight;	// right x pos if conditional hide mouse in effect
-		int						MouseCYLower;	// lower y pos if conditional hide mouse in effect
+		int32_t						MouseCXLeft;	// left x pos if conditional hide mouse in effect
+		int32_t						MouseCYUpper;	// upper y pos if conditional hide mouse in effect
+		int32_t						MouseCXRight;	// right x pos if conditional hide mouse in effect
+		int32_t						MouseCYLower;	// lower y pos if conditional hide mouse in effect
 		char						MCFlags;			// conditional hide mouse flags
 		char						MCCount;			// nesting count for conditional hide mouse
 
 		GraphicViewPortClass	*Screen;			// pointer to the surface mouse was init'd with
 		char *					PrevCursor;		// pointer to previous cursor shape
-		int						MouseUpdate;
-		int						State;
+		int32_t						MouseUpdate;
+		int32_t						State;
 
 		char						*EraseBuffer;	// Buffer which holds background to restore to hidden page
-		int						EraseBuffX;		// X position of the hidden page background
-		int						EraseBuffY;		// Y position of the hidden page background
-		int						EraseBuffHotX;	// X position of the hidden page background
-		int						EraseBuffHotY;	// Y position of the hidden page background
+		int32_t						EraseBuffX;		// X position of the hidden page background
+		int32_t						EraseBuffY;		// Y position of the hidden page background
+		int32_t						EraseBuffHotX;	// X position of the hidden page background
+		int32_t						EraseBuffHotY;	// Y position of the hidden page background
 
-		int						EraseFlags;		// Records whether mutex has been released
+		int32_t						EraseFlags;		// Records whether mutex has been released
 
 		CRITICAL_SECTION		MouseCriticalSection;  // Control for mouse re-enterancy
 
-		friend void __cdecl Mouse_Shadow_Buffer(void *thisptr, GraphicViewPortClass *srcdst, void *buffer, int x, int y, int hotx, int hoty, int store);
-		friend void __cdecl Draw_Mouse(void *thisptr, GraphicViewPortClass *srcdst, int x, int y);
-		friend void * __cdecl ASM_Set_Mouse_Cursor(void *thisptr, int hotspotx, int hotspoty, VOID *cursor);
+		friend void  Mouse_Shadow_Buffer(void *thisptr, GraphicViewPortClass *srcdst, void *buffer, int32_t x, int32_t y, int32_t hotx, int32_t hoty, int32_t store);
+		friend void  Draw_Mouse(void *thisptr, GraphicViewPortClass *srcdst, int32_t x, int32_t y);
+		friend void *  ASM_Set_Mouse_Cursor(void *thisptr, int32_t hotspotx, int32_t hotspoty, void *cursor);
 
 };
 
 void Hide_Mouse(void);
 void Show_Mouse(void);
-void Conditional_Hide_Mouse(int x1, int y1, int x2, int y2);
+void Conditional_Hide_Mouse(int32_t x1, int32_t y1, int32_t x2, int32_t y2);
 void Conditional_Show_Mouse(void);
-int Get_Mouse_State(void);
-void *Set_Mouse_Cursor(int hotx, int hoty, void *cursor);
-int Get_Mouse_X(void);
-int Get_Mouse_Y(void);
+int32_t Get_Mouse_State(void);
+void *Set_Mouse_Cursor(int32_t hotx, int32_t hoty, void *cursor);
+int32_t Get_Mouse_X(void);
+int32_t Get_Mouse_Y(void);
 
 #endif

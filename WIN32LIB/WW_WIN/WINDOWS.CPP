@@ -61,38 +61,38 @@ PRIVATE void In_Char(char *str);
 PRIVATE char Fetch_Char(void);
 
 
-PRIVATE int ScrollCounter = 0;	//	Count of the lines displayed before a pause.
+PRIVATE int32_t ScrollCounter = 0;	//	Count of the lines displayed before a pause.
 PRIVATE char Line[84];	// Staging line buffer.
-PRIVATE int Pos;			// Char Position of next free character.
-PRIVATE int PPos;		// Pixel position of next free character.
-PRIVATE int WPos;		// Char position in window.
+PRIVATE int32_t Pos;			// Char Position of next free character.
+PRIVATE int32_t PPos;		// Pixel position of next free character.
+PRIVATE int32_t WPos;		// Char position in window.
 PRIVATE char *MainSource;
 PRIVATE char *AltSource;
 PRIVATE char Char[2];
 PRIVATE char Stack;
 PRIVATE char WordWrapFlag = FALSE;	// flag for a word wrap.
 
-PRIVATE int MoreSpace = 7;
-PRIVATE int MoreFColor = 0;
-PRIVATE int MoreBColor = 0;
+PRIVATE int32_t MoreSpace = 7;
+PRIVATE int32_t MoreFColor = 0;
+PRIVATE int32_t MoreBColor = 0;
 
 
-int WindowColumns=40;
-int WindowLines=25;
-int WindowWidth=40;
-unsigned int WinB=0;
-unsigned int WinC=1;
-unsigned int WinX=0;
-unsigned int WinY=0;
-unsigned int WinCx=0;
-unsigned int WinCy=0;
-unsigned int WinH=25;
-unsigned int WinW=40;
-unsigned int Window=0;
+int32_t WindowColumns=40;
+int32_t WindowLines=25;
+int32_t WindowWidth=40;
+uint32_t WinB=0;
+uint32_t WinC=1;
+uint32_t WinX=0;
+uint32_t WinY=0;
+uint32_t WinCx=0;
+uint32_t WinCy=0;
+uint32_t WinH=25;
+uint32_t WinW=40;
+uint32_t Window=0;
 
-int MoreOn = TRUE;
+int32_t MoreOn = TRUE;
 char *TXT_MoreText = "--More--";
-void (*Window_More_Ptr)(char const *,int,int,int) = Standard_More_Prompt;
+void (*Window_More_Ptr)(char const *,int32_t,int32_t,int32_t) = Standard_More_Prompt;
 
 extern GraphicViewPortClass *LogicPage;
 /***************************************************************************
@@ -119,9 +119,9 @@ extern GraphicViewPortClass *LogicPage;
  * HISTORY:                                                                *
  *   07/29/1991 JLB : Created.                                             *
  *=========================================================================*/
-void Standard_More_Prompt(char const *prompt, int space, int fcolor, int bcolor)
+void Standard_More_Prompt(char const *prompt, int32_t space, int32_t fcolor, int32_t bcolor)
 {
-	int	x, y, moresize;
+	int32_t	x, y, moresize;
 
 	moresize = (space - 1) * (FontWidth+FontXSpacing);
 	x = ((WinX+WinW) << 3) - moresize;
@@ -145,7 +145,7 @@ void Standard_More_Prompt(char const *prompt, int space, int fcolor, int bcolor)
 
 	// Erase the more prompt prompt.
 	//	Text_Print(prompt, x, y, WinB, WinB);
-	LogicPage->Fill_Rect(x, y, x + moresize - 1, y + (FontHeight+FontYSpacing) - 1, (unsigned char)WinB);
+	LogicPage->Fill_Rect(x, y, x + moresize - 1, y + (FontHeight+FontYSpacing) - 1, (uint8_t)WinB);
 }
 
 
@@ -172,7 +172,7 @@ void Standard_More_Prompt(char const *prompt, int space, int fcolor, int bcolor)
  * HISTORY:                                                                *
  *   07/29/1991 JLB : Created.                                             *
  *=========================================================================*/
-void Set_More_Prompt(char const *prompt, int space, int fcolor, int bcolor)
+void Set_More_Prompt(char const *prompt, int32_t space, int32_t fcolor, int32_t bcolor)
 {
 	if (prompt) {
 		TXT_MoreText = (char*)prompt;
@@ -248,10 +248,10 @@ void Set_More_Off(void)
  * HISTORY:                                                                *
  *   07/25/1991 JLB : Created.                                             *
  *=========================================================================*/
-int Change_Window(int windnum)
+int32_t Change_Window(int32_t windnum)
 {
-	int	oldwindow;
-	int	*data;
+	int32_t	oldwindow;
+	int32_t	*data;
 
 	oldwindow = Window;
 	Window = windnum;
@@ -290,9 +290,9 @@ int Change_Window(int windnum)
  * HISTORY:                                                                *
  *   07/25/1991 JLB : Created.                                             *
  *=========================================================================*/
-int Change_New_Window(int windnum)
+int32_t Change_New_Window(int32_t windnum)
 {
-	int	oldwindow;
+	int32_t	oldwindow;
 
 	oldwindow = Change_Window(windnum);
 	New_Window();
@@ -318,14 +318,14 @@ int Change_New_Window(int windnum)
  *=========================================================================*/
 void New_Window(void)
 {
-	int	x,y,w,h;
+	int32_t	x,y,w,h;
 
 	x = WinX << 3;
 	y = WinY;
 	w = (WinX + WinW) << 3;
 	h = WinY + WinH;
 
-	LogicPage->Fill_Rect(x, y, w - 1, h - 1, (unsigned char)WinB);
+	LogicPage->Fill_Rect(x, y, w - 1, h - 1, (uint8_t)WinB);
 
 	WinCx = WPos = 0;
 	WinCy = 0;
@@ -348,7 +348,7 @@ void New_Window(void)
  * HISTORY:                                                                *
  *   07/25/1991 JLB : Created.                                             *
  *=========================================================================*/
-void Window_Int_Print(int num)
+void Window_Int_Print(int32_t num)
 {
 	Window_Print("%d", num);
 }
@@ -412,10 +412,10 @@ void Window_Int_Print(int num)
  *=========================================================================*/
 void Window_Print(char const string[], ...)
 {
-	int		oldcx, x, y;	// Scratch variables.
+	int32_t		oldcx, x, y;	// Scratch variables.
 	char		c;					// Current character.
 	char		buffer[10];		// Working %d buffer.
-	int		old_c, old_b;	// Original window colors.
+	int32_t		old_c, old_b;	// Original window colors.
 	va_list	arg;				// Argument list var.
 
 
@@ -458,7 +458,7 @@ void Window_Print(char const string[], ...)
 
 					case 'd':
 						AltSource = buffer;
-						sprintf(buffer, "%d", va_arg(arg, int));
+						sprintf(buffer, "%d", va_arg(arg, int32_t));
 						Stack = Char[1];
 						Char[0] = Char[1] = '\0';
 						c = Fetch_Char();
@@ -520,7 +520,7 @@ void Window_Print(char const string[], ...)
 				Flush_Line();
 				WinCy = Fetch_Char();
 				//WinCy = MAX(0, WinCy);
-				WinCy = MIN((long)WindowLines-1, (long)WinCy);
+				WinCy = MIN((int32_t)WindowLines-1, (int32_t)WinCy);
 				break;
 
 			/*
@@ -608,7 +608,7 @@ void Window_Print(char const string[], ...)
 					// Fill_Rect instead of printing spaces
 
 					LogicPage->Fill_Rect(x + oldcx, y,
-								x + WindowWidth - 1, y + (FontHeight+FontYSpacing) - 1, (unsigned char)WinB);
+								x + WindowWidth - 1, y + (FontHeight+FontYSpacing) - 1, (uint8_t)WinB);
 
 					ScrollCounter++;
 		  			WinCy++;
@@ -619,7 +619,7 @@ void Window_Print(char const string[], ...)
 					// Fill_Rect instead of printing spaces
 
 					LogicPage->Fill_Rect(x + oldcx, y,
-								x + WinCx - 1, y + (FontHeight+FontYSpacing) - 1, (unsigned char)WinB);
+								x + WinCx - 1, y + (FontHeight+FontYSpacing) - 1, (uint8_t)WinB);
 				}
 				break;
 
@@ -704,7 +704,7 @@ void Window_Print(char const string[], ...)
  *=========================================================================*/
 PRIVATE void Scroll_Window(void)
 {
-	int	y;		// Top pixel row of bottom line of window.
+	int32_t	y;		// Top pixel row of bottom line of window.
 
 	/*
 	**	Possibly prompt for more text.
@@ -728,7 +728,7 @@ PRIVATE void Scroll_Window(void)
 				WinY + y,
 				((WinX+WinW)<<3) - 1,
 				WinY + WinH - 1,
-				(unsigned char)WinB);
+				(uint8_t)WinB);
 }
 
 
@@ -749,11 +749,11 @@ PRIVATE void Scroll_Window(void)
  *=========================================================================*/
 PRIVATE void Flush_Line(void)
 {
-	int	breakit, breaksize, breakwidth;
-	int	x, y;					// Coordinates of text print.
-	int	breakpoint;			// Point to break the line (if possible).
+	int32_t	breakit, breaksize, breakwidth;
+	int32_t	x, y;					// Coordinates of text print.
+	int32_t	breakpoint;			// Point to break the line (if possible).
 	char	breakchar;			// Break replace character.
-	int	index;				// Backward moving index var.
+	int32_t	index;				// Backward moving index var.
 
 	/*
 	** There could be a held <CR> and this is implied by the cursor Y position

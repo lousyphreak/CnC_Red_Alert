@@ -56,7 +56,7 @@
  * HISTORY:                                                                *
  *   08/20/1993 JLB : Created.                                             *
  *=========================================================================*/
-VOID GraphicViewPortClass::Draw_Rect(int x1_pixel, int y1_pixel, int x2_pixel, int y2_pixel, unsigned char color)
+void GraphicViewPortClass::Draw_Rect(int32_t x1_pixel, int32_t y1_pixel, int32_t x2_pixel, int32_t y2_pixel, uint8_t color)
 {
 	Lock();
 	Draw_Line(x1_pixel, y1_pixel, x2_pixel, y1_pixel, color);

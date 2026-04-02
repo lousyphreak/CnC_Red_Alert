@@ -71,16 +71,16 @@
 							 }
 
 
-GraphicBufferClass* Read_PCX_File(char* name, char* Palette, void *Buff, long Size)
+GraphicBufferClass* Read_PCX_File(char* name, char* Palette, void *Buff, int32_t Size)
 {
-  unsigned     i , j ;
-  unsigned     rle ;
-  unsigned     color ;
-  unsigned		scan_pos ;
+  uint32_t     i , j ;
+  uint32_t     rle ;
+  uint32_t     color ;
+  uint32_t		scan_pos ;
   char		 * file_ptr ;
-  int				width	;
-  int				height ;
-  int 	      file_handle ;
+  int32_t				width	;
+  int32_t				height ;
+  int32_t 	      file_handle ;
   char		 * buffer ;
   PCX_HEADER   header ;
   RGB  		 * pal ;

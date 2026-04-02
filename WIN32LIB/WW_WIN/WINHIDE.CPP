@@ -59,9 +59,9 @@
  * HISTORY:                                                                *
  *   04/26/1991 JLB : Created.                                             *
  *=========================================================================*/
-void Window_Hide_Mouse(int window)
+void Window_Hide_Mouse(int32_t window)
 {
-	int	x,y,w,h;
+	int32_t	x,y,w,h;
 
 	x = WindowList[window][WINDOWX]<<3;
 	y = WindowList[window][WINDOWY];

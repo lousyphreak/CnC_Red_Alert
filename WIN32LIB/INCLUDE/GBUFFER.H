@@ -147,22 +147,22 @@
 class BitmapClass
 {
 	public:
-		BitmapClass(int w, int h, unsigned char * data) :
+		BitmapClass(int32_t w, int32_t h, uint8_t * data) :
 			Width(w), Height(h), Data(data) {};
 
-		int Width;
-		int Height;
-		unsigned char * Data;
+		int32_t Width;
+		int32_t Height;
+		uint8_t * Data;
 };
 
 class TPoint2D
 {
 	public:
-		TPoint2D(int xx, int yy) : x(xx), y(yy) {};
+		TPoint2D(int32_t xx, int32_t yy) : x(xx), y(yy) {};
 		TPoint2D(void) : x(0), y(0) {};
 
-		int x;
-		int y;
+		int32_t x;
+		int32_t y;
 };
 #endif
 
@@ -230,7 +230,7 @@ class GraphicViewPortClass {
 		/*===================================================================*/
 		/* Define the base constructor and destructors for the class			*/
 		/*===================================================================*/
-		GraphicViewPortClass(GraphicBufferClass* graphic_buff, int x, int y, int w, int h);
+		GraphicViewPortClass(GraphicBufferClass* graphic_buff, int32_t x, int32_t y, int32_t w, int32_t h);
 		GraphicViewPortClass();
 		~GraphicViewPortClass();
 
@@ -238,69 +238,69 @@ class GraphicViewPortClass {
 		/* define functions to get at the private data members					*/
 		/*===================================================================*/
 		intptr_t	Get_Offset(void);
-		int	Get_Height(void);
-		int	Get_Width(void);
-		int	Get_XAdd(void);
-		int	Get_XPos(void);
-		int	Get_YPos(void);
-		int	Get_Pitch(void);
-		inline BOOL	Get_IsVideoSurface(void);
+		int32_t	Get_Height(void);
+		int32_t	Get_Width(void);
+		int32_t	Get_XAdd(void);
+		int32_t	Get_XPos(void);
+		int32_t	Get_YPos(void);
+		int32_t	Get_Pitch(void);
+		inline int32_t	Get_IsVideoSurface(void);
 		GraphicBufferClass	*Get_Graphic_Buffer(void);
 
 		/*===================================================================*/
 		/* Define a function which allows us to change a video viewport on	*/
 		/*		the fly.																			*/
 		/*===================================================================*/
-		BOOL Change(int x, int y, int w, int h);
+		int32_t Change(int32_t x, int32_t y, int32_t w, int32_t h);
 
 		/*===================================================================*/
 		/* Define the set of common graphic functions that are supported by	*/
 		/*		both Graphic ViewPorts and VideoViewPorts.							*/
 		/*===================================================================*/
-		int32_t	Size_Of_Region(int w, int h);
-		void	Put_Pixel(int x, int y, unsigned char color);
-		int	Get_Pixel(int x, int y);
-		void	Clear(unsigned char color = 0);
-		int32_t	To_Buffer(int x, int y, int w, int h, void *buff, int32_t size);
-		int32_t	To_Buffer(int x, int y, int w, int h, BufferClass *buff);
+		int32_t	Size_Of_Region(int32_t w, int32_t h);
+		void	Put_Pixel(int32_t x, int32_t y, uint8_t color);
+		int32_t	Get_Pixel(int32_t x, int32_t y);
+		void	Clear(uint8_t color = 0);
+		int32_t	To_Buffer(int32_t x, int32_t y, int32_t w, int32_t h, void *buff, int32_t size);
+		int32_t	To_Buffer(int32_t x, int32_t y, int32_t w, int32_t h, BufferClass *buff);
 		int32_t	To_Buffer(BufferClass *buff);
-		HRESULT	Blit(	GraphicViewPortClass& dest, int x_pixel, int y_pixel, int dx_pixel,
-						int dy_pixel, int pixel_width, int pixel_height, BOOL trans = FALSE);
-		HRESULT	Blit(	GraphicViewPortClass& dest, int dx, int dy, BOOL trans = FALSE);
-		HRESULT	Blit(	GraphicViewPortClass& dest, BOOL trans = FALSE);
-		HRESULT	Blit(	VideoViewPortClass& dest, int x_pixel, int y_pixel, int dx_pixel,
-						int dy_pixel, int pixel_width, int pixel_height, BOOL trans = FALSE);
-		HRESULT	Blit(	VideoViewPortClass& dest, int dx, int dy, BOOL trans = FALSE);
-		HRESULT	Blit(	VideoViewPortClass& dest, BOOL trans = FALSE);
-		BOOL	Scale(	GraphicViewPortClass &dest, int src_x, int src_y, int dst_x,
-							int dst_y, int src_w, int src_h, int dst_w, int dst_h, BOOL trans = FALSE, char *remap = NULL);
-		BOOL	Scale(	GraphicViewPortClass &dest, int src_x, int src_y, int dst_x,
-							int dst_y, int src_w, int src_h, int dst_w, int dst_h, char *remap);
-		BOOL	Scale(	GraphicViewPortClass &dest, BOOL trans = FALSE, char *remap = NULL);
-		BOOL	Scale(	GraphicViewPortClass &dest, char *remap);
-		BOOL	Scale(	VideoViewPortClass &dest, int src_x, int src_y, int dst_x,
-							int dst_y, int src_w, int src_h, int dst_w, int dst_h, BOOL trans = FALSE, char *remap = NULL);
-		BOOL	Scale(	VideoViewPortClass &dest, int src_x, int src_y, int dst_x,
-							int dst_y, int src_w, int src_h, int dst_w, int dst_h, char *remap);
-		BOOL	Scale(	VideoViewPortClass &dest, BOOL trans = FALSE, char *remap = NULL);
-		BOOL	Scale(	VideoViewPortClass &dest, char *remap);
-		uint32_t	Print(char const *string, int x_pixel, int y_pixel, int fcolor, int bcolor);
-		uint32_t	Print(int16_t num, int x_pixel, int y_pixel, int fcol, int bcol);
-		uint32_t	Print(int32_t num, int x_pixel, int y_pixel, int fcol, int bcol);
+		HRESULT	Blit(	GraphicViewPortClass& dest, int32_t x_pixel, int32_t y_pixel, int32_t dx_pixel,
+						int32_t dy_pixel, int32_t pixel_width, int32_t pixel_height, int32_t trans = FALSE);
+		HRESULT	Blit(	GraphicViewPortClass& dest, int32_t dx, int32_t dy, int32_t trans = FALSE);
+		HRESULT	Blit(	GraphicViewPortClass& dest, int32_t trans = FALSE);
+		HRESULT	Blit(	VideoViewPortClass& dest, int32_t x_pixel, int32_t y_pixel, int32_t dx_pixel,
+						int32_t dy_pixel, int32_t pixel_width, int32_t pixel_height, int32_t trans = FALSE);
+		HRESULT	Blit(	VideoViewPortClass& dest, int32_t dx, int32_t dy, int32_t trans = FALSE);
+		HRESULT	Blit(	VideoViewPortClass& dest, int32_t trans = FALSE);
+		int32_t	Scale(	GraphicViewPortClass &dest, int32_t src_x, int32_t src_y, int32_t dst_x,
+							int32_t dst_y, int32_t src_w, int32_t src_h, int32_t dst_w, int32_t dst_h, int32_t trans = FALSE, char *remap = NULL);
+		int32_t	Scale(	GraphicViewPortClass &dest, int32_t src_x, int32_t src_y, int32_t dst_x,
+							int32_t dst_y, int32_t src_w, int32_t src_h, int32_t dst_w, int32_t dst_h, char *remap);
+		int32_t	Scale(	GraphicViewPortClass &dest, int32_t trans = FALSE, char *remap = NULL);
+		int32_t	Scale(	GraphicViewPortClass &dest, char *remap);
+		int32_t	Scale(	VideoViewPortClass &dest, int32_t src_x, int32_t src_y, int32_t dst_x,
+							int32_t dst_y, int32_t src_w, int32_t src_h, int32_t dst_w, int32_t dst_h, int32_t trans = FALSE, char *remap = NULL);
+		int32_t	Scale(	VideoViewPortClass &dest, int32_t src_x, int32_t src_y, int32_t dst_x,
+							int32_t dst_y, int32_t src_w, int32_t src_h, int32_t dst_w, int32_t dst_h, char *remap);
+		int32_t	Scale(	VideoViewPortClass &dest, int32_t trans = FALSE, char *remap = NULL);
+		int32_t	Scale(	VideoViewPortClass &dest, char *remap);
+		uint32_t	Print(char const *string, int32_t x_pixel, int32_t y_pixel, int32_t fcolor, int32_t bcolor);
+		uint32_t	Print(int16_t num, int32_t x_pixel, int32_t y_pixel, int32_t fcol, int32_t bcol);
+		uint32_t	Print(int32_t num, int32_t x_pixel, int32_t y_pixel, int32_t fcol, int32_t bcol);
 
 		/*===================================================================*/
 		/* Define the list of graphic functions which work only with a 		*/
 		/*		graphic buffer.																*/
 		/*===================================================================*/
-		VOID Draw_Line(int sx, int sy, int dx, int dy, unsigned char color);
-		VOID Draw_Rect(int sx, int sy, int dx, int dy, unsigned char color);
-		VOID Fill_Rect(int sx, int sy, int dx, int dy, unsigned char color);
-		VOID Fill_Quad(VOID *span_buff, int x0, int y0, int x1, int y1,
-							int x2, int y2, int x3, int y3, int color);
-		VOID Remap(int sx, int sy, int width, int height, VOID *remap);
-		VOID Remap(VOID *remap);
-		void Draw_Stamp(void const *icondata, int icon, int x_pixel, int y_pixel, void const *remap);
-		void Draw_Stamp(void const *icondata, int icon, int x_pixel, int y_pixel, void const *remap, int clip_window);
+		void Draw_Line(int32_t sx, int32_t sy, int32_t dx, int32_t dy, uint8_t color);
+		void Draw_Rect(int32_t sx, int32_t sy, int32_t dx, int32_t dy, uint8_t color);
+		void Fill_Rect(int32_t sx, int32_t sy, int32_t dx, int32_t dy, uint8_t color);
+		void Fill_Quad(void *span_buff, int32_t x0, int32_t y0, int32_t x1, int32_t y1,
+							int32_t x2, int32_t y2, int32_t x3, int32_t y3, int32_t color);
+		void Remap(int32_t sx, int32_t sy, int32_t width, int32_t height, void *remap);
+		void Remap(void *remap);
+		void Draw_Stamp(void const *icondata, int32_t icon, int32_t x_pixel, int32_t y_pixel, void const *remap);
+		void Draw_Stamp(void const *icondata, int32_t icon, int32_t x_pixel, int32_t y_pixel, void const *remap, int32_t clip_window);
 
 //	This doesnt seem to exist anywhere?? - Steve T 9/26/95 6:05PM
 //		VOID Grey_Out_Region(int x, int y, int width, int height, int color);
@@ -308,18 +308,18 @@ class GraphicViewPortClass {
 		//
 		// New members to lock and unlock the direct draw video memory
 		//
-		inline BOOL 	Lock ();
-		inline BOOL 	Unlock();
-		inline int		Get_LockCount();
+		inline int32_t 	Lock ();
+		inline int32_t 	Unlock();
+		inline int32_t		Get_LockCount();
 
 		// Member to blit using the SDL draw hardware path
-		HRESULT Video_Linear_Blit_To_Linear ( GraphicViewPortClass &dest, int source_x, int source_y, int dest_x, int dest_y, int width	, int height, BOOL mask );
+		HRESULT Video_Linear_Blit_To_Linear ( GraphicViewPortClass &dest, int32_t source_x, int32_t source_y, int32_t dest_x, int32_t dest_y, int32_t width	, int32_t height, int32_t mask );
 
 		/*===================================================================*/
 		/* Define functions to attach the viewport to a graphicbuffer			*/
 		/*===================================================================*/
-		VOID Attach(GraphicBufferClass *graphic_buff, int x, int y, int w, int h);
-		void Attach(GraphicBufferClass *video_buff, int w, int h);
+		void Attach(GraphicBufferClass *graphic_buff, int32_t x, int32_t y, int32_t w, int32_t h);
+		void Attach(GraphicBufferClass *video_buff, int32_t w, int32_t h);
 
 	protected:
 
@@ -327,15 +327,15 @@ class GraphicViewPortClass {
 		/* Define the data used by a GraphicViewPortClass							*/
 		/*===================================================================*/
 		intptr_t				Offset;			// offset to graphic page
-		int						Width;			// width of graphic page
-		int						Height;			// height of graphic page
-		int						XAdd;			// xadd for graphic page (0)
-		int						XPos;			// x offset in relation to graphicbuff
-		int						YPos;			// y offset in relation to graphicbuff
+		int32_t						Width;			// width of graphic page
+		int32_t						Height;			// height of graphic page
+		int32_t						XAdd;			// xadd for graphic page (0)
+		int32_t						XPos;			// x offset in relation to graphicbuff
+		int32_t						YPos;			// y offset in relation to graphicbuff
 		int32_t				Pitch;			//Distance from one line to the next
 		GraphicBufferClass		*GraphicBuff;	// related graphic buff
-		BOOL					IsVideoSurface;	//Flag to let us know if it is a direct draw surface
-		int						LockCount;		// Count for stacking locks if non-zero the buffer
+		int32_t					IsVideoSurface;	//Flag to let us know if it is a direct draw surface
+		int32_t						LockCount;		// Count for stacking locks if non-zero the buffer
 };                                              //   is a locked DD surface
 
 /*=========================================================================*/
@@ -355,20 +355,20 @@ class GraphicViewPortClass {
 class GraphicBufferClass : public GraphicViewPortClass, public BufferClass {
 
 	public:
-		GraphicBufferClass(int w, int h, GBC_Enum flags);
-		GraphicBufferClass(int w, int h,	void *buffer, int32_t size);
-		GraphicBufferClass(int w, int h, void *buffer = 0);
+		GraphicBufferClass(int32_t w, int32_t h, GBC_Enum flags);
+		GraphicBufferClass(int32_t w, int32_t h,	void *buffer, int32_t size);
+		GraphicBufferClass(int32_t w, int32_t h, void *buffer = 0);
 		GraphicBufferClass(void);
 		~GraphicBufferClass();
 
 		void Video_Init(GBC_Enum flags);
-		void Init(int w, int h, void *buffer, int32_t size, GBC_Enum flags);
+		void Init(int32_t w, int32_t h, void *buffer, int32_t size, GBC_Enum flags);
 		void Un_Init(void);
 		void GraphicBufferClass::Attach_Surface (GraphicBufferClass * attach_buffer);
-		BOOL Lock(void);
-		BOOL Unlock(void);
+		int32_t Lock(void);
+		int32_t Unlock(void);
 
-		void Scale_Rotate(BitmapClass &bmp,TPoint2D const &pt,int32_t scale,unsigned char angle);
+		void Scale_Rotate(BitmapClass &bmp,TPoint2D const &pt,int32_t scale,uint8_t angle);
 
 		// Member to get a pointer to a direct draw surface
 		WWSurface* Get_Video_Surface ( void );
@@ -381,7 +381,7 @@ class GraphicBufferClass : public GraphicViewPortClass, public BufferClass {
 
 
 
-inline int GraphicViewPortClass::Get_LockCount(void)
+inline int32_t GraphicViewPortClass::Get_LockCount(void)
 {
 	return (LockCount);
 }
@@ -402,7 +402,7 @@ inline int GraphicViewPortClass::Get_LockCount(void)
  * HISTORY:                                                                                    *
  *    11/29/95 1:02PM ST : Created                                                             *
  *=============================================================================================*/
-inline BOOL GraphicViewPortClass::Get_IsVideoSurface(void)
+inline int32_t GraphicViewPortClass::Get_IsVideoSurface(void)
 {
 	return (IsVideoSurface);
 }
@@ -446,9 +446,9 @@ inline WWSurface* GraphicBufferClass::Get_Video_Surface ( void )
  *   09-19-95 12:33pm ST : Created                                                             *
  *   10/09/1995     : Moved actually functionality to GraphicBuffer                            *
  *=============================================================================================*/
-inline BOOL GraphicViewPortClass::Lock(void)
+inline int32_t GraphicViewPortClass::Lock(void)
 {
-	BOOL lock = GraphicBuff->Lock();
+	int32_t lock = GraphicBuff->Lock();
 	if ( !lock ) return(FALSE);
 
 	if (this != GraphicBuff) {
@@ -472,9 +472,9 @@ inline BOOL GraphicViewPortClass::Lock(void)
  *   09-19-95 02:20pm ST : Created                                                             *
  *   10/09/1995     : Moved actually functionality to GraphicBuffer                            *
  *=============================================================================================*/
-inline BOOL GraphicViewPortClass::Unlock(void)
+inline int32_t GraphicViewPortClass::Unlock(void)
 {
-	BOOL unlock = GraphicBuff->Unlock();
+	int32_t unlock = GraphicBuff->Unlock();
 	if (!unlock) return(FALSE);
 	if (this != GraphicBuff && IsVideoSurface && !GraphicBuff->LockCount) {
 		Offset = 0;
@@ -508,7 +508,7 @@ inline intptr_t GraphicViewPortClass::Get_Offset(void)
  * HISTORY:                                                                *
  *   06/07/1994 PWG : Created.                                             *
  *=========================================================================*/
-inline int GraphicViewPortClass::Get_Height(void)
+inline int32_t GraphicViewPortClass::Get_Height(void)
 {
 	return(Height);
 }
@@ -523,7 +523,7 @@ inline int GraphicViewPortClass::Get_Height(void)
  * HISTORY:                                                                *
  *   06/07/1994 PWG : Created.                                             *
  *=========================================================================*/
-inline int GraphicViewPortClass::Get_Width(void)
+inline int32_t GraphicViewPortClass::Get_Width(void)
 {
 	return(Width);
 }
@@ -539,7 +539,7 @@ inline int GraphicViewPortClass::Get_Width(void)
  * HISTORY:                                                                *
  *   06/07/1994 PWG : Created.                                             *
  *=========================================================================*/
-inline int GraphicViewPortClass::Get_XAdd(void)
+inline int32_t GraphicViewPortClass::Get_XAdd(void)
 {
 	return(XAdd);
 }
@@ -553,7 +553,7 @@ inline int GraphicViewPortClass::Get_XAdd(void)
  * HISTORY:                                                                *
  *   08/22/1994 SKB : Created.                                             *
  *=========================================================================*/
-inline int GraphicViewPortClass::Get_XPos(void)
+inline int32_t GraphicViewPortClass::Get_XPos(void)
 {
 	return(XPos);
 }
@@ -571,7 +571,7 @@ inline int GraphicViewPortClass::Get_XPos(void)
  * HISTORY:                                                                *
  *   08/22/1994 SKB : Created.                                             *
  *=========================================================================*/
-inline int GraphicViewPortClass::Get_YPos(void)
+inline int32_t GraphicViewPortClass::Get_YPos(void)
 {
 	return(YPos);
 }
@@ -603,7 +603,7 @@ inline GraphicBufferClass *GraphicViewPortClass::Get_Graphic_Buffer(void)
  * HISTORY:                                                                *
  *   03/01/1995 BWG : Created.                                             *
  *=========================================================================*/
-inline int32_t	GraphicViewPortClass::Size_Of_Region(int w, int h)
+inline int32_t	GraphicViewPortClass::Size_Of_Region(int32_t w, int32_t h)
 {
 	return Buffer_Size_Of_Region(this, w, h);
 }
@@ -621,7 +621,7 @@ inline int32_t	GraphicViewPortClass::Size_Of_Region(int w, int h)
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline void	GraphicViewPortClass::Put_Pixel(int x, int y, unsigned char color)
+inline void	GraphicViewPortClass::Put_Pixel(int32_t x, int32_t y, uint8_t color)
 {
 
 	if (Lock()){
@@ -644,9 +644,9 @@ inline void	GraphicViewPortClass::Put_Pixel(int x, int y, unsigned char color)
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline int	GraphicViewPortClass::Get_Pixel(int x, int y)
+inline int32_t	GraphicViewPortClass::Get_Pixel(int32_t x, int32_t y)
 {
-	int		return_code=0;
+	int32_t		return_code=0;
 
 	if (Lock()){
 		return_code=(Buffer_Get_Pixel(this, x, y));
@@ -668,7 +668,7 @@ inline int	GraphicViewPortClass::Get_Pixel(int x, int y)
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline void	GraphicViewPortClass::Clear(unsigned char color)
+inline void	GraphicViewPortClass::Clear(uint8_t color)
 {
 	if (Lock()){
 		Buffer_Clear(this, color);
@@ -689,7 +689,7 @@ inline void	GraphicViewPortClass::Clear(unsigned char color)
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline int32_t	GraphicViewPortClass::To_Buffer(int x, int y, int w, int h, void *buff, int32_t size)
+inline int32_t	GraphicViewPortClass::To_Buffer(int32_t x, int32_t y, int32_t w, int32_t h, void *buff, int32_t size)
 {
 	int32_t	return_code=0;
 	if (Lock()){
@@ -711,7 +711,7 @@ inline int32_t	GraphicViewPortClass::To_Buffer(int x, int y, int w, int h, void 
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline int32_t	GraphicViewPortClass::To_Buffer(int x, int y, int w, int h, BufferClass *buff)
+inline int32_t	GraphicViewPortClass::To_Buffer(int32_t x, int32_t y, int32_t w, int32_t h, BufferClass *buff)
 {
 	int32_t	return_code=0;
 	if (Lock()){
@@ -755,8 +755,8 @@ inline int32_t	GraphicViewPortClass::To_Buffer(BufferClass *buff)
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline HRESULT	GraphicViewPortClass::Blit(	GraphicViewPortClass& dest, int x_pixel, int y_pixel, int dx_pixel,
-				int dy_pixel, int pixel_width, int pixel_height, BOOL trans)
+inline HRESULT	GraphicViewPortClass::Blit(	GraphicViewPortClass& dest, int32_t x_pixel, int32_t y_pixel, int32_t dx_pixel,
+				int32_t dy_pixel, int32_t pixel_width, int32_t pixel_height, int32_t trans)
 {
 	HRESULT		return_code=0;
 
@@ -792,7 +792,7 @@ inline HRESULT	GraphicViewPortClass::Blit(	GraphicViewPortClass& dest, int x_pix
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline HRESULT	GraphicViewPortClass::Blit(	GraphicViewPortClass& dest, int dx, int dy, BOOL trans)
+inline HRESULT	GraphicViewPortClass::Blit(	GraphicViewPortClass& dest, int32_t dx, int32_t dy, int32_t trans)
 {
 	HRESULT		return_code=0;
 
@@ -830,7 +830,7 @@ inline HRESULT	GraphicViewPortClass::Blit(	GraphicViewPortClass& dest, int dx, i
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline HRESULT	GraphicViewPortClass::Blit(	GraphicViewPortClass& dest, BOOL trans)
+inline HRESULT	GraphicViewPortClass::Blit(	GraphicViewPortClass& dest, int32_t trans)
 {
 	HRESULT		return_code=0;
 
@@ -871,10 +871,10 @@ inline HRESULT	GraphicViewPortClass::Blit(	GraphicViewPortClass& dest, BOOL tran
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline BOOL	GraphicViewPortClass::Scale(	GraphicViewPortClass &dest, int src_x, int src_y, int dst_x,
-					int dst_y, int src_w, int src_h, int dst_w, int dst_h, BOOL trans, char *remap)
+inline int32_t	GraphicViewPortClass::Scale(	GraphicViewPortClass &dest, int32_t src_x, int32_t src_y, int32_t dst_x,
+					int32_t dst_y, int32_t src_w, int32_t src_h, int32_t dst_w, int32_t dst_h, int32_t trans, char *remap)
 {
-	BOOL	return_code=0;
+	int32_t	return_code=0;
 	if (Lock()){
 		if (dest.Lock()){
 			return_code = (Linear_Scale_To_Linear(this, &dest, src_x, src_y, dst_x, dst_y, src_w, src_h, dst_w, dst_h, trans, remap));
@@ -897,10 +897,10 @@ inline BOOL	GraphicViewPortClass::Scale(	GraphicViewPortClass &dest, int src_x, 
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline BOOL	GraphicViewPortClass::Scale(	GraphicViewPortClass &dest, int src_x, int src_y, int dst_x,
-					int dst_y, int src_w, int src_h, int dst_w, int dst_h, char *remap)
+inline int32_t	GraphicViewPortClass::Scale(	GraphicViewPortClass &dest, int32_t src_x, int32_t src_y, int32_t dst_x,
+					int32_t dst_y, int32_t src_w, int32_t src_h, int32_t dst_w, int32_t dst_h, char *remap)
 {
-	BOOL	return_code=0;
+	int32_t	return_code=0;
 	if (Lock()){
 		if (dest.Lock()){
 			return_code = (Linear_Scale_To_Linear(this, &dest, src_x, src_y, dst_x, dst_y, src_w, src_h, dst_w, dst_h, FALSE, remap));
@@ -923,9 +923,9 @@ inline BOOL	GraphicViewPortClass::Scale(	GraphicViewPortClass &dest, int src_x, 
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline BOOL	GraphicViewPortClass::Scale(	GraphicViewPortClass &dest, BOOL trans, char *remap)
+inline int32_t	GraphicViewPortClass::Scale(	GraphicViewPortClass &dest, int32_t trans, char *remap)
 {
-	BOOL	return_code=0;
+	int32_t	return_code=0;
 	if (Lock()){
 		if (dest.Lock()){
 			return_code = (Linear_Scale_To_Linear(this,	&dest, 0, 0, 0, 0, Width, Height, dest.Get_Width(), dest.Get_Height(), trans, remap));
@@ -948,9 +948,9 @@ inline BOOL	GraphicViewPortClass::Scale(	GraphicViewPortClass &dest, BOOL trans,
  * HISTORY:                                                                *
  *   01/06/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline BOOL	GraphicViewPortClass::Scale(	GraphicViewPortClass &dest, char *remap)
+inline int32_t	GraphicViewPortClass::Scale(	GraphicViewPortClass &dest, char *remap)
 {
-	BOOL	return_code=0;
+	int32_t	return_code=0;
 	if (Lock()){
 		if (dest.Lock()){
 			return_code = (Linear_Scale_To_Linear(this, &dest, 0, 0, 0, 0, Width, Height, dest.Get_Width(), dest.Get_Height(), FALSE, remap));
@@ -972,7 +972,7 @@ inline BOOL	GraphicViewPortClass::Scale(	GraphicViewPortClass &dest, char *remap
  * HISTORY:                                                                *
  *   01/17/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline uint32_t	GraphicViewPortClass::Print(char const *str, int x, int y, int fcol, int bcol)
+inline uint32_t	GraphicViewPortClass::Print(char const *str, int32_t x, int32_t y, int32_t fcol, int32_t bcol)
 {
 	uint32_t	return_code=0;
 	if (Lock()){
@@ -993,7 +993,7 @@ inline uint32_t	GraphicViewPortClass::Print(char const *str, int x, int y, int f
  *                                                                         *
  * HISTORY:                                                                *
  *=========================================================================*/
-inline uint32_t	GraphicViewPortClass::Print(int32_t num, int x, int y, int fcol, int bcol)
+inline uint32_t	GraphicViewPortClass::Print(int32_t num, int32_t x, int32_t y, int32_t fcol, int32_t bcol)
 {
 	char str[17];
 
@@ -1016,7 +1016,7 @@ inline uint32_t	GraphicViewPortClass::Print(int32_t num, int x, int y, int fcol,
  *                                                                         *
  * HISTORY:                                                                *
  *=========================================================================*/
-inline uint32_t	GraphicViewPortClass::Print(int16_t num, int x, int y, int fcol, int bcol)
+inline uint32_t	GraphicViewPortClass::Print(int16_t num, int32_t x, int32_t y, int32_t fcol, int32_t bcol)
 {
 	char str[17];
 
@@ -1050,7 +1050,7 @@ inline uint32_t	GraphicViewPortClass::Print(int16_t num, int x, int y, int fcol,
  *                                                                         *
  * HISTORY:                                                                *
  *=========================================================================*/
-inline void GraphicViewPortClass::Draw_Stamp(void const *icondata, int icon, int x_pixel, int y_pixel, void const *remap)
+inline void GraphicViewPortClass::Draw_Stamp(void const *icondata, int32_t icon, int32_t x_pixel, int32_t y_pixel, void const *remap)
 {
 	if (Lock()){
 		Buffer_Draw_Stamp(this, icondata, icon, x_pixel, y_pixel, remap);
@@ -1073,12 +1073,12 @@ inline void GraphicViewPortClass::Draw_Stamp(void const *icondata, int icon, int
  * HISTORY:                                                                *
  *    07/31/1995 BWG : Created.                                            *
  *=========================================================================*/
-extern BOOL IconCacheAllowed;
-inline void GraphicViewPortClass::Draw_Stamp(void const * icondata, int icon, int x_pixel, int y_pixel, void const * remap, int clip_window)
+extern int32_t IconCacheAllowed;
+inline void GraphicViewPortClass::Draw_Stamp(void const * icondata, int32_t icon, int32_t x_pixel, int32_t y_pixel, void const * remap, int32_t clip_window)
 {
-	int	cache_index=-1;
+	int32_t	cache_index=-1;
 
-   int drewit = 0;
+   int32_t drewit = 0;
 	if (IconCacheAllowed){
 		if (IsVideoSurface){
 			if (!remap){
@@ -1122,7 +1122,7 @@ inline void GraphicViewPortClass::Draw_Stamp(void const * icondata, int icon, in
  * HISTORY:                                                                *
  *   01/16/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline VOID GraphicViewPortClass::Draw_Line(int sx, int sy, int dx, int dy, unsigned char color)
+inline void GraphicViewPortClass::Draw_Line(int32_t sx, int32_t sy, int32_t dx, int32_t dy, uint8_t color)
 {
 	if (Lock()){
 		Buffer_Draw_Line(this, sx, sy, dx, dy, color);
@@ -1142,7 +1142,7 @@ inline VOID GraphicViewPortClass::Draw_Line(int sx, int sy, int dx, int dy, unsi
  * HISTORY:                                                                *
  *   01/16/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline VOID GraphicViewPortClass::Fill_Rect(int sx, int sy, int dx, int dy, unsigned char color)
+inline void GraphicViewPortClass::Fill_Rect(int32_t sx, int32_t sy, int32_t dx, int32_t dy, uint8_t color)
 {
 	if (  AllowHardwareBlitFills
 			&& IsVideoSurface
@@ -1199,7 +1199,7 @@ inline VOID GraphicViewPortClass::Fill_Rect(int sx, int sy, int dx, int dy, unsi
  * HISTORY:                                                                *
  *   01/16/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline VOID GraphicViewPortClass::Remap(int sx, int sy, int width, int height, VOID *remap)
+inline void GraphicViewPortClass::Remap(int32_t sx, int32_t sy, int32_t width, int32_t height, void *remap)
 {
 	if (Lock()){
 		Buffer_Remap(this, sx, sy, width, height, remap);
@@ -1208,8 +1208,8 @@ inline VOID GraphicViewPortClass::Remap(int sx, int sy, int width, int height, V
 }
 
 
-inline VOID GraphicViewPortClass::Fill_Quad(VOID *span_buff, int x0, int y0, int x1, int y1,
-							int x2, int y2, int x3, int y3, int color)
+inline void GraphicViewPortClass::Fill_Quad(void *span_buff, int32_t x0, int32_t y0, int32_t x1, int32_t y1,
+							int32_t x2, int32_t y2, int32_t x3, int32_t y3, int32_t color)
 {
 	if (Lock()){
 		Buffer_Fill_Quad(this, span_buff, x0, y0, x1, y1, x2, y2, x3, y3, color);
@@ -1227,7 +1227,7 @@ inline VOID GraphicViewPortClass::Fill_Quad(VOID *span_buff, int x0, int y0, int
  * HISTORY:                                                                *
  *   07/01/1994 PWG : Created.                                             *
  *=========================================================================*/
-inline VOID GraphicViewPortClass::Remap(VOID *remap)
+inline void GraphicViewPortClass::Remap(void *remap)
 {
 	if (Lock()){
 		Buffer_Remap(this, 0, 0, Width, Height, remap);
@@ -1235,7 +1235,7 @@ inline VOID GraphicViewPortClass::Remap(VOID *remap)
 	Unlock();
 }
 
-inline int GraphicViewPortClass::Get_Pitch(void)
+inline int32_t GraphicViewPortClass::Get_Pitch(void)
 {
 	return(Pitch);
 }
@@ -1257,7 +1257,7 @@ inline int GraphicViewPortClass::Get_Pitch(void)
  * HISTORY:                                                                *
  *   01/12/1995 PWG : Created.                                             *
  *=========================================================================*/
-inline int32_t Buffer_To_Page(int x, int y, int w, int h, void *Buffer, GraphicViewPortClass &view)
+inline int32_t Buffer_To_Page(int32_t x, int32_t y, int32_t w, int32_t h, void *Buffer, GraphicViewPortClass &view)
 {
 	int32_t	return_code=0;
 	if (view.Lock()){
@@ -1282,9 +1282,9 @@ inline int32_t Buffer_To_Page(int x, int y, int w, int h, void *Buffer, GraphicV
  * HISTORY:                                                                *
  *   07/01/1994 PWG : Created.                                             *
  *=========================================================================*/
-inline LONG BufferClass::To_Page(int w, int h, GraphicViewPortClass &view)
+inline int32_t BufferClass::To_Page(int32_t w, int32_t h, GraphicViewPortClass &view)
 {
-	LONG	return_code=0;
+	int32_t	return_code=0;
 	if (view.Lock()){
 		return_code = (Buffer_To_Page(0, 0, w, h, Buffer, &view));
 	}
@@ -1305,9 +1305,9 @@ inline LONG BufferClass::To_Page(int w, int h, GraphicViewPortClass &view)
  * HISTORY:                                                                *
  *   07/01/1994 PWG : Created.                                             *
  *=========================================================================*/
-inline LONG BufferClass::To_Page(GraphicViewPortClass &view)
+inline int32_t BufferClass::To_Page(GraphicViewPortClass &view)
 {
-	LONG	return_code=0;
+	int32_t	return_code=0;
 	if (view.Lock()){
 		return_code = (Buffer_To_Page(0, 0, view.Get_Width(), view.Get_Height(), Buffer, &view));
 	}
@@ -1328,9 +1328,9 @@ inline LONG BufferClass::To_Page(GraphicViewPortClass &view)
  * HISTORY:                                                                *
  *   07/01/1994 PWG : Created.                                             *
  *=========================================================================*/
-inline LONG BufferClass::To_Page(int x, int y, int w, int h, GraphicViewPortClass &view)
+inline int32_t BufferClass::To_Page(int32_t x, int32_t y, int32_t w, int32_t h, GraphicViewPortClass &view)
 {
-	LONG	return_code=0;
+	int32_t	return_code=0;
 	if (view.Lock()){
 		return_code = (Buffer_To_Page(x, y, w, h, Buffer, &view));
 	}

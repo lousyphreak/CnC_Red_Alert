@@ -44,7 +44,7 @@
 /*
 ********************************* Constants *********************************
 */
-#define SCALE(a,b,c) (((((long)(a)<<8) / (long)(b) ) * (unsigned long)(c)) >>8)
+#define SCALE(a,b,c) (((((int32_t)(a)<<8) / (int32_t)(b) ) * (uint32_t)(c)) >>8)
 
 
 /*
@@ -55,7 +55,7 @@
 ******************************** Prototypes *********************************
 */
 
-PRIVATE int __cdecl Palette_To_Palette(void *src_palette, void *dst_palette, unsigned long current_time, unsigned long delay);
+PRIVATE int32_t  Palette_To_Palette(void *src_palette, void *dst_palette, uint32_t current_time, uint32_t delay);
 
 
 /***************************************************************************
@@ -75,11 +75,11 @@ PRIVATE int __cdecl Palette_To_Palette(void *src_palette, void *dst_palette, uns
  * HISTORY:                                                                *
  *   05/02/1994 BR : Created.                                              *
  *=========================================================================*/
-void cdecl Morph_Palette (void *src_pal, void *dst_pal, unsigned int delay,
+void  Morph_Palette (void *src_pal, void *dst_pal, uint32_t delay,
 	void (*callback) (void) )
 {
-	int	result;
-	unsigned long	pal_start = WWTickCount.Time();
+	int32_t	result;
+	uint32_t	pal_start = WWTickCount.Time();
 	extern void   (*cb_ptr) ( void ) ;	// callback function pointer
 
 //	(void *)cb_ptr = callback;
@@ -92,7 +92,7 @@ void cdecl Morph_Palette (void *src_pal, void *dst_pal, unsigned int delay,
 	while (1) {
 		if (src_pal && dst_pal) {
 			result = Palette_To_Palette (src_pal, dst_pal,
-				(WWTickCount.Time() - pal_start), (unsigned long)delay);
+				(WWTickCount.Time() - pal_start), (uint32_t)delay);
 			if (!result)
 				break;
 
@@ -129,14 +129,14 @@ void cdecl Morph_Palette (void *src_pal, void *dst_pal, unsigned int delay,
  * HISTORY:                                                                *
  *   05/24/1993  MC : Created.                                             *
  *=========================================================================*/
-PRIVATE int cdecl Palette_To_Palette(void *src_palette, void *dst_palette,
-	unsigned long current_time, unsigned long delay)
+PRIVATE int32_t  Palette_To_Palette(void *src_palette, void *dst_palette,
+	uint32_t current_time, uint32_t delay)
 {
 	char	colour;
 	char	diff;
-	int	chgval;
-	int	lp;
-	int	change;
+	int32_t	chgval;
+	int32_t	lp;
+	int32_t	change;
 	static char  palette[768];
 	char	*src_pal = (char*)src_palette;
 	char	*dst_pal = (char*)dst_palette;

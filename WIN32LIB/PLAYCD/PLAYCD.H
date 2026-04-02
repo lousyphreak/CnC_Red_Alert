@@ -50,19 +50,19 @@ class	GetCDClass {
 
 protected:
 
-	int	CDDrives[MAX_CD_DRIVES];	//Array containing CD drive letters
-	int	CDCount;							//Number of available CD drives
-	int	CDIndex;
+	int32_t	CDDrives[MAX_CD_DRIVES];	//Array containing CD drive letters
+	int32_t	CDCount;							//Number of available CD drives
+	int32_t	CDIndex;
 
 public:
 
 
-	GetCDClass(VOID);					// This is the default constructor
-	~GetCDClass(VOID);				// This is the destructor
+	GetCDClass(void);					// This is the default constructor
+	~GetCDClass(void);				// This is the destructor
 
-	inline	int	Get_First_CD_Drive(void);
-	inline	int	Get_Next_CD_Drive(void);
-	inline	int	Get_Number_Of_Drives(void) {return (CDCount);};
+	inline	int32_t	Get_First_CD_Drive(void);
+	inline	int32_t	Get_Next_CD_Drive(void);
+	inline	int32_t	Get_Number_Of_Drives(void) {return (CDCount);};
 
 };
 
@@ -82,7 +82,7 @@ public:
  * HISTORY:                                                                                    *
  *    5/21/96 3:50PM ST : Created                                                              *
  *=============================================================================================*/
-inline int GetCDClass::Get_Next_CD_Drive(void)
+inline int32_t GetCDClass::Get_Next_CD_Drive(void)
 {
 	if (CDCount){
 		if (CDIndex == CDCount) CDIndex = 0;
@@ -109,7 +109,7 @@ inline int GetCDClass::Get_Next_CD_Drive(void)
  *   05/26/1994 SW : Created.                                              *
  *   12/4/95    ST : fixed for Win95                                       *
  *=========================================================================*/
-inline int GetCDClass::Get_First_CD_Drive(void)
+inline int32_t GetCDClass::Get_First_CD_Drive(void)
 {
 	CDIndex = 0;
 	return (Get_Next_CD_Drive());

@@ -87,14 +87,14 @@ void Apply_XOR_Delta_Core(uint8_t* target, const uint8_t* delta, Writer writer)
 }
 
 template<typename Writer>
-void Apply_XOR_Delta_2D_Core(uint8_t* target, const uint8_t* delta, int width, int nextrow, Writer writer)
+void Apply_XOR_Delta_2D_Core(uint8_t* target, const uint8_t* delta, int32_t width, int32_t nextrow, Writer writer)
 {
 	if (width <= 0 || nextrow <= 0) {
 		return;
 	}
 
 	uint8_t* row_start = target;
-	int column = 0;
+	int32_t column = 0;
 
 	auto advance = [&](void) {
 		++column;
@@ -111,7 +111,7 @@ void Apply_XOR_Delta_2D_Core(uint8_t* target, const uint8_t* delta, int width, i
 			const uint32_t available = (uint32_t)(width - column);
 			const uint32_t step = (count < available) ? count : available;
 			target += step;
-			column += (int)step;
+			column += (int32_t)step;
 			count -= step;
 			if (column >= width) {
 				row_start += nextrow;
@@ -190,7 +190,7 @@ static inline void Copy_Byte(uint8_t* target, uint8_t value)
 
 }
 
-extern "C" unsigned int __cdecl Apply_XOR_Delta(char *source_ptr, char *delta_ptr)
+extern "C" uint32_t  Apply_XOR_Delta(char *source_ptr, char *delta_ptr)
 {
 	if (source_ptr == 0 || delta_ptr == 0) {
 		return 0;
@@ -200,7 +200,7 @@ extern "C" unsigned int __cdecl Apply_XOR_Delta(char *source_ptr, char *delta_pt
 	return 0;
 }
 
-extern "C" void __cdecl Apply_XOR_Delta_To_Page_Or_Viewport(void *target, void *delta, int width, int nextrow, int copy)
+extern "C" void  Apply_XOR_Delta_To_Page_Or_Viewport(void *target, void *delta, int32_t width, int32_t nextrow, int32_t copy)
 {
 	if (target == 0 || delta == 0) {
 		return;

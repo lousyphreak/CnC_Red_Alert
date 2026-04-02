@@ -55,8 +55,8 @@
 extern "C" {
 #endif
 
-extern BOOL Install_Timer_Interrupt(VOID *bin_ptr, UINT rm_size, UINT freq, BOOL partial);
-extern BOOL Remove_Timer_Interrupt(VOID);
+extern int32_t Install_Timer_Interrupt(void *bin_ptr, uint32_t rm_size, uint32_t freq, int32_t partial);
+extern int32_t Remove_Timer_Interrupt(void);
 
 #ifdef __cplusplus
 }
@@ -65,7 +65,7 @@ extern BOOL Remove_Timer_Interrupt(VOID);
 /////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////// Global Data /////////////////////////////////////
 
-BOOL	TimerSystemOn	= FALSE;
+int32_t	TimerSystemOn	= FALSE;
 
 // Global timers that the library or user can count on existing.
 TimerClass					WWTickCount(BT_SYSTEM);
@@ -73,12 +73,12 @@ CountDownTimerClass		CountDown(BT_SYSTEM, 0, FALSE);
 
 
 // Prototype for timer callback
-void CALLBACK Timer_Callback ( UINT event_id, UINT res1 , DWORD user, DWORD  res2, DWORD  res3 );
+void  Timer_Callback ( uint32_t event_id, uint32_t res1 , uint32_t user, uint32_t  res2, uint32_t  res3 );
 
-HANDLE	TimerThreadHandle = 0;		// Legacy callback thread handle (unused on SDL path)
-int		InTimerCallback	= 0;		//Flag to say if we are currently in a callback
+void *	TimerThreadHandle = 0;		// Legacy callback thread handle (unused on SDL path)
+int32_t		InTimerCallback	= 0;		//Flag to say if we are currently in a callback
 
-static unsigned Timer_Ticks_From_Nanos(uint64_t elapsed_nanos, unsigned frequency)
+static uint32_t Timer_Ticks_From_Nanos(uint64_t elapsed_nanos, uint32_t frequency)
 {
 	if (frequency == 0) {
 		return 0;
@@ -89,7 +89,7 @@ static unsigned Timer_Ticks_From_Nanos(uint64_t elapsed_nanos, unsigned frequenc
 		ticks = static_cast<uint64_t>(0xffffffffu);
 	}
 
-	return static_cast<unsigned>(ticks);
+	return static_cast<uint32_t>(ticks);
 }
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -112,9 +112,9 @@ static unsigned Timer_Ticks_From_Nanos(uint64_t elapsed_nanos, unsigned frequenc
  * HISTORY:                                                                *
  *   10/5/95 3:47PM : ST Created.                                          *
  *=========================================================================*/
-WinTimerClass::WinTimerClass (UINT freq, BOOL partial)
+WinTimerClass::WinTimerClass (uint32_t freq, int32_t partial)
 {
-	BOOL		success;
+	int32_t		success;
 
 #ifdef __SW_EP
 	Frequency = PROFILE_RATE;
@@ -192,7 +192,7 @@ WinTimerClass::~WinTimerClass( void )
  *=============================================================================================*/
 
 
-void CALLBACK Timer_Callback (UINT , UINT , DWORD , DWORD , DWORD)
+void  Timer_Callback (uint32_t , uint32_t , uint32_t , uint32_t , uint32_t)
 {
 	InTimerCallback++;
 	if (WindowsTimer) {
@@ -280,7 +280,7 @@ void WinTimerClass::Update_Tick_Count ( void )
  *    10/5/95 4:02PM ST : Created                                                              *
  *=============================================================================================*/
 
-unsigned WinTimerClass::Get_System_Tick_Count ( void )
+uint32_t WinTimerClass::Get_System_Tick_Count ( void )
 {
 	SysTicks = Timer_Ticks_From_Nanos(SDL_GetTicksNS() - StartTickNanos, Frequency);
 	return ( SysTicks );
@@ -301,7 +301,7 @@ unsigned WinTimerClass::Get_System_Tick_Count ( void )
  *    10/5/95 4:02PM ST : Created                                                              *
  *=============================================================================================*/
 
-unsigned WinTimerClass::Get_User_Tick_Count ( void )
+uint32_t WinTimerClass::Get_User_Tick_Count ( void )
 {
 	UserTicks = Timer_Ticks_From_Nanos(SDL_GetTicksNS() - StartTickNanos, UserRate);
 	return ( UserTicks );

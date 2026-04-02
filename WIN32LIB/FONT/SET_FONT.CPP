@@ -60,7 +60,7 @@
  *   01/31/1992 DRD : Modified to use new font format.                     *
  *   06/29/1994 SKB : modified for 32 bit library                          *
  *=========================================================================*/
-void * __cdecl Set_Font(void const *fontptr)
+void *  Set_Font(void const *fontptr)
 {
 	void *oldfont;
 	char	const *blockptr;
@@ -73,8 +73,8 @@ void * __cdecl Set_Font(void const *fontptr)
 		/*
 		**	Inform the system about the new font.
 		*/
-		unsigned short width_block_offset;
-		unsigned short info_block_offset;
+		uint16_t width_block_offset;
+		uint16_t info_block_offset;
 		std::memcpy(&width_block_offset, (char*)fontptr + FONTWIDTHBLOCK, sizeof(width_block_offset));
 		std::memcpy(&info_block_offset, (char*)fontptr + FONTINFOBLOCK, sizeof(info_block_offset));
 

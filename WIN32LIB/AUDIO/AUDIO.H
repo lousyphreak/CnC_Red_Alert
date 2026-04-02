@@ -124,31 +124,31 @@ typedef enum {
 /*=========================================================================*/
 /* The following prototypes are for the file: SOUNDIO.CPP						*/
 /*=========================================================================*/
-int File_Stream_Sample(char const *filename, BOOL real_time_start = FALSE);
-int File_Stream_Sample_Vol(char const *filename, int volume, BOOL real_time_start = FALSE);
-void __cdecl Sound_Callback(void);
-void __cdecl far maintenance_callback(void);
+int32_t File_Stream_Sample(char const *filename, int32_t real_time_start = FALSE);
+int32_t File_Stream_Sample_Vol(char const *filename, int32_t volume, int32_t real_time_start = FALSE);
+void  Sound_Callback(void);
+void   maintenance_callback(void);
 void *Load_Sample(char const *filename);
 int32_t Load_Sample_Into_Buffer(char const *filename, void *buffer, int32_t size);
-int32_t Sample_Read(int fh, void *buffer, int32_t size);
+int32_t Sample_Read(int32_t fh, void *buffer, int32_t size);
 void Free_Sample(void const *sample);
-BOOL Audio_Init( HWND window , int bits_per_sample, BOOL stereo , int rate , int reverse_channels);
+int32_t Audio_Init( HWND window , int32_t bits_per_sample, int32_t stereo , int32_t rate , int32_t reverse_channels);
 void Sound_End(void);
-void Stop_Sample(int handle);
-BOOL Sample_Status(int handle);
-BOOL Is_Sample_Playing(void const * sample);
+void Stop_Sample(int32_t handle);
+int32_t Sample_Status(int32_t handle);
+int32_t Is_Sample_Playing(void const * sample);
 void Stop_Sample_Playing(void const * sample);
-int Play_Sample(void const *sample, int priority=0xFF, int volume=0xFF, int16_t panloc = 0x0);
-int Play_Sample_Handle(void const *sample, int priority, int volume, int16_t panloc, int id);
-int Set_Sound_Vol(int volume);
-int Set_Score_Vol(int volume);
-void Fade_Sample(int handle, int ticks);
-int Get_Free_Sample_Handle(int priority);
-int Get_Digi_Handle(void);
+int32_t Play_Sample(void const *sample, int32_t priority=0xFF, int32_t volume=0xFF, int16_t panloc = 0x0);
+int32_t Play_Sample_Handle(void const *sample, int32_t priority, int32_t volume, int16_t panloc, int32_t id);
+int32_t Set_Sound_Vol(int32_t volume);
+int32_t Set_Score_Vol(int32_t volume);
+void Fade_Sample(int32_t handle, int32_t ticks);
+int32_t Get_Free_Sample_Handle(int32_t priority);
+int32_t Get_Digi_Handle(void);
 int32_t Sample_Length(void const *sample);
 void Restore_Sound_Buffers (void);
-BOOL Set_Primary_Buffer_Format(void);
-BOOL Start_Primary_Sound_Buffer (BOOL forced);
+int32_t Set_Primary_Buffer_Format(void);
+int32_t Start_Primary_Sound_Buffer (int32_t forced);
 void Stop_Primary_Sound_Buffer (void);
 
 /*
@@ -157,10 +157,10 @@ void Stop_Primary_Sound_Buffer (void);
 extern	void (*Audio_Focus_Loss_Function)(void);
 
 
-extern int Misc;
+extern int32_t Misc;
 extern SFX_Type SoundType;
 extern Sample_Type SampleType;
 
 extern CRITICAL_SECTION	GlobalAudioCriticalSection;
 
-extern int StreamLowImpact;
+extern int32_t StreamLowImpact;

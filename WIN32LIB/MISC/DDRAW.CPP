@@ -54,15 +54,15 @@ HWND			MainWindow;					// Handle to programs main window
 
 PALETTEENTRY				PaletteEntries[256];		// 256 windows palette entries
 WWPalette*	VideoPalette;					// Pointer to direct draw palette object
-BOOL						FirstPaletteSet=FALSE;	// Is this the first time 'Set_Palette' has been called?
+int32_t						FirstPaletteSet=FALSE;	// Is this the first time 'Set_Palette' has been called?
 WWSurface*	PaletteSurface=NULL;
 SurfaceMonitorClass	AllSurfaces;				//List of all direct draw surfaces
-BOOL						CanVblankSync = TRUE;
+int32_t						CanVblankSync = TRUE;
 
-BOOL						SystemToVideoBlits =FALSE;	// Does hardware support system mem to video mem blits?
-BOOL						VideoToSystemBlits =FALSE;	// Does hardware support video mem to system mem blits?
-BOOL						SystemToSystemBlits = FALSE; 	// Does hardware support system mem to system mem blits?
-BOOL						OverlappedVideoBlits = TRUE;	// Can video driver blit overlapped regions?
+int32_t						SystemToVideoBlits =FALSE;	// Does hardware support system mem to video mem blits?
+int32_t						VideoToSystemBlits =FALSE;	// Does hardware support video mem to system mem blits?
+int32_t						SystemToSystemBlits = FALSE; 	// Does hardware support system mem to system mem blits?
+int32_t						OverlappedVideoBlits = TRUE;	// Can video driver blit overlapped regions?
 
 /*
 ** Function to call if we detect focus loss
@@ -82,7 +82,7 @@ extern	void (*Misc_Focus_Restore_Function)(void) = NULL;
  * HISTORY:                                                                                    *
  *   09/27/1995 PWG : Created.                                                                 *
  *=============================================================================================*/
-void Process_Draw_Result(HRESULT result, int display_ok_msg)
+void Process_Draw_Result(HRESULT result, int32_t display_ok_msg)
 {
 	if (result == WWDRAW_OK) {
 		if (display_ok_msg) {
@@ -162,7 +162,7 @@ void Check_Overlapped_Blit_Capability(void)
  * HISTORY:                                                                                    *
  *   09/26/1995 PWG : Created.                                                                 *
  *=============================================================================================*/
-BOOL Set_Video_Mode(HWND hwnd, int w, int h, int bits_per_pixel)
+int32_t Set_Video_Mode(HWND hwnd, int32_t w, int32_t h, int32_t bits_per_pixel)
 {
 	HRESULT result;
 	//
@@ -257,7 +257,7 @@ void Reset_Video_Mode(void)
  * HISTORY:                                                                                    *
  *    11/29/95 12:52PM ST : Created                                                            *
  *=============================================================================================*/
-unsigned int Get_Free_Video_Memory(void)
+uint32_t Get_Free_Video_Memory(void)
 {
 	if (VideoDrawObject){
 		return VideoDrawObject->GetFreeVideoMemory();
@@ -265,7 +265,7 @@ unsigned int Get_Free_Video_Memory(void)
 	return (0);
 }
 
-unsigned int Get_Total_Video_Memory(void)
+uint32_t Get_Total_Video_Memory(void)
 {
 	if (VideoDrawObject){
 		return VideoDrawObject->GetTotalVideoMemory();
@@ -290,9 +290,9 @@ unsigned int Get_Total_Video_Memory(void)
  * HISTORY:                                                                                    *
  *    1/12/96 9:14AM ST : Created                                                              *
  *=============================================================================================*/
-unsigned Get_Video_Hardware_Capabilities(void)
+uint32_t Get_Video_Hardware_Capabilities(void)
 {
-	unsigned	video;
+	uint32_t	video;
 
 	/*
 	** Fail if the direct draw object has not been initialised
@@ -340,7 +340,7 @@ unsigned Get_Video_Hardware_Capabilities(void)
  *                                                                                             *
  * HISTORY:                                                                                    *
  *=============================================================================================*/
-extern int ScreenWidth;
+extern int32_t ScreenWidth;
 void Wait_Vert_Blank(void)
 {
 	if( ScreenWidth!=320 && CanVblankSync){
@@ -379,21 +379,21 @@ void Set_Video_Palette ( void *palette )
 	*/
 	if (!palette) return;
 
-	int	j;
-	int	k;
-		unsigned char const *palette_get;
+	int32_t	j;
+	int32_t	k;
+		uint8_t const *palette_get;
 
 	if ( VideoDrawObject && PaletteSurface ){
 
 		k=0;
 
-		palette_get = (unsigned char const*)palette;
+		palette_get = (uint8_t const*)palette;
 
 		for( j=0 ; j<768 ; j+=3 )
 		{
-			PaletteEntries[k].peRed = (unsigned char)((unsigned int)(*palette_get++) << 2);
-			PaletteEntries[k].peGreen = (unsigned char)((unsigned int)(*palette_get++) << 2);
-			PaletteEntries[k].peBlue = (unsigned char)((unsigned int)(*palette_get++) << 2);
+			PaletteEntries[k].peRed = (uint8_t)((uint32_t)(*palette_get++) << 2);
+			PaletteEntries[k].peGreen = (uint8_t)((uint32_t)(*palette_get++) << 2);
+			PaletteEntries[k].peBlue = (uint8_t)((uint32_t)(*palette_get++) << 2);
 			k++;
 		}
 
@@ -458,7 +458,7 @@ void Wait_Blit (void)
 
 SurfaceMonitorClass::SurfaceMonitorClass(void)
 {
-	for (int i=0 ; i<MAX_SURFACES ; i++)
+	for (int32_t i=0 ; i<MAX_SURFACES ; i++)
 	{
 		Surface[i]=NULL;
 	}
@@ -484,7 +484,7 @@ SurfaceMonitorClass::SurfaceMonitorClass(void)
 void SurfaceMonitorClass::Add_Surface (WWSurface* new_surface)
 {
 	if ( !Got_Surface_Already (new_surface) ){
-		for (int i=0 ; i<MAX_SURFACES ; i++)
+		for (int32_t i=0 ; i<MAX_SURFACES ; i++)
 		{
 			if ( Surface[i]==NULL ){
 				Surface[i]=new_surface;
@@ -512,7 +512,7 @@ void SurfaceMonitorClass::Add_Surface (WWSurface* new_surface)
 
 void SurfaceMonitorClass::Remove_Surface (WWSurface* old_surface)
 {
-	for (int i=0 ; i<MAX_SURFACES ; i++)
+	for (int32_t i=0 ; i<MAX_SURFACES ; i++)
 	{
 		if ( Surface[i]==old_surface ){
 			Surface[i]=NULL;
@@ -537,9 +537,9 @@ void SurfaceMonitorClass::Remove_Surface (WWSurface* old_surface)
  *    11/3/95 3:25PM ST : Created                                                              *
  *=============================================================================================*/
 
-BOOL SurfaceMonitorClass::Got_Surface_Already (WWSurface* test_surface)
+int32_t SurfaceMonitorClass::Got_Surface_Already (WWSurface* test_surface)
 {
-	for (int i=0 ; i<MAX_SURFACES ; i++)
+	for (int32_t i=0 ; i<MAX_SURFACES ; i++)
 	{
 		if ( Surface[i]==test_surface ){
 			return(TRUE);
@@ -569,7 +569,7 @@ void SurfaceMonitorClass::Restore_Surfaces (void)
 		/*
 		** Call restore for each Direct Draw surface
 		*/
-		for (int i=0 ; i<MAX_SURFACES ; i++)
+		for (int32_t i=0 ; i<MAX_SURFACES ; i++)
 		{
 			if ( Surface[i] ){
 				if (Surface[i]->Restore() != WWDRAW_OK){
@@ -618,7 +618,7 @@ void SurfaceMonitorClass::Restore_Surfaces (void)
  *    11/6/95 12:21PM ST : Created                                                             *
  *=============================================================================================*/
 
-void SurfaceMonitorClass::Set_Surface_Focus ( BOOL in_focus )
+void SurfaceMonitorClass::Set_Surface_Focus ( int32_t in_focus )
 {
 	InFocus=in_focus;
 }
@@ -646,7 +646,7 @@ void SurfaceMonitorClass::Release(void)
 	/*
 	** Call release for each Direct Draw surface
 	*/
-	for (int i=0 ; i<MAX_SURFACES ; i++)
+	for (int32_t i=0 ; i<MAX_SURFACES ; i++)
 	{
 		if ( Surface[i] ){
 			Surface[i]->Release();

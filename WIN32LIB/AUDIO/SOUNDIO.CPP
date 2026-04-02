@@ -17,6 +17,7 @@
 */
 
 /* $Id: soundio.cpp 1.41 1994/06/20 15:01:39 joe_bostic Exp $ */
+#include <cstdint>
 /***********************************************************************************************
  **             C O N F I D E N T I A L --- W E S T W O O D   A S S O C I A T E S             **
  ***********************************************************************************************
@@ -56,7 +57,7 @@
  *   Sample_Length -- returns length of a sample in ticks                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-extern	void Colour_Debug (int call_number);
+extern	void Colour_Debug (int32_t call_number);
 #pragma pack(push, 4)
 
 #include "win32_compat.h"
@@ -79,9 +80,9 @@ extern	void Colour_Debug (int call_number);
 #include	"AUDIO.H"
 #pragma pack(pop)
 AudioBackendBuffer *	DumpBuffer = NULL;
-HANDLE						SoundThreadHandle = NULL;
-BOOL						SoundThreadActive = FALSE;
-volatile BOOL			SoundThreadShouldRun = FALSE;
+void *						SoundThreadHandle = NULL;
+int32_t						SoundThreadActive = FALSE;
+volatile int32_t			SoundThreadShouldRun = FALSE;
 
 /*
 **      If this is defined, then the streaming audio buffer will be filled
@@ -122,13 +123,13 @@ volatile BOOL			SoundThreadShouldRun = FALSE;
 ////////////////////////////////////// structs ///////////////////////////////////////
 
 //void						*DigiBuffer = NULL;
-static BOOL				StartingFileStream = FALSE;
-int						StreamLowImpact = FALSE;
+static int32_t				StartingFileStream = FALSE;
+int32_t						StreamLowImpact = FALSE;
 MemoryFlagType			StreamBufferFlag = MEM_NORMAL;
-int							Misc;
+int32_t							Misc;
 SFX_Type					SoundType;
 Sample_Type				SampleType;
-int							ReverseChannels = FALSE;
+int32_t							ReverseChannels = FALSE;
 AudioBackendDevice *			SoundObject = NULL;
 AudioBackendBuffer *	PrimaryBufferPtr = NULL;
 AudioBufferFormat				DsBuffFormat;
@@ -145,19 +146,19 @@ extern	void (*Audio_Focus_Loss_Function)(void) = NULL;
 /* The following PRIVATE functions are in this file:                       */
 /*=========================================================================*/
 
-static BOOL File_Callback(int16_t id, int16_t *odd, void **buffer, int32_t *size);
-static int __cdecl Stream_Sample_Vol(void *buffer, int32_t size, BOOL (*callback)(int16_t id, int16_t *odd, void **buffer, int32_t *size), int volume, int handle);
+static int32_t File_Callback(int16_t id, int16_t *odd, void **buffer, int32_t *size);
+static int32_t  Stream_Sample_Vol(void *buffer, int32_t size, int32_t (*callback)(int16_t id, int16_t *odd, void **buffer, int32_t *size), int32_t volume, int32_t handle);
 static void Pump_Sound_Service(void);
-static DWORD WINAPI Sound_Thread(LPVOID);
-static BOOL Start_Sound_Thread(void);
+static uint32_t  Sound_Thread(void *);
+static int32_t Start_Sound_Thread(void);
 static void Stop_Sound_Thread(void);
 //static int __cdecl Stream_Sample(void *buffer, long size, BOOL (*callback)(short id, short *odd, void **buffer, long *size));
-volatile BOOL AudioDone = FALSE;
+volatile int32_t AudioDone = FALSE;
 /*= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =*/
 
 static bool Sound_Trace_Enabled(void)
 {
-	static int enabled = -1;
+	static int32_t enabled = -1;
 	if (enabled == -1) {
 		char const* env = getenv("RA_TRACE_STARTUP");
 		enabled = (env != NULL && env[0] != '\0') ? 1 : 0;
@@ -186,7 +187,7 @@ static void Sound_Trace(char const* format, ...)
 // This callback is called whenever the queue buffer playback has begun
 // and another buffer is needed for queuing up.  Returns TRUE if there
 // is more data to read from the file.
-static BOOL File_Callback(int16_t id, int16_t *odd, void **buffer, int32_t *size)
+static int32_t File_Callback(int16_t id, int16_t *odd, void **buffer, int32_t *size)
 {
 	SampleTrackerType       *st;            // Pointer to sample playback control struct.
 	void                    *ptr;           // Pointer to working portion of file buffer.
@@ -214,7 +215,7 @@ static BOOL File_Callback(int16_t id, int16_t *odd, void **buffer, int32_t *size
 			if (!*buffer && st->FilePending) {
 	 	  		*buffer = Add_Long_To_Pointer(ptr, (intptr_t)(*odd % LockedData.StreamBufferCount) * (intptr_t)LockedData.StreamBufferSize);
 	 	  		st->FilePending--;
-	 	  		*odd = (short)(*odd + 1);
+	 	  		*odd = (int16_t)(*odd + 1);
 	 	  		if (!st->FilePending) {
 	 	  			*size = st->FilePendingSize;
 	 	  		} else {
@@ -238,7 +239,7 @@ static BOOL File_Callback(int16_t id, int16_t *odd, void **buffer, int32_t *size
 	 	  		(StreamLowImpact ? (LockedData.StreamBufferCount>>1) : ((LockedData.StreamBufferCount-3))) && st->FileHandle != WW_ERROR) {
 
 
-	 	  		int num_empty_buffers;
+	 	  		int32_t num_empty_buffers;
 
 #ifdef SIMPLE_FILLING
 				num_empty_buffers = (LockedData.StreamBufferCount-2) - st->FilePending;
@@ -256,7 +257,7 @@ static BOOL File_Callback(int16_t id, int16_t *odd, void **buffer, int32_t *size
 #endif
 
 				while (num_empty_buffers && (st->FileHandle != WW_ERROR)) {
-					int     tofill;
+					int32_t     tofill;
 					int32_t psize;
 
 					tofill = (*odd + st->FilePending) % LockedData.StreamBufferCount;
@@ -341,11 +342,11 @@ static BOOL File_Callback(int16_t id, int16_t *odd, void **buffer, int32_t *size
 
 
 // Generic streaming sample playback initialization.
-static int __cdecl Stream_Sample_Vol(void *buffer, int32_t size, BOOL (*callback)(int16_t id, int16_t *odd, void **buffer, int32_t *size), int volume, int handle)
+static int32_t  Stream_Sample_Vol(void *buffer, int32_t size, int32_t (*callback)(int16_t id, int16_t *odd, void **buffer, int32_t *size), int32_t volume, int32_t handle)
 {
-	int								playid=-1;      // Sample play ID.
+	int32_t								playid=-1;      // Sample play ID.
 	SampleTrackerType               *st;                    // Working pointer to sample control structure.
-	long							oldsize;                // Copy of original sound size.
+	int32_t							oldsize;                // Copy of original sound size.
 	AUDHeaderType                   header;
 
 	Sound_Trace("Stream_Sample_Vol start size=%ld volume=%d handle=%d audio_done=%d digi=%d callback=%p",
@@ -389,7 +390,7 @@ static int __cdecl Stream_Sample_Vol(void *buffer, int32_t size, BOOL (*callback
 
 
 #if (0)
-static int __cdecl Stream_Sample(void *buffer, int32_t size, BOOL (*callback)(int16_t id, int16_t *odd, void **buffer, int32_t *size), int handle)
+static int32_t  Stream_Sample(void *buffer, int32_t size, int32_t (*callback)(int16_t id, int16_t *odd, void **buffer, int32_t *size), int32_t handle)
 {
 	return Stream_Sample_Vol(buffer, size, callback, 0xFF, handle);
 }
@@ -414,7 +415,7 @@ static int __cdecl Stream_Sample(void *buffer, int32_t size, BOOL (*callback)(in
  * HISTORY:                                                                                    *
  *   01/06/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-int File_Stream_Sample(char const *filename, BOOL real_time_start)
+int32_t File_Stream_Sample(char const *filename, int32_t real_time_start)
 {
 	return File_Stream_Sample_Vol(filename, 0xFF, real_time_start);
 }
@@ -439,13 +440,13 @@ int File_Stream_Sample(char const *filename, BOOL real_time_start)
  *   06/05/1995 PWG : Created.                                             *
  *=========================================================================*/
 
-void File_Stream_Preload(int handle)
+void File_Stream_Preload(int32_t handle)
 {
 	SampleTrackerType	*st		= &LockedData.SampleTracker[handle];
-	int					fh			= st->FileHandle;
-	int					maxnum	= (LockedData.StreamBufferCount >> 1) + STREAM_CUSHION_BLOCKS;
+	int32_t					fh			= st->FileHandle;
+	int32_t					maxnum	= (LockedData.StreamBufferCount >> 1) + STREAM_CUSHION_BLOCKS;
 	void					*buffer	= st->FileBuffer;
-	int					num;
+	int32_t					num;
 
 	/*
     ** Figure just how much we need to load.  If we are doing the load in progress
@@ -463,7 +464,7 @@ void File_Stream_Preload(int handle)
     /*
     ** Loop through the blocks and load up the number we need.
     */
-	int index;
+	int32_t index;
     for (index = st->FilePending; index < num; index++) {
 		int32_t s = Read_File(fh, Add_Long_To_Pointer(buffer, (intptr_t)index * (intptr_t)LockedData.StreamBufferSize), LockedData.StreamBufferSize);
        if (s) {
@@ -487,8 +488,8 @@ void File_Stream_Preload(int handle)
 		** Actually start the sample playing, and don't worry about the file callback
 		** it won't be called for a while.
 		*/
- 		int old						= LockedData.SoundVolume;
-		int size						= (st->FilePending == 1) ? st->FilePendingSize : LockedData.StreamBufferSize;
+ 		int32_t old						= LockedData.SoundVolume;
+		int32_t size						= (st->FilePending == 1) ? st->FilePendingSize : LockedData.StreamBufferSize;
 		LockedData.SoundVolume	= LockedData.ScoreVolume;
 		StartingFileStream		= TRUE;
 
@@ -582,13 +583,13 @@ void File_Stream_Preload(int handle)
  * HISTORY:                                                                                    *
  *=============================================================================================*/
 
-int File_Stream_Sample_Vol(char const *filename, int volume, BOOL real_time_start)
+int32_t File_Stream_Sample_Vol(char const *filename, int32_t volume, int32_t real_time_start)
 {
 	SampleTrackerType       *st;
-	int     fh;
-	int     handle = -1;
-	int     index;
-	BOOL    found = FALSE;
+	int32_t     fh;
+	int32_t     handle = -1;
+	int32_t     index;
+	int32_t    found = FALSE;
 
 	if (filename) {
 		found = Find_File(filename);
@@ -635,7 +636,7 @@ int File_Stream_Sample_Vol(char const *filename, int volume, BOOL real_time_star
 		** with the needed information.  If we dont get valid handle then
 		** we might as well give up.
 		*/
-		if ((unsigned)(handle = Get_Free_Sample_Handle(0xFF)) >= MAX_SFX) {
+		if ((uint32_t)(handle = Get_Free_Sample_Handle(0xFF)) >= MAX_SFX) {
  				return(-1);
 		}
 
@@ -683,9 +684,9 @@ int File_Stream_Sample_Vol(char const *filename, int volume, BOOL real_time_star
  * HISTORY:                                                                                    *
  *   01/06/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-void __cdecl Sound_Callback(void)
+void  Sound_Callback(void)
 {
-	int					index;
+	int32_t					index;
     SampleTrackerType	*st;
 
     if (!AudioDone && LockedData.DigiHandle != -1) {
@@ -729,7 +730,7 @@ void __cdecl Sound_Callback(void)
 							(st->FileHandle != WW_ERROR && st->FilePending < LockedData.StreamBufferCount-3)) &&
 				 			st->Callback) {
 
-                		if (!st->Callback((short)index, (short int *)&st->Odd, &st->QueueBuffer, &st->QueueSize)) {
+                		if (!st->Callback((int16_t)index, (int16_t *)&st->Odd, &st->QueueBuffer, &st->QueueSize)) {
 								st->Callback = NULL;
                 		}
              		}
@@ -784,7 +785,7 @@ void *Load_Sample(char const *filename)
 {
 	void *buffer = NULL;
 	int32_t size;
-	int     fh;
+	int32_t     fh;
 
 	if (LockedData.DigiHandle == -1 || !filename || !Find_File(filename)) {
 		return (NULL);
@@ -828,7 +829,7 @@ void *Load_Sample(char const *filename)
  *=============================================================================================*/
 int32_t Load_Sample_Into_Buffer(char const *filename, void *buffer, int32_t size)
 {
-	int     fh;
+	int32_t     fh;
 
 	/*
 	**      Verify legality of parameters.
@@ -868,7 +869,7 @@ int32_t Load_Sample_Into_Buffer(char const *filename, void *buffer, int32_t size
  * HISTORY:                                                                                    *
  *   01/06/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-int32_t Sample_Read(int fh, void *buffer, int32_t size)
+int32_t Sample_Read(int32_t fh, void *buffer, int32_t size)
 {
 
 	AUDHeaderType	RawHeader;
@@ -937,14 +938,14 @@ static void Pump_Sound_Service(void)
 }
 
 
-static DWORD WINAPI Sound_Thread(LPVOID)
+static uint32_t  Sound_Thread(void *)
 {
 	SoundThreadActive = FALSE;
 	return (0);
 }
 
 
-static BOOL Start_Sound_Thread(void)
+static int32_t Start_Sound_Thread(void)
 {
 	SoundThreadShouldRun = FALSE;
 	SoundThreadActive = FALSE;
@@ -983,7 +984,7 @@ static void Stop_Sound_Thread(void)
  *    12/22/95 4:06PM ST : Created                                                             *
  *=============================================================================================*/
 
-BOOL Set_Primary_Buffer_Format(void)
+int32_t Set_Primary_Buffer_Format(void)
 {
 	if (SoundObject && PrimaryBufferPtr){
 		return (PrimaryBufferPtr->SetFormat ( &PrimaryBuffFormat ) == RAAUDIO_OK);
@@ -1036,10 +1037,10 @@ void Print_Sound_Error(char *sound_error, HWND window)
  *   08-24-95 10:01am ST : Modified for Windows 95 audio output                                *
  *=============================================================================================*/
 
-BOOL Audio_Init( HWND window , int bits_per_sample, BOOL stereo , int rate , int reverse_channels)
+int32_t Audio_Init( HWND window , int32_t bits_per_sample, int32_t stereo , int32_t rate , int32_t reverse_channels)
 {
-	int	index;
-	int	sample=1;
+	int32_t	index;
+	int32_t	sample=1;
 	int16_t old_bits_per_sample;
 	int16_t old_block_align;
 	int32_t	old_bytes_per_sec;
@@ -1241,7 +1242,7 @@ BOOL Audio_Init( HWND window , int bits_per_sample, BOOL stereo , int rate , int
 void Sound_End(void)
 {
 
-	int	index;
+	int32_t	index;
 
 	Stop_Sound_Thread();
 
@@ -1314,9 +1315,9 @@ void Sound_End(void)
  *   06/02/1992 JLB : Created.                                                                 *
  *   11/2/95 4:09PM ST : Modified for streamed audio                                           *
  *=============================================================================================*/
-void Stop_Sample(int handle)
+void Stop_Sample(int32_t handle)
 {
-	if (LockedData.DigiHandle != -1 && (unsigned)handle < MAX_SFX) {
+	if (LockedData.DigiHandle != -1 && (uint32_t)handle < MAX_SFX) {
 
 		if (AudioDone)	return;
 
@@ -1370,9 +1371,9 @@ void Stop_Sample(int handle)
  * HISTORY:                                                                                    *
  *   06/02/1992 JLB : Created.                                                                 *
  *=============================================================================================*/
-BOOL Sample_Status(int handle)
+int32_t Sample_Status(int32_t handle)
 {
-	DWORD	status;
+	uint32_t	status;
 
 	if (AudioDone) return (FALSE);
 
@@ -1380,7 +1381,7 @@ BOOL Sample_Status(int handle)
 	** If its an invalid handle or we do not have a sound driver then
 	** the sample in question is not playing.
 	*/
-	if (LockedData.DigiHandle == -1 || (unsigned)handle >= MAX_SFX) return(FALSE);
+	if (LockedData.DigiHandle == -1 || (uint32_t)handle >= MAX_SFX) return(FALSE);
 
 	/*
 	** If the sample is loading, then for all intents and purposes the
@@ -1422,9 +1423,9 @@ BOOL Sample_Status(int handle)
  *    11/2/95 4:11PM ST : Commented                                                            *
  *=============================================================================================*/
 
-BOOL Is_Sample_Playing(void const * sample)
+int32_t Is_Sample_Playing(void const * sample)
 {
-	int index;
+	int32_t index;
 
 	if (AudioDone) return (FALSE);
 
@@ -1462,7 +1463,7 @@ BOOL Is_Sample_Playing(void const * sample)
 
 void Stop_Sample_Playing(void const * sample)
 {
-	int index;
+	int32_t index;
 
 	if (sample) {
 		for (index = 0; index < MAX_SFX; index++) {
@@ -1493,9 +1494,9 @@ void Stop_Sample_Playing(void const * sample)
  *    11/2/95 4:14PM ST : Added function header                                                *
  *=============================================================================================*/
 
-int Get_Free_Sample_Handle(int priority)
+int32_t Get_Free_Sample_Handle(int32_t priority)
 {
-	int     id;
+	int32_t     id;
 
 	/*
 	**      Find a free SFX holding buffer slot.
@@ -1537,7 +1538,7 @@ int Get_Free_Sample_Handle(int priority)
 	return(id);
 }
 
-int Play_Sample(void const *sample, int priority, int volume, int16_t panloc)
+int32_t Play_Sample(void const *sample, int32_t priority, int32_t volume, int16_t panloc)
 {
 		  return(Play_Sample_Handle(sample, priority, volume, panloc, Get_Free_Sample_Handle(priority)));
 }
@@ -1561,12 +1562,12 @@ int Play_Sample(void const *sample, int priority, int volume, int16_t panloc)
  *    3/20/96 9:47AM ST : Created                                                              *
  *=============================================================================================*/
 
-BOOL Attempt_Audio_Restore (AudioBackendBuffer * sound_buffer)
+int32_t Attempt_Audio_Restore (AudioBackendBuffer * sound_buffer)
 {
 
-	int 	return_code;
-	DWORD	play_status;
-	int	restore_attempts=0;
+	int32_t 	return_code;
+	uint32_t	play_status;
+	int32_t	restore_attempts=0;
 
 	if (AudioDone){
 		return (FALSE);
@@ -1588,7 +1589,7 @@ BOOL Attempt_Audio_Restore (AudioBackendBuffer * sound_buffer)
 
 	} while (restore_attempts++<2 && return_code == RAAUDIOERR_BUFFERLOST);
 
-	return ((BOOL) ~(return_code == RAAUDIOERR_BUFFERLOST));
+	return ((int32_t) ~(return_code == RAAUDIOERR_BUFFERLOST));
 }
 
 
@@ -1611,14 +1612,14 @@ BOOL Attempt_Audio_Restore (AudioBackendBuffer * sound_buffer)
  * HISTORY:                                                                                    *
  *    9/18/96 11:36AM ST : Created                                                             *
  *=============================================================================================*/
-int Convert_HMI_To_Backend_Volume(int volume)
+int32_t Convert_HMI_To_Backend_Volume(int32_t volume)
 {
 	if (volume == 0) return -10000;
 	if (volume == 255) return 0;
 
 	float vol = (float)volume;
 	float retval = exp ( (255.0-vol)/27.68597374) -1;
-	return ((int)-retval);
+	return ((int32_t)-retval);
 }
 
 
@@ -1644,20 +1645,20 @@ int Convert_HMI_To_Backend_Volume(int volume)
  *   04/22/1994 JLB : Multiple sample playback rates.                                          *
  *   11/02/1995 ST  : Windows audio backend support                                            *
  *=============================================================================================*/
-extern BOOL Any_Locked(void);
-extern BOOL GameInFocus;
-int Play_Sample_Handle(void const *sample, int priority, int volume, signed short , int id)
+extern int32_t Any_Locked(void);
+extern int32_t GameInFocus;
+int32_t Play_Sample_Handle(void const *sample, int32_t priority, int32_t volume, int16_t , int32_t id)
 {
 	AUDHeaderType                   RawHeader;
 	SampleTrackerType               *st=NULL;       // Working pointer to sample tracker structure.
 
-	LPVOID				play_buffer_ptr;		//pointer to locked backend buffer
-	LPVOID				dummy_buffer_ptr;		//dummy pointer to second area of locked backend buffer
-	DWORD					lock_length1;
-	DWORD					lock_length2;
-	DWORD					play_status;
+	void *				play_buffer_ptr;		//pointer to locked backend buffer
+	void *				dummy_buffer_ptr;		//dummy pointer to second area of locked backend buffer
+	uint32_t					lock_length1;
+	uint32_t					lock_length2;
+	uint32_t					play_status;
 	HRESULT				return_code;
-	int					retries=0;
+	int32_t					retries=0;
 
 
 	if (Any_Locked()) return(0);
@@ -1695,7 +1696,7 @@ int Play_Sample_Handle(void const *sample, int priority, int volume, signed shor
 	if (!AudioDone){
 		EnterCriticalSection(&GlobalAudioCriticalSection);
 	}
-	st->Compression 			= (SCompressType) ((unsigned char)RawHeader.Compression);
+	st->Compression 			= (SCompressType) ((uint8_t)RawHeader.Compression);
 	st->Original            = sample;
 	st->OriginalSize        = RawHeader.Size + sizeof(RawHeader);
 	st->Priority            = (int16_t)priority;
@@ -1976,7 +1977,7 @@ void Restore_Sound_Buffers ( void )
 	}
 
 
-	for ( int index = 0; index < MAX_SFX; index++) {
+	for ( int32_t index = 0; index < MAX_SFX; index++) {
 		if (LockedData.SampleTracker[index].PlayBuffer){
 			LockedData.SampleTracker[index].PlayBuffer->Restore();
 		}
@@ -2005,9 +2006,9 @@ void Restore_Sound_Buffers ( void )
  *    11/2/95 4:19PM ST : Added function header                                                *
  *=============================================================================================*/
 
-int Set_Sound_Vol(int volume)
+int32_t Set_Sound_Vol(int32_t volume)
 {
-	int old;
+	int32_t old;
  	old = LockedData.SoundVolume;
  	LockedData.SoundVolume = volume & 0xFF;
 	return(old);
@@ -2028,15 +2029,15 @@ int Set_Sound_Vol(int volume)
  * HISTORY:                                                                                    *
  *    11/2/95 4:19PM ST : Added function header                                                *
  *=============================================================================================*/
-int Set_Score_Vol(int volume)
+int32_t Set_Score_Vol(int32_t volume)
 {
-	int old;
+	int32_t old;
 	SampleTrackerType	*st;					//ptr to SampleTracker structure
 
 	old = LockedData.ScoreVolume;
 	LockedData.ScoreVolume = volume & 0xFF;
 
-	for (int index=0 ; index<MAX_SFX ; index++){
+	for (int32_t index=0 ; index<MAX_SFX ; index++){
 		st = &LockedData.SampleTracker[index];
 
 		if (st->IsScore && st->Active){
@@ -2068,7 +2069,7 @@ int Set_Score_Vol(int volume)
  *    11/2/95 4:21PM ST : Added function header                                                *
  *=============================================================================================*/
 
-void Fade_Sample(int handle, int ticks)
+void Fade_Sample(int32_t handle, int32_t ticks)
 {
 	if (Sample_Status(handle)) {
     	if (!ticks || LockedData.SampleTracker[handle].Loading) {
@@ -2083,7 +2084,7 @@ void Fade_Sample(int handle, int ticks)
 
 
 
-int Get_Digi_Handle(void)
+int32_t Get_Digi_Handle(void)
 {
         return(LockedData.DigiHandle);
 }
@@ -2148,9 +2149,9 @@ int32_t Sample_Length(void const *sample)
  * HISTORY:                                                                                    *
  *    2/1/96 12:28PM ST : Created                                                              *
  *=============================================================================================*/
-BOOL Start_Primary_Sound_Buffer (BOOL forced)
+int32_t Start_Primary_Sound_Buffer (int32_t forced)
 {
-	DWORD status;
+	uint32_t status;
 
 	if (PrimaryBufferPtr && GameInFocus){
 		if (forced){
@@ -2193,7 +2194,7 @@ void Stop_Primary_Sound_Buffer (void)
 		PrimaryBufferPtr->Stop();
 	}
 
-	for ( int index = 0; index < MAX_SFX; index++) {
+	for ( int32_t index = 0; index < MAX_SFX; index++) {
 		Stop_Sample(index);
 	}
 

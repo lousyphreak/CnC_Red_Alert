@@ -127,7 +127,7 @@ class RawFileClass : public FileClass
 		**	This is a record of the access rights used to open the file. These rights are
 		**	used if the file object is duplicated.
 		*/
-		int Rights;
+		int32_t Rights;
 
 		RawFileClass(char const *filename);
 		RawFileClass(void);
@@ -137,19 +137,19 @@ class RawFileClass : public FileClass
 
 		virtual char const * File_Name(void) const;
 		virtual char const * Set_Name(char const *filename);
-		virtual int Create(void);
-		virtual int Delete(void);
-		virtual int Is_Available(int forced=false);
-		virtual int Is_Open(void) const;
-		virtual int Open(char const *filename, int rights=READ);
-		virtual int Open(int rights=READ);
-		virtual long Read(void *buffer, long size);
-		virtual long Seek(long pos, int dir=SEEK_CUR);
-		virtual long Size(void);
-		virtual long Write(void const *buffer, long size);
+		virtual int32_t Create(void);
+		virtual int32_t Delete(void);
+		virtual int32_t Is_Available(int32_t forced=false);
+		virtual int32_t Is_Open(void) const;
+		virtual int32_t Open(char const *filename, int32_t rights=READ);
+		virtual int32_t Open(int32_t rights=READ);
+		virtual int32_t Read(void *buffer, int32_t size);
+		virtual int32_t Seek(int32_t pos, int32_t dir=SEEK_CUR);
+		virtual int32_t Size(void);
+		virtual int32_t Write(void const *buffer, int32_t size);
 		virtual void Close(void);
-		virtual void Error(int error, int canretry = false, char const * filename=NULL);
-		virtual void Set_Buffer_Size(int size);
+		virtual void Error(int32_t error, int32_t canretry = false, char const * filename=NULL);
+		virtual void Set_Buffer_Size(int32_t size);
 
 
 	protected:
@@ -158,14 +158,14 @@ class RawFileClass : public FileClass
 		**	This function returns the largest size a low level DOS read or write may
 		**	perform. Larger file transfers are performed in chunks of this size or less.
 		*/
-		long Transfer_Block_Size(void) {return (long)((unsigned)UINT_MAX)-16L;};
+		int32_t Transfer_Block_Size(void) {return (int32_t)((uint32_t)UINT_MAX)-16L;};
 
 	private:
 
 		/*
 		**	This is the low level DOS handle. A -1 indicates an empty condition.
 		*/
-		int Handle;
+		int32_t Handle;
 
 		/*
 		**	This points to the filename as a NULL terminated string. It may point to either a
@@ -180,7 +180,7 @@ class RawFileClass : public FileClass
 		**	This value will be non-zero if the filename has be allocated
 		**	(using strdup()).
 		*/
-		unsigned Allocated:1;
+		uint32_t Allocated:1;
 };
 
 
@@ -242,7 +242,7 @@ inline RawFileClass::RawFileClass(void) : Filename(0)
  * HISTORY:                                                                                    *
 ;*   10/18/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-inline int RawFileClass::Is_Open(void) const
+inline int32_t RawFileClass::Is_Open(void) const
 {
 	return (Handle != -1);
 }

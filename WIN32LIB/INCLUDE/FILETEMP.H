@@ -50,8 +50,8 @@
 /*=========================================================================*/
 // Look at FileErrorType below for the IO_Error function.
 //extern WORD __cdecl ( __cdecl IO_Error)(FileErrorType error, BYTE const *filename);
-VOID __cdecl Prog_End(VOID);
-extern WORD Hard_Error_Occured;
+void  Prog_End(void);
+extern int16_t Hard_Error_Occured;
 
 
 

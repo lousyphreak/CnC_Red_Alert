@@ -97,8 +97,8 @@
 
 
 extern "C"{
-	void __cdecl Profile_Init(void);
-	void __cdecl Profile_End(void);
-	void __cdecl Start_Profiler(void);
-	void __cdecl Stop_Profiler(void);
+	void  Profile_Init(void);
+	void  Profile_End(void);
+	void  Start_Profiler(void);
+	void  Stop_Profiler(void);
 }

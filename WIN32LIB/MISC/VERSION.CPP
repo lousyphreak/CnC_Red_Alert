@@ -55,7 +55,7 @@ PRIVATE char *version = "Westwood Studios - 32 Bit Library Version "
  * HISTORY:                                                                *
  *   07/26/1991 JLB : Created.                                             *
  *=========================================================================*/
-char * __cdecl Version(void)
+char *  Version(void)
 {
 	return(version);
 }

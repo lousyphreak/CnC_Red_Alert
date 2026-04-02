@@ -60,7 +60,7 @@
  *   08/09/1994 IML : Created.															*															
  *=========================================================================*/
 
-VOID cdecl Init_Priority_System (GraphicBufferClass *mask,
+void  Init_Priority_System (GraphicBufferClass *mask,
 											GraphicBufferClass *back)
 {
  MaskPage = mask->Get_Buffer();

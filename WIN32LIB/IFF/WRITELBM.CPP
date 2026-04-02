@@ -53,15 +53,15 @@
 
 	// A BitMapHeader is stored in a BMHD chunk.  This structure MUST be an even size
 typedef struct {
-    unsigned short w, h;							// raster width & height in pixels 
-    unsigned short x, y;							// position for this image
-    unsigned char planes;							// # source bitplanes 
-    unsigned char masking;							// masking technique 
-    unsigned char compression;					// compression algoithm
-    unsigned char pad1;								// UNUSED.  For consistency, put 0 here.
-    unsigned short transcolor;					// transparent "color number"
-    unsigned char xaspect, yaspect;				// aspect ratio, a rational number x/y
-    unsigned short pagewidth, pageheight;		// source "page" size in pixels
+    uint16_t w, h;							// raster width & height in pixels 
+    uint16_t x, y;							// position for this image
+    uint8_t planes;							// # source bitplanes 
+    uint8_t masking;							// masking technique 
+    uint8_t compression;					// compression algoithm
+    uint8_t pad1;								// UNUSED.  For consistency, put 0 here.
+    uint16_t transcolor;					// transparent "color number"
+    uint8_t xaspect, yaspect;				// aspect ratio, a rational number x/y
+    uint16_t pagewidth, pageheight;		// source "page" size in pixels
 } BitMapHeaderType;
 
 
@@ -82,10 +82,10 @@ PRIVATE BitMapHeaderType LocalHeader = {
 /* The following PRIVATE functions are in this file:                       */
 /*=========================================================================*/
 
-PRIVATE long Write_BMHD(int lbmhandle, int bitplanes);
-PRIVATE long Write_CMAP(int lbmhandle, unsigned char * palette, int bitplanes);
-PRIVATE long Write_BODY(int lbmhandle, BufferClass& buff, int bitplanes);
-PRIVATE long Write_Row(int lbmhandle, unsigned char *buffer);
+PRIVATE int32_t Write_BMHD(int32_t lbmhandle, int32_t bitplanes);
+PRIVATE int32_t Write_CMAP(int32_t lbmhandle, uint8_t * palette, int32_t bitplanes);
+PRIVATE int32_t Write_BODY(int32_t lbmhandle, BufferClass& buff, int32_t bitplanes);
+PRIVATE int32_t Write_Row(int32_t lbmhandle, uint8_t *buffer);
 
 
 /*= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =*/
@@ -106,9 +106,9 @@ PRIVATE long Write_Row(int lbmhandle, unsigned char *buffer);
  *   11/18/1991  SB : Created.                                             *
  *=========================================================================*/
 
-PUBLIC BOOL Write_LBM_File(int lbmhandle, BufferClass& buff, int bitplanes, unsigned char *palette)
+PUBLIC int32_t Write_LBM_File(int32_t lbmhandle, BufferClass& buff, int32_t bitplanes, uint8_t *palette)
 {
-	long filesize;
+	int32_t filesize;
 
 
 	Seek_File(lbmhandle, 0L, SEEK_SET);						// goto beginning of file 
@@ -152,9 +152,9 @@ PUBLIC BOOL Write_LBM_File(int lbmhandle, BufferClass& buff, int bitplanes, unsi
  * HISTORY:                                                                *
  *   11/19/1991  SB : Created.                                             *
  *=========================================================================*/
-PRIVATE long Write_BMHD(int lbmhandle, int bitplanes)
+PRIVATE int32_t Write_BMHD(int32_t lbmhandle, int32_t bitplanes)
 {
-	long size;
+	int32_t size;
 	
 	Write_File(lbmhandle, "BMHD", 4L);					// write out chunk title 
 	size = Reverse_Long(sizeof(LocalHeader));			// write out size of LocalHeader chunk
@@ -185,11 +185,11 @@ PRIVATE long Write_BMHD(int lbmhandle, int bitplanes)
  *   11/19/1991  SB : Created.                                             *
  *=========================================================================*/
 
-PRIVATE long Write_CMAP(int lbmhandle, unsigned char * palette, int bitplanes)
+PRIVATE int32_t Write_CMAP(int32_t lbmhandle, uint8_t * palette, int32_t bitplanes)
 {
-	int color, r, g, b, colors;
-	long size;
-	unsigned char *pal_ptr;
+	int32_t color, r, g, b, colors;
+	int32_t size;
+	uint8_t *pal_ptr;
 	char rgb[3];
 
 
@@ -234,19 +234,19 @@ PRIVATE long Write_CMAP(int lbmhandle, unsigned char * palette, int bitplanes)
  *   11/19/1991  SB : Created.                                             *
  *=========================================================================*/
 
-PRIVATE long Write_BODY(int lbmhandle, BufferClass& buff, int bitplanes)
+PRIVATE int32_t Write_BODY(int32_t lbmhandle, BufferClass& buff, int32_t bitplanes)
 {
-	long bodysize = 0;
-	long actualsize;
-	long size;
-	int planebit;
-	int line, plane;
-	unsigned char buffer[40];
-	unsigned char *buffptr;
+	int32_t bodysize = 0;
+	int32_t actualsize;
+	int32_t size;
+	int32_t planebit;
+	int32_t line, plane;
+	uint8_t buffer[40];
+	uint8_t *buffptr;
 
 	Write_File(lbmhandle, "BODY????", 8L);		// BODY chunk ID, ???? reserved for chuncksize 
 
-	buffptr = (unsigned char *) buff.Get_Buffer();						// point to beginning of buff
+	buffptr = (uint8_t *) buff.Get_Buffer();						// point to beginning of buff
 
 	for (line = 0; line < 200; line++) {
 		planebit = 1;											// start with bit 1 set 
@@ -291,13 +291,13 @@ PRIVATE long Write_BODY(int lbmhandle, BufferClass& buff, int bitplanes)
 // 1985 yearbook.  This is the compression method that DP.EXE uses.
 // Change only if DP.EXE changes.
 
-PRIVATE long Write_Row(int lbmhandle, unsigned char *buffer)
+PRIVATE int32_t Write_Row(int32_t lbmhandle, uint8_t *buffer)
 {
-	int i;
-	int chunksize = 0;
-	int dataLength = 40;	  					// 320 rows / 8 ( 1 plane per row)
-	unsigned char repCode, current, curr_plus_2;
-	unsigned char *buffptr;
+	int32_t i;
+	int32_t chunksize = 0;
+	int32_t dataLength = 40;	  					// 320 rows / 8 ( 1 plane per row)
+	uint8_t repCode, current, curr_plus_2;
+	uint8_t *buffptr;
 
 	while (dataLength) {
 
@@ -341,7 +341,7 @@ PRIVATE long Write_Row(int lbmhandle, unsigned char *buffer)
 			}
 			repCode = i - 1;
 			Write_File(lbmhandle, &repCode, 1L);			// Write count as count-1 
-			Write_File(lbmhandle, buffer, (long) i);		// Write 'count' bytes
+			Write_File(lbmhandle, buffer, (int32_t) i);		// Write 'count' bytes
 			buffer += i;
 			dataLength -= i;
 			chunksize += i + 1;
@@ -369,7 +369,7 @@ BMHD 			-> "BMHD" + CHUNKSIZE + CONTEXT
 BODY			->
 
 CHUNKS		-> BMHD | BODY | CMAP | DPPV | CRNG | ????
-CHUNKSIZE	-> (long) // size of chunk not including header or size.
+CHUNKSIZE	-> (int32_t) // size of chunk not including header or size.
 CMAP			-> "CMAP" + CHUNKSIZE + PALETTE_INFO
 COMPRESS_METHOD -> (byte) // compression method used
 CONTEXT		-> WIDTH + HEIGHT + POSX + POSY + #_BITPLANES + MASKING +
@@ -379,7 +379,7 @@ CRNG			-> // we do not use
 
 DPPV			-> // we do not use
 
-FILESIZE		-> (long)   //size of file minus (sizeof(FORM) + sizeof(FILESIZE)
+FILESIZE		-> (int32_t)   //size of file minus (sizeof(FORM) + sizeof(FILESIZE)
 
 GREEN			-> (byte) // green color gun value
 

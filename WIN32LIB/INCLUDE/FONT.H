@@ -64,21 +64,21 @@
 /* The following prototypes are for the file: SET_FONT.CPP						*/
 /*=========================================================================*/
 
-void  * __cdecl Set_Font(void const *fontptr);
+void  *  Set_Font(void const *fontptr);
 
 /*=========================================================================*/
 /* The following prototypes are for the file: FONT.CPP							*/
 /*=========================================================================*/
 
-int __cdecl Char_Pixel_Width(char chr);
-unsigned int __cdecl String_Pixel_Width(char const *string);
-void __cdecl Get_Next_Text_Print_XY(GraphicViewPortClass& vp, unsigned long offset, INT *x, INT *y);
+int32_t  Char_Pixel_Width(char chr);
+uint32_t  String_Pixel_Width(char const *string);
+void  Get_Next_Text_Print_XY(GraphicViewPortClass& vp, uint32_t offset, int32_t *x, int32_t *y);
 
 /*=========================================================================*/
 /* The following prototypes are for the file: LOADFONT.CPP	  					*/
 /*=========================================================================*/
 
-void * __cdecl Load_Font(char  const *name);
+void *  Load_Font(char  const *name);
 
 /*=========================================================================*/
 /* The following prototypes are for the file: TEXTPRNT.ASM	  					*/
@@ -89,7 +89,7 @@ extern "C" {
 #endif
 
 
-void __cdecl Set_Font_Palette_Range(void const *palette, INT start_idx, INT end_idx);
+void  Set_Font_Palette_Range(void const *palette, int32_t start_idx, int32_t end_idx);
 
 
 #ifdef __cplusplus
@@ -103,8 +103,8 @@ void __cdecl Set_Font_Palette_Range(void const *palette, INT start_idx, INT end_
 
 
 //////////////////////////////////////// External varables ///////////////////////////////////////
-extern "C" int FontXSpacing;
-extern "C" int FontYSpacing;
+extern "C" int32_t FontXSpacing;
+extern "C" int32_t FontYSpacing;
 extern char FontWidth ;
 extern char FontHeight;
 extern char *FontWidthBlockPtr;

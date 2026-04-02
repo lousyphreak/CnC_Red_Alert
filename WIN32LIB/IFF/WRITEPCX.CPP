@@ -38,7 +38,7 @@
 #include  <WWSTD.H>
 #include "FILEPCX.H"
 #include <WWMEM.H>
-static void Write_Pcx_ScanLine ( int file_handle , int scansize , char * ptr );
+static void Write_Pcx_ScanLine ( int32_t file_handle , int32_t scansize , char * ptr );
 
 
 /***************************************************************************
@@ -60,13 +60,13 @@ static void Write_Pcx_ScanLine ( int file_handle , int scansize , char * ptr );
  *   05/04/1995 JRJ : Created.                                             *
  *   08/01/1995 SKB : Copy the palette so it is not modified.              *
  *=========================================================================*/
-int Write_PCX_File (char* name, GraphicViewPortClass& pic, unsigned char* palette )
+int32_t Write_PCX_File (char* name, GraphicViewPortClass& pic, uint8_t* palette )
 {
- 	unsigned char palcopy[256 * 3];
-	unsigned     i ;
-	unsigned	   width ;
-	int 	      file_handle ;
-	int				VP_Scan_Line ;
+ 	uint8_t palcopy[256 * 3];
+	uint32_t     i ;
+	uint32_t	   width ;
+	int32_t 	      file_handle ;
+	int32_t				VP_Scan_Line ;
 	char	     * ptr ;
 	RGB  		  * pal ;
 	GraphicBufferClass	* Graphic_Buffer ;
@@ -132,12 +132,12 @@ int Write_PCX_File (char* name, GraphicViewPortClass& pic, unsigned char* palett
 							 }	}
 
 
-void Write_Pcx_ScanLine ( int file_handle , int scansize , char * ptr )
+void Write_Pcx_ScanLine ( int32_t file_handle , int32_t scansize , char * ptr )
 {
-	unsigned     i ;
-	unsigned     rle ;
-	unsigned     color ;
-	unsigned		last ;
+	uint32_t     i ;
+	uint32_t     rle ;
+	uint32_t     color ;
+	uint32_t		last ;
 	char		  * file_ptr ;
 	char		 	pool [ POOL_SIZE ] ;
 
@@ -176,6 +176,6 @@ void Write_Pcx_ScanLine ( int file_handle , int scansize , char * ptr )
 		}
 	}
 
-	Write_File(file_handle, pool, static_cast<int>(file_ptr - pool));
+	Write_File(file_handle, pool, static_cast<int32_t>(file_ptr - pool));
 }
 

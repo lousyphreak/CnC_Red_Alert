@@ -84,22 +84,22 @@ typedef enum {
 /* The following prototypes are for the file: WSA.CPP								*/
 /*=========================================================================*/
 
-void * __cdecl Open_Animation(char const *file_name, char *user_buffer, long user_buffer_size, WSAOpenType user_flags, unsigned char *palette=NULL);
-void __cdecl Close_Animation( void *handle );
-BOOL __cdecl Animate_Frame(void *handle, GraphicViewPortClass& view,
-                         int frame_number, int x_pixel=0, int y_pixel=0,
+void *  Open_Animation(char const *file_name, char *user_buffer, int32_t user_buffer_size, WSAOpenType user_flags, uint8_t *palette=NULL);
+void  Close_Animation( void *handle );
+int32_t  Animate_Frame(void *handle, GraphicViewPortClass& view,
+                         int32_t frame_number, int32_t x_pixel=0, int32_t y_pixel=0,
                          WSAType flags_and_prio = WSA_NORMAL, void *magic_cols=NULL, void *magic=NULL);
-int __cdecl Get_Animation_Frame_Count(void *handle);
-BOOL __cdecl Animate_Frame(void *handle, VideoViewPortClass& view,
-                         int frame_number, int x_pixel=0, int y_pixel=0,
+int32_t  Get_Animation_Frame_Count(void *handle);
+int32_t  Animate_Frame(void *handle, VideoViewPortClass& view,
+                         int32_t frame_number, int32_t x_pixel=0, int32_t y_pixel=0,
                          WSAType flags_and_prio = WSA_NORMAL, void *magic_cols=NULL, void *magic=NULL);
-int __cdecl Get_Animation_Frame_Count(void *handle);
-int __cdecl Get_Animation_X(void const *handle);
-int __cdecl Get_Animation_Y(void const *handle);
-int __cdecl Get_Animation_Width(void const *handle);
-int __cdecl Get_Animation_Height(void const *handle);
-int __cdecl Get_Animation_Palette(void const *handle);
-unsigned long __cdecl Get_Animation_Size(void const *handle);
+int32_t  Get_Animation_Frame_Count(void *handle);
+int32_t  Get_Animation_X(void const *handle);
+int32_t  Get_Animation_Y(void const *handle);
+int32_t  Get_Animation_Width(void const *handle);
+int32_t  Get_Animation_Height(void const *handle);
+int32_t  Get_Animation_Palette(void const *handle);
+uint32_t  Get_Animation_Size(void const *handle);
 
 
 /***************************************************************************
@@ -118,7 +118,7 @@ unsigned long __cdecl Get_Animation_Size(void const *handle);
  * HISTORY:                                                                *
  *   05/24/1994 SKB : Created.                                             *
  *=========================================================================*/
-inline void  * __cdecl Open_Animation(char *file_name, WSAOpenType user_flags, unsigned char *palette=NULL)
+inline void  *  Open_Animation(char *file_name, WSAOpenType user_flags, uint8_t *palette=NULL)
 {
 	return (Open_Animation(file_name, NULL, 0L, user_flags,  palette));
 }
@@ -141,7 +141,7 @@ inline void  * __cdecl Open_Animation(char *file_name, WSAOpenType user_flags, u
  * HISTORY:                                                                *
  *   05/24/1994 SKB : Created.                                             *
  *=========================================================================*/
-inline void * __cdecl Open_Animation(char *file_name, BufferClass& buffer, WSAOpenType user_flags,  unsigned char *palette=NULL)
+inline void *  Open_Animation(char *file_name, BufferClass& buffer, WSAOpenType user_flags,  uint8_t *palette=NULL)
 {
 	return (Open_Animation(file_name, (char *)buffer.Get_Buffer(), buffer.Get_Size(), user_flags, palette));
 }
@@ -153,8 +153,8 @@ inline void * __cdecl Open_Animation(char *file_name, BufferClass& buffer, WSAOp
 
 
 extern "C" {
-unsigned int __cdecl Apply_XOR_Delta(char *source_ptr, char *delta_ptr);
-void  __cdecl Apply_XOR_Delta_To_Page_Or_Viewport(void *target, void *delta, int width, int nextrow, int copy);
+uint32_t  Apply_XOR_Delta(char *source_ptr, char *delta_ptr);
+void   Apply_XOR_Delta_To_Page_Or_Viewport(void *target, void *delta, int32_t width, int32_t nextrow, int32_t copy);
 }
 
 

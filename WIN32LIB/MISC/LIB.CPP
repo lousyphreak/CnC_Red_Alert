@@ -61,10 +61,10 @@
  * HISTORY:                                                                *
  *   02/13/1992  SB : Created.                                             *
  *=========================================================================*/
-static unsigned Divide_With_Round(unsigned num, unsigned den)
+static uint32_t Divide_With_Round(uint32_t num, uint32_t den)
 {
 	// return num/den + (0 ro 1).  1 if the remainder is more than half the denominator.
-	return( (num / den) + (unsigned)((num % den) >= ((den + 1) >> 1)) );
+	return( (num / den) + (uint32_t)((num % den) >= ((den + 1) >> 1)) );
 }
 
 #define HSV_BASE 255 // This is used to get a little better persion on HSV conversion.
@@ -91,9 +91,9 @@ static unsigned Divide_With_Round(unsigned num, unsigned den)
  * HISTORY:                                                                *
  *   02/11/1992  SB : Created.                                             *
  *=========================================================================*/
-void Convert_RGB_To_HSV(unsigned int r, unsigned int g, unsigned int b, unsigned int *h, unsigned int *s, unsigned int *v)
+void Convert_RGB_To_HSV(uint32_t r, uint32_t g, uint32_t b, uint32_t *h, uint32_t *s, uint32_t *v)
 {
- 	unsigned int m, r1, g1, b1, tmp;
+ 	uint32_t m, r1, g1, b1, tmp;
 
 	// Convert RGB base to HSV base.
 	r = Divide_With_Round((r * HSV_BASE), RGB_BASE);
@@ -168,12 +168,12 @@ void Convert_RGB_To_HSV(unsigned int r, unsigned int g, unsigned int b, unsigned
  * HISTORY:                                                                *
  *   02/11/1992  SB : Created.                                             *
  *=========================================================================*/
-void Convert_HSV_To_RGB(unsigned int h, unsigned int s, unsigned int v, unsigned int *r, unsigned int *g, unsigned int *b)
+void Convert_HSV_To_RGB(uint32_t h, uint32_t s, uint32_t v, uint32_t *r, uint32_t *g, uint32_t *b)
 {
-	unsigned int i;				// Integer part.
-	unsigned int f;				// Fractional or remainder part.  f/HSV_BASE gives fraction.
-	unsigned int tmp;			// Tempary variable to help with calculations.
-	unsigned int values[7];	// Possible rgb values.  Don't use zero.
+	uint32_t i;				// Integer part.
+	uint32_t f;				// Fractional or remainder part.  f/HSV_BASE gives fraction.
+	uint32_t tmp;			// Tempary variable to help with calculations.
+	uint32_t values[7];	// Possible rgb values.  Don't use zero.
 
 
 	h *= 6;

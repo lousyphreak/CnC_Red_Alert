@@ -48,13 +48,13 @@ extern	WWSurface*	PaletteSurface;
 /*=========================================================================*/
 /* The following prototypes are for the file: DDRAW.CPP							*/
 /*=========================================================================*/
-void 		Process_Draw_Result(HRESULT result, int display_ok_msg);
-BOOL 		Set_Video_Mode(HWND hwnd, int w, int h, int bits_per_pixel);
+void 		Process_Draw_Result(HRESULT result, int32_t display_ok_msg);
+int32_t 		Set_Video_Mode(HWND hwnd, int32_t w, int32_t h, int32_t bits_per_pixel);
 void 		Reset_Video_Mode(void);
-unsigned 	Get_Free_Video_Memory(void);
-unsigned 	Get_Total_Video_Memory(void);
+uint32_t 	Get_Free_Video_Memory(void);
+uint32_t 	Get_Total_Video_Memory(void);
 void 		Wait_Blit(void);
-unsigned 	Get_Video_Hardware_Capabilities(void);
+uint32_t 	Get_Video_Hardware_Capabilities(void);
 
 extern "C" void Wait_Vert_Blank(void);
 extern "C" void Set_Video_Palette (void *palette);
@@ -109,17 +109,17 @@ class SurfaceMonitorClass {
 
 		void	Add_Surface (WWSurface*);
 		void	Remove_Surface (WWSurface*);
-		BOOL	Got_Surface_Already (WWSurface*);
+		int32_t	Got_Surface_Already (WWSurface*);
 		void	Restore_Surfaces (void);
-		void	Set_Surface_Focus ( BOOL in_focus );
+		void	Set_Surface_Focus ( int32_t in_focus );
 		void	Release(void);
 
-		BOOL	SurfacesRestored;
+		int32_t	SurfacesRestored;
 
 	private:
 
 		WWSurface*	Surface[MAX_SURFACES];
-		BOOL						InFocus;
+		int32_t						InFocus;
 
 };
 
@@ -131,22 +131,22 @@ extern	SurfaceMonitorClass	AllSurfaces;				//List of all direct draw surfaces
 /*=========================================================================*/
 extern	WWDraw*	VideoDrawObject;
 extern	HWND				MainWindow;
-extern BOOL 				SystemToVideoBlits;
-extern BOOL				VideoToSystemBlits;
-extern BOOL				SystemToSystemBlits;
-extern BOOL				OverlappedVideoBlits;	// Can video driver blit overlapped regions?
+extern int32_t 				SystemToVideoBlits;
+extern int32_t				VideoToSystemBlits;
+extern int32_t				SystemToSystemBlits;
+extern int32_t				OverlappedVideoBlits;	// Can video driver blit overlapped regions?
 
 /*=========================================================================*/
 /* The following prototypes are for the file: EXIT.CPP							*/
 /* Prog_End Must be supplied by the user program in startup.cpp				*/
 /*=========================================================================*/
-VOID __cdecl Prog_End(VOID);
-VOID __cdecl Exit(INT errorval, const BYTE *message, ...);
+void  Prog_End(void);
+void  Exit(int32_t errorval, const char *message, ...);
 
 /*=========================================================================*/
 /* The following prototypes are for the file: DELAY.CPP							*/
 /*=========================================================================*/
-void Delay(int duration);
+void Delay(int32_t duration);
 void Vsync(void);
 
 
@@ -154,28 +154,26 @@ void Vsync(void);
 /* The following prototypes are for the file: FINDARGV.CPP						*/
 /*=========================================================================*/
 
-BYTE  __cdecl Find_Argv(BYTE const *str);
-
 /*=========================================================================*/
 /* The following prototypes are for the file: LIB.CPP								*/
 /*=========================================================================*/
 char *Find_Argv(char const *str);
-void Mono_Mem_Dump(void const *databuf, int bytes, int y);
-void Convert_RGB_To_HSV(unsigned int r, unsigned int g, unsigned int b, unsigned int *h, unsigned int *s, unsigned int *v);
-void Convert_HSV_To_RGB(unsigned int h, unsigned int s, unsigned int v, unsigned int *r, unsigned int *g, unsigned int *b);
+void Mono_Mem_Dump(void const *databuf, int32_t bytes, int32_t y);
+void Convert_RGB_To_HSV(uint32_t r, uint32_t g, uint32_t b, uint32_t *h, uint32_t *s, uint32_t *v);
+void Convert_HSV_To_RGB(uint32_t h, uint32_t s, uint32_t v, uint32_t *r, uint32_t *g, uint32_t *b);
 
 
 /*=========================================================================*/
 /* The following prototypes are for the file: VERSION.CPP						*/
 /*=========================================================================*/
 
-BYTE  __cdecl Version(VOID);
+char   Version(void);
 
 
 /*=========================================================================*/
 /* The following prototypes are for the file: IRANDOM.CPP						*/
 /*=========================================================================*/
-int IRandom(int minval, int maxval);
+int32_t IRandom(int32_t minval, int32_t maxval);
 
 
 /*========================= Assembly Routines ==============================*/
@@ -188,67 +186,67 @@ extern "C" {
 /* The following prototypes are for the file: RANDOM.ASM							*/
 /*=========================================================================*/
 
-unsigned char __cdecl Random(void);
-int __cdecl Get_Random_Mask(int maxval);
+uint8_t  Random(void);
+int32_t  Get_Random_Mask(int32_t maxval);
 
 /*=========================================================================*/
 /* The following prototype is for the file: SHAKESCR.ASM							*/
 /*=========================================================================*/
 
-void __cdecl Shake_Screen(int shakes);
+void  Shake_Screen(int32_t shakes);
 
 /*=========================================================================*/
 /* The following prototypes are for the file: REVERSE.ASM						*/
 /*=========================================================================*/
 
-long __cdecl Reverse_Long(long number);
-short __cdecl Reverse_Short(short number);
-long __cdecl Swap_Long(long number);
+int32_t  Reverse_Long(int32_t number);
+int16_t  Reverse_Short(int16_t number);
+int32_t  Swap_Long(int32_t number);
 #if (0)
 /*=========================================================================*/
 /* The following prototype is for the file: FACING8.ASM							*/
 /*=========================================================================*/
 
-int __cdecl Desired_Facing8(int x1, int y1, int x2, int y2);
+int32_t  Desired_Facing8(int32_t x1, int32_t y1, int32_t x2, int32_t y2);
 
 /*=========================================================================*/
 /* The following prototype is for the file: FACING16.ASM							*/
 /*=========================================================================*/
 
-int __cdecl Desired_Facing16(int x1, int y1, int x2, int y2);
+int32_t  Desired_Facing16(int32_t x1, int32_t y1, int32_t x2, int32_t y2);
 
 /*=========================================================================*/
 /* The following prototype is for the file: FACINGFF.ASM							*/
 /*=========================================================================*/
 
-int __cdecl Desired_Facing256(int x1, int y1, int x2, int y2);
+int32_t  Desired_Facing256(int32_t x1, int32_t y1, int32_t x2, int32_t y2);
 
 /*=========================================================================*/
 /* The following prototype is for the file: FADING.ASM							*/
 /*=========================================================================*/
 #endif
 
-void * __cdecl Build_Fading_Table(void const *palette, void const *dest, long int color, long int frac);
+void *  Build_Fading_Table(void const *palette, void const *dest, int32_t color, int32_t frac);
 /*=========================================================================*/
 /* The following prototype is for the file: CRC.ASM							*/
 /*=========================================================================*/
 
-long __cdecl Calculate_CRC(void *buffer, long length);
+int32_t  Calculate_CRC(void *buffer, int32_t length);
 
 /*=========================================================================*/
 /* The following prototypes are for the file: DETPROC.ASM						*/
 /*=========================================================================*/
 
-extern WORD __cdecl  Processor(void);
-extern WORD __cdecl Operating_System(void);
-extern unsigned long Random_Mod(unsigned long mod);
+extern int16_t   Processor(void);
+extern int16_t  Operating_System(void);
+extern uint32_t Random_Mod(uint32_t mod);
 #define random(mod) Random_Mod(mod)
 //extern void  randomize ( void ) ;
 
-extern int __cdecl Clip_Rect ( int * x , int * y , int * dw , int * dh ,
-	       	   			 int width , int height ) ;
-extern int __cdecl Confine_Rect ( int * x , int * y , int dw , int dh ,
-	      	      			 int width , int height ) ;
+extern int32_t  Clip_Rect ( int32_t * x , int32_t * y , int32_t * dw , int32_t * dh ,
+	       	   			 int32_t width , int32_t height ) ;
+extern int32_t  Confine_Rect ( int32_t * x , int32_t * y , int32_t dw , int32_t dh ,
+	      	      			 int32_t width , int32_t height ) ;
 
 
 
@@ -256,7 +254,7 @@ extern int __cdecl Confine_Rect ( int * x , int * y , int dw , int dh ,
 /* The following prototypes are for the file: OPSYS.ASM							*/
 /*=========================================================================*/
 
-extern WORD OperationgSystem;
+extern int16_t OperationgSystem;
 
 #ifdef __cplusplus
 }

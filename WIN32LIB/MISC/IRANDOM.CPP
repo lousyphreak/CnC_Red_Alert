@@ -49,9 +49,9 @@
    RETURNS:	int random number
 */
 
-int IRandom(int minval, int maxval)
+int32_t IRandom(int32_t minval, int32_t maxval)
 {
-	int num,mask;
+	int32_t num,mask;
 
 	// Keep minval and maxval straight.
 	if (minval > maxval) {

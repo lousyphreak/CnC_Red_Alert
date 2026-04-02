@@ -71,21 +71,21 @@ class IconCacheClass {
 		~IconCacheClass (void);					// class destructor
 
 		void Restore(void);						// restore the surface
-		BOOL Cache_It (void * icon_ptr);		// Cache the icon to video memory
+		int32_t Cache_It (void * icon_ptr);		// Cache the icon to video memory
 		void Uncache_It (void);					// Restore the video memory and flag the icon as uncached
-		void Draw_It (WWSurface* dest_surface , int x_pixel, int y_pixel, int window_left , int window_top , int window_width , int window_height);
-		inline BOOL Get_Is_Cached(void);		// Return the IsCached member
+		void Draw_It (WWSurface* dest_surface , int32_t x_pixel, int32_t y_pixel, int32_t window_left , int32_t window_top , int32_t window_width , int32_t window_height);
+		inline int32_t Get_Is_Cached(void);		// Return the IsCached member
 
-		int						TimesDrawn;		// counter of times cached icon has been drawn
-		int						TimesFailed;	// counter of times cached icon has failed to draw
+		int32_t						TimesDrawn;		// counter of times cached icon has been drawn
+		int32_t						TimesFailed;	// counter of times cached icon has failed to draw
 
 
 	private:
 
 		WWSurface*	CacheSurface;	// Ptr to direct draw surface where icon resides
-		BOOL						IsCached;		// Flag to say whether an icon is cached
-		BOOL						SurfaceLost;	// Flag to indicate that our icons surface has been lost
-		int						DrawFrequency;	// Number of times icon has been drawn
+		int32_t						IsCached;		// Flag to say whether an icon is cached
+		int32_t						SurfaceLost;	// Flag to indicate that our icons surface has been lost
+		int32_t						DrawFrequency;	// Number of times icon has been drawn
 		void						*IconSource;	// Ptr to original icon data in system memory
 
 };
@@ -99,7 +99,7 @@ class IconCacheClass {
 
 typedef struct tIconSetType{
 	IControl_Type	*IconSetPtr;				// Ptr to icon set data
-	int				IconListOffset;			// Offset into icon index table for this icon set
+	int32_t				IconListOffset;			// Offset into icon index table for this icon set
 }IconSetType;
 
 
@@ -107,22 +107,22 @@ extern	IconCacheClass	CachedIcons[MAX_CACHED_ICONS];
 
 extern void Invalidate_Cached_Icons (void);
 extern void Restore_Cached_Icons (void);
-extern void Register_Icon_Set (void *icon_data , BOOL pre_cache);
+extern void Register_Icon_Set (void *icon_data , int32_t pre_cache);
 
 //
 // Prototypes for assembly language procedures in STMPCACH.ASM
 //
 extern "C" void Clear_Icon_Pointers (void);
-extern "C" void Cache_Copy_Icon (void const *icon_ptr ,void * , int);
-extern "C" int Is_Icon_Cached (void const *icon_data , int icon);
-extern "C" int Get_Icon_Index (void *icon_ptr);
-extern "C" int Get_Free_Index (void);
-extern "C" BOOL Cache_New_Icon (int icon_index, void *icon_ptr);
-extern "C" int Get_Free_Cache_Slot(void);
+extern "C" void Cache_Copy_Icon (void const *icon_ptr ,void * , int32_t);
+extern "C" int32_t Is_Icon_Cached (void const *icon_data , int32_t icon);
+extern "C" int32_t Get_Icon_Index (void *icon_ptr);
+extern "C" int32_t Get_Free_Index (void);
+extern "C" int32_t Cache_New_Icon (int32_t icon_index, void *icon_ptr);
+extern "C" int32_t Get_Free_Cache_Slot(void);
 
 
-extern	int	CachedIconsDrawn;
-extern	int	UnCachedIconsDrawn;
+extern	int32_t	CachedIconsDrawn;
+extern	int32_t	UnCachedIconsDrawn;
 
 
 /***********************************************************************************************
@@ -139,7 +139,7 @@ extern	int	UnCachedIconsDrawn;
  * HISTORY:                                                                                    *
  *    11/13/95 9:42AM ST : Created                                                             *
  *=============================================================================================*/
-inline BOOL IconCacheClass::Get_Is_Cached (void)
+inline int32_t IconCacheClass::Get_Is_Cached (void)
 {
 	return (IsCached);
 }

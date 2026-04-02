@@ -579,7 +579,7 @@ void Close_File(int handle)
 	}
 }
 
-uint64_t Read_File(int handle, void * buf, uint64_t bytes)
+int32_t Read_File(int32_t handle, void * buf, uint32_t bytes)
 {
 	if (handle != WWERROR && Handles[handle].Is_Open()) {
 		return(Handles[handle].Read(buf, bytes));
@@ -587,7 +587,7 @@ uint64_t Read_File(int handle, void * buf, uint64_t bytes)
 	return(0);
 }
 
-uint64_t Write_File(int handle, void const * buf, uint64_t bytes)
+int32_t Write_File(int32_t handle, void const * buf, uint32_t bytes)
 {
 	if (handle != WWERROR && Handles[handle].Is_Open()) {
 		return(Handles[handle].Write(buf, bytes));
@@ -625,10 +625,10 @@ void * Load_Alloc_Data(char const * name, int )
 	return(Load_Alloc_Data(file));
 }
 
-uint64_t File_Size(int handle)
+uint32_t File_Size(int32_t handle)
 {
 	if (handle != WWERROR && Handles[handle].Is_Open()) {
-		return(Handles[handle].Size());
+		return((uint32_t)Handles[handle].Size());
 	}
 	return(0);
 }
@@ -640,10 +640,10 @@ unsigned long Write_Data(char const * name, void const * ptr, unsigned long size
 }
 #endif
 
-uint64_t Seek_File(int handle, int64_t offset, int starting)
+uint32_t Seek_File(int32_t handle, int32_t offset, int32_t starting)
 {
 	if (handle != WWERROR && Handles[handle].Is_Open()) {
-		return(Handles[handle].Seek(offset, starting));
+		return((uint32_t)Handles[handle].Seek(offset, starting));
 	}
 	return(0);
 }

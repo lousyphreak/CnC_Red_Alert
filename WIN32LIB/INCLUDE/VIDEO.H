@@ -88,11 +88,11 @@
 #ifdef NOT_FOR_WIN95
 typedef struct {
 	char    Signature[4];
-	short   Version;
-	REALPTR OEMString;
-	long    Capabilities;
-	REALPTR AvailModes;
-	short   TotalMemory;
+	int16_t   Version;
+	uint32_t OEMString;
+	int32_t    Capabilities;
+	uint32_t AvailModes;
+	int16_t   TotalMemory;
 	char    Reserved[236];
 } VesaInfoType;
 
@@ -139,17 +139,17 @@ typedef struct {
  *=========================================================================*/
 #ifdef NOT_FOR_WIN95
 typedef struct {
-	short   Attributes;
+	int16_t   Attributes;
 	char    WinA_Attributes;
 	char    WinB_Attributes;
-	short   WinGranularity;
-	short   WinSize;
-	short   WinA_Segment;
-	short   WinB_Segment;
-	REALPTR WinFunc;
-	short   BytesPerScanline;
-	short   XRes;
-	short   YRes;
+	int16_t   WinGranularity;
+	int16_t   WinSize;
+	int16_t   WinA_Segment;
+	int16_t   WinB_Segment;
+	uint32_t WinFunc;
+	int16_t   BytesPerScanline;
+	int16_t   XRes;
+	int16_t   YRes;
 	char    XCharSize;
 	char    YCharSize;
 	char    NumPlanes;
@@ -171,47 +171,47 @@ typedef struct {
 	char    pad[216];
 } VesaModeInfoType;
 
-extern REALPTR	 VesaFunc;
+extern uint32_t	 VesaFunc;
 
 #endif //NOT_FOR_WIN95
 
 
 extern "C" {
-extern	int	GraphicMode;
-extern	long	XRes;
-extern	long	YRes;
+extern	int32_t	GraphicMode;
+extern	int32_t	XRes;
+extern	int32_t	YRes;
 
-extern long		 BankTable [];
-extern unsigned long RMVesaVector ;
-extern unsigned long RMVesaRegs ;
+extern int32_t		 BankTable [];
+extern uint32_t RMVesaVector ;
+extern uint32_t RMVesaRegs ;
 }
 
 /*=========================================================================*/
 /* The following prototypes are for the file: VIDEO.CPP							*/
 /*=========================================================================*/
 
-extern "C" int Set_Video_Mode(int mode);
-int Get_Video_Mode(void);
+extern "C" int32_t Set_Video_Mode(int32_t mode);
+int32_t Get_Video_Mode(void);
 void Update_Video_Mode (void) ;
 void Vesa_Info(void);
-void Vesa_Set_Window(long grain_num);
-int Get_Original_Video_Mode(void);
-void Set_Original_Video_Mode(int mode);
+void Vesa_Set_Window(int32_t grain_num);
+int32_t Get_Original_Video_Mode(void);
+void Set_Original_Video_Mode(int32_t mode);
 
 /*=========================================================================*/
 /* The following prototypes are for the file: INITDLAY.CPP	  					*/
 /*=========================================================================*/
 
-extern VOID Init_Delay(VOID);
-extern BOOL VertBlank;
+extern void Init_Delay(void);
+extern int32_t VertBlank;
 
 /*=========================================================================*/
 /* The following prototypes are for the file: VERTBLNK.ASM	  					*/
 /*=========================================================================*/
 
 extern "C" {
-	extern WORD Get_Vert_Blank(VOID);
-	extern VOID Wait_Vert_Blank(BOOL blank);
+	extern int16_t Get_Vert_Blank(void);
+	extern void Wait_Vert_Blank(int32_t blank);
 }
 
 /*=========================================================================*/

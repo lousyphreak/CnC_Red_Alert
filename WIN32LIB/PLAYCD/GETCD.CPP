@@ -62,7 +62,7 @@
  *   12/4/95    ST   : fixed for Win95                                     *
  *=========================================================================*/
 
-GetCDClass::GetCDClass(VOID)
+GetCDClass::GetCDClass(void)
 {
 	char	path[]={"a:\\"};
 
@@ -78,7 +78,7 @@ GetCDClass::GetCDClass(VOID)
 	for (char i='c' ; i<='z' ; i++){
 		path[0]=i;
 		if (GetDriveType (path) == DRIVE_CDROM){
-			CDDrives[CDCount++] = (int) (i-'a');
+			CDDrives[CDCount++] = (int32_t) (i-'a');
 		}
 	}
 
@@ -89,7 +89,7 @@ GetCDClass::GetCDClass(VOID)
 		for (char i='a' ; i<='b' ; i++){
 			path[0]=i;
 			if (GetDriveType (path) == DRIVE_CDROM){
-				CDDrives[CDCount++] = (int) (i-'a');
+				CDDrives[CDCount++] = (int32_t) (i-'a');
 			}
 		}
 	}
@@ -111,7 +111,7 @@ GetCDClass::GetCDClass(VOID)
  *   12/4/95    ST: fixed for Win95                                        *
  *=========================================================================*/
 
-GetCDClass::~GetCDClass(VOID)
+GetCDClass::~GetCDClass(void)
 {
 //	if(cdDrive_addrp.seg)
 //		DPMI_real_free(cdDrive_addrp);		// free up those conventional buffers

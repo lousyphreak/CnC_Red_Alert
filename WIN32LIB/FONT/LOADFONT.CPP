@@ -46,8 +46,8 @@
 
 #include <errno.h>
 
-int FontXSpacing = 0;
-int FontYSpacing = 0;
+int32_t FontXSpacing = 0;
+int32_t FontYSpacing = 0;
 void const *FontPtr = NULL;
 char FontWidth  = 8;
 char FontHeight = 8;
@@ -81,11 +81,11 @@ char *FontWidthBlockPtr = NULL;
  *   02/01/1992 DRD : Added font file verification.                        *
  *   06/29/1994 SKB : modified for 32 bit library                          *
  *=========================================================================*/
-void * __cdecl Load_Font(char const *name)
+void *  Load_Font(char const *name)
 {
 	char	valid;
-	int		fh;		// DOS file handle for font file.
-	unsigned short	size;		// Size of the data in the file (-2);
+	int32_t		fh;		// DOS file handle for font file.
+	uint16_t	size;		// Size of the data in the file (-2);
 	char	*ptr = NULL;		// Pointer to newly loaded font.
 
 
@@ -95,7 +95,7 @@ void * __cdecl Load_Font(char const *name)
 		if ( Read_File(fh, (char *) &size, 2) != 2) return(NULL);
 
 		ptr = (char *) Alloc(size , MEM_NORMAL );
-		*(short *)ptr = size;
+		*(int16_t *)ptr = size;
 		Read_File(fh, ptr + 2, size - 2);
 		Close_File(fh);
 	} else {
@@ -110,7 +110,7 @@ void * __cdecl Load_Font(char const *name)
 		if (Read_File(fh, (char *) &size, 2) != 2) return(NULL);
 
 		ptr = (char *) Alloc(size, MEM_NORMAL);
-		*(short *)ptr = size;
+		*(int16_t *)ptr = size;
 		Read_File(fh, ptr + 2, size - 2);
 		Close_File(fh);
 	} else {

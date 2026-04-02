@@ -81,14 +81,14 @@ typedef struct {
 	/*
 	**	This flags whether this sample structure is active or not.
 	*/
-	unsigned Active;
+	uint32_t Active;
 	//unsigned Active:1;
 
 	/*
 	**	This flags whether the sample is loading or has been started.
 	*/
 	//unsigned Loading:1;
-	unsigned Loading;
+	uint32_t Loading;
 
 	/*
 	**	This semaphore ensures that simultaneous update of this structure won't
@@ -96,7 +96,7 @@ typedef struct {
 	**	this structure.
 	*/
 	//unsigned DontTouch:1;
-	unsigned DontTouch;
+	uint32_t DontTouch;
 
 	/*
 	**	If this sample is really to be considered a score rather than
@@ -104,7 +104,7 @@ typedef struct {
 	**	the area of volume control.
 	*/
 	//unsigned IsScore:1;
-	unsigned IsScore;
+	uint32_t IsScore;
 
 	/*
 	**	This is the original sample pointer. It is used to control the sample based on
@@ -126,24 +126,24 @@ typedef struct {
 	/*
 	** Variable to keep track of the playback rate of this buffer
 	*/
-	int	PlaybackRate;
+	int32_t	PlaybackRate;
 
 	/*
 	** Variable to keep track of the sample type ( 8 or 16 bit ) of this buffer
 	*/
-	int	BitSize;
+	int32_t	BitSize;
 
 	/*
 	** Variable to keep track of the stereo ability of this buffer
 	*/
-	int	Stereo;
+	int32_t	Stereo;
 
 	/*
 	**	The number of bytes in the buffer that has been filled but is not
 	**	yet playing.  This value is normally the size of the buffer,
 	**	except for the case of the last bit of the sample.
 	*/
-	LONG DataLength;
+	int32_t DataLength;
 
 	/*
 	**	This is the buffer index for the low buffer that
@@ -163,26 +163,26 @@ typedef struct {
 	**  to copy to the play buffer
 	**
 	*/
-	BOOL MoreSource;
+	int32_t MoreSource;
 
 	/*
 	**	This flag indicates that the entire sample fitted inside the
 	** SDL audio backend secondary buffer
 	**
 	*/
-	BOOL OneShot;
+	int32_t OneShot;
 
 	/*
 	**	Pointer to the sound data that has not yet been copied
 	**	to the playback buffers.
 	*/
-	VOID *Source;
+	void *Source;
 
 	/*
 	**	This is the number of bytes remaining in the source data as
 	**	pointed to by the "Source" element.
 	*/
-	LONG Remainder;
+	int32_t Remainder;
 
 	/*
 	**	Object to use with Enter/LeaveCriticalSection
@@ -195,7 +195,7 @@ typedef struct {
 	**	which sounds live or die when the maximum number of
 	**	sounds are being played.
 	*/
-	int Priority;
+	int32_t Priority;
 
 	/*
 	**	This is the handle as returned by sosDIGIStartSample function.
@@ -205,19 +205,19 @@ typedef struct {
 	/*
 	**	This is the current volume of the sample as it is being played.
 	*/
-	int Volume;
-	int Reducer;		// Amount to reduce volume per tick.
+	int32_t Volume;
+	int32_t Reducer;		// Amount to reduce volume per tick.
 
 	/*
 	**	This is the compression that the sound data is using.
 	*/
 	SCompressType Compression;
 	int16_t TrailerLen;						// Number of trailer bytes in buffer.
-	BYTE Trailer[SONARC_MARGIN];		// Maximum number of 'order' samples needed.
+	uint8_t Trailer[SONARC_MARGIN];		// Maximum number of 'order' samples needed.
 
 
-	DWORD Pitch;
-	WORD Flags;
+	uint32_t Pitch;
+	uint16_t Flags;
 
 	/*
 	**	This flag indicates whether this sample needs servicing.
@@ -230,24 +230,24 @@ typedef struct {
 	**	BUT there is more data available.  The sample must be
 	**	restarted upon filling the low buffer.
 	*/
-	BOOL Restart;
+	int32_t Restart;
 
 	/*
 	**	Streaming control handlers.
 	*/
-	BOOL (*Callback)(int16_t id, int16_t *odd, VOID **buffer, int32_t *size);
-	VOID	*QueueBuffer;	// Pointer to continued sample data.
+	int32_t (*Callback)(int16_t id, int16_t *odd, void **buffer, int32_t *size);
+	void	*QueueBuffer;	// Pointer to continued sample data.
 	int32_t	QueueSize;		// Size of queue buffer attached.
 	int16_t	Odd;				// Block number tracker (0..StreamBufferCount-1).
-	int	FilePending;	// Number of buffers already filled ahead.
+	int32_t	FilePending;	// Number of buffers already filled ahead.
 	int32_t	FilePendingSize;	// Number of bytes in last filled buffer.
 
 	/*
 	**	The file variables are used when streaming directly off of the
 	**	hard drive.
 	*/
-	int	FileHandle;		// Streaming file handle (ERROR = not in use).
-	VOID	*FileBuffer;	// Temporary streaming buffer (allowed to be freed).
+	int32_t	FileHandle;		// Streaming file handle (ERROR = not in use).
+	void	*FileBuffer;	// Temporary streaming buffer (allowed to be freed).
 	/*
 	** The following structure is used if the sample if compressed using
 	** the sos 16 bit compression Codec.
@@ -261,15 +261,15 @@ typedef struct {
 
 typedef struct LockedData {
 	int32_t 		DigiHandle; 			// = -1;
-	BOOL 					ServiceSomething;		// = FALSE;
+	int32_t 					ServiceSomething;		// = FALSE;
 	uint32_t 			MagicNumber; 			// = 0xDEAF;
-	VOID 					*UncompBuffer;			// = NULL;
+	void 					*UncompBuffer;			// = NULL;
 	int32_t 			StreamBufferSize; 	// = (2*SECONDARY_BUFFER_SIZE)+128;
 	int16_t 			StreamBufferCount; 	// = 32;
 	SampleTrackerType SampleTracker[MAX_SFX];
 	uint32_t		SoundVolume;
 	uint32_t		ScoreVolume;
-	BOOL					_int;
+	int32_t					_int;
 } LockedDataType;
 
 extern LockedDataType LockedData;
@@ -278,18 +278,18 @@ extern LockedDataType LockedData;
 void Init_Locked_Data(void);
 int32_t Simple_Copy(void ** source, int32_t * ssize, void ** alternate, int32_t * altsize, void **dest, int32_t size);
 int32_t Sample_Copy(SampleTrackerType *st, void ** source, int32_t * ssize, void ** alternate, int32_t * altsize, void * dest, int32_t size, SCompressType scomp, void * trailer, int16_t *trailersize);
-VOID far __cdecl maintenance_callback(VOID);
-VOID __cdecl far DigiCallback(unsigned int driverhandle, unsigned int callsource, unsigned int sampleid);
-void far HMI_TimerCallback(void);
+void   maintenance_callback(void);
+void   DigiCallback(uint32_t driverhandle, uint32_t callsource, uint32_t sampleid);
+void  HMI_TimerCallback(void);
 void *Audio_Add_Long_To_Pointer(void const *ptr, intptr_t size);
-void	DPMI_Unlock(VOID const *ptr, LONG const size);
+void	DPMI_Unlock(void const *ptr, int32_t const size);
 extern "C" {
-	void __cdecl Audio_Mem_Set(void const *ptr, unsigned char value, intptr_t size);
+	void  Audio_Mem_Set(void const *ptr, uint8_t value, intptr_t size);
 //	void	Mem_Copy(void *source, void *dest, unsigned long bytes_to_copy);
-	int32_t  __cdecl Decompress_Frame(void * source, void * dest, int32_t size);
-	int	__cdecl Decompress_Frame_Lock(void);
-	int	__cdecl Decompress_Frame_Unlock(void);
-	int	__cdecl sosCODEC_Lock(void);
-	int	__cdecl sosCODEC_Unlock(void);
+	int32_t   Decompress_Frame(void * source, void * dest, int32_t size);
+	int32_t	 Decompress_Frame_Lock(void);
+	int32_t	 Decompress_Frame_Unlock(void);
+	int32_t	 sosCODEC_Lock(void);
+	int32_t	 sosCODEC_Unlock(void);
 	void	__GETDS(void);
 }

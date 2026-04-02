@@ -2048,7 +2048,7 @@ long Obfuscate(char const * string)
  *   03/02/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
 extern "C"  {
-long Calculate_CRC(void * buffer, long len)
+int32_t Calculate_CRC(void * buffer, int32_t len)
 {
 	return(CRCEngine()(buffer, len));
 }

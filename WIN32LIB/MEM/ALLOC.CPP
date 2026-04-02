@@ -48,7 +48,7 @@
 #endif
 
 
-extern "C" unsigned long Largest_Mem_Block ( void ) ;
+extern "C" uint32_t Largest_Mem_Block ( void ) ;
 
 /*=========================================================================*/
 /* The following PRIVATE functions are in this file:                       */
@@ -57,10 +57,10 @@ extern "C" unsigned long Largest_Mem_Block ( void ) ;
 
 /*= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =*/
 
-unsigned long MinRam=0L;		// Record of least memory at worst case.
-unsigned long MaxRam=0L;		// Record of total allocated at worst case.
-static unsigned long TotalRam = 0L;
-static unsigned long Memory_Calls = 0L;
+uint32_t MinRam=0L;		// Record of least memory at worst case.
+uint32_t MaxRam=0L;		// Record of total allocated at worst case.
+static uint32_t TotalRam = 0L;
+static uint32_t Memory_Calls = 0L;
 
 void (*Memory_Error)(void) = NULL;
 extern void (*Memory_Error_Exit)(char *string)=NULL;
@@ -70,7 +70,7 @@ extern void (*Memory_Error_Exit)(char *string)=NULL;
 
 #ifdef MEM_CHECK
 extern "C"{
-	extern void __cdecl Int3(void);
+	extern void  Int3(void);
 }
 #endif	//MEM_CHECK
 
@@ -104,7 +104,7 @@ extern "C"{
  *   03/09/1995 JLB : Fixed                                                *
  *   09/28/1995 ST  : Simplified for win95                                                                      *
  *=========================================================================*/
-void *Alloc(unsigned long bytes_to_alloc, MemoryFlagType flags)
+void *Alloc(uint32_t bytes_to_alloc, MemoryFlagType flags)
 {
 
 
@@ -126,16 +126,16 @@ void *Alloc(unsigned long bytes_to_alloc, MemoryFlagType flags)
 
 #ifdef MEM_CHECK
 	mem_ptr = (void*)((char*)mem_ptr + 16);
-	unsigned long *magic_ptr =(unsigned long*) ( ((char *)mem_ptr) - 16 );
-	*magic_ptr++ = (unsigned long)mem_ptr;
-	*magic_ptr++ = (unsigned long)mem_ptr;
-	*magic_ptr++ = (unsigned long)mem_ptr;
+	uint32_t *magic_ptr =(uint32_t*) ( ((char *)mem_ptr) - 16 );
+	*magic_ptr++ = (uint32_t)mem_ptr;
+	*magic_ptr++ = (uint32_t)mem_ptr;
+	*magic_ptr++ = (uint32_t)mem_ptr;
 	*magic_ptr 	 = bytes_to_alloc - 32;
-	magic_ptr = (unsigned long*) ( ((char*)mem_ptr) + bytes_to_alloc - 32 );
-	*magic_ptr++ = (unsigned long)mem_ptr;
-	*magic_ptr++ = (unsigned long)mem_ptr;
-	*magic_ptr++ = (unsigned long)mem_ptr;
-	*magic_ptr 	 = (unsigned long)mem_ptr;
+	magic_ptr = (uint32_t*) ( ((char*)mem_ptr) + bytes_to_alloc - 32 );
+	*magic_ptr++ = (uint32_t)mem_ptr;
+	*magic_ptr++ = (uint32_t)mem_ptr;
+	*magic_ptr++ = (uint32_t)mem_ptr;
+	*magic_ptr 	 = (uint32_t)mem_ptr;
 #endif	//MEM_CHECK
 
 	Memory_Calls++;
@@ -164,20 +164,20 @@ void Free(void const *pointer)
 
 #ifdef MEM_CHECK
 
-		unsigned long	*magic_ptr = (unsigned long*) ( ((char*)pointer) - 16 );
+		uint32_t	*magic_ptr = (uint32_t*) ( ((char*)pointer) - 16 );
 
-		if (*magic_ptr++ != (unsigned long)pointer ||
-		 	*magic_ptr++ != (unsigned long)pointer ||
-		 	*magic_ptr++ != (unsigned long)pointer ){
+		if (*magic_ptr++ != (uint32_t)pointer ||
+		 	*magic_ptr++ != (uint32_t)pointer ||
+		 	*magic_ptr++ != (uint32_t)pointer ){
 		 	Int3();
 		}
 
-		magic_ptr = (unsigned long*) ( ((char*)pointer) + *magic_ptr );
+		magic_ptr = (uint32_t*) ( ((char*)pointer) + *magic_ptr );
 
-		if (*magic_ptr++ != (unsigned long)pointer ||
-		 	*magic_ptr++ != (unsigned long)pointer ||
-		 	*magic_ptr++ != (unsigned long)pointer ||
-		 	*magic_ptr++ != (unsigned long)pointer ){
+		if (*magic_ptr++ != (uint32_t)pointer ||
+		 	*magic_ptr++ != (uint32_t)pointer ||
+		 	*magic_ptr++ != (uint32_t)pointer ||
+		 	*magic_ptr++ != (uint32_t)pointer ){
 		 	Int3();
 		}
 
@@ -208,15 +208,15 @@ void Free(void const *pointer)
  * HISTORY:                                                                *
  *   02/01/1992 JLB : Commented.                                           *
  *=========================================================================*/
-void *Resize_Alloc(void *original_ptr, unsigned long new_size_in_bytes)
+void *Resize_Alloc(void *original_ptr, uint32_t new_size_in_bytes)
 {
 
-	unsigned long *temp;
+	uint32_t *temp;
 
-	temp = (unsigned long*)original_ptr;
+	temp = (uint32_t*)original_ptr;
 
 	/* ReAlloc the space */
-	temp = (unsigned long *)realloc(temp, new_size_in_bytes);
+	temp = (uint32_t *)realloc(temp, new_size_in_bytes);
 	if (temp == NULL) {
 		if(Memory_Error != NULL)
 			Memory_Error();
@@ -243,7 +243,7 @@ void *Resize_Alloc(void *original_ptr, unsigned long new_size_in_bytes)
  * HISTORY:                                                                *
  *   09/03/1991 JLB : Commented.                                           *
  *=========================================================================*/
-long Ram_Free(MemoryFlagType)
+int32_t Ram_Free(MemoryFlagType)
 {
 //	return(_memmax());
 #if(0)
@@ -270,7 +270,7 @@ long Ram_Free(MemoryFlagType)
  * HISTORY:                                                                *
  *   06/21/1994 SKB : Created.                                             *
  *=========================================================================*/
-long Heap_Size(MemoryFlagType )
+int32_t Heap_Size(MemoryFlagType )
 {
 	if (!TotalRam) {
 		TotalRam = Total_Ram_Free(MEM_NORMAL);
@@ -294,7 +294,7 @@ long Heap_Size(MemoryFlagType )
  *   06/21/1994 SKB : Created.                                             *
  *   03/09/1995 JLB : Uses prerecorded heap size maximum.                  *
  *=========================================================================*/
-long Total_Ram_Free(MemoryFlagType )
+int32_t Total_Ram_Free(MemoryFlagType )
 {
 #if(0)
 	MEMORYSTATUS	mem_info;

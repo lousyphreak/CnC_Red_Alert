@@ -56,14 +56,14 @@
 #include	<string.h>
 
 
-extern void output(short port, short data);
+extern void output(int16_t port, int16_t data);
 #pragma aux output parm [dx] [ax] =		\
 		"out	dx,al"		\
 		"inc	dx"			\
 		"mov	al,ah"		\
 		"out	dx,al"
 
-int MonoClass::Enabled = 0;
+int32_t MonoClass::Enabled = 0;
 MonoClass * MonoClass::PageUsage[MonoClass::MAX_MONO_PAGES] = {0,0,0,0,0,0,0,0};
 void * MonoClass::MonoSegment = (void*)0x000b0000;
 
@@ -97,7 +97,7 @@ MonoClass::BoxDataType const MonoClass::CharData[MonoClass::COUNT] = {
  *=============================================================================================*/
 MonoClass::MonoClass(void)
 {
-	int	index;
+	int32_t	index;
 
 	Attrib = DEFAULT_ATTRIBUTE;		// Normal text color.
 	X = Y = 0;
@@ -158,7 +158,7 @@ MonoClass::~MonoClass(void)
  * HISTORY:                                                                                    *
  *   10/17/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-void MonoClass::Draw_Box(int x, int y, int w, int h, char attrib, BoxStyleType thick)
+void MonoClass::Draw_Box(int32_t x, int32_t y, int32_t w, int32_t h, char attrib, BoxStyleType thick)
 {
 	CellType	cell;
 	char	oldattrib = Attrib;
@@ -170,7 +170,7 @@ void MonoClass::Draw_Box(int x, int y, int w, int h, char attrib, BoxStyleType t
 	/*
 	**	Draw the horizontal lines.
 	*/
-	for (int xpos = 0; xpos < w-2; xpos++) {
+	for (int32_t xpos = 0; xpos < w-2; xpos++) {
 		cell.Character = CharData[thick].TopEdge;
 		Store_Cell(cell, x+xpos+1, y);
 		cell.Character = CharData[thick].BottomEdge;
@@ -180,7 +180,7 @@ void MonoClass::Draw_Box(int x, int y, int w, int h, char attrib, BoxStyleType t
 	/*
 	**	Draw the vertical lines.
 	*/
-	for (int ypos = 0; ypos < h-2; ypos++) {
+	for (int32_t ypos = 0; ypos < h-2; ypos++) {
 		cell.Character = CharData[thick].LeftEdge;
 		Store_Cell(cell, x, y+ypos+1);
 		cell.Character = CharData[thick].RightEdge;
@@ -222,10 +222,10 @@ void MonoClass::Draw_Box(int x, int y, int w, int h, char attrib, BoxStyleType t
  * HISTORY:                                                                                    *
  *   10/17/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-void MonoClass::Set_Cursor(int x, int y)
+void MonoClass::Set_Cursor(int32_t x, int32_t y)
 {
 #if(0)
-	int	pos = (y*COLUMNS)+x;
+	int32_t	pos = (y*COLUMNS)+x;
 
 	if (!Enabled) return;
 
@@ -234,7 +234,7 @@ void MonoClass::Set_Cursor(int x, int y)
 
 	if (Page == 0) {
 		_DX = CONTROL_PORT;
-		_AX = (short)(0x0E|(pos&0xFF00));
+		_AX = (int16_t)(0x0E|(pos&0xFF00));
 		asm {
 			out	dx,al
 			inc	dx
@@ -243,7 +243,7 @@ void MonoClass::Set_Cursor(int x, int y)
 		}
 
 		_DX = CONTROL_PORT;
-		_AX = (short)(0x0F|(pos<<8));
+		_AX = (int16_t)(0x0F|(pos<<8));
 		asm {
 			out	dx,al
 			inc	dx
@@ -253,7 +253,7 @@ void MonoClass::Set_Cursor(int x, int y)
 
 	}
 #else
-	int	pos = (y*COLUMNS)+x;
+	int32_t	pos = (y*COLUMNS)+x;
 
 	if (!Enabled) return;
 
@@ -262,9 +262,9 @@ void MonoClass::Set_Cursor(int x, int y)
 
 	if (Page == 0) {
 		output(CONTROL_PORT,
-			(short)0x0E|(short)(pos&0xFF00));
+			(int16_t)0x0E|(int16_t)(pos&0xFF00));
 		output(CONTROL_PORT,
-			(short)0x0F|(short)(pos<<8));
+			(int16_t)0x0F|(int16_t)(pos<<8));
 	}
 #endif
 }
@@ -297,8 +297,8 @@ void MonoClass::Clear(void)
 	cell.Attribute = Attrib;
 	cell.Character = ' ';
 
-	for (int y = 0; y < LINES; y++) {
-		for (int x = 0; x < COLUMNS; x++) {
+	for (int32_t y = 0; y < LINES; y++) {
+		for (int32_t x = 0; x < COLUMNS; x++) {
 			Store_Cell(cell, x, y);
 		}
 	}
@@ -322,14 +322,14 @@ void MonoClass::Clear(void)
  * HISTORY:                                                                                    *
  *   10/17/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-void MonoClass::Scroll(int lines)
+void MonoClass::Scroll(int32_t lines)
 {
 	CellType	cell;
 
 	if (!Enabled || lines <= 0) return;
 
-	memmove( (void*)((long)MonoSegment + Offset(0, 0)),
-				(void*)((long)MonoSegment + Offset(0, lines)),
+	memmove( (void*)((int32_t)MonoSegment + Offset(0, 0)),
+				(void*)((int32_t)MonoSegment + Offset(0, lines)),
 				(LINES-lines)*COLUMNS*sizeof(CellType));
 
 
@@ -337,8 +337,8 @@ void MonoClass::Scroll(int lines)
 	cell.Attribute = Attrib;
 	cell.Character = ' ';
 
-	for (int l = LINES-lines; l < LINES; l++) {
-		for (int index = 0; index < COLUMNS; index++) {
+	for (int32_t l = LINES-lines; l < LINES; l++) {
+		for (int32_t index = 0; index < COLUMNS; index++) {
 			Store_Cell(cell, index, l);
 		}
 	}
@@ -385,7 +385,7 @@ void MonoClass::Printf(char const *text, ...)
 
 
 #ifdef NEVER
-void MonoClass::Printf(int text, ...)
+void MonoClass::Printf(int32_t text, ...)
 {
 	va_list	va;
 	/*
@@ -512,7 +512,7 @@ void MonoClass::Print(char const *ptr)
  * HISTORY:                                                                                    *
  *   10/17/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-void MonoClass::Text_Print(char const *text, int x, int y, char attrib)
+void MonoClass::Text_Print(char const *text, int32_t x, int32_t y, char attrib)
 {
 	char	oldx = X;
 	char	oldy = Y;
@@ -527,7 +527,7 @@ void MonoClass::Text_Print(char const *text, int x, int y, char attrib)
 }
 
 #ifdef NEVER
-void MonoClass::Text_Print(int text, int x, int y, char attrib)
+void MonoClass::Text_Print(int32_t text, int32_t x, int32_t y, char attrib)
 {
 	char	oldx = X;
 	char	oldy = Y;
@@ -543,7 +543,7 @@ void MonoClass::Text_Print(int text, int x, int y, char attrib)
 	}
 }
 
-void MonoClass::Print(int text)
+void MonoClass::Print(int32_t text)
 {
 	Print(Text_String(text));
 }
@@ -567,7 +567,7 @@ void MonoClass::Print(int text)
  *=============================================================================================*/
 MonoClass & MonoClass::operator = (MonoClass const & src)
 {
-	memcpy((void*)((long)MonoSegment + src.Offset(0, 0)), (void*)((long)MonoSegment + Offset(0, 0)), SIZE_OF_PAGE);
+	memcpy((void*)((int32_t)MonoSegment + src.Offset(0, 0)), (void*)((int32_t)MonoSegment + Offset(0, 0)), SIZE_OF_PAGE);
 	Set_Cursor(src.X, src.Y);
 	return(*this);
 }
@@ -607,8 +607,8 @@ void MonoClass::View(void)
 		char temp[SIZE_OF_PAGE];
 
 		memcpy(&temp[0], MonoSegment, SIZE_OF_PAGE);
-		memcpy(MonoSegment, (void*)((long)MonoSegment + Offset(0, 0)), SIZE_OF_PAGE);
-		memcpy((void*)((long)MonoSegment + Offset(0, 0)), &temp[0], SIZE_OF_PAGE);
+		memcpy(MonoSegment, (void*)((int32_t)MonoSegment + Offset(0, 0)), SIZE_OF_PAGE);
+		memcpy((void*)((int32_t)MonoSegment + Offset(0, 0)), &temp[0], SIZE_OF_PAGE);
 
 		displace->Page = Page;
 
@@ -618,7 +618,7 @@ void MonoClass::View(void)
 		**	Just copy the new page over since the display page is not assigned
 		**	to a real monochrome page object.
 		*/
-		memcpy(MonoSegment, (void*)((long)MonoSegment + Offset(0, 0)), SIZE_OF_PAGE);
+		memcpy(MonoSegment, (void*)((int32_t)MonoSegment + Offset(0, 0)), SIZE_OF_PAGE);
 	}
 	PageUsage[Page] = displace;
 	PageUsage[0] = this;
@@ -637,7 +637,7 @@ void MonoClass::View(void)
 **	Typically, this is ok, since the C interface will create only one MonoClass object
 **	and the system supports up to 8.
 */
-void Mono_Set_Cursor(int x, int y)
+void Mono_Set_Cursor(int32_t x, int32_t y)
 {
 	if (MonoClass::Is_Enabled()) {
 		MonoClass *mono = MonoClass::Get_Current();
@@ -649,7 +649,7 @@ void Mono_Set_Cursor(int x, int y)
 	}
 }
 
-int Mono_Printf(char const *string, ...)
+int32_t Mono_Printf(char const *string, ...)
 {
 	va_list	va;
 	char buffer[256];
@@ -669,7 +669,7 @@ int Mono_Printf(char const *string, ...)
 
 		va_end(va);
 	}
-	return((short)strlen(buffer));
+	return((int16_t)strlen(buffer));
 }
 
 
@@ -685,7 +685,7 @@ void Mono_Clear_Screen(void)
 	}
 }
 
-void Mono_Text_Print(void const *text, int x, int y, int attrib)
+void Mono_Text_Print(void const *text, int32_t x, int32_t y, int32_t attrib)
 {
 	if (MonoClass::Is_Enabled()) {
 		MonoClass *mono = MonoClass::Get_Current();
@@ -697,7 +697,7 @@ void Mono_Text_Print(void const *text, int x, int y, int attrib)
 	}
 }
 
-void Mono_Draw_Rect(int x, int y, int w, int h, int attrib, int thick)
+void Mono_Draw_Rect(int32_t x, int32_t y, int32_t w, int32_t h, int32_t attrib, int32_t thick)
 {
 	if (MonoClass::Is_Enabled()) {
 		MonoClass *mono = MonoClass::Get_Current();
@@ -721,7 +721,7 @@ void Mono_Print(void const *text)
 	}
 }
 
-int Mono_X(void)
+int32_t Mono_X(void)
 {
 	if (MonoClass::Is_Enabled()) {
 		MonoClass *mono = MonoClass::Get_Current();
@@ -729,12 +729,12 @@ int Mono_X(void)
 			mono = new MonoClass();
 			mono->View();
 		}
-		return(short)mono->Get_X();
+		return(int16_t)mono->Get_X();
 	}
 	return(0);
 }
 
-int Mono_Y(void)
+int32_t Mono_Y(void)
 {
 	if (MonoClass::Is_Enabled()) {
 		MonoClass *mono = MonoClass::Get_Current();
@@ -742,27 +742,27 @@ int Mono_Y(void)
 			mono = new MonoClass();
 			mono->View();
 		}
-		return(short)mono->Get_X();
+		return(int16_t)mono->Get_X();
 	}
 	return(0);
 }
 
 
-void Mono_Put_Char(char , int )
+void Mono_Put_Char(char , int32_t )
 {
 }
 
-void Mono_Scroll(int )
+void Mono_Scroll(int32_t )
 {
 }
 
-void Mono_View_Page(int )
+void Mono_View_Page(int32_t )
 {
 }
 
 
 #ifdef NEVER
-int Mono_Printf(int string, ...)
+int32_t Mono_Printf(int32_t string, ...)
 {
 	va_list	va;
 	char buffer[256];
@@ -782,7 +782,7 @@ int Mono_Printf(int string, ...)
 
 		va_end(va);
 	}
-	return((short)strlen(buffer));
+	return((int16_t)strlen(buffer));
 }
 #endif
 

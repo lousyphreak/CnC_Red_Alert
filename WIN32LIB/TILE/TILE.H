@@ -42,16 +42,16 @@
 /*=========================================================================*/
 /* The following prototypes are for the file: ICONSET.CPP						*/
 /*=========================================================================*/
-void * Load_Icon_Set(char const *filename, void *iconsetptr, long buffsize);
+void * Load_Icon_Set(char const *filename, void *iconsetptr, int32_t buffsize);
 void Free_Icon_Set(void const *iconset);
-long Get_Icon_Set_Size(void const *iconset);
-int Get_Icon_Set_Width(void const *iconset);
-int Get_Icon_Set_Height(void const *iconset);
+int32_t Get_Icon_Set_Size(void const *iconset);
+int32_t Get_Icon_Set_Width(void const *iconset);
+int32_t Get_Icon_Set_Height(void const *iconset);
 void * Get_Icon_Set_Icondata(void const *iconset);
 void * Get_Icon_Set_Trans(void const *iconset);
 void * Get_Icon_Set_Remapdata(void const *iconset);
 void * Get_Icon_Set_Palettedata(void const *iconset);
-int Get_Icon_Set_Count(void const *iconset);
+int32_t Get_Icon_Set_Count(void const *iconset);
 void * Get_Icon_Set_Map(void const *iconset);
 #if (0)
 /*
@@ -59,17 +59,17 @@ void * Get_Icon_Set_Map(void const *iconset);
 ** the structure in WWLIB.I!  This structure MUST be a multiple of 16 bytes long.
 */
 typedef struct {
-	short	Width;			// Width of icons (pixels).
-	short	Height;			// Height of icons (pixels).
-	short	Count;			// Number of (logical) icons in this set.
+	int16_t	Width;			// Width of icons (pixels).
+	int16_t	Height;			// Height of icons (pixels).
+	int16_t	Count;			// Number of (logical) icons in this set.
 //	BOOL	Allocated;		// Was this iconset allocated?
-	short	Allocated;		// Was this iconset allocated?
-	long	Size;				// Size of entire iconset memory block.
-	unsigned char *Icons;			// Offset from buffer start to icon data.
-	long	Palettes;		// Offset from buffer start to palette data.
-	long	Remaps;			// Offset from buffer start to remap index data.
-	long	TransFlag;		// Offset for transparency flag table.
-	unsigned char *Map;				// Icon map offset (if present).
+	int16_t	Allocated;		// Was this iconset allocated?
+	int32_t	Size;				// Size of entire iconset memory block.
+	uint8_t *Icons;			// Offset from buffer start to icon data.
+	int32_t	Palettes;		// Offset from buffer start to palette data.
+	int32_t	Remaps;			// Offset from buffer start to remap index data.
+	int32_t	TransFlag;		// Offset for transparency flag table.
+	uint8_t *Map;				// Icon map offset (if present).
 } IControl_Type;
 #endif	//(0)
 

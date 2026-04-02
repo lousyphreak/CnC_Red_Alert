@@ -62,15 +62,15 @@
  * HISTORY:                                                                *
  *   06/01/1994 PWG : Created.                                             *
  *=========================================================================*/
-BufferClass::BufferClass(VOID *buffer, int32_t size)
+BufferClass::BufferClass(void *buffer, int32_t size)
 {
 	Size			= size;								// find size of physical buffer
 
 	if (buffer) {										// if buffer is specified
-		Buffer			= (BYTE *)buffer;			//		point to it and mark
+		Buffer			= (char *)buffer;			//		point to it and mark
 		Allocated		= FALSE;						//		it as user allocated
 	} else {
-		Buffer			= new BYTE[Size];			// otherwise allocate it and
+		Buffer			= new char[Size];			// otherwise allocate it and
 		Allocated		= TRUE;						//		mark it system alloced
 	}
 }
@@ -88,7 +88,7 @@ BufferClass::BufferClass(VOID *buffer, int32_t size)
 BufferClass::BufferClass(int32_t size)
 {
 	Size				= size;
-	Buffer			= new BYTE[Size];			// otherwise allocate it and
+	Buffer			= new char[Size];			// otherwise allocate it and
 	Allocated		= TRUE;						//		mark it system alloced
 }
 
@@ -106,7 +106,7 @@ BufferClass::BufferClass(int32_t size)
  * HISTORY:                                                                *
  *   06/01/1994 PWG : Created.                                             *
  *=========================================================================*/
-BufferClass::BufferClass(VOID)
+BufferClass::BufferClass(void)
 {
 	Buffer		= NULL;
 	Size			= 0;
@@ -123,9 +123,9 @@ BufferClass::BufferClass(VOID)
  * HISTORY:                                                                *
  *   06/01/1994 PWG : Created.                                             *
  *=========================================================================*/
-BufferClass::~BufferClass(VOID)
+BufferClass::~BufferClass(void)
 {
 	if (Allocated) {
-		delete[] (BYTE*)Buffer;
+		delete[] (char*)Buffer;
 	}
 }

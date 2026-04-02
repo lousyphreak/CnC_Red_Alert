@@ -52,7 +52,7 @@ WWKeyboardClass *_Kbd;
 
 namespace {
 
-constexpr int LEGACY_MIDDLE_MOUSE = 0x04;
+constexpr int32_t LEGACY_MIDDLE_MOUSE = 0x04;
 
 }
 
@@ -75,12 +75,12 @@ WWKeyboardClass::WWKeyboardClass(void)
 	//
 	memset(VKRemap, 0, 256);
 	memset(AsciiRemap, 0, 2048);
-	for (short lp = 31; lp < 255; lp ++) {
+	for (int16_t lp = 31; lp < 255; lp ++) {
 		if (isprint(lp)) {
-			int vk_key = SDL_GameInput_AsciiToLegacyKey((unsigned char)lp);
+			int32_t vk_key = SDL_GameInput_AsciiToLegacyKey((uint8_t)lp);
 			if (vk_key > 0 && vk_key < 2048) {
-				AsciiRemap[vk_key] = (unsigned char)lp;
-				VKRemap[lp] 	 = (unsigned char)(vk_key & 0xFF);
+				AsciiRemap[vk_key] = (uint8_t)lp;
+				VKRemap[lp] 	 = (uint8_t)(vk_key & 0xFF);
 			}
 		}
 	}
@@ -90,7 +90,7 @@ WWKeyboardClass::WWKeyboardClass(void)
 	// the num lock.
 	//
 	memset(ToggleKeys, 0, 256);
-	for (short lp = 0; lp < 255; lp++ ) {
+	for (int16_t lp = 0; lp < 255; lp++ ) {
 		if (isalpha(lp) && isupper(lp)) {
 			ToggleKeys[lp] = 1;
 		}
@@ -129,11 +129,11 @@ WWKeyboardClass::WWKeyboardClass(void)
  * HISTORY:                                                                                    *
  *   10/17/1995 PWG : Created.                                                                 *
  *=============================================================================================*/
-int WWKeyboardClass::Buff_Get(void)
+int32_t WWKeyboardClass::Buff_Get(void)
 {
 	while (!Check()) {}										// wait for key in buffer
-	int 	temp		= Buffer[Head];						// get key out of the buffer
-	int   newhead	= Head;									// save off head for manipulation
+	int32_t 	temp		= Buffer[Head];						// get key out of the buffer
+	int32_t   newhead	= Head;									// save off head for manipulation
 	if (Is_Mouse_Key(temp)) {								// if key is a mouse then
 		MouseQX	= Buffer[(Head + 1) & 255];			//		get the x and y pos
 		MouseQY	= Buffer[(Head + 2) & 255];			//		from the buffer
@@ -146,7 +146,7 @@ int WWKeyboardClass::Buff_Get(void)
 	return(temp);
 }
 
-BOOL WWKeyboardClass::Is_Mouse_Key(int key)
+int32_t WWKeyboardClass::Is_Mouse_Key(int32_t key)
 {
 	key &= 0xFF;
 	return (key == KN_LMOUSE || key == LEGACY_MIDDLE_MOUSE || key == KN_RMOUSE);
@@ -165,10 +165,10 @@ BOOL WWKeyboardClass::Is_Mouse_Key(int key)
  * HISTORY:                                                                                    *
  *   10/16/1995 PWG : Created.                                                                 *
  *=============================================================================================*/
-BOOL WWKeyboardClass::Check(void)
+int32_t WWKeyboardClass::Check(void)
 {
 	Message_Loop();
-	unsigned short temp;											// store temp holding spot for key
+	uint16_t temp;											// store temp holding spot for key
 	if (Head == Tail) return(FALSE);							// if no keys in buff then get out
 	temp = Buffer[Head];											// get key out of the buffer
 	return(temp);													// send it back to main program
@@ -186,9 +186,9 @@ BOOL WWKeyboardClass::Check(void)
  * HISTORY:                                                                                    *
  *   10/16/1995 PWG : Created.                                                                 *
  *=============================================================================================*/
-int WWKeyboardClass::Get(void)
+int32_t WWKeyboardClass::Get(void)
 {
-	int temp,bits;										// store temp holding spot for key
+	int32_t temp,bits;										// store temp holding spot for key
 
 	while (!Check()) {}								// wait for key in buffer
 	temp = Buff_Get();								// get key from the buffer
@@ -213,12 +213,12 @@ int WWKeyboardClass::Get(void)
  * HISTORY:                                                                                    *
  *   10/16/1995 PWG : Created.                                                                 *
  *=============================================================================================*/
-BOOL WWKeyboardClass::Put(int key)
+int32_t WWKeyboardClass::Put(int32_t key)
 {
-	int	temp		= (Tail + 1) & 255;
+	int32_t	temp		= (Tail + 1) & 255;
 	if (temp != Head)
 	{
-		Buffer[Tail]	= (short)key;
+		Buffer[Tail]	= (int16_t)key;
 
 		//
 		// Critical Line
@@ -240,9 +240,9 @@ BOOL WWKeyboardClass::Put(int key)
  * HISTORY:                                                                                    *
  *   10/16/1995 PWG : Created.                                                                 *
  *=============================================================================================*/
-BOOL WWKeyboardClass::Put_Key_Message(UINT vk_key, BOOL release, BOOL dbl)
+int32_t WWKeyboardClass::Put_Key_Message(uint32_t vk_key, int32_t release, int32_t dbl)
 {
-	int bits = 0;
+	int32_t bits = 0;
 	//
 	// Get the status of all of the different keyboard modifiers.  Note, only pay attention
 	// to numlock and caps lock if we are dealing with a key that is affected by them.  Note
@@ -250,11 +250,11 @@ BOOL WWKeyboardClass::Put_Key_Message(UINT vk_key, BOOL release, BOOL dbl)
 	// would be incompatible with the dos version.
 	//
 	if (vk_key != KN_LMOUSE && vk_key != LEGACY_MIDDLE_MOUSE && vk_key != KN_RMOUSE) 	{
-		int	shift		= SDL_GameInput_IsModifierPressed(SDL_KMOD_SHIFT);
-		int	ctrl 		= SDL_GameInput_IsModifierPressed(SDL_KMOD_CTRL);
-		int	alt 		= SDL_GameInput_IsModifierPressed(SDL_KMOD_ALT);
-		int	caps		= SDL_GameInput_IsModifierToggled(SDL_KMOD_CAPS) && (ToggleKeys[vk_key] == 1);
-		int	nums		= SDL_GameInput_IsModifierToggled(SDL_KMOD_NUM) && (ToggleKeys[vk_key] == 2);
+		int32_t	shift		= SDL_GameInput_IsModifierPressed(SDL_KMOD_SHIFT);
+		int32_t	ctrl 		= SDL_GameInput_IsModifierPressed(SDL_KMOD_CTRL);
+		int32_t	alt 		= SDL_GameInput_IsModifierPressed(SDL_KMOD_ALT);
+		int32_t	caps		= SDL_GameInput_IsModifierToggled(SDL_KMOD_CAPS) && (ToggleKeys[vk_key] == 1);
+		int32_t	nums		= SDL_GameInput_IsModifierToggled(SDL_KMOD_NUM) && (ToggleKeys[vk_key] == 2);
 
 		//
 		// Set the proper bits for whatever the key we got is.
@@ -290,19 +290,19 @@ void WWKeyboardClass::Clear(void)
 	Head = Tail;
 }
 
-int WWKeyboardClass::To_ASCII(int key)
+int32_t WWKeyboardClass::To_ASCII(int32_t key)
 {
 	if ( key && WWKEY_RLS_BIT)
 	  return(KN_NONE);
 	return(key);
 }
 
-int WWKeyboardClass::Down(int key)
+int32_t WWKeyboardClass::Down(int32_t key)
 {
 	return SDL_GameInput_IsLegacyKeyPressed(key & 0xFF);
 }
 
-VOID WWKeyboardClass::Split(int &key, int &shift, int &ctrl, int &alt, int &rls, int &dbl)
+void WWKeyboardClass::Split(int32_t &key, int32_t &shift, int32_t &ctrl, int32_t &alt, int32_t &rls, int32_t &dbl)
 {
 	shift = (key & WWKEY_SHIFT_BIT)	!= 0;
 	ctrl	= (key & WWKEY_CTRL_BIT)	!= 0;
@@ -315,11 +315,11 @@ VOID WWKeyboardClass::Split(int &key, int &shift, int &ctrl, int &alt, int &rls,
 
 
 extern "C" {
-	void __cdecl Stop_Execution (void);
+	void  Stop_Execution (void);
 }
 
 #pragma off(unreferenced)
-void WWKeyboardClass::Message_Handler(HWND , UINT message, UINT wParam, LONG lParam)
+void WWKeyboardClass::Message_Handler(HWND , uint32_t message, uint32_t wParam, int32_t lParam)
 {
 	switch (message) {
 		case WM_SYSKEYDOWN:
@@ -437,7 +437,7 @@ void Message_Loop(void)
  * HISTORY:                                                                *
  *   10/26/1995     : Created.                                             *
  *=========================================================================*/
-int Check_Key(void)
+int32_t Check_Key(void)
 {
 	if (!_Kbd) return(KA_NONE);
 	return(_Kbd->Check() & ~WWKEY_SHIFT_BIT);
@@ -449,11 +449,11 @@ void Clear_KeyBuffer(void)
 	_Kbd->Clear();
 }
 
-int Check_Key_Num(void)
+int32_t Check_Key_Num(void)
 {
 	if (!_Kbd) return(KN_NONE);
-	int key		= _Kbd->Check();
-	int flags	= key & 0xFF00;
+	int32_t key		= _Kbd->Check();
+	int32_t flags	= key & 0xFF00;
 	key		   = key & 0x00FF;
 
 	if (isupper(key)) {
@@ -466,11 +466,11 @@ int Check_Key_Num(void)
 	return(key | flags);
 }
 
-int Get_Key_Num(void)
+int32_t Get_Key_Num(void)
 {
 	if (!_Kbd) return(KN_NONE);
-	int key		= _Kbd->Get();
-	int flags	= key & 0xFF00;
+	int32_t key		= _Kbd->Get();
+	int32_t flags	= key & 0xFF00;
 	key		   = key & 0x00FF;
 
 	if (isupper(key)) {
@@ -482,13 +482,13 @@ int Get_Key_Num(void)
 	return(key | flags);
 }
 
-int KN_To_KA(int key)
+int32_t KN_To_KA(int32_t key)
 {
 	if ( key & WWKEY_RLS_BIT) {
 		return(KA_NONE);
 	}
 	if (!(key & WWKEY_VK_BIT)) {
-		int flags = key & 0xFF00;
+		int32_t flags = key & 0xFF00;
 		key		 = key & 0x00FF;
 		if (flags & WWKEY_SHIFT_BIT) {
 			key		= toupper(key);
@@ -505,14 +505,14 @@ int KN_To_KA(int key)
 	return(key);
 }
 
-int KN_To_VK(int key)
+int32_t KN_To_VK(int32_t key)
 {
 	if (!_Kbd) return(KN_NONE);
 	if ( key & WWKEY_RLS_BIT) {
 		return(KN_NONE);
 	}
 
-	int flags = key & 0xFF00;
+	int32_t flags = key & 0xFF00;
 	if (!(flags & WWKEY_VK_BIT)) {
 		key 		 = _Kbd->VKRemap[key & 0x00FF] | flags;
 	}
@@ -520,15 +520,15 @@ int KN_To_VK(int key)
 	return(key);
 }
 
-int Key_Down(int key)
+int32_t Key_Down(int32_t key)
 {
 	if (!_Kbd) return(FALSE);
 	return(_Kbd->Down(key));
 }
 
-int Get_Key(void)
+int32_t Get_Key(void)
 {
-	int retval;
+	int32_t retval;
 
 	if (!_Kbd) return(KN_NONE);
 	retval = _Kbd->Get() & ~WWKEY_SHIFT_BIT;

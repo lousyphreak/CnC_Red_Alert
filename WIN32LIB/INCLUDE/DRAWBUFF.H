@@ -36,32 +36,32 @@ extern "C" {
 	/* Externs for all of the common functions between the video buffer		*/
 	/*		class and the graphic buffer class.											*/
 	/*======================================================================*/
-	 long __cdecl Buffer_Size_Of_Region(void *thisptr, int w, int h);
+	 int32_t  Buffer_Size_Of_Region(void *thisptr, int32_t w, int32_t h);
 
-	 void	__cdecl Buffer_Put_Pixel(void * thisptr, int x, int y, unsigned char color);
-	 int	__cdecl Buffer_Get_Pixel(void * thisptr, int x, int y);
-	 void	__cdecl Buffer_Clear(void *thisptr, unsigned char color);
-	 long	__cdecl Buffer_To_Buffer(void *thisptr, int x, int y, int w, int h, void *buff, long size);
-	 long __cdecl Buffer_To_Page(int x, int y, int w, int h, void *Buffer, void *view);
-	 BOOL	__cdecl Linear_Blit_To_Linear(	void *thisptr, void * dest, int x_pixel, int y_pixel, int dx_pixel,
-			 										int dy_pixel, int pixel_width, int pixel_height, BOOL trans);
-	 BOOL __cdecl Linear_Scale_To_Linear(	void *, void *, int, int, int, int, int, int, int, int, BOOL, char *);
+	 void	 Buffer_Put_Pixel(void * thisptr, int32_t x, int32_t y, uint8_t color);
+	 int32_t	 Buffer_Get_Pixel(void * thisptr, int32_t x, int32_t y);
+	 void	 Buffer_Clear(void *thisptr, uint8_t color);
+	 int32_t	 Buffer_To_Buffer(void *thisptr, int32_t x, int32_t y, int32_t w, int32_t h, void *buff, int32_t size);
+	 int32_t  Buffer_To_Page(int32_t x, int32_t y, int32_t w, int32_t h, void *Buffer, void *view);
+	 int32_t	 Linear_Blit_To_Linear(	void *thisptr, void * dest, int32_t x_pixel, int32_t y_pixel, int32_t dx_pixel,
+			 										int32_t dy_pixel, int32_t pixel_width, int32_t pixel_height, int32_t trans);
+	 int32_t  Linear_Scale_To_Linear(	void *, void *, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, char *);
 
-	 LONG __cdecl Buffer_Print(void *thisptr, const char *str, int x, int y, int fcolor, int bcolor);
+	 int32_t  Buffer_Print(void *thisptr, const char *str, int32_t x, int32_t y, int32_t fcolor, int32_t bcolor);
 
 	/*======================================================================*/
 	/* Externs for all of the graphic buffer class only functions				*/
 	/*======================================================================*/
-	 VOID __cdecl Buffer_Draw_Line(void *thisptr, int sx, int sy, int dx, int dy, unsigned char color);
-	 VOID __cdecl Buffer_Fill_Rect(void *thisptr, int sx, int sy, int dx, int dy, unsigned char color);
-	 VOID __cdecl Buffer_Remap(void * thisptr, int sx, int sy, int width, int height, void *remap);
-	 VOID __cdecl Buffer_Fill_Quad(void * thisptr, VOID *span_buff, int x0, int y0, int x1, int y1,
-							 	int x2, int y2, int x3, int y3, int color);
-	 void __cdecl Buffer_Draw_Stamp(void const *thisptr, void const *icondata, int icon, int x_pixel, int y_pixel, void const *remap);
-	 void __cdecl Buffer_Draw_Stamp_Clip(void const *thisptr, void const *icondata, int icon, int x_pixel, int y_pixel, void const *remap, int ,int,int,int);
-	 void * __cdecl Get_Font_Palette_Ptr ( void );
+	 void  Buffer_Draw_Line(void *thisptr, int32_t sx, int32_t sy, int32_t dx, int32_t dy, uint8_t color);
+	 void  Buffer_Fill_Rect(void *thisptr, int32_t sx, int32_t sy, int32_t dx, int32_t dy, uint8_t color);
+	 void  Buffer_Remap(void * thisptr, int32_t sx, int32_t sy, int32_t width, int32_t height, void *remap);
+	 void  Buffer_Fill_Quad(void * thisptr, void *span_buff, int32_t x0, int32_t y0, int32_t x1, int32_t y1,
+							 	int32_t x2, int32_t y2, int32_t x3, int32_t y3, int32_t color);
+	 void  Buffer_Draw_Stamp(void const *thisptr, void const *icondata, int32_t icon, int32_t x_pixel, int32_t y_pixel, void const *remap);
+	 void  Buffer_Draw_Stamp_Clip(void const *thisptr, void const *icondata, int32_t icon, int32_t x_pixel, int32_t y_pixel, void const *remap, int32_t ,int32_t,int32_t,int32_t);
+	 void *  Get_Font_Palette_Ptr ( void );
 }
 
 extern GraphicViewPortClass *LogicPage;
-extern BOOL AllowHardwareBlitFills;
+extern int32_t AllowHardwareBlitFills;
 #endif

@@ -114,15 +114,15 @@ extern "C" {
 #endif
 
 #ifdef PHARLAP
-extern   int    sosRealFree          ( int );
+extern   int32_t    sosRealFree          ( int32_t );
 extern   int32_t    _sos_read( uint16_t, char *, uint16_t, uint16_t * );
-extern   int    sosRealAlloc( int, int *, int * );
+extern   int32_t    sosRealAlloc( int32_t, int32_t *, int32_t * );
 extern   void   sosDRVFarMemCopy( char *, char *, uint16_t );
-extern   int    sosGetCS( void );
-extern   int    sosGetES( void );
+extern   int32_t    sosGetCS( void );
+extern   int32_t    sosGetES( void );
 #else
-extern   int    sosRealAlloc         ( int, int *, int * );
-extern   int    sosRealFree          ( int );
+extern   int32_t    sosRealAlloc         ( int32_t, int32_t *, int32_t * );
+extern   int32_t    sosRealFree          ( int32_t );
 #endif
 
 // sos driver functions
@@ -131,13 +131,13 @@ extern   uint16_t   sosDRVUnLockMemory   ( uint32_t, uint32_t );
 extern   void   sosDRVGetCapsInfo    ( char *, char *, _SOS_CAPABILITIES  * );
 extern   void   sosDetDRVGetCapsInfo ( char *, char *, _SOS_CAPABILITIES  * );
 extern   void   sosDRVGetCapsPtr     ( char *, char *, _SOS_CAPABILITIES  * );
-extern   void   sosDRVInit           ( char *, char *, int, int, int, int, int, int );
-extern   void   sosDRVStart          ( char *, char *, int, int );
-extern   void   sosDRVSetRate        ( char *, char *, int );
+extern   void   sosDRVInit           ( char *, char *, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t );
+extern   void   sosDRVStart          ( char *, char *, int32_t, int32_t );
+extern   void   sosDRVSetRate        ( char *, char *, int32_t );
 extern   void   sosDRVSetAction      ( char *, char * );
 extern   void   sosDRVStop           ( char *, char * );
 extern   void   sosDRVUnInit         ( char *, char * );
-extern   void   sosDRVGetFillInfo    ( char *, char *, char *, int, int, int, _SOS_FILL_INFO * );
+extern   void   sosDRVGetFillInfo    ( char *, char *, char *, int32_t, int32_t, int32_t, _SOS_FILL_INFO * );
 extern   void   sosFillSampleStructs ( char *, char * );
 extern   uint16_t   sosDetDRVExist       ( char *, char * );
 extern   uint16_t   sosDetDRVGetSettings ( char *, char * );
@@ -163,7 +163,7 @@ extern   uint16_t   sosDRVMakeDMASelector   ( uint16_t );
 extern   uint16_t   sosDRVFreeDMASelector   ( uint16_t );
 
 
-extern   void   sosTIMERDRVInit( int wRate, void (  * )( void ) );
+extern   void   sosTIMERDRVInit( int32_t wRate, void (  * )( void ) );
 extern   void   sosTIMERDRVUnInit( void );
 extern   void   sosTIMERDRVHandler( void );
 extern   void   sosTIMERDRVFHandler( void );

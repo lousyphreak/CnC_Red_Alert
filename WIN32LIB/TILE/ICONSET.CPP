@@ -48,18 +48,18 @@
 #include	<IFF.H>
 
 
-extern int Misc;
+extern int32_t Misc;
 
-void *  Load_Icon_Set(char const *filename, void *iconsetptr, long buffsize);
+void *  Load_Icon_Set(char const *filename, void *iconsetptr, int32_t buffsize);
 void  Free_Icon_Set(void const *iconset);
-long  Get_Icon_Set_Size(void const *iconset);
-int  Get_Icon_Set_Width(void const *iconset);
-int  Get_Icon_Set_Height(void const *iconset);
+int32_t  Get_Icon_Set_Size(void const *iconset);
+int32_t  Get_Icon_Set_Width(void const *iconset);
+int32_t  Get_Icon_Set_Height(void const *iconset);
 void *  Get_Icon_Set_Icondata(void const *iconset);
 void *  Get_Icon_Set_Trans(void const *iconset);
 void *  Get_Icon_Set_Remapdata(void const *iconset);
 void *  Get_Icon_Set_Palettedata(void const *iconset);
-int  Get_Icon_Set_Count(void const *iconset);
+int32_t  Get_Icon_Set_Count(void const *iconset);
 void *  Get_Icon_Set_Map(void const *iconset);
 
 
@@ -106,22 +106,22 @@ void *  Get_Icon_Set_Map(void const *iconset);
  *   07/15/1991 JLB : Load and uncompress onto the same buffer.            *
  *   09/15/1993 JLB : Added EMS support.                                   *
  *=========================================================================*/
-void *  Load_Icon_Set(char const *filename, void *iconsetptr, long buffsize)
+void *  Load_Icon_Set(char const *filename, void *iconsetptr, int32_t buffsize)
 {
-	int	fh;				// File handle of iconset.
-	int	bytespericon;	// The number of bytes per icon.
-	unsigned long	icons=0;			// Number of icons loaded.
-	unsigned long	size;				// Size of the icon chunk (raw).
+	int32_t	fh;				// File handle of iconset.
+	int32_t	bytespericon;	// The number of bytes per icon.
+	uint32_t	icons=0;			// Number of icons loaded.
+	uint32_t	size;				// Size of the icon chunk (raw).
 
-	unsigned long	transsize;
+	uint32_t	transsize;
 	void	*transptr=NULL;
 
-	unsigned long	mapsize;				// Icon map chunk size.
+	uint32_t	mapsize;				// Icon map chunk size.
 	void	*mapptr=NULL;		// Icon map pointer.
 	void	*returnptr=NULL;	// Iconset pointer returned by routine.
-	BOOL	allocated=FALSE;	// Was the iconset block allocated?
+	int32_t	allocated=FALSE;	// Was the iconset block allocated?
 	IControl_Type	*idata=NULL;	// Icon data loaded.
-	long	id;				// ID of file openned.
+	int32_t	id;				// ID of file openned.
 	struct {
 		char	Width;		// Width of icon in bytes.
 		char	Height;		// Height of icon in bytes.
@@ -136,7 +136,7 @@ void *  Load_Icon_Set(char const *filename, void *iconsetptr, long buffsize)
 	*/
 	fh = Open_Iff_File(filename);
 	if (fh != WW_ERROR) {
-		Read_File(fh, &id, sizeof(long));
+		Read_File(fh, &id, sizeof(int32_t));
 		if (id == FORM_ICON) {
 
 			/*
@@ -145,7 +145,7 @@ void *  Load_Icon_Set(char const *filename, void *iconsetptr, long buffsize)
 			**	data blocks that have to be loaded.
 			*/
 			Read_Iff_Chunk(fh, FORM_SINF, &sinf, sizeof(sinf));
-			bytespericon = ((((int)sinf.Width)<<3)*(((int)sinf.Height)<<3)*(int)sinf.Bitplanes)>>3;
+			bytespericon = ((((int32_t)sinf.Width)<<3)*(((int32_t)sinf.Height)<<3)*(int32_t)sinf.Bitplanes)>>3;
 
 			size = Get_Iff_Chunk_Size(fh,FORM_SSET);
 				transsize = Get_Iff_Chunk_Size(fh, FORM_TRNS);
@@ -173,26 +173,26 @@ void *  Load_Icon_Set(char const *filename, void *iconsetptr, long buffsize)
 				/*
 				**	Initialize the iconset header structure.
 				*/
-				idata->Width = (short)(((short)sinf.Width)<<3);
-				idata->Height = (short)(((short)sinf.Height)<<3);
-				idata->Allocated = (short)allocated;
+				idata->Width = (int16_t)(((int16_t)sinf.Width)<<3);
+				idata->Height = (int16_t)(((int16_t)sinf.Height)<<3);
+				idata->Allocated = (int16_t)allocated;
 				idata->Icons = sizeof(IControl_Type);
 				idata->Map = idata->Icons + size;
 					idata->TransFlag = sizeof(IControl_Type) + size + mapsize;
 				idata->Size = buffsize;
 
 					{
-						long	val;
+						int32_t	val;
 
 						val = Read_Iff_Chunk(fh, FORM_SSET, Add_Long_To_Pointer(iconsetptr, sizeof(IControl_Type)), size);
-						icons = (int)(val/(long)bytespericon);
+						icons = (int32_t)(val/(int32_t)bytespericon);
 						idata = (IControl_Type *)iconsetptr;
 					}
 
 				if (mapsize) {
 					icons = mapsize;
 				}
-				idata->Count = (short)icons;
+				idata->Count = (int16_t)icons;
 
 				/*
 				**	Limit buffer to only the size needed.  This is done AFTER loading of the
@@ -254,10 +254,10 @@ void  Free_Icon_Set(void const *iconset)
 }
 
 
-long  Get_Icon_Set_Size(void const *iconset)
+int32_t  Get_Icon_Set_Size(void const *iconset)
 {
 	IControl_Type	*icontrol;
-	long				size=0;
+	int32_t				size=0;
 
 	icontrol = (IControl_Type *)iconset;
 	if (icontrol) {
@@ -267,10 +267,10 @@ long  Get_Icon_Set_Size(void const *iconset)
 }
 
 
-int  Get_Icon_Set_Width(void const *iconset)
+int32_t  Get_Icon_Set_Width(void const *iconset)
 {
 	IControl_Type	*icontrol;
-	int				width=0;
+	int32_t				width=0;
 
 	icontrol = (IControl_Type *)iconset;
 	if (icontrol) {
@@ -280,10 +280,10 @@ int  Get_Icon_Set_Width(void const *iconset)
 }
 
 
-int  Get_Icon_Set_Height(void const *iconset)
+int32_t  Get_Icon_Set_Height(void const *iconset)
 {
 	IControl_Type	*icontrol;
-	int				height=0;
+	int32_t				height=0;
 
 	icontrol = (IControl_Type *)iconset;
 	if (icontrol) {
@@ -298,7 +298,7 @@ void *  Get_Icon_Set_Icondata(void const *iconset)
 	IControl_Type	*icontrol;
 	icontrol = (IControl_Type *)iconset;
 	if (icontrol)
-		return(Add_Long_To_Pointer(iconset, (LONG)icontrol->Icons));
+		return(Add_Long_To_Pointer(iconset, (int32_t)icontrol->Icons));
 	return(NULL);
 }
 
@@ -315,10 +315,10 @@ void *  Get_Icon_Set_Trans(void const *iconset)
 }
 
 
-int  Get_Icon_Set_Count(void const *iconset)
+int32_t  Get_Icon_Set_Count(void const *iconset)
 {
 	IControl_Type	*icontrol;
-	int				count;
+	int32_t				count;
 
 	icontrol = (IControl_Type *)iconset;
 	if (icontrol) {
@@ -333,6 +333,6 @@ void *  Get_Icon_Set_Map(void const *iconset)
 	IControl_Type	*icontrol;
 	icontrol = (IControl_Type *)iconset;
 	if (icontrol)
-		return(Add_Long_To_Pointer(iconset, (LONG)icontrol->Map));
+		return(Add_Long_To_Pointer(iconset, (int32_t)icontrol->Map));
 	return(NULL);
 }

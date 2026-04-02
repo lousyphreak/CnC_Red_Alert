@@ -103,22 +103,22 @@ class MonoClass {
 
 		static void Enable(void) {Enabled = 1;};
 		static void Disable(void) {Enabled = 0;};
-		static int Is_Enabled(void) {return Enabled;};
+		static int32_t Is_Enabled(void) {return Enabled;};
 		static MonoClass * Get_Current(void) {return PageUsage[0];};
 
-		void Draw_Box(int x, int y, int w, int h, char attrib=DEFAULT_ATTRIBUTE, BoxStyleType thick=SINGLE);
+		void Draw_Box(int32_t x, int32_t y, int32_t w, int32_t h, char attrib=DEFAULT_ATTRIBUTE, BoxStyleType thick=SINGLE);
 		void Set_Default_Attribute(char attrib) {Attrib = attrib;};
 		void Clear(void);
-		void Set_Cursor(int x, int y);
+		void Set_Cursor(int32_t x, int32_t y);
 		void Print(char const *text);
-		void Print(int text);
+		void Print(int32_t text);
 		void Printf(char const *text, ...);
-		void Printf(int text, ...);
-		void Text_Print(char const *text, int x, int y, char attrib=DEFAULT_ATTRIBUTE);
-		void Text_Print(int text, int x, int y, char attrib=DEFAULT_ATTRIBUTE);
+		void Printf(int32_t text, ...);
+		void Text_Print(char const *text, int32_t x, int32_t y, char attrib=DEFAULT_ATTRIBUTE);
+		void Text_Print(int32_t text, int32_t x, int32_t y, char attrib=DEFAULT_ATTRIBUTE);
 		void View(void);
-		int Get_X(void) const {return X;};
-		int Get_Y(void) const {return Y;};
+		int32_t Get_X(void) const {return X;};
+		int32_t Get_Y(void) const {return Y;};
 
 		/*
 		**	Handles deep copies for the mono class objects. This performs what is essentially
@@ -141,10 +141,10 @@ class MonoClass {
 		/*
 		**	Helper functions to help with display operations.
 		*/
-		int Offset(int x=0, int y=0) const {return (SIZE_OF_PAGE*Page) + sizeof(CellType)*(x + (y*COLUMNS));};
-		void Scroll(int lines);
-		void Store_Cell(CellType &cell, int x, int y) {
-			*(CellType *)((long)MonoSegment + Offset(x, y)) = cell;
+		int32_t Offset(int32_t x=0, int32_t y=0) const {return (SIZE_OF_PAGE*Page) + sizeof(CellType)*(x + (y*COLUMNS));};
+		void Scroll(int32_t lines);
+		void Store_Cell(CellType &cell, int32_t x, int32_t y) {
+			*(CellType *)((int32_t)MonoSegment + Offset(x, y)) = cell;
 		};
 
 		/*
@@ -169,17 +169,17 @@ class MonoClass {
 		**	If this is true, then monochrome output is allowed. It defaults to false
 		**	so that monochrome output must be explicitly enabled.
 		*/
-		static int Enabled;
+		static int32_t Enabled;
 };
 
-void Mono_Set_Cursor(int x, int y);
-int Mono_Printf(char const *string, ...);
+void Mono_Set_Cursor(int32_t x, int32_t y);
+int32_t Mono_Printf(char const *string, ...);
 void Mono_Clear_Screen(void);
-void Mono_Text_Print(void const *text, int x, int y, int attrib);
-void Mono_Draw_Rect(int x, int y, int w, int h, int attrib, int thick);
+void Mono_Text_Print(void const *text, int32_t x, int32_t y, int32_t attrib);
+void Mono_Draw_Rect(int32_t x, int32_t y, int32_t w, int32_t h, int32_t attrib, int32_t thick);
 void Mono_Print(void const *text);
-int Mono_X(void);
-int Mono_Y(void);
+int32_t Mono_X(void);
+int32_t Mono_Y(void);
 
 #endif
 

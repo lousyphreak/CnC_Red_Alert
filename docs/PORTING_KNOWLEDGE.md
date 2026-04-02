@@ -24,6 +24,27 @@ _Last updated: 2026-04-02_
 
 ## Integer-width audit findings
 
+- Not every old 32-bit-looking draw helper is actually carrying a numeric quantity.
+  - `WIN32LIB/DRAWBUFF/SOFTDRAW.CPP::Buffer_Print(...)` still used integer temporaries as cursor state, but those values are really live framebuffer pointers (`buffer + y * row_bytes + x`), not logical pixel coordinates.
+  - On LP64, storing them in `uint32_t` truncates the address and causes an immediate startup crash when the title-screen `"Stand By"` text is drawn after `Load_Title_Page()`.
+  - Safe rule: for draw-buffer cursor/base values, keep pointer arithmetic in pointer types (`uint8_t *` / `const uint8_t *`) or `uintptr_t` only when an integer carrier is truly unavoidable.
+- Startup reproduction has one launch-path gotcha in this tree.
+  - `STARTUP.CPP` switches the virtual current directory to the executable's directory early in `WinMain`.
+  - Practical rule: for runtime validation, use the copied `GameData/redalert` / `GameData/redalert-asan` binaries (or otherwise launch from the real game-data directory). Running `../build[-asan]/redalert` while your shell is inside `GameData/` is a false lead because the program immediately pivots its working directory back to `build/` or `build-asan/` and then cannot see `REDALERT.INI`.
+
+- For broad legacy-type cleanup in `WIN32LIB`, a token-aware pass is much safer than naive search/replace.
+  - Replacing identifiers while preserving all non-token text avoids the destructive whitespace/comment fallout that happens if the pass normalizes spaces or glues preprocessor lines together.
+  - Practical rule: only rewrite code tokens, then let the compiler identify the few coupled seams outside `WIN32LIB` that must be updated to match the new declarations.
+- The `WIN32LIB` tree still contains multiple type vocabularies even after the earlier VQ work, and they must stay split during cleanup.
+  - `WWSTD` descendants historically used signed `WORD`-family spellings, so those interfaces should become `int16_t`/`int32_t`/`uint32_t` as appropriate rather than blindly inheriting the SOS/HMI unsigned mapping.
+  - The audio-local SOS/HMI headers (`WIN32LIB/AUDIO/SOS*.H`) still follow the unsigned HMI convention and should stay aligned with the already-modern canonical public copies under `WIN32LIB/INCLUDE/SOS*.H`.
+- The legacy root headers matter as much as the use sites.
+  - `WIN32LIB/{INCLUDE,MISC}/WWSTD.H` and `WIN32LIB/AUDIO/SOSDEFS.H` can silently reintroduce old spellings if their alias-definition blocks remain after the user code is converted.
+  - Safe cleanup rule: once the users are migrated, delete the alias-definition blocks instead of trying to keep “harmless” compatibility macros around.
+- Expect direct ABI seams outside `WIN32LIB` after a declaration-wide sweep.
+  - In this pass the two coupled fixes were `CODE/INIT.CPP::Calculate_CRC(...)`, which had to match the fixed-width `WIN32LIB/MISC.H` declaration, and `CODE/CCFILE.CPP`, where the correct endpoint was to make the real exported helpers match the underlying 32-bit `FileClass` / `RawFileClass` / `CCFileClass` contract directly rather than keeping temporary narrowing overloads around.
+  - Practical rule: if a cleaned public header disagrees with the implementation but the underlying engine class hierarchy is already consistent, fix the implementation surface to that real contract and sync any duplicated public headers, instead of stacking adapter overloads on top.
+
 - The active VQ build does not stay entirely within `VQ/INCLUDE`; some of its SOS/HMI surface is still taken from the canonical `WIN32LIB/INCLUDE/SOS*.H` headers through include-order.
   - Practical rule: when modernizing the VQ-side SOS declarations, validate the actual include path used by the VQ translation units before assuming the duplicated VQ headers are the only live copies.
   - In this pass, the build only went green once the shared canonical copies (`WIN32LIB/INCLUDE/SOS{,COMP,DATA,DEFS,FNCT}.H`) were kept in sync with the VQ copies.

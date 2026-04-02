@@ -35,6 +35,8 @@
  *   Size_Of_Region -- Calculates the size of a given region               *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+#include <cstdint>
+
 /*=========================================================================*/
 /* The following PRIVATE functions are in this file:                       */
 /*=========================================================================*/
@@ -54,7 +56,7 @@
  * HISTORY:                                                                *
  *   11/03/1994 PWG : Created.                                             *
  *=========================================================================*/
-long Size_Of_Region(int width, int height)                                 
+int32_t Size_Of_Region(int32_t width, int32_t height)                                 
 {
 	return(width * height);
 }

@@ -46,26 +46,26 @@
 /* Globals required by GraphicBufferClass for function pointers.  These		*/
 /*   pointers will be set to the proper function when set mode is called.	*/
 /*=========================================================================*/
-BOOL (*GVPC_Blit_to_VVPC_Func)(void *, void *, int, int, int, int, int, int, BOOL);
-BOOL (*GVPC_Scale_To_VVPC)(	void *, void *, int, int, int, int, int, int, int, int, BOOL, char *);
+int32_t (*GVPC_Blit_to_VVPC_Func)(void *, void *, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t);
+int32_t (*GVPC_Scale_To_VVPC)(	void *, void *, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, char *);
 
 #ifdef not_any_more_it_doesnt
 /*=========================================================================*/
 /* Globals required by VideoBufferClass for function pointers.  These		*/
 /*   pointers will be set to the proper function when set mode is called.	*/
 /*=========================================================================*/
-void (*VVPC_Clear_Func)(void *, unsigned char);
-long (*VVPC_To_Buffer_Func)(void *,int x, int y, int w, int h, void *buff, long size);
-void (*VVPC_Put_Pixel_Func)(void *,int x, int y, unsigned char color);
-int  (*VVPC_Get_Pixel_Func)(void *, int x, int y);
-long (*VVPC_Buffer_To_Page)(int x, int y, int w, int h, void *Buffer, void *view);
-BOOL (*VVPC_Blit_to_GVPC_Func)(void *, void *, int, int, int, int, int, int, BOOL);
-BOOL (*VVPC_Blit_to_VVPC_Func)(void *, void *, int, int, int, int, int, int, BOOL);
-BOOL (*VVPC_Scale_To_GVPC)(	void *, void *, int, int, int, int, int, int, int, int, BOOL, char *);
-BOOL (*VVPC_Scale_To_VVPC)(	void *, void *, int, int, int, int, int, int, int, int, BOOL, char *);
-LONG (*VVPC_Print_Func)(		void *, const char *, int, int, int, int);
-void (*VVPC_Draw_Stamp)(void *, void *, int, int, int, void *);
-long (*VVPC_Size_Of_Region)(void *, int, int);
+void (*VVPC_Clear_Func)(void *, uint8_t);
+int32_t (*VVPC_To_Buffer_Func)(void *,int32_t x, int32_t y, int32_t w, int32_t h, void *buff, int32_t size);
+void (*VVPC_Put_Pixel_Func)(void *,int32_t x, int32_t y, uint8_t color);
+int32_t  (*VVPC_Get_Pixel_Func)(void *, int32_t x, int32_t y);
+int32_t (*VVPC_Buffer_To_Page)(int32_t x, int32_t y, int32_t w, int32_t h, void *Buffer, void *view);
+int32_t (*VVPC_Blit_to_GVPC_Func)(void *, void *, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t);
+int32_t (*VVPC_Blit_to_VVPC_Func)(void *, void *, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t);
+int32_t (*VVPC_Scale_To_GVPC)(	void *, void *, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, char *);
+int32_t (*VVPC_Scale_To_VVPC)(	void *, void *, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, int32_t, char *);
+int32_t (*VVPC_Print_Func)(		void *, const char *, int32_t, int32_t, int32_t, int32_t);
+void (*VVPC_Draw_Stamp)(void *, void *, int32_t, int32_t, int32_t, void *);
+int32_t (*VVPC_Size_Of_Region)(void *, int32_t, int32_t);
 
 #endif	//not_any_more_it_doesnt
 
@@ -74,7 +74,7 @@ long (*VVPC_Size_Of_Region)(void *, int, int);
 /*=========================================================================*/
 GraphicViewPortClass	*LogicPage;
 
-BOOL IconCacheAllowed = TRUE;
+int32_t IconCacheAllowed = TRUE;
 
 /*
 ** Pointer to a function we will call if we detect loss of focus

@@ -55,7 +55,7 @@ typedef enum {
 ** Prototypes for VMPAGEIN.ASM
 */
 extern "C"{
-	void __cdecl Force_VM_Page_In (void *buffer, int length);
+	void  Force_VM_Page_In (void *buffer, int32_t length);
 }
 
 /*=========================================================================*/
@@ -64,14 +64,14 @@ extern "C"{
 
 void * operator new(size_t size, MemoryFlagType flag);
 void * operator new[] (size_t size, MemoryFlagType flag);
-void	*Alloc(unsigned long bytes_to_alloc, MemoryFlagType flags);
+void	*Alloc(uint32_t bytes_to_alloc, MemoryFlagType flags);
 void	Free(void const *pointer);
-void	DPMI_Lock(VOID const *ptr, long const size);
-void	DPMI_Unlock(void const *ptr, long const size);
-void	*Resize_Alloc(void *original_ptr, unsigned long new_size_in_bytes);
-long	Ram_Free(MemoryFlagType flag);
-long	Heap_Size(MemoryFlagType flag);
-long	Total_Ram_Free(MemoryFlagType flag);
+void	DPMI_Lock(void const *ptr, int32_t const size);
+void	DPMI_Unlock(void const *ptr, int32_t const size);
+void	*Resize_Alloc(void *original_ptr, uint32_t new_size_in_bytes);
+int32_t	Ram_Free(MemoryFlagType flag);
+int32_t	Heap_Size(MemoryFlagType flag);
+int32_t	Total_Ram_Free(MemoryFlagType flag);
 
 #pragma option -Jgd
 
@@ -91,7 +91,7 @@ inline void * operator new[] (size_t size, MemoryFlagType flag)
 /*=========================================================================*/
 
 extern "C" {
-	void __cdecl Mem_Copy(void const *source, void *dest, unsigned long bytes_to_copy);
+	void  Mem_Copy(void const *source, void *dest, uint32_t bytes_to_copy);
 }
 
 
@@ -103,8 +103,8 @@ inline void *Add_Long_To_Pointer(void const *ptr, intptr_t size)
 extern void (*Memory_Error)(void);
 extern void (*Memory_Error_Exit)(char *string);
 
-extern unsigned long MinRam;		// Record of least memory at worst case.
-extern unsigned long MaxRam;		// Record of total allocated at worst case.
+extern uint32_t MinRam;		// Record of least memory at worst case.
+extern uint32_t MaxRam;		// Record of total allocated at worst case.
 
 
 #endif

@@ -70,10 +70,10 @@
  *   05/16/1991 JLB : Created.                                             *
  *   04/19/1994 SKB : Update to 32 bit library.                            *
  *=========================================================================*/
-int __cdecl Open_Iff_File(char const *filename)
+int32_t  Open_Iff_File(char const *filename)
 {
-	int	fh;		// File handle.
-	long	type;		// IFF file type.
+	int32_t	fh;		// File handle.
+	int32_t	type;		// IFF file type.
 
 
 	/* We want to be able to open the file for READ | WRITE, but we do not
@@ -124,7 +124,7 @@ int __cdecl Open_Iff_File(char const *filename)
  *   05/16/1991 JLB : Created.                                             *
  *   04/19/1994 SKB : Update to 32 bit library.                            *
  *=========================================================================*/
-void __cdecl Close_Iff_File(int fh)
+void  Close_Iff_File(int32_t fh)
 {
 	if (fh != WW_ERROR) Close_File(fh);
 }
@@ -143,10 +143,10 @@ void __cdecl Close_Iff_File(int fh)
  *   06/03/1991  CY : Created.                                             *
  *   04/19/1994 SKB : Update to 32 bit library.                            *
  *=========================================================================*/
-unsigned long __cdecl Get_Iff_Chunk_Size(int fh, long id)
+uint32_t  Get_Iff_Chunk_Size(int32_t fh, int32_t id)
 {
-	long	form;					// Chunk iff form name.
-	long	chunksize;			// Size of the chunk.
+	int32_t	form;					// Chunk iff form name.
+	int32_t	chunksize;			// Size of the chunk.
 	char	first_iteration;	// Check once the current chunk name
 
 
@@ -211,10 +211,10 @@ unsigned long __cdecl Get_Iff_Chunk_Size(int fh, long id)
  *   05/16/1991 JLB : Created.                                             *
  *   04/19/1994 SKB : Update to 32 bit library.                            *
  *=========================================================================*/
-unsigned long __cdecl Read_Iff_Chunk(int fh, long id, void *buffer, unsigned long maxsize)
+uint32_t  Read_Iff_Chunk(int32_t fh, int32_t id, void *buffer, uint32_t maxsize)
 {
-	long	form;					// Chunk iff form name.
-	unsigned long	chunksize;			// Size of the chunk.
+	int32_t	form;					// Chunk iff form name.
+	uint32_t	chunksize;			// Size of the chunk.
 	char	first_iteration;	// Check once the current chunk name
 
 	first_iteration = TRUE;
@@ -271,13 +271,13 @@ unsigned long __cdecl Read_Iff_Chunk(int fh, long id, void *buffer, unsigned lon
  * HISTORY:                                                                *
  *   04/19/1994 SKB : Created.                                             *
  *=========================================================================*/
-void __cdecl Write_Iff_Chunk(int file, long id, void *buffer, long length)
+void  Write_Iff_Chunk(int32_t file, int32_t id, void *buffer, int32_t length)
 {
-	long	pos;		// Current position in the IFF file.
-	long	oldpos;	// Record of start of chunk offset.
-	long	endpos;	// end of file offset before we write our data
-	long	value;
-	BOOL	odd;		// Is length odd?
+	int32_t	pos;		// Current position in the IFF file.
+	int32_t	oldpos;	// Record of start of chunk offset.
+	int32_t	endpos;	// end of file offset before we write our data
+	int32_t	value;
+	int32_t	odd;		// Is length odd?
 	char	pad = 0;	// Optional padding byte for even sized chunks.
 
 	/*
@@ -289,7 +289,7 @@ void __cdecl Write_Iff_Chunk(int file, long id, void *buffer, long length)
 
 	if (length) {
 		value = id;
-		odd = (short)length & 0x01;
+		odd = (int16_t)length & 0x01;
 
 		Write_File(file, &value, 4L);
 		oldpos = Seek_File(file, 0L, SEEK_CUR);

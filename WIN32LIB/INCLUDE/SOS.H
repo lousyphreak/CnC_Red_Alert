@@ -534,22 +534,22 @@ enum
 #pragma pack(push, 1)
 typedef struct
 {
-	unsigned       region_size;
-	unsigned       offset;
-	unsigned       segment;
+	uint32_t       region_size;
+	uint32_t       offset;
+	uint32_t       segment;
 	uint16_t	number_available;
 	uint16_t number_used;
-	unsigned       page0;
+	uint32_t       page0;
 
 } EVDS_STRUCT;
 
 typedef struct
 {
-	unsigned       region_size;
-	unsigned       offset;
+	uint32_t       region_size;
+	uint32_t       offset;
 	uint16_t segment;
 	uint16_t	ID;
-	unsigned       physical;
+	uint32_t       physical;
 
 } VDS_STRUCT;
 #pragma pack(pop)

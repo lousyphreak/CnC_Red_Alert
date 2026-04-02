@@ -72,12 +72,12 @@
  *   06/20/1991 BS : Created.                                              *
  *   04/27/1994 BR : Converted to 32-bit                                   *
  *=========================================================================*/
-void __cdecl Load_Palette(char *palette_file_name, void *palette_pointer)
+void  Load_Palette(char *palette_file_name, void *palette_pointer)
 {
 	#if(IBM)
 		Load_Data(palette_file_name, palette_pointer, 768);
 	#else
-		Load_Data(palette_file_name, palette_pointer, (ULONG)(2<<BIT_PLANES));
+		Load_Data(palette_file_name, palette_pointer, (uint32_t)(2<<BIT_PLANES));
 	#endif
 }
 

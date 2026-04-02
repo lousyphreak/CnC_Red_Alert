@@ -56,7 +56,7 @@
 ********************************** Globals **********************************
 */
 extern "C" {
-unsigned char CurrentPalette[768];
+uint8_t CurrentPalette[768];
 }
 
 extern "C" void Set_Video_Palette(void *palette);
@@ -65,8 +65,8 @@ extern "C" void Set_Video_Palette(void *palette);
 ******************************** Prototypes *********************************
 */
 
-PRIVATE void __cdecl Determine_Bump_Rate(void *palette, int delay, short *ticks, short *rate);
-PRIVATE BOOL __cdecl Bump_Palette(void *palette1, unsigned int step);
+PRIVATE void  Determine_Bump_Rate(void *palette, int32_t delay, int16_t *ticks, int16_t *rate);
+PRIVATE int32_t  Bump_Palette(void *palette1, uint32_t step);
 
 /*
 ******************************** Code *********************************
@@ -87,7 +87,7 @@ PRIVATE BOOL __cdecl Bump_Palette(void *palette1, unsigned int step);
  *   04/25/1994 SKB : Created.                                             *
  *   04/27/1994 BR : Converted to 32-bit                                   *
  *=========================================================================*/
-void __cdecl Set_Palette(void *palette)
+void  Set_Palette(void *palette)
 {
 
 	#if(IBM)
@@ -119,7 +119,7 @@ void __cdecl Set_Palette(void *palette)
  *   04/25/1994 SKB : Created.                                             *
  *   04/27/1994 BR : Converted to 32-bit                                   *
  *=========================================================================*/
-void __cdecl Set_Palette_Color(void *palette, int color, void *data)
+void  Set_Palette_Color(void *palette, int32_t color, void *data)
 {
 	/*
 	---------------------- Return if 'palette' is NULL -----------------------
@@ -130,10 +130,10 @@ void __cdecl Set_Palette_Color(void *palette, int color, void *data)
 	------------------- Change the color & set the palette -------------------
 	*/
 	#if(IBM)
-		memcpy(&((unsigned char *)palette)[color * RGB_BYTES], data, RGB_BYTES);
+		memcpy(&((uint8_t *)palette)[color * RGB_BYTES], data, RGB_BYTES);
 		Set_Palette_Range(palette);
 	#else
-		palette[color] = *(unsigned short*)data;
+		palette[color] = *(uint16_t*)data;
 		Set_Palette(palette);
 	#endif
 
@@ -158,13 +158,13 @@ void __cdecl Set_Palette_Color(void *palette, int color, void *data)
  * HISTORY:                                                                *
  *   06/20/1991  BS : Created.                                             *
  *=========================================================================*/
-void Fade_Palette_To(void *palette1, unsigned int delay, void (*callback)() )
+void Fade_Palette_To(void *palette1, uint32_t delay, void (*callback)() )
 {
-	BOOL	changed;	// Flag that palette has changed this tick.
-	short	jump;		// Gun values to jump per palette set.
-	unsigned long	timer;		// Tick count timer used for timing.
-	short	ticksper;	// The ticks (fixed point) per bit jump.
-	int	tickaccum;
+	int32_t	changed;	// Flag that palette has changed this tick.
+	int16_t	jump;		// Gun values to jump per palette set.
+	uint32_t	timer;		// Tick count timer used for timing.
+	int16_t	ticksper;	// The ticks (fixed point) per bit jump.
+	int32_t	tickaccum;
 
 
 	extern void (*cb_ptr)(void);	// callback function pointer
@@ -243,23 +243,23 @@ void Fade_Palette_To(void *palette1, unsigned int delay, void (*callback)() )
  *   04/27/1994 BR : Converted to 32-bit                                   *
  *   08/02/1994 SKB : Made private                                         *
  *=========================================================================*/
-PRIVATE void __cdecl Determine_Bump_Rate(void *palette, int delay, short *ticks,
-	short *rate)
+PRIVATE void  Determine_Bump_Rate(void *palette, int32_t delay, int16_t *ticks,
+	int16_t *rate)
 {
-	int gun1;		// Palette 1 gun value.
-	int gun2;		// Palette 2 gun value.
-	int diff;		// Maximum color gun difference.
-	int tp;			// Temporary tick accumulator.
-	int index;		// Color gun working index.
-	long t;			// Working tick intermediate value.
-	int adiff;		// Absolute difference between guns.
+	int32_t gun1;		// Palette 1 gun value.
+	int32_t gun2;		// Palette 2 gun value.
+	int32_t diff;		// Maximum color gun difference.
+	int32_t tp;			// Temporary tick accumulator.
+	int32_t index;		// Color gun working index.
+	int32_t t;			// Working tick intermediate value.
+	int32_t adiff;		// Absolute difference between guns.
 
 	/*
 	------------------------ Find max gun difference -------------------------
 	*/
 	diff = 0;
 	for (index = 0; index < PALETTE_BYTES; index++) {
-		gun1 = ((unsigned char *)palette)[index];
+		gun1 = ((uint8_t *)palette)[index];
 		gun2 = CurrentPalette[index];
 		adiff = ABS(gun1-gun2);
 		diff = MAX(diff, adiff);
@@ -273,12 +273,12 @@ PRIVATE void __cdecl Determine_Bump_Rate(void *palette, int delay, short *ticks,
 	time more accurately; the caller must shift the accumulated value down
 	8 bits to determine the actual elapsed time!
 	------------------------------------------------------------------------*/
-	t = ((long)delay) << 8;
+	t = ((int32_t)delay) << 8;
 	if (diff) {
 		t /= diff;
-		t = MIN((long)t, (long)0x7FFF);
+		t = MIN((int32_t)t, (int32_t)0x7FFF);
 	}
-	*ticks = (short)t;
+	*ticks = (int16_t)t;
 
 	/*------------------------------------------------------------------------
 	Adjust the color gun rate value if the time to fade is faster than can
@@ -312,12 +312,12 @@ PRIVATE void __cdecl Determine_Bump_Rate(void *palette, int delay, short *ticks,
  *   08/02/1994 SKB : Made private                                         *
  *=========================================================================*/
 #if(IBM)
-PRIVATE BOOL __cdecl Bump_Palette(void *palette1, unsigned int step)
+PRIVATE int32_t  Bump_Palette(void *palette1, uint32_t step)
 {
-	BOOL	changed=FALSE;				// Flag that palette has changed this tick.
-	int	index;						// Index to DAC register gun.
-	int	gun1,gun2;					// Palette 1 gun value.
-	unsigned char	palette[PALETTE_BYTES];	// copy of current palette
+	int32_t	changed=FALSE;				// Flag that palette has changed this tick.
+	int32_t	index;						// Index to DAC register gun.
+	int32_t	gun1,gun2;					// Palette 1 gun value.
+	uint8_t	palette[PALETTE_BYTES];	// copy of current palette
 
 	/*
 	---------------------- Return if 'palette1' is NULL ----------------------
@@ -335,7 +335,7 @@ PRIVATE BOOL __cdecl Bump_Palette(void *palette1, unsigned int step)
 	----------------------- Loop through palette bytes -----------------------
 	*/
 	for (index = 0; index < PALETTE_BYTES; index++) {
-		gun1 = ((unsigned char *)palette1)[index];
+		gun1 = ((uint8_t *)palette1)[index];
 		gun2 = palette[index];
 
 		/*
@@ -360,7 +360,7 @@ PRIVATE BOOL __cdecl Bump_Palette(void *palette1, unsigned int step)
 			gun2 = MAX(gun2, gun1);		// make sure we didn't overshoot it
 		}
 
-		palette[index] = (unsigned char)gun2;
+		palette[index] = (uint8_t)gun2;
 	}
 
 	/*
@@ -383,7 +383,7 @@ PRIVATE BOOL __cdecl Bump_Palette(void *palette1, unsigned int step)
 void (*cb_ptr)(void);	// callback function pointer
 
 /**************************** End of palette.cpp ***************************/
-extern "C" void __cdecl Set_Palette_Range(void *palette)
+extern "C" void  Set_Palette_Range(void *palette)
 {
 	if (!palette) {
 		return;
@@ -394,17 +394,17 @@ extern "C" void __cdecl Set_Palette_Range(void *palette)
 }
 
 
-extern "C" void Set_Palette_Register(int number, int red, int green, int blue)
+extern "C" void Set_Palette_Register(int32_t number, int32_t red, int32_t green, int32_t blue)
 {
-	unsigned char *entry;
+	uint8_t *entry;
 
 	if (number < 0 || number >= 256) {
 		return;
 	}
 
 	entry = &CurrentPalette[number * 3];
-	entry[0] = (unsigned char)MAX(0, MIN(red, 63));
-	entry[1] = (unsigned char)MAX(0, MIN(green, 63));
-	entry[2] = (unsigned char)MAX(0, MIN(blue, 63));
+	entry[0] = (uint8_t)MAX(0, MIN(red, 63));
+	entry[1] = (uint8_t)MAX(0, MIN(green, 63));
+	entry[2] = (uint8_t)MAX(0, MIN(blue, 63));
 	Set_Video_Palette(CurrentPalette);
 }

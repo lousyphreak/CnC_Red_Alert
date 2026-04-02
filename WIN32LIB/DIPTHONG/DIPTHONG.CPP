@@ -113,14 +113,14 @@ void Fixup_Text(char const *source, char *dest)
  * HISTORY:                                                                *
  *   08/13/1993 JLB : Created.                                             *
  *=========================================================================*/
-int Dip_Text(char const *source, char *dest)
+int32_t Dip_Text(char const *source, char *dest)
 {
-	unsigned char	first,		// First character in pair.
+	uint8_t	first,		// First character in pair.
 						next;			// Second character in pair.
-	int				common,		// Common character index.
+	int32_t				common,		// Common character index.
 						dipthong;	// Dipthong character index.
 
-	unsigned long length=0;		// Length of output string
+	uint32_t length=0;		// Length of output string
 
 	first = *source++;
 	next = *source;
@@ -151,9 +151,9 @@ int Dip_Text(char const *source, char *dest)
 					*/
 					for (dipthong = 0; dipthong < 8; dipthong++) {
 						if (Dipthong[common][dipthong] == next) {
-							first = (unsigned char) (common << 3);
-							first |= (unsigned char)dipthong;
-							first |= (unsigned char)0x80;
+							first = (uint8_t) (common << 3);
+							first |= (uint8_t)dipthong;
+							first |= (uint8_t)0x80;
 							source++;
 						}
 					}
@@ -199,11 +199,11 @@ int Dip_Text(char const *source, char *dest)
  *   08/13/1993 JLB : Created.                                             *
  *   10/06/1994 JLB : Handles source string in EMS.                        *
  *=========================================================================*/
-int UnDip_Text(char const *source, char *dest)
+int32_t UnDip_Text(char const *source, char *dest)
 {
-	int	c;			// Source input character.
-	int	common;	// Common character index.
-	int	len;		// Length of output string.
+	int32_t	c;			// Source input character.
+	int32_t	common;	// Common character index.
+	int32_t	len;		// Length of output string.
 	char const *src;
 
 	len = 0;						// Presume no translation.
@@ -230,7 +230,7 @@ int UnDip_Text(char const *source, char *dest)
 			c = Dipthong[common][c & 0x07];
 		}
 
-		*dest++ = (unsigned char)c;
+		*dest++ = (uint8_t)c;
 		len++;
 
 		c = *src++;
@@ -314,14 +314,14 @@ static char InternetTxt[22][40]={
 	"Resolving address of host..."
 };
 
-char *Extract_String(void const *data, int string)
+char *Extract_String(void const *data, int32_t string)
 {
-	unsigned short int	const *ptr;
+	uint16_t	const *ptr;
 
 	if (!data || string < 0) return(NULL);
 
 	if (string >= 4567) return (InternetTxt[string-4567]);
 
-	ptr = (unsigned short int const *)data;
+	ptr = (uint16_t const *)data;
 	return (((char*)data) + ptr[string]);
 }

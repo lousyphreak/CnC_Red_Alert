@@ -45,7 +45,7 @@ static inline uint8_t Clamp_Unsigned_Byte(int32_t value)
 
 }
 
-extern "C" int32_t __cdecl Decompress_Frame(void *source, void *dest, int32_t size)
+extern "C" int32_t  Decompress_Frame(void *source, void *dest, int32_t size)
 {
 	if (source == 0 || dest == 0 || size <= 0) {
 		return 0;
@@ -106,7 +106,7 @@ extern "C" int32_t __cdecl Decompress_Frame(void *source, void *dest, int32_t si
 					const uint8_t delta = (uint8_t)*s++;
 					++incount;
 
-					for (int shift = 0; shift < 8 && size > 0; shift += 2) {
+					for (int32_t shift = 0; shift < 8 && size > 0; shift += 2) {
 						previous = Clamp_Unsigned_Byte((int32_t)previous + Decode2Bit[(delta >> shift) & 0x03]);
 						*d++ = (uint8_t)previous;
 						--size;
@@ -117,7 +117,7 @@ extern "C" int32_t __cdecl Decompress_Frame(void *source, void *dest, int32_t si
 
 			case CODE_SILENCE:
 			default:
-				memset(d, (int)previous, (size_t)counter);
+				memset(d, (int32_t)previous, (size_t)counter);
 				d += counter;
 				size -= counter;
 				break;
@@ -127,22 +127,22 @@ extern "C" int32_t __cdecl Decompress_Frame(void *source, void *dest, int32_t si
 	return incount;
 }
 
-extern "C" int __cdecl Decompress_Frame_Lock(void)
+extern "C" int32_t  Decompress_Frame_Lock(void)
 {
 	return 1;
 }
 
-extern "C" int __cdecl Decompress_Frame_Unlock(void)
+extern "C" int32_t  Decompress_Frame_Unlock(void)
 {
 	return 1;
 }
 
-extern "C" int __cdecl sosCODEC_Lock(void)
+extern "C" int32_t  sosCODEC_Lock(void)
 {
 	return 1;
 }
 
-extern "C" int __cdecl sosCODEC_Unlock(void)
+extern "C" int32_t  sosCODEC_Unlock(void)
 {
 	return 1;
 }

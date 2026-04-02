@@ -70,8 +70,8 @@ class BufferClass {
 		/* Define functions which work with the buffer class.						*/
 		/*===================================================================*/
 		int32_t To_Page(GraphicViewPortClass &view);
-		int32_t To_Page(int w, int h, GraphicViewPortClass &view);
-		int32_t To_Page(int x, int y, int w, int h, GraphicViewPortClass &view);
+		int32_t To_Page(int32_t w, int32_t h, GraphicViewPortClass &view);
+		int32_t To_Page(int32_t x, int32_t y, int32_t w, int32_t h, GraphicViewPortClass &view);
 
 		/*===================================================================*/
 		/* define functions to get at the protected data members					*/
@@ -92,7 +92,7 @@ class BufferClass {
 	protected:
 		void	*Buffer;
 		int32_t	Size;
-		BOOL	Allocated;
+		int32_t	Allocated;
 };
 /***************************************************************************
  * BC::GET_SIZE -- Returns the buffer size of the BufferClass instance     *

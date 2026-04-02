@@ -16,9 +16,9 @@
 **	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-int Dip_Text(char const *source, char *dest);
-int UnDip_Text(char const *source, char *dest);
-char *Extract_String(void const *data, int string);
+int32_t Dip_Text(char const *source, char *dest);
+int32_t UnDip_Text(char const *source, char *dest);
+char *Extract_String(void const *data, int32_t string);
 void Fixup_Text(char const *source, char *dest);
 extern char Common[];
 extern char Dipthong[16][8];

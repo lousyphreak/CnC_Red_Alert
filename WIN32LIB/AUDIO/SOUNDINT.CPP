@@ -253,7 +253,7 @@ int32_t Sample_Copy(SampleTrackerType *st, void ** source, int32_t * ssize, void
 
 
 
-extern int Convert_HMI_To_Backend_Volume(int volume);
+extern int32_t Convert_HMI_To_Backend_Volume(int32_t volume);
 
 /***********************************************************************************************
  * maintenance_callback -- routine to service the direct play secondary buffers                *
@@ -270,19 +270,19 @@ extern int Convert_HMI_To_Backend_Volume(int volume);
  *     ....Unknown                                                                             *
  *    10/17/95 10:15PM ST : tidied up a tad for streamed audio                                 *
  *=============================================================================================*/
-VOID far __cdecl maintenance_callback(VOID)
+void   maintenance_callback(void)
 {
 
-	int					index;				//index used in for loop
+	int32_t					index;				//index used in for loop
 	SampleTrackerType	*st;					//ptr to SampleTracker structure
-	DWORD					play_cursor;		//Position that the backend is reading from
-	DWORD					write_cursor;		//Position in buffer that we can write to
-	int			 		bytes_copied;		//Number of bytes copied into the buffer
-	BOOL					write_more;			//Flag to set if we need to write more into the buffer
-	LPVOID				play_buffer_ptr;	//Beginning of locked area of buffer
-	LPVOID				dummy_buffer_ptr;	//Length of locked area in buffer
-	DWORD					lock_length1;		//Beginning of second locked area in buffer
-	DWORD					lock_length2;		//Length of second locked area in buffer
+	uint32_t					play_cursor;		//Position that the backend is reading from
+	uint32_t					write_cursor;		//Position in buffer that we can write to
+	int32_t			 		bytes_copied;		//Number of bytes copied into the buffer
+	int32_t					write_more;			//Flag to set if we need to write more into the buffer
+	void *				play_buffer_ptr;	//Beginning of locked area of buffer
+	void *				dummy_buffer_ptr;	//Length of locked area in buffer
+	uint32_t					lock_length1;		//Beginning of second locked area in buffer
+	uint32_t					lock_length2;		//Length of second locked area in buffer
 	HRESULT				return_code;
 
 	//EnterCriticalSection(&GlobalAudioCriticalSection);
@@ -354,8 +354,8 @@ VOID far __cdecl maintenance_callback(VOID)
 						/*
 						** Lock 1/2 of the backend buffer so we can write to it
 						*/
-						if ( RAAUDIO_OK== st->PlayBuffer->Lock (	(DWORD)st->DestPtr ,
-															(DWORD)SECONDARY_BUFFER_SIZE/2,
+						if ( RAAUDIO_OK== st->PlayBuffer->Lock (	(uint32_t)st->DestPtr ,
+															(uint32_t)SECONDARY_BUFFER_SIZE/2,
 															&play_buffer_ptr,
 															&lock_length1,
 															&dummy_buffer_ptr,
@@ -529,10 +529,10 @@ void *Audio_Add_Long_To_Pointer(void const *ptr, intptr_t size)
  * HISTORY:                                                                *
  *   06/28/1995 PWG : Created.                                             *
  *=========================================================================*/
-void Audio_Mem_Set(void const *ptr, unsigned char value, intptr_t size)
+void Audio_Mem_Set(void const *ptr, uint8_t value, intptr_t size)
 {
-	unsigned char *temp = (unsigned char *)ptr;
-	for (int lp = 0; lp < size; lp ++) {
+	uint8_t *temp = (uint8_t *)ptr;
+	for (int32_t lp = 0; lp < size; lp ++) {
 		*temp++ = value;
 	}
 }

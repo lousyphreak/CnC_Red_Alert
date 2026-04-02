@@ -70,9 +70,9 @@ void Write_Unaligned(void* data, T value)
 
 extern "C" {
 char * _ShapeBuffer = 0;
-long _ShapeBufferSize = 0;
+int32_t _ShapeBufferSize = 0;
 
-void __cdecl Set_Shape_Buffer(void const *buffer, int size)
+void  Set_Shape_Buffer(void const *buffer, int32_t size)
 {
 	_ShapeBuffer = (char *)buffer;
 	_ShapeBufferSize = size;
@@ -99,7 +99,7 @@ void __cdecl Set_Shape_Buffer(void const *buffer, int size)
  *   08/19/1993 SKB : Split drawshp.asm into several modules.              *
  *   05/25/1994 BR : Converted to 32-bit                                   *
  *=========================================================================*/
-int cdecl Get_Shape_Size(VOID const *shape)
+int32_t  Get_Shape_Size(void const *shape)
 {
 	/*
 	------------------------- Return if NULL pointer -------------------------
@@ -132,7 +132,7 @@ int cdecl Get_Shape_Size(VOID const *shape)
  *   08/19/1993 SKB : Split drawshp.asm into several modules.              *
  *   05/25/1994 BR : Converted to 32-bit                                   *
  *=========================================================================*/
-int Get_Shape_Uncomp_Size(VOID const *shape)
+int32_t Get_Shape_Uncomp_Size(void const *shape)
 {
 	return Read_Unaligned<uint16_t>((char const*)shape + offsetof(Shape_Type, DataLength));
 
@@ -163,11 +163,11 @@ int Get_Shape_Uncomp_Size(VOID const *shape)
  *   08/19/1993 SKB : Split drawshp.asm into several modules.              *
  *   05/25/1994 BR : Converted to 32-bit                                   *
  *=========================================================================*/
-WORD cdecl Get_Shape_Data(VOID const *shape, WORD data)
+int16_t  Get_Shape_Data(void const *shape, int16_t data)
 {
-	WORD retval;
+	int16_t retval;
 
-	retval = Read_Unaligned<WORD>((char const*)shape - ((data+1) * sizeof(WORD)));
+	retval = Read_Unaligned<int16_t>((char const*)shape - ((data+1) * sizeof(int16_t)));
 
 	return (retval);
 
@@ -194,7 +194,7 @@ WORD cdecl Get_Shape_Data(VOID const *shape, WORD data)
  *   08/19/1993 SKB : Split drawshp.asm into several modules.              *
  *   05/25/1994 BR : Converted to 32-bit                                   *
  *=========================================================================*/
-int cdecl Extract_Shape_Count(VOID const *buffer)
+int32_t  Extract_Shape_Count(void const *buffer)
 {
 	return Read_Unaligned<uint16_t>(buffer);
 
@@ -219,9 +219,9 @@ int cdecl Extract_Shape_Count(VOID const *buffer)
  *   08/19/1993 SKB : Split drawshp.asm into several modules.              *
  *   05/25/1994 BR : Converted to 32-bit                                   *
  *=========================================================================*/
-VOID * cdecl Extract_Shape(VOID const *buffer, int shape)
+void *  Extract_Shape(void const *buffer, int32_t shape)
 {
-	int numshapes;		// Number of shapes
+	int32_t numshapes;		// Number of shapes
 	int32_t offset;			// Offset of shape data, from start of block
 	char *bytebuf = (char*) buffer;
 
@@ -259,7 +259,7 @@ VOID * cdecl Extract_Shape(VOID const *buffer, int shape)
  *   08/19/1993 SKB : Split drawshp.asm into several modules.              *
  *   05/25/1994 BR : Converted to 32-bit                                   *
  *=========================================================================*/
-int Get_Shape_Width(VOID const *shape)
+int32_t Get_Shape_Width(void const *shape)
 {
 	return Read_Unaligned<uint16_t>((char const*)shape + offsetof(Shape_Type, Width));
 
@@ -283,7 +283,7 @@ int Get_Shape_Width(VOID const *shape)
  *   08/19/1993 SKB : Split drawshp.asm into several modules.              *
  *   05/25/1994 BR : Converted to 32-bit                                   *
  *=========================================================================*/
-int Get_Shape_Height(VOID const *shape)
+int32_t Get_Shape_Height(void const *shape)
 {
 	return Read_Unaligned<uint8_t>((char const*)shape + offsetof(Shape_Type, Height));
 
@@ -312,9 +312,9 @@ int Get_Shape_Height(VOID const *shape)
  *   08/19/1993 SKB : Split drawshp.asm into several modules.              *
  *   05/25/1994 BR : Converted to 32-bit                                   *
  *=========================================================================*/
-int cdecl Set_Shape_Height(VOID const *shape, WORD newheight)
+int32_t  Set_Shape_Height(void const *shape, int16_t newheight)
 {
-	WORD oldheight;
+	int16_t oldheight;
 
 	oldheight = Read_Unaligned<uint8_t>((char const*)shape + offsetof(Shape_Type, Height));
 	Write_Unaligned<uint8_t>((char*)shape + offsetof(Shape_Type, Height), (uint8_t)newheight);
@@ -340,9 +340,9 @@ int cdecl Set_Shape_Height(VOID const *shape, WORD newheight)
  *   08/19/1993 SKB : Split drawshp.asm into several modules.              *
  *   05/25/1994 BR : Converted to 32-bit                                   *
  *=========================================================================*/
-int cdecl Restore_Shape_Height(VOID *shape)
+int32_t  Restore_Shape_Height(void *shape)
 {
-	WORD oldheight;
+	int16_t oldheight;
 
 	oldheight = Read_Unaligned<uint8_t>((char const*)shape + offsetof(Shape_Type, Height));
 	Write_Unaligned<uint8_t>((char*)shape + offsetof(Shape_Type, Height),
@@ -370,7 +370,7 @@ int cdecl Restore_Shape_Height(VOID *shape)
  *   08/19/1993 SKB : Split drawshp.asm into several modules.              *
  *   05/25/1994 BR : Converted to 32-bit                                   *
  *=========================================================================*/
-int Get_Shape_Original_Height(VOID const *shape)
+int32_t Get_Shape_Original_Height(void const *shape)
 {
 	return Read_Unaligned<uint8_t>((char const*)shape + offsetof(Shape_Type, OriginalHeight));
 

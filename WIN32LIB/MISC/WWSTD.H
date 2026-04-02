@@ -83,10 +83,6 @@
 #define NULL		0L
 #endif
 
-#ifdef VOID
-#undef VOID
-#endif
-
 #define PRIVATE		static
 #define PUBLIC			/* Routines & data don't have a specifier */
 
@@ -164,17 +160,6 @@ int32_t MAX(int32_t, int32_t);
 		}\
 }
 
-// type definitions
-//=======================================
-typedef void 	VOID;
-
-//==================================================
-// Pharlape defines these for use so we use their
-// typedefs!
-//		typedef	unsigned char	BOOL;
-//		typedef signed long		LONG;
-//		typedef unsigned long	ULONG;
-//==================================================
 #ifndef PRIVATE
 #define  PRIVATE	static
 #endif
@@ -184,47 +169,9 @@ typedef void 	VOID;
 // WORD and UWORD should be an INT or UINT, especially on the stack and structures that will
 // not be in large arrays.  When size efficiency is more important then speed, use WORD UWORD.
 
-#define	VOID		void
-
 #pragma	warn -eas
 #define	TRUE		1
 #define	FALSE		0
-
-/*
-**	The "bool" integral type was defined by the C++ comittee in
-**	November of '94. Until the compiler supports this, use the following
-**	definition.
-*/
-#ifndef __BORLANDC__
-#ifndef TRUE_FALSE_DEFINED
-#define TRUE_FALSE_DEFINED
-enum {false=0,true=1};
-typedef int bool;
-#endif
-#endif
-//#define	true		1
-//#define	false		0
-
-#define	BOOL		int					// 32 bits for speed. use CHAR for size optimizations.
-#if(0)
-#ifndef HMI_DRIVER
-#define	INT		int
-#define	UINT		unsigned int
-#define	BYTE		char
-#define	UBYTE		unsigned char
-#define  UCHAR	   unsigned char
-#define	WORD		signed 	short
-#define	UWORD		unsigned short
-#define  USHORT	unsigned short
-
-#define	LONG		signed 	long
-#define	ULONG		unsigned long
-#define  REALPTR	unsigned long
-
-#define	FARPTR  char far *
-
-#endif
-#endif
 
 /*
 **	The type of processor running on this system as
@@ -257,13 +204,13 @@ template<class T> T Abs(T a)
 	return ((a<0) ? -(a) : a);
 }
 
-template<class T> VOID minimize(T &a, T b)
+template<class T> void minimize(T &a, T b)
 {
 	if( b<a )
 		a=b;
 }
 
-template<class T> VOID maximize(T &a, T b)
+template<class T> void maximize(T &a, T b)
 {
 	if( b>a )
 		a=b;
@@ -280,12 +227,12 @@ template<class T> VOID maximize(T &a, T b)
 
 // Template replacements for the user defines above
 #ifdef __cplusplus
-template<class T> VOID BitFlagsOn(T &a, T b)
+template<class T> void BitFlagsOn(T &a, T b)
 {
 	a |= (b);
 }
 
-template<class T> VOID BitFlagsOff(T &a, T b)
+template<class T> void BitFlagsOff(T &a, T b)
 {
 	a &= (~(b));
 }
@@ -295,7 +242,7 @@ template<class T> T BitFlagsValue(T a, T b)
 	return (a & (b));
 }
 
-template<class T> VOID BitFlagsFlip(T &a, T b)
+template<class T> void BitFlagsFlip(T &a, T b)
 {
 	a ^= (b);
 }

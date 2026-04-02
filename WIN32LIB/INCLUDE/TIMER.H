@@ -48,9 +48,9 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////// Externs /////////////////////////////////////////////
-extern BOOL 		TimerSystemOn;
-extern	HANDLE	TimerThreadHandle;		//Handle of timer thread
-extern	int		InTimerCallback;			//true if we are currently in a callback
+extern int32_t 		TimerSystemOn;
+extern	void *	TimerThreadHandle;		//Handle of timer thread
+extern	int32_t		InTimerCallback;			//true if we are currently in a callback
 
 
 /*=========================================================================*/
@@ -63,16 +63,16 @@ class TimerClass {
  	public:
 		// Constructor.  Timers set before low level init has been done will not
 		// be able to be 'Started' or 'on' until timer system is in place.
-		TimerClass(BaseTimerEnum timer=BT_SYSTEM, BOOL start=FALSE);
+		TimerClass(BaseTimerEnum timer=BT_SYSTEM, int32_t start=FALSE);
 
 		// No destructor.
 		~TimerClass(void){}
 
 		//
-		int32_t Set(int32_t value, BOOL start=TRUE);	// Set initial timer value.
+		int32_t Set(int32_t value, int32_t start=TRUE);	// Set initial timer value.
 		int32_t Stop(void);				// Pause timer.
 		int32_t Start(void);				// Resume timer.
-		int32_t Reset(BOOL start=TRUE);	// Reset timer to zero.
+		int32_t Reset(int32_t start=TRUE);	// Reset timer to zero.
 		int32_t Time(void);				// Fetch current timer value.
 
 	protected:
@@ -86,7 +86,7 @@ class TimerClass {
 };
 
 
-inline int32_t TimerClass::Reset(BOOL start)
+inline int32_t TimerClass::Reset(int32_t start)
 {
 	return(Set(0, start));
 }
@@ -96,15 +96,15 @@ class CountDownTimerClass : private TimerClass {
 	public:
 		// Constructor.  Timers set before low level init has been done will not
 		// be able to be 'Started' or 'on' until timer system is in place.
-		CountDownTimerClass(BaseTimerEnum timer, int32_t set, int on=FALSE);
-		CountDownTimerClass(BaseTimerEnum timer=BT_SYSTEM, int on=FALSE);
+		CountDownTimerClass(BaseTimerEnum timer, int32_t set, int32_t on=FALSE);
+		CountDownTimerClass(BaseTimerEnum timer=BT_SYSTEM, int32_t on=FALSE);
 
 		// No destructor.
 		~CountDownTimerClass(void){}
 
 		// Public functions
-		int32_t Set(int32_t set, BOOL start=TRUE);	// Set count down value.
-		int32_t Reset(BOOL start=TRUE);	// Reset timer to zero.
+		int32_t Set(int32_t set, int32_t start=TRUE);	// Set count down value.
+		int32_t Reset(int32_t start=TRUE);	// Reset timer to zero.
 		int32_t Stop(void);			// Pause timer.
 		int32_t Start(void);			// Resume timer.
 		int32_t Time(void);			// Fetch current count down value.
@@ -125,7 +125,7 @@ inline int32_t CountDownTimerClass::Start(void)
 	return(Time());
 }
 
-inline int32_t CountDownTimerClass::Reset(BOOL start)
+inline int32_t CountDownTimerClass::Reset(int32_t start)
 {
 	return (TimerClass::Reset(start));
 }
@@ -136,22 +136,22 @@ inline int32_t CountDownTimerClass::Reset(BOOL start)
 class WinTimerClass {
 
 	public:
-		WinTimerClass ( UINT freq=60 , BOOL partial=0 );
+		WinTimerClass ( uint32_t freq=60 , int32_t partial=0 );
 		~WinTimerClass();
 
 		void 		Update_Tick_Count ( void );
-		unsigned	Get_System_Tick_Count ( void );
-		unsigned	Get_User_Tick_Count ( void );
+		uint32_t	Get_System_Tick_Count ( void );
+		uint32_t	Get_User_Tick_Count ( void );
 
 	private:
 
-		unsigned		TimerHandle;	// Non-zero while the SDL-backed timer is active.
-		unsigned		Frequency;		// Frequency of our timer in ticks per second.
+		uint32_t		TimerHandle;	// Non-zero while the SDL-backed timer is active.
+		uint32_t		Frequency;		// Frequency of our timer in ticks per second.
 
-		unsigned		TrueRate;		//True rate of clock. (only use word)
-		unsigned		SysTicks;		// Cached system tick count.
-		unsigned		UserTicks;		// Cached user tick count.
-		unsigned		UserRate;		//Desired rate of timer.
+		uint32_t		TrueRate;		//True rate of clock. (only use word)
+		uint32_t		SysTicks;		// Cached system tick count.
+		uint32_t		UserTicks;		// Cached user tick count.
+		uint32_t		UserRate;		//Desired rate of timer.
 		uint64_t		StartTickNanos;
 
 
@@ -178,19 +178,19 @@ extern CountDownTimerClass		CountDown;
 //////////////////////////////////////// Prototypes //////////////////////////////////////////
 
 extern "C" {
-	int32_t __cdecl Get_System_Tick_Count(void);
-	int32_t __cdecl Get_User_Tick_Count(void);
-	void far __cdecl Timer_Interrupt_Func(void);
+	int32_t  Get_System_Tick_Count(void);
+	int32_t  Get_User_Tick_Count(void);
+	void   Timer_Interrupt_Func(void);
 //	long Get_Num_Interrupts(unsigned int realmode);
-	void __cdecl Disable_Timer_Interrupt(void);
-	void __cdecl Enable_Timer_Interrupt(void);
+	void  Disable_Timer_Interrupt(void);
+	void  Enable_Timer_Interrupt(void);
 }
 
 /*=========================================================================*/
 /* The following prototypes are for the file: TIMER.CPP							*/
 /*=========================================================================*/
-BOOL __cdecl Init_Timer_System(unsigned int freq, int partial = FALSE);
-BOOL __cdecl Remove_Timer_System(VOID);
+int32_t  Init_Timer_System(uint32_t freq, int32_t partial = FALSE);
+int32_t  Remove_Timer_System(void);
 
 
 #endif // TIMER_H

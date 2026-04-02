@@ -40,20 +40,20 @@
 /*=========================================================================*/
 /* The following prototypes are for the file: WINHIDE.CPP						*/
 /*=========================================================================*/
-void Window_Hide_Mouse(int window);
+void Window_Hide_Mouse(int32_t window);
 void Window_Show_Mouse(void);
 
 /*=========================================================================*/
 /* The following prototypes are for the file: WINDOWS.CPP						*/
 /*=========================================================================*/
-void Standard_More_Prompt(char const *prompt, int space, int fcolor, int bcolor);
-void Set_More_Prompt(char const *prompt, int space, int fcolor, int bcolor);
+void Standard_More_Prompt(char const *prompt, int32_t space, int32_t fcolor, int32_t bcolor);
+void Set_More_Prompt(char const *prompt, int32_t space, int32_t fcolor, int32_t bcolor);
 void Set_More_On(void);
 void Set_More_Off(void);
-int Change_Window(int windnum);
-int Change_New_Window(int windnum);
+int32_t Change_Window(int32_t windnum);
+int32_t Change_New_Window(int32_t windnum);
 void New_Window(void);
-void Window_Int_Print(int num);
+void Window_Int_Print(int32_t num);
 void Window_Print(char const string[], ...);
 
 /*
@@ -72,24 +72,24 @@ typedef enum {
 	WINDOWPADDING=0x1000
 } WindowIndexType;
 
-extern int WindowList[][8];
-extern int WindowColumns;
-extern int WindowLines;
-extern int WindowWidth;
-extern unsigned int WinB;
-extern unsigned int WinC;
-extern unsigned int WinX;
-extern unsigned int WinY;
-extern unsigned int WinCx;
-extern unsigned int WinCy;
-extern unsigned int WinH;
-extern unsigned int WinW;
-extern unsigned int Window;
+extern int32_t WindowList[][8];
+extern int32_t WindowColumns;
+extern int32_t WindowLines;
+extern int32_t WindowWidth;
+extern uint32_t WinB;
+extern uint32_t WinC;
+extern uint32_t WinX;
+extern uint32_t WinY;
+extern uint32_t WinCx;
+extern uint32_t WinCy;
+extern uint32_t WinH;
+extern uint32_t WinW;
+extern uint32_t Window;
 
-extern int MoreOn;
+extern int32_t MoreOn;
 extern char *TXT_MoreText;
 
-extern void (*Window_More_Ptr)(char const *, int, int, int);
+extern void (*Window_More_Ptr)(char const *, int32_t, int32_t, int32_t);
 
 #endif //WINDOWS_H
 
