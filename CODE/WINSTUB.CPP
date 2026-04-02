@@ -46,6 +46,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include	"FUNCTION.H"
+#include "SDLINPUT.H"
 #include	<cstdarg>
 #include	<cstdio>
 #include	<cstdlib>
@@ -539,7 +540,7 @@ void Window_Dialog_Box(HANDLE  hinst, LPCTSTR  lpszTemplate, HWND  hwndOwner, DL
 	** for it.
 	*/
 	Hide_Mouse();
-	ShowCursor(TRUE);
+	SDL_GameInput_ShowCursor(TRUE);
 
 	/*
 	** Pop up the dialog box and then run a standard message handler
@@ -557,7 +558,7 @@ void Window_Dialog_Box(HANDLE  hinst, LPCTSTR  lpszTemplate, HWND  hwndOwner, DL
 	** because it is now time to restore back to the westwood way of
 	** doing things.
 	*/
-	ShowCursor(FALSE);
+	SDL_GameInput_ShowCursor(FALSE);
 	Show_Mouse();
 }
 

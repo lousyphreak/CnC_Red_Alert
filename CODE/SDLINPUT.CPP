@@ -56,6 +56,12 @@ bool get_viewport_rect(RECT& rect)
 	return true;
 }
 
+bool sdl_uses_wayland_video_driver()
+{
+	const char* video_driver = SDL_GetCurrentVideoDriver();
+	return video_driver != NULL && SDL_strcasecmp(video_driver, "wayland") == 0;
+}
+
 uint32_t mouse_button_mask(int button)
 {
 	switch (button) {
@@ -812,6 +818,96 @@ BOOL SDL_GameInput_GetCursorPos(POINT* point)
 	std::scoped_lock lock(g_input_mutex);
 	point->x = g_mouse_x;
 	point->y = g_mouse_y;
+	return (TRUE);
+}
+
+HANDLE SDL_GameInput_SetCursor(HANDLE cursor)
+{
+	return (cursor);
+}
+
+int SDL_GameInput_ShowCursor(BOOL show)
+{
+	const bool was_visible = SDL_CursorVisible();
+	if (show) {
+		SDL_ShowCursor();
+	} else {
+		SDL_HideCursor();
+	}
+	return (was_visible ? 1 : 0);
+}
+
+BOOL SDL_GameInput_ClipCursor(const RECT* rect)
+{
+	if (MainWindow == NULL || MainWindow->sdl_window == NULL) {
+		SDL_GameInput_SetCursorClip(rect);
+		return (rect == NULL ? TRUE : FALSE);
+	}
+
+	const bool wayland_windowed = sdl_uses_wayland_video_driver()
+		&& (SDL_GetWindowFlags(MainWindow->sdl_window) & SDL_WINDOW_FULLSCREEN) == 0;
+
+	if (rect == NULL) {
+		if (wayland_windowed) {
+			SDL_SetWindowMouseRect(MainWindow->sdl_window, NULL);
+			SDL_GameInput_SetCursorClip(NULL);
+			return (TRUE);
+		}
+
+		const BOOL result = SDL_SetWindowMouseRect(MainWindow->sdl_window, NULL) ? TRUE : FALSE;
+		if (result) {
+			SDL_GameInput_SetCursorClip(NULL);
+		}
+		return (result);
+	}
+
+	RECT surface_rect = *rect;
+	RECT viewport_rect{};
+	if (SDL_GameInput_GetViewportRect(&viewport_rect)) {
+		surface_rect.left += viewport_rect.left;
+		surface_rect.top += viewport_rect.top;
+		surface_rect.right += viewport_rect.left;
+		surface_rect.bottom += viewport_rect.top;
+	}
+
+	SDL_Rect mouse_rect{};
+	if (!RA_GameRectToWindowRect(MainWindow, &surface_rect, &mouse_rect)) {
+		mouse_rect.x = static_cast<int>(surface_rect.left);
+		mouse_rect.y = static_cast<int>(surface_rect.top);
+		mouse_rect.w = std::max<int>(0, surface_rect.right - surface_rect.left);
+		mouse_rect.h = std::max<int>(0, surface_rect.bottom - surface_rect.top);
+	}
+
+	if (mouse_rect.w <= 0 || mouse_rect.h <= 0) {
+		SDL_SetWindowMouseRect(MainWindow->sdl_window, NULL);
+		SDL_GameInput_SetCursorClip(rect);
+		return (TRUE);
+	}
+
+	if (wayland_windowed) {
+		/*
+		** Hyprland/Wayland compositor move/resize gestures rely on the real
+		** pointer remaining unconstrained. Keep only the game's logical clip.
+		*/
+		SDL_SetWindowMouseRect(MainWindow->sdl_window, NULL);
+		SDL_GameInput_SetCursorClip(rect);
+		return (TRUE);
+	}
+
+	if (!SDL_SetWindowMouseRect(MainWindow->sdl_window, &mouse_rect)) {
+		return (FALSE);
+	}
+
+	float x = 0.0f;
+	float y = 0.0f;
+	SDL_GetMouseState(&x, &y);
+	const float clamped_x = std::clamp(x, static_cast<float>(mouse_rect.x), static_cast<float>(mouse_rect.x + mouse_rect.w - (mouse_rect.w > 0 ? 1 : 0)));
+	const float clamped_y = std::clamp(y, static_cast<float>(mouse_rect.y), static_cast<float>(mouse_rect.y + mouse_rect.h - (mouse_rect.h > 0 ? 1 : 0)));
+	if (clamped_x != x || clamped_y != y) {
+		SDL_WarpMouseInWindow(MainWindow->sdl_window, clamped_x, clamped_y);
+	}
+
+	SDL_GameInput_SetCursorClip(rect);
 	return (TRUE);
 }
 

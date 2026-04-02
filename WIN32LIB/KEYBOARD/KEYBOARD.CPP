@@ -391,7 +391,7 @@ void WWKeyboardClass::Message_Handler(HWND , UINT message, UINT wParam, LONG lPa
 			break;
 		case WM_MOUSEMOVE:
 			if (CurrentCursor)
-				SetCursor(CurrentCursor);
+				SDL_GameInput_SetCursor(CurrentCursor);
 			break;
 	}
 }

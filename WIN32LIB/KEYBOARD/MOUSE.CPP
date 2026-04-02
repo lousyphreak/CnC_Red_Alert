@@ -34,6 +34,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "MOUSE.H"
+#include "SDLINPUT.H"
 
 static WWMouseClass *_Mouse=NULL;
 extern BOOL GameInFocus;
@@ -154,7 +155,7 @@ void WWMouseClass::Set_Cursor_Clip(void)
 		region.right	= Screen->Get_Width();
 		region.bottom	= Screen->Get_Height();
 
-		ClipCursor(&region);
+		SDL_GameInput_ClipCursor(&region);
 	}
 }
 
@@ -162,7 +163,7 @@ void WWMouseClass::Set_Cursor_Clip(void)
 
 void WWMouseClass::Clear_Cursor_Clip(void)
 {
-	ClipCursor(NULL);
+	SDL_GameInput_ClipCursor(NULL);
 }
 
 
@@ -195,7 +196,7 @@ void WWMouseClass::Process_Mouse(void)
 	//
 	// Get the mouse's current real cursor position
 	//
-	GetCursorPos(&pt);			// get the current cursor position
+	SDL_GameInput_GetCursorPos(&pt);			// get the current cursor position
 	//
 	// If the mouse has moved then we are responsible to redraw the mouse
 	//
@@ -343,7 +344,7 @@ void WWMouseClass::Low_Show_Mouse(int x, int y)
 void WWMouseClass::Show_Mouse()
 {
 	POINT	pt;
-	GetCursorPos(&pt);
+	SDL_GameInput_GetCursorPos(&pt);
 
 	MouseUpdate++;
 	Low_Show_Mouse(pt.x, pt.y);
@@ -397,7 +398,7 @@ void WWMouseClass::Conditional_Hide_Mouse(int x1, int y1, int x2, int y2)
 	// the hiding region and hide if necessary.
 	//
 	if (!(MCFlags & CONDHIDDEN)) {
-		GetCursorPos(&pt);
+		SDL_GameInput_GetCursorPos(&pt);
 		if (MouseBuffX >= MouseCXLeft && MouseBuffX <= MouseCXRight && MouseBuffY >= MouseCYUpper && MouseBuffY <= MouseCYLower) {
 			Low_Hide_Mouse();
 			MCFlags |= CONDHIDDEN;
@@ -446,7 +447,7 @@ void WWMouseClass::Draw_Mouse(GraphicViewPortClass *scr)
 	//
 	//	Get the position that the mouse is currently located at
 	//
-	GetCursorPos(&pt);
+	SDL_GameInput_GetCursorPos(&pt);
 	if (MCFlags & CONDHIDE && pt.x >= MouseCXLeft && pt.x <= MouseCXRight && pt.y >= MouseCYUpper && pt.y <= MouseCYLower) {
 		Hide_Mouse();
 		MCFlags |= CONDHIDDEN;
@@ -557,7 +558,7 @@ int WWMouseClass::Get_Mouse_State(void)
 int WWMouseClass::Get_Mouse_X(void)
 {
 	POINT 	pt;
-	GetCursorPos(&pt);
+	SDL_GameInput_GetCursorPos(&pt);
 	return(pt.x);
 }
 
@@ -575,7 +576,7 @@ int WWMouseClass::Get_Mouse_X(void)
 int WWMouseClass::Get_Mouse_Y(void)
 {
 	POINT 	pt;
-	GetCursorPos(&pt);
+	SDL_GameInput_GetCursorPos(&pt);
 	return(pt.y);
 }
 
@@ -594,7 +595,7 @@ void WWMouseClass::Get_Mouse_XY(int &x, int &y)
 {
 	POINT 	pt;
 
-	GetCursorPos(&pt);
+	SDL_GameInput_GetCursorPos(&pt);
 	x = pt.x;
 	y = pt.y;
 }

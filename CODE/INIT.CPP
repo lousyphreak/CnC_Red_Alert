@@ -61,6 +61,7 @@
 
 #include	"FUNCTION.H"
 #include	"LOADDLG.H"
+#include "SDLINPUT.H"
 #include	<cstdarg>
 #include	<cstdio>
 #include	<cstdlib>
@@ -2979,7 +2980,7 @@ static void Init_Mouse(void)
 	** Since there is no mouse shape currently available we need
 	** to set one of our own.
 	*/
-	ShowCursor(false);
+	SDL_GameInput_ShowCursor(false);
 	if (MouseInstalled) {
 		void const * temp_mouse_shapes = MFCD::Retrieve("MOUSE.SHP");
 		if (temp_mouse_shapes) {

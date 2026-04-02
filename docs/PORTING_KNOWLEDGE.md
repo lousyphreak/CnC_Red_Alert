@@ -517,6 +517,7 @@ _Last updated: 2026-04-01_
 - The active keyboard queue path in this build is `CODE/KEY.CPP`, not `CODE/KEYBOARD.CPP`.
 - The active SDL input architecture is now:
   - `CODE/SDLINPUT.CPP` / `CODE/SDLINPUT.H` own SDL event pumping/waiting, track key/button/toggle state, and maintain the shared mouse position snapshot;
+  - the same SDL input layer now also owns the remaining public mouse compat surface (`SetCursor`, `ShowCursor`, `ClipCursor`, and `GetCursorPos()`), so keyboard and mouse input no longer have to reach back into `SDL3_COMPAT/wrappers/win32_compat.cpp` for live runtime behavior;
   - `CODE/CONQUER.CPP::Call_Back()` pumps SDL every front-end loop iteration and now also runs `WWMouse->Process_Mouse()` on that same main thread;
   - `SDL3_COMPAT/wrappers/win32_compat.cpp::next_message()` only drains posted lifecycle/focus/quit messages and uses `SDL_GameInput_Wait()` when the legacy message loop blocks;
   - `WWKeyboardClass` still owns the legacy circular key/mouse queue, but SDL key/button events are now fed into it directly instead of being translated into fake `WM_KEY*` / `WM_MOUSE*` messages first;
@@ -555,7 +556,7 @@ _Last updated: 2026-04-01_
 - The SDL3 port now lets the main game window resize independently from the logical game framebuffer.
   - The shared letterbox/pillarbox math lives in `RA_GetPresentationRect()`, `RA_WindowToGamePoint()`, and `RA_GameRectToWindowRect()` in `SDL3_COMPAT/wrappers/win32_compat.cpp`.
   - `SDL3_COMPAT/wrappers/ddraw_compat.cpp` must render the primary surface into that computed presentation rectangle and clear the rest of the window to black; otherwise resize stretches or smears the indexed framebuffer.
-  - `CODE/SDLINPUT.CPP` and `ClipCursor()` must convert mouse positions and clip rectangles through the same helpers, or menu hit-testing / software-cursor confinement drift away from the displayed image after a non-4:3 resize.
+  - `CODE/SDLINPUT.CPP` now owns `ClipCursor()` too, and it must keep converting mouse positions and clip rectangles through the same helpers, or menu hit-testing / software-cursor confinement drift away from the displayed image after a non-4:3 resize.
 - The active mouse space is not always the same as the primary-surface space.
   - `CODE/STARTUP.CPP` often leaves the primary surface at `640x480` but attaches `SeenBuff` and `HidPage` as `640x400` viewports, usually at `(0,40)`.
   - `RA_WindowToGamePoint()` and `RA_GameRectToWindowRect()` work in primary-surface coordinates, so the SDL input layer must subtract `SeenBuff.Get_XPos()/Get_YPos()` after `RA_WindowToGamePoint()`, while `ClipCursor()` must add that origin back before calling `SDL_SetWindowMouseRect()`.
