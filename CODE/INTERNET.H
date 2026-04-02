@@ -36,6 +36,7 @@
 
 #ifndef INTERNET_H
 #define INTERNET_H
+#include <stdint.h>
 
 #define IP_ADDRESS_MAX 40
 

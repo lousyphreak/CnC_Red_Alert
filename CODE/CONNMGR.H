@@ -66,6 +66,7 @@
 
 #ifndef CONNMGR_H
 #define CONNMGR_H
+#include <stdint.h>
 
 #include <cstdint>
 

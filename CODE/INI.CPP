@@ -77,6 +77,7 @@
 #include	"B64STRAW.H"
 
 
+#include <stdint.h>
 #ifdef FIXIT_FAST_LOAD
 #include	"CSTRAW.H"
 #endif
@@ -398,7 +399,7 @@ INIClass::INISection * INIClass::Find_Section(char const * section) const
 {
 	if (section != NULL) {
 
-		long crc = CRCEngine()(section, strlen(section));
+		int32_t crc = CRCEngine()(section, strlen(section));
 
 		if (SectionIndex.Is_Present(crc)) {
 			return(SectionIndex.Fetch_Index(crc));
@@ -1191,7 +1192,7 @@ PKey INIClass::Get_PKey(bool fast) const
 	*/
 	if (fast) {
 		BigInt exp = PKey::Fast_Exponent();
-		exp.DEREncode((unsigned char *)buffer);
+		exp.DEREncode((uint8_t *)buffer);
 		key.Decode_Exponent(buffer);
 	} else {
 		Get_UUBlock("PrivateKey", buffer, sizeof(buffer));

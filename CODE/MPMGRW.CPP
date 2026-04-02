@@ -18,6 +18,7 @@
 
 #ifndef MP_LOAD_DLL_DYNAMICALLY
 #define MP_LOAD_DLL_DYNAMICALLY
+#include <stdint.h>
 #endif
 
 #include "MPMGRW.H"
@@ -41,26 +42,26 @@ extern "C" {
 
 #define min(a,b) (((a) < (b)) ? (a) : (b))
 
-typedef void __cdecl (*MPlayerInit_Type)(void);
-typedef void __cdecl (*MPlayerDestroy_Type)(void);
-typedef int __cdecl (*Send_Private_Message_Type)(void *buf,
+typedef void  (*MPlayerInit_Type)(void);
+typedef void  (*MPlayerDestroy_Type)(void);
+typedef int  (*Send_Private_Message_Type)(void *buf,
 					 int buflen,
                      int ack_req,
                      int conn_id);
-typedef int __cdecl	(*Get_Private_Message_Type)(void *buf, int *buflen,
+typedef int 	(*Get_Private_Message_Type)(void *buf, int *buflen,
                     int *conn_id);
-typedef int __cdecl (*Send_Global_Message_Type)(void *buf, int buflen, int ack_req,
+typedef int  (*Send_Global_Message_Type)(void *buf, int buflen, int ack_req,
    int addr);
-typedef int __cdecl (*Get_Global_Message_Type)(void *buf, int *buflen, int *address);		
-typedef int __cdecl (*Create_Connection_Type)(int id, char *name, int address);		
-typedef int __cdecl (*Delete_Connection_Type)(int id);		
-typedef char * __cdecl (*Connection_Name_Type)(int id);			
-typedef int __cdecl	(*Connection_Address_Type)(int id);		
-typedef int __cdecl	(*Num_Connections_Type)(void);			
-typedef int __cdecl (*Connection_ID_Type)(int id);			
-typedef int __cdecl (*Connection_Index_Type)(int id);
-typedef int __cdecl	(*Init_Type)(void);					
-typedef int __cdecl (*Find_Num_Connections_Type)(void);
+typedef int  (*Get_Global_Message_Type)(void *buf, int *buflen, int *address);		
+typedef int  (*Create_Connection_Type)(int id, char *name, int address);		
+typedef int  (*Delete_Connection_Type)(int id);		
+typedef char *  (*Connection_Name_Type)(int id);			
+typedef int 	(*Connection_Address_Type)(int id);		
+typedef int 	(*Num_Connections_Type)(void);			
+typedef int  (*Connection_ID_Type)(int id);			
+typedef int  (*Connection_Index_Type)(int id);
+typedef int 	(*Init_Type)(void);					
+typedef int  (*Find_Num_Connections_Type)(void);
 
 MPlayerInit_Type MPlayerManCreate;
 MPlayerDestroy_Type MPlayerManDestroy;
@@ -79,7 +80,7 @@ Init_Type Init_DLL;
 Find_Num_Connections_Type Find_Num_Connections_DLL;
 
 
-FARPROC MPGetProcAddress(HMODULE hModule, LPCSTR lpProcName) {
+FARPROC MPGetProcAddress(HMODULE hModule, char const * lpProcName) {
         FARPROC ret=GetProcAddress(hModule, lpProcName);
         if (!ret) {
                 char msg[255];

@@ -364,7 +364,7 @@ void SoundControlsClass::Process(void)
 			*/
 			case KN_SPACE:
 			case BUTTON_PLAY|KN_BUTTON:
-				Theme.Queue_Song( (ThemeType)*((unsigned char *)listbox.Current_Item()) );
+				Theme.Queue_Song( (ThemeType)*((uint8_t *)listbox.Current_Item()) );
 				break;
 
 			/*

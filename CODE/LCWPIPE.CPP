@@ -46,6 +46,7 @@
 #include	<assert.h>
 
 
+#include <stdint.h>
 /***********************************************************************************************
  * LCWPipe::LCWPipe -- Constructor for the LCW processor pipe.                                 *
  *                                                                                             *
@@ -199,8 +200,8 @@ int LCWPipe::Put(void const * source, int slen)
 			if (Counter == BlockSize) {
 				int len = LCW_Comp(Buffer, Buffer2, BlockSize);
 
-				BlockHeader.CompCount = (unsigned short)len;
-				BlockHeader.UncompCount = (unsigned short)BlockSize;
+				BlockHeader.CompCount = (uint16_t)len;
+				BlockHeader.UncompCount = (uint16_t)BlockSize;
 				total += Pipe::Put(&BlockHeader, sizeof(BlockHeader));
 				total += Pipe::Put(Buffer2, len);
 				Counter = 0;
@@ -217,8 +218,8 @@ int LCWPipe::Put(void const * source, int slen)
 			source = ((char *)source) + BlockSize;
 			slen -= BlockSize;
 
-			BlockHeader.CompCount = (unsigned short)len;
-			BlockHeader.UncompCount = (unsigned short)BlockSize;
+			BlockHeader.CompCount = (uint16_t)len;
+			BlockHeader.UncompCount = (uint16_t)BlockSize;
 			total += Pipe::Put(&BlockHeader, sizeof(BlockHeader));
 			total += Pipe::Put(Buffer2, len);
 		}
@@ -299,8 +300,8 @@ int LCWPipe::Flush(void)
 			*/
 			int len = LCW_Comp(Buffer, Buffer2, Counter);
 
-			BlockHeader.CompCount = (unsigned short)len;
-			BlockHeader.UncompCount = (unsigned short)Counter;
+			BlockHeader.CompCount = (uint16_t)len;
+			BlockHeader.UncompCount = (uint16_t)Counter;
 			total += Pipe::Put(&BlockHeader, sizeof(BlockHeader));
 			total += Pipe::Put(Buffer2, len);
 			Counter = 0;

@@ -73,7 +73,7 @@
 //**************************************************************************
 // Constants
 //
-const unsigned char kGlobalChannelFlag	= 0x80;
+const uint8_t kGlobalChannelFlag	= 0x80;
 const int kMaxPlayers = 8;
 
 //**************************************************************************
@@ -85,7 +85,7 @@ static void doAlert(int, int, char *);
 static void doPregameHook(char * joinType,  char *,  char *, 
 	char *,  char *,  char *);
 void doIncomingPacket(int addr, void *buf, size_t size);
-void doPlayerEntered(int pid, int isYou, char *, char *, char *, long , char *);
+void doPlayerEntered(int pid, int isYou, char *, char *, char *, int32_t , char *);
 
 
 //**************************************************************************
@@ -248,7 +248,7 @@ int TenConnManClass::Send_Private_Message(void *buf, int buflen,
 	int reliable, int conn_id)
 {
 	int doBroadcast = conn_id == -1;
-	unsigned char *ucbuf = (unsigned char *)buf;
+	uint8_t *ucbuf = (uint8_t *)buf;
 
 	//
 	// Ensure the global channel flag isn't set on this outgoing packet
@@ -351,7 +351,7 @@ int TenConnManClass::Send_Global_Message(void *buf, int buflen,
 	int reliable, int address)
 {
 	int doBroadcast = address == -1;
-	unsigned char *ucbuf = (unsigned char *)buf;
+	uint8_t *ucbuf = (uint8_t *)buf;
 
 	//
 	// Ensure the global channel flag isn't set on this outgoing packet
@@ -1061,12 +1061,12 @@ static void doPregameHook(char * joinType,  char *,  char *,
 void doIncomingPacket(int addr, void *buf, size_t size)
 {
 	int rc;
-	unsigned char *byte;
+	uint8_t *byte;
 
 	//
 	// Check to see if this packet belongs to the Global Channel or not
 	//
-	byte = (unsigned char *)buf;
+	byte = (uint8_t *)buf;
 
 	//
 	// If the global channel flag is set in this packet, queue it onto the 
@@ -1106,7 +1106,7 @@ void doIncomingPacket(int addr, void *buf, size_t size)
  *   07/22/1996 BRR : Created.                                             * 
  *=========================================================================*/
 void doPlayerEntered(int pid, int isYou, char * /*options*/, 
-	char */*termOptions*/, char */*address*/, long /*uniqueId*/, 
+	char */*termOptions*/, char */*address*/, int32_t /*uniqueId*/, 
 	char */*joinType*/)
 {
 	if (isYou) {

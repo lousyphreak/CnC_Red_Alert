@@ -54,7 +54,7 @@
 #include	"TCPIP.H"
 #endif	//WINSOCK_IPX
 
-bool Receive_Remote_File ( char *file_name, unsigned int file_length, int gametype);
+bool Receive_Remote_File ( char *file_name, uint32_t file_length, int gametype);
 bool Send_Remote_File ( char *file_name, int gametype );
 
 #ifdef FIXIT_CSII	//	checked - ajw 9/28/98
@@ -88,12 +88,12 @@ bool Get_Scenario_File_From_Host(char *return_name, int gametype)
 	(void)gametype;
 	//WWDebugString ("RA95 - In Get_Scenario_From_Host\n");
 
-	unsigned int file_length;
+	uint32_t file_length;
 
 	GlobalPacketType	net_send_packet;
 	GlobalPacketType	net_receive_packet;
-	unsigned int		packet_len;
-	unsigned short		product_id;
+	uint32_t		packet_len;
+	uint16_t		product_id;
 
 	IPXAddressClass	sender_address;
 
@@ -156,12 +156,12 @@ bool Get_Scenario_File_From_Host(char *return_name, int gametype)
  * HISTORY:                                                                                    *
  *   8/22/96 3:07PM ST : Created                                                               *
  *=============================================================================================*/
-bool Receive_Remote_File ( char *file_name, unsigned int file_length, int gametype)
+bool Receive_Remote_File ( char *file_name, uint32_t file_length, int gametype)
 {
 	(void)gametype;
 
 	//WWDebugString ("RA95 - In Receive_Remote_File\n");
-	unsigned short		product_id;
+	uint16_t		product_id;
 	IPXAddressClass	sender_address;
 
 	/*
@@ -250,8 +250,8 @@ bool Receive_Remote_File ( char *file_name, unsigned int file_length, int gamety
 	RemoteFileTransferType receive_packet;
 
 	int 				last_received_block = -1;		//No blocks received yet
-	unsigned int 	total_length = 0;
-	unsigned int	packet_len;
+	uint32_t 	total_length = 0;
+	uint32_t	packet_len;
 
 	/*
 	** If the file name is already in use, use the temp file name

@@ -37,6 +37,7 @@
 
 #ifndef BULLET_H
 #define BULLET_H
+#include <stdint.h>
 
 #include "TYPE.H"
 #include "OBJECT.H"
@@ -103,8 +104,8 @@ class BulletClass :	public ObjectClass,
 		virtual void Draw_It(int x, int y, WindowNumberType window) const;
 		virtual bool Mark(MarkType mark=MARK_CHANGE);
 		virtual void AI(void);
-		virtual short const * Occupy_List(bool = false) const;
-		virtual short const * Overlap_List(void) const {return Occupy_List(false);};
+		virtual int16_t const * Occupy_List(bool = false) const;
+		virtual int16_t const * Overlap_List(void) const {return Occupy_List(false);};
 		virtual COORDINATE Target_Coord(void) const;
 
 		/*

@@ -37,6 +37,7 @@
 
 #ifndef MONOC_Hx
 #define MONOC_Hx
+#include <stdint.h>
 
 
 
@@ -167,8 +168,8 @@ class MonoClass {
 		**	code.
 		*/
 		struct CellType {
-			unsigned char Character;	// Character to display.
-			unsigned char Attribute;	// Attribute.
+			uint8_t Character;	// Character to display.
+			uint8_t Attribute;	// Attribute.
 		};
 
 		struct MonoPageType {
@@ -220,4 +221,3 @@ extern int Mono_X(void);
 extern int Mono_Y(void);
 
 #endif
-

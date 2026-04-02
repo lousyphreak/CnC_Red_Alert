@@ -64,7 +64,7 @@
 /*
 ********************************* Globals ***********************************
 */
-unsigned short 	IPXConnClass::Socket;
+uint16_t 	IPXConnClass::Socket;
 int			 		IPXConnClass::ConnectionNum;
 ECBType *			IPXConnClass::ListenECB;
 IPXHeaderType *	IPXConnClass::ListenHeader;
@@ -72,7 +72,7 @@ char *				IPXConnClass::ListenBuf;
 ECBType *			IPXConnClass::SendECB;
 IPXHeaderType *	IPXConnClass::SendHeader;
 char *				IPXConnClass::SendBuf;
-long 					IPXConnClass::Handler;
+int32_t 					IPXConnClass::Handler;
 int 					IPXConnClass::Configured = 0;
 int 					IPXConnClass::SocketOpen = 0;
 int 					IPXConnClass::Listening = 0;
@@ -102,7 +102,7 @@ int					IPXConnClass::PacketLen;
  *   12/20/1994 BR : Created.                                              *
  *=========================================================================*/
 IPXConnClass::IPXConnClass (int numsend, int numreceive, int maxlen,
-	unsigned short magicnum, IPXAddressClass *address, int id, char *name,
+	uint16_t magicnum, IPXAddressClass *address, int id, char *name,
 	int extralen) :
 	ConnectionClass (numsend, numreceive, maxlen, magicnum,
 		2,			// retry delta
@@ -219,10 +219,10 @@ void IPXConnClass::Init (void)
  * HISTORY:                                                                *
  *   12/20/1994 BR : Created.                                              *
  *=========================================================================*/
-void IPXConnClass::Configure (unsigned short socket, int conn_num,
+void IPXConnClass::Configure (uint16_t socket, int conn_num,
 	ECBType *listen_ecb, ECBType *send_ecb, IPXHeaderType *listen_header,
 	IPXHeaderType *send_header, char *listen_buf, char *send_buf,
-	long handler_rm_ptr, int maxpacketlen)
+	int32_t handler_rm_ptr, int maxpacketlen)
 {
 	/*------------------------------------------------------------------------
 	Save the values passed in
@@ -407,7 +407,7 @@ int IPXConnClass::Send(char *buf, int buflen, void *, int)
  * HISTORY:                                                                *
  *   12/16/1994 BR : Created.                                              *
  *=========================================================================*/
-int IPXConnClass::Open_Socket(unsigned short socket)
+int IPXConnClass::Open_Socket(uint16_t socket)
 {
 	int rc;
 #ifdef WINSOCK_IPX
@@ -472,7 +472,7 @@ int IPXConnClass::Open_Socket(unsigned short socket)
  * HISTORY:                                                                *
  *   12/16/1994 BR : Created.                                              *
  *=========================================================================*/
-void IPXConnClass::Close_Socket(unsigned short socket)
+void IPXConnClass::Close_Socket(uint16_t socket)
 {
 #ifdef WINSOCK_IPX
 	socket = socket;
@@ -543,7 +543,7 @@ int IPXConnClass::Send_To(char *buf, int buflen, IPXAddressClass *address,
 	int rc;
 
 
-	unsigned char	send_address[6];
+	uint8_t	send_address[6];
 
 	if (Winsock.Get_Connected()) {
 		Winsock.Write((void*)buf, buflen);
@@ -580,7 +580,7 @@ int IPXConnClass::Send_To(char *buf, int buflen, IPXAddressClass *address,
 		}
 	}
 
-	return (IPX_Send_Packet95(&send_address[0], (unsigned char*)buf, buflen, (unsigned char*)net, (unsigned char*)node));
+	return (IPX_Send_Packet95(&send_address[0], (uint8_t*)buf, buflen, (uint8_t*)net, (uint8_t*)node));
 
 #endif	//WINSOCK_IPX
 
@@ -615,7 +615,7 @@ int IPXConnClass::Broadcast(char *buf, int buflen)
 		Winsock.Write((void*)buf, buflen);
 		return(true);
 	} else {
-		return (IPX_Broadcast_Packet95((unsigned char*)buf, buflen));
+		return (IPX_Broadcast_Packet95((uint8_t*)buf, buflen));
 	}
 
 #endif	//WINSOCK_IPX

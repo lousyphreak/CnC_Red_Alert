@@ -1291,7 +1291,7 @@ int UnitTypeClass::Max_Pips(void) const
 void UnitTypeClass::Turret_Adjust(DirType dir, int &x, int &y) const
 {
 	static struct {
-		signed char X,Y;
+		int8_t X,Y;
 	} _adjust[32] = {
 	  	{1,2},	// N
 	  	{-1,1},

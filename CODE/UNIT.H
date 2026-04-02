@@ -37,6 +37,7 @@
 
 #ifndef UNIT_H
 #define UNIT_H
+#include <stdint.h>
 
 #include "FACING.H"
 #include "DRIVE.H"
@@ -94,7 +95,7 @@ class UnitClass :	public DriveClass
 		** This is the area where a mobile gap generator stores the previously-held
 		** shroud values for the cells surrounding itself.
 		*/
-		unsigned long ShroudBits;
+		uint32_t ShroudBits;
 
 		/*
 		** This is the center coordinate for the mobile gap generator, as to
@@ -173,7 +174,7 @@ class UnitClass :	public DriveClass
 		**	Display and rendering support functionality. Supports imagery and how
 		**	object interacts with the map and thus indirectly controls rendering.
 		*/
-		virtual short const * Overlap_List(bool redraw=false) const;
+		virtual int16_t const * Overlap_List(bool redraw=false) const;
 		virtual void Draw_It(int x, int y, WindowNumberType window) const;
 
 		/*

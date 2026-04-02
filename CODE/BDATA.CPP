@@ -67,7 +67,7 @@
 #define	MCW	MAP_CELL_W
 
 #define XYCELL(x,y)	(y*MAP_CELL_W+x)
-static short const ExitPyle[] = {
+static int16_t const ExitPyle[] = {
 	XYCELL(1,2),
 	XYCELL(2,2),
 	XYCELL(0,2),
@@ -84,7 +84,7 @@ static short const ExitPyle[] = {
 	REFRESH_EOL
 };
 
-static short const ExitSub[] = {
+static int16_t const ExitSub[] = {
 	XYCELL( 0, 2),
 	XYCELL( 2, 2),
 	XYCELL(-1, 2),
@@ -92,7 +92,7 @@ static short const ExitSub[] = {
 	XYCELL( 3, 2)
 };
 
-static short const ExitWeap[] = {
+static int16_t const ExitWeap[] = {
 	XYCELL(1,2),
 	XYCELL(-1,3),
 	XYCELL(0,3),
@@ -102,47 +102,47 @@ static short const ExitWeap[] = {
 	REFRESH_EOL
 };
 
-static short const ComList[] = {0, 1, MCW, MCW+1, REFRESH_EOL};
-static short const List000111111[] = {(MCW*1), (MCW*1)+1, (MCW*1)+2, (MCW*2), (MCW*2)+1, (MCW*2)+2, REFRESH_EOL};
-static short const List0010[] = {MCW, REFRESH_EOL};
-static short const List0011[] = {(MCW*1), (MCW*1)+1, REFRESH_EOL};
-static short const List010111100[] = {1, (MCW*1), (MCW*1)+1, (MCW*1)+2, (MCW*2), REFRESH_EOL};
-static short const List0111[] = {1, (MCW*1), (MCW*1)+1, REFRESH_EOL};
-static short const List1000[] = {0, REFRESH_EOL};
-static short const List101000011[] = {0, 2, (MCW*2)+1, (MCW*2)+2, REFRESH_EOL};
-static short const List1100[] = {0, 1, REFRESH_EOL};
-static short const List1101[] = {0, 1, (MCW*1)+1, REFRESH_EOL};
-static short const List11[] = {0, 1, REFRESH_EOL};
-static short const List12[] = {MCW, REFRESH_EOL};
-static short const List1[] = {0, REFRESH_EOL};
-static short const List21[] = {0, 1, REFRESH_EOL};
-static short const List22[] = {0, 1, MCW, MCW+1, REFRESH_EOL};
-static short const List22_0011[] = {MCW, MCW+1, REFRESH_EOL};
-static short const List22_1100[] = {0, 1, REFRESH_EOL};
-static short const List2[] = {0, 1, MCW+1, MCW, REFRESH_EOL};
-static short const List32[] = {0, 1, 2, MCW, MCW+1, MCW+2, REFRESH_EOL};
+static int16_t const ComList[] = {0, 1, MCW, MCW+1, REFRESH_EOL};
+static int16_t const List000111111[] = {(MCW*1), (MCW*1)+1, (MCW*1)+2, (MCW*2), (MCW*2)+1, (MCW*2)+2, REFRESH_EOL};
+static int16_t const List0010[] = {MCW, REFRESH_EOL};
+static int16_t const List0011[] = {(MCW*1), (MCW*1)+1, REFRESH_EOL};
+static int16_t const List010111100[] = {1, (MCW*1), (MCW*1)+1, (MCW*1)+2, (MCW*2), REFRESH_EOL};
+static int16_t const List0111[] = {1, (MCW*1), (MCW*1)+1, REFRESH_EOL};
+static int16_t const List1000[] = {0, REFRESH_EOL};
+static int16_t const List101000011[] = {0, 2, (MCW*2)+1, (MCW*2)+2, REFRESH_EOL};
+static int16_t const List1100[] = {0, 1, REFRESH_EOL};
+static int16_t const List1101[] = {0, 1, (MCW*1)+1, REFRESH_EOL};
+static int16_t const List11[] = {0, 1, REFRESH_EOL};
+static int16_t const List12[] = {MCW, REFRESH_EOL};
+static int16_t const List1[] = {0, REFRESH_EOL};
+static int16_t const List21[] = {0, 1, REFRESH_EOL};
+static int16_t const List22[] = {0, 1, MCW, MCW+1, REFRESH_EOL};
+static int16_t const List22_0011[] = {MCW, MCW+1, REFRESH_EOL};
+static int16_t const List22_1100[] = {0, 1, REFRESH_EOL};
+static int16_t const List2[] = {0, 1, MCW+1, MCW, REFRESH_EOL};
+static int16_t const List32[] = {0, 1, 2, MCW, MCW+1, MCW+2, REFRESH_EOL};
 //static short const List42[] = {0, 1, 2, 3, MCW, MCW+1, MCW+2, MCW+3, REFRESH_EOL};
-static short const ListFix[] = {1, MCW, MCW+1, MCW+2, MCW+MCW+1, REFRESH_EOL};
-static short const ListWeap[] = {0, 1, 2, (MCW*1), (MCW*1)+1, (MCW*1)+2, REFRESH_EOL};
-static short const ListWestwood[] = {1, 2, 3, MCW+1, MCW+2, MCW+3, REFRESH_EOL};
-static short const OListSAM[] = {-MCW, -(MCW-1), REFRESH_EOL};
+static int16_t const ListFix[] = {1, MCW, MCW+1, MCW+2, MCW+MCW+1, REFRESH_EOL};
+static int16_t const ListWeap[] = {0, 1, 2, (MCW*1), (MCW*1)+1, (MCW*1)+2, REFRESH_EOL};
+static int16_t const ListWestwood[] = {1, 2, 3, MCW+1, MCW+2, MCW+3, REFRESH_EOL};
+static int16_t const OListSAM[] = {-MCW, -(MCW-1), REFRESH_EOL};
 #ifdef FATSHIP
-static short const ListSPen[] = {0, 1, 2, MCW, MCW+1, MCW+2, MCW+MCW, MCW+MCW+1, MCW+MCW+2, REFRESH_EOL};
-static short const OListSPen[] = {REFRESH_EOL};
+static int16_t const ListSPen[] = {0, 1, 2, MCW, MCW+1, MCW+2, MCW+MCW, MCW+MCW+1, MCW+MCW+2, REFRESH_EOL};
+static int16_t const OListSPen[] = {REFRESH_EOL};
 #else
-static short const ListSPen[] = {1, MCW, MCW+1, MCW+2, MCW+MCW+1, REFRESH_EOL};
-static short const OListSPen[] = {0, 2, MCW+MCW, MCW+MCW+2, REFRESH_EOL};
+static int16_t const ListSPen[] = {1, MCW, MCW+1, MCW+2, MCW+MCW+1, REFRESH_EOL};
+static int16_t const OListSPen[] = {0, 2, MCW+MCW, MCW+MCW+2, REFRESH_EOL};
 #endif
-static short const OListWestwood[] = {0, MCW, REFRESH_EOL};
-static short const StoreList[] = {0, REFRESH_EOL};
+static int16_t const OListWestwood[] = {0, MCW, REFRESH_EOL};
+static int16_t const StoreList[] = {0, REFRESH_EOL};
 
-static short const ListFactory[] = {0, 1, 2, (MCW*1), (MCW*1)+1, (MCW*1)+2, (MCW*2), (MCW*2)+1, (MCW*2)+2, REFRESH_EOL};
+static int16_t const ListFactory[] = {0, 1, 2, (MCW*1), (MCW*1)+1, (MCW*1)+2, (MCW*2), (MCW*2)+1, (MCW*2)+2, REFRESH_EOL};
 
-static short const OListFix[] = {0, 2, MCW+MCW, MCW+MCW+2, REFRESH_EOL};
-static short const OListWeap[] = {REFRESH_EOL};
-static short const OComList[] = {1, REFRESH_EOL};
-static short const OList12[] = {0, REFRESH_EOL};
-static short const OListTmpl[] = {0, 1, 2, REFRESH_EOL};
+static int16_t const OListFix[] = {0, 2, MCW+MCW, MCW+MCW+2, REFRESH_EOL};
+static int16_t const OListWeap[] = {REFRESH_EOL};
+static int16_t const OComList[] = {1, REFRESH_EOL};
+static int16_t const OList12[] = {0, REFRESH_EOL};
+static int16_t const OListTmpl[] = {0, 1, 2, REFRESH_EOL};
 
 
 /***************************************************************************
@@ -173,8 +173,8 @@ static BuildingTypeClass const ClassBarrel(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassBarrel3(
@@ -203,8 +203,8 @@ static BuildingTypeClass const ClassBarrel3(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassAVMine(
@@ -233,8 +233,8 @@ static BuildingTypeClass const ClassAVMine(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassAPMine(
@@ -263,8 +263,8 @@ static BuildingTypeClass const ClassAPMine(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassIronCurtain(
@@ -293,8 +293,8 @@ static BuildingTypeClass const ClassIronCurtain(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_22, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List22_0011,// OCCUPYLIST:	List of active foundation squares.
-	(short const *)List22_1100	// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List22_0011,// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)List22_1100	// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassForwardCom(
@@ -323,8 +323,8 @@ static BuildingTypeClass const ClassForwardCom(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_22, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List22_0011,// OCCUPYLIST:	List of active foundation squares.
-	(short const *)List22_1100	// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List22_0011,// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)List22_1100	// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassAdvancedTech(
@@ -353,8 +353,8 @@ static BuildingTypeClass const ClassAdvancedTech(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_22, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List22,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List22,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassChronosphere(
@@ -383,8 +383,8 @@ static BuildingTypeClass const ClassChronosphere(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_22, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List22,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List22,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassWeapon(
@@ -412,9 +412,9 @@ static BuildingTypeClass const ClassWeapon(
 	RTTI_UNITTYPE,					// The object type produced at this factory.
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_32, 						// SIZE:			Building size.
-	(short const *)ExitWeap,	// Preferred exit cell list.
-	(short const *)ListWeap,	// OCCUPYLIST:	List of active foundation squares.
-	(short const *)OListWeap	// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)ExitWeap,	// Preferred exit cell list.
+	(int16_t const *)ListWeap,	// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)OListWeap	// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassShipYard(
@@ -443,8 +443,8 @@ static BuildingTypeClass const ClassShipYard(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_33, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)ListSPen,	// OCCUPYLIST:	List of active foundation squares.
-	(short const *)OListSPen	// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)ListSPen,	// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)OListSPen	// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassSubPen(
@@ -472,9 +472,9 @@ static BuildingTypeClass const ClassSubPen(
 	RTTI_VESSELTYPE,				// The object type produced at this factory.
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_33, 						// SIZE:			Building size.
-	(short const *)ExitSub,		// Preferred exit cell list.
-	(short const *)ListSPen,	// OCCUPYLIST:	List of active foundation squares.
-	(short const *)OListSPen	// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)ExitSub,		// Preferred exit cell list.
+	(int16_t const *)ListSPen,	// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)OListSPen	// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassPillbox(
@@ -503,8 +503,8 @@ static BuildingTypeClass const ClassPillbox(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassCamoPillbox(
@@ -533,8 +533,8 @@ static BuildingTypeClass const ClassCamoPillbox(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassTesla(
@@ -563,8 +563,8 @@ static BuildingTypeClass const ClassTesla(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_12, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List12,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)OList12		// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List12,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)OList12		// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassTurret(
@@ -593,8 +593,8 @@ static BuildingTypeClass const ClassTurret(
 	(DirType)208,					// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassAAGun(
@@ -623,8 +623,8 @@ static BuildingTypeClass const ClassAAGun(
 	DIR_NE,							// Starting idle frame to match construction.
 	BSIZE_12, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List12,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)OList12		// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List12,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)OList12		// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassFlameTurret(
@@ -653,8 +653,8 @@ static BuildingTypeClass const ClassFlameTurret(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassConst(
@@ -683,8 +683,8 @@ static BuildingTypeClass const ClassConst(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_33, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)ListFactory,// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)ListFactory,// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassFakeConst(
@@ -713,8 +713,8 @@ static BuildingTypeClass const ClassFakeConst(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_33, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)ListFactory,// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)ListFactory,// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassFakeWeapon(
@@ -742,9 +742,9 @@ static BuildingTypeClass const ClassFakeWeapon(
 	RTTI_NONE,						// The object type produced at this factory.
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_32, 						// SIZE:			Building size.
-	(short const *)ExitWeap,	// Preferred exit cell list.
-	(short const *)ListWeap,	// OCCUPYLIST:	List of active foundation squares.
-	(short const *)OListWeap	// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)ExitWeap,	// Preferred exit cell list.
+	(int16_t const *)ListWeap,	// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)OListWeap	// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassRefinery(
@@ -773,8 +773,8 @@ static BuildingTypeClass const ClassRefinery(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_33, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List010111100,	// OCCUPYLIST:	List of active foundation squares.
-	(short const *)List101000011	// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List010111100,	// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)List101000011	// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassStorage(
@@ -803,8 +803,8 @@ static BuildingTypeClass const ClassStorage(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)StoreList,	// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)StoreList,	// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassHelipad(
@@ -833,8 +833,8 @@ static BuildingTypeClass const ClassHelipad(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_22, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List2,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List2,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassCommand(
@@ -863,8 +863,8 @@ static BuildingTypeClass const ClassCommand(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_22, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)ComList,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)ComList,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassGapGenerator(
@@ -893,8 +893,8 @@ static BuildingTypeClass const ClassGapGenerator(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_12, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List0010,	// OCCUPYLIST:	List of active foundation squares.
-	(short const *)List1			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List0010,	// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)List1			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassSAM(
@@ -923,8 +923,8 @@ static BuildingTypeClass const ClassSAM(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_21, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List21,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)OListSAM		// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List21,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)OListSAM		// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassMissileSilo(
@@ -953,8 +953,8 @@ static BuildingTypeClass const ClassMissileSilo(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_21, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List21,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)OListSAM		// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List21,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)OListSAM		// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassAirStrip(
@@ -983,8 +983,8 @@ static BuildingTypeClass const ClassAirStrip(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_32, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List32,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List32,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassPower(
@@ -1013,8 +1013,8 @@ static BuildingTypeClass const ClassPower(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_22, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List22,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)List22_1100	// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List22,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)List22_1100	// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassAdvancedPower(
@@ -1043,8 +1043,8 @@ static BuildingTypeClass const ClassAdvancedPower(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_33, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List000111111,	// OCCUPYLIST:	List of active foundation squares.
-	(short const *)OListTmpl	// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List000111111,	// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)OListTmpl	// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassSovietTech(
@@ -1073,8 +1073,8 @@ static BuildingTypeClass const ClassSovietTech(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_33, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List000111111,	// OCCUPYLIST:	List of active foundation squares.
-	(short const *)OListTmpl	// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List000111111,	// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)OListTmpl	// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassHospital(
@@ -1103,8 +1103,8 @@ static BuildingTypeClass const ClassHospital(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_22, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List2,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List2,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassBioLab(
@@ -1133,8 +1133,8 @@ static BuildingTypeClass const ClassBioLab(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_22, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List2,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List2,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassBarracks(
@@ -1163,8 +1163,8 @@ static BuildingTypeClass const ClassBarracks(
 	RTTI_INFANTRYTYPE,			// The object type produced at this factory.
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_22, 						// SIZE:			Building size.
-	(short const *)ExitPyle,	// Preferred exit cell list.
-	(short const *)List22,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)ExitPyle,	// Preferred exit cell list.
+	(int16_t const *)List22,		// OCCUPYLIST:	List of active foundation squares.
 	NULL								// OVERLAPLIST:List of overlap cell offset.
 );
 
@@ -1193,8 +1193,8 @@ static BuildingTypeClass const ClassTent(
 	RTTI_INFANTRYTYPE,			// The object type produced at this factory.
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_22, 						// SIZE:			Building size.
-	(short const *)ExitPyle,	// Preferred exit cell list.
-	(short const *)List22,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)ExitPyle,	// Preferred exit cell list.
+	(int16_t const *)List22,		// OCCUPYLIST:	List of active foundation squares.
 	NULL								// OVERLAPLIST:List of overlap cell offset.
 );
 
@@ -1225,7 +1225,7 @@ static BuildingTypeClass const ClassKennel(
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
 //	(short const *)ExitPyle,	// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
 	NULL								// OVERLAPLIST:List of overlap cell offset.
 );
 
@@ -1254,9 +1254,9 @@ static BuildingTypeClass const ClassFakeShipYard(
 	RTTI_NONE,						// The object type produced at this factory.
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_33, 						// SIZE:			Building size.
-	(short const *)ExitWeap,	// Preferred exit cell list.
-	(short const *)ListSPen,	// OCCUPYLIST:	List of active foundation squares.
-	(short const *)OListSPen	// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)ExitWeap,	// Preferred exit cell list.
+	(int16_t const *)ListSPen,	// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)OListSPen	// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassFakeSubPen(
@@ -1284,9 +1284,9 @@ static BuildingTypeClass const ClassFakeSubPen(
 	RTTI_NONE,						// The object type produced at this factory.
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_33, 						// SIZE:			Building size.
-	(short const *)ExitSub,		// Preferred exit cell list.
-	(short const *)ListSPen,	// OCCUPYLIST:	List of active foundation squares.
-	(short const *)OListSPen	// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)ExitSub,		// Preferred exit cell list.
+	(int16_t const *)ListSPen,	// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)OListSPen	// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassFakeCommand(
@@ -1315,8 +1315,8 @@ static BuildingTypeClass const ClassFakeCommand(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_22, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)ComList,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)OComList		// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)ComList,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)OComList		// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassRepair(
@@ -1345,8 +1345,8 @@ static BuildingTypeClass const ClassRepair(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_33, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)ListFix,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)OListFix		// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)ListFix,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)OListFix		// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV01(
@@ -1375,8 +1375,8 @@ static BuildingTypeClass const ClassV01(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_22, 						// SIZE: Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List0011,	// OCCUPYLIST:	List of active foundation squares.
-	(short const *)List1100		// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List0011,	// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)List1100		// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV02(
@@ -1405,8 +1405,8 @@ static BuildingTypeClass const ClassV02(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_22, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List0011,	// OCCUPYLIST:	List of active foundation squares.
-	(short const *)List1100		// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List0011,	// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)List1100		// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV03(
@@ -1435,8 +1435,8 @@ static BuildingTypeClass const ClassV03(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_22, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List0111,	// OCCUPYLIST:	List of active foundation squares.
-	(short const *)List1000		// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List0111,	// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)List1000		// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV04(
@@ -1465,8 +1465,8 @@ static BuildingTypeClass const ClassV04(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_22, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List0011,	// OCCUPYLIST:	List of active foundation squares.
-	(short const *)List1100		// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List0011,	// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)List1100		// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV05(
@@ -1495,8 +1495,8 @@ static BuildingTypeClass const ClassV05(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_21, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List11,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List11,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV06(
@@ -1525,8 +1525,8 @@ static BuildingTypeClass const ClassV06(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_21, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List11,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List11,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV07(
@@ -1555,8 +1555,8 @@ static BuildingTypeClass const ClassV07(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_21, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List11,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List11,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV08(
@@ -1585,8 +1585,8 @@ static BuildingTypeClass const ClassV08(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV09(
@@ -1615,8 +1615,8 @@ static BuildingTypeClass const ClassV09(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV10(
@@ -1645,8 +1645,8 @@ static BuildingTypeClass const ClassV10(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV11(
@@ -1675,8 +1675,8 @@ static BuildingTypeClass const ClassV11(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV12(
@@ -1705,8 +1705,8 @@ static BuildingTypeClass const ClassV12(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV13(
@@ -1735,8 +1735,8 @@ static BuildingTypeClass const ClassV13(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV14(
@@ -1765,8 +1765,8 @@ static BuildingTypeClass const ClassV14(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV15(
@@ -1795,8 +1795,8 @@ static BuildingTypeClass const ClassV15(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV16(
@@ -1825,8 +1825,8 @@ static BuildingTypeClass const ClassV16(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV17(
@@ -1855,8 +1855,8 @@ static BuildingTypeClass const ClassV17(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV18(
@@ -1885,8 +1885,8 @@ static BuildingTypeClass const ClassV18(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV19(
@@ -1915,8 +1915,8 @@ static BuildingTypeClass const ClassV19(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV20(
@@ -1945,8 +1945,8 @@ static BuildingTypeClass const ClassV20(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_22, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List0011,	// OCCUPYLIST:	List of active foundation squares.
-	(short const *)List1100		// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List0011,	// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)List1100		// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV21(
@@ -1975,8 +1975,8 @@ static BuildingTypeClass const ClassV21(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_22, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1101,	// OCCUPYLIST:	List of active foundation squares.
-	(short const *)List0010		// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1101,	// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)List0010		// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV22(
@@ -2005,8 +2005,8 @@ static BuildingTypeClass const ClassV22(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_21, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List11,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List11,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV23(
@@ -2035,8 +2035,8 @@ static BuildingTypeClass const ClassV23(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV24(
@@ -2065,8 +2065,8 @@ static BuildingTypeClass const ClassV24(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_22, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List0011,	// OCCUPYLIST:	List of active foundation squares.
-	(short const *)List1100		// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List0011,	// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)List1100		// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV25(
@@ -2095,8 +2095,8 @@ static BuildingTypeClass const ClassV25(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_22, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List0111,	// OCCUPYLIST:	List of active foundation squares.
-	(short const *)List1000		// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List0111,	// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)List1000		// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV26(
@@ -2125,8 +2125,8 @@ static BuildingTypeClass const ClassV26(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_21, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List11,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List11,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV27(
@@ -2155,8 +2155,8 @@ static BuildingTypeClass const ClassV27(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV28(
@@ -2185,8 +2185,8 @@ static BuildingTypeClass const ClassV28(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV29(
@@ -2215,8 +2215,8 @@ static BuildingTypeClass const ClassV29(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV30(
@@ -2245,8 +2245,8 @@ static BuildingTypeClass const ClassV30(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_21, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List11,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List11,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV31(
@@ -2275,8 +2275,8 @@ static BuildingTypeClass const ClassV31(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_21, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List11,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List11,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV32(
@@ -2305,8 +2305,8 @@ static BuildingTypeClass const ClassV32(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_21, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List11,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List11,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV33(
@@ -2335,8 +2335,8 @@ static BuildingTypeClass const ClassV33(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_21, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List11,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List11,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV34(
@@ -2365,8 +2365,8 @@ static BuildingTypeClass const ClassV34(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV35(
@@ -2395,8 +2395,8 @@ static BuildingTypeClass const ClassV35(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 static BuildingTypeClass const ClassV36(
@@ -2425,8 +2425,8 @@ static BuildingTypeClass const ClassV36(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 static BuildingTypeClass const ClassV37(
 	STRUCT_V37,
@@ -2454,8 +2454,8 @@ static BuildingTypeClass const ClassV37(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_42, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)ListWestwood,	// OCCUPYLIST:	List of active foundation squares.
-	(short const *)OListWestwood	// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)ListWestwood,	// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)OListWestwood	// OVERLAPLIST:List of overlap cell offset.
 );
 static BuildingTypeClass const ClassMission(
 	STRUCT_MISSION,
@@ -2483,8 +2483,8 @@ static BuildingTypeClass const ClassMission(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_32, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List32,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List32,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 // Sandbag wall
@@ -2514,8 +2514,8 @@ static BuildingTypeClass const Sandbag(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 // Cyclone fence
 static BuildingTypeClass const Cyclone(
@@ -2544,8 +2544,8 @@ static BuildingTypeClass const Cyclone(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 // Brick wall
 static BuildingTypeClass const Brick(
@@ -2574,8 +2574,8 @@ static BuildingTypeClass const Brick(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 // Barbwire wall
 static BuildingTypeClass const Barbwire(
@@ -2604,8 +2604,8 @@ static BuildingTypeClass const Barbwire(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 // Wood wall
 static BuildingTypeClass const Wood(
@@ -2634,8 +2634,8 @@ static BuildingTypeClass const Wood(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 static BuildingTypeClass const Fence(
 	STRUCT_FENCE,
@@ -2663,8 +2663,8 @@ static BuildingTypeClass const Fence(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 
 
@@ -2695,7 +2695,7 @@ static BuildingTypeClass const ClassQueen(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_21, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List11,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)List11,		// OCCUPYLIST:	List of active foundation squares.
 	NULL								// OVERLAPLIST:List of overlap cell offset.
 );
 static BuildingTypeClass const ClassLarva1(
@@ -2724,8 +2724,8 @@ static BuildingTypeClass const ClassLarva1(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 static BuildingTypeClass const ClassLarva2(
 	STRUCT_LARVA2,
@@ -2753,8 +2753,8 @@ static BuildingTypeClass const ClassLarva2(
 	DIR_N,							// Starting idle frame to match construction.
 	BSIZE_11, 						// SIZE:			Building size.
 	NULL,								// Preferred exit cell list.
-	(short const *)List1,		// OCCUPYLIST:	List of active foundation squares.
-	(short const *)NULL			// OVERLAPLIST:List of overlap cell offset.
+	(int16_t const *)List1,		// OCCUPYLIST:	List of active foundation squares.
+	(int16_t const *)NULL			// OVERLAPLIST:List of overlap cell offset.
 );
 #endif
 void const * BuildingTypeClass::WarFactoryOverlay;
@@ -2800,9 +2800,9 @@ BuildingTypeClass::BuildingTypeClass(
 						RTTIType tobuild,
 						DirType sframe,
 						BSizeType size,
-						short const * exitlist,
-						short const * sizelist,
-						short const * overlap) :
+						int16_t const * exitlist,
+						int16_t const * sizelist,
+						int16_t const * overlap) :
 								TechnoTypeClass(RTTI_BUILDINGTYPE,
 													int(type),
 													name,
@@ -3447,7 +3447,7 @@ BuildingTypeClass & BuildingTypeClass::As_Reference(StructType type)
  * HISTORY:                                                                                    *
  *   01/23/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-short const * BuildingTypeClass::Occupy_List(bool placement) const
+int16_t const * BuildingTypeClass::Occupy_List(bool placement) const
 {
 	SmudgeType bib = SMUDGE_NONE;
 	CELL cell=0;
@@ -3455,13 +3455,13 @@ short const * BuildingTypeClass::Occupy_List(bool placement) const
 	if (placement && Bib_And_Offset(bib, cell)) {
 
 		SmudgeTypeClass const & smudge = SmudgeTypeClass::As_Reference(bib);
-		static short _list[25];
-		short * dest = &_list[0];
+		static int16_t _list[25];
+		int16_t * dest = &_list[0];
 
 		/*
 		**	Copy the bib overlap list into the working buffer.
 		*/
-		short const * src = smudge.Occupy_List();
+		int16_t const * src = smudge.Occupy_List();
 		while (*src != REFRESH_EOL) {
 			*dest++ = (*src++) + cell;
 		}
@@ -3482,7 +3482,7 @@ short const * BuildingTypeClass::Occupy_List(bool placement) const
 		return(OccupyList);
 	}
 
-	static short const _templap[] = {REFRESH_EOL};
+	static int16_t const _templap[] = {REFRESH_EOL};
 	return(&_templap[0]);
 }
 
@@ -3504,13 +3504,13 @@ short const * BuildingTypeClass::Occupy_List(bool placement) const
  * HISTORY:                                                                                    *
  *   01/23/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-short const * BuildingTypeClass::Overlap_List(void) const
+int16_t const * BuildingTypeClass::Overlap_List(void) const
 {
 	if (OverlapList != NULL) {
 		return(OverlapList);
 	}
 
-	static short const _templap[] = {REFRESH_EOL};
+	static int16_t const _templap[] = {REFRESH_EOL};
 	return(&_templap[0]);
 }
 
@@ -3730,7 +3730,7 @@ bool BuildingTypeClass::Flush_For_Placement(CELL cell, HouseClass * house)  cons
 {
 	bool again = false;
 	if (cell > 0) {
-		short const * list = Occupy_List(true);
+		int16_t const * list = Occupy_List(true);
 
 		while (*list != REFRESH_EOL) {
 			CELL newcell = cell + *list++;

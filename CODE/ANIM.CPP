@@ -329,12 +329,12 @@ bool AnimClass::Mark(MarkType mark)
  * HISTORY:                                                                                    *
  *   03/19/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-short const * AnimClass::Overlap_List(void) const
+int16_t const * AnimClass::Overlap_List(void) const
 {
 #ifdef VIC
 	assert(Anims.ID(this) == ID);
 	assert(IsActive);
-	static short const OverlapAtom[] = {
+	static int16_t const OverlapAtom[] = {
 		(-MAP_CELL_W * 2) - 1, (-MAP_CELL_W * 2), (-MAP_CELL_W * 2) + 1,
 		(-MAP_CELL_W * 1) - 1, (-MAP_CELL_W * 1), (-MAP_CELL_W * 1) + 1,
 		(-MAP_CELL_W * 0) - 1, (-MAP_CELL_W * 0), (-MAP_CELL_W * 0) + 1,
@@ -344,7 +344,7 @@ short const * AnimClass::Overlap_List(void) const
 	};
 
 	if (IsToDelete) {
-		static short const _list[] = {REFRESH_EOL};
+		static int16_t const _list[] = {REFRESH_EOL};
 		return(_list);
 	}
 
@@ -390,13 +390,13 @@ IsTheaterShape = false;
  * HISTORY:                                                                                    *
  *   03/19/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-short const * AnimClass::Occupy_List(bool) const
+int16_t const * AnimClass::Occupy_List(bool) const
 {
 #ifdef VIC
 	assert(Anims.ID(this) == ID);
 	assert(IsActive);
 
-	static short _simple[] = {REFRESH_EOL};
+	static int16_t _simple[] = {REFRESH_EOL};
 
 #endif
 	return(_simple);
@@ -494,7 +494,7 @@ void AnimClass::operator delete(void * ptr)
  *   05/31/1994 JLB : Created.                                                                 *
  *   08/03/1994 JLB : Added a delayed affect parameter.                                        *
  *=============================================================================================*/
-AnimClass::AnimClass(AnimType animnum, COORDINATE coord, unsigned char timedelay, unsigned char loop) :
+AnimClass::AnimClass(AnimType animnum, COORDINATE coord, uint8_t timedelay, uint8_t loop) :
 	ObjectClass(RTTI_ANIM, Anims.ID(this)),
 	Class(AnimTypes.Ptr((int)animnum)),
 	xObject(TARGET_NONE),
@@ -540,7 +540,7 @@ IsTheaterShape = false;
 	if (total_loops < 1) {
 		total_loops = 1;
 	}
-	Loops = (unsigned char)total_loops;
+	Loops = (uint8_t)total_loops;
 
 	/*
 	**	If the animation starts immediately, then play the associated sound effect now.

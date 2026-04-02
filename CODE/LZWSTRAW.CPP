@@ -44,6 +44,7 @@
 #include	<assert.h>
 
 
+#include <stdint.h>
 /***********************************************************************************************
  * LZWStraw::LZWStraw -- Constructor for LZW straw object.                                     *
  *                                                                                             *
@@ -168,9 +169,9 @@ int LZWStraw::Get(void * destbuf, int slen)
 			LZW_Uncompress(ptr, Buffer);
 			Counter = BlockHeader.UncompCount;
 		} else {
-			BlockHeader.UncompCount = (unsigned short)Straw::Get(Buffer, BlockSize);
+			BlockHeader.UncompCount = (uint16_t)Straw::Get(Buffer, BlockSize);
 			if (BlockHeader.UncompCount == 0) break;
-			BlockHeader.CompCount = (unsigned short)LZW_Compress(::Buffer(Buffer, BlockHeader.UncompCount), &Buffer2[sizeof(BlockHeader)]);
+			BlockHeader.CompCount = (uint16_t)LZW_Compress(::Buffer(Buffer, BlockHeader.UncompCount), &Buffer2[sizeof(BlockHeader)]);
 			memmove(Buffer2, &BlockHeader, sizeof(BlockHeader));
 			Counter = BlockHeader.CompCount+sizeof(BlockHeader);
 		}

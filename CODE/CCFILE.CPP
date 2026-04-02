@@ -299,7 +299,7 @@ int32_t CCFileClass::Size(void)
 	**	mixfiles in order to get its size.
 	*/
 	if (!CDFileClass::Is_Available()) {
-		long length = 0;
+		int32_t length = 0;
 		MFCD::Offset(File_Name(), NULL, NULL, NULL, &length);
 		return(static_cast<int32_t>(length));
 	}
@@ -436,8 +436,8 @@ int CCFileClass::Open(int rights)
 	*/
 	MFCD * mixfile = NULL;
 	void * pointer = NULL;
-	long length = 0;
-	long start = 0;
+	int32_t length = 0;
+	int32_t start = 0;
 	if (MFCD::Offset(File_Name(), &pointer, &mixfile, &start, &length)) {
 
 		assert(mixfile != NULL);
@@ -612,7 +612,7 @@ int Create_File(char const * file_name)
 	return(CCFileClass(file_name).Create());
 }
 
-unsigned long Load_Data(char const * name, void * ptr, unsigned long size)
+uint32_t Load_Data(char const * name, void * ptr, uint32_t size)
 {
 	return(CCFileClass(name).Read(ptr, size));
 }
@@ -634,7 +634,7 @@ uint32_t File_Size(int32_t handle)
 }
 
 #ifdef NEVER
-unsigned long Write_Data(char const * name, void const * ptr, unsigned long size)
+uint32_t Write_Data(char const * name, void const * ptr, uint32_t size)
 {
 	return(CCFileClass(name).Write(ptr, size));
 }

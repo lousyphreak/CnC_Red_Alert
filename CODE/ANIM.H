@@ -37,6 +37,7 @@
 
 #ifndef ANIM_H
 #define ANIM_H
+#include <stdint.h>
 
 #include	"TYPE.H"
 
@@ -53,7 +54,7 @@ class AnimClass : public ObjectClass, public StageClass {
 
 	public:
 
-		AnimClass(AnimType animnum, COORDINATE coord, unsigned char timedelay=0, unsigned char loop=1);
+		AnimClass(AnimType animnum, COORDINATE coord, uint8_t timedelay=0, uint8_t loop=1);
 		AnimClass(NoInitClass const & x) : ObjectClass(x), Class(x), StageClass(x) {};
 		virtual ~AnimClass(void);
 
@@ -79,8 +80,8 @@ class AnimClass : public ObjectClass, public StageClass {
 		virtual COORDINATE Sort_Y(void) const;
 		virtual LayerType In_Which_Layer(void) const;
 		virtual ObjectTypeClass const & Class_Of(void) const {return *Class;};
-		virtual short const * Occupy_List(bool = false) const;
-		virtual short const * Overlap_List(void) const;
+		virtual int16_t const * Occupy_List(bool = false) const;
+		virtual int16_t const * Overlap_List(void) const;
 		virtual void Draw_It(int x, int y, WindowNumberType window) const;
 		virtual void AI(void);
 		virtual void Detach(TARGET target, bool all);
@@ -109,7 +110,7 @@ class AnimClass : public ObjectClass, public StageClass {
 		**	This counter tells how many more times the animation should loop before it
 		**	terminates.
 		*/
-		unsigned char Loops;
+		uint8_t Loops;
 
 	protected:
 		void Middle(void);

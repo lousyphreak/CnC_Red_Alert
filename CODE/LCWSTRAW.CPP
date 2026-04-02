@@ -44,6 +44,7 @@
 #include	<assert.h>
 
 
+#include <stdint.h>
 /***********************************************************************************************
  * LCWStraw::LCWStraw -- Constructor for LCW straw object.                                     *
  *                                                                                             *
@@ -167,9 +168,9 @@ int LCWStraw::Get(void * destbuf, int slen)
 			LCW_Uncomp(ptr, Buffer);
 			Counter = BlockHeader.UncompCount;
 		} else {
-			BlockHeader.UncompCount = (unsigned short)Straw::Get(Buffer, BlockSize);
+			BlockHeader.UncompCount = (uint16_t)Straw::Get(Buffer, BlockSize);
 			if (BlockHeader.UncompCount == 0) break;
-			BlockHeader.CompCount = (unsigned short)LCW_Comp(Buffer, &Buffer2[sizeof(BlockHeader)], BlockHeader.UncompCount);
+			BlockHeader.CompCount = (uint16_t)LCW_Comp(Buffer, &Buffer2[sizeof(BlockHeader)], BlockHeader.UncompCount);
 			memmove(Buffer2, &BlockHeader, sizeof(BlockHeader));
 			Counter = BlockHeader.CompCount+sizeof(BlockHeader);
 		}

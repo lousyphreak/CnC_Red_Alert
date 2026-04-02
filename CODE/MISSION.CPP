@@ -184,7 +184,7 @@ void MissionClass::Debug_Dump(MonoClass * mono) const
 
 	mono->Set_Cursor(1, 9);mono->Printf("%-14s", MissionClass::Mission_Name(Mission));
 	mono->Set_Cursor(16, 9);mono->Printf("%-12s", MissionClass::Mission_Name(MissionQueue));
-	mono->Set_Cursor(1, 7);mono->Printf("%3d", (long)Timer);
+	mono->Set_Cursor(1, 7);mono->Printf("%3d", (int32_t)Timer);
 	mono->Set_Cursor(6, 7);mono->Printf("%2d", Status);
 
 	ObjectClass::Debug_Dump(mono);

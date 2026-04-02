@@ -143,7 +143,7 @@ bool CCINIClass::Load(Straw & file, bool withdigest)
 		/*
 		**	If a digest is present, fetch it.
 		*/
-		unsigned char digest[20];
+		uint8_t digest[20];
 		int len = Get_UUBlock("Digest", digest, sizeof(digest));
 		if (len > 0) {
 			Clear("Digest");
@@ -388,10 +388,10 @@ bool CCINIClass::Put_MPHType(char const * section, char const * entry, MPHType v
  * HISTORY:                                                                                    *
  *   07/03/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-long CCINIClass::Get_Owners(char const * section, char const * entry, long defvalue) const
+int32_t CCINIClass::Get_Owners(char const * section, char const * entry, int32_t defvalue) const
 {
 	char buffer[128];
-	long ownable = defvalue;
+	int32_t ownable = defvalue;
 
 	if (Get_String(section, entry, "", buffer, sizeof(buffer))) {
 
@@ -427,7 +427,7 @@ long CCINIClass::Get_Owners(char const * section, char const * entry, long defva
  * HISTORY:                                                                                    *
  *   07/03/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-bool CCINIClass::Put_Owners(char const * section, char const * entry, long value)
+bool CCINIClass::Put_Owners(char const * section, char const * entry, int32_t value)
 {
 	char buffer[128];
 

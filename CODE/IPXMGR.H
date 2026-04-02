@@ -115,6 +115,7 @@
 
 #ifndef IPXMANAGER_H
 #define IPXMANAGER_H
+#include <stdint.h>
 
 
 /*
@@ -143,8 +144,8 @@ These routines report the location & length of the real-mode routine, as
 it's stored in protected-mode memory.
 ---------------------------------------------------------------------------*/
 extern "C" {
-	void * __cdecl Get_RM_IPX_Address(void);
-	long __cdecl Get_RM_IPX_Size(void);
+	void *  Get_RM_IPX_Address(void);
+	int32_t  Get_RM_IPX_Size(void);
 }
 
 /*
@@ -160,7 +161,7 @@ class IPXManagerClass : public ConnManClass
 		Constructor/destructor.
 		.....................................................................*/
 		IPXManagerClass (int glb_maxlen, int pvt_maxlen, int glb_num_packets,
-			int pvt_num_packets, unsigned short socket, unsigned short product_id);
+			int pvt_num_packets, uint16_t socket, uint16_t product_id);
 		virtual ~IPXManagerClass ();	// stop listening
 
 		/*.....................................................................
@@ -191,7 +192,7 @@ class IPXManagerClass : public ConnManClass
 		int Send_Global_Message (void *buf, int buflen, int ack_req = 0,
 			IPXAddressClass *address = NULL);
 		int Get_Global_Message (void *buf, int *buflen, IPXAddressClass *address,
-			unsigned short *product_id);
+			uint16_t *product_id);
 
 		virtual int Send_Private_Message (void *buf, int buflen,
 			int ack_req = 1, int conn_id = CONNECTION_NONE);
@@ -222,7 +223,7 @@ class IPXManagerClass : public ConnManClass
 		The Socket ID should be known by both ends of the communications before
 		any packets are sent.
 		.....................................................................*/
-		void Set_Socket(unsigned short socket);
+		void Set_Socket(uint16_t socket);
 
 		/*.....................................................................
 		Routines to return the largest average queue response time, and to
@@ -257,9 +258,9 @@ class IPXManagerClass : public ConnManClass
 		/*.....................................................................
 		Misc variables
 		.....................................................................*/
-		unsigned int IPXStatus : 1;		// 0 = no IPX, 1 = IPX found
-		unsigned int Listening : 1;		// 1 = Listening is on
-		unsigned int RealMemAllocd : 1;	// 1 = Real-mode memory has been alloc'd
+		uint32_t IPXStatus : 1;		// 0 = no IPX, 1 = IPX found
+		uint32_t Listening : 1;		// 1 = Listening is on
+		uint32_t RealMemAllocd : 1;	// 1 = Real-mode memory has been alloc'd
 
 		/*.....................................................................
 		Packet Sizes, used for allocating real-mode memory
@@ -273,12 +274,12 @@ class IPXManagerClass : public ConnManClass
 		The ProductID is used in the Global Channel's packet header, and it's
 		used for the Private Channels' Magic Number.
 		.....................................................................*/
-		unsigned short ProductID;			// product ID
+		uint16_t ProductID;			// product ID
 
 		/*.....................................................................
 		The Socket ID, and local Novell Connection Number
 		.....................................................................*/
-		unsigned short Socket;				// Our socket ID for sending/receiving
+		uint16_t Socket;				// Our socket ID for sending/receiving
 		int ConnectionNum;					// local connection #, 0=not logged in
 
 		/*.....................................................................
@@ -307,25 +308,25 @@ class IPXManagerClass : public ConnManClass
 		This is a structure that mirrors data in real-mode memory:
 		.....................................................................*/
 		typedef struct {
-			short Marker1;							// the byte ID marker
+			int16_t Marker1;							// the byte ID marker
 			ECBType ListenECB;					// the Listening ECB
-			short NumBufs;							// # of buffers we're giving to the handler
+			int16_t NumBufs;							// # of buffers we're giving to the handler
 			char *BufferFlags;					// array of buffer-avail flags
-			short PacketSize;						// size of packet including IPX header
+			int16_t PacketSize;						// size of packet including IPX header
 			IPXHeaderType *FirstPacketBuf;	// ptr to 1st packet buffer
-			short CurIndex;						// handler's current packet index
+			int16_t CurIndex;						// handler's current packet index
 			IPXHeaderType *CurPacketBuf;		// handler's current packet buf
-			short FuncOffset;						// contains offset of code
+			int16_t FuncOffset;						// contains offset of code
 			char Semaphore;						// prevents re-entrancy
-			short ReEntrantCount;				// times we've been called re-entrantly
-			short StackPtr;						// real-mode stack pointer
-			short StackSeg;						// real-mode stack segment
-			short StackPtr_int;					// internal stack pointer
-			short StackSeg_int;					// internal stack segment
-			short StackCheck;						// stack check value (0x1234)
-			short Stack[256];						// actual stack space
-			short StackSpace;						// label for top of stack
-			short Marker2;							// the byte ID marker
+			int16_t ReEntrantCount;				// times we've been called re-entrantly
+			int16_t StackPtr;						// real-mode stack pointer
+			int16_t StackSeg;						// real-mode stack segment
+			int16_t StackPtr_int;					// internal stack pointer
+			int16_t StackSeg_int;					// internal stack segment
+			int16_t StackCheck;						// stack check value (0x1234)
+			int16_t Stack[256];						// actual stack space
+			int16_t StackSpace;						// label for top of stack
+			int16_t Marker2;							// the byte ID marker
 		} RealModeDataType;
 
 		/*.....................................................................
@@ -340,8 +341,8 @@ class IPXManagerClass : public ConnManClass
 		Size of the allocation;
 		Ptr to the real-mode assembly data area
 		.....................................................................*/
-		unsigned short Selector;				// selector of DOS allocation pointer
-		unsigned short Segment;					// real-mode segment of DOS allocation
+		uint16_t Selector;				// selector of DOS allocation pointer
+		uint16_t Segment;					// real-mode segment of DOS allocation
 		int RealMemSize;							// size of real mode memory allocated
 		RealModeDataType *RealModeData;		// assembly routine & its data
 
@@ -349,7 +350,7 @@ class IPXManagerClass : public ConnManClass
 		This is a real-mode pointer to the address of the real-mode assembly
 		entry point.
 		.....................................................................*/
-		long Handler;
+		int32_t Handler;
 
 		/*.....................................................................
 		Event Control Block for listening; contained within the real-mode

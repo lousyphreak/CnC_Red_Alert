@@ -116,9 +116,9 @@ void CreditClass::Graphic_Logic(bool forced)
 		Fancy_Text_Print("%ld", xx, 0, &MetalScheme, TBLACK, TPF_METAL12 | TPF_CENTER | TPF_USE_GRAD_PAL, Current);
 
 		if (Scen.MissionTimer.Is_Active()) {
-			long secs = Scen.MissionTimer / TICKS_PER_SECOND;
-			long mins = secs / 60;
-			long hours = mins / 60;
+			int32_t secs = Scen.MissionTimer / TICKS_PER_SECOND;
+			int32_t mins = secs / 60;
+			int32_t hours = mins / 60;
 			secs %= 60;
 			mins %= 60;
 
@@ -184,7 +184,7 @@ void CreditClass::AI(bool forced)
 	/*
 	**	Make sure that the credit counter doesn't drop below zero.
 	*/
-	Credits = max(Credits, 0L);
+	Credits = max(Credits, 0);
 
 	if (Scen.MissionTimer.Is_Active() || Scen.MissionTimer) {
 		IsToRedraw = true;

@@ -45,6 +45,7 @@
 #include	"BUFF.H"
 #include	"LZW.H"
 
+#include <stdint.h>
 LZWEngine::LZWEngine(void)
 {
 	Reset();
@@ -79,7 +80,7 @@ int LZWEngine::Compress(Buffer const & input, Buffer const & output)
 		**	then break out of the process loop so that the final code
 		**	can be written out.
 		*/
-		unsigned char character;
+		uint8_t character;
 		if (instraw.Get(&character, sizeof(character)) == 0) break;
 
 		/*
@@ -143,10 +144,10 @@ int LZWEngine::Uncompress(Buffer const & input, Buffer const & output)
 		return(outcount);
 	}
 
-	unsigned char character = (unsigned char)old_code;
+	uint8_t character = (uint8_t)old_code;
 	outcount += outpipe.Put(&character, sizeof(character));
 
-	unsigned int count;
+	uint32_t count;
 	CodeType new_code;
 	CodeType next_code = FIRST_CODE;
 	for (;;) {
@@ -190,7 +191,7 @@ int LZWEngine::Uncompress(Buffer const & input, Buffer const & output)
 
 int LZWEngine::Make_LZW_Hash(CodeType code, char character)
 {
-	return((((int)(unsigned char)character) << ( BITS - 8 ) ) ^ (int)code);
+	return((((int)(uint8_t)character) << ( BITS - 8 ) ) ^ (int)code);
 }
 
 
@@ -293,7 +294,7 @@ int LZW_Compress(Buffer const & inbuff, Buffer const & outbuff)
 #define FIRST_CODE                 257
 #define UNUSED                     -1
 
-typedef unsigned short CodeType;
+typedef uint16_t CodeType;
 
 /*
  * This data structure defines the dictionary.  Each entry in the dictionary
@@ -321,7 +322,7 @@ char decode_stack[TABLE_SIZE];
 
 inline int Make_LZW_Hash(CodeType code, char character)
 {
-	return((((int)(unsigned char)character) << ( BITS - 8 ) ) ^ (int)code);
+	return((((int)(uint8_t)character) << ( BITS - 8 ) ) ^ (int)code);
 }
 
 
@@ -496,7 +497,7 @@ int LZW_Uncompress(Buffer & inbuff, Buffer & outbuff)
 	char character = (char)old_code;
 	outcount += output.Put(&character, sizeof(character));
 
-	unsigned int count;
+	uint32_t count;
 	CodeType new_code;
 	CodeType next_code = FIRST_CODE;
 	for (;;) {

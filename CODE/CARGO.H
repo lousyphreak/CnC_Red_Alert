@@ -37,6 +37,7 @@
 
 #ifndef CARGO_H
 #define CARGO_H
+#include <stdint.h>
 
 class FootClass;
 
@@ -80,7 +81,7 @@ class CargoClass {
 		**	This is the number of objects attached to this cargo hold. For transporter
 		**	objects, they might contain more than one object.
 		*/
-		unsigned char Quantity;
+		uint8_t Quantity;
 
 		/*
 		**	This is the target value of any attached object. A value of zero indicates

@@ -494,7 +494,7 @@ bool SidebarClass::Factory_Link(int factory, RTTIType type, int id)
  * HISTORY:                                                                                    *
  *   01/19/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-void SidebarClass::Refresh_Cells(CELL cell, short const * list)
+void SidebarClass::Refresh_Cells(CELL cell, int16_t const * list)
 {
 	if (*list == REFRESH_SIDEBAR) {
 		IsToRedraw = true;

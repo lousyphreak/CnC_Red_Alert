@@ -445,7 +445,7 @@ void ScoreClass::Presentation(void)
 	** Load the background for the score screen
 	*/
 
-	unsigned minutes = (unsigned)((ElapsedTime / (long)TIMER_MINUTE))+1;
+	unsigned minutes = (unsigned)((ElapsedTime / (int32_t)TIMER_MINUTE))+1;
 
 // Load up the shapes for the Nod score screen
 	yellowptr = MFCD::Retrieve("BAR3BHR.SHP");

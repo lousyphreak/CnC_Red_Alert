@@ -371,7 +371,7 @@ MoveType TerrainClass::Can_Enter_Cell(CELL cell, FacingType) const
 	assert(Terrains.ID(this) == ID);
 	assert(IsActive);
 
-	short const	* offset;		// Pointer to cell offset list.
+	int16_t const	* offset;		// Pointer to cell offset list.
 
 	if ((unsigned)cell >= MAP_CELL_TOTAL) return(MOVE_NO);
 
@@ -661,12 +661,12 @@ COORDINATE TerrainClass::Center_Coord(void) const
  * HISTORY:                                                                                    *
  *   05/08/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-unsigned char * TerrainClass::Radar_Icon(CELL cell)
+uint8_t * TerrainClass::Radar_Icon(CELL cell)
 {
 	assert(Terrains.ID(this) == ID);
 	assert(IsActive);
 
-	unsigned char * icon = (unsigned char *)Class->Get_Radar_Data();	// get a pointer to radar icons
+	uint8_t * icon = (uint8_t *)Class->Get_Radar_Data();	// get a pointer to radar icons
 	int  width = *icon++;							// extract the width from data
 	int  height = *icon++;							// extract the width from data
 

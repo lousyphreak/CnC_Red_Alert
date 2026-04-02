@@ -514,7 +514,7 @@ void VesselClass::Debug_Dump(MonoClass * mono) const
  * HISTORY:                                                                                    *
  *   03/20/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-short const * VesselClass::Overlap_List(bool redraw) const
+int16_t const * VesselClass::Overlap_List(bool redraw) const
 {
 	assert(Vessels.ID(this) == ID);
 	assert(IsActive);
@@ -638,7 +638,7 @@ void VesselClass::AI(void)
 		**	Double check that there is a passenger that is trying to load or unload.
 		**	If not, then close the door.
 		*/
-		if (!Is_Door_Closed() && Mission != MISSION_UNLOAD && Transmit_Message(RADIO_TRYING_TO_LOAD) != RADIO_ROGER && !(long)DoorShutCountDown) {
+		if (!Is_Door_Closed() && Mission != MISSION_UNLOAD && Transmit_Message(RADIO_TRYING_TO_LOAD) != RADIO_ROGER && !(int32_t)DoorShutCountDown) {
 			LST_Close_Door();
 		}
 	}
@@ -1595,7 +1595,7 @@ DirType VesselClass::Desired_Load_Dir(ObjectClass * passenger, CELL & moveto) co
 		**	Give more weight to the cells that require the least rotation of the transport or the
 		**	least roundabout movement for the potential passenger.
 		*/
-		value -= (int)ABS((int)(signed char)Facing_Dir(face) - (int)(signed char)faceto);
+		value -= (int)ABS((int)(int8_t)Facing_Dir(face) - (int)(int8_t)faceto);
 		if (face == FACING_S) {
 			value -= 100;
 		}

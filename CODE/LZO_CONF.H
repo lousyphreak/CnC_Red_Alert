@@ -50,6 +50,7 @@
 
 #ifndef __LZO_CONF_H
 #define __LZO_CONF_H
+#include <stdint.h>
 
 #ifndef __LZOCONF_H
 #  include "LZOCONF.H"
@@ -98,7 +99,7 @@
 #if (UINT_MAX >= 0xffffffffL)
    typedef ptrdiff_t        lzo_ptrdiff_t;
 #else
-   typedef long             lzo_ptrdiff_t;
+   typedef int32_t             lzo_ptrdiff_t;
 #endif
 
 
@@ -199,7 +200,7 @@
 //
 ************************************************************************/
 
-#define LZO_BYTE(x)			((unsigned char) (x))
+#define LZO_BYTE(x)			((uint8_t) (x))
 
 #define LZO_MAX(a,b)		((a) >= (b) ? (a) : (b))
 #define LZO_MIN(a,b)		((a) <= (b) ? (a) : (b))

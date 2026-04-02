@@ -58,14 +58,14 @@
 #include "IPX95.H"
 #endif	//WINSOCK_IPX
 
-void output(short,short)
+void output(int16_t,int16_t)
 {}
 
 
-unsigned long CCFocusMessage = WM_USER+50;	//Private message for receiving application focus
+uint32_t CCFocusMessage = WM_USER+50;	//Private message for receiving application focus
 extern	void VQA_PauseAudio(void);
 extern	void VQA_ResumeAudio(void);
-extern BOOL BootstrapFocusSeen;
+extern int32_t BootstrapFocusSeen;
 
 //#include "WOLDEBUG.H"
 
@@ -145,7 +145,7 @@ void Focus_Restore(void)
 
 void Check_For_Focus_Loss(void)
 {
-	static BOOL	focus_last_time = 1;
+	static int32_t	focus_last_time = 1;
 			 MSG	msg;
 
 
@@ -195,7 +195,7 @@ void Check_For_Focus_Loss(void)
 
 extern bool InMovie;
 
-long FAR PASCAL _export Windows_Procedure(HWND hwnd, UINT message, UINT wParam, LONG lParam)
+int32_t   Windows_Procedure(HWND hwnd, uint32_t message, uint32_t wParam, int32_t lParam)
 {
 
 	int	low_param = LOWORD(wParam);
@@ -214,7 +214,7 @@ long FAR PASCAL _export Windows_Procedure(HWND hwnd, UINT message, UINT wParam, 
 	** Pass on any messages intended for the winsock message handler.
 	*/
 	if ( PacketTransport ) {
-		if ( message == (UINT) PacketTransport->Protocol_Event_Message() ) {
+		if ( message == (uint32_t) PacketTransport->Protocol_Event_Message() ) {
 			if ( PacketTransport->Message_Handler (hwnd, message, wParam, lParam) ){
 				return ( DefWindowProc (hwnd, message, wParam, lParam) );
 			}else{
@@ -309,7 +309,7 @@ long FAR PASCAL _export Windows_Procedure(HWND hwnd, UINT message, UINT wParam, 
 
 		case WM_ACTIVATEAPP:
 			winstub_trace("WM_ACTIVATEAPP hwnd=%p active=%u", hwnd, wParam);
-			if ((BOOL)wParam) {
+			if ((int32_t)wParam) {
 				BootstrapFocusSeen = TRUE;
 				GameInFocus = TRUE;
 				AllSurfaces.Set_Surface_Focus(TRUE);
@@ -407,7 +407,7 @@ void WWDebugString (char *string)
 
 	sprintf (outstr, "%s", string);
 
-	DWORD	actual;
+	uint32_t	actual;
 	if (DebugFile == INVALID_HANDLE_VALUE){
 		DebugFile = CreateFile("debug.txt", GENERIC_WRITE, 0,
 												NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -613,7 +613,7 @@ void Colour_Debug (int call_number)
 
 
 
-BOOL Any_Locked (void)
+int32_t Any_Locked (void)
 {
 	if (SeenBuff.Get_LockCount() ||
 		HidPage.Get_LockCount()) {
@@ -695,21 +695,21 @@ BOOL Any_Locked (void)
 //}
 
 
-unsigned char	*VQPalette;
-long				VQNumBytes;
-unsigned long	VQSlowpal;
+uint8_t	*VQPalette;
+int32_t				VQNumBytes;
+uint32_t	VQSlowpal;
 bool				VQPaletteChange = false;
 
 
 extern "C"{
-	void __cdecl SetPalette(unsigned char *palette, long numbytes, unsigned long slowpal);
+	void  SetPalette(uint8_t *palette, int32_t numbytes, uint32_t slowpal);
 }
 
 void Create_Palette_Interpolation_Table(void);
 
 
 
-void Flag_To_Set_Palette(unsigned char *palette, long numbytes, unsigned long slowpal)
+void Flag_To_Set_Palette(uint8_t *palette, int32_t numbytes, uint32_t slowpal)
 {
 	VQPalette = palette;
 	VQNumBytes = numbytes;
@@ -731,10 +731,10 @@ void Check_VQ_Palette_Set(void)
 
 
 
-void __cdecl SetPalette(unsigned char *palette, long numbytes, unsigned long slowpal)
+void  SetPalette(uint8_t *palette, int32_t numbytes, uint32_t slowpal)
 {
 	static int palette_trace_count = 0;
-	unsigned char movie_palette[256 * 3];
+	uint8_t movie_palette[256 * 3];
 	bool used_precomputed_palette = false;
 
 	if (palette == NULL) {
@@ -898,8 +898,8 @@ void Memory_Error_Handler(void)
 
 
 
-GraphicBufferClass* Read_PCX_File(char* name, char* Palette, void *Buff, long Size);
-void Load_Title_Screen(char *name, GraphicViewPortClass *video_page, unsigned char *palette)
+GraphicBufferClass* Read_PCX_File(char* name, char* Palette, void *Buff, int32_t Size);
+void Load_Title_Screen(char *name, GraphicViewPortClass *video_page, uint8_t *palette)
 {
 
 	GraphicBufferClass *load_buffer;
@@ -951,7 +951,7 @@ void Load_Title_Screen(char *name, GraphicViewPortClass *video_page, unsigned ch
 							 }
 
 
-GraphicBufferClass* Read_PCX_File(char* name, char* palette, void *Buff, long Size)
+GraphicBufferClass* Read_PCX_File(char* name, char* palette, void *Buff, int32_t Size)
 {
 	unsigned					i, j;
 	unsigned					rle;

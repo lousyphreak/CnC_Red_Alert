@@ -169,8 +169,8 @@ class VersionClass {
 		// This is the program's version number, stored internally.
 		//.....................................................................
 		uint32_t Version;
-		unsigned short MajorVer;
-		unsigned short MinorVer;
+		uint16_t MajorVer;
+		uint16_t MinorVer;
 
 		//.....................................................................
 		// This array is used for formatting the version # as a string

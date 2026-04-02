@@ -16,6 +16,7 @@
 **	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <stdint.h>
 #ifdef WOLAPI_INTEGRATION
 
 //	wol_gsup.h			"WOL Game Setup Dialog"
@@ -269,12 +270,12 @@ protected:
 
 	GAMEPARAMS			GParamsLastSent;		//	Used merely as a handy container for the vars I need to set.
 
-	DWORD				dwTimeNextParamRefresh;		//	Param changes are sent by host at certain interval.
+	uint32_t				dwTimeNextParamRefresh;		//	Param changes are sent by host at certain interval.
 
 	HousesType			HousePrevious;
 
-	unsigned int		nHostLastParamID;		//	Host's send update tracking packet ID.
-	unsigned int		nGuestLastParamID;		//	Guest's record of last ID received from host.
+	uint32_t		nHostLastParamID;		//	Host's send update tracking packet ID.
+	uint32_t		nGuestLastParamID;		//	Guest's record of last ID received from host.
 
 	bool				bWaitingToStart;
 
@@ -291,7 +292,7 @@ protected:
 	char				szTriggerGameStartInfo[ ( WOL_NAME_LEN_MAX + 10 ) * 4 + 60 ];
 
 	//	Tooltips...
-	DWORD				timeToolTipAppear;
+	uint32_t				timeToolTipAppear;
 	ToolTipClass*		pToolTipHead;			//	Head of list of ToolTips that parallels gadget list.
 	ToolTipClass*		pToolTipHitLast;		//	ToolTip the mouse was last over, or null.
 

@@ -41,14 +41,14 @@
 
 
 #ifdef __BORLANDC__
-uint32_t __cdecl Get_CPU_Clock(uint32_t & high)
+uint32_t  Get_CPU_Clock(uint32_t & high)
 {
 	__asm db 0fh,031h
 	__asm mov [high],edx
 	return(_EAX);
 }
 #else
-uint32_t __cdecl Get_CPU_Clock(uint32_t & high)
+uint32_t  Get_CPU_Clock(uint32_t & high)
 {
 	struct timespec spec;
 	uint64_t counter;

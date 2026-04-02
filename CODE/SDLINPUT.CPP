@@ -11,9 +11,10 @@
 #include <mutex>
 #include <thread>
 
+#include <stdint.h>
 extern HWND MainWindow;
-extern BOOL GameInFocus;
-extern BOOL BootstrapFocusSeen;
+extern int32_t GameInFocus;
+extern int32_t BootstrapFocusSeen;
 extern GraphicViewPortClass SeenBuff;
 
 namespace {
@@ -21,10 +22,10 @@ namespace {
 constexpr uint32_t MOUSE_LEFT_MASK = 0x01u;
 constexpr uint32_t MOUSE_RIGHT_MASK = 0x02u;
 constexpr uint32_t MOUSE_MIDDLE_MASK = 0x04u;
-constexpr unsigned short LEGACY_MIDDLE_MOUSE = 0x04;
-constexpr unsigned short LEGACY_NUMPAD0 = 0x60;
-constexpr unsigned short LEGACY_NUMPAD5 = 0x65;
-constexpr unsigned short LEGACY_DECIMAL = 0x6E;
+constexpr uint16_t LEGACY_MIDDLE_MOUSE = 0x04;
+constexpr uint16_t LEGACY_NUMPAD0 = 0x60;
+constexpr uint16_t LEGACY_NUMPAD5 = 0x65;
+constexpr uint16_t LEGACY_DECIMAL = 0x6E;
 
 std::mutex g_input_mutex;
 std::array<uint16_t, SDL_SCANCODE_COUNT> g_scancode_down_counts{};
@@ -91,7 +92,7 @@ uint32_t translate_mouse_button_state(uint32_t button_state)
 	return (state);
 }
 
-unsigned short mouse_button_to_legacy_key(int button)
+uint16_t mouse_button_to_legacy_key(int button)
 {
 	switch (button) {
 		case SDL_BUTTON_LEFT:
@@ -141,7 +142,7 @@ void update_mouse_position_locked(int x, int y)
 	g_mouse_y = y;
 }
 
-unsigned short legacy_key_from_scancode(SDL_Scancode scancode)
+uint16_t legacy_key_from_scancode(SDL_Scancode scancode)
 {
 	switch (scancode) {
 		case SDL_SCANCODE_LSHIFT:
@@ -250,13 +251,13 @@ unsigned short legacy_key_from_scancode(SDL_Scancode scancode)
 	}
 }
 
-unsigned short legacy_key_from_keycode(SDL_Keycode keycode)
+uint16_t legacy_key_from_keycode(SDL_Keycode keycode)
 {
 	if (keycode >= SDLK_A && keycode <= SDLK_Z) {
-		return static_cast<unsigned short>(KN_A + static_cast<unsigned short>(keycode - SDLK_A));
+		return static_cast<uint16_t>(KN_A + static_cast<uint16_t>(keycode - SDLK_A));
 	}
 	if (keycode >= SDLK_0 && keycode <= SDLK_9) {
-		return static_cast<unsigned short>(KN_0 + static_cast<unsigned short>(keycode - SDLK_0));
+		return static_cast<uint16_t>(KN_0 + static_cast<uint16_t>(keycode - SDLK_0));
 	}
 
 	switch (keycode) {
@@ -384,7 +385,7 @@ bool mouse_button_down_locked(uint8_t button)
 	}
 }
 
-SDL_Scancode scancode_from_legacy_key(unsigned short key)
+SDL_Scancode scancode_from_legacy_key(uint16_t key)
 {
 	key &= 0xFFu;
 
@@ -412,7 +413,7 @@ SDL_Scancode scancode_from_legacy_key(unsigned short key)
 	}
 }
 
-bool legacy_key_down_locked(unsigned short key)
+bool legacy_key_down_locked(uint16_t key)
 {
 	const SDL_Scancode direct_scancode = scancode_from_legacy_key(key);
 	if (direct_scancode != SDL_SCANCODE_UNKNOWN) {
@@ -529,7 +530,7 @@ bool legacy_key_down_locked(unsigned short key)
 	}
 }
 
-char translate_ascii_from_legacy_key(unsigned short key)
+char translate_ascii_from_legacy_key(uint16_t key)
 {
 	if ((key & WWKEY_RLS_BIT) != 0) {
 		return '\0';
@@ -544,7 +545,7 @@ char translate_ascii_from_legacy_key(unsigned short key)
 		return '\0';
 	}
 
-	const unsigned short base_key = key & 0xFFu;
+	const uint16_t base_key = key & 0xFFu;
 	if (base_key >= KN_A && base_key <= KN_Z) {
 		return static_cast<char>((shift ^ caps) ? ('A' + (base_key - KN_A)) : ('a' + (base_key - KN_A)));
 	}
@@ -695,7 +696,7 @@ void SDL_GameInput_Set_Main_Thread(void)
 
 void SDL_GameInput_Handle_Key(SDL_Scancode scancode, SDL_Keycode keycode, SDL_Keymod mod_state, bool repeat, bool release)
 {
-	unsigned short legacy_key = legacy_key_from_scancode(scancode);
+	uint16_t legacy_key = legacy_key_from_scancode(scancode);
 	if (legacy_key == 0) {
 		legacy_key = legacy_key_from_keycode(keycode);
 	}
@@ -728,7 +729,7 @@ void SDL_GameInput_Handle_Mouse_Motion(int x, int y, uint32_t button_state)
 
 void SDL_GameInput_Handle_Mouse_Button(int button, int x, int y, bool release)
 {
-	const unsigned short legacy_key = mouse_button_to_legacy_key(button);
+	const uint16_t legacy_key = mouse_button_to_legacy_key(button);
 	if (legacy_key == 0) {
 		return;
 	}
@@ -770,7 +771,7 @@ void SDL_GameInput_Pump(void)
 	g_is_pumping.store(false);
 }
 
-BOOL SDL_GameInput_Wait(void)
+int32_t SDL_GameInput_Wait(void)
 {
 	if (g_main_thread_set.load() && std::this_thread::get_id() != g_main_thread_id) {
 		return (FALSE);
@@ -808,7 +809,7 @@ void SDL_GameInput_Maybe_Pump(void)
 	SDL_GameInput_Pump();
 }
 
-BOOL SDL_GameInput_GetCursorPos(POINT* point)
+int32_t SDL_GameInput_GetCursorPos(POINT* point)
 {
 	if (point == NULL) {
 		return (FALSE);
@@ -826,7 +827,7 @@ HANDLE SDL_GameInput_SetCursor(HANDLE cursor)
 	return (cursor);
 }
 
-int SDL_GameInput_ShowCursor(BOOL show)
+int SDL_GameInput_ShowCursor(int32_t show)
 {
 	const bool was_visible = SDL_CursorVisible();
 	if (show) {
@@ -837,7 +838,7 @@ int SDL_GameInput_ShowCursor(BOOL show)
 	return (was_visible ? 1 : 0);
 }
 
-BOOL SDL_GameInput_ClipCursor(const RECT* rect)
+int32_t SDL_GameInput_ClipCursor(const RECT* rect)
 {
 	if (MainWindow == NULL || MainWindow->sdl_window == NULL) {
 		SDL_GameInput_SetCursorClip(rect);
@@ -854,7 +855,7 @@ BOOL SDL_GameInput_ClipCursor(const RECT* rect)
 			return (TRUE);
 		}
 
-		const BOOL result = SDL_SetWindowMouseRect(MainWindow->sdl_window, NULL) ? TRUE : FALSE;
+		const int32_t result = SDL_SetWindowMouseRect(MainWindow->sdl_window, NULL) ? TRUE : FALSE;
 		if (result) {
 			SDL_GameInput_SetCursorClip(NULL);
 		}
@@ -925,7 +926,7 @@ int SDL_GameInput_GetGlobalMouseY(void)
 	return (g_mouse_y);
 }
 
-BOOL SDL_GameInput_GetViewportRect(RECT* rect)
+int32_t SDL_GameInput_GetViewportRect(RECT* rect)
 {
 	if (rect == NULL) {
 		return (FALSE);
@@ -976,27 +977,27 @@ bool SDL_GameInput_IsMouseButtonPressed(uint8_t button)
 	return mouse_button_down_locked(button);
 }
 
-bool SDL_GameInput_IsLegacyKeyPressed(unsigned short key)
+bool SDL_GameInput_IsLegacyKeyPressed(uint16_t key)
 {
 	SDL_GameInput_Maybe_Pump();
 	std::scoped_lock lock(g_input_mutex);
 	return legacy_key_down_locked(key);
 }
 
-char SDL_GameInput_KeyToASCII(unsigned short key)
+char SDL_GameInput_KeyToASCII(uint16_t key)
 {
 	SDL_GameInput_Maybe_Pump();
 	std::scoped_lock lock(g_input_mutex);
 	return translate_ascii_from_legacy_key(key);
 }
 
-SHORT SDL_GameInput_AsciiToLegacyKey(unsigned char ch)
+int16_t SDL_GameInput_AsciiToLegacyKey(uint8_t ch)
 {
 	if (ch >= 'a' && ch <= 'z') {
-		return static_cast<SHORT>(KN_A + static_cast<unsigned short>(ch - 'a'));
+		return static_cast<int16_t>(KN_A + static_cast<uint16_t>(ch - 'a'));
 	}
 	if (ch >= 'A' && ch <= 'Z') {
-		return static_cast<SHORT>(WWKEY_SHIFT_BIT | (KN_A + static_cast<unsigned short>(ch - 'A')));
+		return static_cast<int16_t>(WWKEY_SHIFT_BIT | (KN_A + static_cast<uint16_t>(ch - 'A')));
 	}
-	return static_cast<SHORT>(ch);
+	return static_cast<int16_t>(ch);
 }

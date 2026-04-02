@@ -36,6 +36,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #ifndef SESSION_H
 #define SESSION_H
+#include <stdint.h>
 
 #include "IPXADDR.H"
 #include "MSGLIST.H"
@@ -169,7 +170,7 @@ typedef struct NodeNameTag {
 #endif
 	union {
 		struct {
-			unsigned char IsOpen;		// is the game open?
+			uint8_t IsOpen;		// is the game open?
 			uint32_t LastTime;		// last time we heard from this guy
 		} Game;
 		struct {
@@ -180,7 +181,7 @@ typedef struct NodeNameTag {
 		} Player;
 		struct {
 			uint32_t LastTime;		// last time we heard from this guy
-			unsigned char LastChance;	// we're about to remove him from the list
+			uint8_t LastChance;	// we're about to remove him from the list
 			PlayerColorType Color;		// chat player's color
 		} Chat;
 	};
@@ -193,9 +194,9 @@ typedef struct NodeNameTag {
 #define MAX_SEND_FILE_PACKET_SIZE MAX_FILE_PACKET_SIZE - 64
 typedef struct {
 	NetCommandType	Command;					// Enum defined above. Should be a file transfer enum.
-	unsigned short 	BlockNumber;			// Index position of this file chunk in the file
-	unsigned short		BlockLength;			// Length of data in the RawData buffer
-	unsigned char 		RawData	[MAX_SEND_FILE_PACKET_SIZE];
+	uint16_t 	BlockNumber;			// Index position of this file chunk in the file
+	uint16_t		BlockLength;			// Length of data in the RawData buffer
+	uint8_t 		RawData	[MAX_SEND_FILE_PACKET_SIZE];
 } RemoteFileTransferType;
 
 
@@ -207,7 +208,7 @@ typedef struct GlobalPacketType {
 	char Name[MPLAYER_NAME_MAX];				// Player or Game Name
 	union {
 		struct {
-			unsigned int IsOpen		: 1;		// 1 = game is open for joining
+			uint32_t IsOpen		: 1;		// 1 = game is open for joining
 		} GameInfo;
 		struct {
 			HousesType House;						// player's House
@@ -219,26 +220,26 @@ typedef struct GlobalPacketType {
 		} PlayerInfo;
 		struct {
 			char Scenario[DESCRIP_MAX];		// Scenario Name
-			unsigned int Credits;				// player's credits
-			unsigned int IsBases		: 1;		// 1 = bases are allowed
-			unsigned int IsTiberium	: 1;		// 1 = tiberium is allowed
-			unsigned int IsGoodies	: 1;		// 1 = goodies are allowed
-			unsigned int IsGhosties	: 1;		// 1 = ghosts are allowed
-			unsigned int OfficialScenario :1;// Is this scenario an official Westwood one?
-			unsigned char BuildLevel;			// buildable level
-			unsigned char UnitCount;			// max # units
-			unsigned char AIPlayers;			// # of AI players allowed
+			uint32_t Credits;				// player's credits
+			uint32_t IsBases		: 1;		// 1 = bases are allowed
+			uint32_t IsTiberium	: 1;		// 1 = tiberium is allowed
+			uint32_t IsGoodies	: 1;		// 1 = goodies are allowed
+			uint32_t IsGhosties	: 1;		// 1 = ghosts are allowed
+			uint32_t OfficialScenario :1;// Is this scenario an official Westwood one?
+			uint8_t BuildLevel;			// buildable level
+			uint8_t UnitCount;			// max # units
+			uint8_t AIPlayers;			// # of AI players allowed
 			int Seed;								// random number seed
 			SpecialClass Special;				// command-line options
-			unsigned int GameSpeed;				// Game Speed
+			uint32_t GameSpeed;				// Game Speed
 			uint32_t Version;				// version # common to all players
-			unsigned int FileLength;			// Length of scenario file to expect from host.
+			uint32_t FileLength;			// Length of scenario file to expect from host.
 #ifdef WOLAPI_INTEGRATION
 			char ShortFileName[13];				// Name of scenario file to expect from host
 #else
 			char ShortFileName[12];				// Name of scenario file to expect from host
 #endif
-			unsigned char FileDigest[32];		// Digest of scenario file to expect from host
+			uint8_t FileDigest[32];		// Digest of scenario file to expect from host
 												//	ajw - This is not necessarily null-terminated.
 		} ScenarioInfo;
 		struct {
@@ -451,7 +452,7 @@ class SessionClass
 		char ScenarioFileName[_MAX_FNAME+_MAX_EXT+1];	//File name of scenario to load
 
 		char ScenarioDigest [32];								//Digest of scenario to load
-		unsigned int ScenarioFileLength;
+		uint32_t ScenarioFileLength;
 		bool ScenarioIsOfficial;
 
 		char ScenarioRequests[20];		//Which players requested scenario files
@@ -502,7 +503,7 @@ class SessionClass
 		GlobalPacketType GPacket;				// global packet
 		int GPacketlen;							// global packet length
 		IPXAddressClass GAddress;				// address of sender
-		unsigned short GProductID;				// product ID of sender
+		uint16_t GProductID;				// product ID of sender
 		char MetaPacket[MAX_IPX_PACKET_SIZE]; // packet building buffer
 		int MetaSize;								// size of MetaPacket
 		DynamicVectorClass <NodeNameType *> Games;	// list of games

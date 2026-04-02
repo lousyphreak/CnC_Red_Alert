@@ -50,6 +50,7 @@
 #include	"RNDSTRAW.H"
 #include	"SHA.H"
 
+#include <stdint.h>
 /***********************************************************************************************
  * RandomStraw::RandomStraw -- Constructor for the random straw class.                         *
  *                                                                                             *
@@ -217,7 +218,7 @@ void RandomStraw::Seed_Byte(char seed)
  * HISTORY:                                                                                    *
  *   07/10/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-void RandomStraw::Seed_Short(short seed)
+void RandomStraw::Seed_Short(int16_t seed)
 {
 	for (int index = 0; index < (sizeof(seed)*CHAR_BIT); index++) {
 		Seed_Bit(seed);
@@ -240,7 +241,7 @@ void RandomStraw::Seed_Short(short seed)
  * HISTORY:                                                                                    *
  *   07/10/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-void RandomStraw::Seed_Long(long seed)
+void RandomStraw::Seed_Long(int32_t seed)
 {
 	for (int index = 0; index < (sizeof(seed)*CHAR_BIT); index++) {
 		Seed_Bit(seed);

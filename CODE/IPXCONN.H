@@ -43,6 +43,7 @@
 
 #ifndef IPXCONN_H
 #define IPXCONN_H
+#include <stdint.h>
 
 
 /*
@@ -71,7 +72,7 @@ class IPXConnClass : public ConnectionClass
 		Constructor/destructor.
 		.....................................................................*/
 		IPXConnClass(int numsend, int numrecieve, int maxlen,
-			unsigned short magicnum, IPXAddressClass *address, int id, char *name,
+			uint16_t magicnum, IPXAddressClass *address, int id, char *name,
 			int extralen = 0);
 		virtual ~IPXConnClass () {};
 
@@ -85,10 +86,10 @@ class IPXConnClass : public ConnectionClass
 		It's static because it doesn't apply to any specific connection, but
 		all of them.
 		.....................................................................*/
-		static void Configure(unsigned short socket,
+		static void Configure(uint16_t socket,
 			int conn_num, ECBType *listen_ecb, ECBType *send_ecb,
 			IPXHeaderType *listen_header, IPXHeaderType *send_header,
-			char *listen_buf, char *send_buf, long handler_rm_ptr,
+			char *listen_buf, char *send_buf, int32_t handler_rm_ptr,
 			int maxpacketlen);
 
 		/*.....................................................................
@@ -135,8 +136,8 @@ class IPXConnClass : public ConnectionClass
 		Send_To & Broadcast are static since they're direct interfaces to IPX,
 		and there's only one IPX instance running.
 		.....................................................................*/
-		static int Open_Socket(unsigned short socket);
-		static void Close_Socket(unsigned short socket);
+		static int Open_Socket(uint16_t socket);
+		static void Close_Socket(uint16_t socket);
 		static int Send_To(char *buf, int buflen, IPXAddressClass *address,
 			NetNodeType immed);
 		static int Broadcast(char *buf, int buflen);
@@ -144,7 +145,7 @@ class IPXConnClass : public ConnectionClass
 		/*.....................................................................
 		The socket ID for this connection
 		.....................................................................*/
-		static unsigned short Socket;
+		static uint16_t Socket;
 
 		/*.....................................................................
 		User's local Connection # (0 = not logged in)
@@ -182,7 +183,7 @@ class IPXConnClass : public ConnectionClass
 		the segment/offset to be computed by the caller gives the caller
 		control over CS.)
 		.....................................................................*/
-		static long Handler;
+		static int32_t Handler;
 
 		/*.....................................................................
 		This status flag tells us if Configure() has been called or not.

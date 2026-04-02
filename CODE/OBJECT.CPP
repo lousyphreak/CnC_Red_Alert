@@ -1910,8 +1910,8 @@ bool ObjectClass::Attach_Trigger(TriggerClass * trigger)
 
 
 // These can't be made inline (for various reasons).
-short const * ObjectClass::Occupy_List(bool placement) const {return(Class_Of().Occupy_List(placement));};
-short const * ObjectClass::Overlap_List(bool ) const {return(Class_Of().Overlap_List());};
+int16_t const * ObjectClass::Occupy_List(bool placement) const {return(Class_Of().Occupy_List(placement));};
+int16_t const * ObjectClass::Overlap_List(bool ) const {return(Class_Of().Overlap_List());};
 BuildingClass * ObjectClass::Who_Can_Build_Me(bool intheory, bool legal) const {return(Class_Of().Who_Can_Build_Me(intheory, legal, Owner()));};
 fixed ObjectClass::Health_Ratio(void) const {return(fixed(Strength, Class_Of().MaxStrength));};
 int ObjectClass::Full_Name(void) const {return Class_Of().Full_Name();};
@@ -2095,9 +2095,9 @@ void const * ObjectTypeClass::Get_Cameo_Data(void) const
  * HISTORY:                                                                                    *
  *   05/28/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-short const * ObjectTypeClass::Occupy_List(bool) const
+int16_t const * ObjectTypeClass::Occupy_List(bool) const
 {
-	static short const _list[] = {0, REFRESH_EOL};
+	static int16_t const _list[] = {0, REFRESH_EOL};
 	return(_list);
 }
 
@@ -2119,9 +2119,9 @@ short const * ObjectTypeClass::Occupy_List(bool) const
  * HISTORY:                                                                                    *
  *   05/28/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-short const * ObjectTypeClass::Overlap_List(void) const
+int16_t const * ObjectTypeClass::Overlap_List(void) const
 {
-	static short const _list[] = {REFRESH_EOL};
+	static int16_t const _list[] = {REFRESH_EOL};
 	return(_list);
 }
 

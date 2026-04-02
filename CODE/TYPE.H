@@ -37,6 +37,7 @@
 
 #ifndef TYPE_H
 #define TYPE_H
+#include <stdint.h>
 
 #include "sdl_fs.h"
 
@@ -162,7 +163,7 @@ class HouseTypeClass : public AbstractTypeClass
 							PlayerColorType remapcolor,
 							char prefix);
 
-		unsigned char const * Remap_Table(void) const;
+		uint8_t const * Remap_Table(void) const;
 
 		static void * operator new(size_t);
 		static void * operator new(size_t , void * ptr) {return(ptr);};
@@ -254,7 +255,7 @@ class ObjectTypeClass : public AbstractTypeClass
 		/*
 		**	This is the maximum strength of this object type.
 		*/
-		unsigned short MaxStrength;
+		uint16_t MaxStrength;
 
 		/*
 		**	These point to the shape imagery for this object type. Since the shape imagery
@@ -299,8 +300,8 @@ class ObjectTypeClass : public AbstractTypeClass
 		virtual int Cost_Of(void) const;
 		virtual int Time_To_Build(void) const;
 		virtual ObjectClass * Create_One_Of(HouseClass *) const = 0;
-		virtual short const * Occupy_List(bool placement=false) const;
-		virtual short const * Overlap_List(void) const;
+		virtual int16_t const * Occupy_List(bool placement=false) const;
+		virtual int16_t const * Overlap_List(void) const;
 		virtual BuildingClass * Who_Can_Build_Me(bool intheory, bool legal, HousesType house) const;
 		virtual void const * Get_Cameo_Data(void) const;
 		void const * Get_Image_Data(void) const {return ImageData;};
@@ -494,7 +495,7 @@ class TechnoTypeClass : public ObjectTypeClass
 		**	to take possession of an object type otherwise not normally allowed.
 		**	This event usually occurs as a result of capture.
 		*/
-		long Ownable;
+		int32_t Ownable;
 
 		/*
 		**	This is the small icon image that is used to display the object in
@@ -690,7 +691,7 @@ class BuildingTypeClass : public TechnoTypeClass {
 		**	more suitable than others. This list is here to inform the system which
 		**	directions those are.
 		*/
-		short const * ExitList;
+		int16_t const * ExitList;
 
 		/*
 		**	This is the structure type identifier. It can serve as a unique
@@ -769,9 +770,9 @@ class BuildingTypeClass : public TechnoTypeClass {
 						RTTIType tobuild,
 						DirType sframe,
 						BSizeType size,
-						short const * exitlist,
-						short const * sizelist,
-						short const * overlap
+						int16_t const * exitlist,
+						int16_t const * sizelist,
+						int16_t const * overlap
 						);
 		operator StructType(void) const {return(Type);};
 
@@ -798,8 +799,8 @@ class BuildingTypeClass : public TechnoTypeClass {
 		virtual void Dimensions(int &width, int &height) const;
 		virtual bool Create_And_Place(CELL cell, HousesType house) const;
 		virtual ObjectClass * Create_One_Of(HouseClass * house) const;
-		virtual short const * Occupy_List(bool placement=false) const;
-		virtual short const * Overlap_List(void) const;
+		virtual int16_t const * Occupy_List(bool placement=false) const;
+		virtual int16_t const * Overlap_List(void) const;
 		virtual void const * Get_Buildup_Data(void) const {return(BuildupData);};
 
 		bool Is_Factory(void) const {return(ToBuild != RTTI_NONE);}
@@ -822,14 +823,14 @@ class BuildingTypeClass : public TechnoTypeClass {
 		**	are used to indicate the building's "footprint". This footprint is used
 		**	to determine building placement legality and terrain passibility.
 		*/
-		short const * OccupyList;
+		int16_t const * OccupyList;
 
 		/*
 		**	Buildings can often times overlap a cell but not actually "occupy" it for
 		**	purposes of movement. This points to a list of offsets that indicate which
 		**	cells the building has visual overlap but does not occupy.
 		*/
-		short const * OverlapList;
+		int16_t const * OverlapList;
 
 		/*
 		**	The construction animation graphic data pointer is
@@ -927,7 +928,7 @@ class UnitTypeClass : public TechnoTypeClass
 		**	is facing used to reach the center point of the turret. This distance is
 		**	in leptons.
 		*/
-		signed char TurretOffset;
+		int8_t TurretOffset;
 
 		/*
 		**	This value is used to provide the unit with a default mission order when
@@ -1044,7 +1045,7 @@ class VesselTypeClass : public TechnoTypeClass
 		**	is facing used to reach the center point of the turret. This distance is
 		**	in leptons.
 		*/
-		signed char TurretOffset;
+		int8_t TurretOffset;
 
 		/*
 		**	This value is used to provide the unit with a default mission order when
@@ -1098,7 +1099,7 @@ class VesselTypeClass : public TechnoTypeClass
 		virtual bool Create_And_Place(CELL cell, HousesType house) const;
 		virtual ObjectClass * Create_One_Of(HouseClass * house) const;
 		virtual int Max_Pips(void) const;
-		virtual short const * Overlap_List(void) const;
+		virtual int16_t const * Overlap_List(void) const;
 
 		void Turret_Adjust(DirType dir, int & x, int & y) const;
 
@@ -1202,7 +1203,7 @@ class InfantryTypeClass : public TechnoTypeClass
 		** used only in conjunction with the IsRemapOverride flag, and is
 		** primarily used for the civilians.
 		*/
-		unsigned char const * OverrideRemap;
+		uint8_t const * OverrideRemap;
 
 		/*
 		**	This is the explicit unit class constructor.
@@ -1224,7 +1225,7 @@ class InfantryTypeClass : public TechnoTypeClass
 						DoInfoStruct const * controls,
 						int firelaunch,
 						int pronelaunch,
-						unsigned char const * override_remap);
+						uint8_t const * override_remap);
 
 		static void * operator new(size_t);
 		static void * operator new(size_t , void * ptr) {return(ptr);};
@@ -1241,7 +1242,7 @@ class InfantryTypeClass : public TechnoTypeClass
 		virtual void Dimensions(int & width, int & height) const;
 		virtual bool Create_And_Place(CELL cell, HousesType house) const;
 		virtual ObjectClass * Create_One_Of(HouseClass * house) const;
-		virtual short const * Occupy_List(bool placement=false) const;
+		virtual int16_t const * Occupy_List(bool placement=false) const;
 		virtual int Full_Name(void) const;
 
 		#ifdef SCENARIO_EDITOR
@@ -1340,8 +1341,8 @@ class AircraftTypeClass : public TechnoTypeClass
 		virtual void Dimensions(int &width, int &height) const;
 		virtual bool Create_And_Place(CELL, HousesType) const;
 		virtual ObjectClass * Create_One_Of(HouseClass * house) const;
-		virtual short const * Occupy_List(bool placement=false) const;
-		virtual short const * Overlap_List(void) const;
+		virtual int16_t const * Occupy_List(bool placement=false) const;
+		virtual int16_t const * Overlap_List(void) const;
 		virtual int Max_Pips(void) const;
 
 		#ifdef SCENARIO_EDITOR
@@ -1486,7 +1487,7 @@ class BulletTypeClass : public ObjectTypeClass
 		**	as with rockets. If the ROT is zero, then no homing is performed. Otherwise
 		**	the projectile is considered to be a homing type.
 		*/
-		unsigned char ROT;
+		uint8_t ROT;
 
 		/*
 		**	Some projectiles have a built in arming distance that must elapse before the
@@ -1562,8 +1563,8 @@ class TerrainTypeClass : public ObjectTypeClass
 				bool is_water,
 				char const * ininame,
 				int fullname,
-				short const * occupy,
-				short const * overlap);
+				int16_t const * occupy,
+				int16_t const * overlap);
 
 		static void * operator new(size_t);
 		static void * operator new(size_t , void * ptr) {return(ptr);};
@@ -1579,16 +1580,16 @@ class TerrainTypeClass : public ObjectTypeClass
 		virtual COORDINATE Coord_Fixup(COORDINATE coord) const;
 		virtual bool Create_And_Place(CELL cell, HousesType house) const;
 		virtual ObjectClass * Create_One_Of(HouseClass *) const;
-		virtual short const * Occupy_List(bool placement=false) const;
-		virtual short const * Overlap_List(void) const;
+		virtual int16_t const * Occupy_List(bool placement=false) const;
+		virtual int16_t const * Overlap_List(void) const;
 
 		#ifdef SCENARIO_EDITOR
 		virtual void Display(int x, int y, WindowNumberType window, HousesType house=HOUSE_NONE) const;
 		#endif
 
 	private:
-		short const * Occupy;
-		short const * Overlap;
+		int16_t const * Occupy;
+		int16_t const * Overlap;
 };
 
 
@@ -1611,12 +1612,12 @@ class TemplateTypeClass: public ObjectTypeClass
 		**	in. A bit set in the (1<<TheaterType) position indicates the template is legal
 		**	in that particular theater.
 		*/
-		unsigned char Theater;
+		uint8_t Theater;
 
 		/*
 		**	Raw dimensions of this template (in icons).
 		*/
-		unsigned char Width,Height;
+		uint8_t Width,Height;
 
 		//----------------------------------------------------------
 		TemplateTypeClass(NoInitClass const & x) : ObjectTypeClass(x) {};
@@ -1640,7 +1641,7 @@ class TemplateTypeClass: public ObjectTypeClass
 		virtual COORDINATE Coord_Fixup(COORDINATE coord) const;
 		virtual bool Create_And_Place(CELL cell, HousesType house=HOUSE_NONE) const;
 		virtual ObjectClass * Create_One_Of(HouseClass *) const;
-		virtual short const * Occupy_List(bool placement=false) const;
+		virtual int16_t const * Occupy_List(bool placement=false) const;
 		LandType Land_Type(int icon) const;
 
 		#ifdef SCENARIO_EDITOR
@@ -1944,9 +1945,9 @@ class OverlayTypeClass: public ObjectTypeClass
 		virtual COORDINATE Coord_Fixup(COORDINATE coord) const;
 		virtual bool Create_And_Place(CELL cell, HousesType house=HOUSE_NONE) const;
 		virtual ObjectClass * Create_One_Of(HouseClass *) const;
-		virtual short const * Occupy_List(bool placement=false) const;
+		virtual int16_t const * Occupy_List(bool placement=false) const;
 		virtual void Draw_It(int x, int y, int data) const;
-		virtual unsigned char * Radar_Icon(int data) const;
+		virtual uint8_t * Radar_Icon(int data) const;
 
 		#ifdef SCENARIO_EDITOR
 		virtual void Display(int x, int y, WindowNumberType window, HousesType house=HOUSE_NONE) const;
@@ -2013,8 +2014,8 @@ class SmudgeTypeClass : public ObjectTypeClass
 
 		virtual bool Create_And_Place(CELL cell, HousesType house=HOUSE_NONE) const;
 		virtual ObjectClass * Create_One_Of(HouseClass *) const;
-		virtual short const * Occupy_List(bool placement=false) const;
-		virtual short const * Overlap_List(void) const {return Occupy_List();};
+		virtual int16_t const * Occupy_List(bool placement=false) const;
+		virtual int16_t const * Overlap_List(void) const {return Occupy_List();};
 		virtual void Draw_It(int x, int y, int data) const ;
 
 		#ifdef SCENARIO_EDITOR

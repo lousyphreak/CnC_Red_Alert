@@ -86,7 +86,7 @@ class CRCEngine {
 			return(CRC);
 		};
 
-		static int32_t Rotate_Left(int32_t value, unsigned int count) {
+		static int32_t Rotate_Left(int32_t value, uint32_t count) {
 			const uint32_t bits = static_cast<uint32_t>(value);
 			return static_cast<int32_t>((bits << count) | (bits >> ((sizeof(bits) * 8) - count)));
 		}

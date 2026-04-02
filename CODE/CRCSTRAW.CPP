@@ -40,6 +40,7 @@
 
 #include "CRCSTRAW.H"
 
+#include <stdint.h>
 /***********************************************************************************************
  * CRCStraw::Get -- Fetch the data requested and calculate CRC on it.                          *
  *                                                                                             *
@@ -87,7 +88,7 @@ int CRCStraw::Get(void * source, int slen)
  * HISTORY:                                                                                    *
  *   07/03/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-long CRCStraw::Result(void) const
+int32_t CRCStraw::Result(void) const
 {
 	return(CRC());
 }

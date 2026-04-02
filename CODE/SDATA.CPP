@@ -349,10 +349,10 @@ SmudgeType SmudgeTypeClass::From_Name(char const * name)
  * HISTORY:                                                                                    *
  *   08/12/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-short const * SmudgeTypeClass::Occupy_List(bool) const
+int16_t const * SmudgeTypeClass::Occupy_List(bool) const
 {
-	static short _occupy[4*4];
-	short * ptr = &_occupy[0];
+	static int16_t _occupy[4*4];
+	int16_t * ptr = &_occupy[0];
 
 	for (int x = 0; x < Width; x++) {
 		for (int y = 0; y < Height; y++) {

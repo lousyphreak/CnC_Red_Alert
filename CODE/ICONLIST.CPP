@@ -16,6 +16,7 @@
 **	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <stdint.h>
 #ifdef WOLAPI_INTEGRATION
 
 //	Iconlist.cpp - created by ajw 07/07/98
@@ -115,7 +116,7 @@ int IconListClass::Add_Item( const char* text, const char* szHelp,
 			if( TextFlags == TPF_TYPE )
 			{
 				void* pFontBefore = Set_Font( TypeFontPtr );
-				DWORD FontXSpacingBefore = FontXSpacing;
+				uint32_t FontXSpacingBefore = FontXSpacing;
 				FontXSpacing = -2;
 
 				int iWidthToClipAt = IsScrollActive ? Width : Width - UpGadget.Width;
@@ -696,7 +697,7 @@ int IconListClass::FindColor( RemapControlType* pColorRemap )
 }
 
 //***********************************************************************************************
-bool IconListClass::Set_Item( unsigned int index, const char* szText )
+bool IconListClass::Set_Item( uint32_t index, const char* szText )
 {
 	//	Resets the text string allocated for an item.
 	if( !bDoAlloc || index >= List.Count() )
@@ -716,7 +717,7 @@ bool IconListClass::Set_Item( unsigned int index, const char* szText )
 }
 
 //***********************************************************************************************
-bool IconListClass::Set_Icon( unsigned int index, unsigned int iIconNumber, void* pIcon, ICONKIND IconKind )
+bool IconListClass::Set_Icon( uint32_t index, uint32_t iIconNumber, void* pIcon, ICONKIND IconKind )
 {
 	if( index >= List.Count() )
 		return false;

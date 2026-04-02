@@ -37,6 +37,7 @@
 
 #ifndef EXTERNS_H
 #define EXTERNS_H
+#include <stdint.h>
 
 #include	<SDLAUDIOBACKEND.H>
 #include	"PALETTEC.H"
@@ -116,9 +117,9 @@ extern char const * NameOverride[25];
 extern int NameIDOverride[25];
 #endif
 
-extern BOOL					GameInFocus;
-extern unsigned char 	*InterpolatedPalettes[100];
-extern BOOL					PalettesRead;
+extern int32_t					GameInFocus;
+extern uint8_t 	*InterpolatedPalettes[100];
+extern int32_t					PalettesRead;
 extern unsigned			PaletteCounter;
 extern int 					AllDone;
 extern HANDLE 				hInstance;
@@ -374,31 +375,31 @@ extern char const * const					SpecialWeaponFile[SPC_COUNT];
 extern char const * const					ArmorName[ARMOR_COUNT];
 extern char const * const					QuarryName[QUARRY_COUNT];
 extern char const * const					FormationName[FORMATION_COUNT];
-extern long const								PlayCodes[];
-extern long const								CheatCodes[];
+extern int32_t const								PlayCodes[];
+extern int32_t const								CheatCodes[];
 //extern char const * const					ProjectileNames[];
-extern long const								EditorCodes[];
+extern int32_t const								EditorCodes[];
 extern char const * const					SourceName[SOURCE_COUNT];
 extern int const								GroundColor[LAND_COUNT];
 extern int const								SnowColor[LAND_COUNT];
 extern TheaterDataType const 				Theaters[THEATER_COUNT];
-extern unsigned char const 				Facing32[256];
-extern unsigned char const					Facing16[256];
-extern signed char const					Rotation16[256];
-extern unsigned char const 				Facing8[256];
-extern unsigned char const					Pixel2Lepton[24];
+extern uint8_t const 				Facing32[256];
+extern uint8_t const					Facing16[256];
+extern int8_t const					Rotation16[256];
+extern uint8_t const 				Facing8[256];
+extern uint8_t const					Pixel2Lepton[24];
 extern COORDINATE const 					StoppingCoordAbs[5];
 extern CELL const 							AdjacentCell[FACING_COUNT];
 extern COORDINATE const 					AdjacentCoord[FACING_COUNT];
-extern unsigned char const					RemapCiv2[];
-extern unsigned char const					RemapCiv4[];
-extern unsigned char const					RemapCiv5[];
-extern unsigned char const					RemapCiv6[];
-extern unsigned char const					RemapCiv7[];
-extern unsigned char const					RemapCiv8[];
-extern unsigned char const					RemapCiv9[];
-extern unsigned char const					RemapCiv10[];
-extern unsigned char const					RemapEmber[];
+extern uint8_t const					RemapCiv2[];
+extern uint8_t const					RemapCiv4[];
+extern uint8_t const					RemapCiv5[];
+extern uint8_t const					RemapCiv6[];
+extern uint8_t const					RemapCiv7[];
+extern uint8_t const					RemapCiv8[];
+extern uint8_t const					RemapCiv9[];
+extern uint8_t const					RemapCiv10[];
+extern uint8_t const					RemapEmber[];
 
 extern int SoundOn;
 
@@ -429,7 +430,7 @@ extern "C"{
 
 extern void Reset_Theater_Shapes(void);
 extern TheaterType LastTheater;
-void Coordinate_Remap ( GraphicViewPortClass *inbuffer, int x, int y, int width, int height, unsigned char *remap_table);
+void Coordinate_Remap ( GraphicViewPortClass *inbuffer, int x, int y, int width, int height, uint8_t *remap_table);
 void Do_Vortex (int x, int y, int frame);
 
 
@@ -465,9 +466,9 @@ extern	int UnitBuildPenalty;
 /*
 ** From SENDFILE.CPP - externs for scenario file transfers
 */
-bool Receive_Remote_File ( char *file_name, unsigned int file_length, unsigned int crc, int gametype);
+bool Receive_Remote_File ( char *file_name, uint32_t file_length, uint32_t crc, int gametype);
 bool Send_Remote_File ( char *file_name, int gametype );
 bool Get_Scenario_File_From_Host(char *return_name, int gametype);
-bool Find_Local_Scenario (char *description, char *filename, unsigned int length, char *digest, bool official);
+bool Find_Local_Scenario (char *description, char *filename, uint32_t length, char *digest, bool official);
 
 #endif

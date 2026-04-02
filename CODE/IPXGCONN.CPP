@@ -70,7 +70,7 @@
  *   12/20/1994 BR : Created.                                              *
  *=========================================================================*/
 IPXGlobalConnClass::IPXGlobalConnClass (int numsend, int numreceive,
-	int maxlen, unsigned short product_id) :
+	int maxlen, uint16_t product_id) :
 	IPXConnClass (numsend, numreceive,
 		maxlen + sizeof(GlobalHeaderType) - sizeof(CommHeaderType),
 		GLOBAL_MAGICNUM, 		// magic number for this connection
@@ -340,7 +340,7 @@ int IPXGlobalConnClass::Receive_Packet (void * buf, int buflen,
  *   12/20/1994 BR : Created.                                              *
  *=========================================================================*/
 int IPXGlobalConnClass::Get_Packet (void * buf, int *buflen,
-	IPXAddressClass *address, unsigned short *product_id)
+	IPXAddressClass *address, uint16_t *product_id)
 {
 	ReceiveQueueType *rec_entry;					// ptr to receive entry header
 	GlobalHeaderType *packet;

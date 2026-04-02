@@ -90,7 +90,7 @@ static char *ConnectionClass::Commands[PACKET_COUNT] = {
  *   12/20/1994 BR : Created.                                              *
  *=========================================================================*/
 ConnectionClass::ConnectionClass (int numsend, int numreceive,
-	int maxlen, unsigned short magicnum, uint32_t retry_delta,
+	int maxlen, uint16_t magicnum, uint32_t retry_delta,
 	uint32_t max_retries, uint32_t timeout, int extralen)
 {
 	/*------------------------------------------------------------------------

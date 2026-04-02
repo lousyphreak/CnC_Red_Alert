@@ -137,7 +137,7 @@ PaletteClass ComboPalette;
 /*
 ** Ptr to the combo palette.
 */
-unsigned char *ComboPalPtr;
+uint8_t *ComboPalPtr;
 
 /*
 ** Lookup table. If an entry is non-zero then it should be faded in/out when the slide changes.
@@ -403,7 +403,7 @@ void Slide_Show (int slide, int frame)
 			/*
 			** If this is the last fade down frame then zero the picture palette entries.
 			*/
-			unsigned char *ccpalptr = (unsigned char*)CCPalette;
+			uint8_t *ccpalptr = (uint8_t*)CCPalette;
 			for (int index = 0 ; index < 256 ; index++){
 				if (PaletteLUT[index]){
 					ccpalptr[index*3] = 0;
@@ -685,8 +685,8 @@ void Show_Who_Was_Responsible (void)
 	** Copy the font palette entries into the combo palette.
 	*/
 	PaletteClass credit_palette;
-	ComboPalPtr = (unsigned char *) &ComboPalette;
-	unsigned char *creditpal_ptr = (unsigned char *) &credit_palette;
+	ComboPalPtr = (uint8_t *) &ComboPalette;
+	uint8_t *creditpal_ptr = (uint8_t *) &credit_palette;
 	memcpy (ComboPalette, CCPalette, sizeof (ComboPalette));
 
 	for (int index = 0 ; index < 256 ; index++ ){
@@ -715,7 +715,7 @@ void Show_Who_Was_Responsible (void)
 	for (int index = 0 ; index < NUM_SLIDES ; index++){
 		SlideBuffers[index] = new GraphicBufferClass;
 		SlideBuffers[index]->Init (SeenBuff.Get_Width(), SeenBuff.Get_Height(), NULL , 0 , (GBC_Enum)0);
-		Load_Title_Screen(&SlideNames[index][0], SlideBuffers[index], (unsigned char*) &SlidePals[index][0]);
+		Load_Title_Screen(&SlideNames[index][0], SlideBuffers[index], (uint8_t*) &SlidePals[index][0]);
 	}
 
 	/*

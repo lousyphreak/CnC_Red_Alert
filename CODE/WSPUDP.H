@@ -36,6 +36,7 @@
 
 #ifndef WSPUDP_H
 #define WSPUDP_H
+#include <stdint.h>
 
 #include	"WSPROTO.H"
 
@@ -53,7 +54,7 @@ class UDPInterfaceClass : public WinsockInterfaceClass {
 		UDPInterfaceClass (void);
 		virtual ~UDPInterfaceClass(void);
 
-	 	virtual long Message_Handler(HWND window, UINT message, UINT wParam, LONG lParam);
+	 	virtual int32_t Message_Handler(HWND window, uint32_t message, uint32_t wParam, int32_t lParam);
 		virtual bool Open_Socket ( SOCKET socketnum );
 		virtual void Set_Broadcast_Address ( void *address );
 		virtual void Broadcast (void *buffer, int buffer_len);
@@ -72,12 +73,12 @@ class UDPInterfaceClass : public WinsockInterfaceClass {
 		/*
 		** Address to use when broadcasting a packet.
 		*/
-		DynamicVectorClass <unsigned char *> BroadcastAddresses;
+		DynamicVectorClass <uint8_t *> BroadcastAddresses;
 
 		/*
 		** List of local addresses.
 		*/
-		DynamicVectorClass <unsigned char *> LocalAddresses;
+		DynamicVectorClass <uint8_t *> LocalAddresses;
 };
 
 

@@ -350,7 +350,7 @@ void HouseClass::Debug_Dump(MonoClass * mono) const
 	mono->Set_Cursor(52, 1);mono->Printf("%2d", State);
 	mono->Set_Cursor(58, 1);mono->Printf("%2d", Blockage);
 	mono->Set_Cursor(65, 1);mono->Printf("%2d", IQ);
-	mono->Set_Cursor(72, 1);mono->Printf("%5d", (long)RepairTimer);
+	mono->Set_Cursor(72, 1);mono->Printf("%5d", (int32_t)RepairTimer);
 
 	mono->Set_Cursor(1, 3);mono->Printf("%08X", AScan);
 	mono->Set_Cursor(10, 3);mono->Printf("%8.8s", (BuildAircraft == AIRCRAFT_NONE) ? " " : AircraftTypeClass::As_Reference(BuildAircraft).Graphic_Name());
@@ -359,8 +359,8 @@ void HouseClass::Debug_Dump(MonoClass * mono) const
 	mono->Set_Cursor(37, 3);mono->Printf("%5d", Power);
 	mono->Set_Cursor(45, 3);mono->Printf("%04X", RadarSpied);
 	mono->Set_Cursor(52, 3);mono->Printf("%5d", PointTotal);
-	mono->Set_Cursor(62, 3);mono->Printf("%5d", (long)TeamTime);
-	mono->Set_Cursor(71, 3);mono->Printf("%5d", (long)AlertTime);
+	mono->Set_Cursor(62, 3);mono->Printf("%5d", (int32_t)TeamTime);
+	mono->Set_Cursor(71, 3);mono->Printf("%5d", (int32_t)AlertTime);
 
 	mono->Set_Cursor(1, 5);mono->Printf("%08X", BScan);
 	mono->Set_Cursor(10, 5);mono->Printf("%8.8s", (BuildStructure == STRUCT_NONE) ? " " : BuildingTypeClass::As_Reference(BuildStructure).Graphic_Name());
@@ -368,8 +368,8 @@ void HouseClass::Debug_Dump(MonoClass * mono) const
 	mono->Set_Cursor(27, 5);mono->Printf("%8d", Tiberium);
 	mono->Set_Cursor(37, 5);mono->Printf("%5d", Drain);
 	mono->Set_Cursor(44, 5);mono->Printf("%16.16s", QuarryName[PreferredTarget]);
-	mono->Set_Cursor(62, 5);mono->Printf("%5d", (long)TriggerTime);
-	mono->Set_Cursor(71, 5);mono->Printf("%5d", (long)BorrowedTime);
+	mono->Set_Cursor(62, 5);mono->Printf("%5d", (int32_t)TriggerTime);
+	mono->Set_Cursor(71, 5);mono->Printf("%5d", (int32_t)BorrowedTime);
 
 	mono->Set_Cursor(1, 7);mono->Printf("%08X", UScan);
 	mono->Set_Cursor(10, 7);mono->Printf("%8.8s", (BuildUnit == UNIT_NONE) ? " " : UnitTypeClass::As_Reference(BuildUnit).Graphic_Name());
@@ -377,7 +377,7 @@ void HouseClass::Debug_Dump(MonoClass * mono) const
 	mono->Set_Cursor(27, 7);mono->Printf("%8d", Control.InitialCredits);
 	mono->Set_Cursor(38, 7);mono->Printf("%5d", UnitsLost);
 	mono->Set_Cursor(44, 7);mono->Printf("%08X", Allies);
-	mono->Set_Cursor(71, 7);mono->Printf("%5d", (long)Attack);
+	mono->Set_Cursor(71, 7);mono->Printf("%5d", (int32_t)Attack);
 
 	mono->Set_Cursor(1, 9);mono->Printf("%08X", IScan);
 	mono->Set_Cursor(10, 9);mono->Printf("%8.8s", (BuildInfantry == INFANTRY_NONE) ? " " : InfantryTypeClass::As_Reference(BuildInfantry).Graphic_Name());
@@ -385,13 +385,13 @@ void HouseClass::Debug_Dump(MonoClass * mono) const
 	mono->Set_Cursor(27, 9);mono->Printf("%8d", Capacity);
 	mono->Set_Cursor(38, 9);mono->Printf("%5d", BuildingsLost);
 	mono->Set_Cursor(45, 9);mono->Printf("%4d", Radius / CELL_LEPTON_W);
-	mono->Set_Cursor(71, 9);mono->Printf("%5d", (long)AITimer);
+	mono->Set_Cursor(71, 9);mono->Printf("%5d", (int32_t)AITimer);
 
 	mono->Set_Cursor(1, 11);mono->Printf("%08X", VScan);
 	mono->Set_Cursor(10, 11);mono->Printf("%8.8s", (BuildVessel == VESSEL_NONE) ? " " : VesselTypeClass::As_Reference(BuildVessel).Graphic_Name());
 	mono->Set_Cursor(21, 11);mono->Printf("%3d", CurVessels);
 	mono->Set_Cursor(54, 11);mono->Printf("%04X", Coord_Cell(Center));
-	mono->Set_Cursor(71, 11);mono->Printf("%5d", (long)DamageTime);
+	mono->Set_Cursor(71, 11);mono->Printf("%5d", (int32_t)DamageTime);
 
 
 	for (int index = 0; index < ARRAY_SIZE(Scen.GlobalFlags); index++) {
@@ -2288,7 +2288,7 @@ void HouseClass::Make_Enemy(HousesType house)
  *   05/08/1995 JLB : Created.                                                                 *
  *   10/25/1995 JLB : Uses remap control value.                                                *
  *=============================================================================================*/
-unsigned char const * HouseClass::Remap_Table(bool blushing, RemapType remap) const
+uint8_t const * HouseClass::Remap_Table(bool blushing, RemapType remap) const
 {
 	assert(Houses.ID(this) == ID);
 
@@ -3561,7 +3561,7 @@ void HouseClass::MPlayer_Defeated(void)
 
 	char txt[80];
 	int i,j;
-	unsigned char id;
+	uint8_t id;
 	HouseClass * hptr;
 	HouseClass * hptr2;
 	int num_alive;
@@ -5489,7 +5489,7 @@ int HouseClass::AI_Building(void)
 		/*
 		**	Build a refinery if there isn't one already available.
 		*/
-		unsigned int current = BQuantity[STRUCT_REFINERY];
+		uint32_t current = BQuantity[STRUCT_REFINERY];
 		if (!IsTiberiumShort && current < Round_Up(Rule.RefineryRatio*fixed(CurBuildings)) && current < Rule.RefineryLimit) {
 			b = &BuildingTypeClass::As_Reference(STRUCT_REFINERY);
 			if (Can_Build(b, ActLike) && (money > b->Cost_Of() || hasincome)) {
@@ -7639,7 +7639,7 @@ CELL HouseClass::Find_Cell_In_Zone(TechnoClass const * techno, ZoneType zone) co
 	*/
 	CELL trycell = Random_Cell_In_Zone(zone);
 
-	short const * list = NULL;
+	int16_t const * list = NULL;
 	if (techno->What_Am_I() == RTTI_BUILDING) {
 		list = techno->Occupy_List(true);
 	}

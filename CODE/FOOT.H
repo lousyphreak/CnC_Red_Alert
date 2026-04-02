@@ -37,6 +37,7 @@
 
 #ifndef FOOT_H
 #define FOOT_H
+#include <stdint.h>
 
 #include	"TARGET.H"
 #include	"TYPE.H"
@@ -201,7 +202,7 @@ class FootClass :	public TechnoClass
 		**	this will be set to the team number (0 - 9). If it is not part of any
 		**	pseudo-team, then the number will be -1.
 		*/
-		unsigned char Group;
+		uint8_t Group;
 
 		/*
 		**	This points to the next member in the team that this object is part of. This

@@ -37,6 +37,7 @@
 
 #ifndef BFIOFILE_H
 #define BFIOFILE_H
+#include <stdint.h>
 
 #include	<cstdint>
 #include	"RAWFILE.H"

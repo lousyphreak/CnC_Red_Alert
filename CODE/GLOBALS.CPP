@@ -176,7 +176,7 @@ fixed EngineerCaptureLevel=0x40;	// Building damage level before engineer can ca
 #endif
 #endif
 
-unsigned short			Hard_Error_Occured = 0;
+uint16_t			Hard_Error_Occured = 0;
 WWMouseClass *			WWMouse = NULL;
 GraphicBufferClass	SysMemPage(DEFAULT_SCREEN_WIDTH, 200, (void*)NULL, DEFAULT_SCREEN_WIDTH * (200 + 4));
 WinTimerClass *		WindowsTimer=NULL;
@@ -192,8 +192,8 @@ int						AllDone;
 **	This is true if the game is the currently in focus windows app
 **
 */
-BOOL GameInFocus = FALSE;
-BOOL BootstrapFocusSeen = FALSE;
+int32_t GameInFocus = FALSE;
+int32_t BootstrapFocusSeen = FALSE;
 
 
 

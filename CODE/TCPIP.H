@@ -47,6 +47,7 @@
 
 #include <winsock.h>
 
+#include <stdint.h>
 #ifndef WOLAPI_INTEGRATION
 extern bool Server;
 #endif
@@ -94,21 +95,21 @@ class TcpipManagerClass {
 		TcpipManagerClass(void);
 		~TcpipManagerClass(void);
 
-		BOOL Init(void);
+		int32_t Init(void);
 		void Start_Server(void);
 		void Start_Client(void);
 		void Close_Socket(SOCKET s);
-	 	void Message_Handler(HWND window, UINT message, UINT wParam, LONG lParam);
+	 	void Message_Handler(HWND window, uint32_t message, uint32_t wParam, int32_t lParam);
 		void Copy_To_In_Buffer(int bytes);
 		int  Read(void *buffer, int buffer_len);
 		void Write(void *buffer, int buffer_len);
-		BOOL Add_Client(void);
+		int32_t Add_Client(void);
 		void Close(void);
 		void Set_Host_Address(char *address);
-		void Set_Protocol_UDP(BOOL state);
+		void Set_Protocol_UDP(int32_t state);
 		void Clear_Socket_Error(SOCKET socket);
 
-		inline BOOL Get_Connected(void) {return (Connected);}
+		inline int32_t Get_Connected(void) {return (Connected);}
 
 		typedef enum ConnectStatusEnum {
 			CONNECTED_OK = 0,
@@ -143,7 +144,7 @@ class TcpipManagerClass {
 		} InternetBufferType;
 
 
-		BOOL 					WinsockInitialised;
+		int32_t 					WinsockInitialised;
 		WSADATA				WinsockInfo;
 		SOCKET				ListenSocket;
 		SOCKET				ConnectSocket;
@@ -159,12 +160,12 @@ class TcpipManagerClass {
 		//char					OutBuffer[WS_OUT_BUFFER_LEN];
 		//int					OutBufferHead;
 		//int					OutBufferTail;
-		BOOL					IsServer;
-		BOOL					Connected;
+		int32_t					IsServer;
+		int32_t					Connected;
 		HostType				Server;
 		char					HostAddress[IP_ADDRESS_MAX];
 		ConnectStatusEnum ConnectStatus;
-		BOOL					UseUDP;
+		int32_t					UseUDP;
 		IN_ADDR				UDPIPAddress;
 		int					SocketReceiveBuffer;
 		int					SocketSendBuffer;

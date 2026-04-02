@@ -37,6 +37,7 @@
 
 #ifndef HELP_H
 #define HELP_H
+#include <stdint.h>
 
 #include	"TAB.H"
 #define HELP_TEXT_COLOR 80	//158		//Goldy/orange
@@ -59,7 +60,7 @@ class HelpClass: public TabClass
 
 		void Help_Text(int text, int x=-1, int y=-1, int color=LTGREY, bool quick=false);
 		void Set_Cost(int cost);
-		short const * Overlap_List(void) const;
+		int16_t const * Overlap_List(void) const;
 
 	private:
 
@@ -128,7 +129,7 @@ class HelpClass: public TabClass
 		**	which cells are under the help text and thus which cells need to be redrawn if
 		**	the help text is to be erased.
 		*/
-		static short OverlapList[60];
+		static int16_t OverlapList[60];
 
 		enum HelpClassEnum {
 			HELP_DELAY=TIMER_SECOND*1,				// The countdown timer delay before help text pops up.

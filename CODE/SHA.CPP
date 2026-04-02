@@ -40,9 +40,11 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include	<stdlib.h>
+#include	<cstring>
 #include	"SHA.H"
 
 
+#include <stdint.h>
 #if !defined(__BORLANDC__) && !defined(min)
 #define	min(a, b)		((a)<(b))?(a):(b)
 #endif
@@ -284,10 +286,11 @@ void SHAEngine::Process_Block(void const * source, SHADigest & acc) const
 	**	Expand the source data into a large 80 * 32bit buffer. This is the working
 	**	data that will be transformed by the secure hash algorithm.
 	*/
-	uint32_t const * data = (uint32_t const *)source;
 	int index;
 	for (index = 0; index < SRC_BLOCK_SIZE/sizeof(uint32_t); index++) {
-		block[index] = Reverse_LONG(data[index]);
+		uint32_t value;
+		std::memcpy(&value, (char const *)source + (index * sizeof(uint32_t)), sizeof(value));
+		block[index] = Reverse_LONG(value);
 	}
 
 	for (index = SRC_BLOCK_SIZE/sizeof(uint32_t); index < PROC_BLOCK_SIZE/sizeof(uint32_t); index++) {

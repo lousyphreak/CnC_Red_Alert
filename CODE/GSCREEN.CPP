@@ -457,7 +457,7 @@ void GScreenClass::Blit_Display(void)
 	BStart(BENCH_BLIT_DISPLAY);
 		if (SeenBuff.Get_Width()!=320) {
 			WWMouse->Draw_Mouse(&HidPage);
-			HidPage.Blit(SeenBuff , 0 , 0 , 0 , 0 , HidPage.Get_Width() , HidPage.Get_Height() , (BOOL) FALSE );
+			HidPage.Blit(SeenBuff , 0 , 0 , 0 , 0 , HidPage.Get_Width() , HidPage.Get_Height() , (int32_t) FALSE );
 			WWMouse->Erase_Mouse(&HidPage, FALSE);
 		} else {
 			ModeX_Blit(&HiddenPage);

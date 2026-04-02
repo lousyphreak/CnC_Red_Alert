@@ -37,6 +37,7 @@
 
 #ifndef VESSEL_H
 #define VESSEL_H
+#include <stdint.h>
 
 #include "DRIVE.H"
 #include "RADIO.H"
@@ -102,7 +103,7 @@ class VesselClass : public DriveClass
 		virtual COORDINATE Fire_Coord(int which) const;
 		virtual MoveType Can_Enter_Cell(CELL cell, FacingType from=FACING_NONE) const;
 		virtual void Draw_It(int x, int y, WindowNumberType window) const;
-		virtual short const * Overlap_List(bool redraw=false) const;
+		virtual int16_t const * Overlap_List(bool redraw=false) const;
 		virtual DirType Desired_Load_Dir(ObjectClass * passenger, CELL & moveto) const;
 		virtual RadioMessageType Receive_Message(RadioClass * from, RadioMessageType message, TARGET & param);
 		virtual void AI(void);

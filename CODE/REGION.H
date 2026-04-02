@@ -37,6 +37,7 @@
 
 #ifndef REGION_H
 #define REGION_H
+#include <stdint.h>
 
 
 class RegionClass {
@@ -53,7 +54,7 @@ class RegionClass {
 		int Threat_Value(void) const {return Threat;};
 
 	protected:
-		long  Threat;
+		int32_t  Threat;
 };
 
 #endif

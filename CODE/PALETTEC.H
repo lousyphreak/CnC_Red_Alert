@@ -37,6 +37,7 @@
 
 #ifndef PALETTEC_H
 #define PALETTEC_H
+#include <stdint.h>
 
 #include "RGB.H"
 
@@ -60,8 +61,8 @@ class PaletteClass
 		int operator != (PaletteClass const & palette) const { return(!(operator == (palette))); }
 		PaletteClass & operator = (PaletteClass const & palette);
 
-		operator unsigned char * (void) { return(reinterpret_cast<unsigned char *>(&Palette[0])); }
-		operator unsigned char const * (void) const { return(reinterpret_cast<unsigned char const *>(&Palette[0])); }
+		operator uint8_t * (void) { return(reinterpret_cast<uint8_t *>(&Palette[0])); }
+		operator uint8_t const * (void) const { return(reinterpret_cast<uint8_t const *>(&Palette[0])); }
 
 		void * Get_Data(void) { return(&Palette[0]); }
 		void const * Get_Data(void) const { return(&Palette[0]); }

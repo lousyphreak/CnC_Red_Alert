@@ -40,6 +40,7 @@
 #include "CRC.H"
 
 
+#include <stdint.h>
 /***********************************************************************************************
  * CRCEngine::operator() -- Submits one byte of data to the CRC engine.                        *
  *                                                                                             *

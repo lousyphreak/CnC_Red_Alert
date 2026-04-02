@@ -20,7 +20,7 @@
 #include <string.h>
 #include <stdint.h>
 
-extern "C" int __cdecl LCW_Comp(void const *source, void *dest, int length)
+extern "C" int  LCW_Comp(void const *source, void *dest, int length)
 {
 	if (source == 0 || dest == 0 || length < 0) {
 		return 0;

@@ -935,8 +935,8 @@ void Keyboard_Process(KeyNumType & input)
 
 void Toggle_Formation(void) {
 	int team = -1;
-	long minx = 0x7FFFFFFFL, miny = 0x7FFFFFFFL;
-	long maxx = 0, maxy = 0;
+	int32_t minx = 0x7FFFFFFFL, miny = 0x7FFFFFFFL;
+	int32_t maxx = 0, maxy = 0;
 	int index;
 	bool setform = 0;
 
@@ -1005,8 +1005,8 @@ void Toggle_Formation(void) {
 		if (obj && !obj->IsInLimbo && obj->House == PlayerPtr && obj->Group == team) {
 			obj->Mark(MARK_CHANGE);
 			if (setform) {
-				long xc = Cell_X(Coord_Cell(obj->Center_Coord()));
-				long yc = Cell_Y(Coord_Cell(obj->Center_Coord()));
+				int32_t xc = Cell_X(Coord_Cell(obj->Center_Coord()));
+				int32_t yc = Cell_Y(Coord_Cell(obj->Center_Coord()));
 				if (xc < minx) minx = xc;
 				if (xc > maxx) maxx = xc;
 				if (yc < miny) miny = yc;
@@ -1026,8 +1026,8 @@ void Toggle_Formation(void) {
 		if (obj && !obj->IsInLimbo && obj->House == PlayerPtr && obj->Group == team) {
 			obj->Mark(MARK_CHANGE);
 			if (setform) {
-				long xc = Cell_X(Coord_Cell(obj->Center_Coord()));
-				long yc = Cell_Y(Coord_Cell(obj->Center_Coord()));
+				int32_t xc = Cell_X(Coord_Cell(obj->Center_Coord()));
+				int32_t yc = Cell_Y(Coord_Cell(obj->Center_Coord()));
 				if (xc < minx) minx = xc;
 				if (xc > maxx) maxx = xc;
 				if (yc < miny) miny = yc;
@@ -1046,8 +1046,8 @@ void Toggle_Formation(void) {
 		if (obj && !obj->IsInLimbo && obj->House == PlayerPtr && obj->Group == team) {
 			obj->Mark(MARK_CHANGE);
 			if (setform) {
-				long xc = Cell_X(Coord_Cell(obj->Center_Coord()));
-				long yc = Cell_Y(Coord_Cell(obj->Center_Coord()));
+				int32_t xc = Cell_X(Coord_Cell(obj->Center_Coord()));
+				int32_t yc = Cell_Y(Coord_Cell(obj->Center_Coord()));
 				if (xc < minx) minx = xc;
 				if (xc > maxx) maxx = xc;
 				if (yc < miny) miny = yc;
@@ -1073,8 +1073,8 @@ void Toggle_Formation(void) {
 		for (index = 0; index < Units.Count(); index++) {
 			UnitClass * obj = Units.Ptr(index);
 			if (obj && !obj->IsInLimbo && obj->House == PlayerPtr && obj->Group == team) {
-				long xc = Cell_X(Coord_Cell(obj->Center_Coord()));
-				long yc = Cell_Y(Coord_Cell(obj->Center_Coord()));
+				int32_t xc = Cell_X(Coord_Cell(obj->Center_Coord()));
+				int32_t yc = Cell_Y(Coord_Cell(obj->Center_Coord()));
 
 				obj->XFormOffset = xc - centerx;
 				obj->YFormOffset = yc - centery;
@@ -1084,8 +1084,8 @@ void Toggle_Formation(void) {
 		for (index = 0; index < Infantry.Count(); index++) {
 			InfantryClass * obj = Infantry.Ptr(index);
 			if (obj && !obj->IsInLimbo && obj->House == PlayerPtr && obj->Group == team ) {
-				long xc = Cell_X(Coord_Cell(obj->Center_Coord()));
-				long yc = Cell_Y(Coord_Cell(obj->Center_Coord()));
+				int32_t xc = Cell_X(Coord_Cell(obj->Center_Coord()));
+				int32_t yc = Cell_Y(Coord_Cell(obj->Center_Coord()));
 
 				obj->XFormOffset = xc - centerx;
 				obj->YFormOffset = yc - centery;
@@ -1095,8 +1095,8 @@ void Toggle_Formation(void) {
 		for (index = 0; index < Vessels.Count(); index++) {
 			VesselClass * obj = Vessels.Ptr(index);
 			if (obj && !obj->IsInLimbo && obj->House == PlayerPtr && obj->Group == team ) {
-				long xc = Cell_X(Coord_Cell(obj->Center_Coord()));
-				long yc = Cell_Y(Coord_Cell(obj->Center_Coord()));
+				int32_t xc = Cell_X(Coord_Cell(obj->Center_Coord()));
+				int32_t yc = Cell_Y(Coord_Cell(obj->Center_Coord()));
 
 				obj->XFormOffset = xc - centerx;
 				obj->YFormOffset = yc - centery;
@@ -2558,7 +2558,7 @@ int32_t MixFileHandler(VQAHandle * vqa, int32_t action, void * buffer, int32_t n
 		** VQAERR_READ.
 		*/
 		case VQACMD_READ:
-			error = (file->Read(buffer, (unsigned short)nbytes) != (unsigned short)nbytes);
+			error = (file->Read(buffer, (uint16_t)nbytes) != (uint16_t)nbytes);
 			break;
 
 		/*
@@ -2594,7 +2594,7 @@ int32_t MixFileHandler(VQAHandle * vqa, int32_t action, void * buffer, int32_t n
 				error = file->Open((char *)buffer, READ);
 
 				if (error != -1) {
-					vqa->VQAio = (unsigned long)file;
+					vqa->VQAio = reinterpret_cast<uintptr_t>(file);
 					error = 0;
 				} else {
 					delete file;
@@ -2640,7 +2640,7 @@ int32_t MixFileHandler(VQAHandle * vqa, int32_t action, void * buffer, int32_t n
 }
 
 
-void Rebuild_Interpolated_Palette(unsigned char * interpal)
+void Rebuild_Interpolated_Palette(uint8_t * interpal)
 {
 	for (int y=0; y<255; y++) {
 		for (int x=y+1; x<256; x++) {
@@ -2650,8 +2650,8 @@ void Rebuild_Interpolated_Palette(unsigned char * interpal)
 }
 
 
-unsigned char 	* InterpolatedPalettes[100];
-BOOL				PalettesRead;
+uint8_t 	* InterpolatedPalettes[100];
+int32_t				PalettesRead;
 unsigned			PaletteCounter;
 
 
@@ -2669,7 +2669,7 @@ unsigned			PaletteCounter;
  * HISTORY:                                                                                    *
  *    5/7/96 9:49AM ST : Created                                                               *
  *=============================================================================================*/
-int Load_Interpolated_Palettes(char const * filename, BOOL add)
+int Load_Interpolated_Palettes(char const * filename, int32_t add)
 {
 	int	num_palettes=0;
 	int	i;
@@ -2703,7 +2703,7 @@ int Load_Interpolated_Palettes(char const * filename, BOOL add)
 		file.Read(&num_palettes , 4);
 
 		for (i=0; i < num_palettes; i++) {
-			InterpolatedPalettes[i+start_palette] = (unsigned char *)malloc (65536);
+			InterpolatedPalettes[i+start_palette] = (uint8_t *)malloc (65536);
 			memset (InterpolatedPalettes[i+start_palette], 0, 65536);
 			for (int y = 0; y < 256; y++) {
 				file.Read (InterpolatedPalettes[i+start_palette] + y*256 , y+1);
@@ -2830,11 +2830,11 @@ bool Try_Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 		if(IsVQ640) {
 			AnimControl.ImageWidth = 640;
 			AnimControl.ImageHeight = 400;
-			AnimControl.ImageBuf = (unsigned char *)VQ640.Get_Offset();
+			AnimControl.ImageBuf = (uint8_t *)VQ640.Get_Offset();
 		} else {
 			AnimControl.ImageWidth = 320;
 			AnimControl.ImageHeight = 200;
-			AnimControl.ImageBuf = (unsigned char *)SysMemPage.Get_Offset();
+			AnimControl.ImageBuf = (uint8_t *)SysMemPage.Get_Offset();
 		}
 		#endif
 
@@ -2849,7 +2849,7 @@ bool Try_Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 		if ((vqa = VQA_Alloc()) != NULL) {
 			VQA_Init(vqa, MixFileHandler);
 
-			const long open_result = VQA_Open(vqa, fullname, &AnimControl);
+			const int32_t open_result = VQA_Open(vqa, fullname, &AnimControl);
 			if (open_result == 0) {
 				Conquer_Trace("Play_Movie VQA_Open success file=%s", fullname);
 				played = true;
@@ -3082,7 +3082,7 @@ void const * Get_Radar_Icon(void const * shapefile, int shapenum, int frames, in
 		** next frame.
 		*/
 		void * ptr;
-		if ((ptr = (void *)(Build_Frame(shapefile, shapenum + framelp, SysMemPage.Get_Buffer()))) != NULL) {
+		if ((ptr = Build_Frame(shapefile, shapenum + framelp, SysMemPage.Get_Buffer())) != NULL) {
 			ptr = Get_Shape_Header_Data(ptr);
 
 			/*
@@ -3158,10 +3158,10 @@ void const * Get_Radar_Icon(void const * shapefile, int shapenum, int frames, in
  * HISTORY:                                                                                    *
  *   02/21/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-void CC_Draw_Shape(void const * shapefile, int shapenum, int x, int y, WindowNumberType window, ShapeFlags_Type flags, void const * fadingdata, void const * ghostdata, DirType rotation, long scale)
+void CC_Draw_Shape(void const * shapefile, int shapenum, int x, int y, WindowNumberType window, ShapeFlags_Type flags, void const * fadingdata, void const * ghostdata, DirType rotation, int32_t scale)
 {
 	int predoffset;
-	unsigned	long	shape_pointer;
+	void *	shape_pointer;
 
 
 	/*
@@ -3174,10 +3174,10 @@ void CC_Draw_Shape(void const * shapefile, int shapenum, int x, int y, WindowNum
 		fadingdata = DisplayClass::FadingShade;
 	}
 
-	static unsigned char * _xbuffer = 0;
+	static uint8_t * _xbuffer = 0;
 
 	if (!_xbuffer) {
-		_xbuffer = new unsigned char[SHAPE_BUFFER_SIZE];
+		_xbuffer = new uint8_t[SHAPE_BUFFER_SIZE];
 	}
 
 	if (shapefile != NULL && shapenum != -1) {
@@ -3218,7 +3218,7 @@ void CC_Draw_Shape(void const * shapefile, int shapenum, int x, int y, WindowNum
 			**	The Win32 build can return cached shapes wrapped in a small header.
 			**	The software blitter needs the raw pixel payload, not that wrapper.
 			*/
-			unsigned char * buffer = (unsigned char *)Get_Shape_Header_Data((void*)shape_pointer);
+			uint8_t * buffer = (uint8_t *)Get_Shape_Header_Data((void*)shape_pointer);
 
 
 			UseOldShapeDraw = false;
@@ -3231,7 +3231,7 @@ void CC_Draw_Shape(void const * shapefile, int shapenum, int x, int y, WindowNum
 				** Get the raw shape data without the new header and flag to use the old shape drawing
 				*/
 				UseOldShapeDraw = true;
-				buffer = (unsigned char *) Get_Shape_Header_Data((void*)shape_pointer);
+				buffer = (uint8_t *) Get_Shape_Header_Data((void*)shape_pointer);
 
 				if (Debug_Rotate) {
 
@@ -3323,7 +3323,7 @@ Rect const Shape_Dimensions(void const * shapedata, int shapenum)
 	}
 
 	char * shape;
-	void * sh = (void *)Build_Frame(shapedata, shapenum, _ShapeBuffer);
+	void * sh = Build_Frame(shapedata, shapenum, _ShapeBuffer);
 	if (sh == NULL) return(rect);
 //	shape = (char *)sh;
 	shape = (char *)Get_Shape_Header_Data(sh);
@@ -3474,7 +3474,7 @@ void Check_VQ_Palette_Set(void);
 extern GraphicBufferClass VQ640;
 extern bool IsVQ640;
 
-long VQ_Call_Back(unsigned char *buffer, long frame)
+int32_t VQ_Call_Back(uint8_t *buffer, int32_t frame)
 {
 	static int frame_trace_count = 0;
 	int key = 0;
@@ -3484,11 +3484,11 @@ long VQ_Call_Back(unsigned char *buffer, long frame)
 	}
 	Check_VQ_Palette_Set();
 	if (std::getenv("RA_TRACE_STARTUP") != NULL && buffer != NULL && frame_trace_count < 8) {
-		unsigned long width = IsVQ640 ? 640u : 320u;
-		unsigned long height = IsVQ640 ? 400u : 200u;
-		unsigned long total = width * height;
-		unsigned long nonzero = 0;
-		for (unsigned long index = 0; index < total; ++index) {
+		uint32_t width = IsVQ640 ? 640u : 320u;
+		uint32_t height = IsVQ640 ? 400u : 200u;
+		uint32_t total = width * height;
+		uint32_t nonzero = 0;
+		for (uint32_t index = 0; index < total; ++index) {
 			if (buffer[index] != 0) {
 				++nonzero;
 			}
@@ -3516,16 +3516,16 @@ long VQ_Call_Back(unsigned char *buffer, long frame)
 #endif
 	WWDraw_Flush_Present();
 	if (std::getenv("RA_TRACE_STARTUP") != NULL && frame < 8 && SeenBuff.Lock()) {
-		unsigned char* visible = static_cast<unsigned char*>(SeenBuff.Get_Graphic_Buffer()->Get_Buffer());
-		unsigned long nonzero = 0;
-		unsigned long width = (unsigned long)SeenBuff.Get_Width();
-		unsigned long height = (unsigned long)SeenBuff.Get_Height();
+		uint8_t* visible = static_cast<uint8_t*>(SeenBuff.Get_Graphic_Buffer()->Get_Buffer());
+		uint32_t nonzero = 0;
+		uint32_t width = (uint32_t)SeenBuff.Get_Width();
+		uint32_t height = (uint32_t)SeenBuff.Get_Height();
 		int pitch = SeenBuff.Get_Pitch();
-		long offset = SeenBuff.Get_Offset();
+		int32_t offset = SeenBuff.Get_Offset();
 		if (visible != NULL && pitch > 0 && offset >= 0) {
-			unsigned char* row = visible + offset;
-			for (unsigned long y = 0; y < height; ++y) {
-				for (unsigned long x = 0; x < width; ++x) {
+			uint8_t* row = visible + offset;
+			for (uint32_t y = 0; y < height; ++y) {
+				for (uint32_t x = 0; x < width; ++x) {
 					if (row[x] != 0) {
 						++nonzero;
 					}
@@ -3711,8 +3711,8 @@ void Handle_Team(int team, int action)
 		**	Create the team.
 		*/
 		case 2: {
-			long minx = 0x7FFFFFFFL, miny = 0x7FFFFFFFL;
-			long maxx = 0, maxy = 0;
+			int32_t minx = 0x7FFFFFFFL, miny = 0x7FFFFFFFL;
+			int32_t maxx = 0, maxy = 0;
 			TeamSpeed[team] = SPEED_WHEEL;
 			TeamMaxSpeed[team] = MPH_LIGHT_SPEED;
 			for (index = 0; index < Units.Count(); index++) {
@@ -3722,8 +3722,8 @@ void Handle_Team(int team, int action)
 					if (obj->IsSelected) {
 						obj->Group = team;
 						obj->Mark(MARK_CHANGE);
-						long xc = Cell_X(Coord_Cell(obj->Center_Coord()));
-						long yc = Cell_Y(Coord_Cell(obj->Center_Coord()));
+						int32_t xc = Cell_X(Coord_Cell(obj->Center_Coord()));
+						int32_t yc = Cell_Y(Coord_Cell(obj->Center_Coord()));
 						if (xc < minx) minx = xc;
 						if (xc > maxx) maxx = xc;
 						if (yc < miny) miny = yc;
@@ -3743,8 +3743,8 @@ void Handle_Team(int team, int action)
 					if (obj->IsSelected) {
 						obj->Group = team;
 						obj->Mark(MARK_CHANGE);
-						long xc = Cell_X(Coord_Cell(obj->Center_Coord()));
-						long yc = Cell_Y(Coord_Cell(obj->Center_Coord()));
+						int32_t xc = Cell_X(Coord_Cell(obj->Center_Coord()));
+						int32_t yc = Cell_Y(Coord_Cell(obj->Center_Coord()));
 						if (xc < minx) minx = xc;
 						if (xc > maxx) maxx = xc;
 						if (yc < miny) miny = yc;
@@ -3764,8 +3764,8 @@ void Handle_Team(int team, int action)
 					if (obj->IsSelected) {
 						obj->Group = team;
 						obj->Mark(MARK_CHANGE);
-						long xc = Cell_X(Coord_Cell(obj->Center_Coord()));
-						long yc = Cell_Y(Coord_Cell(obj->Center_Coord()));
+						int32_t xc = Cell_X(Coord_Cell(obj->Center_Coord()));
+						int32_t yc = Cell_Y(Coord_Cell(obj->Center_Coord()));
 						if (xc < minx) minx = xc;
 						if (xc > maxx) maxx = xc;
 						if (yc < miny) miny = yc;
@@ -3804,8 +3804,8 @@ void Handle_Team(int team, int action)
 #else
 #if(1)
 // Old always-north formation stuff
-						long xc = Cell_X(Coord_Cell(obj->Center_Coord()));
-						long yc = Cell_Y(Coord_Cell(obj->Center_Coord()));
+						int32_t xc = Cell_X(Coord_Cell(obj->Center_Coord()));
+						int32_t yc = Cell_Y(Coord_Cell(obj->Center_Coord()));
 
 						obj->XFormOffset = xc - centerx;
 						obj->YFormOffset = yc - centery;
@@ -3829,8 +3829,8 @@ void Handle_Team(int team, int action)
 #else
 #if(1)
 // Old always-north formation stuff
-						long xc = Cell_X(Coord_Cell(obj->Center_Coord()));
-						long yc = Cell_Y(Coord_Cell(obj->Center_Coord()));
+						int32_t xc = Cell_X(Coord_Cell(obj->Center_Coord()));
+						int32_t yc = Cell_Y(Coord_Cell(obj->Center_Coord()));
 
 						obj->XFormOffset = xc - centerx;
 						obj->YFormOffset = yc - centery;
@@ -3932,8 +3932,8 @@ int Get_CD_Index (int cd_drive, int timeout)
 	{
 	char		volume_name[128];
 	char		buffer[128];
-	DWORD		filename_length;
-	DWORD		misc_dword;
+	uint32_t		filename_length;
+	uint32_t		misc_dword;
 	int		count = 0;
 
 	CountDownTimerClass timer;
@@ -3949,9 +3949,9 @@ int Get_CD_Index (int cd_drive, int timeout)
 		sprintf(buffer, "%c:\\", 'A' + cd_drive);
 
 		if (GetVolumeInformation ((char const *)buffer, &volume_name[0] ,
-				static_cast<DWORD>(sizeof(volume_name)), static_cast<DWORD*>(NULL) ,
+				static_cast<uint32_t>(sizeof(volume_name)), static_cast<uint32_t*>(NULL) ,
 				&filename_length, &misc_dword,
-				(char *)NULL, static_cast<DWORD>(0)))
+				(char *)NULL, static_cast<uint32_t>(0)))
 			{
 			/*
 			** Try opening 'movies.mix' to verify that the CD is really there and is what
@@ -4801,9 +4801,9 @@ static void Do_Record_Playback(void)
 	int i;
 	COORDINATE coord;
 	ObjectClass * obj;
-	unsigned long sum;
-	unsigned long sum2;
-	unsigned long ltgt;
+	uint32_t sum;
+	uint32_t sum2;
+	uint32_t ltgt;
 
 	/*
 	**	Record a game
@@ -4827,7 +4827,7 @@ static void Do_Record_Playback(void)
 		*/
 		sum = 0;
 		for (i = 0; i < count; i++) {
-			ltgt = (unsigned long)(CurrentObject[i]->As_Target());
+			ltgt = (uint32_t)(CurrentObject[i]->As_Target());
 			sum += ltgt;
 		}
 		Session.RecordFile.Write (&sum, sizeof(sum));
@@ -4876,7 +4876,7 @@ static void Do_Record_Playback(void)
 			*/
 			sum = 0;
 			for (i = 0; i < CurrentObject.Count(); i++) {
-				ltgt = (unsigned long)(CurrentObject[i]->As_Target());
+				ltgt = (uint32_t)(CurrentObject[i]->As_Target());
 				sum += ltgt;
 			}
 
@@ -5097,7 +5097,7 @@ void Shake_The_Screen(int shakes)
  * HISTORY:                                                                                    *
  *   09/04/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-void List_Copy(short const * source, int len, short * dest)
+void List_Copy(int16_t const * source, int len, int16_t * dest)
 {
 	if (source == NULL || dest == NULL || len <= 0) {
 		return;
@@ -5175,8 +5175,8 @@ bool Is_Counterstrike_Installed (void)
 		HKEY hKey;
 		if( RegOpenKeyEx( HKEY_LOCAL_MACHINE, Game_Registry_Key(), 0, KEY_READ, &hKey ) != ERROR_SUCCESS )
 			return false;
-		DWORD dwValue;
-		DWORD dwBufSize = sizeof( DWORD );
+		uint32_t dwValue;
+		uint32_t dwBufSize = sizeof( uint32_t );
 		if( RegQueryValueEx( hKey, "CStrikeInstalled", 0, NULL, (LPBYTE)&dwValue, &dwBufSize ) != ERROR_SUCCESS )
 			bInstalled = false;
 		else
@@ -5205,8 +5205,8 @@ bool Is_Aftermath_Installed (void)
 		HKEY hKey;
 		if( RegOpenKeyEx( HKEY_LOCAL_MACHINE, Game_Registry_Key(), 0, KEY_READ, &hKey ) != ERROR_SUCCESS )
 			return false;
-		DWORD dwValue;
-		DWORD dwBufSize = sizeof( DWORD );
+		uint32_t dwValue;
+		uint32_t dwBufSize = sizeof( uint32_t );
 		if( RegQueryValueEx( hKey, "AftermathInstalled", 0, NULL, (LPBYTE)&dwValue, &dwBufSize ) != ERROR_SUCCESS )
 			bInstalled = false;
 		else

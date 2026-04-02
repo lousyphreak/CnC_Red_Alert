@@ -43,6 +43,7 @@
 
 
 #include "LZO1X.H"
+#include <stdint.h>
 #define NDEBUG
 #include <assert.h>
 #include "LZO_CONF.H"
@@ -125,7 +126,7 @@ static int do_compress(const lzo_byte *in , lzo_uint  in_len,
 		}
 #if defined(LZO_UNALIGNED_OK_2)
 		else
-			if (* (unsigned short *) m_pos != * (unsigned short *) ip)
+			if (* (uint16_t *) m_pos != * (uint16_t *) ip)
 #else
 		else
 			if (m_pos[0] != ip[0] || m_pos[1] != ip[1])

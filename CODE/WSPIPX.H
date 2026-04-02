@@ -36,6 +36,7 @@
 
 #ifndef WSPIPX_H
 #define WSPIPX_H
+#include <stdint.h>
 
 #include	"WSPROTO.H"
 
@@ -62,7 +63,7 @@ class IPXInterfaceClass : public WinsockInterfaceClass {
 		IPXInterfaceClass (void);
 		//virtual ~IPXInterfaceClass(void){Close();};
 		bool Get_Network_Card_Address (int card_number, SOCKADDR_IPX *addr);
-	 	virtual long Message_Handler(HWND window, UINT message, UINT wParam, LONG lParam);
+	 	virtual int32_t Message_Handler(HWND window, uint32_t message, uint32_t wParam, int32_t lParam);
 		virtual bool Open_Socket ( SOCKET socketnum );
 
 		virtual ProtocolEnum Get_Protocol (void) {
@@ -81,17 +82,17 @@ class IPXInterfaceClass : public WinsockInterfaceClass {
 		** number of the net that this PC is attached to. This limits broadcasts to the current
 		** network.
 		*/
-		unsigned char	BroadcastNet[4];
+		uint8_t	BroadcastNet[4];
 
 		/*
 		** The node to use as a broadcast address. Normally ff,ff,ff,ff,ff,ff.
 		*/
-		unsigned char	BroadcastNode[6];
+		uint8_t	BroadcastNode[6];
 
 		/*
 		** The id of the network cars in this machine.
 		*/
-		unsigned char	MyNode[6];
+		uint8_t	MyNode[6];
 
 		/*
 		** The socket number to connect with. Normally this will be virgins reserved socket

@@ -37,6 +37,7 @@
 
 #ifndef CELL_H
 #define CELL_H
+#include <stdint.h>
 
 #include	"DEFINES.H"
 #include	"CCPTR.H"
@@ -59,7 +60,7 @@ class CellClass
 		**	be calculated. Calculating this number requires a divide and would occur about
 		**	5.72031 bijillion times per second.
 		*/
-		short ID;
+		int16_t ID;
 
 		/*
 		**	Does this cell need to be updated on the radar map?  If something changes in the cell
@@ -120,13 +121,13 @@ class CellClass
 		**	will only consider the CrushZone. All other terrestrial travellers will
 		**	use the normal Zone.
 		*/
-		unsigned char Zones[MZONE_COUNT];
+		uint8_t Zones[MZONE_COUNT];
 
 		/*
 		** This field controls whether an area is being jammed by a gap
 		** generator.
 		*/
-		unsigned short Jammed;
+		uint16_t Jammed;
 
 		/*
 		**	This is the trigger ID for any trigger that might be attached to
@@ -140,7 +141,7 @@ class CellClass
 		**	specified by this element is rendered. It is the lowest of the low.
 		*/
 		TemplateType TType;
-		unsigned char TIcon;
+		uint8_t TIcon;
 
 		/*
 		**	The second layer of 'terrain' icons is represented by a simple
@@ -148,14 +149,14 @@ class CellClass
 		**	concrete and walls.
 		*/
 		OverlayType Overlay;
-		unsigned char OverlayData;
+		uint8_t OverlayData;
 
 		/*
 		**	This is used to specify any special 'stain' overlay icon. This
 		**	typically includes infantry bodies or other temporary marks.
 		*/
 		SmudgeType Smudge;
-		unsigned char SmudgeData;
+		uint8_t SmudgeData;
 
 		/*
 		**	Smudges and walls need to record ownership values. For walls, this
@@ -204,7 +205,7 @@ class CellClass
 				unsigned Monolith:1;		// Some immovable blockage is in cell.
 				unsigned Building:1;		// A building of some time (usually blocks movement).
 			} Occupy;
-			unsigned char Composite;
+			uint8_t Composite;
 		} Flag;
 
 		//----------------------------------------------------------------
@@ -279,7 +280,7 @@ class CellClass
 		*/
 		bool Grow_Tiberium(void);
 		bool Spread_Tiberium(bool forced=false);
-		long Tiberium_Adjust(bool pregame=false);
+		int32_t Tiberium_Adjust(bool pregame=false);
 		void Wall_Update(void);
 		void Concrete_Calc(void);
 		void Recalc_Attributes(void);

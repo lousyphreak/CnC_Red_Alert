@@ -38,6 +38,7 @@
 
 #ifndef TEVENT_H
 #define TEVENT_H
+#include <stdint.h>
 
 #include <SDL3/SDL_stdinc.h>
 #include <cstdint>

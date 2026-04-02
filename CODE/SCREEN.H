@@ -37,6 +37,7 @@
 
 #ifndef SCREEN_H
 #define SCREEN_H
+#include <stdint.h>
 
 
 class ScreenClass
@@ -61,8 +62,8 @@ class ScreenClass
 		Set_Default_Mouse(MouseShapeType mouse);
 		Force_Mouse_Shape(MouseShapeType mouse);
 
-		unsigned char *GamePalette;
-		unsigned char *BlackPalette;
+		uint8_t *GamePalette;
+		uint8_t *BlackPalette;
 };
 
 #endif

@@ -38,6 +38,7 @@
 
 #ifndef FIXED_H
 #define FIXED_H
+#include <stdint.h>
 
 #include "ENDIAN.H"
 
@@ -80,7 +81,7 @@ class fixed
 		fixed(int numerator, int denominator);
 
 		// Conversion constructor to get fixed point from integer.
-		fixed(int value) {Data.Composite.Fraction = 0;Data.Composite.Whole = (unsigned char)value;}
+		fixed(int value) {Data.Composite.Fraction = 0;Data.Composite.Whole = (uint8_t)value;}
 
 		// Constructor if ASCII image of number is known.
 		fixed(char const * ascii);
@@ -91,10 +92,10 @@ class fixed
 		/*
 		**	The standard operators as they apply to in-place operation.
 		*/
-		fixed & operator *= (fixed const & rvalue) {Data.Raw = (unsigned short)(((int)Data.Raw * rvalue.Data.Raw) / 256);return(*this);}
-		fixed & operator *= (int rvalue) {Data.Raw = (unsigned short)(Data.Raw * rvalue);return(*this);}
-		fixed & operator /= (fixed const & rvalue) {if (rvalue.Data.Raw != 0 && rvalue.Data.Raw != 256) Data.Raw = (unsigned short)(((int)Data.Raw * 256) / rvalue);return(*this);}
-		fixed & operator /= (int rvalue) {if (rvalue) Data.Raw = (unsigned short)((unsigned)Data.Raw / rvalue);return(*this);}
+		fixed & operator *= (fixed const & rvalue) {Data.Raw = (uint16_t)(((int)Data.Raw * rvalue.Data.Raw) / 256);return(*this);}
+		fixed & operator *= (int rvalue) {Data.Raw = (uint16_t)(Data.Raw * rvalue);return(*this);}
+		fixed & operator /= (fixed const & rvalue) {if (rvalue.Data.Raw != 0 && rvalue.Data.Raw != 256) Data.Raw = (uint16_t)(((int)Data.Raw * 256) / rvalue);return(*this);}
+		fixed & operator /= (int rvalue) {if (rvalue) Data.Raw = (uint16_t)((unsigned)Data.Raw / rvalue);return(*this);}
 		fixed & operator += (fixed const & rvalue) {Data.Raw += rvalue.Data.Raw;return(*this);}
 		fixed & operator -= (fixed const & rvalue) {Data.Raw -= rvalue.Data.Raw;return(*this);}
 
@@ -103,10 +104,10 @@ class fixed
 		**	and divide are more efficient than using the fixed point counterparts.
 		*/
 //		const fixed operator * (fixed const & rvalue) const {return(fixed(*this) *= rvalue);}
-		const fixed operator * (fixed const & rvalue) const {fixed temp = *this;temp.Data.Raw = (unsigned short)(((int)temp.Data.Raw * (int)rvalue.Data.Raw) / 256);return(temp);}
+		const fixed operator * (fixed const & rvalue) const {fixed temp = *this;temp.Data.Raw = (uint16_t)(((int)temp.Data.Raw * (int)rvalue.Data.Raw) / 256);return(temp);}
 		const int operator * (int rvalue) const {return ((((unsigned)Data.Raw * rvalue) + (256/2)) / 256);}
 //		const fixed operator / (fixed const & rvalue) const {return(fixed(*this) /= rvalue);}
-		const fixed operator / (fixed const & rvalue) const {fixed temp = *this;if (rvalue.Data.Raw != 0 && rvalue.Data.Raw != 256) temp.Data.Raw = (unsigned short)(((int)temp.Data.Raw * 256) / rvalue.Data.Raw);return(temp);}
+		const fixed operator / (fixed const & rvalue) const {fixed temp = *this;if (rvalue.Data.Raw != 0 && rvalue.Data.Raw != 256) temp.Data.Raw = (uint16_t)(((int)temp.Data.Raw * 256) / rvalue.Data.Raw);return(temp);}
 		const int operator / (int rvalue) const {if (rvalue) return(((unsigned)Data.Raw+(256/2)) / ((unsigned)rvalue*256));return(*this);}
 //		const fixed operator + (fixed const & rvalue) const {return(fixed(*this) += rvalue);}
 		const fixed operator + (fixed const & rvalue) const {fixed temp = *this;temp += rvalue;return(temp);}
@@ -165,13 +166,13 @@ class fixed
 		/*
 		**	Helper functions to handle simple and common operations on fixed point numbers.
 		*/
-		void Round_Up(void) {Data.Raw += (unsigned short)(256-1);Data.Composite.Fraction = 0;}
+		void Round_Up(void) {Data.Raw += (uint16_t)(256-1);Data.Composite.Fraction = 0;}
 		void Round_Down(void) {Data.Composite.Fraction = 0;}
 		void Round(void) {if (Data.Composite.Fraction >= 256/2) Round_Up();Round_Down();}
-		void Saturate(unsigned capvalue) {if (Data.Raw > (capvalue*256)) Data.Raw = (unsigned short)(capvalue*256);}
+		void Saturate(unsigned capvalue) {if (Data.Raw > (capvalue*256)) Data.Raw = (uint16_t)(capvalue*256);}
 		void Saturate(fixed const & capvalue) {if (*this > capvalue) *this = capvalue;}
-		void Sub_Saturate(unsigned capvalue) {if (Data.Raw >= (capvalue*256)) Data.Raw = (unsigned short)((capvalue*256)-1);}
-		void Sub_Saturate(fixed const & capvalue) {if (*this >= capvalue) Data.Raw = (unsigned short)(capvalue.Data.Raw-1);}
+		void Sub_Saturate(unsigned capvalue) {if (Data.Raw >= (capvalue*256)) Data.Raw = (uint16_t)((capvalue*256)-1);}
+		void Sub_Saturate(fixed const & capvalue) {if (*this >= capvalue) Data.Raw = (uint16_t)(capvalue.Data.Raw-1);}
 		void Inverse(void) {*this = fixed(1) / *this;}
 
 		/*
@@ -206,14 +207,14 @@ class fixed
 		union {
 			struct {
 #if RA_BIG_ENDIAN_HOST
-				unsigned char Whole;
-				unsigned char Fraction;
+				uint8_t Whole;
+				uint8_t Fraction;
 #else
-				unsigned char Fraction;
-				unsigned char Whole;
+				uint8_t Fraction;
+				uint8_t Whole;
 #endif
 			} Composite;
-			unsigned short Raw;
+			uint16_t Raw;
 		} Data;
 };
 

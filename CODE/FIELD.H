@@ -36,6 +36,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #ifndef __FIELD_H
 #define __FIELD_H
+#include <stdint.h>
 
 #include "win32_compat.h"
 #include <cstdint>
@@ -64,7 +65,7 @@ class FieldClass {
 		//
 		FieldClass(void) {};
 		FieldClass(char *id, char data);
-		FieldClass(char *id, unsigned char data);
+		FieldClass(char *id, uint8_t data);
 		FieldClass(char *id, int16_t data);
 		FieldClass(char *id, uint16_t data);
 		FieldClass(char *id, int32_t data);
@@ -77,8 +78,8 @@ class FieldClass {
 
 	private:
 		char				ID[4];				// id value of this field
-		unsigned short	DataType;			// id of the data type we are using
-		unsigned short Size;					// size of the data portion of this field
+		uint16_t	DataType;			// id of the data type we are using
+		uint16_t Size;					// size of the data portion of this field
 		void  			*Data;				// pointer to the data portion of this field
 		FieldClass		*Next;				// pointer to the next field in the field list
 };

@@ -37,6 +37,7 @@
 
 #ifndef TXTLABEL_H
 #define TXTLABEL_H
+#include <stdint.h>
 
 class TextLabelClass : public GadgetClass
 {
@@ -60,8 +61,8 @@ class TextLabelClass : public GadgetClass
 		/*
 		** General-purpose data fields
 		*/
-		unsigned long UserData1;
-		unsigned long UserData2;
+		uint32_t UserData1;
+		uint32_t UserData2;
 		TextPrintType Style;
 		char *Text;
 		RemapControlType * Color;

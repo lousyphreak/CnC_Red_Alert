@@ -53,6 +53,7 @@
 #include	<string.h>
 
 
+#include <stdint.h>
 /***********************************************************************************************
  * RAMFileClass::RAMFileClass -- Construct a RAM buffer based "file" object.                   *
  *                                                                                             *

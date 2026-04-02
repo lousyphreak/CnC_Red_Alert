@@ -149,8 +149,8 @@ static void Queue_AI_Normal(void);
 static void Queue_AI_Multiplayer(void);
 static RetcodeType Wait_For_Players(int first_time, ConnManClass *net,
 	int resend_delta, int dialog_time, int timeout, char *multi_packet_buf,
-	int my_sent, long *their_frame,  unsigned short *their_sent,
-	unsigned short *their_recv);
+	int my_sent, int32_t *their_frame,  uint16_t *their_sent,
+	uint16_t *their_recv);
 static void Generate_Timing_Event(ConnManClass *net, int my_sent);
 static void Generate_Real_Timing_Event(ConnManClass *net, int my_sent);
 static void Generate_Process_Time_Event(ConnManClass *net);
@@ -159,14 +159,14 @@ static int Send_Packets(ConnManClass *net, char *multi_packet_buf,
 	int multi_packet_max, int max_ahead, int my_sent);
 static void Send_FrameSync(ConnManClass *net, int cmd_count);
 static RetcodeType Process_Receive_Packet(ConnManClass *net,
-	char *multi_packet_buf, int id, int packetlen, long *their_frame,
-	unsigned short *their_sent, unsigned short *their_recv);
-static int Can_Advance(ConnManClass *net, int max_ahead, long *their_frame,
-	unsigned short *their_sent, unsigned short *their_recv);
+	char *multi_packet_buf, int id, int packetlen, int32_t *their_frame,
+	uint16_t *their_sent, uint16_t *their_recv);
+static int Can_Advance(ConnManClass *net, int max_ahead, int32_t *their_frame,
+	uint16_t *their_sent, uint16_t *their_recv);
 static int Process_Reconnect_Dialog(CDTimerClass<SystemTimerClass> *timeout_timer,
-	long *their_frame, int num_conn, int reconn, int fresh);
-static int Handle_Timeout(ConnManClass *net, long *their_frame,
-	unsigned short *their_sent, unsigned short *their_recv);
+	int32_t *their_frame, int num_conn, int reconn, int fresh);
+static int Handle_Timeout(ConnManClass *net, int32_t *their_frame,
+	uint16_t *their_sent, uint16_t *their_recv);
 static void Stop_Game(void);
 
 //...........................................................................
@@ -188,7 +188,7 @@ int Extract_Compressed_Events(void *buf, int bufsize);
 static int Execute_DoList(int max_houses, HousesType base_house,
 	ConnManClass *net, CDTimerClass<FrameTimerClass> *skip_crc,
 //	ConnManClass *net, TCountDownTimerClass *skip_crc,
-	long *their_frame, unsigned short *their_sent, unsigned short *their_recv);
+	int32_t *their_frame, uint16_t *their_sent, uint16_t *their_recv);
 static void Clean_DoList(ConnManClass *net);
 static void Queue_Record(void);
 static void Queue_Playback(void);
@@ -201,13 +201,13 @@ void Add_CRC(uint32_t *crc, uint32_t val);
 static void Print_CRCs(EventClass *ev);
 static void Init_Queue_Mono(ConnManClass *net);
 static void Update_Queue_Mono(ConnManClass *net, int flow_index);
-static void Print_Framesync_Values(long curframe, uint32_t max_ahead,
-	int num_connections, unsigned short *their_recv,
-	unsigned short *their_sent, unsigned short my_sent);
+static void Print_Framesync_Values(int32_t curframe, uint32_t max_ahead,
+	int num_connections, uint16_t *their_recv,
+	uint16_t *their_sent, uint16_t my_sent);
 
 extern void Keyboard_Process(KeyNumType &input);
 void Dump_Packet_Too_Late_Stuff(EventClass *event, ConnManClass *net,
-	long *their_frame, unsigned short *their_sent, unsigned short *their_recv);
+	int32_t *their_frame, uint16_t *their_sent, uint16_t *their_recv);
 void Check_Mirror(void);
 
 
@@ -571,13 +571,13 @@ static void Queue_AI_Multiplayer(void)
 	//........................................................................
 	// Frame-sync'ing variables
 	//........................................................................
-	static long
+	static int32_t
 		their_frame[MAX_PLAYERS - 1];	// other players' frame #'s
-	static unsigned short
+	static uint16_t
 		their_sent[MAX_PLAYERS - 1];	// # cmds other player claims to have sent
-	static unsigned short
+	static uint16_t
 		their_recv[MAX_PLAYERS - 1];	// # cmds actually received from others
-	static unsigned short
+	static uint16_t
 		my_sent;								// # cmds I've sent out
 
 	//........................................................................
@@ -898,8 +898,8 @@ static void Queue_AI_Multiplayer(void)
  *=========================================================================*/
 static RetcodeType Wait_For_Players(int first_time, ConnManClass *net,
 	int resend_delta, int dialog_time, int timeout, char *multi_packet_buf,
-	int my_sent, long *their_frame, unsigned short *their_sent,
-	unsigned short *their_recv)
+	int my_sent, int32_t *their_frame, uint16_t *their_sent,
+	uint16_t *their_recv)
 {
 	//........................................................................
 	// Variables for sending, receiving & parsing packets:
@@ -1230,12 +1230,12 @@ static void Generate_Timing_Event(ConnManClass *net, int my_sent)
 			//..................................................................
 			else {
 				if (Session.Type == GAME_IPX || Session.Type == GAME_INTERNET) {
-					ev.Data.FrameInfo.Delay = max(static_cast<unsigned long>(resp_time / 8),
-						 static_cast<unsigned long>(NETWORK_MIN_MAX_AHEAD));
+					ev.Data.FrameInfo.Delay = max(static_cast<uint32_t>(resp_time / 8),
+						 static_cast<uint32_t>(NETWORK_MIN_MAX_AHEAD));
 				}
 				else if (Session.Type == GAME_TEN || Session.Type == GAME_MPATH) {
-					ev.Data.FrameInfo.Delay = max(static_cast<unsigned long>(resp_time / 8),
-						 static_cast<unsigned long>(HIGH_LATENCY_MIN_MAX_AHEAD));
+					ev.Data.FrameInfo.Delay = max(static_cast<uint32_t>(resp_time / 8),
+						 static_cast<uint32_t>(HIGH_LATENCY_MIN_MAX_AHEAD));
 				}
 			}
 			OutList.Add(ev);
@@ -1690,8 +1690,8 @@ static void Send_FrameSync(ConnManClass *net, int cmd_count)
  *   11/21/1995 BRR : Created.                                             *
  *=========================================================================*/
 static RetcodeType Process_Receive_Packet(ConnManClass *net,
-	char *multi_packet_buf, int id, int packetlen, long *their_frame,
-	unsigned short *their_sent, unsigned short *their_recv)
+	char *multi_packet_buf, int id, int packetlen, int32_t *their_frame,
+	uint16_t *their_sent, uint16_t *their_recv)
 {
 	EventClass *event;
 	int index;
@@ -1842,10 +1842,10 @@ static RetcodeType Process_Receive_Packet(ConnManClass *net,
  * HISTORY:                                                                *
  *   11/21/1995 BRR : Created.                                             *
  *=========================================================================*/
-static int Can_Advance(ConnManClass *net, int max_ahead, long *their_frame,
-	unsigned short *their_sent, unsigned short *their_recv)
+static int Can_Advance(ConnManClass *net, int max_ahead, int32_t *their_frame,
+	uint16_t *their_sent, uint16_t *their_recv)
 {
-	long their_oldest_frame;			// other players' oldest frame #
+	int32_t their_oldest_frame;			// other players' oldest frame #
 	int count_ok;							// true = my cmd count matches theirs
 	int i;
 
@@ -1912,7 +1912,7 @@ static int Can_Advance(ConnManClass *net, int max_ahead, long *their_frame,
  *   11/21/1995 BRR : Created.                                             *
  *=========================================================================*/
 static int Process_Reconnect_Dialog(CDTimerClass<SystemTimerClass> *timeout_timer,
-	long *their_frame, int num_conn, int reconn, int fresh)
+	int32_t *their_frame, int num_conn, int reconn, int fresh)
 {
 	static int displayed_time = 0;	// time value currently displayed
 	int new_time;
@@ -1990,8 +1990,8 @@ static int Process_Reconnect_Dialog(CDTimerClass<SystemTimerClass> *timeout_time
  * HISTORY:                                                                *
  *   11/21/1995 BRR : Created.                                             *
  *=========================================================================*/
-static int Handle_Timeout(ConnManClass *net, long *their_frame,
-	unsigned short *their_sent, unsigned short *their_recv)
+static int Handle_Timeout(ConnManClass *net, int32_t *their_frame,
+	uint16_t *their_sent, uint16_t *their_recv)
 {
 	int oldest_index;						// index of person requiring a reconnect
 	int i,j;
@@ -2319,8 +2319,8 @@ static int Add_Compressed_Events(void *buf, int bufsize, int frame_delay,
 	EventClass prevevent;				// last event processed
 	int datasize;							// size of element plucked from event union
 	int storedsize;						// actual # bytes stored from event
-	unsigned char *unitsptr = NULL;	// ptr to buffer pos to store mega. rep count
-	unsigned char numunits = 0;		// megamission rep count value
+	uint8_t *unitsptr = NULL;	// ptr to buffer pos to store mega. rep count
+	uint8_t numunits = 0;		// megamission rep count value
 	bool missiondup = false;			// flag: is this event a megamission repeat?
 
 	//------------------------------------------------------------------------
@@ -2419,7 +2419,7 @@ static int Add_Compressed_Events(void *buf, int bufsize, int frame_delay,
 					}
 
 					*unitsptr = numunits;
-					unitsptr = ((unsigned char *)buf) + size +
+					unitsptr = ((uint8_t *)buf) + size +
 						sizeof(EventClass::EventType);
 					storedsize += sizeof(numunits);
 					numunits = 1;
@@ -2455,7 +2455,7 @@ static int Add_Compressed_Events(void *buf, int bufsize, int frame_delay,
 				printf("  New MEGAMISSION run:\n");
 			}
 
-			unitsptr = ((unsigned char *)buf) + size +
+			unitsptr = ((uint8_t *)buf) + size +
 				sizeof(EventClass::EventType);
 			storedsize += sizeof(numunits);
 			numunits = 1;
@@ -2751,7 +2751,7 @@ static int Extract_Compressed_Events(void *buf, int bufsize)
 	int count = 0;						// # events processed
 	int datasize = 0;					// size of data to copy
 	EventClass eventdata;			// stores Frame, ID, etc
-	unsigned char numunits = 0;	// # units stored in compressed MegaMissions
+	uint8_t numunits = 0;	// # units stored in compressed MegaMissions
 
 	//------------------------------------------------------------------------
 	// Clear work event structure
@@ -2797,7 +2797,7 @@ static int Extract_Compressed_Events(void *buf, int bufsize)
 			// if MEGAMISSION event get the number of units (events to generate)
 			//..................................................................
 			else if (event->Type == EventClass::MEGAMISSION) {
-				numunits = *(((unsigned char *)buf) + pos + sizeof(eventdata.Type));
+				numunits = *(((uint8_t *)buf) + pos + sizeof(eventdata.Type));
 				pos += sizeof(numunits);
 				leftover -= sizeof(numunits);
 			}
@@ -2966,7 +2966,7 @@ static int Extract_Compressed_Events(void *buf, int bufsize)
  *=========================================================================*/
 static int Execute_DoList(int max_houses, HousesType base_house,
 	ConnManClass *net, CDTimerClass<FrameTimerClass> *skip_crc,
-	long *their_frame, unsigned short *their_sent, unsigned short *their_recv)
+	int32_t *their_frame, uint16_t *their_sent, uint16_t *their_recv)
 {
 	HousesType house;
 	HouseClass *hptr;
@@ -4086,9 +4086,9 @@ static void Update_Queue_Mono(ConnManClass *net, int flow_index)
  * HISTORY:                                                                *
  *   11/21/1995 BRR : Created.                                             *
  *=========================================================================*/
-static void Print_Framesync_Values(long curframe, uint32_t max_ahead,
-	int num_connections, unsigned short *their_recv,
-	unsigned short *their_sent, unsigned short my_sent)
+static void Print_Framesync_Values(int32_t curframe, uint32_t max_ahead,
+	int num_connections, uint16_t *their_recv,
+	uint16_t *their_sent, uint16_t my_sent)
 {
 #if(SHOW_MONO)
 	int i;
@@ -4140,7 +4140,7 @@ static void Print_Framesync_Values(long curframe, uint32_t max_ahead,
  *   06/28/1996 BRR : Created.                                             *
  *=========================================================================*/
 void Dump_Packet_Too_Late_Stuff(EventClass *event, ConnManClass *net,
-	long *their_frame, unsigned short *their_sent, unsigned short *their_recv)
+	int32_t *their_frame, uint16_t *their_sent, uint16_t *their_recv)
 {
 	SDL_IOStream *fp;
 	int i;

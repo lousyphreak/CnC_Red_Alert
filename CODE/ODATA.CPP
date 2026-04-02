@@ -702,9 +702,9 @@ OverlayType OverlayTypeClass::From_Name(char const * name)
  * HISTORY:                                                                                    *
  *   05/23/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-short const * OverlayTypeClass::Occupy_List(bool) const
+int16_t const * OverlayTypeClass::Occupy_List(bool) const
 {
-	static short _simple[] = {0, REFRESH_EOL};
+	static int16_t _simple[] = {0, REFRESH_EOL};
 
 	return(_simple);
 }
@@ -723,9 +723,9 @@ short const * OverlayTypeClass::Occupy_List(bool) const
  * HISTORY:                                                                *
  *   04/19/1995 PWG : Created.                                             *
  *=========================================================================*/
-unsigned char * OverlayTypeClass::Radar_Icon(int data) const
+uint8_t * OverlayTypeClass::Radar_Icon(int data) const
 {
-	unsigned char * icon = (unsigned char *)Get_Radar_Data();		// Get pointer to radar icons
+	uint8_t * icon = (uint8_t *)Get_Radar_Data();		// Get pointer to radar icons
 	if (icon != NULL) icon += (data * 9) + 2;			// move icon ptr to correct icon
 	return(icon);											// Return the correct icon
 }

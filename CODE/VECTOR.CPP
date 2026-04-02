@@ -415,7 +415,7 @@ int VectorClass<T>::Resize(unsigned newsize, T const * array)
  * HISTORY:                                                                                    *
  *   07/18/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-BooleanVectorClass::BooleanVectorClass(unsigned size, unsigned char * array)
+BooleanVectorClass::BooleanVectorClass(unsigned size, uint8_t * array)
 {
 	BitArray.Resize(((size + (8-1)) / 8), array);
 	LastIndex = -1;
@@ -671,7 +671,7 @@ void BooleanVectorClass::Fixup(int index) const
 		**	value with the appropriate data from the bit array.
 		*/
 		if (index != -1) {
-			((unsigned char&)Copy) = Read_Bit(index);
+			((uint8_t&)Copy) = Read_Bit(index);
 		}
 
 		((int &)LastIndex) = index;
@@ -687,13 +687,13 @@ bool BooleanVectorClass::Read_Bit(int index) const
 
 void BooleanVectorClass::Write_Bit(int index, bool value) const
 {
-	unsigned char & byte = const_cast<unsigned char &>(BitArray[(unsigned)index >> 3]);
-	unsigned char mask = (unsigned char)(1U << (index & 7));
+	uint8_t & byte = const_cast<uint8_t &>(BitArray[(unsigned)index >> 3]);
+	uint8_t mask = (uint8_t)(1U << (index & 7));
 
 	if (value) {
 		byte |= mask;
 	} else {
-		byte &= (unsigned char)~mask;
+		byte &= (uint8_t)~mask;
 	}
 }
 
@@ -727,5 +727,5 @@ template class VectorClass<TriggerClass *>;
 template class VectorClass<NodeNameTag *>;
 template class VectorClass<char *>;
 template class VectorClass<char const *>;
-template class VectorClass<unsigned char>;
+template class VectorClass<uint8_t>;
 template class VectorClass<void *>;

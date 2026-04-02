@@ -427,7 +427,7 @@ char * VersionClass::Version_Name(void)
 	// For final versions, trim 0's off the minor version
 	//------------------------------------------------------------------------
 #else
-	unsigned short adjusted_minor;
+	uint16_t adjusted_minor;
 	int i;
 
 	adjusted_minor = Minor_Version();

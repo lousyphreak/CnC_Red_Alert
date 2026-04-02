@@ -41,7 +41,7 @@
 **	These are the access passwords used to activate cheat mode, editor mode,
 **	and special game options.
 */
-long const PlayCodes[] = {
+int32_t const PlayCodes[] = {
 	0xE0792D6D,					// Dwight Okahara
 	0x90046ECF,					// Paul S. Mudra
 	0xC3EE9A26,					// Frank Klepaki
@@ -49,7 +49,7 @@ long const PlayCodes[] = {
 	0L
 };
 
-long const CheatCodes[] = {
+int32_t const CheatCodes[] = {
 	0xA0E2AB53,					// Joseph Hewitt
 	0x00532693,					// Mike Lightner
 	0x7DDFF824,					// Joe Bostic
@@ -64,7 +64,7 @@ long const CheatCodes[] = {
 };
 
 
-long const EditorCodes[] = {
+int32_t const EditorCodes[] = {
 	0xA2C09326,					// Erik Yeo
 	0x1F944BB3,					// Mike Lightner
 	0xDE07154D,					// Adam Isgreen
@@ -338,7 +338,7 @@ COORDINATE const StoppingCoordAbs[5] = {
 **	value. This is used to convert pixel (screen) coordinates into the underlying
 **	coordinate system.
 */
-unsigned char const Pixel2Lepton[24] = {
+uint8_t const Pixel2Lepton[24] = {
 	0x00,0x0B,0x15,0x20,0x2B,0x35,0x40,0x4B,
 	0x55,0x60,0x6B,0x75,0x80,0x8B,0x95,0xA0,
 	0xAB,0xB5,0xC0,0xCB,0xD5,0xE0,0xEB,0xF5
@@ -468,7 +468,7 @@ char const * const CrateNames[CRATE_COUNT] = {
 **	be converted to the CLOSEST appropriate facing, NOT rounded down to the
 **	nearest facing.
 */
-unsigned char const Facing8[256] = {
+uint8_t const Facing8[256] = {
 	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
 	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
 	2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,
@@ -480,7 +480,7 @@ unsigned char const Facing8[256] = {
 };
 
 
-unsigned char const Facing16[256] = {
+uint8_t const Facing16[256] = {
 	0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,
 	2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,
 	4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,
@@ -492,7 +492,7 @@ unsigned char const Facing16[256] = {
 };
 
 
-signed char const Rotation16[256] = {
+int8_t const Rotation16[256] = {
 	0,1,2,3,4,5,6,7,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,-8,-7,-6,-5,-4,-3,-2,-1,
 	0,1,2,3,4,5,6,7,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,-8,-7,-6,-5,-4,-3,-2,-1,
 	0,1,2,3,4,5,6,7,-8,-7,-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6,7,-8,-7,-6,-5,-4,-3,-2,-1,
@@ -508,7 +508,7 @@ signed char const Rotation16[256] = {
 **	This table incorporates a compensating factor for the distortion caused
 **	by 3D-Studio when it tries to render 45% angles.
 */
-unsigned char const Facing32[256] = {
+uint8_t const Facing32[256] = {
 	0,0,0,0,0,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,
 	3,4,4,4,4,4,4,5,5,5,5,5,5,5,6,6,6,6,6,6,6,7,7,7,7,7,7,7,8,8,8,8,
 	8,8,8,9,9,9,9,9,9,9,10,10,10,10,10,10,10,11,11,11,11,11,11,11,12,12,12,12,12,12,12,12,
@@ -521,7 +521,7 @@ unsigned char const Facing32[256] = {
 
 
 #ifdef OBSOLETE
-unsigned char const Facing32[256] = {
+uint8_t const Facing32[256] = {
 	0,0,0,0,
 	1,1,1,1,1,1,1,1,
 	2,2,2,2,2,2,2,2,
@@ -627,7 +627,7 @@ TheaterDataType const Theaters[THEATER_COUNT] = {
 };
 
 
-unsigned char const RemapCiv2[256] = {
+uint8_t const RemapCiv2[256] = {
 	0,1,2,3,4,5,6,209,8,9,10,11,12,13,12,15,									// 0..15
 	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,						// 16..31
 	32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,						// 32..47
@@ -646,7 +646,7 @@ unsigned char const RemapCiv2[256] = {
 	240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255	// 240..255
 };
 
-unsigned char const RemapCiv4[256] = {
+uint8_t const RemapCiv4[256] = {
 	0,1,2,3,4,5,6,187,8,9,10,11,12,13,14,15,									// 0..15
 	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,						// 16..31
 	32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,						// 32..47
@@ -665,7 +665,7 @@ unsigned char const RemapCiv4[256] = {
 	240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255	// 240..255
 };
 
-unsigned char const RemapCiv5[256] = {
+uint8_t const RemapCiv5[256] = {
 	0,1,2,3,4,5,6,109,8,9,10,11,131,13,14,15,									// 0..15
 	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,						// 16..31
 	32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,						// 32..47
@@ -684,7 +684,7 @@ unsigned char const RemapCiv5[256] = {
 	240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255	// 240..255
 };
 
-unsigned char const RemapCiv6[256] = {
+uint8_t const RemapCiv6[256] = {
 	0,1,2,3,4,5,6,120,8,9,10,11,12,13,238,15,									// 0..15
 	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,						// 16..31
 	32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,						// 32..47
@@ -703,7 +703,7 @@ unsigned char const RemapCiv6[256] = {
 	240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255	// 240..255
 };
 
-unsigned char const RemapCiv7[256] = {
+uint8_t const RemapCiv7[256] = {
 	0,1,2,3,4,5,6,7,8,9,10,11,12,13,131,15,									// 0..15
 	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,						// 16..31
 	32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,						// 32..47
@@ -722,7 +722,7 @@ unsigned char const RemapCiv7[256] = {
 	240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255	// 240..255
 };
 
-unsigned char const RemapCiv8[256] = {
+uint8_t const RemapCiv8[256] = {
 	0,1,2,3,4,5,6,182,8,9,10,11,12,13,131,15,									// 0..15
 	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,						// 16..31
 	32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,						// 32..47
@@ -741,7 +741,7 @@ unsigned char const RemapCiv8[256] = {
 	240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255	// 240..255
 };
 
-unsigned char const RemapCiv9[256] = {
+uint8_t const RemapCiv9[256] = {
 	0,1,2,3,4,5,6,7,8,9,10,11,12,13,7,15,										// 0..15
 	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,						// 16..31
 	32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,						// 32..47
@@ -760,7 +760,7 @@ unsigned char const RemapCiv9[256] = {
 	240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255	// 240..255
 };
 
-unsigned char const RemapCiv10[256] = {
+uint8_t const RemapCiv10[256] = {
 	0,1,2,3,4,5,6,137,8,9,10,11,12,13,15,15,									// 0..15
 	16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,						// 16..31
 	32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,						// 32..47
@@ -779,7 +779,7 @@ unsigned char const RemapCiv10[256] = {
 	240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255	// 240..255
 };
 
-unsigned char const RemapEmber[256] = {
+uint8_t const RemapEmber[256] = {
 #define	CEC	CC_EMBER_COLOR
 	  0,CEC,CEC,CEC,CEC,CEC,CEC,CEC,CEC,CEC,CEC,CEC,BLACK,CEC,CEC,CEC,
 	CEC,CEC,CEC,CEC,CEC,CEC,CEC,CEC,CEC,CEC,CEC,CEC,CEC,CEC,CEC,CEC,

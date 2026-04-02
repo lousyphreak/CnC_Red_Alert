@@ -18,6 +18,7 @@
 
 #ifndef mpmgr_h
 #define mpmgr_h
+#include <stdint.h>
 
 #include "CONNMGR.H"
 #include "win32_compat.h"

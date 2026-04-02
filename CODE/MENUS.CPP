@@ -42,7 +42,7 @@
 ******************************/
 
 PRIVATE int Coordinates_In_Region(int x, int y, int inx1, int iny1, int inx2, int iny2);
-PRIVATE int Select_To_Entry(int select, unsigned long bitfield, int index);
+PRIVATE int Select_To_Entry(int select, uint32_t bitfield, int index);
 PRIVATE void Flash_Line(char const *text, int xpix, int ypix, unsigned nfgc, unsigned hfgc, unsigned bgc);
 
 int UnknownKey;
@@ -65,7 +65,7 @@ PRIVATE int MenuSkip;
 /*				the starting index within the bit field.								*/
 /*	RETURNS:	int the index into the table of entries								*/
 /*=========================================================================*/
-PRIVATE int Select_To_Entry(int select, unsigned long bitfield, int index)
+PRIVATE int Select_To_Entry(int select, uint32_t bitfield, int index)
 {
 	int placement;
 
@@ -140,7 +140,7 @@ PRIVATE int Coordinates_In_Region(int x, int y, int inx1, int iny1, int inx2, in
 /*				point to start at within the list.										*/
 /*	RETURNS:	int the total number of items in the menu							*/
 /*=========================================================================*/
- int Find_Menu_Items(int maxitems, unsigned long field, char index)
+ int Find_Menu_Items(int maxitems, uint32_t field, char index)
  {
 	int loop,ctr;
 
@@ -167,7 +167,7 @@ PRIVATE int Coordinates_In_Region(int x, int y, int inx1, int iny1, int inx2, in
 /*				index into the field, int the number of lines to skip.			*/
 /*	RETURNS:	none																				*/
 /*=========================================================================*/
-void Setup_Menu(int menu, char const * text[], unsigned long field, int index, int skip)
+void Setup_Menu(int menu, char const * text[], uint32_t field, int index, int skip)
 {
 	int * menuptr,lp;
 	int menuy,menux,idx,item,num,drawy;
@@ -201,7 +201,7 @@ void Setup_Menu(int menu, char const * text[], unsigned long field, int index, i
 /*	INPUTS:																						*/
 /*	RETURNS:																						*/
 /*=========================================================================*/
-int Check_Menu(int menu, char const * text[], char *, long field, int index)
+int Check_Menu(int menu, char const * text[], char *, int32_t field, int index)
 {
 	int maxitem,select,key,menuy,menux;
 	int mx1,mx2,my1,my2,tempy;
@@ -453,7 +453,7 @@ int Do_Menu(char const ** strings, bool )
  * HISTORY:                                                                *
  *   05/17/1995 BRR : Created.                                             *
  *=========================================================================*/
-int Main_Menu(unsigned long )
+int Main_Menu(uint32_t )
 {
 	/*
 	**	Dialog & button dimensions
@@ -552,7 +552,7 @@ int Main_Menu(unsigned long )
 	int retval;										// return value
 	int curbutton;
 	TextButtonClass * buttons[7];
-	unsigned long starttime;
+	uint32_t starttime;
 
 	/*
 	**	Buttons

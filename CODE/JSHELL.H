@@ -45,8 +45,8 @@
 class SystemTimerClass
 {
 	public:
-		long operator () (void) const;
-		operator long (void) const;
+		int32_t operator () (void) const;
+		operator int32_t (void) const;
 };
 struct NoInitClass;
 
@@ -63,7 +63,7 @@ class SmartPtr
 
 		operator T * (void) const {return(Pointer);}
 
-		operator long (void) const {return((long)Pointer);}
+		operator int32_t (void) const {return((int32_t)Pointer);}
 
 		SmartPtr<T> operator ++ (int) {assert(Pointer != 0);SmartPtr<T> temp = *this;++Pointer;return(temp);}
 		SmartPtr<T> & operator ++ (void) {assert(Pointer != 0);++Pointer;return(*this);}
@@ -157,9 +157,6 @@ template<class T> inline void swap(T &value1, T &value2)
 	value1 = value2;
 	value2 = temp;
 }
-int swap(int, int);
-long swap(long, long);
-
 template<class T> inline
 T Bound(T original, T minval, T maxval)
 {
@@ -167,17 +164,9 @@ T Bound(T original, T minval, T maxval)
 	if (original > maxval) return(maxval);
 	return(original);
 };
-inline int Bound(signed int original, signed int minval, signed int maxval)
-{
-	return Bound<signed int>(original, minval, maxval);
-}
 inline unsigned Bound(unsigned original, unsigned minval, unsigned maxval)
 {
 	return Bound<unsigned>(original, minval, maxval);
-}
-inline long Bound(long original, long minval, long maxval)
-{
-	return Bound<long>(original, minval, maxval);
 }
 
 template<class T>
@@ -322,11 +311,11 @@ unsigned Cardinal_To_Fixed(unsigned base, unsigned cardinal);
 
 #ifndef OUTPORTB
 #define OUTPORTB
-extern void outportb(int port, unsigned char data);
+extern void outportb(int port, uint8_t data);
 #pragma aux outportb parm [edx] [al] =		\
 		"out	dx,al"
 
-extern void outport(int port, unsigned short data);
+extern void outport(int port, uint16_t data);
 #pragma aux outport parm [edx] [ax] =		\
 		"out	dx,al"		\
 		"inc	dx"			\
@@ -353,15 +342,15 @@ class FrameTimerClass
 
 extern WinTimerClass	*		WindowsTimer;
 
-inline long SystemTimerClass::operator () (void) const {if (!WindowsTimer) return(0);return(WindowsTimer->Get_System_Tick_Count());}
-inline SystemTimerClass::operator long (void) const {if (!WindowsTimer) return(0);return(WindowsTimer->Get_System_Tick_Count());}
+inline int32_t SystemTimerClass::operator () (void) const {if (!WindowsTimer) return(0);return(WindowsTimer->Get_System_Tick_Count());}
+inline SystemTimerClass::operator int32_t (void) const {if (!WindowsTimer) return(0);return(WindowsTimer->Get_System_Tick_Count());}
 
 
 class UserTimerClass
 {
 	public:
-			long operator () (void) const {if (!WindowsTimer) return(0);return(WindowsTimer->Get_User_Tick_Count());};
-			operator long (void) const {if (!WindowsTimer) return(0);return(WindowsTimer->Get_User_Tick_Count());};
+			int32_t operator () (void) const {if (!WindowsTimer) return(0);return(WindowsTimer->Get_User_Tick_Count());};
+			operator int32_t (void) const {if (!WindowsTimer) return(0);return(WindowsTimer->Get_User_Tick_Count());};
 };
 
 

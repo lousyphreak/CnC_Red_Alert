@@ -37,12 +37,13 @@
 
 #ifndef IPX_H
 #define IPX_H
+#include <stdint.h>
 
 /*
 ******************************** Structures *********************************
 */
-typedef unsigned char NetNumType[4];
-typedef unsigned char NetNodeType[6];
+typedef uint8_t NetNumType[4];
+typedef uint8_t NetNodeType[6];
 typedef char UserID[48];
 
 /*---------------------------------------------------------------------------
@@ -52,16 +53,16 @@ field; annotation of 'APP' means the application must set the field.
 NOTE: All header fields are ordered high-byte,low-byte.
 ---------------------------------------------------------------------------*/
 typedef struct IPXHEADER {
-	unsigned short CheckSum;					// IPX: Not used; always 0xffff
-	unsigned short Length;						// IPX: Total size, incl header & data
-	unsigned char TransportControl;			// IPX: # bridges message crossed
-	unsigned char PacketType;					// APP: Set to 4 for IPX (5 for SPX)
-	unsigned char DestNetworkNumber[4];		// APP: destination Network Number
-	unsigned char DestNetworkNode[6];		// APP: destination Node Address
-	unsigned short DestNetworkSocket;		// APP: destination Socket Number
-	unsigned char SourceNetworkNumber[4];	// IPX: source Network Number
-	unsigned char SourceNetworkNode[6];		// IPX: source Node Address
-	unsigned short SourceNetworkSocket;		// IPX: source Socket Number
+	uint16_t CheckSum;					// IPX: Not used; always 0xffff
+	uint16_t Length;						// IPX: Total size, incl header & data
+	uint8_t TransportControl;			// IPX: # bridges message crossed
+	uint8_t PacketType;					// APP: Set to 4 for IPX (5 for SPX)
+	uint8_t DestNetworkNumber[4];		// APP: destination Network Number
+	uint8_t DestNetworkNode[6];		// APP: destination Node Address
+	uint16_t DestNetworkSocket;		// APP: destination Socket Number
+	uint8_t SourceNetworkNumber[4];	// IPX: source Network Number
+	uint8_t SourceNetworkNode[6];		// IPX: source Node Address
+	uint16_t SourceNetworkSocket;		// IPX: source Socket Number
 } IPXHeaderType;
 
 /*---------------------------------------------------------------------------
@@ -72,17 +73,17 @@ up a separate ECB for each IPX operation you perform.
 typedef struct ECB {
 	void *Link_Address;
 	void (*Event_Service_Routine)(void);	// APP: event handler (NULL=none)
-	unsigned char InUse;							// IPX: 0 = event complete
-	unsigned char CompletionCode;				// IPX: event's return code
-	unsigned short SocketNumber;				// APP: socket to send data through
-	unsigned short ConnectionID;				// returned by Listen (???)
-	unsigned short RestOfWorkspace;
-	unsigned char DriverWorkspace[12];
-	unsigned char ImmediateAddress[6];		// returned by Get_Local_Target
-	unsigned short PacketCount;
+	uint8_t InUse;							// IPX: 0 = event complete
+	uint8_t CompletionCode;				// IPX: event's return code
+	uint16_t SocketNumber;				// APP: socket to send data through
+	uint16_t ConnectionID;				// returned by Listen (???)
+	uint16_t RestOfWorkspace;
+	uint8_t DriverWorkspace[12];
+	uint8_t ImmediateAddress[6];		// returned by Get_Local_Target
+	uint16_t PacketCount;
 	struct {
 		void *Address;
-		unsigned short Length;
+		uint16_t Length;
 	} Packet[2];
 } ECBType;
 
@@ -92,23 +93,23 @@ This structure is used for calling DPMI function 0x300, Call-Real-Mode-
 Interrupt.  It passes register values to & from the interrupt handler.
 ---------------------------------------------------------------------------*/
 typedef struct {
-	long edi;
-	long esi;
-	long ebp;
-	long Reserved;
-	long ebx;
-	long edx;
-	long ecx;
-	long eax;
-	short Flags;
-	short es;
-	short ds;
-	short fs;
-	short gs;
-	short ip;
-	short cs;
-	short sp;
-	short ss;
+	int32_t edi;
+	int32_t esi;
+	int32_t ebp;
+	int32_t Reserved;
+	int32_t ebx;
+	int32_t edx;
+	int32_t ecx;
+	int32_t eax;
+	int16_t Flags;
+	int16_t es;
+	int16_t ds;
+	int16_t fs;
+	int16_t gs;
+	int16_t ip;
+	int16_t cs;
+	int16_t sp;
+	int16_t ss;
 } RMIType;
 
 /*
@@ -171,17 +172,17 @@ error codes if there's an error, EXCEPT:
 .................................. ipx.cpp ..................................
 */
 int IPX_SPX_Installed(void);
-int IPX_Open_Socket(unsigned short socket);
-int IPX_Close_Socket(unsigned short socket);
+int IPX_Open_Socket(uint16_t socket);
+int IPX_Close_Socket(uint16_t socket);
 int IPX_Get_Connection_Number(void);
 int IPX_Get_1st_Connection_Num (char *username);
 int IPX_Get_Internet_Address(int connection_number, 
-	unsigned char *network_number, unsigned char *physical_node);
+	uint8_t *network_number, uint8_t *physical_node);
 int IPX_Get_User_ID(int connection_number, char *user_id);
 int IPX_Listen_For_Packet(struct ECB *ecb_ptr);
 void IPX_Send_Packet(struct ECB *ecb_ptr);
-int IPX_Get_Local_Target(unsigned char *dest_network, unsigned char *dest_node,
-	unsigned short dest_socket, unsigned char *bridge_address);
+int IPX_Get_Local_Target(uint8_t *dest_network, uint8_t *dest_node,
+	uint16_t dest_socket, uint8_t *bridge_address);
 int IPX_Cancel_Event(struct ECB *ecb_ptr);
 void Let_IPX_Breath(void);
 

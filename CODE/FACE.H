@@ -60,19 +60,19 @@ static_assert(sizeof(DirType) == 1, "DirType must remain 8-bit");
 // Operators that allow simple math with DirType.
 inline DirType operator + (DirType f1, DirType f2)
 {
-	return (DirType)(uint8_t)((unsigned int)f1 + (unsigned int)f2);
+	return (DirType)(uint8_t)((uint32_t)f1 + (uint32_t)f2);
 }
 inline DirType operator + (DirType f1, int f2)
 {
-	return (DirType)(uint8_t)((unsigned int)f1 + (unsigned int)f2);
+	return (DirType)(uint8_t)((uint32_t)f1 + (uint32_t)f2);
 }
 inline DirType operator - (DirType f1, DirType f2)
 {
-	return (DirType)(uint8_t)((unsigned int)f1 - (unsigned int)f2);
+	return (DirType)(uint8_t)((uint32_t)f1 - (uint32_t)f2);
 }
 inline DirType operator - (DirType f1, int f2)
 {
-	return (DirType)(uint8_t)((unsigned int)f1 - (unsigned int)f2);
+	return (DirType)(uint8_t)((uint32_t)f1 - (uint32_t)f2);
 }
 
 

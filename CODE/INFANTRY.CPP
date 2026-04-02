@@ -680,14 +680,14 @@ void InfantryClass::Per_Cell_Process(PCPType why)
 									*/
 									if (IsOwnedByPlayer || bldg->IsOwnedByPlayer) Speak(VOX_MONEY_STOLEN);
 #ifdef OBSOLETE
-									long capacity = bldg->Class->Capacity * 256;
+									int32_t capacity = bldg->Class->Capacity * 256;
 									capacity /= (bldg->House->Tiberium+1);
 									int bldgcap = bldg->Class->Capacity;
 
-									long cash = (bldgcap * 256) / (capacity+1);
+									int32_t cash = (bldgcap * 256) / (capacity+1);
 									if (cash > (bldgcap / 2)) cash = bldgcap / 2;
 #else
-									long cash = bldg->House->Available_Money() / 2;
+									int32_t cash = bldg->House->Available_Money() / 2;
 #endif
 									bldg->House->Spend_Money(cash);
 									House->Refund_Money(cash);
@@ -1540,9 +1540,9 @@ MoveType InfantryClass::Can_Enter_Cell(CELL cell, FacingType ) const
  *   09/01/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
 #ifdef PARTIAL
-short const * InfantryClass::Overlap_List(bool redraw) const
+int16_t const * InfantryClass::Overlap_List(bool redraw) const
 #else
-short const * InfantryClass::Overlap_List(bool ) const
+int16_t const * InfantryClass::Overlap_List(bool ) const
 #endif
 {
 	assert(Infantry.ID(this) == ID);
@@ -2909,7 +2909,7 @@ ActionType InfantryClass::What_Action(ObjectClass const * object) const
 					if (object->What_Am_I() == RTTI_BUILDING) {
 						CELL cell = ::As_Cell(object->As_Target());
 						int targzone = Map[::As_Cell(As_Target())].Zones[Class->MZone];
-						short const *list = ((BuildingClass *)object)->Class->Occupy_List(false);
+						int16_t const *list = ((BuildingClass *)object)->Class->Occupy_List(false);
 						bool found = false;
 						while (*list != REFRESH_EOL && !found) {
 							CELL newcell = cell + *list++;

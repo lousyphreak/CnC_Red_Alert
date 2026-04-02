@@ -38,6 +38,7 @@
 
 #ifndef LZOPIPE_H
 #define LZOPIPE_H
+#include <stdint.h>
 
 #include	"PIPE.H"
 
@@ -91,8 +92,8 @@ class LZOPipe : public Pipe
 		**	Each block has a header of this format.
 		*/
 		struct {
-			unsigned short CompCount;		// Size of data block (compressed).
-			unsigned short UncompCount;	// Bytes of uncompressed data it represents.
+			uint16_t CompCount;		// Size of data block (compressed).
+			uint16_t UncompCount;	// Bytes of uncompressed data it represents.
 		} BlockHeader;
 
 		LZOPipe(LZOPipe & rvalue);

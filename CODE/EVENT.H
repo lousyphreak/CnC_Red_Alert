@@ -37,6 +37,7 @@
 
 #ifndef EVENT_H
 #define EVENT_H
+#include <stdint.h>
 
 /*
 **	This event class is used to contain all external game events (things that the player can
@@ -191,9 +192,9 @@ class EventClass
 			** Delay: sender's propagation delay value for this frame
 			*/
 			struct {
-				unsigned long CRC;
-				unsigned short CommandCount;	// # commands sent so far
-				unsigned char Delay;				// propagation delay used this frame
+				uint32_t CRC;
+				uint16_t CommandCount;	// # commands sent so far
+				uint8_t Delay;				// propagation delay used this frame
 														// (Frame - Delay = sender's current frame #)
 			} FrameInfo;
 			/*
@@ -204,7 +205,7 @@ class EventClass
 			*/
 			struct {
 				void * Pointer;
-				unsigned long Size;
+				uint32_t Size;
 			} Variable;
 
 			//
@@ -213,8 +214,8 @@ class EventClass
 			// the COMM_MULTI_E_COMP protocol.
 			//
 			struct {
-				unsigned short DesiredFrameRate;
-				unsigned short MaxAhead;
+				uint16_t DesiredFrameRate;
+				uint16_t MaxAhead;
 			} Timing;
 
 			//
@@ -222,7 +223,7 @@ class EventClass
 			// the "desired" frame rate for the game.
 			//
 			struct {
-				unsigned short AverageTicks;
+				uint16_t AverageTicks;
 			} ProcessTime;
 
 		} Data;
@@ -243,8 +244,8 @@ class EventClass
 		EventClass(EventType type, RTTIType object, CELL cell);
 		EventClass(EventType type, int id, CELL cell);
 		EventClass(AnimType anim, HousesType owner, COORDINATE coord);
-		EventClass(void *ptr, unsigned long size);
-		EventClass(EventType type, void *ptr, unsigned long size);
+		EventClass(void *ptr, uint32_t size);
+		EventClass(EventType type, void *ptr, uint32_t size);
 
 		// Process the event.
 		void Execute(void);
@@ -253,7 +254,7 @@ class EventClass
 			return memcmp(this, &q, sizeof(q)) == 0;
 		};
 
-		static unsigned char EventLength[LAST_EVENT];
+		static uint8_t EventLength[LAST_EVENT];
 		static char * EventNames[LAST_EVENT];
 };
 

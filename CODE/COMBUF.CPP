@@ -851,8 +851,8 @@ void CommBufferClass::Mono_Debug_Print(int refresh)
 	int num;												// max # items to print
 
 	struct CommHdr {									// this mirrors the CommHeaderType
-		unsigned short MagicNumber;
-		unsigned char Code;
+		uint16_t MagicNumber;
+		uint8_t Code;
 		uint32_t PacketID;
 	} *hdr;
 
@@ -989,8 +989,8 @@ void CommBufferClass::Mono_Debug_Print2(int refresh)
 	int val;
 
 	struct CommHdr {									// this mirrors the CommHeaderType
-		unsigned short MagicNumber;
-		unsigned char Code;
+		uint16_t MagicNumber;
+		uint8_t Code;
 		uint32_t PacketID;
 	} *hdr;
 
@@ -1057,7 +1057,7 @@ void CommBufferClass::Mono_Debug_Print2(int refresh)
 
 				}
 				else if (DebugSize==2) {
-					val = *((short *)(SendQueue[i].Buffer + DebugOffset));
+					val = *((int16_t *)(SendQueue[i].Buffer + DebugOffset));
 
 				}
 				else if (DebugSize==4) {
@@ -1121,7 +1121,7 @@ void CommBufferClass::Mono_Debug_Print2(int refresh)
 
 				}
 				else if (DebugSize==2) {
-					val = *((short *)(ReceiveQueue[i].Buffer + DebugOffset));
+					val = *((int16_t *)(ReceiveQueue[i].Buffer + DebugOffset));
 
 				}
 				else if (DebugSize==4) {

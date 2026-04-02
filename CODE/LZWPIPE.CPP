@@ -47,6 +47,7 @@
 #include	<assert.h>
 
 
+#include <stdint.h>
 /***********************************************************************************************
  * LZWPipe::LZWPipe -- Constructor for the LZW processor pipe.                                 *
  *                                                                                             *
@@ -201,8 +202,8 @@ int LZWPipe::Put(void const * source, int slen)
 			if (Counter == BlockSize) {
 				int len = LZW_Compress(::Buffer(Buffer, BlockSize), Buffer2);
 
-				BlockHeader.CompCount = (unsigned short)len;
-				BlockHeader.UncompCount = (unsigned short)BlockSize;
+				BlockHeader.CompCount = (uint16_t)len;
+				BlockHeader.UncompCount = (uint16_t)BlockSize;
 				total += Pipe::Put(&BlockHeader, sizeof(BlockHeader));
 				total += Pipe::Put(Buffer2, len);
 				Counter = 0;
@@ -219,8 +220,8 @@ int LZWPipe::Put(void const * source, int slen)
 			source = ((char *)source) + BlockSize;
 			slen -= BlockSize;
 
-			BlockHeader.CompCount = (unsigned short)len;
-			BlockHeader.UncompCount = (unsigned short)BlockSize;
+			BlockHeader.CompCount = (uint16_t)len;
+			BlockHeader.UncompCount = (uint16_t)BlockSize;
 			total += Pipe::Put(&BlockHeader, sizeof(BlockHeader));
 			total += Pipe::Put(Buffer2, len);
 		}
@@ -301,8 +302,8 @@ int LZWPipe::Flush(void)
 			*/
 			int len = LZW_Compress(::Buffer(Buffer, Counter), Buffer2);
 
-			BlockHeader.CompCount = (unsigned short)len;
-			BlockHeader.UncompCount = (unsigned short)Counter;
+			BlockHeader.CompCount = (uint16_t)len;
+			BlockHeader.UncompCount = (uint16_t)Counter;
 			total += Pipe::Put(&BlockHeader, sizeof(BlockHeader));
 			total += Pipe::Put(Buffer2, len);
 			Counter = 0;

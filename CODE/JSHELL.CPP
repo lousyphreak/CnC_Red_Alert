@@ -66,13 +66,13 @@
  *=============================================================================================*/
 void * Small_Icon(void const * iconptr, int iconnum)
 {
-	static unsigned char _icon[9];
+	static uint8_t _icon[9];
 	IControl_Type const * iptr = (IControl_Type const *)iconptr;
-	unsigned char * data;
+	uint8_t * data;
 
 	if (iconptr) {
 		iconnum = ((char *)((char *)iptr + iptr->Map))[iconnum];
-		data = &((unsigned char *)((unsigned char *)iptr + iptr->Icons))[iconnum*(24*24)];
+		data = &((uint8_t *)((uint8_t *)iptr + iptr->Icons))[iconnum*(24*24)];
 //		data = &iptr->Icons[iconnum*(24*24)];
 
 		for (int index = 0; index < 9; index++) {
@@ -189,9 +189,9 @@ void File_Fatal(char const * message)
  * HISTORY:                                                                                    *
  *   10/17/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-long Load_Uncompress(FileClass &file, BuffType &uncomp_buff, BuffType &dest_buff, void * reserved_data)
+int32_t Load_Uncompress(FileClass &file, BuffType &uncomp_buff, BuffType &dest_buff, void * reserved_data)
 {
-	unsigned short	size;
+	uint16_t	size;
 	void	* sptr = uncomp_buff.Get_Buffer();
 	void	* dptr = dest_buff.Get_Buffer();
 	int	opened = false;
@@ -254,7 +254,7 @@ long Load_Uncompress(FileClass &file, BuffType &uncomp_buff, BuffType &dest_buff
 	/*
 	**	Decompress the data.
 	*/
-	size = (unsigned int) Uncompress_Data(sptr, dptr);
+	size = (uint32_t) Uncompress_Data(sptr, dptr);
 
 	/*
 	**	Close the file if necessary.
@@ -262,11 +262,11 @@ long Load_Uncompress(FileClass &file, BuffType &uncomp_buff, BuffType &dest_buff
 	if (opened) {
 		file.Close();
 	}
-	return((long)size);
+	return((int32_t)size);
 }
 
 
-int Load_Picture(char const * filename, BufferClass& scratchbuf, BufferClass& destbuf, unsigned char * palette, PicturePlaneType )
+int Load_Picture(char const * filename, BufferClass& scratchbuf, BufferClass& destbuf, uint8_t * palette, PicturePlaneType )
 {
 	return(Load_Uncompress(CCFileClass(filename), scratchbuf, destbuf,  palette ) / 8000);
 }
@@ -292,7 +292,7 @@ int Load_Picture(char const * filename, BufferClass& scratchbuf, BufferClass& de
 void * Load_Alloc_Data(FileClass &file)
 {
 	void * ptr = 0;
-	long size = file.Size();
+	int32_t size = file.Size();
 
 	ptr = new char [size];
 	if (ptr) {
@@ -318,7 +318,7 @@ void * Load_Alloc_Data(FileClass &file)
  * HISTORY:                                                                                    *
  *   04/02/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-long Translucent_Table_Size(int count)
+int32_t Translucent_Table_Size(int count)
 {
 	return(256L + (256L * count));
 }
@@ -353,7 +353,7 @@ long Translucent_Table_Size(int count)
  *=============================================================================================*/
 void * Build_Translucent_Table(PaletteClass const & palette, TLucentType const * control, int count, void * buffer)
 {
-	unsigned char	const *table;		// Remap table pointer.
+	uint8_t	const *table;		// Remap table pointer.
 	int			index;		// Working color index.
 
 	if (count && control && palette) {
@@ -363,15 +363,15 @@ void * Build_Translucent_Table(PaletteClass const & palette, TLucentType const *
 
 		if (buffer) {
 			memset(buffer, -1, 256);
-			table = (unsigned char*)buffer + 256;
+			table = (uint8_t*)buffer + 256;
 
 			/*
 			**	Build the individual remap tables for each translucent color.
 			*/
 			for (index = 0; index < count; index++) {
-				((unsigned char*)buffer)[control[index].SourceColor] = index;
+				((uint8_t*)buffer)[control[index].SourceColor] = index;
 				Build_Fading_Table(palette, (void*)table, control[index].DestColor, control[index].Fading);
-				table = (unsigned char*)table + 256;
+				table = (uint8_t*)table + 256;
 			}
 		}
 	}
@@ -407,7 +407,7 @@ void * Build_Translucent_Table(PaletteClass const & palette, TLucentType const *
  *=============================================================================================*/
 void * Conquer_Build_Translucent_Table(PaletteClass const & palette, TLucentType const * control, int count, void * buffer)
 {
-	unsigned char	const *table;		// Remap table pointer.
+	uint8_t	const *table;		// Remap table pointer.
 
 	if (count && control) {
 		if (!buffer) {
@@ -416,15 +416,15 @@ void * Conquer_Build_Translucent_Table(PaletteClass const & palette, TLucentType
 
 		if (buffer) {
 			memset(buffer, -1, 256);
-			table = (unsigned char*)buffer + 256;
+			table = (uint8_t*)buffer + 256;
 
 			/*
 			**	Build the individual remap tables for each translucent color.
 			*/
 			for (int index = 0; index < count; index++) {
-				((unsigned char*)buffer)[control[index].SourceColor] = index;
+				((uint8_t*)buffer)[control[index].SourceColor] = index;
 				Conquer_Build_Fading_Table(palette, (void*)table, control[index].DestColor, control[index].Fading);
-				table = (unsigned char*)table + 256;
+				table = (uint8_t*)table + 256;
 			}
 		}
 	}
@@ -435,7 +435,7 @@ void * Conquer_Build_Translucent_Table(PaletteClass const & palette, TLucentType
 void * Make_Fading_Table(PaletteClass const & palette, void * dest, int color, int frac)
 {
 	if (dest) {
-		unsigned char * ptr = (unsigned char *)dest;
+		uint8_t * ptr = (uint8_t *)dest;
 
 		/*
 		**	Find an appropriate remap color index for every color in the palette.
@@ -466,7 +466,7 @@ void * Make_Fading_Table(PaletteClass const & palette, void * dest, int color, i
 void * Conquer_Build_Fading_Table(PaletteClass const & palette, void * dest, int color, int frac)
 {
 	if (dest) {
-		unsigned char * ptr = (unsigned char *)dest;
+		uint8_t * ptr = (uint8_t *)dest;
 //		HSVClass desthsv = palette[color];
 
 		/*

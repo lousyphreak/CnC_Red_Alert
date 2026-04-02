@@ -30,7 +30,7 @@ bool WOL_Download_Dialog( IDownload* pDownload, RADownloadEventSink* pDownloadSi
 	//	This dialog is presented for each file that is to be downloaded during a WOLAPI patch.
 
 	bool bReturn = true;
-	DWORD dwTimeNextPump = ::timeGetTime() + WOLAPIPUMPWAIT;
+	uint32_t dwTimeNextPump = ::timeGetTime() + WOLAPIPUMPWAIT;
 
 	/*
 	** Dialog & button dimensions

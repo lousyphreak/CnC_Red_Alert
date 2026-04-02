@@ -504,8 +504,8 @@ bool ReadSavedNicks( WolapiObject* pWO, IconListClass& NickList, char* szNameBuf
 
 	//	Returns true if edits are set with a default nick/pass because a nick was found.
 
-	LPCSTR szNick;
-	LPCSTR szPass;
+	char const * szNick;
+	char const * szPass;
 	bool bReturn = false;
 
 	for( int i = 1; i != 3; i++ )
@@ -537,8 +537,8 @@ bool bSaveNick( WolapiObject* pWO, const char* szNickToSave, const char* szPassT
 	//	Else push nick 1 down to second slot and save new nick in slot 1, unless
 	//	nick 1 name matches new entry.
 
-	LPCSTR szNick;
-	LPCSTR szPass;
+	char const * szNick;
+	char const * szPass;
 	bool bPushSlot1 = true;
 
 	switch( pWO->pChat->GetNick( 1, &szNick, &szPass ) )
@@ -613,8 +613,8 @@ void DeleteNick( WolapiObject* pWO, int iOneBasedEntryToDelete )
 	if( iOneBasedEntryToDelete == 1 )
 	{
 		//	Check for nick 2.
-		LPCSTR szNick;
-		LPCSTR szPass;
+		char const * szNick;
+		char const * szPass;
 		if( pWO->pChat->GetNick( 2, &szNick, &szPass ) == S_OK && *szNick != 0 )
 		{
 			//	Copy nick in slot 2 to slot 1.

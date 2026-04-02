@@ -179,9 +179,9 @@ int Distance(COORDINATE coord1, COORDINATE coord2)
  *   06/03/1994 JLB : Converted to general purpose spillage functionality.                     *
  *   01/07/1995 JLB : Manually calculates spillage list for large objects.                     *
  *=============================================================================================*/
-short const * Coord_Spillage_List(COORDINATE coord, int maxsize)
+int16_t const * Coord_Spillage_List(COORDINATE coord, int maxsize)
 {
-	static short const _MoveSpillage[(int)FACING_COUNT+1][5] = {
+	static int16_t const _MoveSpillage[(int)FACING_COUNT+1][5] = {
 		{0, -MAP_CELL_W, REFRESH_EOL, 0, 0},						// N
 		{0, -MAP_CELL_W, 1, -(MAP_CELL_W-1), REFRESH_EOL},		// NE
 		{0, 1, REFRESH_EOL, 0, 0},										// E
@@ -192,12 +192,12 @@ short const * Coord_Spillage_List(COORDINATE coord, int maxsize)
 		{0, -1, -MAP_CELL_W, -(MAP_CELL_W+1), REFRESH_EOL},	// NW
 		{0, REFRESH_EOL, 0, 0, 0}										// non-moving.
 	};
-	static short _manual[10];
+	static int16_t _manual[10];
 //;	00 = on axis
 //;	01 = below axis
 //;	10 = above axis
 //;	11 = undefined
-	static signed char const _SpillTable[16]	= {8,6,2,-1,0,7,1,-1,4,5,3,-1,-1,-1,-1,-1};
+	static int8_t const _SpillTable[16]	= {8,6,2,-1,0,7,1,-1,4,5,3,-1,-1,-1,-1,-1};
 	int	index=0;
 	int	x,y;
 
@@ -206,7 +206,7 @@ short const * Coord_Spillage_List(COORDINATE coord, int maxsize)
 	**	that covers a 5x5 square region.
 	*/
 	if (maxsize > ICON_PIXEL_W * 2) {
-		static short const _gigundo[] = {
+		static int16_t const _gigundo[] = {
 			-((2*MAP_CELL_W)-2),-((2*MAP_CELL_W)-1),-((2*MAP_CELL_W)),-((2*MAP_CELL_W)+1),-((2*MAP_CELL_W)+2),
 			-((1*MAP_CELL_W)-2),-((1*MAP_CELL_W)-1),-((1*MAP_CELL_W)),-((1*MAP_CELL_W)+1),-((1*MAP_CELL_W)+2),
 			-((0*MAP_CELL_W)-2),-((0*MAP_CELL_W)-1),-((0*MAP_CELL_W)),-((0*MAP_CELL_W)+1),-((0*MAP_CELL_W)+2),
@@ -285,10 +285,10 @@ short const * Coord_Spillage_List(COORDINATE coord, int maxsize)
  * HISTORY:                                                                                    *
  *   07/22/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-short const * Coord_Spillage_List(COORDINATE coord, Rect const & rect, bool nocenter)
+int16_t const * Coord_Spillage_List(COORDINATE coord, Rect const & rect, bool nocenter)
 {
 	if (!rect.Is_Valid()) {
-		static short const _list[] = {REFRESH_EOL};
+		static int16_t const _list[] = {REFRESH_EOL};
 		return(_list);
 	}
 
@@ -301,8 +301,8 @@ short const * Coord_Spillage_List(COORDINATE coord, Rect const & rect, bool noce
 	**	corners of the rectangle. The values are now absolute to the real game world rather
 	**	than relative to the coordinate.
 	*/
-	LEPTON const startx = (LEPTON)(uint16_t)((int)x + (short)Pixel_To_Lepton(rect.X));
-	LEPTON const starty = (LEPTON)(uint16_t)((int)y + (short)Pixel_To_Lepton(rect.Y));
+	LEPTON const startx = (LEPTON)(uint16_t)((int)x + (int16_t)Pixel_To_Lepton(rect.X));
+	LEPTON const starty = (LEPTON)(uint16_t)((int)y + (int16_t)Pixel_To_Lepton(rect.Y));
 	LEPTON const endx = (LEPTON)(uint16_t)((int)startx + Pixel_To_Lepton(rect.Width-1));
 	LEPTON const endy = (LEPTON)(uint16_t)((int)starty + Pixel_To_Lepton(rect.Height-1));
 
@@ -322,11 +322,11 @@ short const * Coord_Spillage_List(COORDINATE coord, Rect const & rect, bool noce
 	**	are known.
 	*/
 	int count = 0;
-	static short _spillagelist[128];
-	short * ptr = _spillagelist;
+	static int16_t _spillagelist[128];
+	int16_t * ptr = _spillagelist;
 	for (int yy = celly; yy <= celly2; yy++) {
 		for (int xx = cellx; xx <= cellx2; xx++) {
-			short offset = (XY_Cell(xx, yy) - coordcell);
+			int16_t offset = (XY_Cell(xx, yy) - coordcell);
 			if (!nocenter || offset != 0) {
 				*ptr++ = offset;
 				count++;
@@ -363,18 +363,18 @@ short const * Coord_Spillage_List(COORDINATE coord, Rect const & rect, bool noce
  * HISTORY:                                                                                    *
  *   05/27/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-COORDINATE Coord_Move(COORDINATE start, register DirType dir, unsigned short distance)
+COORDINATE Coord_Move(COORDINATE start, register DirType dir, uint16_t distance)
 {
 #ifdef NEVER
-	short x = Coord_X(start);
-	short y = Coord_Y(start);
+	int16_t x = Coord_X(start);
+	int16_t y = Coord_Y(start);
 
 	Move_Point(x, y, dir, distance);
 	return(XY_Coord(x,y));
 #endif
 
-	short x = (short)Coord_X(start);
-	short y = (short)Coord_Y(start);
+	int16_t x = (int16_t)Coord_X(start);
+	int16_t y = (int16_t)Coord_Y(start);
 
 	Move_Point(x, y, dir, distance);
 	return(XY_Coord((LEPTON)(uint16_t)x, (LEPTON)(uint16_t)y));
@@ -420,20 +420,20 @@ COORDINATE Coord_Scatter(COORDINATE coord, unsigned distance, bool lock)
 	return(newcoord);
 }
 
-int calcx(signed short factor, short distance)
+int calcx(int16_t factor, int16_t distance)
 {
 	return((int)(((int32_t)factor * (int32_t)distance) >> 7));
 }
 
 
-int calcy(signed short factor, short distance)
+int calcy(int16_t factor, int16_t distance)
 {
 	return(-((int)(((int32_t)factor * (int32_t)distance) >> 7)));
 }
 
-void Move_Point(short &x, short &y, register DirType dir, unsigned short distance)
+void Move_Point(int16_t &x, int16_t &y, register DirType dir, uint16_t distance)
 {
-	unsigned int const index = (unsigned int)dir;
+	uint32_t const index = (uint32_t)dir;
 
 	static char const CosTable[256] = {
 		0x00,0x03,0x06,0x09,0x0c,0x0f,0x12,0x15,
@@ -573,11 +573,11 @@ void Move_Point(short &x, short &y, register DirType dir, unsigned short distanc
  *=============================================================================================*/
 // Loss of precision in initializations (8 bits to 7 bits) warning. Hmmm.. can this be fixed?
 //lint -e569
-void Normal_Move_Point(short &x, short &y, register DirType dir, unsigned short distance)
+void Normal_Move_Point(int16_t &x, int16_t &y, register DirType dir, uint16_t distance)
 {
-	unsigned int const index = (unsigned int)dir;
+	uint32_t const index = (uint32_t)dir;
 
-	static signed char const CosTable[256] = {
+	static int8_t const CosTable[256] = {
 		0x00,0x03,0x06,0x09,0x0c,0x0f,0x12,0x15,
 		0x18,0x1b,0x1e,0x21,0x24,0x27,0x2a,0x2d,
 		0x30,0x33,0x36,0x39,0x3b,0x3e,0x41,0x43,
@@ -615,7 +615,7 @@ void Normal_Move_Point(short &x, short &y, register DirType dir, unsigned short 
 		0xe8,0xeb,0xee,0xf1,0xf4,0xf7,0xfa,0xfd,
 	};
 
-	static signed char const SinTable[256] = {
+	static int8_t const SinTable[256] = {
 		0x7f,0x7e,0x7e,0x7e,0x7e,0x7e,0x7d,0x7d,
 		0x7c,0x7b,0x7b,0x7a,0x79,0x78,0x77,0x76,
 		0x75,0x74,0x72,0x71,0x70,0x6e,0x6c,0x6b,

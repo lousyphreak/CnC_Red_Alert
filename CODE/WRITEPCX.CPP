@@ -64,9 +64,9 @@ static void Write_Pcx_ScanLine(FileClass & file, int scansize, char * ptr);
  *   06/03/1996 JLB : Converted to C++ and file class I/O.                 *
  *=========================================================================*/
 
-static const unsigned char rle_code = 0xC0;					// Run code.
-static const unsigned char rle_max_run = 0x2F;				// Maximum run allowed.
-static const unsigned char rle_full_run = (rle_max_run|rle_code);	// Full character run.
+static const uint8_t rle_code = 0xC0;					// Run code.
+static const uint8_t rle_max_run = 0x2F;				// Maximum run allowed.
+static const uint8_t rle_full_run = (rle_max_run|rle_code);	// Full character run.
 
 
 /***********************************************************************************************
@@ -90,7 +90,7 @@ static const unsigned char rle_full_run = (rle_max_run|rle_code);	// Full charac
  *=============================================================================================*/
 int Write_PCX_File(FileClass & file, GraphicBufferClass & pic, PaletteClass * palette)
 {
- 	unsigned char palcopy[256 * sizeof(RGB)];
+ 	uint8_t palcopy[256 * sizeof(RGB)];
 	int	VP_Scan_Line;
 	char	* ptr;
 	RGB	* pal;
@@ -101,14 +101,14 @@ int Write_PCX_File(FileClass & file, GraphicBufferClass & pic, PaletteClass * pa
 		8,
 		0,
 		0,
-		(short)(pic.Get_Width()-1),
-		(short)(pic.Get_Height()-1),
-		(short)(pic.Get_Width()),
-		(short)(pic.Get_Height()),
+		(int16_t)(pic.Get_Width()-1),
+		(int16_t)(pic.Get_Height()-1),
+		(int16_t)(pic.Get_Width()),
+		(int16_t)(pic.Get_Height()),
 		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
 		0,
 		1,
-		(short)pic.Get_Width(),
+		(int16_t)pic.Get_Width(),
 		1,
 		{0}
 	};
@@ -138,7 +138,7 @@ int Write_PCX_File(FileClass & file, GraphicBufferClass & pic, PaletteClass * pa
 	/*
 	**	Special marker for end of RLE data.
 	*/
-	unsigned char ender = 0x0C;
+	uint8_t ender = 0x0C;
 	file.Write(&ender, sizeof(ender));
 
 	/*
@@ -147,9 +147,9 @@ int Write_PCX_File(FileClass & file, GraphicBufferClass & pic, PaletteClass * pa
 	memmove(palcopy, palette, sizeof(PaletteClass));
 	pal = (RGB *)palcopy ;
 	for (int palindex = 0; palindex < 256; palindex++) {
-		pal->red = (unsigned char)((pal->red<<2)); // | (pal->red>>6));
-		pal->green = (unsigned char)((pal->green<<2)); // | (pal->green>>6));
-		pal->blue = (unsigned char)((pal->blue<<2)); // | (pal->blue>>6));
+		pal->red = (uint8_t)((pal->red<<2)); // | (pal->red>>6));
+		pal->green = (uint8_t)((pal->green<<2)); // | (pal->green>>6));
+		pal->blue = (uint8_t)((pal->blue<<2)); // | (pal->blue>>6));
 		pal++;
 	}
 
@@ -189,11 +189,11 @@ int Write_PCX_File(FileClass & file, GraphicBufferClass & pic, PaletteClass * pa
  *=============================================================================================*/
 static void Write_Pcx_ScanLine(FileClass & file, int scansize, char * ptr)
 {
-	unsigned char last = *ptr;
-	unsigned char rle=1;
-	unsigned char c;
+	uint8_t last = *ptr;
+	uint8_t rle=1;
+	uint8_t c;
 	for (int i = 1; i < scansize; i++) {
-   	unsigned char color = (unsigned char)(0xff & * ++ptr);
+   	uint8_t color = (uint8_t)(0xff & * ++ptr);
 		if (color == last) {
 			rle++;
 			if (rle == rle_max_run) {
@@ -206,7 +206,7 @@ static void Write_Pcx_ScanLine(FileClass & file, int scansize, char * ptr)
 		 		if (rle == 1 && (rle_code != (rle_code & last))) {
 			   	file.Write(&last, sizeof(last));
 		     	} else {
-					c = (unsigned char)(rle | rle_code);
+					c = (uint8_t)(rle | rle_code);
 		      	file.Write(&c, sizeof(c));
 	     	   	file.Write(&last, sizeof(last));
 				}
@@ -219,7 +219,7 @@ static void Write_Pcx_ScanLine(FileClass & file, int scansize, char * ptr)
 		if (rle == 1 && ( rle_code != (rle_code & last))) {
 			file.Write(&last, sizeof(last));
 		} else {
-			c = (unsigned char)(rle | rle_code);
+			c = (uint8_t)(rle | rle_code);
 			file.Write(&c, sizeof(c));
 	   	file.Write(&last, sizeof(last));
 		}

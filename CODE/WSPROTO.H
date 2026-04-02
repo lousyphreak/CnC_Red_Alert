@@ -36,6 +36,7 @@
 
 #ifndef WSPROTO_H
 #define WSPROTO_H
+#include <stdint.h>
 
 #include	"_WSPROTO.H"
 
@@ -117,7 +118,7 @@ class WinsockInterfaceClass {
 			return (false);
 		};
 
-	 	virtual long Message_Handler(HWND, UINT, UINT, LONG) {
+	 	virtual int32_t Message_Handler(HWND, uint32_t, uint32_t, int32_t) {
 			return (1);
 		}
 
@@ -144,10 +145,10 @@ class WinsockInterfaceClass {
 		** It acts as a temporary control for these packets.
 		*/
 		typedef struct tWinsockBufferType {
-			unsigned char		Address [64];	// Address. IN_ADDR, IPXAddressClass etc.
+			uint8_t		Address [64];	// Address. IN_ADDR, IPXAddressClass etc.
 			int					BufferLen;		// Length of data in buffer
 			bool					IsBroadcast;	// Flag to broadcast this packet
-			unsigned char		Buffer[1024];	// Buffer to store packet in.
+			uint8_t		Buffer[1024];	// Buffer to store packet in.
 		} WinsockBufferType;
 
 		/*
@@ -175,7 +176,7 @@ class WinsockInterfaceClass {
 		/*
 		** Temporary receive buffer to use when querying Winsock for incoming packets.
 		*/
-		unsigned char		ReceiveBuffer[WS_RECEIVE_BUFFER_LEN];
+		uint8_t		ReceiveBuffer[WS_RECEIVE_BUFFER_LEN];
 
 		/*
 		** Current connection status.

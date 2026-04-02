@@ -118,7 +118,7 @@ const char* Game_Registry_Key();
  *   03/20/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
 //int PASCAL WinMain(HINSTANCE, HINSTANCE, char *, int )
-int PASCAL WinMain ( HINSTANCE instance , HINSTANCE , char * command_line , int command_show )
+int  WinMain ( HINSTANCE instance , HINSTANCE , char * command_line , int command_show )
 
 {
 
@@ -237,8 +237,8 @@ int PASCAL WinMain ( HINSTANCE instance , HINSTANCE , char * command_line , int 
 	//	Look for special registry entry that tells us when the setup exe has done its thing.
 	HKEY hKey;
 	RegOpenKeyEx( HKEY_LOCAL_MACHINE, Game_Registry_Key(), 0, KEY_READ, &hKey );
-	DWORD dwValue;
-	DWORD dwBufSize = sizeof( DWORD );
+	uint32_t dwValue;
+	uint32_t dwBufSize = sizeof( uint32_t );
 	if( RegQueryValueEx( hKey, "WolapiInstallComplete", 0, NULL, (LPBYTE)&dwValue, &dwBufSize ) == ERROR_SUCCESS )
 	{
 //		debugprint( "Found WolapiInstallComplete in registry\n" );
@@ -345,7 +345,7 @@ int PASCAL WinMain ( HINSTANCE instance , HINSTANCE , char * command_line , int 
 			startup_trace("Audio_Init complete SoundOn=%d", SoundOn);
 
 
-			BOOL video_success = FALSE;
+			int32_t video_success = FALSE;
 			/*
 			** Set 640x400 video mode. If its not available then try for 640x480
 			*/
@@ -559,7 +559,7 @@ int PASCAL WinMain ( HINSTANCE instance , HINSTANCE , char * command_line , int 
  * HISTORY:                                                                                    *
  *   03/20/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-void __cdecl Prog_End(void)
+void  Prog_End(void)
 {
 	Sound_End();
 	if (WWMouse) {

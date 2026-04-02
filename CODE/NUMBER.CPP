@@ -25,11 +25,12 @@
 **	Method to raise a number by an arbitrary whole exponent and then
 **	modulo the result by another number.
 */
-unsigned long Power_Mod(unsigned long root, unsigned long exponent, unsigned long mod)
+#include <stdint.h>
+uint32_t Power_Mod(uint32_t root, uint32_t exponent, uint32_t mod)
 {
-	unsigned long s = 1;
-	unsigned long t = root;
-	unsigned long u = exponent;
+	uint32_t s = 1;
+	uint32_t t = root;
+	uint32_t u = exponent;
 
 	while (u) {
 		if (u & 1) {

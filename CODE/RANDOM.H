@@ -37,6 +37,7 @@
 
 #ifndef RANDOM_H
 #define RANDOM_H
+#include <stdint.h>
 
 /**********************************************************************
 ** Enable this define to turn on the random # counters.  This must not
@@ -64,11 +65,11 @@ class RandomClass {
 			SIGNIFICANT_BITS=15				// Random number bit significance.
 		};
 
-		unsigned long Seed;
+		uint32_t Seed;
 
 #ifdef RANDOM_COUNT
-		unsigned long Count1;
-		unsigned long Count2;
+		uint32_t Count1;
+		uint32_t Count2;
 #endif
 
 	protected:

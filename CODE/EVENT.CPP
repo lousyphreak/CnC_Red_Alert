@@ -57,7 +57,7 @@
 ** Table of what data is really used in the EventClass struct for different
 ** events.  This table must be kept current with the EventType enum.
 */
-unsigned char EventClass::EventLength[EventClass::LAST_EVENT] = {
+uint8_t EventClass::EventLength[EventClass::LAST_EVENT] = {
 	0,															// EMPTY
 	size_of(EventClass, Data.General ),				// ALLY
 	size_of(EventClass, Data.MegaMission ),		// MEGAMISSION
@@ -467,7 +467,7 @@ EventClass::EventClass(EventType type, int id, CELL cell)
  * HISTORY:                                                                                    *
  *   11/10/1995 BRR : Created.                                                                 *
  *=============================================================================================*/
-EventClass::EventClass(EventType type, void * ptr, unsigned long size)
+EventClass::EventClass(EventType type, void * ptr, uint32_t size)
 {
 	ID = PlayerPtr->ID;
 	Type = type;

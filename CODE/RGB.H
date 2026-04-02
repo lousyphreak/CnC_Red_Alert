@@ -37,17 +37,18 @@
 
 #ifndef RGB_H
 #define RGB_H
+#include <stdint.h>
 
 class PaletteClass;
 class HSVClass;
 
 #ifndef OUTPORTB
 #define OUTPORTB
-extern void outportb(int port, unsigned char data);
+extern void outportb(int port, uint8_t data);
 #pragma aux outportb parm [edx] [al] =		\
 		"out	dx,al"
 
-extern void outport(int port, unsigned short data);
+extern void outport(int port, uint16_t data);
 #pragma aux outport parm [edx] [ax] =		\
 		"out	dx,al"		\
 		"inc	dx"			\
@@ -55,7 +56,7 @@ extern void outport(int port, unsigned short data);
 		"out	dx,al"
 #endif
 
-extern void outrgb(unsigned char red, unsigned char green, unsigned char blue);
+extern void outrgb(uint8_t red, uint8_t green, uint8_t blue);
 #pragma aux outrgb parm [al] [bl] [cl] \
 		modify [dx al] = \
 		"mov	dx,03C9h"	\
@@ -82,10 +83,10 @@ class RGBClass
 
 	public:
 		RGBClass(void) : Red(0), Green(0), Blue(0) {};
-		RGBClass(unsigned char red, unsigned char green, unsigned char blue) :
-				Red((unsigned char)(red>>2)),
-				Green((unsigned char)(green>>2)),
-				Blue((unsigned char)(blue>>2))
+		RGBClass(uint8_t red, uint8_t green, uint8_t blue) :
+				Red((uint8_t)(red>>2)),
+				Green((uint8_t)(green>>2)),
+				Blue((uint8_t)(blue>>2))
 			{};
 		operator HSVClass (void) const;
 		RGBClass & operator = (RGBClass const & rgb) {
@@ -120,7 +121,7 @@ class RGBClass
 //			outportb(0x03C9, Blue);
 		};
 
-		static void Raw_Color_Prep(unsigned char color) {
+		static void Raw_Color_Prep(uint8_t color) {
 			outportb(0x03C8, color);
 		};
 
@@ -128,9 +129,9 @@ class RGBClass
 		**	These hold the actual color gun values in machine dependant scale. This
 		**	means the values range from 0 to 63.
 		*/
-		unsigned char Red;
-		unsigned char Green;
-		unsigned char Blue;
+		uint8_t Red;
+		uint8_t Green;
+		uint8_t Blue;
 };
 
 extern RGBClass const BlackColor;

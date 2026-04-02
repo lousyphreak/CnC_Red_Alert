@@ -174,7 +174,7 @@ void Connect_TEN(void)
 		NetCommandType Dummy;				// packet type; set to PING
 		char Name[MPLAYER_NAME_MAX];		// player's name
 		HousesType House;						// player's ActLike
-		unsigned char Color;					// player's Color
+		uint8_t Color;					// player's Color
 	} ConnectPacketType;
 	int num_players;
 	int num_found;

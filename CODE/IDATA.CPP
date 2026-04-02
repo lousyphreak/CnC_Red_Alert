@@ -907,7 +907,7 @@ InfantryTypeClass::InfantryTypeClass (
 						DoInfoStruct const * control,
 						int firelaunch,
 						int pronelaunch,
-						unsigned char const * override_remap)
+						uint8_t const * override_remap)
 	: TechnoTypeClass(RTTI_INFANTRYTYPE,
 							int(type),
 							name,
@@ -1125,9 +1125,9 @@ bool InfantryTypeClass::Create_And_Place(CELL cell, HousesType house) const
  * HISTORY:                                                                                    *
  *   09/24/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-short const * InfantryTypeClass::Occupy_List(bool) const
+int16_t const * InfantryTypeClass::Occupy_List(bool) const
 {
-	static short const _list[] = {0, REFRESH_EOL};
+	static int16_t const _list[] = {0, REFRESH_EOL};
 
 	return(&_list[0]);
 }

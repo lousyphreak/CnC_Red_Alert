@@ -489,7 +489,7 @@ HouseTypeClass & HouseTypeClass::As_Reference(HousesType house)
  * HISTORY:                                                                                    *
  *   06/03/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-unsigned char const * HouseTypeClass::Remap_Table(void) const
+uint8_t const * HouseTypeClass::Remap_Table(void) const
 {
 	return(ColorRemaps[RemapColor].RemapTable);
 }

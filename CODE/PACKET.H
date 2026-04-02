@@ -40,12 +40,13 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #ifndef __PACKET_H
 #define __PACKET_H
+#include <stdint.h>
 
 
 #include "FIELD.H"
 class PacketClass {
 	public:
-		PacketClass(short id = 0)
+		PacketClass(int16_t id = 0)
 		{
 			Size 			= 0;
 			ID				= id;
@@ -65,7 +66,7 @@ class PacketClass {
 		// having to worry about newing one first.
 		//
 		void Add_Field(char *field, char data) {Add_Field(new FieldClass(field, data));};
-		void Add_Field(char *field, unsigned char data) {Add_Field(new FieldClass(field, data));};
+		void Add_Field(char *field, uint8_t data) {Add_Field(new FieldClass(field, data));};
 		void Add_Field(char *field, int16_t data) {Add_Field(new FieldClass(field, data));};
 		void Add_Field(char *field, uint16_t data) {Add_Field(new FieldClass(field, data));};
 		void Add_Field(char *field, int32_t data) {Add_Field(new FieldClass(field, data));};
@@ -80,7 +81,7 @@ class PacketClass {
 		//
 		FieldClass *Find_Field(char *id);
 		bool Get_Field(char *id, char &data);
-		bool Get_Field(char *id, unsigned char &data);
+		bool Get_Field(char *id, uint8_t &data);
 		bool Get_Field(char *id, int16_t &data);
 		bool Get_Field(char *id, uint16_t &data);
 		bool Get_Field(char *id, int32_t &data);
@@ -91,8 +92,8 @@ class PacketClass {
 		char *Create_Comms_Packet(int &size);
 
 	private:
-		unsigned short 	Size;
-		short 				ID;
+		uint16_t 	Size;
+		int16_t 				ID;
 		FieldClass			*Head;
 		FieldClass			*Current;
 };

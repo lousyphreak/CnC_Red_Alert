@@ -37,6 +37,7 @@
 
 #ifndef DISPLAY_H
 #define DISPLAY_H
+#include <stdint.h>
 
 #include	"CCINI.H"
 #include	"FACE.H"
@@ -92,8 +93,8 @@ class DisplayClass: public MapClass
 		**	extensively by the scenario editor.
 		*/
 		CELL ZoneCell;
-		short ZoneOffset;
-		short const *CursorSize;
+		int16_t ZoneOffset;
+		int16_t const *CursorSize;
 		bool ProximityCheck;		// Is proximity check ok?
 
 		/*
@@ -106,20 +107,20 @@ class DisplayClass: public MapClass
 		ObjectTypeClass const * PendingObject;
 		HousesType PendingHouse;
 
-		static unsigned char FadingBrighten[256];
-		static unsigned char FadingShade[256];
-		static unsigned char FadingWayDark[256];
-		static unsigned char FadingLight[256];
-		static unsigned char FadingGreen[256];
-		static unsigned char FadingYellow[256];
-		static unsigned char FadingRed[256];
-		static unsigned char TranslucentTable[(MAGIC_COL_COUNT+1)*256];
-		static unsigned char WhiteTranslucentTable[(1+1)*256];
-		static unsigned char MouseTranslucentTable[(4+1)*256];
+		static uint8_t FadingBrighten[256];
+		static uint8_t FadingShade[256];
+		static uint8_t FadingWayDark[256];
+		static uint8_t FadingLight[256];
+		static uint8_t FadingGreen[256];
+		static uint8_t FadingYellow[256];
+		static uint8_t FadingRed[256];
+		static uint8_t TranslucentTable[(MAGIC_COL_COUNT+1)*256];
+		static uint8_t WhiteTranslucentTable[(1+1)*256];
+		static uint8_t MouseTranslucentTable[(4+1)*256];
 		static void const *TransIconset;
-		static unsigned char UnitShadow[(USHADOW_COL_COUNT+1)*256];
-		static unsigned char UnitShadowAir[(USHADOW_COL_COUNT+1)*256];
-		static unsigned char SpecialGhost[2*256];
+		static uint8_t UnitShadow[(USHADOW_COL_COUNT+1)*256];
+		static uint8_t UnitShadowAir[(USHADOW_COL_COUNT+1)*256];
+		static uint8_t SpecialGhost[2*256];
 
 		//-------------------------------------------------------------------------
 		DisplayClass(void);
@@ -155,7 +156,7 @@ class DisplayClass: public MapClass
 		virtual void Help_Text(int , int =-1, int =-1, int =YELLOW, bool =false) {};
 		virtual MouseType Get_Mouse_Shape(void) const = 0;
 		virtual bool Scroll_Map(DirType facing, int & distance, bool really);
-		virtual void Refresh_Cells(CELL cell, short const *list);
+		virtual void Refresh_Cells(CELL cell, int16_t const *list);
 		virtual void Set_View_Dimensions(int x, int y, int width=-1, int height=-1);
 
 		/*
@@ -163,9 +164,9 @@ class DisplayClass: public MapClass
 		*/
 		virtual void Put_Place_Back(TechnoClass * ) {}; // Affects 'pending' system.
 		void Cursor_Mark(CELL pos, bool on);
-		void Set_Cursor_Shape(short const * list);
+		void Set_Cursor_Shape(int16_t const * list);
 		CELL Set_Cursor_Pos(CELL pos = -1);
-		void Get_Occupy_Dimensions(int & w, int & h, short const *list) const;
+		void Get_Occupy_Dimensions(int & w, int & h, int16_t const *list) const;
 
 		/*
 		**	Tactical map only functionality.
@@ -180,12 +181,12 @@ class DisplayClass: public MapClass
 		void Submit(ObjectClass const * object, LayerType layer);
 		CELL Calculated_Cell(SourceType dir, WAYPOINT waypoint=-1, CELL cell=-1, SpeedType loco=SPEED_FOOT, bool zonecheck=true, MZoneType mzone=MZONE_NORMAL) const;
 		bool In_View(register CELL cell) const;
-		bool Passes_Proximity_Check(ObjectTypeClass const * object, HousesType house, short const * list, CELL trycell) const;
+		bool Passes_Proximity_Check(ObjectTypeClass const * object, HousesType house, int16_t const * list, CELL trycell) const;
 		ObjectClass * Cell_Object(CELL cell, int x=0, int y=0) const;
 		ObjectClass * Next_Object(ObjectClass * object) const;
 		ObjectClass * Prev_Object(ObjectClass * object) const;
 		int Cell_Shadow(CELL cell) const;
-		short const * Text_Overlap_List(char const * text, int x, int y) const;
+		int16_t const * Text_Overlap_List(char const * text, int x, int y) const;
 		bool Is_Spot_Free(COORDINATE coord) const;
 		COORDINATE Closest_Free_Spot(COORDINATE coord, bool any=false) const;
 		void Sell_Mode_Control(int control);
@@ -304,7 +305,7 @@ class DisplayClass: public MapClass
 		int NewX,NewY;
 
 		static void const *ShadowShapes;
-		static unsigned char ShadowTrans[(SHADOW_COL_COUNT+1)*256];
+		static uint8_t ShadowTrans[(SHADOW_COL_COUNT+1)*256];
 
 		void Redraw_Icons(void);
 		void Redraw_OIcons(void);

@@ -148,8 +148,8 @@ class IconListClass : public ListClass
 		virtual int			Find( const char* szItemToFind );
 		virtual int			FindColor( RemapControlType* pColorRemap );
 
-		virtual bool		Set_Item( unsigned int index, const char* szText );
-		virtual bool		Set_Icon( unsigned int index, unsigned int iIconNumber, void* pIcon, ICONKIND IconKind );
+		virtual bool		Set_Item( uint32_t index, const char* szText );
+		virtual bool		Set_Icon( uint32_t index, uint32_t iIconNumber, void* pIcon, ICONKIND IconKind );
 
 		virtual int			GetRealWidth();
 		virtual void		Resize( int x, int y, int w, int h );

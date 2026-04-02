@@ -1321,7 +1321,7 @@ int BGMessageBox(char const * msg, int btn1, int btn2)
 	bool pressed;
 	int curbutton;
 	TextButtonClass * buttons[3];
-	BOOL display;									// display level
+	int32_t display;									// display level
 	int  realval[5];
 	int  morebutton = 3;						// which button says "more": 2 or 3?
 
@@ -2186,8 +2186,8 @@ bool Read_Scenario_INI(char * fname, bool )
 #ifdef TOFIX
 	len = strlen(buffer);
 	for (int i = 0; i < len; i++) {
-		val = (unsigned char)buffer[i];
-		Add_CRC(&ScenarioCRC, (unsigned long)val);
+		val = (uint8_t)buffer[i];
+		Add_CRC(&ScenarioCRC, (uint32_t)val);
 	}
 #endif
 

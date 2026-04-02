@@ -37,6 +37,7 @@
 
 #ifndef TEAMTYPE_H
 #define TEAMTYPE_H
+#include <stdint.h>
 
 /*
 **	TeamMissionType: the various missions that a team can have.
@@ -164,7 +165,7 @@ class TeamTypeClass : public AbstractTypeClass
 		void Draw_It(int index, int x, int y, int width, int height, bool selected, TextPrintType flags) const;
 		static char const * Name_From_Mission(TeamMissionType order);
 		static TeamMissionType Mission_From_Name(char const *name);
-		static TeamTypeClass const * Suggested_New_Team(HouseClass * house, long atypes, long utypes, long itypes, long vtypes, bool alerted);
+		static TeamTypeClass const * Suggested_New_Team(HouseClass * house, int32_t atypes, int32_t utypes, int32_t itypes, int32_t vtypes, bool alerted);
 		static TeamTypeClass * From_Name(char const * name);
 		bool Edit(void);
 #if defined(CHEAT_KEYS) || defined(SCENARIO_EDITOR)
@@ -227,17 +228,17 @@ class TeamTypeClass : public AbstractTypeClass
 		/*
 		**	Initial # of this type of team
 		*/
-		unsigned char InitNum;
+		uint8_t InitNum;
 
 		/*
 		**	Max # of this type of team allowed at one time
 		*/
-		unsigned char MaxAllowed;
+		uint8_t MaxAllowed;
 
 		/*
 		**	Fear level of this team
 		*/
-		unsigned char Fear;
+		uint8_t Fear;
 
 		/*
 		**	House the team belongs to

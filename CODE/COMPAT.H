@@ -76,8 +76,8 @@
 
 
 //extern unsigned char *Palette;
-extern unsigned char MDisabled;			// Is mouse disabled?
-extern WORD Hard_Error_Occured;
+extern uint8_t MDisabled;			// Is mouse disabled?
+extern uint16_t Hard_Error_Occured;
 
 /*
 **	This is the menu control structures.
@@ -156,10 +156,10 @@ inline int Get_IconSet_MapHeight(void const * data)
 	return(0);
 }
 
-inline unsigned char const * Get_IconSet_ControlMap(void const * data)
+inline uint8_t const * Get_IconSet_ControlMap(void const * data)
 {
 	if (data) {
-		return((unsigned char const *)((char *)data + ((IControl_Type *)data)->ColorMap));
+		return((uint8_t const *)((char *)data + ((IControl_Type *)data)->ColorMap));
 	}
 	return(0);
 }
@@ -173,22 +173,22 @@ class IconsetClass : protected IControl_Type
 		*/
 		int Map_Width(void) const {return(MapWidth);};
 		int Map_Height(void) const {return(MapHeight);};
-		unsigned char * Control_Map(void) {return((unsigned char *)this + ColorMap);};
-		unsigned char const * Control_Map(void) const {return((unsigned char const *)this + ColorMap);};
+		uint8_t * Control_Map(void) {return((uint8_t *)this + ColorMap);};
+		uint8_t const * Control_Map(void) const {return((uint8_t const *)this + ColorMap);};
 		int Icon_Count(void) const {return(Count);};
 		int Pixel_Width(void) const {return(Width);};
 		int Pixel_Height(void) const {return(Height);};
 		int Total_Size(void) const {return(Size);};
-		unsigned char const * Palette_Data(void) const {return((unsigned char const *)this + Palettes);};
-		unsigned char * Palette_Data(void) {return((unsigned char *)this + Palettes);};
-		unsigned char const * Icon_Data(void) const {return((unsigned char const *)this + Icons);};
-		unsigned char * Icon_Data(void) {return((unsigned char *)this + Icons);};
-		unsigned char const * Map_Data(void) const {return((unsigned char const *)this + Map);};
-		unsigned char * Map_Data(void) {return((unsigned char *)this + Map);};
-		unsigned char const * Remap_Data(void) const {return((unsigned char const *)this + Remaps);};
-		unsigned char * Remap_Data(void) {return((unsigned char *)this + Remaps);};
-		unsigned char const * Trans_Data(void) const {return((unsigned char const *)this + TransFlag);};
-		unsigned char * Trans_Data(void) {return((unsigned char *)this + TransFlag);};
+		uint8_t const * Palette_Data(void) const {return((uint8_t const *)this + Palettes);};
+		uint8_t * Palette_Data(void) {return((uint8_t *)this + Palettes);};
+		uint8_t const * Icon_Data(void) const {return((uint8_t const *)this + Icons);};
+		uint8_t * Icon_Data(void) {return((uint8_t *)this + Icons);};
+		uint8_t const * Map_Data(void) const {return((uint8_t const *)this + Map);};
+		uint8_t * Map_Data(void) {return((uint8_t *)this + Map);};
+		uint8_t const * Remap_Data(void) const {return((uint8_t const *)this + Remaps);};
+		uint8_t * Remap_Data(void) {return((uint8_t *)this + Remaps);};
+		uint8_t const * Trans_Data(void) const {return((uint8_t const *)this + TransFlag);};
+		uint8_t * Trans_Data(void) {return((uint8_t *)this + TransFlag);};
 
 	/*
 	**	Disallow these operations with an IconsetClass object.

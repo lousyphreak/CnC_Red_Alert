@@ -80,12 +80,12 @@
 
 /* Unsigned type with 32 bits or more */
 #if (UINT_MAX >= 0xffffffffL)
-   typedef unsigned int     lzo_uint;
+   typedef uint32_t     lzo_uint;
    typedef int              lzo_int;
 #  define LZO_UINT_MAX      UINT_MAX
 #elif (ULONG_MAX >= 0xffffffffL)
-   typedef unsigned long    lzo_uint;
-   typedef long             lzo_int;
+   typedef uint32_t    lzo_uint;
+   typedef int32_t             lzo_int;
 #  define LZO_UINT_MAX      ULONG_MAX
 #else
 #  error lzo_uint
@@ -100,17 +100,17 @@
 #if (LZO_UINT_MAX <= UINT_MAX)
 #  define __LZO_MMODEL
 #elif defined(__LZO_MSDOS16)
-#  define __LZO_MMODEL      huge
-#  define __LZO_ENTRY       __cdecl
+#  define __LZO_MMODEL      
+#  define __LZO_ENTRY       
 #else
 #  error __LZO_MMODEL
 #endif
 
 
 /* no typedef here because of const-pointer issues */
-#define lzo_byte            unsigned char __LZO_MMODEL
+#define lzo_byte            uint8_t __LZO_MMODEL
 #define lzo_voidp           void __LZO_MMODEL *
-#define lzo_bytep           unsigned char __LZO_MMODEL *
+#define lzo_bytep           uint8_t __LZO_MMODEL *
 #define lzo_uintp           lzo_uint __LZO_MMODEL *
 #define lzo_intp            lzo_int __LZO_MMODEL *
 #define lzo_voidpp          lzo_voidp __LZO_MMODEL * 

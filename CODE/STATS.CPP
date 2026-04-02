@@ -133,8 +133,8 @@
 #define FIELD_PLAYER2_HARVESTED					"HRV2"
 
 
-#define	PACKET_TYPE_HOST_GAME_INFO		(unsigned char) 50
-#define	PACKET_TYPE_GUEST_GAME_INFO		(unsigned char) 51
+#define	PACKET_TYPE_HOST_GAME_INFO		(uint8_t) 50
+#define	PACKET_TYPE_GUEST_GAME_INFO		(uint8_t) 51
 
 //	Note: These enums match those in the game results server code.
 enum {
@@ -160,7 +160,7 @@ extern "C" char	CPUType;
 
 bool			GameTimerInUse = false;
 TimerClass	GameTimer;
-long			GameEndTime;
+int32_t			GameEndTime;
 void			*PacketLater = NULL;
 
 #include "WOLDEBUG.H"
@@ -257,9 +257,9 @@ void Send_Statistics_Packet(void)
 #ifdef WOLAPI_INTEGRATION
 		if( pWolapi->bGameServer )
 		{
-			stats.Add_Field( FIELD_HOSTORNOT, (unsigned char)0 );		//	Reversed meaning of this for Neal.
+			stats.Add_Field( FIELD_HOSTORNOT, (uint8_t)0 );		//	Reversed meaning of this for Neal.
 		}else{
-			stats.Add_Field( FIELD_HOSTORNOT, (unsigned char)1 );
+			stats.Add_Field( FIELD_HOSTORNOT, (uint8_t)1 );
 		}
 #else
 		if (Server){
@@ -277,15 +277,15 @@ void Send_Statistics_Packet(void)
 #ifdef WOLAPI_INTEGRATION
 
 		//	Number of players initially in game.
-		stats.Add_Field( FIELD_NUM_INITIAL_PLAYERS, (unsigned long)pWolapi->GameInfoCurrent.iPlayerCount );
+		stats.Add_Field( FIELD_NUM_INITIAL_PLAYERS, (uint32_t)pWolapi->GameInfoCurrent.iPlayerCount );
 //debugprint( "Stats: number of initial players is %i\n", pWolapi->GameInfoCurrent.iPlayerCount );
 
 		//	Number of players remaining in game. Not sure of what use this will be statistically...
-		stats.Add_Field( FIELD_NUM_REMAINING_PLAYERS, (unsigned long)Session.Players.Count() );
+		stats.Add_Field( FIELD_NUM_REMAINING_PLAYERS, (uint32_t)Session.Players.Count() );
 //debugprint( "Stats: number of remaining players is %i\n", Session.Players.Count() );
 
 		//	Whether or not this was a tournament game.
-		stats.Add_Field( FIELD_TOURNAMENT, (unsigned char)( pWolapi->GameInfoCurrent.bTournament ? 1 : 0 ) );
+		stats.Add_Field( FIELD_TOURNAMENT, (uint8_t)( pWolapi->GameInfoCurrent.bTournament ? 1 : 0 ) );
 
 //	ajw This is now in WOLAPI...
 //		//	A unique value that identifies the machine that the game was played on.
@@ -425,8 +425,8 @@ void Send_Statistics_Packet(void)
 								strcpy( szAsciiIP, inet_ntoa( *( (struct in_addr*)piAddress ) ) );
 								//	We have an address in the right form.
 								//	Now, is it an address in a private network? If so we should ignore it.
-								unsigned char q1 = ( (char*)piAddress )[ 0 ];	//	First digit.
-								unsigned char q2 = ( (char*)piAddress )[ 1 ];	//	Second digit.
+								uint8_t q1 = ( (char*)piAddress )[ 0 ];	//	First digit.
+								uint8_t q2 = ( (char*)piAddress )[ 1 ];	//	Second digit.
 //								debugprint( "ip: %s\n", szAsciiIP );
 								if( q1 == 10 || ( q1 == 172 && ( q2 >= 16 && q2 <= 31 ) ) || ( q1 == 192 && q2 == 168 ) )
 								{
@@ -620,8 +620,8 @@ void Send_Statistics_Packet(void)
 				**	Pack the date/time into a FILETIME-sized structure for network transmission.
 				**	The exact encoding doesn't matter as long as it's consistent across players.
 				*/
-				write_time.dwLowDateTime = htonl((DWORD)((uint64_t)path_info.modify_time & 0xFFFFFFFF));
-				write_time.dwHighDateTime = htonl((DWORD)((uint64_t)path_info.modify_time >> 32));
+				write_time.dwLowDateTime = htonl((uint32_t)((uint64_t)path_info.modify_time & 0xFFFFFFFF));
+				write_time.dwHighDateTime = htonl((uint32_t)((uint64_t)path_info.modify_time >> 32));
 				stats.Add_Field (FIELD_GAME_BUILD_DATE, (void*)&write_time, sizeof (write_time));
 			}
 		}
@@ -662,9 +662,9 @@ void Send_Statistics_Packet(void)
 #ifdef WOLAPI_INTEGRATION
 			//	Whether or not this player was taken over by the computer, due to his quitting the game.
 			if( strcmp( player->IniName, player->InitialName ) )
-				stats.Add_Field( FIELD_COMPUTERTOOKOVER, (unsigned char)1 );
+				stats.Add_Field( FIELD_COMPUTERTOOKOVER, (uint8_t)1 );
 			else
-				stats.Add_Field( FIELD_COMPUTERTOOKOVER, (unsigned char)0 );
+				stats.Add_Field( FIELD_COMPUTERTOOKOVER, (uint8_t)0 );
 #endif
 			/*
 			** Player team. (NOD or GDI)
@@ -676,7 +676,7 @@ void Send_Statistics_Packet(void)
 			** Player color
 			*/
 			field_player_color[3] = '1' + (char)house;
-			stats.Add_Field (field_player_color, (unsigned char) (player->Class->House - HOUSE_MULTI1));
+			stats.Add_Field (field_player_color, (uint8_t) (player->Class->House - HOUSE_MULTI1));
 
 			/*
 			** Player end credits.
@@ -871,7 +871,7 @@ void Send_Statistics_Packet(void)
 
 	if( *szGameResServer )
 	{
-		if( pWolapi->pNetUtil->RequestGameresSend( szGameResServer, iPort, (unsigned char*)packet, packet_size ) != S_OK )
+		if( pWolapi->pNetUtil->RequestGameresSend( szGameResServer, iPort, (uint8_t*)packet, packet_size ) != S_OK )
 			//debugprint( "RequestGameresSend( %s, %i ) failed!!!\n", szGameResServer, iPort );
 			;
 	}

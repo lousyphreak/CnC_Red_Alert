@@ -740,7 +740,7 @@ int Read_Bin_Pos( char * buffer )
 }
 
 
-int Read_Bin_PosSet( unsigned int pos, char * buffer )
+int Read_Bin_PosSet( uint32_t pos, char * buffer )
 {
 	if (buffer != ReadBinBuffer) {
 		return( -1 );
@@ -754,16 +754,16 @@ int Read_Bin_PosSet( unsigned int pos, char * buffer )
 bool Read_Bin_String( char * string, char * buffer )
 {
 	char * ptr;
-	unsigned char length;
+	uint8_t length;
 
 	if (buffer != ReadBinBuffer ||
 		 ReadBinBufferPos >= ReadBinBufferLen) {
 		return( false );
 	} else {
 		ptr = ReadBinBuffer + ReadBinBufferPos;
-		length = (unsigned char)*ptr++;
+		length = (uint8_t)*ptr++;
 		if ( (ReadBinBufferPos + length + 2) <= ReadBinBufferLen) {
-			memcpy( string, ptr, (unsigned int)(length + 1) );
+			memcpy( string, ptr, (uint32_t)(length + 1) );
 			ReadBinBufferPos += (length + 2);
 
 			if (ReadBinBufferPos > ReadBinBufferMax) {
@@ -835,7 +835,7 @@ int Write_Bin_Pos( char * buffer )
 }
 
 
-int Write_Bin_PosSet( unsigned int pos, char * buffer )
+int Write_Bin_PosSet( uint32_t pos, char * buffer )
 {
 	if (buffer != WriteBinBuffer) {
 		return( -1 );

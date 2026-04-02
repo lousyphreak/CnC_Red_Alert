@@ -699,7 +699,7 @@ class HouseClass {
 
 		int  Get_Quantity(AircraftType aircraft);
 		int  Get_Quantity(StructType building);
-		unsigned char const * Remap_Table(bool blushing=false, RemapType remap=REMAP_NORMAL) const;
+		uint8_t const * Remap_Table(bool blushing=false, RemapType remap=REMAP_NORMAL) const;
 
 		TechnoTypeClass const * Suggest_New_Object(RTTIType objectype, bool kennel=false) const;
 		BuildingTypeClass const * Suggest_New_Building(void) const;

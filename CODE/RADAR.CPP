@@ -674,7 +674,7 @@ void RadarClass::Render_Terrain(CELL cell, int x, int y, int size)
 	** loop through the list and take care of rendering the correct icon.
 	*/
 	for (lp = 0; lp < listidx; lp ++) {
-		unsigned char * icon = list[lp]->Radar_Icon(cell);
+		uint8_t * icon = list[lp]->Radar_Icon(cell);
 		if (!icon) continue;
 		Buffer_To_Page(0, 0, 3, 3, icon, _IconStage);
 		_IconStage.Scale(*LogicPage, 0, 0, x, y, 3, 3, ZoomFactor, ZoomFactor, TRUE, (char *)&FadingBrighten[0]);
@@ -770,7 +770,7 @@ void RadarClass::Render_Overlay(CELL cell, int x, int y, int size)
 		OverlayTypeClass const * otype = &OverlayTypeClass::As_Reference(overlay);
 
 		if (otype->IsRadarVisible) {
-			unsigned char * icon = otype->Radar_Icon((*this)[cell].OverlayData);
+			uint8_t * icon = otype->Radar_Icon((*this)[cell].OverlayData);
 			if (!icon) return;
 			Buffer_To_Page(0, 0, 3, 3, icon, _IconStage);
 			if (otype->IsTiberium) {
@@ -1021,7 +1021,7 @@ void RadarClass::Plot_Radar_Pixel(CELL cell)
 				}
 
 				IconsetClass const * iconset = (IconsetClass const *)ptr;
-				unsigned char const * icondata = iconset->Icon_Data();
+				uint8_t const * icondata = iconset->Icon_Data();
 
 
 				/*
@@ -1030,7 +1030,7 @@ void RadarClass::Plot_Radar_Pixel(CELL cell)
 				icon &= 0x00FF;
 				icon = *(iconset->Map_Data() + icon);
 
-				unsigned char * data = (unsigned char *)icondata + icon*(24*24);
+				uint8_t * data = (uint8_t *)icondata + icon*(24*24);
 				Buffer_To_Page(0, 0, 24, 24, data, _TileStage);
 				_TileStage.Scale(*LogicPage, 0, 0, x, y, 24, 24, ZoomFactor, ZoomFactor, TRUE);
 			} else {
@@ -1319,7 +1319,7 @@ void RadarClass::Cell_XY_To_Radar_Pixel(int cellx, int celly, int &x, int &y)
  *=============================================================================================*/
 bool RadarClass::Jam_Cell(CELL cell, HouseClass * house/*KO, bool shadeit*/)
 {
-	unsigned short jam = 1 << house->Class->House;
+	uint16_t jam = 1 << house->Class->House;
 	(*this)[cell].Jammed |= jam;
 	if (house != PlayerPtr) Shroud_Cell(cell/*KO, shadeit*/);
 	Radar_Pixel(cell);
@@ -1345,7 +1345,7 @@ bool RadarClass::Jam_Cell(CELL cell, HouseClass * house/*KO, bool shadeit*/)
  *=============================================================================================*/
 bool RadarClass::UnJam_Cell(CELL cell, HouseClass * house)
 {
-	unsigned short jam = 1 << house->Class->House;
+	uint16_t jam = 1 << house->Class->House;
 	(*this)[cell].Redraw_Objects();
 	(*this)[cell].Jammed &= (0xFFFF - jam);
 	Radar_Pixel(cell);
@@ -1836,7 +1836,7 @@ int RadarClass::RTacticalClass::Action(unsigned flags, KeyNumType & key)
  * HISTORY:                                                                                    *
  *   01/01/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-void RadarClass::Refresh_Cells(CELL cell, short const * list)
+void RadarClass::Refresh_Cells(CELL cell, int16_t const * list)
 {
 	if (*list == REFRESH_SIDEBAR) {
 		IsToRedraw = true;

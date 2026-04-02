@@ -78,7 +78,7 @@ void LogicClass::Debug_Dump(MonoClass * mono) const
 
 
 	_framecounter++;
-	mono->Set_Cursor(1, 1);mono->Printf("%ld", (long)Scen.Timer);
+	mono->Set_Cursor(1, 1);mono->Printf("%ld", (int32_t)Scen.Timer);
 	mono->Set_Cursor(10, 1);mono->Printf("%3d", FramesPerSecond);
 	mono->Set_Cursor(1, 3);mono->Printf("%02d:%02d:%02d", Scen.Timer / TICKS_PER_HOUR, (Scen.Timer % TICKS_PER_HOUR)/TICKS_PER_MINUTE, (Scen.Timer % TICKS_PER_MINUTE)/TICKS_PER_SECOND);
 
@@ -95,7 +95,7 @@ void LogicClass::Debug_Dump(MonoClass * mono) const
 	mono->Set_Cursor(1, 21);mono->Printf("%3d", TriggerTypes.Count());
 	mono->Set_Cursor(1, 22);mono->Printf("%3d", Factories.Count());
 
-	SpareTicks = min((long)SpareTicks, (long)TIMER_SECOND);
+	SpareTicks = min((int32_t)SpareTicks, (int32_t)TIMER_SECOND);
 
 	/*
 	**	CPU utilization record.

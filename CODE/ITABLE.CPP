@@ -17,7 +17,8 @@
 */
 
 
-unsigned short IndexTable[] = {
+#include <stdint.h>
+uint16_t IndexTable[] = {
 	0,	// Index = 0, Token = 0
 	0,	// Index = 0, Token = 1
 	0,	// Index = 0, Token = 2

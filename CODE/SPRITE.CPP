@@ -33,11 +33,12 @@
 //#include	"FUNCTION.H"
 #include "../WIN32LIB/INCLUDE/GBUFFER.H"
 #include <stdio.h>
+#include <stdint.h>
 //#include "GBUFFER.H"
 //#include "math.h"
 
 
-long _SineTab[256] = {
+int32_t _SineTab[256] = {
 0 ,6 ,12 , 18 , 25 , 31 , 37 , 43 , 49 , 56 , 62 , 68 , 74 , 80 , 86 ,
 92 , 97 , 103 , 109 , 115 , 120 , 126 , 131 , 136 , 142 , 147 , 152 ,
 157 , 162 , 167 , 171 , 176 , 180 , 185 , 189 , 193 , 197 , 201 , 205 ,
@@ -63,7 +64,7 @@ long _SineTab[256] = {
 -38 , -32 , -25 , -19 , -13 , -7 ,
 };
 
-long _CosineTab[256] = {
+int32_t _CosineTab[256] = {
 256 , 255 , 255 , 255 , 254 , 254 , 253 , 252 , 251 , 249 , 248 , 246 ,
 244 , 243 , 241 , 238 , 236 , 234 , 231 , 228 , 225 , 222 , 219 , 216 ,
 212 , 209 , 205 , 201 , 197 , 193 , 189 , 185 , 181 , 176 , 171 , 167 ,
@@ -108,16 +109,16 @@ long _CosineTab[256] = {
 *
 ***************************************************************/
 
-void GraphicBufferClass::Scale_Rotate(BitmapClass &bmp,TPoint2D const &pt,int32_t scale,unsigned char angle)
+void GraphicBufferClass::Scale_Rotate(BitmapClass &bmp,TPoint2D const &pt,int32_t scale,uint8_t angle)
 {
-	unsigned int scrpos;
-	unsigned int temp;
+	uint32_t scrpos;
+	uint32_t temp;
 
 	int i,j;			// counter vars
 	int pxerror	=0;		// these three vars will be used in an
 	int pyerror	=0;		// integer difference alg to keep track
 	int pixpos	=0;		// of what pixel to draw.
-	unsigned char pixel;
+	uint8_t pixel;
 
 	TPoint2D p0;	// "upper left" corner of the rectangle
 	TPoint2D p1;	// "upper right" corner of the rectangle
@@ -128,10 +129,10 @@ void GraphicBufferClass::Scale_Rotate(BitmapClass &bmp,TPoint2D const &pt,int32_
 	-------------------------------------------------*/
 	{
 		angle &= 0x0FF;
-		long c = _CosineTab[angle];
- 		long s = _SineTab[angle];
-		long W = (scale*bmp.Width)>>1;
-		long L = (scale*bmp.Height)>>1;
+		int32_t c = _CosineTab[angle];
+ 		int32_t s = _SineTab[angle];
+		int32_t W = (scale*bmp.Width)>>1;
+		int32_t L = (scale*bmp.Height)>>1;
 
 		p0.x = (pt.x + ((( (L*c) >> 8)-((W*s) >> 8)) >> 8));
 		p0.y = (pt.y + (((-(L*s) >> 8)-((W*c) >> 8)) >> 8));
@@ -212,7 +213,7 @@ void GraphicBufferClass::Scale_Rotate(BitmapClass &bmp,TPoint2D const &pt,int32_
 			for (i=0;i<f_deltax;i++)
 			{
 				pixel=bmp.Data[pixpos];				//read pixel
-				if (pixel) ((unsigned char *)Get_Buffer())[scrpos]=pixel;	//draw if not transparent
+				if (pixel) ((uint8_t *)Get_Buffer())[scrpos]=pixel;	//draw if not transparent
 //				if (pixel) Data[scrpos]=pixel;	//draw if not transparent
 				pxerror+=bmp.Width;		 			//update position in bitmap
 				while (pxerror>f_deltax)
@@ -224,7 +225,7 @@ void GraphicBufferClass::Scale_Rotate(BitmapClass &bmp,TPoint2D const &pt,int32_
 				f_error+=f_deltay;
 				if (f_error>f_deltax)
 				{
-					if (pixel) ((unsigned char *)Get_Buffer())[scrpos]=pixel;
+					if (pixel) ((uint8_t *)Get_Buffer())[scrpos]=pixel;
 					f_error-=f_deltax;
 					scrpos+=f_ystep;
 				};
@@ -262,7 +263,7 @@ void GraphicBufferClass::Scale_Rotate(BitmapClass &bmp,TPoint2D const &pt,int32_
 			for (i=0;i<f_deltay;i++)
 			{
 				pixel=bmp.Data[pixpos];				//read pixel
-				if (pixel) ((unsigned char *)Get_Buffer())[scrpos]=pixel;	//draw if not transparent
+				if (pixel) ((uint8_t *)Get_Buffer())[scrpos]=pixel;	//draw if not transparent
 				pxerror+=bmp.Width;					//update position in bitmap
 				while (pxerror>f_deltay)
 				{
@@ -274,7 +275,7 @@ void GraphicBufferClass::Scale_Rotate(BitmapClass &bmp,TPoint2D const &pt,int32_
 				f_error+=f_deltax;
 				if (f_error>f_deltay)
 				{
-					if (pixel) ((unsigned char *)Get_Buffer())[scrpos]=pixel;
+					if (pixel) ((uint8_t *)Get_Buffer())[scrpos]=pixel;
 					f_error-=f_deltay;
 					scrpos+=f_xstep;
 				};

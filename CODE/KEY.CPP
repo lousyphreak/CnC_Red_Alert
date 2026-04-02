@@ -59,6 +59,7 @@
 
 #include	"MONOC.H"
 
+#include <stdint.h>
 //void Message_Loop(void);
 
 //WWKeyboardClass * _Kbd = NULL;
@@ -69,13 +70,13 @@ extern WWKeyboardClass *Keyboard;
 
 namespace {
 
-bool CapsLock_Affects_Key(unsigned short key)
+bool CapsLock_Affects_Key(uint16_t key)
 {
 	key &= 0xFF;
 	return (key >= KN_A && key <= KN_Z);
 }
 
-bool NumLock_Affects_Key(unsigned short key)
+bool NumLock_Affects_Key(uint16_t key)
 {
 	key &= 0xFF;
 	return (key >= 0x60 && key <= 0x6F);
@@ -116,11 +117,11 @@ WWKeyboardClass::WWKeyboardClass(void) :
  * HISTORY:                                                                                    *
  *   10/17/1995 PWG : Created.                                                                 *
  *=============================================================================================*/
-unsigned short WWKeyboardClass::Buff_Get(void)
+uint16_t WWKeyboardClass::Buff_Get(void)
 {
 	while (!Check()) {}										// wait for key in buffer
 
-	unsigned short temp = Fetch_Element();
+	uint16_t temp = Fetch_Element();
 	if (Is_Mouse_Key(temp)) {
 		MouseQX = Fetch_Element();
 		MouseQY = Fetch_Element();
@@ -143,7 +144,7 @@ unsigned short WWKeyboardClass::Buff_Get(void)
  * HISTORY:                                                                                    *
  *   09/30/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-bool WWKeyboardClass::Is_Mouse_Key(unsigned short key)
+bool WWKeyboardClass::Is_Mouse_Key(uint16_t key)
 {
 	key &= 0xFF;
 	return (key == KN_LMOUSE || key == 0x04 || key == KN_RMOUSE);
@@ -163,7 +164,7 @@ bool WWKeyboardClass::Is_Mouse_Key(unsigned short key)
  *   10/16/1995 PWG : Created.                                                                 *
  *   09/24/1996 JLB : Converted to new style keyboard system.                                  *
  *=============================================================================================*/
-unsigned short WWKeyboardClass::Check(void) const
+uint16_t WWKeyboardClass::Check(void) const
 {
 	((WWKeyboardClass *)this)->Fill_Buffer_From_System();
 	if (Is_Buffer_Empty()) return(false);
@@ -183,7 +184,7 @@ unsigned short WWKeyboardClass::Check(void) const
  * HISTORY:                                                                                    *
  *   10/16/1995 PWG : Created.                                                                 *
  *=============================================================================================*/
-unsigned short WWKeyboardClass::Get(void)
+uint16_t WWKeyboardClass::Get(void)
 {
 	while (!Check()) {}								// wait for key in buffer
 	return (Buff_Get());
@@ -202,7 +203,7 @@ unsigned short WWKeyboardClass::Get(void)
  * HISTORY:                                                                                    *
  *   10/16/1995 PWG : Created.                                                                 *
  *=============================================================================================*/
-bool WWKeyboardClass::Put(unsigned short key)
+bool WWKeyboardClass::Put(uint16_t key)
 {
 	if (!Is_Buffer_Full()) {
 		Put_Element(key);
@@ -224,7 +225,7 @@ bool WWKeyboardClass::Put(unsigned short key)
  * HISTORY:                                                                                    *
  *   10/16/1995 PWG : Created.                                                                 *
  *=============================================================================================*/
-bool WWKeyboardClass::Put_Key_Message(unsigned short vk_key, bool release)
+bool WWKeyboardClass::Put_Key_Message(uint16_t vk_key, bool release)
 {
 	/*
 	** Get the status of all of the different keyboard modifiers.  Note, only pay attention
@@ -279,7 +280,7 @@ bool WWKeyboardClass::Put_Key_Message(unsigned short vk_key, bool release)
  * HISTORY:                                                                                    *
  *   11/02/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-bool WWKeyboardClass::Put_Mouse_Message(unsigned short vk_key, int x, int y, bool release)
+bool WWKeyboardClass::Put_Mouse_Message(uint16_t vk_key, int x, int y, bool release)
 {
 	if (Is_Mouse_Key(vk_key)) {
 		MouseQX = x;
@@ -288,19 +289,19 @@ bool WWKeyboardClass::Put_Mouse_Message(unsigned short vk_key, int x, int y, boo
 
 	if (Available_Buffer_Room() >= 3 && Is_Mouse_Key(vk_key)) {
 		Put_Key_Message(vk_key, release);
-		Put((unsigned short)x);
-		Put((unsigned short)y);
+		Put((uint16_t)x);
+		Put((uint16_t)y);
 		return(true);
 	}
 	return(false);
 }
 
-bool WWKeyboardClass::Handle_Key_Event(unsigned short vk_key, bool release)
+bool WWKeyboardClass::Handle_Key_Event(uint16_t vk_key, bool release)
 {
 	return (Put_Key_Message(vk_key, release));
 }
 
-bool WWKeyboardClass::Handle_Mouse_Button_Event(unsigned short vk_key, int x, int y, bool release)
+bool WWKeyboardClass::Handle_Mouse_Button_Event(uint16_t vk_key, int x, int y, bool release)
 {
 	return (Put_Mouse_Message(vk_key, x, y, release));
 }
@@ -311,12 +312,12 @@ void WWKeyboardClass::Handle_Mouse_Motion(int x, int y)
 	MouseQY = y;
 }
 
-bool Keyboard_Handle_Key_Event(unsigned short vk_key, bool release)
+bool Keyboard_Handle_Key_Event(uint16_t vk_key, bool release)
 {
 	return ((Keyboard != NULL) ? Keyboard->Handle_Key_Event(vk_key, release) : false);
 }
 
-bool Keyboard_Handle_Mouse_Button_Event(unsigned short vk_key, int x, int y, bool release)
+bool Keyboard_Handle_Mouse_Button_Event(uint16_t vk_key, int x, int y, bool release)
 {
 	return ((Keyboard != NULL) ? Keyboard->Handle_Mouse_Button_Event(vk_key, x, y, release) : false);
 }
@@ -345,7 +346,7 @@ void Keyboard_Handle_Mouse_Motion(int x, int y)
  * HISTORY:                                                                                    *
  *   09/30/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-char WWKeyboardClass::To_ASCII(unsigned short key)
+char WWKeyboardClass::To_ASCII(uint16_t key)
 {
 	return SDL_GameInput_KeyToASCII(key);
 }
@@ -365,7 +366,7 @@ char WWKeyboardClass::To_ASCII(unsigned short key)
  * HISTORY:                                                                                    *
  *   09/30/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-bool WWKeyboardClass::Down(unsigned short key)
+bool WWKeyboardClass::Down(uint16_t key)
 {
 	return SDL_GameInput_IsLegacyKeyPressed(key & 0xFF);
 }
@@ -387,9 +388,9 @@ bool WWKeyboardClass::Down(unsigned short key)
  * HISTORY:                                                                                    *
  *   09/30/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-unsigned short WWKeyboardClass::Fetch_Element(void)
+uint16_t WWKeyboardClass::Fetch_Element(void)
 {
-	unsigned short val = 0;
+	uint16_t val = 0;
 	if (Head != Tail) {
 		val = Buffer[Head];
 
@@ -416,7 +417,7 @@ unsigned short WWKeyboardClass::Fetch_Element(void)
  * HISTORY:                                                                                    *
  *   09/30/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-unsigned short WWKeyboardClass::Peek_Element(void) const
+uint16_t WWKeyboardClass::Peek_Element(void) const
 {
 	if (!Is_Buffer_Empty()) {
 		return(Buffer[Head]);
@@ -441,7 +442,7 @@ unsigned short WWKeyboardClass::Peek_Element(void) const
  * HISTORY:                                                                                    *
  *   09/30/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-bool WWKeyboardClass::Put_Element(unsigned short val)
+bool WWKeyboardClass::Put_Element(uint16_t val)
 {
 	if (!Is_Buffer_Full()) {
 		int temp = (Tail+1) % ARRAY_SIZE(Buffer);

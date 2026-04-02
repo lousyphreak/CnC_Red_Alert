@@ -37,6 +37,7 @@
 
 #ifndef RADAR_H
 #define RADAR_H
+#include <stdint.h>
 
 #include	"DISPLAY.H"
 class RadarClass: public DisplayClass
@@ -72,7 +73,7 @@ class RadarClass: public DisplayClass
 		virtual CELL Click_Cell_Calc(int x, int y) const;
 		virtual void AI(KeyNumType &input, int x, int y);
 		virtual void Draw_It(bool complete=false);
-		virtual void Refresh_Cells(CELL cell, short const *list);
+		virtual void Refresh_Cells(CELL cell, int16_t const *list);
 		virtual void Set_Map_Dimensions(int x, int y, int w, int h);
 		virtual void Set_Tactical_Position(COORDINATE coord);
 		void	Zoom_Mode(CELL cell);

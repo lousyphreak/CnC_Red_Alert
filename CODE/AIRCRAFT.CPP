@@ -501,8 +501,8 @@ void AircraftClass::Draw_Rotors(int x, int y, WindowNumberType window) const
 		/*
 		**	Dual rotors offset along flight axis.
 		*/
-		short xx = x;
-		short yy = y-Lepton_To_Pixel(Height);
+		int16_t xx = x;
+		int16_t yy = y-Lepton_To_Pixel(Height);
 		FacingType face = Dir_Facing(SecondaryFacing);
 		Move_Point(xx, yy, SecondaryFacing.Current(), _stretch[face]);
 		CC_Draw_Shape(AircraftTypeClass::RRotorData, shapenum, xx, yy-2, window, flags, NULL, DisplayClass::UnitShadow);
@@ -961,12 +961,12 @@ void AircraftClass::AI(void)
  * HISTORY:                                                                                    *
  *   07/26/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-short const * AircraftClass::Overlap_List(bool redraw) const
+int16_t const * AircraftClass::Overlap_List(bool redraw) const
 {
 	assert(Aircraft.ID(this) == ID);
 	assert(IsActive);
 
-	static short const _list[] = {
+	static int16_t const _list[] = {
 		-(MAP_CELL_W-1), -MAP_CELL_W, -(MAP_CELL_W+1),
 		-1, 0, 1,
 		(MAP_CELL_W-1), MAP_CELL_W, (MAP_CELL_W+1),
@@ -975,7 +975,7 @@ short const * AircraftClass::Overlap_List(bool redraw) const
 		REFRESH_EOL
 	};
 
-	static short const _listbadger[] = {
+	static int16_t const _listbadger[] = {
 		-(MAP_CELL_W-2), -(MAP_CELL_W-1), -MAP_CELL_W, -(MAP_CELL_W+1), -(MAP_CELL_W+2),
 		-2, -1, 0, 1, 2,
 		(MAP_CELL_W-2), (MAP_CELL_W-1), MAP_CELL_W, (MAP_CELL_W+1), (MAP_CELL_W+2),

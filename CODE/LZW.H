@@ -37,6 +37,7 @@
 
 #ifndef _LZW_H
 #define _LZW_H
+#include <stdint.h>
 
 #include	"BUFF.H"
 class LZWEngine
@@ -50,7 +51,7 @@ class LZWEngine
 		void Reset(void);
 
 	private:
-		typedef short CodeType;
+		typedef int16_t CodeType;
 		struct CodeClass {
 			CodeType CodeValue;
 			CodeType ParentCode;

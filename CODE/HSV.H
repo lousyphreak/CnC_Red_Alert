@@ -38,6 +38,7 @@
 
 #ifndef HSV_H
 #define HSV_H
+#include <stdint.h>
 
 class RGBClass;
 class HSVClass;
@@ -54,7 +55,7 @@ class HSVClass
 
 	public:
 		HSVClass(void) : Hue(0), Saturation(0), Value(0) {};
-		HSVClass(unsigned char hue, unsigned char saturation, unsigned char value) :
+		HSVClass(uint8_t hue, uint8_t saturation, uint8_t value) :
 				Hue(hue),
 				Saturation(saturation),
 				Value(value)
@@ -73,9 +74,9 @@ class HSVClass
 		void Set(int color) const;
 
 	private:
-		unsigned char Hue;
-		unsigned char Saturation;
-		unsigned char Value;
+		uint8_t Hue;
+		uint8_t Saturation;
+		uint8_t Value;
 };
 
 #endif

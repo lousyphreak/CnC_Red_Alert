@@ -565,7 +565,7 @@ ReceiveQueueType * CommQueueClass::Get_Receive(int index)
  * HISTORY:                                                                *
  *   01/19/1995 BR : Created.                                              *
  *=========================================================================*/
-void CommQueueClass::Add_Delay(unsigned long delay)
+void CommQueueClass::Add_Delay(uint32_t delay)
 {
 	int roundoff = 0;
 
@@ -603,7 +603,7 @@ void CommQueueClass::Add_Delay(unsigned long delay)
  * HISTORY:                                                                *
  *   01/19/1995 BR : Created.                                              *
  *=========================================================================*/
-unsigned long CommQueueClass::Avg_Response_Time(void)
+uint32_t CommQueueClass::Avg_Response_Time(void)
 {
 	return(MeanDelay);
 }
@@ -624,7 +624,7 @@ unsigned long CommQueueClass::Avg_Response_Time(void)
  * HISTORY:                                                                *
  *   01/19/1995 BR : Created.                                              *
  *=========================================================================*/
-unsigned long CommQueueClass::Max_Response_Time(void)
+uint32_t CommQueueClass::Max_Response_Time(void)
 {
 	return(MaxDelay);
 }
@@ -715,9 +715,9 @@ void CommQueueClass::Mono_Debug_Print(int refresh)
 	int num;												// max # items to print
 
 	struct CommHdr {									// this mirrors the CommHeaderType
-		unsigned short MagicNumber;
-		unsigned char Code;
-		unsigned long PacketID;
+		uint16_t MagicNumber;
+		uint8_t Code;
+		uint32_t PacketID;
 	} *hdr;
 
 	/*
@@ -849,9 +849,9 @@ void CommQueueClass::Mono_Debug_Print2(int refresh)
 	int val;
 
 	struct CommHdr {									// this mirrors the CommHeaderType
-		unsigned short MagicNumber;
-		unsigned char Code;
-		unsigned long PacketID;
+		uint16_t MagicNumber;
+		uint8_t Code;
+		uint32_t PacketID;
 	} *hdr;
 
 	/*
@@ -916,7 +916,7 @@ void CommQueueClass::Mono_Debug_Print2(int refresh)
 					val = *(SendQueue[i].Buffer + DebugOffset);
 				} else {
 					if (DebugSize==2) {
-						val = *((short *)(SendQueue[i].Buffer + DebugOffset));
+						val = *((int16_t *)(SendQueue[i].Buffer + DebugOffset));
 					} else {
 						if (DebugSize==4) {
 							val = *((int *)(SendQueue[i].Buffer + DebugOffset));
@@ -972,7 +972,7 @@ void CommQueueClass::Mono_Debug_Print2(int refresh)
 					val = *(ReceiveQueue[i].Buffer + DebugOffset);
 				} else {
 					if (DebugSize==2) {
-						val = *((short *)(ReceiveQueue[i].Buffer + DebugOffset));
+						val = *((int16_t *)(ReceiveQueue[i].Buffer + DebugOffset));
 					} else {
 						if (DebugSize==4) {
 							val = *((int *)(ReceiveQueue[i].Buffer + DebugOffset));

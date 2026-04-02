@@ -37,6 +37,7 @@
 
 #ifndef MAP_H
 #define MAP_H
+#include <stdint.h>
 
 #include	"GSCREEN.H"
 #include	"CRATE.H"
@@ -90,7 +91,7 @@ class MapClass: public GScreenClass
 		void Detach(TARGET target, bool all=true);
 		void Shroud_The_Map(void);
 
-		long Overpass(void);
+		int32_t Overpass(void);
 
 		virtual void Logic(void);
 		virtual void Set_Map_Dimensions(int x, int y, int w, int h);
@@ -119,7 +120,7 @@ class MapClass: public GScreenClass
 		/*
 		**	This is the total value of all harvestable Tiberium on the map.
 		*/
-		long TotalValue;
+		int32_t TotalValue;
 
 		CellClass & operator [] (COORDINATE coord) {return(Array[Coord_Cell(coord)]);};
 		CellClass & operator [] (CELL cell) {return(Array[cell]);};

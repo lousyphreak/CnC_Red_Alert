@@ -42,6 +42,7 @@
 #include	"WATCOM.H"
 #include	"HSV.H"
 #include	"RGB.H"
+#include <stdint.h>
 HSVClass const HSVClass::BlackColor(0, 0, 0);
 
 
@@ -136,10 +137,10 @@ int HSVClass::Difference(HSVClass const & hsv) const
  *=============================================================================================*/
 HSVClass::operator RGBClass (void) const
 {
-	unsigned int i;				// Integer part.
-	unsigned int f;				// Fractional or remainder part.  f/HSV_BASE gives fraction.
-	unsigned int tmp;			// Temporary variable to help with calculations.
-	unsigned int values[7];	// Possible rgb values.  Don't use zero.
+	uint32_t i;				// Integer part.
+	uint32_t f;				// Fractional or remainder part.  f/HSV_BASE gives fraction.
+	uint32_t tmp;			// Temporary variable to help with calculations.
+	uint32_t values[7];	// Possible rgb values.  Don't use zero.
 
 	int hue = Hue_Component();
 	int saturation = Saturation_Component();

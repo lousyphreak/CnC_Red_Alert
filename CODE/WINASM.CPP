@@ -20,12 +20,12 @@
 #include "EXTERNS.H"
 #include <string.h>
 
-static unsigned char TopLine[640];
-static unsigned char BottomLine[640];
-static unsigned char LineBuffer[640];
+static uint8_t TopLine[640];
+static uint8_t BottomLine[640];
+static uint8_t LineBuffer[640];
 
 
-static void Interpolate_Single_Line(unsigned char const *source_ptr, unsigned char *dest_ptr, int source_width)
+static void Interpolate_Single_Line(uint8_t const *source_ptr, uint8_t *dest_ptr, int source_width)
 {
 if (source_width <= 0) {
 return;
@@ -41,9 +41,9 @@ dest_ptr[(source_width - 1) * 2 + 1] = 0;
 }
 
 
-static void Interpolate_Between_Lines(unsigned char const *source1,
-unsigned char const *source2,
-unsigned char *destination,
+static void Interpolate_Between_Lines(uint8_t const *source1,
+uint8_t const *source2,
+uint8_t *destination,
 int source_width)
 {
 for (int index = 0; index < source_width * 2; ++index) {
@@ -58,17 +58,17 @@ extern "C" void ModeX_Blit(GraphicBufferClass *source)
 		return;
 	}
 
-	source->Blit(SeenBuff, 0, 0, 0, 0, source->Get_Width(), source->Get_Height(), (BOOL)FALSE);
+	source->Blit(SeenBuff, 0, 0, 0, 0, source->Get_Width(), source->Get_Height(), (int32_t)FALSE);
 }
 
 
-extern "C" void __cdecl Stop_Execution(void)
+extern "C" void  Stop_Execution(void)
 {
 }
 
 
-extern "C" void __cdecl Asm_Interpolate(unsigned char *src_ptr,
-	unsigned char *dest_ptr,
+extern "C" void  Asm_Interpolate(uint8_t *src_ptr,
+	uint8_t *dest_ptr,
 	int lines,
 	int source_width,
 	int dest_width)
@@ -76,7 +76,7 @@ extern "C" void __cdecl Asm_Interpolate(unsigned char *src_ptr,
 int row_bytes = dest_width / 2;
 
 for (int row = 0; row < lines; ++row) {
-unsigned char *dest_row = dest_ptr + row * row_bytes * 2;
+uint8_t *dest_row = dest_ptr + row * row_bytes * 2;
 Interpolate_Single_Line(src_ptr + row * source_width, LineBuffer, source_width);
 memcpy(dest_row, LineBuffer, source_width * 2);
 memcpy(dest_row + row_bytes, LineBuffer, source_width * 2);
@@ -84,8 +84,8 @@ memcpy(dest_row + row_bytes, LineBuffer, source_width * 2);
 }
 
 
-extern "C" void __cdecl Asm_Interpolate_Line_Double(unsigned char *src_ptr,
-unsigned char *dest_ptr,
+extern "C" void  Asm_Interpolate_Line_Double(uint8_t *src_ptr,
+uint8_t *dest_ptr,
 int lines,
 int source_width,
 int dest_width)
@@ -93,7 +93,7 @@ int dest_width)
 int row_bytes = dest_width / 2;
 
 for (int row = 0; row < lines; ++row) {
-unsigned char *dest_row = dest_ptr + row * row_bytes * 2;
+uint8_t *dest_row = dest_ptr + row * row_bytes * 2;
 Interpolate_Single_Line(src_ptr + row * source_width, LineBuffer, source_width);
 memcpy(dest_row, LineBuffer, source_width * 2);
 memcpy(dest_row + row_bytes, LineBuffer, source_width * 2);
@@ -101,15 +101,15 @@ memcpy(dest_row + row_bytes, LineBuffer, source_width * 2);
 }
 
 
-extern "C" void __cdecl Asm_Interpolate_Line_Interpolate(unsigned char *src_ptr,
-unsigned char *dest_ptr,
+extern "C" void  Asm_Interpolate_Line_Interpolate(uint8_t *src_ptr,
+uint8_t *dest_ptr,
 int source_lines,
 int source_width,
 int dest_width)
 {
 int row_bytes = dest_width / 2;
-unsigned char *last_line = TopLine;
-unsigned char *next_line = BottomLine;
+uint8_t *last_line = TopLine;
+uint8_t *next_line = BottomLine;
 
 if (source_lines <= 0) {
 return;
@@ -123,7 +123,7 @@ dest_ptr += row_bytes * 2;
 --source_lines;
 
 while (source_lines > 0) {
-unsigned char *swap_line;
+uint8_t *swap_line;
 
 swap_line = last_line;
 last_line = next_line;

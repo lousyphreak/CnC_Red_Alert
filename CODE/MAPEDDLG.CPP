@@ -2294,7 +2294,7 @@ int MapEditClass::Scenario_Dialog(void)
 	TheaterType theater = TheaterType(theaterbtn.Current_Index());
 	if (theater != orig_theater) {
 
-		unsigned char theater_mask;	// template/terrain mask
+		uint8_t theater_mask;	// template/terrain mask
 		TerrainClass * terrain;	// cell's terrain pointer
 
 		/*

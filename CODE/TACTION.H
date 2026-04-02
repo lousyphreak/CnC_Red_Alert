@@ -38,6 +38,7 @@
 
 #ifndef ACTION_H
 #define ACTION_H
+#include <stdint.h>
 
 #include <SDL3/SDL_stdinc.h>
 #include <cstdint>

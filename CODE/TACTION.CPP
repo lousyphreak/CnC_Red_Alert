@@ -297,7 +297,7 @@ void TActionClass::Read_INI(void)
 			**	Since triggers refer to other triggers, only record a copy of the trigger text
 			**	name. This will be fixed up later.
 			*/
-			Trigger.Set_Raw((long)strdup(strtok(NULL, ",")));
+			Trigger.Set_Raw((int32_t)strdup(strtok(NULL, ",")));
 
 			Data.Value = Normalize_Legacy_Action_Value(Action, atoi(strtok(NULL, ",")));
 			break;

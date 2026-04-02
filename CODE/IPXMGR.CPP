@@ -111,8 +111,8 @@
  *   12/20/1994 BR : Created.                                              *
  *=========================================================================*/
 IPXManagerClass::IPXManagerClass (int glb_maxlen, int pvt_maxlen,
-	int glb_num_packets, int pvt_num_packets, unsigned short socket,
-	unsigned short product_id)
+	int glb_num_packets, int pvt_num_packets, uint16_t socket,
+	uint16_t product_id)
 {
 	int i;
 #ifdef WINSOCK_IPX
@@ -176,8 +176,8 @@ IPXManagerClass::IPXManagerClass (int glb_maxlen, int pvt_maxlen,
 	//........................................................................
 	//	Save our socket ID number
 	//........................................................................
-	Socket = (unsigned short)( (((unsigned long)socket & 0x00ff) << 8) |
-		(((unsigned long)socket & 0xff00) >> 8));
+	Socket = (uint16_t)( (((uint32_t)socket & 0x00ff) << 8) |
+		(((uint32_t)socket & 0xff00) >> 8));
 
 	//------------------------------------------------------------------------
 	//	Get the user's IPX local connection number
@@ -787,7 +787,7 @@ int IPXManagerClass::Send_Global_Message(void *buf, int buflen,
  *   01/25/1995 BR : Created.                                              *
  *=========================================================================*/
 int IPXManagerClass::Get_Global_Message(void *buf, int *buflen,
-	IPXAddressClass *address, unsigned short *product_id)
+	IPXAddressClass *address, uint16_t *product_id)
 {
 	//------------------------------------------------------------------------
 	//	Error if IPX not installed or not Listening
@@ -980,7 +980,7 @@ int IPXManagerClass::Service(void)
 #ifdef WINSOCK_IPX
 
 
-	unsigned char temp_receive_buffer[1024];
+	uint8_t temp_receive_buffer[1024];
 	int	temp_receive_buffer_len;
 	int	temp_address_len;
 
@@ -1074,7 +1074,7 @@ int IPXManagerClass::Service(void)
 #else	//WINSOCK_IPX
 
 
-	unsigned char temp_receive_buffer[1024];
+	uint8_t temp_receive_buffer[1024];
 	int	recv_length;
 
 	if (Winsock.Get_Connected()) {
@@ -1414,10 +1414,10 @@ int IPXManagerClass::Private_Num_Receive(int id)
  * HISTORY:                                                                *
  *   01/25/1995 BR : Created.                                              *
  *=========================================================================*/
-void IPXManagerClass::Set_Socket(unsigned short socket)
+void IPXManagerClass::Set_Socket(uint16_t socket)
 {
-	Socket = (unsigned short)( (((unsigned long)socket & 0x00ff) << 8) |
-		(((unsigned long)socket & 0xff00) >> 8));
+	Socket = (uint16_t)( (((uint32_t)socket & 0x00ff) << 8) |
+		(((uint32_t)socket & 0xff00) >> 8));
 
 }	/* end of Set_Socket */
 
@@ -1529,8 +1529,8 @@ void IPXManagerClass::Reset_Response_Time(void)
 void * IPXManagerClass::Oldest_Send(void)
 {
 	int i,j;
-	unsigned long time;
-	unsigned long mintime = 0xffffffff;
+	uint32_t time;
+	uint32_t mintime = 0xffffffff;
 	SendQueueType *send_entry;				// ptr to send entry header
 	CommHeaderType *packet;
 	void *buf = NULL;

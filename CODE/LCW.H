@@ -38,15 +38,12 @@
 
 #ifndef LCW_H
 #define LCW_H
+#include <stdint.h>
 
-#ifndef __cdecl
-#define __cdecl
-#endif
-
-int LCW_Uncomp(void const * source, void * dest, unsigned long length=0);
+int LCW_Uncomp(void const * source, void * dest, uint32_t length=0);
 
 extern "C" {
-int __cdecl LCW_Comp(void const * source, void * dest, int length);
+int  LCW_Comp(void const * source, void * dest, int length);
 }
 
 #endif

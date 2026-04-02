@@ -502,16 +502,16 @@ typedef enum DiffType {
 **	and when size is critical. COORDINATE is more efficient when dealing with
 **	accuracy and object movement.
 */
-typedef unsigned short	LEPTON;
+typedef uint16_t	LEPTON;
 typedef union {
 	LEPTON Raw;
 	struct {
 #if RA_BIG_ENDIAN_HOST
-		unsigned char Cell;
-		unsigned char Lepton;
+		uint8_t Cell;
+		uint8_t Lepton;
 #else
-		unsigned char Lepton;
-		unsigned char Cell;
+		uint8_t Lepton;
+		uint8_t Cell;
 #endif
 	} Sub;
 } LEPTON_COMPOSITE;
@@ -532,7 +532,7 @@ typedef union {
 static_assert(sizeof(COORDINATE) == 4, "COORDINATE must remain 32-bit");
 static_assert(sizeof(COORD_COMPOSITE) == 4, "COORD_COMPOSITE must remain 32-bit");
 
-typedef signed short		CELL;
+typedef int16_t		CELL;
 #define	SLUFF_BITS	2
 typedef union {
 	CELL Cell;
@@ -2360,13 +2360,13 @@ typedef struct {
 	unsigned Interrupt:1;	// Can it be interrupted?
 	unsigned IsMobile:1;		// Can it move while doing this?
 	unsigned RandomStart:1;	// Should animation be "randomized"?
-	unsigned char Rate;		// Frame rate.
+	uint8_t Rate;		// Frame rate.
 } DoStruct;
 
 typedef struct {
 	int				Frame;	// Starting frame of the animation.
-	unsigned char	Count;	// Number of frames of animation.
-	unsigned char	Jump;		// Frames to jump between facings.
+	uint8_t	Count;	// Number of frames of animation.
+	uint8_t	Jump;		// Frames to jump between facings.
 } DoInfoStruct;
 
 
@@ -3565,18 +3565,18 @@ typedef enum SourceType {
 */
 typedef struct RemapControlType
 {
-	unsigned char BrightColor;			// Highlight (bright) color index.
-	unsigned char Color;					// Normal color index.
-	unsigned char RemapTable[256];	// Actual remap table.
-	unsigned char FontRemap[16];		// Remap table for gradient font.
-	unsigned char Shadow;				// Color of shadowed edge of a raised button.
-	unsigned char Background;			// Background fill color for buttons.
-	unsigned char Corners;				// Transition color between shadow and highlight.
-	unsigned char Highlight;			// Bright edge of raised button.
-	unsigned char Box;					// Color for dialog box border.
-	unsigned char Bright;				// Color used for highlighted text.
-	unsigned char Underline;			// Color for underlining dialog box titles.
-	unsigned char Bar;					// Selected entry list box background color.
+	uint8_t BrightColor;			// Highlight (bright) color index.
+	uint8_t Color;					// Normal color index.
+	uint8_t RemapTable[256];	// Actual remap table.
+	uint8_t FontRemap[16];		// Remap table for gradient font.
+	uint8_t Shadow;				// Color of shadowed edge of a raised button.
+	uint8_t Background;			// Background fill color for buttons.
+	uint8_t Corners;				// Transition color between shadow and highlight.
+	uint8_t Highlight;			// Bright edge of raised button.
+	uint8_t Box;					// Color for dialog box border.
+	uint8_t Bright;				// Color used for highlighted text.
+	uint8_t Underline;			// Color for underlining dialog box titles.
+	uint8_t Bar;					// Selected entry list box background color.
 } RemapControlType;
 
 
@@ -3599,7 +3599,7 @@ typedef struct {
 	int				Cost;					// Accumulated terrain cost.
 	int				Length;				// Command string length.
 	FacingType		*Command;			// Pointer to command string.
-	unsigned long	*Overlap;			// Pointer to overlap list
+	uint32_t	*Overlap;			// Pointer to overlap list
 	CELL				LastOverlap;		// stores position of last overlap
 	CELL				LastFixup;			// stores position of last overlap
 } PathType;

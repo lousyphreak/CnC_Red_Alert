@@ -52,7 +52,7 @@
 **	This is the holding buffer for the text overlap list. This buffer must be in the near
 **	data segment. It will be filled in by the Set_Text() function.
 */
-short HelpClass::OverlapList[60] = {
+int16_t HelpClass::OverlapList[60] = {
 	REFRESH_EOL
 };
 
@@ -129,10 +129,10 @@ void HelpClass::Init_Clear(void)
  * HISTORY:                                                                                    *
  *   11/18/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-short const * HelpClass::Overlap_List(void) const
+int16_t const * HelpClass::Overlap_List(void) const
 {
 	if (Text == TXT_NONE || CountDownTimer) {
-		((short &)(OverlapList[0])) = REFRESH_EOL;
+		((int16_t &)(OverlapList[0])) = REFRESH_EOL;
 	}
 	return(OverlapList);
 }

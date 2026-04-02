@@ -20,83 +20,84 @@
 
 #include <cstring>
 
+#include <stdint.h>
 namespace {
 
 struct BITMAPCOREHEADER {
-    DWORD bcSize;
-    WORD bcWidth;
-    WORD bcHeight;
-    WORD bcPlanes;
-    WORD bcBitCount;
+    uint32_t bcSize;
+    uint16_t bcWidth;
+    uint16_t bcHeight;
+    uint16_t bcPlanes;
+    uint16_t bcBitCount;
 };
 
 struct RGBTRIPLE {
-    BYTE rgbtBlue;
-    BYTE rgbtGreen;
-    BYTE rgbtRed;
+    uint8_t rgbtBlue;
+    uint8_t rgbtGreen;
+    uint8_t rgbtRed;
 };
 
-constexpr DWORD BI_RGB_VALUE = 0;
+constexpr uint32_t BI_RGB_VALUE = 0;
 
-bool Is_Win30_DIB(LPCSTR lpDIB)
+bool Is_Win30_DIB(char const * lpDIB)
 {
     if (lpDIB == NULL) {
         return false;
     }
 
-    DWORD header_size = 0;
+    uint32_t header_size = 0;
     std::memcpy(&header_size, lpDIB, sizeof(header_size));
     return header_size == sizeof(BITMAPINFOHEADER);
 }
 
-DWORD Image_Size(const BITMAPINFOHEADER& header)
+uint32_t Image_Size(const BITMAPINFOHEADER& header)
 {
     if (header.biSizeImage != 0) {
         return header.biSizeImage;
     }
 
-    const DWORD height = header.biHeight < 0 ? static_cast<DWORD>(-header.biHeight) : static_cast<DWORD>(header.biHeight);
-    return WIDTHBYTES(static_cast<DWORD>(header.biWidth) * static_cast<DWORD>(header.biBitCount)) * height;
+    const uint32_t height = header.biHeight < 0 ? static_cast<uint32_t>(-header.biHeight) : static_cast<uint32_t>(header.biHeight);
+    return WIDTHBYTES(static_cast<uint32_t>(header.biWidth) * static_cast<uint32_t>(header.biBitCount)) * height;
 }
 
 } // namespace
 
 
-LPSTR FAR FindDIBBits(LPCSTR lpDIB)
+char *  FindDIBBits(char const * lpDIB)
 {
-    return const_cast<LPSTR>(lpDIB + *(reinterpret_cast<const DWORD*>(lpDIB)) + PaletteSize(lpDIB));
+    return const_cast<char *>(lpDIB + *(reinterpret_cast<const uint32_t*>(lpDIB)) + PaletteSize(lpDIB));
 }
 
 
-DWORD FAR DIBWidth(LPCSTR lpDIB)
-{
-    if (lpDIB == NULL) {
-        return 0;
-    }
-
-    if (Is_Win30_DIB(lpDIB)) {
-        return static_cast<DWORD>(reinterpret_cast<const BITMAPINFOHEADER*>(lpDIB)->biWidth);
-    }
-
-    return static_cast<DWORD>(reinterpret_cast<const BITMAPCOREHEADER*>(lpDIB)->bcWidth);
-}
-
-
-DWORD FAR DIBHeight(LPCSTR lpDIB)
+uint32_t  DIBWidth(char const * lpDIB)
 {
     if (lpDIB == NULL) {
         return 0;
     }
 
     if (Is_Win30_DIB(lpDIB)) {
-        return static_cast<DWORD>(reinterpret_cast<const BITMAPINFOHEADER*>(lpDIB)->biHeight);
+        return static_cast<uint32_t>(reinterpret_cast<const BITMAPINFOHEADER*>(lpDIB)->biWidth);
     }
 
-    return static_cast<DWORD>(reinterpret_cast<const BITMAPCOREHEADER*>(lpDIB)->bcHeight);
+    return static_cast<uint32_t>(reinterpret_cast<const BITMAPCOREHEADER*>(lpDIB)->bcWidth);
 }
 
 
-WORD FAR DIBNumColors(LPCSTR lpDIB)
+uint32_t  DIBHeight(char const * lpDIB)
+{
+    if (lpDIB == NULL) {
+        return 0;
+    }
+
+    if (Is_Win30_DIB(lpDIB)) {
+        return static_cast<uint32_t>(reinterpret_cast<const BITMAPINFOHEADER*>(lpDIB)->biHeight);
+    }
+
+    return static_cast<uint32_t>(reinterpret_cast<const BITMAPCOREHEADER*>(lpDIB)->bcHeight);
+}
+
+
+uint16_t  DIBNumColors(char const * lpDIB)
 {
     if (lpDIB == NULL) {
         return 0;
@@ -105,7 +106,7 @@ WORD FAR DIBNumColors(LPCSTR lpDIB)
     if (Is_Win30_DIB(lpDIB)) {
         const BITMAPINFOHEADER* const header = reinterpret_cast<const BITMAPINFOHEADER*>(lpDIB);
         if (header->biClrUsed != 0) {
-            return static_cast<WORD>(header->biClrUsed);
+            return static_cast<uint16_t>(header->biClrUsed);
         }
 
         switch (header->biBitCount) {
@@ -133,17 +134,17 @@ WORD FAR DIBNumColors(LPCSTR lpDIB)
 }
 
 
-WORD FAR PaletteSize(LPCSTR lpDIB)
+uint16_t  PaletteSize(char const * lpDIB)
 {
     if (Is_Win30_DIB(lpDIB)) {
-        return static_cast<WORD>(DIBNumColors(lpDIB) * sizeof(RGBQUAD));
+        return static_cast<uint16_t>(DIBNumColors(lpDIB) * sizeof(RGBQUAD));
     }
 
-    return static_cast<WORD>(DIBNumColors(lpDIB) * sizeof(RGBTRIPLE));
+    return static_cast<uint16_t>(DIBNumColors(lpDIB) * sizeof(RGBTRIPLE));
 }
 
 
-WORD FAR DestroyDIB(HDIB hDib)
+uint16_t  DestroyDIB(HDIB hDib)
 {
     if (hDib != NULL) {
         GlobalFree(hDib);
@@ -153,14 +154,14 @@ WORD FAR DestroyDIB(HDIB hDib)
 }
 
 
-HDIB LoadDIB_FromMemory(const unsigned char* pData, DWORD dwBitsSize)
+HDIB LoadDIB_FromMemory(const uint8_t* pData, uint32_t dwBitsSize)
 {
     if (pData == NULL || dwBitsSize < sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER)) {
         return NULL;
     }
 
-    const unsigned char* const pDataStart = pData;
-    const unsigned char* const pDataEnd = pData + dwBitsSize;
+    const uint8_t* const pDataStart = pData;
+    const uint8_t* const pDataEnd = pData + dwBitsSize;
 
     BITMAPFILEHEADER file_header;
     std::memcpy(&file_header, pData, sizeof(file_header));
@@ -179,7 +180,7 @@ HDIB LoadDIB_FromMemory(const unsigned char* pData, DWORD dwBitsSize)
         return NULL;
     }
 
-    DWORD num_colors = file_info.biClrUsed;
+    uint32_t num_colors = file_info.biClrUsed;
     if (num_colors == 0) {
         switch (file_info.biBitCount) {
         case 1:
@@ -200,14 +201,14 @@ HDIB LoadDIB_FromMemory(const unsigned char* pData, DWORD dwBitsSize)
     }
     file_info.biSizeImage = Image_Size(file_info);
 
-    const DWORD dib_offset = file_info.biSize + num_colors * sizeof(RGBQUAD);
-    const DWORD dib_size = dib_offset + file_info.biSizeImage;
+    const uint32_t dib_offset = file_info.biSize + num_colors * sizeof(RGBQUAD);
+    const uint32_t dib_size = dib_offset + file_info.biSizeImage;
 
     if (pData + file_info.biSize + num_colors * sizeof(RGBQUAD) > pDataEnd) {
         return NULL;
     }
 
-    const unsigned char* bits_data = pData + file_info.biSize + num_colors * sizeof(RGBQUAD);
+    const uint8_t* bits_data = pData + file_info.biSize + num_colors * sizeof(RGBQUAD);
     if (file_header.bfOffBits != 0) {
         bits_data = pDataStart + file_header.bfOffBits;
     }
@@ -220,7 +221,7 @@ HDIB LoadDIB_FromMemory(const unsigned char* pData, DWORD dwBitsSize)
         return NULL;
     }
 
-    unsigned char* const dib_data = static_cast<unsigned char*>(GlobalLock(hDIB));
+    uint8_t* const dib_data = static_cast<uint8_t*>(GlobalLock(hDIB));
     if (dib_data == NULL) {
         GlobalFree(hDIB);
         return NULL;

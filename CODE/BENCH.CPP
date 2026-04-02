@@ -44,6 +44,7 @@
 #include	"BENCH.H"
 #include	"MPU.H"
 
+#include <stdint.h>
 /***********************************************************************************************
  * Benchmark::Benchmark -- Constructor for the benchmark object.                               *
  *                                                                                             *

@@ -37,13 +37,14 @@
 
 #ifndef CREDITS_H
 #define CREDITS_H
+#include <stdint.h>
 
 /****************************************************************************
 **	The animating credit counter display is controlled by this class.
 */
 class CreditClass {
 	public:
-		long Credits;		// Value of credits trying to update display to.
+		int32_t Credits;		// Value of credits trying to update display to.
 
 		/*---------------------------------------------------------------------
 		**	Constructors, Destructors, and overloaded operators.
@@ -59,7 +60,7 @@ class CreditClass {
 		void Graphic_Logic(bool forced=false);
 		void AI(bool forced=false);
 
-		long	Current;		// Credit value currently displayed.
+		int32_t	Current;		// Credit value currently displayed.
 
 		unsigned IsToRedraw:1;
 		unsigned IsUp:1;

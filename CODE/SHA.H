@@ -38,6 +38,7 @@
 
 #ifndef SHA_H
 #define SHA_H
+#include <stdint.h>
 
 
 #include	<stdio.h>
@@ -78,7 +79,7 @@ class SHAEngine
 
 		typedef union {
 			uint32_t Long[5];
-			unsigned char Char[20];
+			uint8_t Char[20];
 		} SHADigest;
 		static_assert(sizeof(SHADigest) == 20, "SHA digest must stay 20 bytes");
 

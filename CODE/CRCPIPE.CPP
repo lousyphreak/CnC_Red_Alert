@@ -40,6 +40,7 @@
 
 #include "CRCPIPE.H"
 
+#include <stdint.h>
 /***********************************************************************************************
  * CRCPipe::Put -- Retrieves the data bytes specified and calculates CRC on it.                *
  *                                                                                             *
@@ -82,7 +83,7 @@ int CRCPipe::Put(void const * source, int slen)
  * HISTORY:                                                                                    *
  *   07/03/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-long CRCPipe::Result(void) const
+int32_t CRCPipe::Result(void) const
 {
 	return(CRC());
 }

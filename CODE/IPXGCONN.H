@@ -77,6 +77,7 @@
 
 #ifndef IPXGLOBALCONN_H
 #define IPXGLOBALCONN_H
+#include <stdint.h>
 
 
 #include "IPXCONN.H"
@@ -94,7 +95,7 @@
 //---------------------------------------------------------------------------
 typedef struct {
 	CommHeaderType Header;
-	unsigned short ProductID;
+	uint16_t ProductID;
 } GlobalHeaderType;
 
 
@@ -134,7 +135,7 @@ class IPXGlobalConnClass : public IPXConnClass
 		// Constructor/destructor.
 		//.....................................................................
 		IPXGlobalConnClass (int numsend, int numrecieve, int maxlen,
-			unsigned short product_id);
+			uint16_t product_id);
 		virtual ~IPXGlobalConnClass () {};
 
 		//.....................................................................
@@ -145,7 +146,7 @@ class IPXGlobalConnClass : public IPXConnClass
 		virtual int Receive_Packet (void * buf, int buflen,
 			IPXAddressClass *address);
 		virtual int Get_Packet (void * buf, int *buflen,
-			IPXAddressClass *address, unsigned short *product_id);
+			IPXAddressClass *address, uint16_t *product_id);
 
 		//.....................................................................
 		// This is for telling the connection it can cross a bridge.
@@ -155,7 +156,7 @@ class IPXGlobalConnClass : public IPXConnClass
 		//.....................................................................
 		// The Product ID for this product.
 		//.....................................................................
-		unsigned short ProductID;
+		uint16_t ProductID;
 
 		//.....................................................................
 		// This describes the address of a bridge we have to cross.  This class

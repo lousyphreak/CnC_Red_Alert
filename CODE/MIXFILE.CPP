@@ -223,8 +223,8 @@ MixFileClass<T>::MixFileClass(char const * filename, PKey const * key) :
 	*/
 	FileHeader fileheader;
 	struct {
-		short First;		// Always zero for extended mixfile format.
-		short Second;		// Bitfield of extensions to this mixfile.
+		int16_t First;		// Always zero for extended mixfile format.
+		int16_t Second;		// Bitfield of extensions to this mixfile.
 	} alternate;
 
 	/*
@@ -458,7 +458,7 @@ bool MixFileClass<T>::Cache(Buffer const * buffer)
 		**	Fetch the whole mixfile data in one step. If the number of bytes retrieved
 		**	does not equal that requested, then this indicates a serious error.
 		*/
-		long actual = straw->Get(Data, DataSize);
+		int32_t actual = straw->Get(Data, DataSize);
 		if (actual != DataSize) {
 			delete [] Data;
 			Data = NULL;
@@ -557,7 +557,7 @@ int compfunc(void const * ptr1, void const * ptr2)
  *   10/17/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
 template<class T>
-bool MixFileClass<T>::Offset(char const * filename, void ** realptr, MixFileClass ** mixfile, long * offset, long * size)
+bool MixFileClass<T>::Offset(char const * filename, void ** realptr, MixFileClass ** mixfile, int32_t * offset, int32_t * size)
 {
 	MixFileClass<T> * ptr;
 

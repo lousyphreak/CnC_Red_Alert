@@ -37,6 +37,7 @@
 
 #ifndef FACING_H
 #define FACING_H
+#include <stdint.h>
 
 #include "FACE.H"
 
@@ -69,8 +70,8 @@ class FacingClass
 		DirType Get(void) const { return(Current()); }
 
 		int Is_Rotating(void) const {return (Desired() != Current());};
-		int Difference(void) const {return (int)(signed char)((int)Desired() - (int)Current());}
-		int Difference(DirType facing) const {return (int)(signed char)((int)facing - (int)Current());}
+		int Difference(void) const {return (int)(int8_t)((int)Desired() - (int)Current());}
+		int Difference(DirType facing) const {return (int)(int8_t)((int)facing - (int)Current());}
 		int Rotation_Adjust(int rate);
 
 	private:

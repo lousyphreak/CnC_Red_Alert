@@ -24,6 +24,7 @@
 #include	"READLINE.H"
 
 
+#include <stdint.h>
 // Disable the "temporary object used to initialize a non-constant reference" warning.
 #pragma warning 665 9
 
@@ -36,7 +37,7 @@ void strtrim(char * buffer)
 		**	Strip leading white space from the string.
 		*/
 		char * source = buffer;
-		while (isspace(static_cast<unsigned char>(*source))) {
+		while (isspace(static_cast<uint8_t>(*source))) {
 			source++;
 		}
 		if (source != buffer) {
@@ -47,7 +48,7 @@ void strtrim(char * buffer)
 		**	Clip trailing white space from the string.
 		*/
 		int length = static_cast<int>(strlen(buffer));
-		while (length > 0 && isspace(static_cast<unsigned char>(buffer[length - 1]))) {
+		while (length > 0 && isspace(static_cast<uint8_t>(buffer[length - 1]))) {
 			buffer[--length] = '\0';
 		}
 	}

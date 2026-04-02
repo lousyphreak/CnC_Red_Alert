@@ -71,8 +71,8 @@
  *   12/20/1994 BR : Created.                                              *
  *=========================================================================*/
 NonSequencedConnClass::NonSequencedConnClass (int numsend, int numreceive, 
-	int maxlen, unsigned short magicnum, unsigned long retry_delta,
-	unsigned long max_retries, unsigned long timeout) :
+	int maxlen, uint16_t magicnum, uint32_t retry_delta,
+	uint32_t max_retries, uint32_t timeout) :
 	ConnectionClass(numsend, numreceive, maxlen, magicnum, retry_delta, max_retries, timeout)
 {
 	/*------------------------------------------------------------------------
@@ -513,7 +513,7 @@ int NonSequencedConnClass::Service_Send_Queue (void)
 	int num_entries;
 	SendQueueType *send_entry;						// ptr to send queue entry
 	CommHeaderType *packet_hdr;					// packet header
-	unsigned long curtime;							// current time
+	uint32_t curtime;							// current time
 	int bad_conn = 0;
 
 	/*------------------------------------------------------------------------

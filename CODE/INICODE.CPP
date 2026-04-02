@@ -82,7 +82,7 @@ void Get_Scenario_Digest(char * digest, char * buffer)
 	**	Decode and decrypt the number.
 	*/
 	BigInt hash = 0;
-	hash.DERDecode((unsigned char*)stage);
+	hash.DERDecode((uint8_t*)stage);
 
 	BigInt d;
 	d = d.Decode_ASCII(KEY_D);
@@ -108,7 +108,7 @@ bool Read_Scenario_INI_Write_INB( char *root, bool fresh)
 	char buf[256];				// Working string staging buffer.
 	char scenarioname[40];
 	int len;
-	unsigned char val;
+	uint8_t val;
 
 	/*
 	**	Fetch working pointer to the INI staging buffer. Make sure that the buffer
@@ -150,8 +150,8 @@ bool Read_Scenario_INI_Write_INB( char *root, bool fresh)
 	ScenarioCRC = 0;
 	len = strlen(buffer);
 	for (int i = 0; i < len; i++) {
-		val = (unsigned char)buffer[i];
-		Add_CRC(&ScenarioCRC, (unsigned long)val);
+		val = (uint8_t)buffer[i];
+		Add_CRC(&ScenarioCRC, (uint32_t)val);
 	}
 
 	sprintf(fname,"%s.INB",root);
@@ -159,7 +159,7 @@ bool Read_Scenario_INI_Write_INB( char *root, bool fresh)
 	file.Cache(16384);
 	file.Open(WRITE);
 
-	unsigned long crc = Ini_Binary_Version();
+	uint32_t crc = Ini_Binary_Version();
 
 	file.Write( (char *)&crc, sizeof(crc) );
 

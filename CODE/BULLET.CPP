@@ -236,7 +236,7 @@ void BulletClass::operator delete(void * ptr)
  *   06/20/1994 JLB : Created.                                                                 *
  *   01/05/1995 JLB : Handles projectiles with altitude.                                       *
  *=============================================================================================*/
-short const * BulletClass::Occupy_List(bool) const
+int16_t const * BulletClass::Occupy_List(bool) const
 {
 	assert(Bullets.ID(this) == ID);
 	assert(IsActive);
@@ -245,7 +245,7 @@ short const * BulletClass::Occupy_List(bool) const
 	**	Super-gigundo units use the >= 64 coord spillage list logic.
 	*/
 	if (Class->IsGigundo) {
-		static short _list[] = {
+		static int16_t _list[] = {
 			-1, 0, 1,
 			MAP_CELL_W*1-1, MAP_CELL_W*1, MAP_CELL_W*1+1,
 			-MAP_CELL_W*1-1, -MAP_CELL_W*1, -MAP_CELL_W*1+1,
@@ -263,8 +263,8 @@ short const * BulletClass::Occupy_List(bool) const
 	**	that the bullet imagery and the shadow are widely separated.
 	*/
 	if (Height > 0) {
-		static short _list[25];
-		const short * ptr = Coord_Spillage_List(Coord, 5);
+		static int16_t _list[25];
+		const int16_t * ptr = Coord_Spillage_List(Coord, 5);
 		int index = 0;
 		CELL cell1 = Coord_Cell(Coord);
 
@@ -509,7 +509,7 @@ int BulletClass::Shape_Number(void) const
 	**	For tumbling projectiles, fetch offset stage.
 	*/
 	if (Class->Tumble > 0) {
-		shapenum += (long)Frame % Class->Tumble;
+		shapenum += (int32_t)Frame % Class->Tumble;
 	}
 
 	return(shapenum);

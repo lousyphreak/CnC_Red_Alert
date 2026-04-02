@@ -37,6 +37,7 @@
 
 #ifndef OBJECT_H
 #define OBJECT_H
+#include <stdint.h>
 
 #include "JSHELL.H"
 
@@ -125,7 +126,7 @@ class ObjectClass : public AbstractClass
 		/*
 		**	This is the current strength of this object.
 		*/
-		short Strength;
+		int16_t Strength;
 
 		/*-----------------------------------------------------------------------------------
 		**	Constructor & destructors.
@@ -191,8 +192,8 @@ class ObjectClass : public AbstractClass
 		virtual void Do_Shimmer(void);
 		virtual int Exit_Object(TechnoClass *);
 		virtual bool Render(bool forced) const;
-		virtual short const * Occupy_List(bool placement=false) const;
-		virtual short const * Overlap_List(bool redraw=false) const;
+		virtual int16_t const * Occupy_List(bool placement=false) const;
+		virtual int16_t const * Overlap_List(bool redraw=false) const;
 		virtual fixed Health_Ratio(void) const;
 		virtual void Draw_It(int x, int y, WindowNumberType ) const = 0;
 		virtual void Hidden(void);

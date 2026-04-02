@@ -30,6 +30,7 @@
  *                                                                         * 
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+#include <stdint.h>
 class TenConnManClass : public ConnManClass
 {
 	public:

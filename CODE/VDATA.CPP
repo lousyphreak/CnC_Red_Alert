@@ -608,8 +608,8 @@ void VesselTypeClass::One_Time(void)
  *=============================================================================================*/
 void VesselTypeClass::Turret_Adjust(DirType dir, int & x, int & y) const
 {
-	short xx = x;
-	short yy = y;
+	int16_t xx = x;
+	int16_t yy = y;
 
 	switch (Type) {
 		case VESSEL_CA:
@@ -648,9 +648,9 @@ void VesselTypeClass::Turret_Adjust(DirType dir, int & x, int & y) const
  * HISTORY:                                                                                    *
  *   03/20/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-short const * VesselTypeClass::Overlap_List(void) const
+int16_t const * VesselTypeClass::Overlap_List(void) const
 {
-	static short const _ship[] = {-3, -2, -1, 1, 2, 3,
+	static int16_t const _ship[] = {-3, -2, -1, 1, 2, 3,
 		-MAP_CELL_W, -(MAP_CELL_W+1), -(MAP_CELL_W-1), -(MAP_CELL_W+2), -(MAP_CELL_W-2),
 		+MAP_CELL_W, +(MAP_CELL_W+1), +(MAP_CELL_W-1), +(MAP_CELL_W+2), +(MAP_CELL_W-2),
 		REFRESH_EOL};

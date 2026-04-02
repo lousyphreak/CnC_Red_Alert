@@ -18,6 +18,7 @@
 
 #ifndef DIBAPI_H
 #define DIBAPI_H
+#include <stdint.h>
 
 #include "win32_compat.h"
 /*
@@ -118,12 +119,12 @@ enum {
 
 /* Function prototypes used by the game's WOL bitmap paths. */
 
-WORD      FAR  DestroyDIB (HDIB);
-DWORD     FAR  DIBHeight (LPCSTR lpDIB);
-WORD      FAR  DIBNumColors (LPCSTR lpDIB);
-DWORD     FAR  DIBWidth (LPCSTR lpDIB);
-LPSTR     FAR  FindDIBBits (LPCSTR lpDIB);
-WORD      FAR  PaletteSize (LPCSTR lpDIB);
-HDIB             LoadDIB_FromMemory(const unsigned char* pData, DWORD dwBitsSize);
+uint16_t        DestroyDIB (HDIB);
+uint32_t       DIBHeight (char const * lpDIB);
+uint16_t        DIBNumColors (char const * lpDIB);
+uint32_t       DIBWidth (char const * lpDIB);
+char *       FindDIBBits (char const * lpDIB);
+uint16_t        PaletteSize (char const * lpDIB);
+HDIB             LoadDIB_FromMemory(const uint8_t* pData, uint32_t dwBitsSize);
 
 #endif

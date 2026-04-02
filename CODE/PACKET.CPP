@@ -44,6 +44,7 @@
 #include "PACKET.H"
 
 
+#include <stdint.h>
 /**************************************************************************
  * PACKETCLASS::~PACKETCLASS -- destroys a packet class be freeing list   *
  *                                                                        *
@@ -102,11 +103,11 @@ PacketClass::PacketClass(char *curbuf)
 	//
 	// Pull the size and packet ID out of the linear packet stream.
 	//
-	Size = *(unsigned short *)curbuf;
-	curbuf += sizeof (unsigned short);
+	Size = *(uint16_t *)curbuf;
+	curbuf += sizeof (uint16_t);
 	Size = ntohs(Size);
-	ID	  = *(short *)curbuf;
-	curbuf += sizeof (short);
+	ID	  = *(int16_t *)curbuf;
+	curbuf += sizeof (int16_t);
 	ID   = ntohs(ID);
 	Head = NULL;
 
@@ -186,7 +187,7 @@ char *PacketClass::Create_Comms_Packet(int &size)
 	//   are building.
 	//
 	for (current = Head; current; current=current->Next) {
-		size += (unsigned short)FIELD_HEADER_SIZE;			// add in packet header size
+		size += (uint16_t)FIELD_HEADER_SIZE;			// add in packet header size
 		size += current->Size;				// add in data size
 		size += (4 - (size & 3)) & 3; 	// add in pad value to dword align next packet
 	}
@@ -201,10 +202,10 @@ char *PacketClass::Create_Comms_Packet(int &size)
 	//
 	// write the size into the packet header
 	//
-	*(unsigned short *)curbuf = (unsigned short)htons((unsigned short)size);
-	curbuf += sizeof (unsigned short);
-	*(short *)curbuf = htons(ID);
-	curbuf += sizeof (short);
+	*(uint16_t *)curbuf = (uint16_t)htons((uint16_t)size);
+	curbuf += sizeof (uint16_t);
+	*(int16_t *)curbuf = htons(ID);
+	curbuf += sizeof (int16_t);
 
 	//
 	// Ok now that the actual header information has been written we need to write out
@@ -307,11 +308,11 @@ bool PacketClass::Get_Field(char *id, char &data)
  * HISTORY:                                                               *
  *   04/23/1996 PWG : Created.                                            *
  *========================================================================*/
-bool PacketClass::Get_Field(char *id, unsigned char &data)
+bool PacketClass::Get_Field(char *id, uint8_t &data)
 {
 	FieldClass *field = Find_Field(id);
 	if (field) {
-		data = *((unsigned char *)field->Data);
+		data = *((uint8_t *)field->Data);
 	}
 	return((field) ? true : false);
 }
@@ -331,11 +332,11 @@ bool PacketClass::Get_Field(char *id, unsigned char &data)
  * HISTORY:                                                               *
  *   04/23/1996 PWG : Created.                                            *
  *========================================================================*/
-bool PacketClass::Get_Field(char *id, short &data)
+bool PacketClass::Get_Field(char *id, int16_t &data)
 {
 	FieldClass *field = Find_Field(id);
 	if (field) {
-		data = *((short *)field->Data);
+		data = *((int16_t *)field->Data);
 	}
 	return((field) ? true : false);
 }
@@ -355,11 +356,11 @@ bool PacketClass::Get_Field(char *id, short &data)
  * HISTORY:                                                               *
  *   04/23/1996 PWG : Created.                                            *
  *========================================================================*/
-bool PacketClass::Get_Field(char *id, unsigned short &data)
+bool PacketClass::Get_Field(char *id, uint16_t &data)
 {
 	FieldClass *field = Find_Field(id);
 	if (field) {
-		data = *((unsigned short *)field->Data);
+		data = *((uint16_t *)field->Data);
 	}
 	return((field) ? true : false);
 }

@@ -188,9 +188,9 @@ void TcpipManagerClass::Close(void)
  *    3/20/96 2:54PM ST : Created                                                              *
  *=============================================================================================*/
 
-BOOL TcpipManagerClass::Init(void)
+int32_t TcpipManagerClass::Init(void)
 {
-	short version;
+	int16_t version;
 	int 	rc;
 
 	/*
@@ -364,9 +364,9 @@ void TcpipManagerClass::Write(void *buffer, int buffer_len)
 	** Send a message to ourselves to start off the event
 	*/
 	if (UseUDP){
-		SendMessage(MainWindow, WM_UDPASYNCEVENT, 0, (LONG)FD_WRITE);
+		SendMessage(MainWindow, WM_UDPASYNCEVENT, 0, (int32_t)FD_WRITE);
 	}else{
-		SendMessage(MainWindow, WM_ASYNCEVENT, 0, (LONG)FD_WRITE);
+		SendMessage(MainWindow, WM_ASYNCEVENT, 0, (int32_t)FD_WRITE);
 	}
 	/*
 	** Make sure the message loop gets called because all the Winsock notifications
@@ -395,7 +395,7 @@ void TcpipManagerClass::Write(void *buffer, int buffer_len)
  *    3/20/96 3:02PM ST : Created                                                              *
  *=============================================================================================*/
 
-BOOL TcpipManagerClass::Add_Client(void)
+int32_t TcpipManagerClass::Add_Client(void)
 {
 	struct 	sockaddr_in addr;
 	int 		addrsize;
@@ -503,7 +503,7 @@ BOOL TcpipManagerClass::Add_Client(void)
  *    3/20/96 3:05PM ST : Created                                                              *
  *=============================================================================================*/
 
-void TcpipManagerClass::Message_Handler(HWND, UINT message, UINT , LONG lParam)
+void TcpipManagerClass::Message_Handler(HWND, uint32_t message, uint32_t , int32_t lParam)
 {
 	struct 	hostent *hentry;
 	struct 	sockaddr_in addr;
@@ -879,12 +879,12 @@ void TcpipManagerClass::Close_Socket(SOCKET s)
 
 	ling.l_onoff = 0;		// linger off
 	ling.l_linger = 0;	// timeout in seconds (ie close now)
-	setsockopt(s, SOL_SOCKET, SO_LINGER, (LPSTR)&ling, sizeof(ling));
+	setsockopt(s, SOL_SOCKET, SO_LINGER, (char *)&ling, sizeof(ling));
 	closesocket (s);
 }
 
 
-void TcpipManagerClass::Set_Protocol_UDP(BOOL state)
+void TcpipManagerClass::Set_Protocol_UDP(int32_t state)
 {
 	UseUDP = state;
 }
@@ -893,7 +893,7 @@ void TcpipManagerClass::Set_Protocol_UDP(BOOL state)
 
 void TcpipManagerClass::Clear_Socket_Error(SOCKET socket)
 {
-	unsigned long error_code;
+	uint32_t error_code;
 	int length = 4;
 
 	getsockopt (socket, SOL_SOCKET, SO_ERROR, (char*)&error_code, &length);

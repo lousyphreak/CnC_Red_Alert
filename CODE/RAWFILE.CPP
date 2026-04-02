@@ -64,6 +64,7 @@
 
 #include	"RAWFILE.H"
 
+#include <stdint.h>
 /***********************************************************************************************
  * RawFileClass::Error -- Handles displaying a file error message.                             *
  *                                                                                             *

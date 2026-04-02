@@ -37,6 +37,7 @@
 
 #ifndef POWER_H
 #define POWER_H
+#include <stdint.h>
 
 #include	"RADAR.H"
 class PowerClass : public RadarClass
@@ -53,7 +54,7 @@ class PowerClass : public RadarClass
 		virtual void Init_Clear(void);						// Clears all to known state
 		virtual void Draw_It(bool complete=false);
 		virtual void AI(KeyNumType &input, int x, int y);
-		virtual void Refresh_Cells(CELL cell, short const *list);
+		virtual void Refresh_Cells(CELL cell, int16_t const *list);
 		void Flash_Power(void);
 
 		unsigned IsToRedraw:1;
@@ -107,8 +108,8 @@ class PowerClass : public RadarClass
 		int PowerHeight;
 		int DrainBounce;
 		int PowerBounce;
-		short PowerDir;
-		short DrainDir;
+		int16_t PowerDir;
+		int16_t DrainDir;
 
 		/*
 		**	Points to the shape to use for the "desired" power level indicator.

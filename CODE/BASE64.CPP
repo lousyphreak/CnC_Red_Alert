@@ -42,6 +42,7 @@
 #include "ENDIAN.H"
 #include	<stddef.h>
 
+#include <stdint.h>
 /*
 **	This is the magic padding character used to fill out the encoded data to a multiple of
 **	4 characters even though the source data is less than necessary to accomplish this.
@@ -61,7 +62,7 @@ static char const * const _encoder = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnop
 */
 #define	BAD	0xFE			// Ignore this character in source data.
 #define	END	0xFF			// Signifies premature end of input data.
-static unsigned char const _decoder[256] = {
+static uint8_t const _decoder[256] = {
 	BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,
 	BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,
 	BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,BAD,62,BAD,BAD,BAD,63,
@@ -90,15 +91,15 @@ int const PacketChars = 4;
 typedef union {
 	struct {
 #if RA_BIG_ENDIAN_HOST
-		unsigned char C1;
-		unsigned char C2;
-		unsigned char C3;
+		uint8_t C1;
+		uint8_t C2;
+		uint8_t C3;
 #else
-		unsigned char C3;
-		unsigned char C2;
-		unsigned char C1;
+		uint8_t C3;
+		uint8_t C2;
+		uint8_t C1;
 #endif
-		unsigned char pad;
+		uint8_t pad;
 	} Char;
 	struct {
 #if RA_BIG_ENDIAN_HOST
@@ -114,7 +115,7 @@ typedef union {
 #endif
 		unsigned pad:8;
 	} SubCode;
-	unsigned int Raw;
+	uint32_t Raw;
 }	PacketType;
 
 
@@ -156,8 +157,8 @@ int Base64_Encode(void const * source, int slen, void * dest, int dlen)
 	**	during the decode process).
 	*/
 	int total = 0;
-	unsigned char const * sptr = (unsigned char const *)source;
-	unsigned char * dptr = (unsigned char *)dest;
+	uint8_t const * sptr = (uint8_t const *)source;
+	uint8_t * dptr = (uint8_t *)dest;
 	while (slen > 0 && dlen >= PacketChars) {
 
 		/*
@@ -252,8 +253,8 @@ int Base64_Decode(void const * source, int slen, void * dest, int dlen)
 	}
 
 	int total = 0;
-	unsigned char const * sptr = (unsigned char const *)source;
-	unsigned char * dptr = (unsigned char *)dest;
+	uint8_t const * sptr = (uint8_t const *)source;
+	uint8_t * dptr = (uint8_t *)dest;
 	while (slen > 0 && dlen > 0) {
 
 		PacketType packet;
@@ -265,10 +266,10 @@ int Base64_Decode(void const * source, int slen, void * dest, int dlen)
 		*/
 		int pcount = 0;
 		while (pcount < PacketChars && slen > 0) {
-			unsigned char c = *sptr++;
+			uint8_t c = *sptr++;
 			slen--;
 
-			unsigned char code = _decoder[c];
+			uint8_t code = _decoder[c];
 
 			/*
 			**	An unrecognized character is skipped.

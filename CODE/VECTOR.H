@@ -54,6 +54,7 @@
 
 #ifndef VECTOR_H
 #define VECTOR_H
+#include <stdint.h>
 
 #ifdef NEVER
 #ifndef false
@@ -195,7 +196,7 @@ class DynamicVectorClass : public VectorClass<T>
 class BooleanVectorClass
 {
 	public:
-		BooleanVectorClass(unsigned size=0, unsigned char * array=0);
+		BooleanVectorClass(unsigned size=0, uint8_t * array=0);
 		BooleanVectorClass(BooleanVectorClass const & vector);
 
 		// Assignment operator.
@@ -278,7 +279,7 @@ class BooleanVectorClass
 		/*
 		**	This points to the allocated bitfield array.
 		*/
-		VectorClass<unsigned char> BitArray;
+		VectorClass<uint8_t> BitArray;
 };
 
 #endif

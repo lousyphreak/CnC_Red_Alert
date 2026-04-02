@@ -37,6 +37,7 @@
 
 #ifndef SCORE_H
 #define SCORE_H
+#include <stdint.h>
 
 #include	"UNIT.H"
 #include	"BUILDING.H"
@@ -57,7 +58,7 @@ class ScoreClass {
 		int NHarvested;
 		int GHarvested;
 		int CHarvested;
-		unsigned long ElapsedTime;
+		uint32_t ElapsedTime;
 		TTimerClass<SystemTimerClass> RealTime;
 
 		void Init(void);
@@ -72,7 +73,7 @@ class ScoreClass {
 		void Decode_Pointers(void);
 
 	private:
-		unsigned char *ChangingGun;
+		uint8_t *ChangingGun;
 
 		void ScoreDelay(int ticks);
 		void Pulse_Bar_Graph(void);

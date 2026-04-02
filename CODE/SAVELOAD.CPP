@@ -367,7 +367,7 @@ bool Save_Game(int id, char const * descr, bool )
 	/*
 	**	Save the save-game version, for loading verification
 	*/
-	unsigned long version = SAVEGAME_VERSION;
+	uint32_t version = SAVEGAME_VERSION;
 #ifdef FIXIT_CSII	//	checked - ajw 9/28/98
 	version++;
 #endif
@@ -507,7 +507,7 @@ bool Load_Game(int id)
 	/*
 	**	Read in & verify the save-game ID code
 	*/
-	unsigned long version;
+	uint32_t version;
 	if (fstraw.Get(&version, sizeof(version)) != sizeof(version)) {
 		return(false);
 	}
@@ -531,7 +531,7 @@ bool Load_Game(int id)
 	**	Remember the file position since we must seek back here to
 	**	perform the real saved game read.
 	*/
-	long pos = file.Seek(0, SEEK_CUR);
+	int32_t pos = file.Seek(0, SEEK_CUR);
 
 	/*
 	**	Pass the rest of the file through the hash straw so that
@@ -1358,7 +1358,7 @@ void Decode_All_Pointers(void)
 bool Get_Savefile_Info(int id, char * buf, unsigned * scenp, HousesType * housep)
 {
 	char name[_MAX_FNAME+_MAX_EXT];
-	unsigned long version;
+	uint32_t version;
 	char descr_buf[DESCRIP_MAX];
 
 	/*

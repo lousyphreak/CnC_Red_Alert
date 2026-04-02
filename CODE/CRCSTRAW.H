@@ -38,6 +38,7 @@
 
 #ifndef CRCSTRAW_H
 #define CRCSTRAW_H
+#include <stdint.h>
 
 #include "STRAW.H"
 #include "CRC.H"
@@ -52,7 +53,7 @@ class CRCStraw : public Straw
 		virtual int Get(void * source, int slen);
 
 		// Calculate and return the CRC value.
-		long Result(void) const;
+		int32_t Result(void) const;
 
 	protected:
 		CRCEngine CRC;

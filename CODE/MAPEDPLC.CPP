@@ -228,7 +228,7 @@ int MapEditClass::Placement_Dialog(void)
 	const ObjectTypeClass * curobj;			// Working object pointer.
 	int x,y;											// for drawing the grid
 	KeyNumType input;								// user input
-	short const * occupy;							// ptr into object's OccupyList
+	int16_t const * occupy;							// ptr into object's OccupyList
 	int cell;										// cell index for parsing OccupyList
 	int i;
 	int typeindex;									// index of class type
@@ -777,10 +777,10 @@ int MapEditClass::Place_Object(void)
 	CELL template_cell;						// cell being checked for template
 	COORDINATE obj_coord;							// coord of occupier object
 	int okflag;									// OK to place a template?
-	short const * occupy;						// ptr into template's OccupyList
+	int16_t const * occupy;						// ptr into template's OccupyList
 	ObjectClass * occupier;					// occupying object
 	TemplateType save_ttype;				// for saving cell's TType
-	unsigned char save_ticon;				// for saving cell's TIcon
+	uint8_t save_ticon;				// for saving cell's TIcon
 //	BaseNodeClass node;						// for adding to an AI Base
 
 	/*

@@ -56,6 +56,7 @@
 #include	<string.h>
 
 
+#include <stdint.h>
 /***********************************************************************************************
  * BufferIOFileClass::BufferIOFileClass -- Filename based constructor for a file object.       *
  *                                                                                             *

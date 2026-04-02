@@ -20,6 +20,7 @@
 
 #ifndef MIXFILE_H
 #define MIXFILE_H
+#include <stdint.h>
 
 
 #include	<stdlib.h>
@@ -41,7 +42,7 @@ class MixFileClass : public Node<MixFileClass<T>>
 		void Free(void);
 		bool Cache(Buffer const * buffer = NULL);
 		static bool Cache(char const *filename, Buffer const * buffer=NULL);
-		static bool Offset(char const *filename, void ** realptr = 0, MixFileClass<T> ** mixfile = 0, long * offset = 0, long * size = 0);
+		static bool Offset(char const *filename, void ** realptr = 0, MixFileClass<T> ** mixfile = 0, int32_t * offset = 0, int32_t * size = 0);
 		static void const * Retrieve(char const *filename);
 
 		struct SubBlock {
@@ -56,7 +57,7 @@ class MixFileClass : public Node<MixFileClass<T>>
 
 	private:
 		static MixFileClass<T> * Finder(char const * filename);
-		long Offset(long crc, long * size = 0) const;
+		int32_t Offset(int32_t crc, int32_t * size = 0) const;
 
 		/*
 		**	If this mixfile has an attached message digest, then this flag
@@ -101,12 +102,12 @@ class MixFileClass : public Node<MixFileClass<T>>
 		**	This is the total size of all the data file embedded within the mixfile.
 		**	It does not include the header or digest bytes.
 		*/
-		long DataSize;
+		int32_t DataSize;
 
 		/*
 		**	Start of raw data in within the mixfile.
 		*/
-		long DataStart;
+		int32_t DataStart;
 
 		/*
 		**	Points to the file header control block array. Each file in the mixfile will

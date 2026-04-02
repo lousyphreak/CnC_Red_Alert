@@ -37,6 +37,7 @@
 
 #ifndef CREW_H
 #define CREW_H
+#include <stdint.h>
 
 
 /****************************************************************************
@@ -50,7 +51,7 @@ class CrewClass
 		**	This keeps track of the number of "kills" the unit as accumulated.
 		**	When it reaches a certain point, the unit improves.
 		*/
-		unsigned short Kills;
+		uint16_t Kills;
 
 		/*
 		**	Constructors, Destructors, and overloaded operators.

@@ -148,9 +148,9 @@ inline static FacingType Next_Direction(FacingType facing, FacingType dir)
 /* Define a couple of variables which are private to the module they are   */
 /*      declared in.                                                       */
 /*=========================================================================*/
-static unsigned long MainOverlap[MAP_CELL_TOTAL/32];		// overlap list for the main path
-static unsigned long LeftOverlap[MAP_CELL_TOTAL/32];		// overlap list for the left path
-static unsigned long RightOverlap[MAP_CELL_TOTAL/32];	// overlap list for the right path
+static uint32_t MainOverlap[MAP_CELL_TOTAL/32];		// overlap list for the main path
+static uint32_t LeftOverlap[MAP_CELL_TOTAL/32];		// overlap list for the left path
+static uint32_t RightOverlap[MAP_CELL_TOTAL/32];	// overlap list for the right path
 
 
 //static CELL MoveMask = 0;
@@ -191,7 +191,7 @@ static CELL StartLocation;
  *=========================================================================*/
 int Point_Relative_To_Line(int x, int z, int x1, int z1, int x2, int z2)
 {
-	return((((long)x - (long)x2) * ((long)z1 - (long)z2)) - (((long)z - (long)z2) * ((long)x1 - (long)x2)));
+	return((((int32_t)x - (int32_t)x2) * ((int32_t)z1 - (int32_t)z2)) - (((int32_t)z - (int32_t)z2) * ((int32_t)x1 - (int32_t)x2)));
 }
 
 

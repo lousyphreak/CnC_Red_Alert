@@ -37,6 +37,7 @@
 
 #ifndef TEAM_H
 #define TEAM_H
+#include <stdint.h>
 
 
 #include	"WWFILE.H"
@@ -262,7 +263,7 @@ class TeamClass : public AbstractClass
 		*/
 		SmartPtr<FootClass> Member;
 
-		unsigned char Quantity[TeamTypeClass::MAX_TEAM_CLASSCOUNT];
+		uint8_t Quantity[TeamTypeClass::MAX_TEAM_CLASSCOUNT];
 };
 
 #endif

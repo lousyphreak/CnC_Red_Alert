@@ -485,13 +485,13 @@ RESULT_WOLGSUP WOL_GameSetupDialog::Show()
 	bProcess = true;						// process while true
 	KeyNumType input;
 
-	DWORD timeWaitingToStartTimeout;
+	uint32_t timeWaitingToStartTimeout;
 
 	char szScenarioNameDisplay[ 300 ];
 
 	bool	bInformParamChange;
 
-	long ok_timer = 0;						// for timing OK button
+	int32_t ok_timer = 0;						// for timing OK button
 	int i;
 	int tabs[] = {77*RESFACTOR};			// tabs for player list box
 	int optiontabs[] = {8*RESFACTOR};		// tabs for option list box
@@ -528,8 +528,8 @@ RESULT_WOLGSUP WOL_GameSetupDialog::Show()
 		SetPlayerColor( pWO->szMyName, ColorNextAvailable() );	//	Unless I'm host, this will be changed quite immediately,
 																//	but nice to have it be a valid value until then.
 
-	DWORD dwTimeNextPlayerPing = ::timeGetTime() + PING_AND_DISPLAY_WAIT;
-	DWORD dwTimeNextPingDisplay = dwTimeNextPlayerPing + 1500;		//	Stagger ping and ping display periods.
+	uint32_t dwTimeNextPlayerPing = ::timeGetTime() + PING_AND_DISPLAY_WAIT;
+	uint32_t dwTimeNextPingDisplay = dwTimeNextPlayerPing + 1500;		//	Stagger ping and ping display periods.
 
 	//------------------------------------------------------------------------
 	//	Build the button list
@@ -2740,7 +2740,7 @@ bool WOL_GameSetupDialog::InformAboutPlayerHouse( const char* szName, HousesType
 		*szSend = 0;
 	}
 	else
-		sprintf( szSend, "%02u %06u %02u %s", WOL_GAMEOPT_INFHOUSE, nHostLastParamID, (short)House, szName );
+		sprintf( szSend, "%02u %06u %02u %s", WOL_GAMEOPT_INFHOUSE, nHostLastParamID, (int16_t)House, szName );
 
 	return pWO->SendGameOpt( szSend, pUserPriv );
 }
@@ -2843,7 +2843,7 @@ void WOL_GameSetupDialog::OnGuestJoin( User* pUser )
 				{
 	//				InformAboutPlayerHouse( szPlayerName, House, pUser );
 					char szSendHouse[ 50 ];
-					sprintf( szSendHouse, " 1 %02u", (short)House );
+					sprintf( szSendHouse, " 1 %02u", (int16_t)House );
 					strcat( szSendPiece, szSendHouse );
 				}
 				else
@@ -2894,12 +2894,12 @@ void WOL_GameSetupDialog::AcceptNewGuestPlayerInfo( char* szMsg )
 	char* szRemaining;
 
 	szToken = strtok( szMsg, szDelimiter );
-	unsigned int nPlayers = atoi( szToken );
+	uint32_t nPlayers = atoi( szToken );
 
 	//	We have to assist strtok a bit because of calls below that may also call strtok()...
 	szRemaining = szMsg + 3;
 
-	for( unsigned int nPlayer = 0; nPlayer != nPlayers; ++nPlayer )
+	for( uint32_t nPlayer = 0; nPlayer != nPlayers; ++nPlayer )
 	{
 		//	Read in length of following string.
 		szToken = strtok( szRemaining, szDelimiter );
@@ -3289,7 +3289,7 @@ void WOL_GameSetupDialog::TriggerGameStart( char* szGoMessage )
 			pPlayerNew = new NodeNameType;
 			strcpy( pPlayerNew->Name, szPlayerName );
 			//	Get player's IP address from pChatSink...
-			unsigned long lAddress = ( pWO->pChatSink->GetPlayerGameIP( szPlayerName ) );	//ntohl(
+			uint32_t lAddress = ( pWO->pChatSink->GetPlayerGameIP( szPlayerName ) );	//ntohl(
 //			debugprint( "IP address is %i, or 0x%x\n", lAddress, lAddress );
 			if( pWO->GameInfoCurrent.bTournament )
 			{
@@ -3456,7 +3456,7 @@ void WOL_GameSetupDialog::TriggerGameStart( char* szGoMessage )
 
 	pWO->GameInfoCurrent.iPlayerCount = Session.Players.Count();
 
-	Ipx.Set_Timing (25, (unsigned long) -1, 1000);
+	Ipx.Set_Timing (25, (uint32_t) -1, 1000);
 
 
 	if( bHost )
@@ -3480,7 +3480,7 @@ void WOL_GameSetupDialog::TriggerGameStart( char* szGoMessage )
 	}
 
 	Session.CommProtocol = COMM_PROTOCOL_MULTI_E_COMP;
-	Ipx.Set_Timing (30, (unsigned long) -1, 600);
+	Ipx.Set_Timing (30, (uint32_t) -1, 600);
 
 	pWO->bEnableNewAftermathUnits = bAftermathUnits;
 	bAftermathMultiplayer = bAftermathUnits;

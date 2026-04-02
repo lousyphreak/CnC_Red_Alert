@@ -606,7 +606,7 @@ return(rc);
 /***********************************************************************************************
  * Find_Local_Scenario -- finds the file name of the scenario with matching attributes         *
  ***********************************************************************************************/
-bool Find_Local_Scenario(char *description, char *filename, unsigned int length, char *digest, bool official)
+bool Find_Local_Scenario(char *description, char *filename, uint32_t length, char *digest, bool official)
 {
 char digest_buffer[32];
 

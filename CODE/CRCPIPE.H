@@ -38,6 +38,7 @@
 
 #ifndef CRCPIPE_H
 #define CRCPIPE_H
+#include <stdint.h>
 
 #include	"PIPE.H"
 #include	"CRC.H"
@@ -52,7 +53,7 @@ class CRCPipe : public Pipe
 		virtual int Put(void const * source, int slen);
 
 		// Fetch the CRC value.
-		long Result(void) const;
+		int32_t Result(void) const;
 
 	protected:
 		CRCEngine CRC;

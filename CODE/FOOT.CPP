@@ -189,7 +189,7 @@ void FootClass::Debug_Dump(MonoClass * mono) const
 		mono->Printf("%s", _p2c[path_index]);
 	}
 	mono->Set_Cursor(54, 5);mono->Printf("%2d", PathThreshhold);
-	mono->Set_Cursor(72, 3);mono->Printf("%4d", (long)PathDelay);
+	mono->Set_Cursor(72, 3);mono->Printf("%4d", (int32_t)PathDelay);
 	mono->Set_Cursor(67, 3);mono->Printf("%3d", TryTryAgain);
 	if (HeadToCoord) {
 		mono->Set_Cursor(60, 5);mono->Printf("%08X", HeadToCoord);
@@ -227,7 +227,7 @@ void FootClass::Set_Speed(int speed)
 	assert(IsActive);
 
 	speed &= 0xFF;
-	((unsigned char &)Speed) = speed;
+	((uint8_t &)Speed) = speed;
 }
 
 

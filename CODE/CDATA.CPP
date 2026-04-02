@@ -3003,7 +3003,7 @@ LandType TemplateTypeClass::Land_Type(int icon) const
 	IconsetClass const * icontrol = (IconsetClass const *)Get_Image_Data();
 
 	if (icontrol != NULL) {
-		unsigned char const * map = icontrol->Control_Map();
+		uint8_t const * map = icontrol->Control_Map();
 		if (map != NULL) {
 			static LandType _land[16] = {
 				LAND_CLEAR,
@@ -3081,13 +3081,13 @@ TemplateType TemplateTypeClass::From_Name(char const * name)
  *   05/23/1994 JLB : Created.                                                                 *
  *   12/12/1995 JLB : Optimized for direct access to iconset data.                             *
  *=============================================================================================*/
-short const * TemplateTypeClass::Occupy_List(bool) const
+int16_t const * TemplateTypeClass::Occupy_List(bool) const
 {
-	static short _occupy[13*8+5];
-	short	* ptr;
+	static int16_t _occupy[13*8+5];
+	int16_t	* ptr;
 
 	IconsetClass const * iconset = (IconsetClass const *)Get_Image_Data();
-	unsigned char const * map = iconset->Map_Data();
+	uint8_t const * map = iconset->Map_Data();
 
 	ptr = &_occupy[0];
 	for (int index = 0; index < Width * Height; index++) {
@@ -3097,7 +3097,7 @@ short const * TemplateTypeClass::Occupy_List(bool) const
 	}
 	*ptr = REFRESH_EOL;
 
-	return((short const *)&_occupy[0]);
+	return((int16_t const *)&_occupy[0]);
 }
 
 
@@ -3136,8 +3136,8 @@ void TemplateTypeClass::Init(TheaterType theater)
 
 			Register_Icon_Set((void*)ptr, TRUE);		//Register icon set for video memory caching
 
-			((unsigned char &)tplate.Width) = Get_IconSet_MapWidth(ptr);
-			((unsigned char &)tplate.Height) = Get_IconSet_MapHeight(ptr);
+			((uint8_t &)tplate.Width) = Get_IconSet_MapWidth(ptr);
+			((uint8_t &)tplate.Height) = Get_IconSet_MapHeight(ptr);
 		}
 	}
 }
@@ -3181,7 +3181,7 @@ void TemplateTypeClass::Display(int x, int y, WindowNumberType window, HousesTyp
 	y += WindowList[window][WINDOWY];
 
 	IconsetClass const * iconset = (IconsetClass const *)Get_Image_Data();
-	unsigned char const * map = iconset->Map_Data();
+	uint8_t const * map = iconset->Map_Data();
 
 	for (index = 0; index < w*h; index++) {
 		if (map[index] != 0xFF) {

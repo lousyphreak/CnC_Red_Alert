@@ -53,26 +53,26 @@
 #include	"TERRAIN.H"
 #include	"TYPE.H"
 
-static short const _List000011101000[] = {MAP_CELL_W, MAP_CELL_W+1, MAP_CELL_W+2, MAP_CELL_W*2, REFRESH_EOL};
-static short const _List000110[] = {MAP_CELL_W, MAP_CELL_W+1, REFRESH_EOL};
-static short const _List001011100110[] = {2, MAP_CELL_W, MAP_CELL_W+1, MAP_CELL_W+2, MAP_CELL_W*2+1, MAP_CELL_W*2+2, REFRESH_EOL};
-static short const _List0010[] = {MAP_CELL_W, REFRESH_EOL};
-static short const _List0011[] = {MAP_CELL_W, MAP_CELL_W+1, REFRESH_EOL};
-static short const _List001[] = {2, REFRESH_EOL};
-static short const _List010110[] = {1, MAP_CELL_W, MAP_CELL_W+1, REFRESH_EOL};
-static short const _List01[] = {1, REFRESH_EOL};
-static short const _List11[] = {0, 1, REFRESH_EOL};
-static short const _List1001[] = {0, MAP_CELL_W+1, REFRESH_EOL};
-static short const _List1010[] = {0, MAP_CELL_W, REFRESH_EOL};
-static short const _List101001[] = {0, 2, MAP_CELL_W+2, REFRESH_EOL};
-static short const _List10[] = {0, REFRESH_EOL};
-static short const _List110000011001[] = {0, 1, MAP_CELL_W+3, MAP_CELL_W*2, MAP_CELL_W*2+3, REFRESH_EOL};
-static short const _List110001[] = {0, 1, MAP_CELL_W+2, REFRESH_EOL};
-static short const _List1100[] = {0, 1, REFRESH_EOL};
-static short const _List110110[] = {0, 1, MAP_CELL_W, MAP_CELL_W+1, REFRESH_EOL};
-static short const _List1101[] = {0, 1, MAP_CELL_W+1, REFRESH_EOL};
-static short const _List1111[] = {0, 1, MAP_CELL_W, MAP_CELL_W+1, REFRESH_EOL};
-static short const _List111000010110[] = {0, 1, 2, MAP_CELL_W+3, MAP_CELL_W*2+1, MAP_CELL_W*2+2, REFRESH_EOL};
+static int16_t const _List000011101000[] = {MAP_CELL_W, MAP_CELL_W+1, MAP_CELL_W+2, MAP_CELL_W*2, REFRESH_EOL};
+static int16_t const _List000110[] = {MAP_CELL_W, MAP_CELL_W+1, REFRESH_EOL};
+static int16_t const _List001011100110[] = {2, MAP_CELL_W, MAP_CELL_W+1, MAP_CELL_W+2, MAP_CELL_W*2+1, MAP_CELL_W*2+2, REFRESH_EOL};
+static int16_t const _List0010[] = {MAP_CELL_W, REFRESH_EOL};
+static int16_t const _List0011[] = {MAP_CELL_W, MAP_CELL_W+1, REFRESH_EOL};
+static int16_t const _List001[] = {2, REFRESH_EOL};
+static int16_t const _List010110[] = {1, MAP_CELL_W, MAP_CELL_W+1, REFRESH_EOL};
+static int16_t const _List01[] = {1, REFRESH_EOL};
+static int16_t const _List11[] = {0, 1, REFRESH_EOL};
+static int16_t const _List1001[] = {0, MAP_CELL_W+1, REFRESH_EOL};
+static int16_t const _List1010[] = {0, MAP_CELL_W, REFRESH_EOL};
+static int16_t const _List101001[] = {0, 2, MAP_CELL_W+2, REFRESH_EOL};
+static int16_t const _List10[] = {0, REFRESH_EOL};
+static int16_t const _List110000011001[] = {0, 1, MAP_CELL_W+3, MAP_CELL_W*2, MAP_CELL_W*2+3, REFRESH_EOL};
+static int16_t const _List110001[] = {0, 1, MAP_CELL_W+2, REFRESH_EOL};
+static int16_t const _List1100[] = {0, 1, REFRESH_EOL};
+static int16_t const _List110110[] = {0, 1, MAP_CELL_W, MAP_CELL_W+1, REFRESH_EOL};
+static int16_t const _List1101[] = {0, 1, MAP_CELL_W+1, REFRESH_EOL};
+static int16_t const _List1111[] = {0, 1, MAP_CELL_W, MAP_CELL_W+1, REFRESH_EOL};
+static int16_t const _List111000010110[] = {0, 1, 2, MAP_CELL_W+3, MAP_CELL_W*2+1, MAP_CELL_W*2+2, REFRESH_EOL};
 
 
 static TerrainTypeClass const Mine(
@@ -83,7 +83,7 @@ static TerrainTypeClass const Mine(
 		false,				// Is based on the water?
 	"MINE",
 	TXT_ORE_MINE,
-	(short const *)_List10,
+	(int16_t const *)_List10,
 	NULL
 );
 static TerrainTypeClass const Boxes01(
@@ -94,7 +94,7 @@ static TerrainTypeClass const Boxes01(
 		false,				// Is based on the water?
 	"BOXES01",
 	TXT_CRATES,
-	(short const *)_List10,
+	(int16_t const *)_List10,
 	NULL
 );
 static TerrainTypeClass const Boxes02(
@@ -105,7 +105,7 @@ static TerrainTypeClass const Boxes02(
 		false,				// Is based on the water?
 	"BOXES02",
 	TXT_CRATES,
-	(short const *)_List10,
+	(int16_t const *)_List10,
 	NULL
 );
 static TerrainTypeClass const Boxes03(
@@ -116,7 +116,7 @@ static TerrainTypeClass const Boxes03(
 		false,				// Is based on the water?
 	"BOXES03",
 	TXT_CRATES,
-	(short const *)_List10,
+	(int16_t const *)_List10,
 	NULL
 );
 static TerrainTypeClass const Boxes04(
@@ -127,7 +127,7 @@ static TerrainTypeClass const Boxes04(
 		false,				// Is based on the water?
 	"BOXES04",
 	TXT_CRATES,
-	(short const *)_List10,
+	(int16_t const *)_List10,
 	NULL
 );
 static TerrainTypeClass const Boxes05(
@@ -138,7 +138,7 @@ static TerrainTypeClass const Boxes05(
 		false,				// Is based on the water?
 	"BOXES05",
 	TXT_CRATES,
-	(short const *)_List10,
+	(int16_t const *)_List10,
 	NULL
 );
 static TerrainTypeClass const Boxes06(
@@ -149,7 +149,7 @@ static TerrainTypeClass const Boxes06(
 		false,				// Is based on the water?
 	"BOXES06",
 	TXT_CRATES,
-	(short const *)_List10,
+	(int16_t const *)_List10,
 	NULL
 );
 static TerrainTypeClass const Boxes07(
@@ -160,7 +160,7 @@ static TerrainTypeClass const Boxes07(
 		false,				// Is based on the water?
 	"BOXES07",
 	TXT_CRATES,
-	(short const *)_List10,
+	(int16_t const *)_List10,
 	NULL
 );
 static TerrainTypeClass const Boxes08(
@@ -171,7 +171,7 @@ static TerrainTypeClass const Boxes08(
 		false,				// Is based on the water?
 	"BOXES08",
 	TXT_CRATES,
-	(short const *)_List10,
+	(int16_t const *)_List10,
 	NULL
 );
 static TerrainTypeClass const Boxes09(
@@ -182,7 +182,7 @@ static TerrainTypeClass const Boxes09(
 		false,				// Is based on the water?
 	"BOXES09",
 	TXT_CRATES,
-	(short const *)_List10,
+	(int16_t const *)_List10,
 	NULL
 );
 
@@ -194,7 +194,7 @@ static TerrainTypeClass const Ice01(
 		true,					// Is based on the water?
 	"ICE01",
 	TXT_ICE,
-	(short const *)_List1111,
+	(int16_t const *)_List1111,
 	NULL
 );
 static TerrainTypeClass const Ice02(
@@ -205,7 +205,7 @@ static TerrainTypeClass const Ice02(
 		true,					// Is based on the water?
 	"ICE02",
 	TXT_ICE,
-	(short const *)_List1010,
+	(int16_t const *)_List1010,
 	NULL
 );
 static TerrainTypeClass const Ice03(
@@ -216,7 +216,7 @@ static TerrainTypeClass const Ice03(
 		true,					// Is based on the water?
 	"ICE03",
 	TXT_ICE,
-	(short const *)_List11,
+	(int16_t const *)_List11,
 	NULL
 );
 static TerrainTypeClass const Ice04(
@@ -227,7 +227,7 @@ static TerrainTypeClass const Ice04(
 		true,					// Is based on the water?
 	"ICE04",
 	TXT_ICE,
-	(short const *)_List10,
+	(int16_t const *)_List10,
 	NULL
 );
 static TerrainTypeClass const Ice05(
@@ -238,7 +238,7 @@ static TerrainTypeClass const Ice05(
 		true,					// Is based on the water?
 	"ICE05",
 	TXT_ICE,
-	(short const *)_List10,
+	(int16_t const *)_List10,
 	NULL
 );
 
@@ -250,8 +250,8 @@ static TerrainTypeClass const Tree1Class(
 		false,				// Is based on the water?
 	"T01",
 	TXT_TREE,
-	(short const *)_List0010,
-	(short const *)_List1001
+	(int16_t const *)_List0010,
+	(int16_t const *)_List1001
 );
 
 static TerrainTypeClass const Tree2Class(
@@ -262,8 +262,8 @@ static TerrainTypeClass const Tree2Class(
 		false,				// Is based on the water?
 	"T02",
 	TXT_TREE,
-	(short const *)_List0010,
-	(short const *)_List1001
+	(int16_t const *)_List0010,
+	(int16_t const *)_List1001
 );
 
 static TerrainTypeClass const Tree3Class(
@@ -274,8 +274,8 @@ static TerrainTypeClass const Tree3Class(
 		false,				// Is based on the water?
 	"T03",
 	TXT_TREE,
-	(short const *)_List0010,
-	(short const *)_List1001
+	(int16_t const *)_List0010,
+	(int16_t const *)_List1001
 );
 
 static TerrainTypeClass const Tree5Class(
@@ -286,8 +286,8 @@ static TerrainTypeClass const Tree5Class(
 		false,				// Is based on the water?
 	"T05",
 	TXT_TREE,
-	(short const *)_List0010,
-	(short const *)_List1001
+	(int16_t const *)_List0010,
+	(int16_t const *)_List1001
 );
 
 static TerrainTypeClass const Tree6Class(
@@ -298,8 +298,8 @@ static TerrainTypeClass const Tree6Class(
 		false,				// Is based on the water?
 	"T06",
 	TXT_TREE,
-	(short const *)_List0010,
-	(short const *)_List1001
+	(int16_t const *)_List0010,
+	(int16_t const *)_List1001
 );
 
 static TerrainTypeClass const Tree7Class(
@@ -310,8 +310,8 @@ static TerrainTypeClass const Tree7Class(
 		false,				// Is based on the water?
 	"T07",
 	TXT_TREE,
-	(short const *)_List0010,
-	(short const *)_List1001
+	(int16_t const *)_List0010,
+	(int16_t const *)_List1001
 );
 
 static TerrainTypeClass const Tree8Class(
@@ -322,8 +322,8 @@ static TerrainTypeClass const Tree8Class(
 		false,				// Is based on the water?
 	"T08",
 	TXT_TREE,
-	(short const *)_List10,
-	(short const *)_List01
+	(int16_t const *)_List10,
+	(int16_t const *)_List01
 );
 
 static TerrainTypeClass const Tree10Class(
@@ -334,8 +334,8 @@ static TerrainTypeClass const Tree10Class(
 		false,				// Is based on the water?
 	"T10",
 	TXT_TREE,
-	(short const *)_List0011,
-	(short const *)_List1100
+	(int16_t const *)_List0011,
+	(int16_t const *)_List1100
 );
 
 static TerrainTypeClass const Tree11Class(
@@ -346,8 +346,8 @@ static TerrainTypeClass const Tree11Class(
 		false,				// Is based on the water?
 	"T11",
 	TXT_TREE,
-	(short const *)_List0011,
-	(short const *)_List1100
+	(int16_t const *)_List0011,
+	(int16_t const *)_List1100
 );
 
 static TerrainTypeClass const Tree12Class(
@@ -358,8 +358,8 @@ static TerrainTypeClass const Tree12Class(
 		false,				// Is based on the water?
 	"T12",
 	TXT_TREE,
-	(short const *)_List0010,
-	(short const *)_List1001
+	(int16_t const *)_List0010,
+	(int16_t const *)_List1001
 );
 
 static TerrainTypeClass const Tree13Class(
@@ -370,8 +370,8 @@ static TerrainTypeClass const Tree13Class(
 		false,				// Is based on the water?
 	"T13",
 	TXT_TREE,
-	(short const *)_List0010,
-	(short const *)_List1101
+	(int16_t const *)_List0010,
+	(int16_t const *)_List1101
 );
 
 static TerrainTypeClass const Tree14Class(
@@ -382,8 +382,8 @@ static TerrainTypeClass const Tree14Class(
 		false,				// Is based on the water?
 	"T14",
 	TXT_TREE,
-	(short const *)_List0011,
-	(short const *)_List1100
+	(int16_t const *)_List0011,
+	(int16_t const *)_List1100
 );
 
 static TerrainTypeClass const Tree15Class(
@@ -394,8 +394,8 @@ static TerrainTypeClass const Tree15Class(
 		false,				// Is based on the water?
 	"T15",
 	TXT_TREE,
-	(short const *)_List0011,
-	(short const *)_List1100
+	(int16_t const *)_List0011,
+	(int16_t const *)_List1100
 );
 
 static TerrainTypeClass const Tree16Class(
@@ -406,8 +406,8 @@ static TerrainTypeClass const Tree16Class(
 		false,				// Is based on the water?
 	"T16",
 	TXT_TREE,
-	(short const *)_List0010,
-	(short const *)_List1001
+	(int16_t const *)_List0010,
+	(int16_t const *)_List1001
 );
 
 static TerrainTypeClass const Tree17Class(
@@ -418,8 +418,8 @@ static TerrainTypeClass const Tree17Class(
 		false,				// Is based on the water?
 	"T17",
 	TXT_TREE,
-	(short const *)_List0010,
-	(short const *)_List1001
+	(int16_t const *)_List0010,
+	(int16_t const *)_List1001
 );
 
 static TerrainTypeClass const Clump1Class(
@@ -430,8 +430,8 @@ static TerrainTypeClass const Clump1Class(
 		false,				// Is based on the water?
 	"TC01",
 	TXT_TREE,
-	(short const *)_List000110,
-	(short const *)_List110001
+	(int16_t const *)_List000110,
+	(int16_t const *)_List110001
 );
 
 static TerrainTypeClass const Clump2Class(
@@ -442,8 +442,8 @@ static TerrainTypeClass const Clump2Class(
 		false,				// Is based on the water?
 	"TC02",
 	TXT_TREE,
-	(short const *)_List010110,
-	(short const *)_List101001
+	(int16_t const *)_List010110,
+	(int16_t const *)_List101001
 );
 
 static TerrainTypeClass const Clump3Class(
@@ -454,8 +454,8 @@ static TerrainTypeClass const Clump3Class(
 		false,				// Is based on the water?
 	"TC03",
 	TXT_TREE,
-	(short const *)_List110110,
-	(short const *)_List001
+	(int16_t const *)_List110110,
+	(int16_t const *)_List001
 );
 
 static TerrainTypeClass const Clump4Class(
@@ -466,8 +466,8 @@ static TerrainTypeClass const Clump4Class(
 		false,				// Is based on the water?
 	"TC04",
 	TXT_TREE,
-	(short const *)_List000011101000,
-	(short const *)_List111000010110
+	(int16_t const *)_List000011101000,
+	(int16_t const *)_List111000010110
 );
 
 static TerrainTypeClass const Clump5Class(
@@ -478,8 +478,8 @@ static TerrainTypeClass const Clump5Class(
 		false,				// Is based on the water?
 	"TC05",
 	TXT_TREE,
-	(short const *)_List001011100110,
-	(short const *)_List110000011001
+	(int16_t const *)_List001011100110,
+	(int16_t const *)_List110000011001
 );
 
 
@@ -506,8 +506,8 @@ TerrainTypeClass::TerrainTypeClass(
 	bool is_water,
 	char const * ininame,
 	int fullname,
-	short const * occupy,
-	short const * overlap) :
+	int16_t const * occupy,
+	int16_t const * overlap) :
 		ObjectTypeClass(RTTI_TERRAINTYPE,
 							int(terrain),
 							true,
@@ -849,11 +849,11 @@ ObjectClass * TerrainTypeClass::Create_One_Of(HouseClass *) const
  * HISTORY:                                                                                    *
  *   09/20/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-short const * TerrainTypeClass::Occupy_List(bool ) const
+int16_t const * TerrainTypeClass::Occupy_List(bool ) const
 {
 	if (Occupy != NULL) return(Occupy);
 
-	static short const _simple[1] = {
+	static int16_t const _simple[1] = {
 		REFRESH_EOL
 	};
 	return(&_simple[0]);
@@ -878,11 +878,11 @@ short const * TerrainTypeClass::Occupy_List(bool ) const
  * HISTORY:                                                                                    *
  *   09/20/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-short const * TerrainTypeClass::Overlap_List(void) const
+int16_t const * TerrainTypeClass::Overlap_List(void) const
 {
 	if (Overlap != NULL) return(Overlap);
 
-	static short const _simple[1] = {
+	static int16_t const _simple[1] = {
 		REFRESH_EOL
 	};
 	return(&_simple[0]);

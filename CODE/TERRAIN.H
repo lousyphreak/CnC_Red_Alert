@@ -37,6 +37,7 @@
 
 #ifndef TERRAIN_H
 #define TERRAIN_H
+#include <stdint.h>
 
 #include	"OBJECT.H"
 #include	"TYPE.H"
@@ -99,7 +100,7 @@ class TerrainClass : public ObjectClass, public StageClass
 		*/
 		virtual void Draw_It(int x, int y, WindowNumberType window) const;
 		virtual bool Mark(MarkType mark=MARK_CHANGE);
-		unsigned char *Radar_Icon(CELL cell);
+		uint8_t *Radar_Icon(CELL cell);
 
 		/*
 		**	User I/O.

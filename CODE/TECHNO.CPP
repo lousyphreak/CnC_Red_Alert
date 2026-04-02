@@ -539,7 +539,7 @@ void TechnoClass::Debug_Dump(MonoClass * mono) const
 	mono->Set_Cursor(14, 7);mono->Printf("%2d", Fetch_Stage());
 	mono->Set_Cursor(49, 1);mono->Printf("%3d", Ammo);
 	mono->Set_Cursor(71, 1);mono->Printf("$%4d", PurchasePrice);
-	mono->Set_Cursor(54, 1);mono->Printf("%3d", (long)Arm);
+	mono->Set_Cursor(54, 1);mono->Printf("%3d", (int32_t)Arm);
 	if (Is_Something_Attached()) {
 		mono->Set_Cursor(1, 5);mono->Printf("%08X", Attached_Object());
 	}
@@ -567,7 +567,7 @@ void TechnoClass::Debug_Dump(MonoClass * mono) const
 	mono->Fill_Attrib(40, 14, 12, 1, IsDiscoveredByPlayer ? MonoClass::INVERSE : MonoClass::NORMAL);
 	mono->Fill_Attrib(40, 15, 12, 1, IsDiscoveredByComputer ? MonoClass::INVERSE : MonoClass::NORMAL);
 	mono->Fill_Attrib(40, 16, 12, 1, IsALemon ? MonoClass::INVERSE : MonoClass::NORMAL);
-	mono->Set_Cursor(47, 17);mono->Printf("%3d", (long)IronCurtainCountDown);
+	mono->Set_Cursor(47, 17);mono->Printf("%3d", (int32_t)IronCurtainCountDown);
 	mono->Fill_Attrib(40, 17, 12, 1, IronCurtainCountDown > 0 ? MonoClass::INVERSE : MonoClass::NORMAL);
 
 	RadioClass::Debug_Dump(mono);
@@ -2894,7 +2894,7 @@ int TechnoClass::Rearm_Delay(bool second, int which) const
  *   09/30/1996 BWG : Created.                                                                 *
  *   09/30/1996 JLB : Uses standard facing conversion and distance routines.                   *
  *=============================================================================================*/
-bool TechnoClass::Electric_Zap(TARGET target, int which, COORDINATE source_coord, unsigned char * remap)
+bool TechnoClass::Electric_Zap(TARGET target, int which, COORDINATE source_coord, uint8_t * remap)
 {
 	int x,y,x1,y1;
 	COORDINATE source;
@@ -5607,7 +5607,7 @@ void TechnoClass::Draw_Pips(int x, int y, WindowNumberType window) const
 		if (spiedby) {
 			// If it's a refinery/silo, print the enemy's money
 			if (((BuildingClass *)this)->Class->Capacity) {
-				long money = House->Available_Money();
+				int32_t money = House->Available_Money();
 
 				/*
 				**	Determine how many digits will be printed.
@@ -6329,7 +6329,7 @@ int TechnoTypeClass::Legal_Placement(CELL pos) const
 	**	obstacles. If this check passes for all foundation squares, only then does the
 	**	routine return that it is legal to place.
 	*/
-	short const * offset = Occupy_List(true);
+	int16_t const * offset = Occupy_List(true);
 	bool build = (What_Am_I() == RTTI_BUILDINGTYPE);
 
 	while (offset != NULL && *offset != REFRESH_EOL) {

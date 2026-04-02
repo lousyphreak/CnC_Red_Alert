@@ -141,12 +141,12 @@ UnitTypeClass      �   BuildingTypeClass      �  VesselTypeClass
 class BitmapClass
 {
 	public:
-		BitmapClass(int w, int h, unsigned char * data) :
+		BitmapClass(int w, int h, uint8_t * data) :
 			Width(w), Height(h), Data(data) {};
 
 		int Width;
 		int Height;
-		unsigned char * Data;
+		uint8_t * Data;
 };
 
 class TPoint2D
@@ -212,10 +212,10 @@ class TPoint2D
 #include	"RNDSTRAW.H"
 // Should be part of WWLIB.H. This is used in JSHELL.CPP.
 typedef struct {
-	unsigned char	SourceColor;
-	unsigned char	DestColor;
-	unsigned char	Fading;
-	unsigned char	reserved;
+	uint8_t	SourceColor;
+	uint8_t	DestColor;
+	uint8_t	Fading;
+	uint8_t	reserved;
 } TLucentType;
 
 
@@ -416,10 +416,10 @@ void Assert_Failure (char *expression, int line, char *file);
 
 
 extern void Free_Interpolated_Palettes(void);
-extern int Load_Interpolated_Palettes(char const *filename, BOOL add=FALSE);
-extern void Rebuild_Interpolated_Palette(unsigned char *interpal);
+extern int Load_Interpolated_Palettes(char const *filename, int32_t add=FALSE);
+extern void Rebuild_Interpolated_Palette(uint8_t *interpal);
 extern void Interpolate_2X_Scale( GraphicBufferClass *source, GraphicViewPortClass *dest ,char const *palette_file_name);
-void Increase_Palette_Luminance (unsigned char *palette , int red_percentage , int green_percentage , int blue_percentage ,int cap);
+void Increase_Palette_Luminance (uint8_t *palette , int red_percentage , int green_percentage , int blue_percentage ,int cap);
 
 /*
 **	ADATA.CPP
@@ -443,7 +443,7 @@ AnimType Anim_From_Name(char const * name);
 VocType Voc_From_Name(char const * name);
 char const * Speech_Name(VoxType speech);
 char const * Voc_Name(VocType voc);
-int Sound_Effect(VocType voc, fixed volume=1, int variation=1, signed short panvalue=0, HousesType house=HOUSE_NONE);
+int Sound_Effect(VocType voc, fixed volume=1, int variation=1, int16_t panvalue=0, HousesType house=HOUSE_NONE);
 void Speak(VoxType voice);
 void Speak_AI(void);
 void Stop_Speaking(void);
@@ -466,7 +466,7 @@ void Wide_Area_Damage(COORDINATE coord, LEPTON radius, int damage, TechnoClass *
 /*
 **	CONQUER.CPP
 */
-void List_Copy(short const * source, int len, short * dest);
+void List_Copy(int16_t const * source, int len, int16_t * dest);
 int Get_CD_Index (int cd_drive, int timeout);
 int Owner_From_Name(char const * text);
 CrateType Crate_From_Name(char const * name);
@@ -500,14 +500,14 @@ void Play_Movie(VQType name, ThemeType theme=THEME_NONE, bool clrscrn=true);
 bool Main_Loop(void);
 TheaterType Theater_From_Name(char const * name);
 void Main_Game(int argc, char * argv[]);
-long VQ_Call_Back(unsigned char * buffer=NULL, long frame=0);
+int32_t VQ_Call_Back(uint8_t * buffer=NULL, int32_t frame=0);
 void Call_Back(void);
 char const *Language_Name(char const * basename);
 SourceType Source_From_Name(char const * name);
 char const *Name_From_Source(SourceType source);
 FacingType KN_To_Facing(int input);
 void const *Get_Radar_Icon(void const * shapefile, int shapenum, int frames, int zoomfactor);
-void CC_Draw_Shape(void const * shapefile, int shapenum, int x, int y, WindowNumberType window, ShapeFlags_Type flags, void const * fadingdata=0, void const * ghostdata=0, DirType rotation=DIR_N, long scale=0x0100);
+void CC_Draw_Shape(void const * shapefile, int shapenum, int x, int y, WindowNumberType window, ShapeFlags_Type flags, void const * fadingdata=0, void const * ghostdata=0, DirType rotation=DIR_N, int32_t scale=0x0100);
 void Go_Editor(bool flag);
 int32_t MixFileHandler(VQAHandle * vqa, int32_t action, void * buffer, int32_t nbytes);
 char *CC_Get_Shape_Filename(void const * shapeptr );
@@ -522,10 +522,10 @@ void Shake_The_Screen(int shakes);
 /*
 **	COORD.CPP
 */
-short const * Coord_Spillage_List(COORDINATE coord, Rect const & rect, bool nocenter=true);
-void Normal_Move_Point(short &x, short &y, register DirType dir, unsigned short distance);
-void Move_Point(short &x, short &y, register DirType dir, unsigned short distance);
-COORDINATE Coord_Move(COORDINATE start, DirType facing, unsigned short distance);
+int16_t const * Coord_Spillage_List(COORDINATE coord, Rect const & rect, bool nocenter=true);
+void Normal_Move_Point(int16_t &x, int16_t &y, register DirType dir, uint16_t distance);
+void Move_Point(int16_t &x, int16_t &y, register DirType dir, uint16_t distance);
+COORDINATE Coord_Move(COORDINATE start, DirType facing, uint16_t distance);
 COORDINATE Coord_Scatter(COORDINATE coord, unsigned distance, bool lock=false);
 DirType Direction(CELL cell1, CELL cell2);
 DirType Direction(COORDINATE coord1, COORDINATE coord2);
@@ -533,7 +533,7 @@ DirType Direction256(COORDINATE coord1, COORDINATE coord2);
 DirType Direction8(COORDINATE coord1, COORDINATE coord2);
 int Distance(COORDINATE coord1, COORDINATE coord2);
 int Distance(TARGET target1, TARGET target2);
-short const * Coord_Spillage_List(COORDINATE coord, int maxsize);
+int16_t const * Coord_Spillage_List(COORDINATE coord, int maxsize);
 
 /*
 **	DEBUG.CPP
@@ -551,7 +551,7 @@ int Format_Window_String(char * string, int maxlinelen, int & width, int & heigh
 extern void Dialog_Box(int x, int y, int w, int h);
 void Conquer_Clip_Text_Print(char const *, unsigned x, unsigned y, RemapControlType * fore, unsigned back=(unsigned)TBLACK, TextPrintType flag=TPF_8POINT|TPF_DROPSHADOW, int width=-1, int const * tabs=0);
 void Draw_Box(int x, int y, int w, int h, BoxStyleEnum up, bool filled);
-int cdecl Dialog_Message(char *errormsg, ...);
+int  Dialog_Message(char *errormsg, ...);
 void Window_Box(WindowNumberType window, BoxStyleEnum style);
 void Fancy_Text_Print(char const *text, unsigned x, unsigned y, RemapControlType * fore, unsigned back, TextPrintType flag, ...);
 void Fancy_Text_Print(int text, unsigned x, unsigned y, RemapControlType * fore, unsigned back, TextPrintType flag, ...);
@@ -611,7 +611,7 @@ bool Read_Scenario_INI_Write_INB( char *root, bool fresh );
 **	INIT.CPP
 */
 void Load_Title_Page(bool visible=false);
-long Obfuscate(char const * string);
+int32_t Obfuscate(char const * string);
 void Anim_Init(void);
 bool Init_Game(int argc, char *argv[]);
 bool Select_Game(bool fade = false);
@@ -622,28 +622,28 @@ void Parse_INI_File(void);
 ** INTERPAL.CPP
 */
 #define SIZE_OF_PALETTE 256
-extern	"C" unsigned char *InterpolationPalette;
-extern	BOOL	InterpolationPaletteChanged;
+extern	"C" uint8_t *InterpolationPalette;
+extern	int32_t	InterpolationPaletteChanged;
 extern	void 	Interpolate_2X_Scale( GraphicBufferClass *source, GraphicViewPortClass *dest ,char const *palette_file_name);
 void Read_Interpolation_Palette (char const *palette_file_name);
 void Write_Interpolation_Palette (char const *palette_file_name);
-void Increase_Palette_Luminance(unsigned char *InterpolationPalette ,	int RedPercentage ,int GreenPercentage ,int BluePercentage ,int cap);
+void Increase_Palette_Luminance(uint8_t *InterpolationPalette ,	int RedPercentage ,int GreenPercentage ,int BluePercentage ,int cap);
 extern "C"{
-	extern unsigned char PaletteInterpolationTable[SIZE_OF_PALETTE][SIZE_OF_PALETTE];
-	extern unsigned char *InterpolationPalette;
-	void __cdecl Asm_Create_Palette_Interpolation_Table(void);
+	extern uint8_t PaletteInterpolationTable[SIZE_OF_PALETTE][SIZE_OF_PALETTE];
+	extern uint8_t *InterpolationPalette;
+	void  Asm_Create_Palette_Interpolation_Table(void);
 }
 
 /*
 ** JSHELL.CPP
 */
-int Load_Picture(char const *filename, BufferClass& scratchbuf, BufferClass& destbuf, unsigned char *palette, PicturePlaneType format);
+int Load_Picture(char const *filename, BufferClass& scratchbuf, BufferClass& destbuf, uint8_t *palette, PicturePlaneType format);
 void * Conquer_Build_Fading_Table(PaletteClass const & palette, void *dest, int color, int frac);
 void * Small_Icon(void const * iconptr, int iconnum);
 void Set_Window(int window, int x, int y, int w, int h);
 void * Load_Alloc_Data(FileClass &file);
-long Load_Uncompress(FileClass &file, BuffType &uncomp_buff, BuffType &dest_buff, void *reserved_data);
-long Translucent_Table_Size(int count);
+int32_t Load_Uncompress(FileClass &file, BuffType &uncomp_buff, BuffType &dest_buff, void *reserved_data);
+int32_t Translucent_Table_Size(int count);
 void *Build_Translucent_Table(PaletteClass const & palette, TLucentType const *control, int count, void *buffer);
 void *Conquer_Build_Translucent_Table(PaletteClass const & palette, TLucentType const *control, int count, void *buffer);
 void * Make_Fading_Table(PaletteClass const & palette, void * dest, int color, int frac);
@@ -652,18 +652,18 @@ void * Make_Fading_Table(PaletteClass const & palette, void * dest, int color, i
 **	KEYFBUFF.ASM
 */
 extern "C" {
-	long __cdecl Buffer_Frame_To_Page(int x, int y, int w, int h, void *Buffer, GraphicViewPortClass &view, int flags, ...);
+	int32_t  Buffer_Frame_To_Page(int x, int y, int w, int h, void *Buffer, GraphicViewPortClass &view, int flags, ...);
 }
 
 /*
 **	KEYFRAME.CPP
 */
-unsigned long Build_Frame(void const *dataptr, unsigned short framenumber, void *buffptr);
-unsigned short Get_Build_Frame_Count(void const *dataptr);
-unsigned short Get_Build_Frame_X(void const *dataptr);
-unsigned short Get_Build_Frame_Y(void const *dataptr);
-unsigned short Get_Build_Frame_Width(void const *dataptr);
-unsigned short Get_Build_Frame_Height(void const *dataptr);
+void * Build_Frame(void const *dataptr, uint16_t framenumber, void *buffptr);
+uint16_t Get_Build_Frame_Count(void const *dataptr);
+uint16_t Get_Build_Frame_X(void const *dataptr);
+uint16_t Get_Build_Frame_Y(void const *dataptr);
+uint16_t Get_Build_Frame_Width(void const *dataptr);
+uint16_t Get_Build_Frame_Height(void const *dataptr);
 bool Get_Build_Frame_Palette(void const *dataptr, void *palette);
 
 /*
@@ -675,11 +675,11 @@ int Coord_Spillage_Number(COORDINATE coord, int maxsize);
 /*
 **	MENUS.CPP
 */
-void Setup_Menu(int menu, char const *text[], unsigned long field, int index, int skip);
-int Check_Menu(int menu, char const *text[], char *selection, long field, int index);
+void Setup_Menu(int menu, char const *text[], uint32_t field, int index, int skip);
+int Check_Menu(int menu, char const *text[], char *selection, int32_t field, int index);
 int Do_Menu(char const **strings, bool blue);
 extern int UnknownKey;
-int Main_Menu(unsigned long timeout);
+int Main_Menu(uint32_t timeout);
 
 /*
 ** MPLAYER.CPP
@@ -771,7 +771,7 @@ bool Read_Bin_Init( char *buffer, int length );
 int Read_Bin_Length( char *buffer );
 bool Read_Bin_Num( void *num, int length, char *buffer );
 int Read_Bin_Pos( char *buffer );
-int Read_Bin_PosSet( unsigned int pos, char *buffer );
+int Read_Bin_PosSet( uint32_t pos, char *buffer );
 bool Read_Bin_String( char *string, char *buffer );
 
 char *Write_Bin_Buffer( void );
@@ -779,7 +779,7 @@ bool Write_Bin_Init( char *buffer, int length );
 int Write_Bin_Length( char *buffer );
 bool Write_Bin_Num( void *num, int length, char *buffer );
 int Write_Bin_Pos( char *buffer );
-int Write_Bin_PosSet( unsigned int pos, char *buffer );
+int Write_Bin_PosSet( uint32_t pos, char *buffer );
 bool Write_Bin_String( char *string, int length, char *buffer );
 
 /*
@@ -930,7 +930,7 @@ ArmorType Armor_From_Name(char const * name);
 /*
 ** Winstub.cpp
 */
-void Load_Title_Screen(char *name, GraphicViewPortClass *video_page, unsigned char *palette);
+void Load_Title_Screen(char *name, GraphicViewPortClass *video_page, uint8_t *palette);
 
 /*
 ** Egos.CPP

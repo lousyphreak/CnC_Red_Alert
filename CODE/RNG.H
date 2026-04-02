@@ -37,6 +37,7 @@
 
 #ifndef RNG_H
 #define RNG_H
+#include <stdint.h>
 
 /*
 **	This is an abstract interface class for a random number generator. It serves only to
@@ -46,7 +47,7 @@ class RandomNumberGenerator {
 	public:
 		virtual ~RandomNumberGenerator() {}
 
-		virtual void Get_Block(void * output, unsigned int size) = 0;
+		virtual void Get_Block(void * output, uint32_t size) = 0;
 };
 
 

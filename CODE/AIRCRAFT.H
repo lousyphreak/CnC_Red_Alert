@@ -37,6 +37,7 @@
 
 #ifndef AIRCRAFT_H
 #define AIRCRAFT_H
+#include <stdint.h>
 
 #include	"RADIO.H"
 #include	"FLY.H"
@@ -127,7 +128,7 @@ class AircraftClass : public FootClass, public FlyClass
 		virtual void Look(bool incremental=false);
 		void Draw_Rotors(int x, int y, WindowNumberType window) const;
 		virtual int Exit_Object(TechnoClass *);
-		virtual short const * Overlap_List(bool redraw=false) const;
+		virtual int16_t const * Overlap_List(bool redraw=false) const;
 		virtual void Draw_It(int x, int y, WindowNumberType window) const;
 		virtual void Set_Speed(int speed);
 
@@ -225,7 +226,7 @@ class AircraftClass : public FootClass, public FlyClass
 		**	This is the jitter tracker to be used when the aircraft is a helicopter and
 		**	is flying. It is most noticeable when the helicopter is hovering.
 		*/
-		unsigned char Jitter;
+		uint8_t Jitter;
 
 	private:
 

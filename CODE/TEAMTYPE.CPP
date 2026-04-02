@@ -410,7 +410,7 @@ void TeamTypeClass::Destroy_All_Of(void) const
  *   07/13/1995 JLB : Created.                                                                 *
  *   07/21/1995 JLB : Will autocreate team even if no members in field.                        *
  *=============================================================================================*/
-TeamTypeClass const * TeamTypeClass::Suggested_New_Team(HouseClass * house, long , long , long , long , bool alerted)
+TeamTypeClass const * TeamTypeClass::Suggested_New_Team(HouseClass * house, int32_t , int32_t , int32_t , int32_t , bool alerted)
 //TeamTypeClass const * TeamTypeClass::Suggested_New_Team(HouseClass * house, long atypes, long utypes, long itypes, long vtypes, bool alerted)
 {
 //	TeamTypeClass const * best = NULL;
@@ -439,10 +439,10 @@ TeamTypeClass const * TeamTypeClass::Suggested_New_Team(HouseClass * house, long
 			/*
 			**	Determine what kind of units this team requires.
 			*/
-			long uneeded = 0;
-			long ineeded = 0;
-			long vneeded = 0;
-			long aneeded = 0;
+			int32_t uneeded = 0;
+			int32_t ineeded = 0;
+			int32_t vneeded = 0;
+			int32_t aneeded = 0;
 			for (int ctype = 0; ctype < ttype->ClassCount; ctype++) {
 				switch (ttype->Members[ctype].Class->What_Am_I()) {
 					case RTTI_INFANTRYTYPE:

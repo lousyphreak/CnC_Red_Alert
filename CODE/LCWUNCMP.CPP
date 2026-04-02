@@ -35,6 +35,7 @@
  * Functions:                                                              *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+#include <stdint.h>
 extern "C" {
 
 /***************************************************************************
@@ -70,15 +71,15 @@ extern "C" {
  * HISTORY:                                                                *
  *    03/20/1995 IML : Created.                                            *
  *=========================================================================*/
-unsigned long __cdecl LCW_Uncompress (void * source, void * dest, unsigned long )
+uint32_t  LCW_Uncompress (void * source, void * dest, uint32_t )
 //unsigned long LCW_Uncompress (void * source, void * dest, unsigned long length)
 {
-	unsigned char * source_ptr, * dest_ptr, * copy_ptr, op_code, data;
+	uint8_t * source_ptr, * dest_ptr, * copy_ptr, op_code, data;
 	unsigned	  count, * word_dest_ptr, word_data;
 
 	/* Copy the source and destination ptrs. */
-	source_ptr = (unsigned char*) source;
-	dest_ptr   = (unsigned char*) dest;
+	source_ptr = (uint8_t*) source;
+	dest_ptr   = (uint8_t*) dest;
 
 	while (1 /*TRUE*/) {
 
@@ -100,7 +101,7 @@ unsigned long __cdecl LCW_Uncompress (void * source, void * dest, unsigned long 
 				if (op_code == 0x80) {
 
 					/* Return # of destination bytes written. */
-					return ((unsigned long) (dest_ptr - (unsigned char*) dest));
+					return ((uint32_t) (dest_ptr - (uint8_t*) dest));
 
 				} else {
 
@@ -143,7 +144,7 @@ unsigned long __cdecl LCW_Uncompress (void * source, void * dest, unsigned long 
 
 						/* Do a long copy from destination. */
 						count	 = *source_ptr + ((unsigned) *(source_ptr + 1) << 8);
-						copy_ptr = (unsigned char*) dest + *(source_ptr + 2) + ((unsigned) *(source_ptr + 3) << 8);
+						copy_ptr = (uint8_t*) dest + *(source_ptr + 2) + ((unsigned) *(source_ptr + 3) << 8);
 						source_ptr += 4;
 
 						while (count--) *dest_ptr++ = *copy_ptr++;
@@ -152,7 +153,7 @@ unsigned long __cdecl LCW_Uncompress (void * source, void * dest, unsigned long 
 
 						/* Do a medium copy from destination. */
 						count = (op_code & 0x3f) + 3;
-						copy_ptr = (unsigned char*) dest + *source_ptr + ((unsigned) *(source_ptr + 1) << 8);
+						copy_ptr = (uint8_t*) dest + *source_ptr + ((unsigned) *(source_ptr + 1) << 8);
 						source_ptr += 2;
 
 						while (count--) *dest_ptr++ = *copy_ptr++;

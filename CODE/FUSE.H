@@ -37,6 +37,7 @@
 
 #ifndef FUSE_H
 #define FUSE_H
+#include <stdint.h>
 
 /****************************************************************************
 **	The fuse is used by projectiles to determine whether detonation should
@@ -59,7 +60,7 @@ class FuseClass {
 		**	Fuses can detonate if enough time has elapsed. This value counts
 		**	down. When it reaches zero, detonation occurs.
 		*/
-		unsigned char Timer;
+		uint8_t Timer;
 
 	private:
 
@@ -68,7 +69,7 @@ class FuseClass {
 		**	occur. This counts down and when it reaches zero, normal fuse
 		**	detonation checking can occur.
 		*/
-		unsigned char Arming;
+		uint8_t Arming;
 
 		/*
 		**	This is the designated impact point of the projectile. The fuse
@@ -81,7 +82,7 @@ class FuseClass {
 		**	will progressively get smaller. Detonation occurs when it reaches
 		**	zero or when it starts to grow larger.
 		*/
-		short Proximity;
+		int16_t Proximity;
 };
 
 inline COORDINATE FuseClass::Fuse_Target(void)

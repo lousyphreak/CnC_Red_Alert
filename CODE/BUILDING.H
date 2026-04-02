@@ -37,6 +37,7 @@
 
 #ifndef BUILDING_H
 #define BUILDING_H
+#include <stdint.h>
 
 #include	"FTIMER.H"
 #include	"RADIO.H"
@@ -250,7 +251,7 @@ class BuildingClass : public TechnoClass
 		virtual bool Can_Demolish(void) const;
 		virtual ObjectTypeClass const & Class_Of(void) const {return *Class;};
 		virtual DirType Fire_Direction(void) const;
-		virtual short const * Overlap_List(bool redraw=false) const;
+		virtual int16_t const * Overlap_List(bool redraw=false) const;
 		int Shape_Number(void) const;
 		int Power_Output(void) const;
 		CELL Check_Point(CheckPointType cp) const;

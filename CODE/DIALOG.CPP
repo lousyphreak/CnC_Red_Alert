@@ -51,7 +51,7 @@
 #include	"FUNCTION.H"
 #include   "DEFINES.H"
 //VG 10/17/96
-unsigned char * Font_Palette(int color);
+uint8_t * Font_Palette(int color);
 
 
 /***********************************************************************************************
@@ -372,7 +372,7 @@ void Simple_Text_Print(char const * text, unsigned x, unsigned y, RemapControlTy
 	static int		xspace=0;			// Spacing adjustment for font.
 	void const *	font=0;		// Font to use.
 	int				shadow;				// Requested shadow value.
-	unsigned char	fontpalette[16];	// Working font palette array.
+	uint8_t	fontpalette[16];	// Working font palette array.
 	int forecolor;
 
 	if (fore == NULL) {
@@ -900,9 +900,9 @@ void Plain_Text_Print(char const * text, unsigned x, unsigned y, unsigned fore, 
 
 
 
-unsigned char * Font_Palette(int color)
+uint8_t * Font_Palette(int color)
 {
-	static unsigned char _fpalette[16];
+	static uint8_t _fpalette[16];
 
 	memset(_fpalette, '\0', sizeof(_fpalette));
 	memset(&_fpalette[11], color, 5);

@@ -18,12 +18,13 @@
 
 #include "RGB.H"
 
+#include <stdint.h>
 extern "C" void Set_Palette_Register(int number, int red, int green, int blue);
 
 static int CurrentPaletteRegister = 0;
 
 
-void outportb(int port, unsigned char data)
+void outportb(int port, uint8_t data)
 {
 	if (port == 0x03C8) {
 		CurrentPaletteRegister = data;
@@ -31,15 +32,15 @@ void outportb(int port, unsigned char data)
 }
 
 
-void outport(int port, unsigned short data)
+void outport(int port, uint16_t data)
 {
 	if (port == 0x03C8) {
-		CurrentPaletteRegister = (unsigned char)data;
+		CurrentPaletteRegister = (uint8_t)data;
 	}
 }
 
 
-void outrgb(unsigned char red, unsigned char green, unsigned char blue)
+void outrgb(uint8_t red, uint8_t green, uint8_t blue)
 {
 	Set_Palette_Register(CurrentPaletteRegister & 0xFF, red, green, blue);
 	CurrentPaletteRegister = (CurrentPaletteRegister + 1) & 0xFF;

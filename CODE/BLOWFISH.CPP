@@ -47,6 +47,7 @@
 #include	<assert.h>
 
 
+#include <stdint.h>
 /*
 **	Byte order controlled long integer. This integer is constructed
 **	so that character 0 (C0) is the most significant byte of the
@@ -56,10 +57,10 @@
 typedef union {
 	uint32_t Long;
 	struct {
-		unsigned char C3;
-		unsigned char C2;
-		unsigned char C1;
-		unsigned char C0;
+		uint8_t C3;
+		uint8_t C2;
+		uint8_t C1;
+		uint8_t C0;
 	} Char;
 } Int;
 
@@ -138,7 +139,7 @@ void BlowfishEngine::Submit_Key(void const * key, int length)
 	**	into a long by using endian independent means.
 	*/
 	int j = 0;
-	unsigned char const * key_ptr = (unsigned char const *)key;
+	uint8_t const * key_ptr = (uint8_t const *)key;
 	uint32_t * p_ptr = &P_Encrypt[0];
 	for (int index = 0; index < ROUNDS+2; index++) {
 		uint32_t data = 0;
@@ -354,7 +355,7 @@ void BlowfishEngine::Process_Block(void const * plaintext, void * cyphertext, ui
 	**	biased toward "big endian" architecture and some optimizations
 	**	could be done for big endian processors in that case.
 	*/
-	unsigned char const * source = (unsigned char const *)plaintext;
+	uint8_t const * source = (uint8_t const *)plaintext;
 	Int left;
 	left.Char.C0 = *source++;
 	left.Char.C1 = *source++;
@@ -394,7 +395,7 @@ void BlowfishEngine::Process_Block(void const * plaintext, void * cyphertext, ui
 	**	superfluous exchange that occurs as a side effect of the
 	**	encryption rounds.
 	*/
-	unsigned char * out = (unsigned char *)cyphertext;
+	uint8_t * out = (uint8_t *)cyphertext;
 	*out++ = right.Char.C0;
 	*out++ = right.Char.C1;
 	*out++ = right.Char.C2;

@@ -100,23 +100,23 @@ LayerClass DisplayClass::Layer[LAYER_COUNT];
 /*
 ** Fading tables
 */
-unsigned char DisplayClass::FadingBrighten[256];
-unsigned char DisplayClass::FadingShade[256];
-unsigned char DisplayClass::FadingWayDark[256];
-unsigned char DisplayClass::FadingLight[256];
-unsigned char DisplayClass::FadingGreen[256];
-unsigned char DisplayClass::FadingYellow[256];
-unsigned char DisplayClass::FadingRed[256];
-unsigned char DisplayClass::TranslucentTable[(MAGIC_COL_COUNT+1)*256];
-unsigned char DisplayClass::WhiteTranslucentTable[(1+1)*256];
-unsigned char DisplayClass::MouseTranslucentTable[(4+1)*256];
+uint8_t DisplayClass::FadingBrighten[256];
+uint8_t DisplayClass::FadingShade[256];
+uint8_t DisplayClass::FadingWayDark[256];
+uint8_t DisplayClass::FadingLight[256];
+uint8_t DisplayClass::FadingGreen[256];
+uint8_t DisplayClass::FadingYellow[256];
+uint8_t DisplayClass::FadingRed[256];
+uint8_t DisplayClass::TranslucentTable[(MAGIC_COL_COUNT+1)*256];
+uint8_t DisplayClass::WhiteTranslucentTable[(1+1)*256];
+uint8_t DisplayClass::MouseTranslucentTable[(4+1)*256];
 void const * DisplayClass::TransIconset;
-unsigned char DisplayClass::UnitShadow[(USHADOW_COL_COUNT+1)*256];
-unsigned char DisplayClass::UnitShadowAir[(USHADOW_COL_COUNT+1)*256];
-unsigned char DisplayClass::SpecialGhost[2*256];
+uint8_t DisplayClass::UnitShadow[(USHADOW_COL_COUNT+1)*256];
+uint8_t DisplayClass::UnitShadowAir[(USHADOW_COL_COUNT+1)*256];
+uint8_t DisplayClass::SpecialGhost[2*256];
 
 void const * DisplayClass::ShadowShapes;
-unsigned char DisplayClass::ShadowTrans[(SHADOW_COL_COUNT+1)*256];
+uint8_t DisplayClass::ShadowTrans[(SHADOW_COL_COUNT+1)*256];
 
 /*
 ** Bit array of cell redraw flags
@@ -474,13 +474,13 @@ void DisplayClass::Init_Theater(TheaterType theater)
  *   12/07/1994 JLB : Sidebar fixup.                                                           *
  *   08/13/1995 JLB : Optimized for variable sized help text.                                  *
  *=============================================================================================*/
-short const * DisplayClass::Text_Overlap_List(char const * text, int x, int y) const
+int16_t const * DisplayClass::Text_Overlap_List(char const * text, int x, int y) const
 {
-	static short _list[60];
+	static int16_t _list[60];
 	int count = ARRAY_SIZE(_list);
 
 	if (text != NULL) {
-		short * ptr = &_list[0];
+		int16_t * ptr = &_list[0];
 		int len = String_Pixel_Width(text)+CELL_PIXEL_W;
 		int right = TacPixelX + Lepton_To_Pixel(TacLeptonWidth);
 
@@ -609,7 +609,7 @@ void DisplayClass::Set_View_Dimensions(int x, int y, int width, int height)
  *   06/03/1994 JLB : Created.                                                                 *
  *   06/26/1995 JLB : Puts placement cursor into static buffer.                                *
  *=============================================================================================*/
-void DisplayClass::Set_Cursor_Shape(short const * list)
+void DisplayClass::Set_Cursor_Shape(int16_t const * list)
 {
 	if (CursorSize) {
 		Cursor_Mark(ZoneCell+ZoneOffset, false);
@@ -618,7 +618,7 @@ void DisplayClass::Set_Cursor_Shape(short const * list)
 
 	if (list) {
 		int	w,h;
-		static short _list[50];
+		static int16_t _list[50];
 
 		List_Copy(list, ARRAY_SIZE(_list), _list);
 		CursorSize = _list;
@@ -660,9 +660,9 @@ void DisplayClass::Set_Cursor_Shape(short const * list)
  *   06/07/1994 JLB : Handles concrete check.                                                  *
  *   10/11/1994 BWG : Added IsProximate check for ore refineries                               *
  *=============================================================================================*/
-bool DisplayClass::Passes_Proximity_Check(ObjectTypeClass const * object, HousesType house, short const * list, CELL trycell) const
+bool DisplayClass::Passes_Proximity_Check(ObjectTypeClass const * object, HousesType house, int16_t const * list, CELL trycell) const
 {
-	short const * ptr;
+	int16_t const * ptr;
 	int retval = -1;
 	bool noradar = false;
 	bool nomapped = false;
@@ -912,7 +912,7 @@ CELL DisplayClass::Set_Cursor_Pos(CELL pos)
  * HISTORY:                                                                                    *
  *   03/31/1995 BRR : Created.                                                                 *
  *=============================================================================================*/
-void DisplayClass::Get_Occupy_Dimensions(int & w, int & h, short const * list) const
+void DisplayClass::Get_Occupy_Dimensions(int & w, int & h, int16_t const * list) const
 {
 	int min_x = MAP_CELL_W;
 	int max_x = -MAP_CELL_W;
@@ -1201,8 +1201,8 @@ bool DisplayClass::Scroll_Map(DirType facing, int & distance, bool really)
 	/*
 	**	Clip the new coordinate to the edges of the game world.
 	*/
-	int xx = (int)(short)Coord_X(coord) - (short)Cell_To_Lepton(MapCellX);
-	int yy = (int)(short)Coord_Y(coord) - (short)Cell_To_Lepton(MapCellY);
+	int xx = (int)(int16_t)Coord_X(coord) - (int16_t)Cell_To_Lepton(MapCellX);
+	int yy = (int)(int16_t)Coord_Y(coord) - (int16_t)Cell_To_Lepton(MapCellY);
 	bool shifted = Confine_Rect(&xx, &yy, TacLeptonWidth, TacLeptonHeight, Cell_To_Lepton(MapCellWidth), Cell_To_Lepton(MapCellHeight));
 	if (xx < 0) {
 		xx = 0;
@@ -1271,16 +1271,16 @@ bool DisplayClass::Scroll_Map(DirType facing, int & distance, bool really)
  *   05/14/1994 JLB : Created.                                                                 *
  *   08/01/1994 JLB : Simplified.                                                              *
  *=============================================================================================*/
-void DisplayClass::Refresh_Cells(CELL cell, short const * list)
+void DisplayClass::Refresh_Cells(CELL cell, int16_t const * list)
 {
-	short tlist[128];
+	int16_t tlist[128];
 
 	if (*list == REFRESH_SIDEBAR) {
 		list++;
 	}
 
 	List_Copy(list, ARRAY_SIZE(tlist), tlist);
-	short * tt = tlist;
+	int16_t * tt = tlist;
 	while (*tt != REFRESH_EOL) {
 		CELL newcell = cell + *tt++;
 		if (In_Radar(newcell)) {
@@ -1733,10 +1733,10 @@ ObjectClass * DisplayClass::Cell_Object(CELL cell, int x, int y) const
 			/*
 			** Work out which map edges need to be redrawn
 			*/
-			BOOL redraw_right = (oldx < 0) ? true : false;		//Right hand edge
-			BOOL redraw_left  = (oldx > 0) ? true : false;		//Left hand edge
-			BOOL redraw_bottom= (oldy < 0) ? true : false;		//Bottom edge
-			BOOL redraw_top	= (oldy > 0) ? true : false;		//Top edge
+			int32_t redraw_right = (oldx < 0) ? true : false;		//Right hand edge
+			int32_t redraw_left  = (oldx > 0) ? true : false;		//Left hand edge
+			int32_t redraw_bottom= (oldy < 0) ? true : false;		//Bottom edge
+			int32_t redraw_top	= (oldy > 0) ? true : false;		//Top edge
 
 			/*
 			**	Blit any replicable block to avoid having to drawstamp.
@@ -3705,14 +3705,14 @@ void DisplayClass::Compute_Start_Pos(void)
 	**	and buildings.  Buildings are weighted so that they count 16 times more
 	**	than units or infantry.
 	*/
-	long x = 0;
-	long y = 0;
-	long num = 0;
+	int32_t x = 0;
+	int32_t y = 0;
+	int32_t num = 0;
 	for (int i = 0; i < Infantry.Count(); i++) {
 		InfantryClass * infp = Infantry.Ptr(i);
 		if (!infp->IsInLimbo && infp->IsOwnedByPlayer) {
-			x += (long)Coord_XCell(infp->Coord);
-			y += (long)Coord_YCell(infp->Coord);
+			x += (int32_t)Coord_XCell(infp->Coord);
+			y += (int32_t)Coord_YCell(infp->Coord);
 			num++;
 		}
 	}
@@ -3720,8 +3720,8 @@ void DisplayClass::Compute_Start_Pos(void)
 	for (int i = 0; i < Units.Count(); i++) {
 		UnitClass * unitp = Units.Ptr(i);
 		if (!unitp->IsInLimbo && unitp->IsOwnedByPlayer) {
-			x += (long)Coord_XCell(unitp->Coord);
-			y += (long)Coord_YCell(unitp->Coord);
+			x += (int32_t)Coord_XCell(unitp->Coord);
+			y += (int32_t)Coord_YCell(unitp->Coord);
 			num++;
 		}
 	}
@@ -3729,8 +3729,8 @@ void DisplayClass::Compute_Start_Pos(void)
 	for (int i = 0; i < Buildings.Count(); i++) {
 		BuildingClass * bldgp = Buildings.Ptr(i);
 		if (!bldgp->IsInLimbo && bldgp->IsOwnedByPlayer) {
-			x += (((long)Coord_XCell(bldgp->Coord)) * 16);
-			y += (((long)Coord_YCell(bldgp->Coord)) * 16);
+			x += (((int32_t)Coord_XCell(bldgp->Coord)) * 16);
+			y += (((int32_t)Coord_YCell(bldgp->Coord)) * 16);
 			num += 16;
 		}
 	}
@@ -3738,8 +3738,8 @@ void DisplayClass::Compute_Start_Pos(void)
 	for (int i = 0; i < Vessels.Count(); i++) {
 		VesselClass * bldgp = Vessels.Ptr(i);
 		if (!bldgp->IsInLimbo && bldgp->IsOwnedByPlayer) {
-			x += (((long)Coord_XCell(bldgp->Coord)));
-			y += (((long)Coord_YCell(bldgp->Coord)));
+			x += (((int32_t)Coord_XCell(bldgp->Coord)));
+			y += (((int32_t)Coord_YCell(bldgp->Coord)));
 			num++;
 		}
 	}

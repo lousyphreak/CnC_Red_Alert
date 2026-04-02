@@ -27,7 +27,7 @@ char CPUType = 0;
 
 char VendorID[17] = "Generic CPU";
 
-bool __cdecl Detect_MMX_Availability(void)
+bool  Detect_MMX_Availability(void)
 {
 #if defined(__MMX__) || defined(_M_IX86_FP) || defined(__x86_64__) || defined(_M_X64)
 	return(true);

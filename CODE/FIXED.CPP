@@ -45,6 +45,7 @@
 #include	<ctype.h>
 
 
+#include <stdint.h>
 /*
 **	These are some handy fixed point constants. Using these constants instead of manually
 **	constructing them is not only faster, but more readable.
@@ -61,7 +62,7 @@ fixed::fixed(int numerator, int denominator)
 	if (denominator == 0) {
 		Data.Raw = 0;
 	} else {
-		Data.Raw = (unsigned short)((unsigned)(numerator * 256) / (unsigned)denominator);
+		Data.Raw = (uint16_t)((unsigned)(numerator * 256) / (unsigned)denominator);
 	}
 }
 
@@ -123,12 +124,12 @@ fixed::fixed(char const * ascii)
 	**	divided by 100 to get mathematical fixed point percentage value.
 	*/
 	if (*tptr == '\%') {
-		Data.Raw = (unsigned short)((atoi(ascii) * 256) / 100);
+		Data.Raw = (uint16_t)((atoi(ascii) * 256) / 100);
 	} else {
 
 		Data.Composite.Whole = Data.Composite.Fraction = 0;
 		if (wholepart && *wholepart != '.') {
-			Data.Composite.Whole = (unsigned char)atoi(wholepart);
+			Data.Composite.Whole = (uint8_t)atoi(wholepart);
 		}
 
 		char * fracpart = strchr(ascii, '.');
@@ -145,7 +146,7 @@ fixed::fixed(char const * ascii)
 				base *= 10;
 			}
 
-			Data.Composite.Fraction = (unsigned char)((256 * frac) / base);
+			Data.Composite.Fraction = (uint8_t)((256 * frac) / base);
 		}
 	}
 }

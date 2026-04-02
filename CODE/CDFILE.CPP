@@ -49,6 +49,7 @@
 #include	<string.h>
 
 
+#include <stdint.h>
 /*
 **	Pointer to the first search path record.
 */
@@ -89,7 +90,7 @@ extern int Get_CD_Index (int cd_drive, int timeout);
  * HISTORY:                                                                                    *
  *   09/22/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-int harderr_handler(unsigned int , unsigned int , unsigned int *)
+int harderr_handler(uint32_t , uint32_t , uint32_t *)
 {
 	return(3);
 }
@@ -110,7 +111,7 @@ int harderr_handler(unsigned int , unsigned int , unsigned int *)
  * HISTORY:                                                                                    *
  *   09/20/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-int cdecl Is_Disk_Inserted(int disk)
+int  Is_Disk_Inserted(int disk)
 {
 	char	scan[] = "?:\\";
 

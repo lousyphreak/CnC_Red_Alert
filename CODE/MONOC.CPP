@@ -71,7 +71,7 @@
 
 
 
-extern void output(short port, short data);
+extern void output(int16_t port, int16_t data);
 #pragma aux output parm [dx] [ax] =		\
 		"out	dx,al"		\
 		"inc	dx"			\
@@ -394,8 +394,8 @@ void MonoClass::Set_Cursor(int x, int y)
 	*/
 	int pos = ((y+SubY)*COLUMNS)+(x+SubX);
 	if (Page == 0) {
-		output(CONTROL_PORT, (short)(0x0E|(pos&0xFF00)));
-		output(CONTROL_PORT, (short)(0x0F|(pos<<8)));
+		output(CONTROL_PORT, (int16_t)(0x0E|(pos&0xFF00)));
+		output(CONTROL_PORT, (int16_t)(0x0F|(pos<<8)));
 	}
 }
 
@@ -913,7 +913,7 @@ int Mono_Printf(char const * string, ...)
 
 		va_end(va);
 	}
-	return((short)strlen(buffer));
+	return((int16_t)strlen(buffer));
 }
 
 
@@ -1059,7 +1059,7 @@ int Mono_X(void)
 			mono = new MonoClass();
 			mono->View();
 		}
-		return(short)mono->Get_X();
+		return(int16_t)mono->Get_X();
 	}
 	return(0);
 }
@@ -1087,7 +1087,7 @@ int Mono_Y(void)
 			mono = new MonoClass();
 			mono->View();
 		}
-		return(short)mono->Get_X();
+		return(int16_t)mono->Get_X();
 	}
 	return(0);
 }
@@ -1125,6 +1125,6 @@ int Mono_Printf(int string, ...)
 
 		va_end(va);
 	}
-	return((short)strlen(buffer));
+	return((int16_t)strlen(buffer));
 }
 

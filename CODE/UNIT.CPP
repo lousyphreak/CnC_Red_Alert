@@ -124,7 +124,7 @@
 void Recoil_Adjust(DirType dir, int &x, int &y)
 {
 	static struct {
-		signed char X,Y;
+		int8_t X,Y;
 	} _adjust[32] = {
 		{0,	1},	// N
 		{0,	1},
@@ -2993,7 +2993,7 @@ int UnitClass::Mission_Hunt(void)
  *   05/26/1994 JLB : Created.                                                                 *
  *   06/19/1994 JLB : Uses Coord_Spillable_List function.                                      *
  *=============================================================================================*/
-short const * UnitClass::Overlap_List(bool redraw) const
+int16_t const * UnitClass::Overlap_List(bool redraw) const
 {
 	assert(Units.ID(this) == ID);
 	assert(IsActive);
@@ -3582,7 +3582,7 @@ void UnitClass::Exit_Repair(void)
 	int	i;
 	CELL	cell;
 	bool	found = false;
-	static short const ExitRepair[] = {
+	static int16_t const ExitRepair[] = {
 		XYCELL(0,	-2),
 		XYCELL(1,	-1),
 		XYCELL(2,	0),
@@ -3750,7 +3750,7 @@ DirType UnitClass::Desired_Load_Dir(ObjectClass * passenger, CELL & moveto) cons
 		**	Give more weight to the cells that require the least rotation of the transport or the
 		**	least roundabout movement for the potential passenger.
 		*/
-		value -= (int)ABS((int)(signed char)Facing_Dir(face) - (int)(signed char)faceto);
+		value -= (int)ABS((int)(int8_t)Facing_Dir(face) - (int)(int8_t)faceto);
 		if (face == FACING_S) {
 			value -= 100;
 		}

@@ -37,6 +37,7 @@
 
 #ifndef OPTIONS_H
 #define OPTIONS_H
+#include <stdint.h>
 
 class OptionsClass {
 	public:
@@ -78,7 +79,7 @@ class OptionsClass {
 		**	This is actually the delay between game frames expressed as 1/60 of
 		**	a second. The default value is 4 (1/15 second).
 		*/
-		unsigned int GameSpeed;
+		uint32_t GameSpeed;
 
 		int ScrollRate;		// Distance to scroll.
 		fixed Volume;			// Volume for sound effects.

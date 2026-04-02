@@ -1,11 +1,36 @@
 # Porting Knowledge
 
+## CODE runtime LP64 regressions after broad type sweeps
+
+- Startup/movie/shapecache validation needs to continue past "it builds" after any large CODE-wide type cleanup.
+  - One LP64 regression survived the compile pass in `CODE/CONQUER.CPP::MixFileHandler(...)`: `VQAHandle::VQAio` is an opaque IO cookie and the live VQA headers already model it as `uintptr_t`, but the `VQACMD_OPEN` path still stored the `CCFileClass *` through a `uint32_t` cast. Practical symptom: the game crashes immediately during the first intro movie (`ENGLISH.VQA`) on the first `VQACMD_READ`.
+  - Another LP64 regression hid behind the first one in the shape-cache path: `CODE/2KEYFRAM.CPP::Build_Frame(...)` semantically returns a pointer to built shape data, not a numeric handle. The uncached path and the cached-frame fast path both break on Linux if they return that pointer through `uint32_t`, and callers like `CC_Draw_Shape(...)` must not store the result in `uint32_t` temporaries either.
+  - Safe rule: only keep the shape-cache metadata itself as 32-bit relative offsets (`shape_data`, `KeyFrameSlots[...]` entries, etc.). Any value that is a live in-process address at the point of use must stay a pointer or at least `uintptr_t`.
+- Once the startup crash is gone, UBSan becomes useful immediately on the same launch path.
+  - `CODE/SHA.CPP::Process_Block(...)` still assumed the source block could be read as aligned `uint32_t[]`; on Linux/SDL3 that can trip misaligned-load UB during normal startup/setup flows. A small local `std::memcpy(...)` into a temporary word preserves behavior and removes the UB.
+  - `CODE/RANDOM.CPP` still built bit masks with signed all-ones constants (`~0`, `~0L`), which trips UBSan for left-shifting negative values even though the intended logic is just an unsigned mask. Build those masks in unsigned space first, then cast back if needed.
+
 ## VQ callback and opaque-handle gotchas on LP64
 
 - The VQA movie loader still uses two ABI-sensitive surfaces that must not be flattened blindly during the type sweep:
   - `MixFileHandler` must exactly match the private VQ callback type in `VQAPLAYP.H` (`int32_t (*)(VQAHandle *, int32_t, void *, int32_t)`). Leaving it as `long` on Linux keeps source compatibility at the call site but breaks the callback ABI because `long` is 64-bit on LP64.
   - `VQAHandle::VQAio` / `VQAHandleP::VQAio` are not 32-bit counters; they are opaque IO-manager storage that currently carries a live `CCFileClass*`. They must therefore be `uintptr_t`, not `uint32_t`, or startup movie playback will truncate the pointer and crash in `MixFileHandler` on the first `VQACMD_READ`.
 - Practical symptom when either of the above is wrong: startup survives general game/bootstrap init, then crashes during the first intro movie (`ENGLISH.VQA`) inside `MixFileHandler` / `VQA_Open`.
+
+## CODE tree sweep gotchas
+
+- A CODE-wide primitive type sweep is safest when it is token-aware **and** preserves the whitespace that follows replaced type tokens.
+  - Replacing `unsigned short key` with `uint16_t` is fine, but if the rewrite accidentally consumes the trailing separator too then declarations collapse into invalid tokens like `uint16_tkey`.
+  - Practical rule: only replace the matched type tokens themselves; do not absorb the original post-type spacing.
+- Primitive alias names can collide with real project identifiers.
+  - `CODE/MONOC.H` still has an intentional enum member named `DOUBLE`; blindly replacing every `DOUBLE` token with the C++ type keyword `double` breaks the class definition immediately.
+  - Practical rule: after a broad alias sweep, grep/build specifically for keyword collisions around historically alias-looking all-caps names before assuming the pass is purely mechanical.
+- Stripping legacy modifier defines can leave malformed compatibility stubs behind.
+  - In `CODE/LCW.H`, removing the now-dead `__cdecl` shim without checking the surrounding preprocessor block left an empty `#ifndef` / `#define` pair that broke every translation unit including `FUNCTION.H`.
+  - Practical rule: after deleting old modifier macros, scan for blank preprocessor directives and empty guard blocks.
+- Fixed-width types introduced into standalone CODE sources/headers often need local `<stdint.h>` includes even if much of the tree sees them indirectly through `FUNCTION.H`.
+  - `CODE/BASE64.CPP` was the first compile break in this pass because it uses `uint8_t`/`uint32_t` directly but does not include `FUNCTION.H`.
+  - Practical rule: after a type sweep, audit repo-owned files that now spell `uint*_t`/`int*_t` directly and add explicit `<stdint.h>` includes where they are not already reachable.
 
 ## Gameplay audio still has live duplicate SOS headers
 

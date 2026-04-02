@@ -722,8 +722,8 @@ bool BuildingClass::Mark(MarkType mark)
 	assert(IsActive);
 
 	if (TechnoClass::Mark(mark)) {
-		short const * offset = Overlap_List();
-		short const * occupy = Occupy_List();
+		int16_t const * offset = Overlap_List();
+		int16_t const * occupy = Occupy_List();
 		CELL cell = Coord_Cell(Coord);
 		SmudgeType bib;
 
@@ -1214,7 +1214,7 @@ ResultType BuildingClass::Take_Damage(int & damage, int distance, WarheadType wa
 			Base_Is_Attacked(source);
 		}
 
-		short const * offset = Occupy_List();
+		int16_t const * offset = Occupy_List();
 
 		/*
 		** Memorize who they used to be in radio contact with.
@@ -3082,7 +3082,7 @@ bool BuildingClass::Captured(HouseClass * newowner)
 		/*
 		** Update the new building's colors on the radar map.
 		*/
-		short const * offset = Occupy_List();
+		int16_t const * offset = Occupy_List();
 		while (*offset != REFRESH_EOL) {
 			CELL cell = Coord_Cell(Coord) + *offset++;
 			Map.Radar_Pixel(cell);
@@ -5694,10 +5694,10 @@ void BuildingClass::Remove_Gap_Effect(void)
 }
 
 
-short const * BuildingClass::Overlap_List(bool redraw) const
+int16_t const * BuildingClass::Overlap_List(bool redraw) const
 {
 	if ((SpiedBy & (1 << PlayerPtr->Class->House)) != 0 && IsSelected && (*this == STRUCT_BARRACKS || *this == STRUCT_TENT)) {
-		static short const _list[] = {
+		static int16_t const _list[] = {
 			-1, 2, (MAP_CELL_W*1)-1, (MAP_CELL_W*1)+2, REFRESH_EOL
 		};
 		return(_list);

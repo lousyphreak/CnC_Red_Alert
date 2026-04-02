@@ -1475,8 +1475,8 @@ void TeamClass::Calc_Center(TARGET & center, TARGET & close_member) const
 
 	} else {
 
-		long	x = 0;								// Accumulated X coordinate.
-		long	y = 0;								// Accumulated Y coordinate.
+		int32_t	x = 0;								// Accumulated X coordinate.
+		int32_t	y = 0;								// Accumulated Y coordinate.
 		int   dist = 0;							// Closest recorded distance to team target.
 		int	quantity = 0;						// Number of team members counted.
 		FootClass const * closest = 0;		// Closest member to target.

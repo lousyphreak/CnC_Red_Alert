@@ -37,6 +37,7 @@
 
 #ifndef PK_H
 #define PK_H
+#include <stdint.h>
 
 #include	"INT.H"
 /*
@@ -73,7 +74,7 @@ class PKey
 		void Decode_Modulus(void * buffer);
 		void Decode_Exponent(void * buffer);
 
-		static long Fast_Exponent(void) {return(65537L);}
+		static int32_t Fast_Exponent(void) {return(65537L);}
 
 	private:
 

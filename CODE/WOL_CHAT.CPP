@@ -257,7 +257,7 @@ int WOL_Chat_Dialog( WolapiObject* pWO )
 	sendedit.Add_Tail(*commands);
 
 	//	Tooltips...
-	DWORD				timeToolTipAppear;
+	uint32_t				timeToolTipAppear;
 	ToolTipClass*		pToolTipHead = NULL;		//	Head of list of ToolTips that parallels gadget list.
 	ToolTipClass*		pToolTipHitLast = NULL;		//	ToolTip the mouse was last over, or null.
 
@@ -351,7 +351,7 @@ int WOL_Chat_Dialog( WolapiObject* pWO )
 			char szChannelToJoin[ WOL_CHANNAME_LEN_MAX ];
 			//sprintf( szChannelToJoin, "Lob_%i_%i", GAME_TYPE, pWO->iLobbyReturnAfterGame );
 			sprintf( szChannelToJoin, "%s%i", LOB_PREFIX, pWO->iLobbyReturnAfterGame );
-			pWO->OnEnteringChatChannel( szChannelToJoin, false, iChannelLobbyNumber( (unsigned char*)szChannelToJoin ) );
+			pWO->OnEnteringChatChannel( szChannelToJoin, false, iChannelLobbyNumber( (uint8_t*)szChannelToJoin ) );
 		}
 		else
 			//	Will never happen presumably, if games are always entered via a lobby chat channel.

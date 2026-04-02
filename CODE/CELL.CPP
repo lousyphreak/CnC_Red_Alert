@@ -214,7 +214,7 @@ TechnoClass * CellClass::Cell_Techno(int x, int y) const
 	ObjectClass * object;
 	COORDINATE		click;			// Coordinate of click relative to cell corner.
 	TechnoClass * close = NULL;
-	long		distance = 0;	// Recorded closest distance.
+	int32_t		distance = 0;	// Recorded closest distance.
 
 	/*
 	**	Create a coordinate value that represent the pixel location within the cell. This is
@@ -227,7 +227,7 @@ TechnoClass * CellClass::Cell_Techno(int x, int y) const
 		while (object) {
 			if (object->Is_Techno()) {
 				COORDINATE coord = Coord_Fraction(object->Center_Coord());
-				long dist = Distance(coord, click);
+				int32_t dist = Distance(coord, click);
 				if (!close || dist < distance) {
 					close = (TechnoClass *)object;
 					distance = dist;
@@ -1820,7 +1820,7 @@ COORDINATE CellClass::Closest_Free_Spot(COORDINATE coord, bool any) const
 	**	examination of these spots for availability ensures that the closest available one is
 	**	discovered first.
 	*/
-	static unsigned char _sequence[5][4] = {
+	static uint8_t _sequence[5][4] = {
 		{1,2,3,4},
 		{0,2,3,4},
 		{0,1,4,3},
@@ -1833,7 +1833,7 @@ COORDINATE CellClass::Closest_Free_Spot(COORDINATE coord, bool any) const
 	**	sublocations are equidistant. Instead of picking a static sequence of examination, the
 	**	order is mixed up by way of this table.
 	*/
-	static unsigned char _alternate[4][4] = {
+	static uint8_t _alternate[4][4] = {
 		{1,2,3,4},
 		{2,3,4,1},
 		{3,4,1,2},
@@ -1861,7 +1861,7 @@ COORDINATE CellClass::Closest_Free_Spot(COORDINATE coord, bool any) const
 	**	the closest one to the coordinate requested. Use precalculated table so that
 	**	when the first free position is found, bail.
 	*/
-	unsigned char * sequence;
+	uint8_t * sequence;
 	if (spot_index == 0) {
 		sequence = &_alternate[Random_Pick(0, 3)][0];
 	} else {
@@ -2033,7 +2033,7 @@ void CellClass::Adjust_Threat(HousesType house, int threat_value)
  *   05/16/1995 JLB : Created.                                                                 *
  *   02/20/1996 JLB : Takes into account the ore type.                                         *
  *=============================================================================================*/
-long CellClass::Tiberium_Adjust(bool pregame)
+int32_t CellClass::Tiberium_Adjust(bool pregame)
 {
 	assert((unsigned)Cell_Number() <= MAP_CELL_TOTAL);
 	if (Overlay != OVERLAY_NONE) {
@@ -2237,7 +2237,7 @@ bool CellClass::Goodie_Check(FootClass * object)
 						int i,ucount;
 						int minunits = 1000;
 						bool found = false;
-						unsigned long minutes = (Score.ElapsedTime / TIMER_MINUTE);
+						uint32_t minutes = (Score.ElapsedTime / TIMER_MINUTE);
 						if (minutes > 100) minutes = 100;
 						if (Random_Pick(0,100-(int)minutes) == 0) {
 							for (i=0; i < (Session.Players.Count() + Session.Options.AIPlayers); i++) {

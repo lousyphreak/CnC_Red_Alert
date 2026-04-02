@@ -389,7 +389,7 @@ void Sound_Effect(VocType voc, COORDINATE coord, int variation, HousesType house
  *   05/04/1995 JLB : Variation adjustments.                                                   *
  *   11/01/1996 JLB : House override control.                                                  *
  *=============================================================================================*/
-int Sound_Effect(VocType voc, fixed volume, int variation, signed short pan_value, HousesType house)
+int Sound_Effect(VocType voc, fixed volume, int variation, int16_t pan_value, HousesType house)
 {
 	char name[_MAX_FNAME+_MAX_EXT];				// Working filename of sound effect.
 

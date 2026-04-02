@@ -125,7 +125,7 @@ class SidebarClass: public PowerClass
 
 		virtual void AI(KeyNumType & input, int x, int y);
 		virtual void Draw_It(bool complete);
-		virtual void Refresh_Cells(CELL cell, short const *list);
+		virtual void Refresh_Cells(CELL cell, int16_t const *list);
 
 		void Zoom_Mode_Control(void);
 		bool Abandon_Production(RTTIType type, int factory);

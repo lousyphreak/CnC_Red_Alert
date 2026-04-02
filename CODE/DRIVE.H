@@ -37,6 +37,7 @@
 
 #ifndef DRIVE_H
 #define DRIVE_H
+#include <stdint.h>
 
 #include	"FTIMER.H"
 #include	"FOOT.H"

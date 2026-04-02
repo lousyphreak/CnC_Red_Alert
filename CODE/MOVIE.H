@@ -37,11 +37,7 @@
 #include "win32_compat.h"
 #include "sdl_draw.h"
 
-#ifdef MPGEXPORT		  
-#define DLLCALL __declspec(dllexport)
-#else
-#define DLLCALL __declspec(dllimport)
-#endif
+#define DLLCALL
 
 typedef enum
 	{
@@ -59,15 +55,15 @@ typedef enum
 	MPGRES_LOSTFOCUS,
 	} MPG_RESPONSE;
 
-typedef MPG_RESPONSE (far __stdcall *LPMPGCALLBACK)(MPG_CMD cmd, LPVOID data, LPVOID user);
+typedef MPG_RESPONSE (  *LPMPGCALLBACK)(MPG_CMD cmd, void * data, void * user);
 
 extern "C"
 	{
-	DLLCALL void __stdcall MpgPlay(const char* name, WWDraw* dd,
+	DLLCALL void  MpgPlay(const char* name, WWDraw* dd,
 		WWSurface* surface, RECT* dstRect);
-	DLLCALL void __stdcall MpgPause(void);
-	DLLCALL void __stdcall MpgResume(void);
-	DLLCALL void __stdcall MpgSetCallback(LPMPGCALLBACK callback, LPVOID user);
+	DLLCALL void  MpgPause(void);
+	DLLCALL void  MpgResume(void);
+	DLLCALL void  MpgSetCallback(LPMPGCALLBACK callback, void * user);
 	}
 
 #endif // _MPGMOVIE_H_

@@ -725,9 +725,9 @@ void MapClass::Place_Down(CELL cell, ObjectClass * object)
 	if (!object) return;
 
 	if (object->Class_Of().IsFootprint && object->In_Which_Layer() == LAYER_GROUND)  {
-		short xlist[128];
+		int16_t xlist[128];
 		List_Copy(object->Occupy_List(), ARRAY_SIZE(xlist), xlist);
-		short const * list = xlist;
+		int16_t const * list = xlist;
 		while (*list != REFRESH_EOL) {
 			CELL newcell = cell + *list++;
 			if ((unsigned)newcell < MAP_CELL_TOTAL) {
@@ -773,9 +773,9 @@ void MapClass::Pick_Up(CELL cell, ObjectClass * object)
 	if (!object) return;
 
 	if (object->Class_Of().IsFootprint && object->In_Which_Layer() == LAYER_GROUND)  {
-		short xlist[128];
+		int16_t xlist[128];
 		List_Copy(object->Occupy_List(), ARRAY_SIZE(xlist), xlist);
-		short const * list = xlist;
+		int16_t const * list = xlist;
 		while (*list != REFRESH_EOL) {
 			CELL newcell = cell + *list++;
 			if ((unsigned)newcell < MAP_CELL_TOTAL) {
@@ -824,9 +824,9 @@ void MapClass::Overlap_Down(CELL cell, ObjectClass * object)
 	if (!object) return;
 
 	if (object->Class_Of().IsFootprint && object->In_Which_Layer() == LAYER_GROUND)  {
-		short xlist[128];
+		int16_t xlist[128];
 		List_Copy(object->Overlap_List(), ARRAY_SIZE(xlist), xlist);
-		short const * list = xlist;
+		int16_t const * list = xlist;
 		while (*list != REFRESH_EOL) {
 			CELL newcell = cell + *list++;
 			if ((unsigned)newcell < MAP_CELL_TOTAL) {
@@ -864,9 +864,9 @@ void MapClass::Overlap_Up(CELL cell, ObjectClass * object)
 	if (!object) return;
 
 	if (object->Class_Of().IsFootprint && object->In_Which_Layer() == LAYER_GROUND)  {
-		short xlist[128];
+		int16_t xlist[128];
 		List_Copy(object->Overlap_List(), ARRAY_SIZE(xlist), xlist);
-		short const * list = xlist;
+		int16_t const * list = xlist;
 		while (*list != REFRESH_EOL) {
 			CELL newcell = cell + *list++;
 			if ((unsigned)newcell < MAP_CELL_TOTAL) {
@@ -895,9 +895,9 @@ void MapClass::Overlap_Up(CELL cell, ObjectClass * object)
  *   02/13/1995 JLB : Returns total tiberium worth.                                            *
  *   02/15/1995 JLB : Optimal scan.                                                            *
  *=============================================================================================*/
-long MapClass::Overpass(void)
+int32_t MapClass::Overpass(void)
 {
-	long value = 0;
+	int32_t value = 0;
 
 	/*
 	**	Smooth out Tiberium. Cells that are not surrounded by other tiberium
@@ -1284,9 +1284,9 @@ int MapClass::Validate(void)
 {
 	CELL cell;
 	TemplateType ttype;
-	unsigned char ticon;
+	uint8_t ticon;
 	TemplateTypeClass const *tclass;
-	unsigned char map[13*8];
+	uint8_t map[13*8];
 	OverlayType overlay;
 	SmudgeType smudge;
 	ObjectClass * obj;
@@ -1361,11 +1361,11 @@ if (BlubCell->Overlapper[1]) {
 		obj = (*this)[cell].Cell_Occupier();
 		if (obj) {
 			if (
-				((unsigned int)obj & 0xff000000) ||
-				((unsigned int)obj->Next & 0xff000000) ||
+				((uint32_t)obj & 0xff000000) ||
+				((uint32_t)obj->Next & 0xff000000) ||
 //				((unsigned int)obj->Trigger & 0xff000000) ||
 				obj->IsInLimbo ||
-				((unsigned int)Coord_Cell(obj->Coord) >= MAP_CELL_TOTAL)) {
+				((uint32_t)Coord_Cell(obj->Coord) >= MAP_CELL_TOTAL)) {
 
 				return (false);
 			}
@@ -1378,11 +1378,11 @@ if (BlubCell->Overlapper[1]) {
 			obj = (*this)[cell].Overlapper[i];
 			if (obj) {
 				if (
-					((unsigned int)obj & 0xff000000) ||
-					((unsigned int)obj->Next & 0xff000000) ||
+					((uint32_t)obj & 0xff000000) ||
+					((uint32_t)obj->Next & 0xff000000) ||
 //					((unsigned int)obj->Trigger & 0xff000000) ||
 					obj->IsInLimbo ||
-					((unsigned int)Coord_Cell(obj->Coord) >= MAP_CELL_TOTAL)) {
+					((uint32_t)Coord_Cell(obj->Coord) >= MAP_CELL_TOTAL)) {
 
 					return (false);
 				}

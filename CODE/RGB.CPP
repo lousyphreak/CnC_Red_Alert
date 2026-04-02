@@ -44,6 +44,7 @@
 #include	"HSV.H"
 #include	"PALETTEC.H"
 
+#include <stdint.h>
 RGBClass const BlackColor(0, 0, 0);
 
 
@@ -187,10 +188,10 @@ RGBClass::operator HSVClass (void) const
 	**	hue is based on a six sided color wheel.
 	*/
 	if (saturation != 0) {
-		unsigned int tmp = value - white;
-	 	unsigned int r1 = ((value - red) * 255) / tmp;
-	 	unsigned int g1 = ((value - green) * 255) / tmp;
-	 	unsigned int b1 = ((value - blue) * 255) / tmp;
+		uint32_t tmp = value - white;
+	 	uint32_t r1 = ((value - red) * 255) / tmp;
+	 	uint32_t g1 = ((value - green) * 255) / tmp;
+	 	uint32_t b1 = ((value - blue) * 255) / tmp;
 
 		// Find effect of second most predominant color.
 		// In which section of the hexagon of colors does the color lie?

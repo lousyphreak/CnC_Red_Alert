@@ -37,6 +37,7 @@
 
 #ifndef DOOR_H
 #define DOOR_H
+#include <stdint.h>
 
 class DoorClass
 {
@@ -51,7 +52,7 @@ class DoorClass
 		**	This is the recorded number of stages of the current
 		**	door animation process.
 		*/
-		unsigned char Stages;
+		uint8_t Stages;
 
 		/*
 		**	This is the door state.

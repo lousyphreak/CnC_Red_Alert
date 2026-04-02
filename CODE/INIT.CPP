@@ -75,7 +75,7 @@
 #include	"TCPIP.H"
 #endif	//WINSOCK_IPX
 
-extern BOOL BootstrapFocusSeen;
+extern int32_t BootstrapFocusSeen;
 
 #include <time.h>
 
@@ -483,11 +483,11 @@ bool Select_Game(bool fade)
 
 #ifdef DONGLE
 	/* These where added by ColinM for the dongle checking */
-	short iRet = 0;
-	unsigned short iPortNr = 1;  /* automatic port scan enabled */
-	unsigned char cSCodeSER[] = "\x41\x42";
-	unsigned long ulIdRet = 0;
-	unsigned char cBoxName[]= "\x00\x00";
+	int16_t iRet = 0;
+	uint16_t iPortNr = 1;  /* automatic port scan enabled */
+	uint8_t cSCodeSER[] = "\x41\x42";
+	uint32_t ulIdRet = 0;
+	uint8_t cBoxName[]= "\x00\x00";
 #endif
 	
 #ifdef FIXIT_CSII	//	checked - ajw 9/28/98
@@ -1398,12 +1398,12 @@ void Anim_Init(void)
 	AnimControl.DrawerCallback = VQ_Call_Back;
 	AnimControl.ImageWidth = 320;
 	AnimControl.ImageHeight = 200;
-	AnimControl.ImageBuf = (unsigned char *)SysMemPage.Get_Offset();
+	AnimControl.ImageBuf = (uint8_t *)SysMemPage.Get_Offset();
 #ifdef MOVIE640
 	if(IsVQ640) {
 		AnimControl.ImageWidth = 640;
 		AnimControl.ImageHeight = 400;
-		AnimControl.ImageBuf = (unsigned char *)VQ640.Get_Offset();
+		AnimControl.ImageBuf = (uint8_t *)VQ640.Get_Offset();
 	}
 #endif
 	AnimControl.Vmode = 0;
@@ -1452,7 +1452,7 @@ bool Parse_Command_Line(int argc, char * argv[])
 
 	for (int index = 1; index < argc; index++) {
 		char * string;		// Pointer to argument.
-		long code = 0;
+		int32_t code = 0;
 
 		string = SDL_strupr(argv[index]);
 
@@ -1470,12 +1470,12 @@ bool Parse_Command_Line(int argc, char * argv[])
 
 
 		bool processed = true;
-		long ob = Obfuscate(string);
+		int32_t ob = Obfuscate(string);
 
 		/*
 		**	Check to see if the parameter is a cheat enabling one.
 		*/
-		long const * optr = &CheatCodes[0];
+		int32_t const * optr = &CheatCodes[0];
 		while (*optr) {
 			if (*optr++ == ob) {
 				Debug_Playtest = true;
@@ -1618,9 +1618,9 @@ bool Parse_Command_Line(int argc, char * argv[])
 		**	Specify socket ID, as an offset from 0x4000.
 		*/
 		if (strstr(string, "-SOCKET")) {
-			unsigned short socket;
+			uint16_t socket;
 
-			socket = (unsigned short)(atoi(string + strlen("SOCKET")));
+			socket = (uint16_t)(atoi(string + strlen("SOCKET")));
 			socket += 0x4000;
 			if (socket >= 0x4000 && socket < 0x8000) {
 				Ipx.Set_Socket (socket);
@@ -1668,7 +1668,7 @@ bool Parse_Command_Line(int argc, char * argv[])
 		**	Specify the random number seed (for debugging)
 		*/
 		if (strstr(string, "-SEED")) {
-			CustomSeed = (unsigned short)(atoi(string + strlen("SEED")));
+			CustomSeed = (uint16_t)(atoi(string + strlen("SEED")));
 			continue;
 		}
 
@@ -1869,7 +1869,7 @@ bool Parse_Command_Line(int argc, char * argv[])
  * HISTORY:                                                                                    *
  *   08/19/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-long Obfuscate(char const * string)
+int32_t Obfuscate(char const * string)
 {
 	char buffer[128];
 
@@ -1923,13 +1923,13 @@ long Obfuscate(char const * string)
 	**	Transform the buffer into a number. This transformation is character
 	**	order dependant.
 	*/
-	long code = Calculate_CRC(buffer, length);
+	int32_t code = Calculate_CRC(buffer, length);
 
 	/*
 	**	Record a copy of this initial transformation to be used in a later
 	**	self referential transformation.
 	*/
-	long copy = code;
+	int32_t copy = code;
 
 	/*
 	**	Reverse the character string and combine with the previous transformation.
@@ -1952,11 +1952,11 @@ long Obfuscate(char const * string)
 	*/
 	SDL_strrev(buffer);		// Restore original string order.
 	for (index = 0; index < length; index++) {
-		code ^= (unsigned char)buffer[index];
-		unsigned char temp = (unsigned char)code;
+		code ^= (uint8_t)buffer[index];
+		uint8_t temp = (uint8_t)code;
 		buffer[index] ^= temp;
 		code >>= 8;
-		code |= (((long)temp)<<24);
+		code |= (((int32_t)temp)<<24);
 	}
 
 	/*
@@ -1965,8 +1965,8 @@ long Obfuscate(char const * string)
 	**	unconventional attacks, the loss is limited to less than 10%.
 	*/
 	for (index = 0; index < length; index++) {
-		static unsigned char _lossbits[] = {0x00,0x08,0x00,0x20,0x00,0x04,0x10,0x00};
-		static unsigned char _addbits[] = {0x10,0x00,0x00,0x80,0x40,0x00,0x00,0x04};
+		static uint8_t _lossbits[] = {0x00,0x08,0x00,0x20,0x00,0x04,0x10,0x00};
+		static uint8_t _addbits[] = {0x10,0x00,0x00,0x80,0x40,0x00,0x00,0x04};
 
 		buffer[index] |= _addbits[index % (sizeof(_addbits)/sizeof(_addbits[0]))];
 		buffer[index] &= ~_lossbits[index % (sizeof(_lossbits)/sizeof(_lossbits[0]))];
@@ -1982,24 +1982,24 @@ long Obfuscate(char const * string)
 	**	to discourage even the most determined hackers.
 	*/
 	for (index = 0; index < length; index += 4) {
-		short key1 = buffer[index];
-		short key2 = buffer[index+1];
-		short key3 = buffer[index+2];
-		short key4 = buffer[index+3];
-		short val1 = key1;
-		short val2 = key2;
-		short val3 = key3;
-		short val4 = key4;
+		int16_t key1 = buffer[index];
+		int16_t key2 = buffer[index+1];
+		int16_t key3 = buffer[index+2];
+		int16_t key4 = buffer[index+3];
+		int16_t val1 = key1;
+		int16_t val2 = key2;
+		int16_t val3 = key3;
+		int16_t val4 = key4;
 
 		val1 *= key1;
 		val2 += key2;
 		val3 += key3;
 		val4 *= key4;
 
-		short s3 = val3;
+		int16_t s3 = val3;
 		val3 ^= val1;
 		val3 *= key1;
-		short s2 = val2;
+		int16_t s2 = val2;
 		val2 ^= val4;
 		val2 += val3;
 		val2 *= key3;
@@ -2212,7 +2212,7 @@ static void Init_Color_Remaps(void)
 	SysMemPage.Blit(HidPage);
 	for (PlayerColorType pcolor = PCOLOR_FIRST; pcolor < PCOLOR_COUNT; pcolor++) {
 
-		unsigned char * ptr = ColorRemaps[pcolor].RemapTable;
+		uint8_t * ptr = ColorRemaps[pcolor].RemapTable;
 
 		for (int color = 0; color < 256; color++) {
 			ptr[color] = color;
@@ -2873,7 +2873,7 @@ static void Bootstrap(void)
 	**	and ShapeBufferSize to these values, so it can be accessed for other
 	**	purposes.
 	*/
-	Set_Shape_Buffer(new unsigned char[SHAPE_BUFFER_SIZE], SHAPE_BUFFER_SIZE);
+	Set_Shape_Buffer(new uint8_t[SHAPE_BUFFER_SIZE], SHAPE_BUFFER_SIZE);
 
 	/*
 	**	Fetch the language text from the hard drive first. If it cannot be
@@ -2895,7 +2895,7 @@ static void Bootstrap(void)
 	/*
 	**	Default palette initialization.
 	*/
-	memmove((unsigned char *)&GamePalette[0], (void *)MFCD::Retrieve("TEMPERAT.PAL"), 768L);
+	memmove((uint8_t *)&GamePalette[0], (void *)MFCD::Retrieve("TEMPERAT.PAL"), 768L);
 	WhitePalette[0] = BlackPalette[0];
 //	GamePalette.Set();
 
@@ -3010,7 +3010,7 @@ static void Init_Authorization(void)
 #ifdef NEVER
 	while (!ok && counter) {
 		SmartPtr<char const> str = Fetch_Password(TXT_PASSWORD_CAPTION, TXT_PASSWORD_MESSAGE, TXT_OK);
-		SmartPtr<long const> lptr = &CheatCodes[0];
+		SmartPtr<int32_t const> lptr = &CheatCodes[0];
 		while (*lptr) {
 			if (Obfuscate(str) == *lptr++) {
 				ok = true;
@@ -3229,8 +3229,8 @@ void Extract(char* filename, char* outname)
 
 	if (buffer)
 		{
-		unsigned long size = inFile.Size();
-		unsigned long bytes;
+		uint32_t size = inFile.Size();
+		uint32_t bytes;
 
 		while (size > 0)
 			{
@@ -3258,8 +3258,8 @@ bool Is_DVD_Installed()
 	HKEY hKey;
 	if( RegOpenKeyEx( HKEY_LOCAL_MACHINE, Game_Registry_Key(), 0, KEY_READ, &hKey ) != ERROR_SUCCESS )
 		return false;
-	DWORD dwValue;
-	DWORD dwBufSize = sizeof( DWORD );
+	uint32_t dwValue;
+	uint32_t dwBufSize = sizeof( uint32_t );
 	if( RegQueryValueEx( hKey, "DVD", 0, NULL, (LPBYTE)&dwValue, &dwBufSize ) != ERROR_SUCCESS )
 		bInstalled = false;
 	else
