@@ -7,8 +7,11 @@
 #include <cstdio>
 #include <cstring>
 #include <fcntl.h>
+#include <memory>
 #include <mutex>
+#include <new>
 #include <unordered_map>
+#include <vector>
 
 #if defined(__EMSCRIPTEN__) && RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA
 #include <emscripten.h>
@@ -141,6 +144,19 @@ std::string WWFS_AppendPathComponent(const std::string& base, const std::string&
 #if defined(__EMSCRIPTEN__) && RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA
 constexpr char kWWFSEmscriptenAssetManifestPath[] = "/ra-assets-manifest.txt";
 constexpr char kWWFSEmscriptenDefaultAssetBaseUrl[] = "../GameData/";
+constexpr Sint64 kWWFSEmscriptenRangeChunkSize = 256 * 1024;
+
+struct WWFS_EmscriptenRangeFileCache {
+    std::string remote_relative_path;
+    Sint64 size = -1;
+    std::unordered_map<Sint64, std::vector<unsigned char>> chunks;
+    std::mutex mutex;
+};
+
+struct WWFS_EmscriptenRangeStream {
+    std::shared_ptr<WWFS_EmscriptenRangeFileCache> file;
+    Sint64 position = 0;
+};
 
 std::mutex& WWFS_EmscriptenCacheMutex()
 {
@@ -172,11 +188,35 @@ std::unordered_map<std::string, std::string>& WWFS_EmscriptenAssetManifest()
     return manifest;
 }
 
+std::mutex& WWFS_EmscriptenRangeCacheMutex()
+{
+    static std::mutex mutex;
+    return mutex;
+}
+
+std::unordered_map<std::string, std::shared_ptr<WWFS_EmscriptenRangeFileCache>>& WWFS_EmscriptenRangeFileCaches()
+{
+    static std::unordered_map<std::string, std::shared_ptr<WWFS_EmscriptenRangeFileCache>> caches;
+    return caches;
+}
+
 std::string WWFS_FoldPath(std::string path)
 {
     std::replace(path.begin(), path.end(), '\\', '/');
     std::transform(path.begin(), path.end(), path.begin(), [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
     return path;
+}
+
+bool WWFS_IsReadOnlyOpenMode(const char* mode)
+{
+    return mode && std::strchr(mode, 'r') != nullptr && std::strchr(mode, '+') == nullptr
+        && std::strchr(mode, 'w') == nullptr && std::strchr(mode, 'a') == nullptr;
+}
+
+bool WWFS_IsMixAssetPath(const std::string& path)
+{
+    const std::string folded_path = WWFS_FoldPath(path);
+    return folded_path.size() >= 4 && folded_path.compare(folded_path.size() - 4, 4, ".mix") == 0;
 }
 
 bool WWFS_PathIsWithinBaseDirectory(const std::string& normalized_path, std::string* relative_path = nullptr)
@@ -401,6 +441,345 @@ EM_ASYNC_JS(int, wwfs_emscripten_fetch_asset_js, (const char* local_path_c, cons
         return 0;
     }
 });
+
+EM_ASYNC_JS(int, wwfs_emscripten_query_range_asset_size_js, (const char* remote_relative_c, const char* default_base_url_c), {
+    const remoteRelative = UTF8ToString(remote_relative_c);
+    const defaultBaseUrl = UTF8ToString(default_base_url_c);
+    const configuredBaseUrl = Module.raAssetBaseUrl || globalThis.RA_ASSET_BASE_URL || defaultBaseUrl;
+    const absoluteBaseUrl = new URL(configuredBaseUrl, globalThis.location.href);
+    const assetUrl = new URL(remoteRelative, absoluteBaseUrl);
+
+    try {
+        const response = await fetch(assetUrl, {
+            credentials: 'same-origin',
+            headers: { 'Range': 'bytes=0-0' }
+        });
+
+        if (!response.ok) {
+            console.error(`Red Alert range size probe failed for ${assetUrl}: ${response.status} ${response.statusText}`);
+            return -1;
+        }
+
+        if (response.status !== 206) {
+            if (response.body) {
+                try {
+                    await response.body.cancel();
+                } catch (err) {
+                }
+            }
+            return -2;
+        }
+
+        const contentRange = response.headers.get('content-range') || response.headers.get('Content-Range') || '';
+        const slash = contentRange.lastIndexOf('/');
+        if (slash < 0) {
+            await response.arrayBuffer();
+            return -1;
+        }
+
+        await response.arrayBuffer();
+        const totalSize = Number.parseInt(contentRange.substring(slash + 1), 10);
+        return Number.isFinite(totalSize) && totalSize >= 0 ? totalSize : -1;
+    } catch (err) {
+        console.error(`Red Alert range size probe failed for ${assetUrl}:`, err);
+        return -1;
+    }
+});
+
+EM_ASYNC_JS(int, wwfs_emscripten_fetch_asset_range_js, (const char* remote_relative_c, const char* default_base_url_c, int offset, int length, unsigned char* dest, int dest_capacity), {
+    const remoteRelative = UTF8ToString(remote_relative_c);
+    const defaultBaseUrl = UTF8ToString(default_base_url_c);
+    const configuredBaseUrl = Module.raAssetBaseUrl || globalThis.RA_ASSET_BASE_URL || defaultBaseUrl;
+    const absoluteBaseUrl = new URL(configuredBaseUrl, globalThis.location.href);
+    const assetUrl = new URL(remoteRelative, absoluteBaseUrl);
+
+    try {
+        const response = await fetch(assetUrl, {
+            credentials: 'same-origin',
+            headers: { 'Range': `bytes=${offset}-${offset + length - 1}` }
+        });
+
+        if (!response.ok) {
+            console.error(`Red Alert range fetch failed for ${assetUrl}: ${response.status} ${response.statusText}`);
+            return -1;
+        }
+
+        if (response.status !== 206) {
+            if (response.body) {
+                try {
+                    await response.body.cancel();
+                } catch (err) {
+                }
+            }
+            return -2;
+        }
+
+        const bytes = new Uint8Array(await response.arrayBuffer());
+        const actual = Math.min(bytes.length, dest_capacity);
+        HEAPU8.set(bytes.subarray(0, actual), dest);
+        return actual;
+    } catch (err) {
+        console.error(`Red Alert range fetch failed for ${assetUrl}:`, err);
+        return -1;
+    }
+});
+
+std::shared_ptr<WWFS_EmscriptenRangeFileCache> WWFS_GetEmscriptenRangeFileCache(const std::string& normalized_path)
+{
+    std::string actual_local_path;
+    std::string remote_relative_path;
+    if (!WWFS_ResolveEmscriptenAssetPath(normalized_path, &actual_local_path, &remote_relative_path)
+        || !WWFS_IsMixAssetPath(remote_relative_path)
+        || WWFS_LocalPathExists(actual_local_path.c_str())) {
+        return {};
+    }
+
+    const std::string cache_key = WWFS_FoldPath(remote_relative_path);
+    {
+        std::scoped_lock lock(WWFS_EmscriptenRangeCacheMutex());
+        const auto existing = WWFS_EmscriptenRangeFileCaches().find(cache_key);
+        if (existing != WWFS_EmscriptenRangeFileCaches().end()) {
+            return existing->second;
+        }
+    }
+
+    const int range_size = wwfs_emscripten_query_range_asset_size_js(remote_relative_path.c_str(), kWWFSEmscriptenDefaultAssetBaseUrl);
+    if (range_size <= 0) {
+        if (range_size == -2) {
+            SDL_SetError("HTTP range requests are not available for '%s'", remote_relative_path.c_str());
+        } else {
+            SDL_SetError("Failed to query the size of remote asset '%s'", remote_relative_path.c_str());
+        }
+        return {};
+    }
+
+    std::shared_ptr<WWFS_EmscriptenRangeFileCache> file_cache(new (std::nothrow) WWFS_EmscriptenRangeFileCache());
+    if (!file_cache) {
+        SDL_OutOfMemory();
+        return {};
+    }
+    file_cache->remote_relative_path = remote_relative_path;
+    file_cache->size = static_cast<Sint64>(range_size);
+
+    std::scoped_lock lock(WWFS_EmscriptenRangeCacheMutex());
+    auto& caches = WWFS_EmscriptenRangeFileCaches();
+    const auto inserted = caches.emplace(cache_key, file_cache);
+    return inserted.second ? file_cache : inserted.first->second;
+}
+
+bool WWFS_EnsureEmscriptenRangeChunkLoaded(const std::shared_ptr<WWFS_EmscriptenRangeFileCache>& file_cache, Sint64 chunk_index)
+{
+    if (!file_cache || chunk_index < 0) {
+        return false;
+    }
+
+    {
+        std::scoped_lock lock(file_cache->mutex);
+        if (file_cache->chunks.find(chunk_index) != file_cache->chunks.end()) {
+            return true;
+        }
+    }
+
+    const Sint64 chunk_offset = chunk_index * kWWFSEmscriptenRangeChunkSize;
+    if (chunk_offset >= file_cache->size) {
+        return false;
+    }
+
+    const Sint64 max_chunk_size = file_cache->size - chunk_offset;
+    const size_t requested_size = static_cast<size_t>(std::min(max_chunk_size, kWWFSEmscriptenRangeChunkSize));
+    std::vector<unsigned char> chunk_data(requested_size);
+    const int bytes_fetched = wwfs_emscripten_fetch_asset_range_js(file_cache->remote_relative_path.c_str(),
+        kWWFSEmscriptenDefaultAssetBaseUrl,
+        static_cast<int>(chunk_offset),
+        static_cast<int>(requested_size),
+        chunk_data.data(),
+        static_cast<int>(chunk_data.size()));
+    if (bytes_fetched <= 0) {
+        if (bytes_fetched == -2) {
+            SDL_SetError("HTTP range requests are not available for '%s'", file_cache->remote_relative_path.c_str());
+        } else {
+            SDL_SetError("Failed to fetch a range from remote asset '%s'", file_cache->remote_relative_path.c_str());
+        }
+        return false;
+    }
+
+    chunk_data.resize(static_cast<size_t>(bytes_fetched));
+
+    std::scoped_lock lock(file_cache->mutex);
+    auto& chunks = file_cache->chunks;
+    if (chunks.find(chunk_index) == chunks.end()) {
+        chunks.emplace(chunk_index, std::move(chunk_data));
+    }
+    return true;
+}
+
+Sint64 SDLCALL WWFS_EmscriptenRangeStreamSize(void* userdata)
+{
+    const auto* stream = static_cast<WWFS_EmscriptenRangeStream*>(userdata);
+    return (stream && stream->file) ? stream->file->size : -1;
+}
+
+Sint64 SDLCALL WWFS_EmscriptenRangeStreamSeek(void* userdata, Sint64 offset, SDL_IOWhence whence)
+{
+    auto* stream = static_cast<WWFS_EmscriptenRangeStream*>(userdata);
+    if (!stream || !stream->file) {
+        SDL_SetError("Invalid Emscripten range stream");
+        return -1;
+    }
+
+    Sint64 base = 0;
+    switch (whence) {
+    case SDL_IO_SEEK_SET:
+        base = 0;
+        break;
+    case SDL_IO_SEEK_CUR:
+        base = stream->position;
+        break;
+    case SDL_IO_SEEK_END:
+        base = stream->file->size;
+        break;
+    default:
+        SDL_SetError("Invalid Emscripten range seek mode");
+        return -1;
+    }
+
+    if ((offset < 0 && base < -offset) || (offset > 0 && base > LLONG_MAX - offset)) {
+        SDL_SetError("Emscripten range seek overflow");
+        return -1;
+    }
+
+    const Sint64 new_position = base + offset;
+    if (new_position < 0) {
+        SDL_SetError("Emscripten range seek before start of file");
+        return -1;
+    }
+
+    stream->position = new_position;
+    return stream->position;
+}
+
+size_t SDLCALL WWFS_EmscriptenRangeStreamRead(void* userdata, void* ptr, size_t size, SDL_IOStatus* status)
+{
+    auto* stream = static_cast<WWFS_EmscriptenRangeStream*>(userdata);
+    if (!stream || !stream->file || !ptr) {
+        if (status) {
+            *status = SDL_IO_STATUS_ERROR;
+        }
+        SDL_SetError("Invalid Emscripten range stream read");
+        return 0;
+    }
+
+    if (stream->position >= stream->file->size) {
+        if (status) {
+            *status = SDL_IO_STATUS_EOF;
+        }
+        return 0;
+    }
+
+    const size_t requested = static_cast<size_t>(std::min<Sint64>(static_cast<Sint64>(size), stream->file->size - stream->position));
+    unsigned char* output = static_cast<unsigned char*>(ptr);
+    size_t copied = 0;
+
+    while (copied < requested) {
+        const Sint64 absolute_offset = stream->position + static_cast<Sint64>(copied);
+        const Sint64 chunk_index = absolute_offset / kWWFSEmscriptenRangeChunkSize;
+        if (!WWFS_EnsureEmscriptenRangeChunkLoaded(stream->file, chunk_index)) {
+            if (status) {
+                *status = SDL_IO_STATUS_ERROR;
+            }
+            return copied;
+        }
+
+        std::scoped_lock lock(stream->file->mutex);
+        const auto chunk = stream->file->chunks.find(chunk_index);
+        if (chunk == stream->file->chunks.end()) {
+            if (status) {
+                *status = SDL_IO_STATUS_ERROR;
+            }
+            SDL_SetError("Missing cached Emscripten range chunk");
+            return copied;
+        }
+
+        const size_t chunk_offset = static_cast<size_t>(absolute_offset % kWWFSEmscriptenRangeChunkSize);
+        if (chunk_offset >= chunk->second.size()) {
+            break;
+        }
+
+        const size_t available = chunk->second.size() - chunk_offset;
+        const size_t to_copy = std::min(available, requested - copied);
+        std::memcpy(output + copied, chunk->second.data() + chunk_offset, to_copy);
+        copied += to_copy;
+    }
+
+    stream->position += static_cast<Sint64>(copied);
+    if (status && copied < size) {
+        *status = (stream->position >= stream->file->size) ? SDL_IO_STATUS_EOF : SDL_IO_STATUS_READY;
+    }
+    return copied;
+}
+
+size_t SDLCALL WWFS_EmscriptenRangeStreamWrite(void*, const void*, size_t, SDL_IOStatus* status)
+{
+    if (status) {
+        *status = SDL_IO_STATUS_READONLY;
+    }
+    SDL_SetError("Emscripten range streams are read-only");
+    return 0;
+}
+
+bool SDLCALL WWFS_EmscriptenRangeStreamFlush(void*, SDL_IOStatus* status)
+{
+    if (status) {
+        *status = SDL_IO_STATUS_READY;
+    }
+    return true;
+}
+
+bool SDLCALL WWFS_EmscriptenRangeStreamClose(void* userdata)
+{
+    delete static_cast<WWFS_EmscriptenRangeStream*>(userdata);
+    return true;
+}
+
+const SDL_IOStreamInterface& WWFS_EmscriptenRangeStreamInterface()
+{
+    static const SDL_IOStreamInterface interface = []() {
+        SDL_IOStreamInterface iface;
+        SDL_INIT_INTERFACE(&iface);
+        iface.size = WWFS_EmscriptenRangeStreamSize;
+        iface.seek = WWFS_EmscriptenRangeStreamSeek;
+        iface.read = WWFS_EmscriptenRangeStreamRead;
+        iface.write = WWFS_EmscriptenRangeStreamWrite;
+        iface.flush = WWFS_EmscriptenRangeStreamFlush;
+        iface.close = WWFS_EmscriptenRangeStreamClose;
+        return iface;
+    }();
+
+    return interface;
+}
+
+SDL_IOStream* WWFS_OpenEmscriptenRangeStream(const std::string& normalized_path)
+{
+    const std::shared_ptr<WWFS_EmscriptenRangeFileCache> file_cache = WWFS_GetEmscriptenRangeFileCache(normalized_path);
+    if (!file_cache) {
+        return nullptr;
+    }
+
+    WWFS_EmscriptenRangeStream* stream_state = new (std::nothrow) WWFS_EmscriptenRangeStream();
+    if (!stream_state) {
+        SDL_OutOfMemory();
+        return nullptr;
+    }
+
+    stream_state->file = file_cache;
+    SDL_IOStream* stream = SDL_OpenIO(&WWFS_EmscriptenRangeStreamInterface(), stream_state);
+    if (!stream) {
+        delete stream_state;
+        return nullptr;
+    }
+
+    return stream;
+}
 
 bool WWFS_GetSyntheticEmscriptenPathInfo(const std::string& normalized_path, SDL_PathInfo* info)
 {
@@ -912,6 +1291,14 @@ SDL_IOStream* WWFS_OpenFile(const char* path, const char* mode)
 #if defined(__EMSCRIPTEN__) && RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA
     const bool allow_fetch = (std::strchr(mode, 'r') != nullptr) || (std::strchr(mode, '+') != nullptr);
     if (allow_fetch && !WWFS_LocalPathExists(normalized.c_str())) {
+        if (WWFS_IsReadOnlyOpenMode(mode)) {
+            SDL_IOStream* range_stream = WWFS_OpenEmscriptenRangeStream(normalized);
+            if (range_stream) {
+                return range_stream;
+            }
+            SDL_ClearError();
+        }
+
         std::string cached_path;
         if (WWFS_EnsureEmscriptenAssetCached(normalized, &cached_path)) {
             const std::string resolved_existing = resolve_existing_case_insensitive_path(normalized);
