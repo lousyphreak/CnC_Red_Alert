@@ -263,7 +263,7 @@ int RawFileClass::Open(int rights)
 	}
 
 	if (mode != NULL) {
-		Handle = SDL_IOFromFile(normalized.c_str(), mode);
+		Handle = WWFS_OpenFile(normalized.c_str(), mode);
 	}
 
 	/*
@@ -326,7 +326,7 @@ int RawFileClass::Is_Available(int forced)
 	*/
 	std::string normalized = WWFS_NormalizePath(Filename);
 	SDL_PathInfo info;
-	return SDL_GetPathInfo(normalized.c_str(), &info) ? true : false;
+	return WWFS_GetPathInfo(normalized.c_str(), &info) ? true : false;
 }
 
 
@@ -757,7 +757,7 @@ uint32_t RawFileClass::Get_Date_Time(void)
 
 	std::string normalized = WWFS_NormalizePath(Filename);
 	SDL_PathInfo info;
-	if (!SDL_GetPathInfo(normalized.c_str(), &info)) {
+	if (!WWFS_GetPathInfo(normalized.c_str(), &info) || info.modify_time <= 0) {
 		return(0);
 	}
 

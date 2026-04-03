@@ -331,7 +331,7 @@ HANDLE CreateFile(LPCSTR file_name, DWORD desired_access, DWORD, LPVOID, DWORD c
 {
     auto mode = create_file_mode(desired_access, creation_disposition);
     const std::string normalized_path = WWFS_NormalizePath(file_name);
-    SDL_IOStream* io = SDL_IOFromFile(normalized_path.c_str(), mode.c_str());
+    SDL_IOStream* io = WWFS_OpenFile(normalized_path.c_str(), mode.c_str());
     if (!io) {
         set_last_error(kErrorFileNotFound);
         return invalid_handle_value();

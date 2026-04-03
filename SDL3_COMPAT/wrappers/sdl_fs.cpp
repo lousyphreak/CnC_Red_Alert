@@ -4,15 +4,32 @@
 #include <cctype>
 #include <cerrno>
 #include <climits>
+#include <cstdio>
 #include <cstring>
 #include <fcntl.h>
 #include <mutex>
 #include <unordered_map>
 
+#if defined(__EMSCRIPTEN__) && RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA
+#include <emscripten.h>
+#endif
+
 static std::string WWFS_CurrentDirectoryPath();
 
 namespace {
-std::string WWFS_BaseDirectory()
+std::mutex& WWFS_BaseDirectoryMutex()
+{
+    static std::mutex mutex;
+    return mutex;
+}
+
+std::string& WWFS_BaseDirectoryOverride()
+{
+    static std::string path;
+    return path;
+}
+
+std::string WWFS_DefaultBaseDirectory()
 {
     static const std::string path = []() {
         const char* base_path = SDL_GetBasePath();
@@ -28,6 +45,15 @@ std::string WWFS_BaseDirectory()
     }();
 
     return path;
+}
+
+std::string WWFS_BaseDirectory()
+{
+    std::scoped_lock lock(WWFS_BaseDirectoryMutex());
+    if (!WWFS_BaseDirectoryOverride().empty()) {
+        return WWFS_BaseDirectoryOverride();
+    }
+    return WWFS_DefaultBaseDirectory();
 }
 
 std::string WWFS_ProcessCurrentDirectory()
@@ -49,8 +75,20 @@ std::string WWFS_ProcessCurrentDirectory()
     return WWFS_BaseDirectory();
 }
 
-std::mutex g_wwfs_current_directory_mutex;
-std::string g_wwfs_current_directory;
+std::mutex& WWFS_CurrentDirectoryMutex()
+{
+    static std::mutex mutex;
+    return mutex;
+}
+
+std::string& WWFS_CurrentDirectoryStorage()
+{
+    static std::string path;
+    return path;
+}
+
+bool WWFS_GetPathInfoAbsolute(const std::string& normalized_path, SDL_PathInfo* info);
+bool WWFS_PathExists(const char* path);
 
 bool WWFS_IsAbsolutePath(const std::string& path)
 {
@@ -70,13 +108,14 @@ std::string WWFS_StripTrailingPathSeparators(std::string path)
 
 std::string WWFS_CurrentDirectoryPathLocked()
 {
-    if (g_wwfs_current_directory.empty()) {
-        g_wwfs_current_directory = WWFS_ProcessCurrentDirectory();
+    std::string& current_directory = WWFS_CurrentDirectoryStorage();
+    if (current_directory.empty()) {
+        current_directory = WWFS_ProcessCurrentDirectory();
     }
-    return g_wwfs_current_directory;
+    return current_directory;
 }
 
-bool WWFS_PathExists(const char* path)
+bool WWFS_LocalPathExists(const char* path)
 {
     if (!path || !*path) {
         return false;
@@ -97,6 +136,363 @@ std::string WWFS_AppendPathComponent(const std::string& base, const std::string&
     }
 
     return base + "/" + component;
+}
+
+#if defined(__EMSCRIPTEN__) && RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA
+constexpr char kWWFSEmscriptenAssetManifestPath[] = "/ra-assets-manifest.txt";
+constexpr char kWWFSEmscriptenDefaultAssetBaseUrl[] = "../GameData/";
+
+std::mutex& WWFS_EmscriptenCacheMutex()
+{
+    static std::mutex mutex;
+    return mutex;
+}
+
+bool& WWFS_EmscriptenCacheInitialized()
+{
+    static bool initialized = false;
+    return initialized;
+}
+
+std::mutex& WWFS_EmscriptenManifestMutex()
+{
+    static std::mutex mutex;
+    return mutex;
+}
+
+bool& WWFS_EmscriptenManifestLoaded()
+{
+    static bool loaded = false;
+    return loaded;
+}
+
+std::unordered_map<std::string, std::string>& WWFS_EmscriptenAssetManifest()
+{
+    static std::unordered_map<std::string, std::string> manifest;
+    return manifest;
+}
+
+std::string WWFS_FoldPath(std::string path)
+{
+    std::replace(path.begin(), path.end(), '\\', '/');
+    std::transform(path.begin(), path.end(), path.begin(), [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+    return path;
+}
+
+bool WWFS_PathIsWithinBaseDirectory(const std::string& normalized_path, std::string* relative_path = nullptr)
+{
+    const std::string base_path = WWFS_BaseDirectory();
+    if (base_path.empty()) {
+        return false;
+    }
+
+    if (normalized_path == base_path) {
+        if (relative_path) {
+            relative_path->clear();
+        }
+        return true;
+    }
+
+    if (base_path == "/") {
+        if (normalized_path.empty() || normalized_path.front() != '/') {
+            return false;
+        }
+        if (relative_path) {
+            *relative_path = normalized_path.substr(1);
+        }
+        return true;
+    }
+
+    if (normalized_path.size() <= base_path.size()) {
+        return false;
+    }
+    if (normalized_path.compare(0, base_path.size(), base_path) != 0) {
+        return false;
+    }
+
+    const char separator = normalized_path[base_path.size()];
+    if (separator != '/' && separator != '\\') {
+        return false;
+    }
+
+    if (relative_path) {
+        *relative_path = normalized_path.substr(base_path.size() + 1);
+    }
+    return true;
+}
+
+bool WWFS_LoadEmscriptenAssetManifest()
+{
+    std::scoped_lock lock(WWFS_EmscriptenManifestMutex());
+    bool& manifest_loaded = WWFS_EmscriptenManifestLoaded();
+    std::unordered_map<std::string, std::string>& asset_manifest = WWFS_EmscriptenAssetManifest();
+    if (manifest_loaded) {
+        return !asset_manifest.empty();
+    }
+
+    manifest_loaded = true;
+
+    SDL_IOStream* stream = SDL_IOFromFile(kWWFSEmscriptenAssetManifestPath, "rb");
+    if (!stream) {
+        return false;
+    }
+
+    const Sint64 end = SDL_SeekIO(stream, 0, SDL_IO_SEEK_END);
+    if (end < 0 || SDL_SeekIO(stream, 0, SDL_IO_SEEK_SET) < 0) {
+        SDL_CloseIO(stream);
+        return false;
+    }
+
+    std::string manifest_text;
+    manifest_text.resize(static_cast<size_t>(end));
+    if (!manifest_text.empty()) {
+        const size_t bytes_read = SDL_ReadIO(stream, manifest_text.data(), manifest_text.size());
+        manifest_text.resize(bytes_read);
+    }
+
+    SDL_CloseIO(stream);
+
+    size_t cursor = 0;
+    while (cursor < manifest_text.size()) {
+        const size_t next_newline = manifest_text.find('\n', cursor);
+        const size_t line_end = (next_newline == std::string::npos) ? manifest_text.size() : next_newline;
+        std::string line = manifest_text.substr(cursor, line_end - cursor);
+        if (!line.empty() && line.back() == '\r') {
+            line.pop_back();
+        }
+        if (!line.empty()) {
+            std::replace(line.begin(), line.end(), '\\', '/');
+            asset_manifest[WWFS_FoldPath(line)] = line;
+        }
+
+        if (next_newline == std::string::npos) {
+            break;
+        }
+        cursor = next_newline + 1;
+    }
+
+    return !asset_manifest.empty();
+}
+
+bool WWFS_ResolveEmscriptenAssetPath(const std::string& normalized_path, std::string* local_path, std::string* remote_relative_path)
+{
+    std::string relative_path;
+    if (!WWFS_PathIsWithinBaseDirectory(normalized_path, &relative_path) || relative_path.empty()) {
+        return false;
+    }
+    if (!WWFS_LoadEmscriptenAssetManifest()) {
+        return false;
+    }
+
+    const std::unordered_map<std::string, std::string>& asset_manifest = WWFS_EmscriptenAssetManifest();
+    const std::string folded_relative_path = WWFS_FoldPath(relative_path);
+    const auto entry = asset_manifest.find(folded_relative_path);
+    if (entry == asset_manifest.end()) {
+        return false;
+    }
+
+    if (remote_relative_path) {
+        *remote_relative_path = entry->second;
+    }
+    if (local_path) {
+        *local_path = WWFS_AppendPathComponent(WWFS_BaseDirectory(), entry->second);
+    }
+    return true;
+}
+
+EM_ASYNC_JS(int, wwfs_emscripten_init_cache_js, (const char* base_dir_c), {
+    const baseDir = UTF8ToString(base_dir_c);
+    const ensureDir = (path) => {
+        if (!path || path === '/') {
+            return;
+        }
+
+        const parts = path.split('/');
+        let current = '';
+        for (const part of parts) {
+            if (!part) {
+                continue;
+            }
+
+            current += '/' + part;
+            const analyzed = FS.analyzePath(current);
+            if (!analyzed.exists) {
+                FS.mkdir(current);
+            }
+        }
+    };
+
+    try {
+        ensureDir(baseDir);
+        if (!Module.raWWFSCacheMounted) {
+            FS.mount(IDBFS, {}, baseDir);
+            Module.raWWFSCacheMounted = true;
+        }
+        if (!Module.raWWFSCacheInitPromise) {
+            Module.raWWFSCacheInitPromise = new Promise((resolve, reject) => {
+                FS.syncfs(true, (err) => err ? reject(err) : resolve());
+            });
+        }
+
+        await Module.raWWFSCacheInitPromise;
+        return 1;
+    } catch (err) {
+        console.error('Red Alert Emscripten cache initialization failed:', err);
+        Module.raWWFSCacheInitPromise = null;
+        return 0;
+    }
+});
+
+EM_ASYNC_JS(int, wwfs_emscripten_fetch_asset_js, (const char* local_path_c, const char* remote_relative_c, const char* default_base_url_c), {
+    const localPath = UTF8ToString(local_path_c);
+    const remoteRelative = UTF8ToString(remote_relative_c);
+    const defaultBaseUrl = UTF8ToString(default_base_url_c);
+
+    const ensureDir = (path) => {
+        if (!path || path === '/') {
+            return;
+        }
+
+        const parts = path.split('/');
+        let current = '';
+        for (const part of parts) {
+            if (!part) {
+                continue;
+            }
+
+            current += '/' + part;
+            const analyzed = FS.analyzePath(current);
+            if (!analyzed.exists) {
+                FS.mkdir(current);
+            }
+        }
+    };
+
+    const configuredBaseUrl = Module.raAssetBaseUrl || globalThis.RA_ASSET_BASE_URL || defaultBaseUrl;
+    const absoluteBaseUrl = new URL(configuredBaseUrl, globalThis.location.href);
+    const assetUrl = new URL(remoteRelative, absoluteBaseUrl);
+
+    try {
+        if (FS.analyzePath(localPath).exists) {
+            return 1;
+        }
+
+        const lastSlash = localPath.lastIndexOf('/');
+        if (lastSlash > 0) {
+            ensureDir(localPath.substring(0, lastSlash));
+        }
+
+        const response = await fetch(assetUrl, { credentials: 'same-origin' });
+        if (!response.ok) {
+            console.error(`Red Alert asset fetch failed for ${assetUrl}: ${response.status} ${response.statusText}`);
+            return 0;
+        }
+
+        const bytes = new Uint8Array(await response.arrayBuffer());
+        FS.writeFile(localPath, bytes, { canOwn: true });
+
+        await new Promise((resolve, reject) => {
+            FS.syncfs(false, (err) => err ? reject(err) : resolve());
+        });
+
+        return 1;
+    } catch (err) {
+        console.error(`Red Alert asset fetch failed for ${assetUrl}:`, err);
+        return 0;
+    }
+});
+
+bool WWFS_GetSyntheticEmscriptenPathInfo(const std::string& normalized_path, SDL_PathInfo* info)
+{
+    std::string actual_local_path;
+    if (!WWFS_ResolveEmscriptenAssetPath(normalized_path, &actual_local_path, nullptr)) {
+        return false;
+    }
+
+    if (WWFS_LocalPathExists(actual_local_path.c_str())) {
+        return SDL_GetPathInfo(actual_local_path.c_str(), info);
+    }
+
+    if (info) {
+        info->type = SDL_PATHTYPE_FILE;
+        info->size = 0;
+        info->create_time = 0;
+        info->modify_time = 0;
+        info->access_time = 0;
+    }
+
+    return true;
+}
+
+bool WWFS_EnsureEmscriptenAssetCached(const std::string& normalized_path, std::string* resolved_path)
+{
+    std::string actual_local_path;
+    std::string remote_relative_path;
+    if (!WWFS_ResolveEmscriptenAssetPath(normalized_path, &actual_local_path, &remote_relative_path)) {
+        return false;
+    }
+
+    if (WWFS_LocalPathExists(actual_local_path.c_str())) {
+        if (resolved_path) {
+            *resolved_path = actual_local_path;
+        }
+        return true;
+    }
+
+    if (!WWFS_InitializeEmscriptenAssetCache()) {
+        return false;
+    }
+
+    if (WWFS_LocalPathExists(actual_local_path.c_str())) {
+        if (resolved_path) {
+            *resolved_path = actual_local_path;
+        }
+        return true;
+    }
+
+    if (!wwfs_emscripten_fetch_asset_js(actual_local_path.c_str(), remote_relative_path.c_str(), kWWFSEmscriptenDefaultAssetBaseUrl)) {
+        SDL_SetError("Failed to fetch Emscripten asset '%s'", remote_relative_path.c_str());
+        return false;
+    }
+
+    if (!WWFS_LocalPathExists(actual_local_path.c_str())) {
+        SDL_SetError("Fetched Emscripten asset '%s' was not written to '%s'", remote_relative_path.c_str(), actual_local_path.c_str());
+        return false;
+    }
+
+    if (resolved_path) {
+        *resolved_path = actual_local_path;
+    }
+    return true;
+}
+#else
+bool WWFS_GetSyntheticEmscriptenPathInfo(const std::string&, SDL_PathInfo*)
+{
+    return false;
+}
+
+bool WWFS_EnsureEmscriptenAssetCached(const std::string&, std::string*)
+{
+    return false;
+}
+#endif
+
+bool WWFS_GetPathInfoAbsolute(const std::string& normalized_path, SDL_PathInfo* info)
+{
+    if (normalized_path.empty()) {
+        return false;
+    }
+
+    if (SDL_GetPathInfo(normalized_path.c_str(), info)) {
+        return true;
+    }
+
+    return WWFS_GetSyntheticEmscriptenPathInfo(normalized_path, info);
+}
+
+bool WWFS_PathExists(const char* path)
+{
+    return path && *path && WWFS_GetPathInfoAbsolute(path, nullptr);
 }
 
 struct CaseMatchContext {
@@ -130,7 +526,7 @@ std::string resolve_existing_case_insensitive_path(const std::string& path)
         return {};
     }
 
-    if (WWFS_PathExists(path.c_str())) {
+    if (WWFS_LocalPathExists(path.c_str())) {
         return path;
     }
 
@@ -231,6 +627,53 @@ bool resolve_virtual_cd_path(const char* windows_path, std::string& resolved_pat
 
 
 } // end anonymous namespace
+
+void WWFS_SetBaseDirectory(const char* path)
+{
+    std::scoped_lock lock(WWFS_BaseDirectoryMutex());
+    std::string& base_directory_override = WWFS_BaseDirectoryOverride();
+    if (!path || !*path) {
+        base_directory_override.clear();
+        return;
+    }
+
+    std::string normalized(path);
+    std::replace(normalized.begin(), normalized.end(), '\\', '/');
+    base_directory_override = WWFS_StripTrailingPathSeparators(normalized);
+    if (base_directory_override.empty()) {
+        base_directory_override = "/";
+    }
+}
+
+std::string WWFS_GetBaseDirectoryPath()
+{
+    return WWFS_BaseDirectory();
+}
+
+bool WWFS_InitializeEmscriptenAssetCache()
+{
+#if defined(__EMSCRIPTEN__) && RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA
+    std::scoped_lock lock(WWFS_EmscriptenCacheMutex());
+    bool& cache_initialized = WWFS_EmscriptenCacheInitialized();
+    if (cache_initialized) {
+        return true;
+    }
+
+    const std::string base_directory = WWFS_BaseDirectory();
+    if (base_directory.empty()) {
+        SDL_SetError("Emscripten asset cache base directory is empty");
+        return false;
+    }
+
+    if (!wwfs_emscripten_init_cache_js(base_directory.c_str())) {
+        SDL_SetError("Failed to initialize the Emscripten asset cache at '%s'", base_directory.c_str());
+        return false;
+    }
+
+    cache_initialized = true;
+#endif
+    return true;
+}
 
 int WWFS_GetVirtualCDIndexForDriveLetter(char drive_letter)
 {
@@ -379,7 +822,7 @@ std::string WWFS_NormalizePath(const char* windows_path)
 
 static std::string WWFS_CurrentDirectoryPath()
 {
-    std::scoped_lock lock(g_wwfs_current_directory_mutex);
+    std::scoped_lock lock(WWFS_CurrentDirectoryMutex());
     return WWFS_CurrentDirectoryPathLocked();
 }
 
@@ -396,8 +839,8 @@ bool WWFS_SetCurrentDirectory(const char* path)
         return false;
     }
 
-    std::scoped_lock lock(g_wwfs_current_directory_mutex);
-    g_wwfs_current_directory = normalized;
+    std::scoped_lock lock(WWFS_CurrentDirectoryMutex());
+    WWFS_CurrentDirectoryStorage() = normalized;
     return true;
 }
 
@@ -425,7 +868,12 @@ bool WWFS_CreateDirectory(const char* path)
 
 bool WWFS_GetPathInfo(const char* path, SDL_PathInfo* info)
 {
-    return path && *path && SDL_GetPathInfo(WWFS_NormalizePath(path).c_str(), info);
+    if (!path || !*path) {
+        return false;
+    }
+
+    const std::string normalized = WWFS_NormalizePath(path);
+    return WWFS_GetPathInfoAbsolute(normalized, info);
 }
 
 bool WWFS_RemovePath(const char* path)
@@ -460,7 +908,17 @@ SDL_IOStream* WWFS_OpenFile(const char* path, const char* mode)
         return nullptr;
     }
 
-    const std::string normalized = WWFS_NormalizePath(path);
+    std::string normalized = WWFS_NormalizePath(path);
+#if defined(__EMSCRIPTEN__) && RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA
+    const bool allow_fetch = (std::strchr(mode, 'r') != nullptr) || (std::strchr(mode, '+') != nullptr);
+    if (allow_fetch && !WWFS_LocalPathExists(normalized.c_str())) {
+        std::string cached_path;
+        if (WWFS_EnsureEmscriptenAssetCached(normalized, &cached_path)) {
+            const std::string resolved_existing = resolve_existing_case_insensitive_path(normalized);
+            normalized = resolved_existing.empty() ? cached_path : resolved_existing;
+        }
+    }
+#endif
     return SDL_IOFromFile(normalized.c_str(), mode);
 }
 

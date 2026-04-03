@@ -18,6 +18,7 @@ option(RA_ENABLE_ASAN "Enable AddressSanitizer" OFF)
 option(RA_ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer" OFF)
 option(RA_ENABLE_UDP "Enable UDP multiplayer transport" ON)
 option(RA_EMSCRIPTEN_PACKAGE_GAMEDATA "Package the GameData directory into the emscripten output" OFF)
+option(RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA "Load GameData over HTTP on demand in the emscripten build" ON)
 
 if(EMSCRIPTEN)
     set(RA_ENABLE_UDP OFF CACHE BOOL "Enable UDP multiplayer transport" FORCE)
@@ -51,6 +52,12 @@ endif()
 
 if(EMSCRIPTEN)
     list(APPEND RA_COMMON_DEFINITIONS INTERNET_OFF)
+endif()
+
+if(EMSCRIPTEN AND RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA)
+    list(APPEND RA_COMMON_DEFINITIONS RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA=1)
+else()
+    list(APPEND RA_COMMON_DEFINITIONS RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA=0)
 endif()
 
 set(RA_COMMON_INCLUDE_DIRS
@@ -165,6 +172,40 @@ list(FILTER RA_WIN32LIB_SOURCES EXCLUDE REGEX "/RAWFILE/.*\.CPP$")
 
 list(FILTER RA_WIN32LIB_SOURCES EXCLUDE REGEX "/(TEST|TST|REDBOOK)\\.CPP$")
 
+if(EMSCRIPTEN)
+    set(RA_EMSCRIPTEN_EFFECTIVE_PACKAGE_GAMEDATA ${RA_EMSCRIPTEN_PACKAGE_GAMEDATA})
+    if(RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA AND RA_EMSCRIPTEN_PACKAGE_GAMEDATA)
+        message(STATUS "RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA is ON; skipping monolithic GameData preloading")
+        set(RA_EMSCRIPTEN_EFFECTIVE_PACKAGE_GAMEDATA OFF)
+    endif()
+
+    if(RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA)
+        file(GLOB_RECURSE RA_EMSCRIPTEN_GAMEDATA_ENTRIES
+            RELATIVE "${CMAKE_SOURCE_DIR}/GameData"
+            "${CMAKE_SOURCE_DIR}/GameData/*"
+        )
+        set(RA_EMSCRIPTEN_GAMEDATA_FILES "")
+        foreach(ra_gamedata_entry IN LISTS RA_EMSCRIPTEN_GAMEDATA_ENTRIES)
+            if(IS_DIRECTORY "${CMAKE_SOURCE_DIR}/GameData/${ra_gamedata_entry}")
+                continue()
+            endif()
+            if(ra_gamedata_entry MATCHES "^(redalert|redalert-asan)(\\.exe)?$")
+                continue()
+            endif()
+            string(REPLACE "\\" "/" ra_gamedata_entry_normalized "${ra_gamedata_entry}")
+            list(APPEND RA_EMSCRIPTEN_GAMEDATA_FILES "${ra_gamedata_entry_normalized}")
+        endforeach()
+        list(SORT RA_EMSCRIPTEN_GAMEDATA_FILES)
+        list(JOIN RA_EMSCRIPTEN_GAMEDATA_FILES "\n" RA_EMSCRIPTEN_GAMEDATA_MANIFEST_CONTENT)
+        set(RA_EMSCRIPTEN_GAMEDATA_MANIFEST "${CMAKE_BINARY_DIR}/ra-assets-manifest.txt")
+        if(RA_EMSCRIPTEN_GAMEDATA_MANIFEST_CONTENT)
+            file(WRITE "${RA_EMSCRIPTEN_GAMEDATA_MANIFEST}" "${RA_EMSCRIPTEN_GAMEDATA_MANIFEST_CONTENT}\n")
+        else()
+            file(WRITE "${RA_EMSCRIPTEN_GAMEDATA_MANIFEST}" "")
+        endif()
+    endif()
+endif()
+
 add_library(sdl3_compat STATIC
     SDL3_COMPAT/wrappers/win32_compat.cpp
     SDL3_COMPAT/wrappers/sdl_config.cpp
@@ -274,10 +315,23 @@ if(EMSCRIPTEN)
         "-sMIN_WEBGL_VERSION=1"
         "-sENVIRONMENT=web"
     )
-    if(RA_EMSCRIPTEN_PACKAGE_GAMEDATA)
+    if(RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA)
+        target_link_options(redalert PRIVATE
+            "-sFORCE_FILESYSTEM"
+            "-lidbfs.js"
+            "--embed-file"
+            "${RA_EMSCRIPTEN_GAMEDATA_MANIFEST}@/ra-assets-manifest.txt"
+        )
+    endif()
+    if(RA_EMSCRIPTEN_EFFECTIVE_PACKAGE_GAMEDATA)
         target_link_options(redalert PRIVATE
             "--preload-file"
             "${CMAKE_SOURCE_DIR}/GameData@/"
+        )
+    else()
+        add_custom_command(TARGET redalert POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E rm -f "$<TARGET_FILE_DIR:redalert>/redalert.data"
+            VERBATIM
         )
     endif()
 else()

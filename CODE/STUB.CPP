@@ -27,6 +27,7 @@
 #include <SDL3/SDL_main.h>
 
 #include "SDLINPUT.H"
+#include "sdl_fs.h"
 
 extern int RedAlert_Main(int argc, char* argv[]);
 
@@ -46,8 +47,20 @@ void Build_Startup_Arguments(CallbackAppState& state, int argc, char* argv[])
 	state.arguments.clear();
 	state.argv.clear();
 
+#if defined(__EMSCRIPTEN__) && RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA
+	std::string executable_path = WWFS_GetBaseDirectoryPath();
+	if (executable_path.empty() || executable_path == ".") {
+		executable_path = "/redalert";
+	} else if (executable_path == "/") {
+		executable_path = "/redalert";
+	} else {
+		executable_path += "/redalert";
+	}
+	state.arguments.emplace_back(executable_path);
+#else
 	const char* base_path = SDL_GetBasePath();
 	state.arguments.emplace_back((base_path != NULL && base_path[0] != '\0') ? base_path : "./");
+#endif
 
 	for (int index = 1; index < argc; ++index) {
 		state.arguments.emplace_back(argv[index] != NULL ? argv[index] : "");
@@ -80,6 +93,13 @@ SDL_AppResult App_Result_From_Exit_Code(int exit_code)
 SDL_AppResult SDLCALL SDL_AppInit(void** appstate, int argc, char* argv[])
 {
 	CallbackAppState* state = new CallbackAppState();
+#if defined(__EMSCRIPTEN__) && RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA
+	WWFS_SetBaseDirectory("/persistent");
+	if (!WWFS_InitializeEmscriptenAssetCache()) {
+		delete state;
+		return SDL_APP_FAILURE;
+	}
+#endif
 	Build_Startup_Arguments(*state, argc, argv);
 
 	SDL_GameInput_Set_Main_Thread();

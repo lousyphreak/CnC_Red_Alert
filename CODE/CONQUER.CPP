@@ -3962,7 +3962,7 @@ int Get_CD_Index (int cd_drive, int timeout)
 			sprintf(buffer, "%c:\\main.mix", 'A' + cd_drive);
 
 			SDL_PathInfo path_info;
-			if (SDL_GetPathInfo(WWFS_NormalizePath(buffer).c_str(), &path_info))
+			if (WWFS_GetPathInfo(buffer, &path_info))
 				{
 
 				/*
