@@ -84,10 +84,6 @@ char const *FunctionNames[] = {
 	NULL
 };
 
-extern void Get_OS_Version (void);
-bool				WindowsNT = false;
-
-
 /***********************************************************************************************
  * Load_IPX_Dll -- Loads the THIPX32 DLL                                                       *
  *                                                                                             *
@@ -105,35 +101,7 @@ bool				WindowsNT = false;
  *=============================================================================================*/
 bool Load_IPX_Dll (void)
 {
-	Get_OS_Version();
-	if (WindowsNT) return (false);
-
-	SetErrorMode( SEM_NOOPENFILEERRORBOX );
-	IpxDllInstance = LoadLibrary ( "THIPX32.DLL" );
-	SetErrorMode ( 0 );
-
-	if ( IpxDllInstance ){
-
-		const char		*function_name;
-		uint32_t 	*fptr = (uint32_t *) &IPX_Initialise;
-		int				count = 0;
-
-		do {
-			function_name = FunctionNames[count];
-			if (function_name){
-				*fptr = (uint32_t) GetProcAddress (IpxDllInstance, function_name);
-				assert (*fptr != NULL);
-				fptr++;
-				count++;
-			}
-
-		} while ( function_name );
-
-		return (true);
-
-	}else{
-		return (false);
-	}
+	return (false);
 }
 
 
@@ -195,5 +163,4 @@ int IPX_Get_Local_Target(uint8_t * dest_network, uint8_t * dest_node,
 	//Int3();
 	return (IPX_Get_Local_Target95(dest_network, dest_node, dest_socket, bridge_address));
 }
-
 

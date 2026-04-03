@@ -440,11 +440,7 @@ void Send_Statistics_Packet(void)
 								piAddress = (int*)pHostent->h_addr_list[ ++i ];
 							}
 						}
-//						else
-//							debugprint( "gethostbyname failed. Error %i\n", WSAGetLastError() );
 					}
-//					else
-//						debugprint( "gethostname failed with %i, error %i\n", iRes, WSAGetLastError() );
 				}
 				stats.Add_Field( FIELD_PLAYER1_IP, (char*)szIPAddress );
 				Session.Players[ 1 ]->Address.Get_Address( net, node );

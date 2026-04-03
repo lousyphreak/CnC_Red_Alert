@@ -311,16 +311,6 @@ int GetSystemMetrics(int index)
     return 0;
 }
 
-HGDIOBJ LoadIcon(void*, LPCSTR)
-{
-    return nullptr;
-}
-
-INT_PTR DialogBox(void*, LPCTSTR, RAWindow*, void*)
-{
-    return 0;
-}
-
 void ExitProcess(UINT exit_code)
 {
     std::exit(static_cast<int>(exit_code));
@@ -376,11 +366,6 @@ DWORD GetLastError(void)
 {
     std::scoped_lock lock(g_last_error_mutex);
     return g_last_error;
-}
-
-DWORD GetVersion(void)
-{
-    return 0;
 }
 
 UINT SetErrorMode(UINT mode)

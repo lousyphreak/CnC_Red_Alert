@@ -99,5 +99,3 @@ extern "C"{
 	extern int   IPX_Get_Local_Target95(uint8_t *, uint8_t*, uint16_t, uint8_t*);
 }
 #endif	//(0)
-
-extern bool WindowsNT;

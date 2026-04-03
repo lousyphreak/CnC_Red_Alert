@@ -8,6 +8,13 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Removed the remaining repo-owned no-op Win32 compat stubs and their dead callers:
+  - audited `SDL3_COMPAT/wrappers/win32_compat.{h,cpp}` for wrappers that had no SDL-side behavior at all and confirmed three repo-owned dead ends: `LoadIcon(...)` always returned `nullptr`, `DialogBox(...)` always returned `0`, and `GetVersion()` always returned `0`;
+  - deleted the unused `LoadIcon(...)` declarations/definitions entirely because the repo-owned code no longer references them at all;
+  - deleted the dead `DialogBox(...)` wrapper and the only repo-owned caller, `CODE/WINSTUB.CPP::Window_Dialog_Box(...)`, which had become unreachable after the earlier SDL dialog/input cleanup;
+  - removed the fake `GetVersion()` probe plus the now-dead `Get_OS_Version()` / `WindowsNT` chain in `CODE/{STARTUP,IPX95}.CPP`: `Load_IPX_Dll()` now returns `false` directly, which preserves the current SDL/Linux behavior because the stubbed compat path had already been forcing that same result;
+  - validation for this checkpoint: `cmake --build build --target redalert -j8`, `cmake --build build-asan --target redalert -j8`, and `cd GameData && timeout 20s env ASAN_OPTIONS=abort_on_error=1:detect_leaks=0 UBSAN_OPTIONS=print_stacktrace=1 ./redalert-asan "Erik Yeo"` all succeed after the cleanup, with no `AddressSanitizer` / `runtime error:` matches in the captured startup log.
+
 - Removed the remaining live Win32-style messaging layer and Win32 window/instance handle vocabulary from the repo-owned SDL/Linux path:
   - `CODE/WINSTUB.CPP`, `CODE/KEY.CPP`, and `WIN32LIB/KEYBOARD/KEYBOARD.CPP` no longer pump a fake Win32 queue (`PeekMessage` / `GetMessage` / `TranslateMessage` / `DispatchMessage` / `PostQuitMessage`); they now use direct SDL input pumping and the existing `AllDone` shutdown flag instead;
   - `CODE/TCPIP.{H,CPP}` no longer self-dispatches through `SendMessage(...)` or exposes `Message_Handler(HWND, ...)`; the live async socket path now uses explicit internal event ids plus `Handle_Async_Event(...)`, while the inert `WSAAsync*` compat stubs remain only as no-op registration points for the legacy socket setup flow;

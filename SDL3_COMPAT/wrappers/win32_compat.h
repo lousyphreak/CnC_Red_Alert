@@ -392,14 +392,11 @@ bool RA_GameRectToWindowRect(RAWindow* window, const RECT* game_rect, SDL_Rect* 
 extern "C" {
 
 int GetSystemMetrics(int index);
-HGDIOBJ LoadIcon(void* instance, LPCSTR icon_name);
-INT_PTR DialogBox(void* instance, LPCTSTR template_name, RAWindow* owner, void* dialog_proc);
 void ExitProcess(UINT exit_code);
 
 int MessageBox(RAWindow* window, LPCSTR text, LPCSTR caption, UINT type);
 void OutputDebugString(LPCSTR text);
 DWORD GetLastError(void);
-DWORD GetVersion(void);
 UINT SetErrorMode(UINT mode);
 void Sleep(DWORD milliseconds);
 DWORD GetTickCount(void);

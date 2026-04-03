@@ -1,5 +1,14 @@
 # Porting Knowledge
 
+## Dead compat stubs should be deleted, not preserved
+
+- `SDL3_COMPAT/wrappers/win32_compat.{h,cpp}` still needs periodic audits for wrappers that have no SDL-side behavior at all.
+  - In this pass, the repo-owned dead stubs were `LoadIcon(...)` (always `nullptr`), `DialogBox(...)` (always `0`), and `GetVersion()` (always `0`).
+  - Safe rule: if a compat wrapper is both non-functional and either unused or only feeding dead repo-owned code, delete the wrapper and remove the repo-owned caller chain instead of carrying a fake API forward.
+- `CODE/IPX95.CPP::Load_IPX_Dll()` is one concrete example of how to collapse a dead stub chain safely.
+  - Before cleanup, the SDL port called `Get_OS_Version()`, which called the stubbed `GetVersion()`, which always made `WindowsNT` true and therefore forced `Load_IPX_Dll()` to return `false`.
+  - Safe cleanup rule: when a stubbed compat probe already deterministically forces one outcome, replace the call chain with that explicit outcome and delete the dead intermediate state/functions.
+
 ## SDL main-window path no longer needs Win32 class/show/focus wrappers
 
 - Follow-up porting work removed the remaining fake Win32 message queue and window-proc seam from the active SDL/Linux build.

@@ -419,34 +419,6 @@ width = width; height = height;
 }
 
 
-void Window_Dialog_Box(void*  hinst, LPCTSTR  lpszTemplate, RAWindow*  hwndOwner, void*  dlgprc)
-{
-	/*
-	** Get rid of the Westwood mouse cursor because we are showing a
-	** dialog box and we want to have the right windows cursor showing
-	** for it.
-	*/
-	Hide_Mouse();
-	SDL_GameInput_ShowCursor(TRUE);
-
-	/*
-	** Pop up the dialog box and then run a standard message handler
-	** until the dialog box is closed.
-	*/
-
-	DialogBox(hinst, lpszTemplate, hwndOwner, dlgprc);
-
-	/*
-	** Restore the westwood mouse cursor and get rid of the windows one
-	** because it is now time to restore back to the westwood way of
-	** doing things.
-	*/
-	SDL_GameInput_ShowCursor(FALSE);
-	Show_Mouse();
-}
-
-
-
 typedef struct tColourList {
 
 	char	Red;
