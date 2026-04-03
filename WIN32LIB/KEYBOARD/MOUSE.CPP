@@ -76,8 +76,6 @@ WWMouseClass::WWMouseClass(GraphicViewPortClass *scr, int32_t mouse_max_width, i
 	MouseUpdate		= 0;
 	State				= 1;
 
-	InitializeCriticalSection (&MouseCriticalSection);
-
 	EraseBuffer		= new char[mouse_max_width * mouse_max_height];
 	EraseBuffX		= -1;
 	EraseBuffY  	= -1;
@@ -99,49 +97,11 @@ WWMouseClass::~WWMouseClass()
 
 	if (MouseCursor) delete[] MouseCursor;
 	if (MouseBuffer) delete[] MouseBuffer;
-	DeleteCriticalSection(&MouseCriticalSection);
-
 	/*
 	** Free up the windows mouse pointer movement
 	*/
 	Clear_Cursor_Clip();
 }
-
-
-void Block_Mouse(GraphicBufferClass *buffer)
-{
-	if (_Mouse){
-		_Mouse->Block_Mouse(buffer);
-	}
-}
-
-
-void Unblock_Mouse(GraphicBufferClass *buffer)
-{
-	if (_Mouse){
-		_Mouse->Unblock_Mouse(buffer);
-	}
-}
-
-
-
-void WWMouseClass::Block_Mouse(GraphicBufferClass *buffer)
-{
-	if (buffer == Screen->Get_Graphic_Buffer()){
-		EnterCriticalSection(&MouseCriticalSection);
-	}
-}
-
-
-void WWMouseClass::Unblock_Mouse(GraphicBufferClass *buffer)
-{
-	if (buffer == Screen->Get_Graphic_Buffer()){
-		LeaveCriticalSection(&MouseCriticalSection);
-	}
-}
-
-
-
 
 
 void WWMouseClass::Set_Cursor_Clip(void)
@@ -180,16 +140,9 @@ void WWMouseClass::Process_Mouse(void)
 		return;
 
 	//
-	// Make sure there are no conflicts with other
-	// threads that may try and lock the screen buffer
-	//
-	//Block_Mouse(Screen->Get_Graphic_Buffer());
-
-	//
-	// If the screen is already locked by another thread then just exit
+	// If the screen is already locked then just exit.
 	//
 	if (Screen->Get_LockCount()!=0){
-		//Unblock_Mouse(Screen->Get_Graphic_Buffer());
 		return;
 	}
 
@@ -234,10 +187,6 @@ void WWMouseClass::Process_Mouse(void)
 		}
 	}
 
-	//
-	// Allow other threads to lock the screen again
-	//
-	//Unblock_Mouse(Screen->Get_Graphic_Buffer());
 }
 
 void *WWMouseClass::Set_Cursor(int32_t xhotspot, int32_t yhotspot, void *cursor)

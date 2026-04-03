@@ -505,8 +505,6 @@ GraphicViewPortClass *Set_Logic_Page(GraphicViewPortClass &ptr)
 extern	void Colour_Debug (int32_t call_number);
 extern int32_t GameInFocus;
 
-extern void Block_Mouse(GraphicBufferClass *buffer);
-extern void Unblock_Mouse(GraphicBufferClass *buffer);
 
 int32_t GraphicBufferClass::Lock(void)
 {
@@ -529,15 +527,11 @@ int32_t GraphicBufferClass::Lock(void)
 	if (!GameInFocus) return (FALSE);
 
 
-	Block_Mouse(this);
-
-
 	//
 	// If surface is already locked then inc the lock count and return true
 	//
 	if (LockCount){
 		LockCount++;
-		Unblock_Mouse(this);
 		return(TRUE);
 	}
 
@@ -558,7 +552,6 @@ int32_t GraphicBufferClass::Lock(void)
 					LockCount++;		// increment count so we can track if
 					TotalLocks++;		// Total number of times we have locked (for debugging)
 					//Colour_Debug (1);
-					Unblock_Mouse(this);
 					return (TRUE);		// we locked it multiple times.
 
 				case WWDRAW_ERROR_SURFACELOST :
@@ -570,13 +563,11 @@ int32_t GraphicBufferClass::Lock(void)
 					break;
 
 				default :
-					Unblock_Mouse(this);
 					return (FALSE);
 			}
 		}
 	}
 	//Colour_Debug(1);
-	Unblock_Mouse(this);
 	return (FALSE);		//Return false because we couldnt lock or restore the surface
 }
 
@@ -608,14 +599,11 @@ int32_t GraphicBufferClass::Unlock(void)
 	// unlock so just give it a shot.
 	//
 	if (LockCount == 1 && VideoSurfacePtr) {
-		Block_Mouse(this);
 		if ( VideoSurfacePtr->Unlock ( NULL ) != WWDRAW_OK ){
-			Unblock_Mouse(this);
 			return(FALSE);
 		} else {
 			Offset=NOT_LOCKED;
 			LockCount--;
-			Unblock_Mouse(this);
 			return(TRUE);
 		}
 	}

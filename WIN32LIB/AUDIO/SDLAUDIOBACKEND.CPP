@@ -151,8 +151,7 @@ HRESULT AudioBackendBuffer::Stop(void)
 	}
 
 	if (Primary && Owner != NULL) {
-		std::scoped_lock owner_lock(Owner->Mutex);
-		Owner->UpdatePrimaryPlaybackLocked(false);
+		Owner->UpdatePrimaryPlayback(false);
 	}
 
 	return (RAAUDIO_OK);
@@ -173,8 +172,7 @@ HRESULT AudioBackendBuffer::Play(int32_t looping)
 	}
 
 	if (Primary && Owner != NULL) {
-		std::scoped_lock owner_lock(Owner->Mutex);
-		Owner->UpdatePrimaryPlaybackLocked(true);
+		Owner->UpdatePrimaryPlayback(true);
 	}
 
 	return (RAAUDIO_OK);
@@ -267,8 +265,7 @@ HRESULT AudioBackendBuffer::SetFormat(const AudioBufferFormat *format)
 	}
 
 	if (Primary && Owner != NULL) {
-		std::scoped_lock owner_lock(Owner->Mutex);
-		Owner->RefreshPrimaryFormatLocked();
+		Owner->RefreshPrimaryFormat();
 	}
 
 	return (RAAUDIO_OK);
@@ -355,10 +352,20 @@ AudioBackendDevice::AudioBackendDevice(void)
 
 AudioBackendDevice::~AudioBackendDevice()
 {
-	std::scoped_lock lock(Mutex);
-	if (Stream != NULL) {
-		SDL_DestroyAudioStream(Stream);
+	SDL_AudioStream *callback_stream = LockStreamForCallbackSync();
+	SDL_AudioStream *stream_to_destroy = NULL;
+
+	{
+		std::scoped_lock lock(Mutex);
+		stream_to_destroy = Stream;
 		Stream = NULL;
+	}
+
+	if (callback_stream != NULL) {
+		SDL_UnlockAudioStream(callback_stream);
+	}
+	if (stream_to_destroy != NULL) {
+		SDL_DestroyAudioStream(stream_to_destroy);
 	}
 }
 
@@ -381,11 +388,14 @@ HRESULT AudioBackendDevice::CreateBuffer(uint32_t buffer_bytes, const AudioBuffe
 		return (RAAUDIOERR_GENERIC);
 	}
 
-	std::scoped_lock lock(Mutex);
 	if (primary) {
-		PrimaryBuffer = *buffer;
-		RefreshPrimaryFormatLocked();
+		{
+			std::scoped_lock lock(Mutex);
+			PrimaryBuffer = *buffer;
+		}
+		RefreshPrimaryFormat();
 	} else {
+		std::scoped_lock lock(Mutex);
 		SecondaryBuffers.push_back(*buffer);
 	}
 
@@ -414,17 +424,12 @@ void SDLCALL AudioBackendDevice::AudioCallback(void *userdata, SDL_AudioStream *
 
 void AudioBackendDevice::FeedAudio(SDL_AudioStream *stream, int32_t additional_amount)
 {
+	std::scoped_lock lock(Mutex);
+
 	const SDL_AudioFormat output_format = (SDL_AudioFormat)MixFormat;
 	const int32_t output_channels = std::max<int32_t>(1, MixChannels);
 	const int32_t sample_bytes = SDL_AUDIO_BYTESIZE(output_format);
 	const int32_t frame_bytes = output_channels * std::max(1, sample_bytes);
-
-	std::unique_lock<std::mutex> lock(Mutex, std::try_to_lock);
-	if (!lock.owns_lock()) {
-		std::vector<uint8_t> silence((size_t)std::max(0, additional_amount), (uint8_t)SDL_GetSilenceValueForFormat(output_format));
-		SDL_PutAudioStreamData(stream, silence.data(), (int32_t)silence.size());
-		return;
-	}
 
 	int32_t output_frames = additional_amount / frame_bytes;
 	if (additional_amount % frame_bytes != 0) {
@@ -481,20 +486,31 @@ void AudioBackendDevice::FeedAudio(SDL_AudioStream *stream, int32_t additional_a
 
 void AudioBackendDevice::RemoveBuffer(AudioBackendBuffer *buffer)
 {
-	std::scoped_lock lock(Mutex);
-	if (PrimaryBuffer == buffer) {
-		PrimaryBuffer = NULL;
-		PrimaryPlaying = false;
-		if (Stream != NULL) {
-			SDL_ClearAudioStream(Stream);
-			SDL_PauseAudioStreamDevice(Stream);
-			SDL_DestroyAudioStream(Stream);
-			Stream = NULL;
+	SDL_AudioStream *callback_stream = LockStreamForCallbackSync();
+	SDL_AudioStream *stream_to_destroy = NULL;
+
+	{
+		std::scoped_lock lock(Mutex);
+		if (PrimaryBuffer == buffer) {
+			PrimaryBuffer = NULL;
+			PrimaryPlaying = false;
+			if (Stream != NULL) {
+				SDL_ClearAudioStream(Stream);
+				SDL_PauseAudioStreamDevice(Stream);
+				stream_to_destroy = Stream;
+				Stream = NULL;
+			}
+		} else {
+			SecondaryBuffers.erase(std::remove(SecondaryBuffers.begin(), SecondaryBuffers.end(), buffer), SecondaryBuffers.end());
 		}
-		return;
 	}
 
-	SecondaryBuffers.erase(std::remove(SecondaryBuffers.begin(), SecondaryBuffers.end(), buffer), SecondaryBuffers.end());
+	if (callback_stream != NULL) {
+		SDL_UnlockAudioStream(callback_stream);
+	}
+	if (stream_to_destroy != NULL) {
+		SDL_DestroyAudioStream(stream_to_destroy);
+	}
 }
 
 
@@ -555,6 +571,51 @@ bool AudioBackendDevice::EnsureAudioStreamLocked(void)
 }
 
 
+SDL_AudioStream *AudioBackendDevice::LockStreamForCallbackSync(void)
+{
+	for (;;) {
+		SDL_AudioStream *stream = NULL;
+
+		{
+			std::scoped_lock lock(Mutex);
+			stream = Stream;
+		}
+
+		if (stream == NULL) {
+			return (NULL);
+		}
+
+		if (!SDL_LockAudioStream(stream)) {
+			return (NULL);
+		}
+
+		{
+			std::scoped_lock lock(Mutex);
+			if (Stream == stream) {
+				return (stream);
+			}
+		}
+
+		SDL_UnlockAudioStream(stream);
+	}
+}
+
+
+void AudioBackendDevice::UpdatePrimaryPlayback(bool playing)
+{
+	SDL_AudioStream *callback_stream = LockStreamForCallbackSync();
+
+	{
+		std::scoped_lock lock(Mutex);
+		UpdatePrimaryPlaybackLocked(playing);
+	}
+
+	if (callback_stream != NULL) {
+		SDL_UnlockAudioStream(callback_stream);
+	}
+}
+
+
 void AudioBackendDevice::UpdatePrimaryPlaybackLocked(bool playing)
 {
 	PrimaryPlaying = playing;
@@ -572,14 +633,37 @@ void AudioBackendDevice::UpdatePrimaryPlaybackLocked(bool playing)
 }
 
 
-void AudioBackendDevice::RefreshPrimaryFormatLocked(void)
+void AudioBackendDevice::RefreshPrimaryFormat(void)
+{
+	SDL_AudioStream *callback_stream = LockStreamForCallbackSync();
+	SDL_AudioStream *stream_to_destroy = NULL;
+
+	{
+		std::scoped_lock lock(Mutex);
+		RefreshPrimaryFormatLocked(&stream_to_destroy);
+	}
+
+	if (callback_stream != NULL) {
+		SDL_UnlockAudioStream(callback_stream);
+	}
+	if (stream_to_destroy != NULL) {
+		SDL_DestroyAudioStream(stream_to_destroy);
+	}
+}
+
+
+void AudioBackendDevice::RefreshPrimaryFormatLocked(SDL_AudioStream **stream_to_destroy)
 {
 	if (PrimaryBuffer == NULL) {
 		return;
 	}
 
 	if (Stream != NULL) {
-		SDL_DestroyAudioStream(Stream);
+		SDL_ClearAudioStream(Stream);
+		SDL_PauseAudioStreamDevice(Stream);
+		if (stream_to_destroy != NULL) {
+			*stream_to_destroy = Stream;
+		}
 		Stream = NULL;
 	}
 

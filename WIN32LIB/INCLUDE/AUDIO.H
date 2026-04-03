@@ -164,8 +164,6 @@ extern int32_t Misc;
 extern SFX_Type SoundType;
 extern Sample_Type SampleType;
 
-extern CRITICAL_SECTION	GlobalAudioCriticalSection;
-
 extern int32_t StreamLowImpact;
 
 #endif

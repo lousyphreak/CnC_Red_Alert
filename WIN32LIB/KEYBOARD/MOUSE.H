@@ -63,8 +63,6 @@ class WWMouseClass {
 		void Draw_Mouse(GraphicViewPortClass *scr);
 		void Erase_Mouse(GraphicViewPortClass *scr, int32_t forced = FALSE);
 
-		void Block_Mouse(GraphicBufferClass *buffer);
-		void Unblock_Mouse(GraphicBufferClass *buffer);
 		void Set_Cursor_Clip(void);
 		void Clear_Cursor_Clip(void);
 
@@ -107,8 +105,6 @@ class WWMouseClass {
 		int32_t						EraseBuffHotY;	// Y position of the hidden page background
 
 		int32_t						EraseFlags;		// Records whether mutex has been released
-
-		CRITICAL_SECTION		MouseCriticalSection;  // Control for mouse re-enterancy
 
 		friend void  Mouse_Shadow_Buffer(void *thisptr, GraphicViewPortClass *srcdst, void *buffer, int32_t x, int32_t y, int32_t hotx, int32_t hoty, int32_t store);
 		friend void  Draw_Mouse(void *thisptr, GraphicViewPortClass *srcdst, int32_t x, int32_t y);

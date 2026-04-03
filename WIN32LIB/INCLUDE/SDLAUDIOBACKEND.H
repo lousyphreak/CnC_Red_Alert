@@ -77,8 +77,11 @@ private:
 	void FeedAudio(struct SDL_AudioStream *stream, int32_t additional_amount);
 	void RemoveBuffer(AudioBackendBuffer *buffer);
 	bool EnsureAudioStreamLocked(void);
+	struct SDL_AudioStream *LockStreamForCallbackSync(void);
+	void UpdatePrimaryPlayback(bool playing);
 	void UpdatePrimaryPlaybackLocked(bool playing);
-	void RefreshPrimaryFormatLocked(void);
+	void RefreshPrimaryFormat(void);
+	void RefreshPrimaryFormatLocked(struct SDL_AudioStream **stream_to_destroy);
 
 	int32_t RefCount;
 	HWND Window;

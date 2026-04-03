@@ -2757,9 +2757,6 @@ void Free_Interpolated_Palettes(void)
  * HISTORY:                                                                                    *
  *   12/19/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-extern void Suspend_Audio_Thread(void);
-extern void Resume_Audio_Thread(void);
-
 #ifdef MOVIE640
 extern GraphicBufferClass VQ640;
 #endif
@@ -2861,7 +2858,6 @@ bool Try_Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 				Conquer_Trace("Play_Movie VQA_Open success file=%s", fullname);
 				played = true;
 				Brokeout = false;
-				//Suspend_Audio_Thread();
 				#ifdef MOVIE640
 				if(!IsVQ640) {
 					Load_Interpolated_Palettes(palname);
@@ -2876,7 +2872,6 @@ bool Try_Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 				VQA_Play(vqa, VQAMODE_RUN);
 				Conquer_Trace("Play_Movie VQA_Play complete file=%s brokeout=%d", fullname, Brokeout ? 1 : 0);
 				VQA_Close(vqa);
-				//Resume_Audio_Thread();
 				InMovie = FALSE;
 				#ifdef MOVIE640
 				if(!IsVQ640) {

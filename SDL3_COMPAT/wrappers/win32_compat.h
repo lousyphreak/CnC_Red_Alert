@@ -342,10 +342,6 @@ struct tagMSG {
 };
 using MSG = tagMSG;
 
-struct alignas(void*) CRITICAL_SECTION {
-    std::recursive_mutex* mutex;
-};
-
 using WNDPROC = LRESULT (CALLBACK*)(HWND, UINT, WPARAM, LPARAM);
 using DLGPROC = INT_PTR (CALLBACK*)(HWND, UINT, WPARAM, LPARAM);
 
@@ -458,11 +454,6 @@ BOOL CloseHandle(HANDLE handle);
 HANDLE CreateEvent(LPVOID attributes, BOOL manual_reset, BOOL initial_state, LPCSTR name);
 BOOL SetEvent(HANDLE handle);
 BOOL ResetEvent(HANDLE handle);
-void InitializeCriticalSection(CRITICAL_SECTION* critical_section);
-void DeleteCriticalSection(CRITICAL_SECTION* critical_section);
-void EnterCriticalSection(CRITICAL_SECTION* critical_section);
-void LeaveCriticalSection(CRITICAL_SECTION* critical_section);
-
 HANDLE CreateFile(LPCSTR file_name, DWORD desired_access, DWORD share_mode, LPVOID security_attributes,
     DWORD creation_disposition, DWORD flags_and_attributes, HANDLE template_file);
 BOOL ReadFile(HANDLE handle, LPVOID buffer, DWORD number_of_bytes_to_read, LPDWORD number_of_bytes_read, LPVOID overlapped);

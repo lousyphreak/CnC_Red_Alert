@@ -285,8 +285,6 @@ void   maintenance_callback(void)
 	uint32_t					lock_length2;		//Length of second locked area in buffer
 	HRESULT				return_code;
 
-	//EnterCriticalSection(&GlobalAudioCriticalSection);
-
 	st = &LockedData.SampleTracker[0];
 	for (index = 0; index < MAX_SFX; index++) {
 
@@ -299,8 +297,6 @@ void   maintenance_callback(void)
 			**	is performed.
 			*/
 			if (st->Service && !st->DontTouch ) {
-
-				//EnterCriticalSection (&st->AudioCriticalSection);
 
 				st->DontTouch = TRUE;
 
@@ -318,8 +314,6 @@ void   maintenance_callback(void)
 							Audio_Focus_Loss_Function();
 						}
 					}
-					//LeaveCriticalSection(&GlobalAudioCriticalSection);
-					//LeaveCriticalSection (&st->AudioCriticalSection);
 					return;		//Our app has lost focus or something else nasty has happened
 				}					//so dont update the sound buffers
 
@@ -433,7 +427,6 @@ void   maintenance_callback(void)
 
 				st->DontTouch = FALSE;
 
-				//LeaveCriticalSection (&st->AudioCriticalSection);
 			}
 			/*
 			**	For file streamed samples, fill the queue pointer if needed.
@@ -469,7 +462,6 @@ void   maintenance_callback(void)
 			**	time.
 			*/
 			if (st->Active && st->Reducer && st->Volume) {
-				//EnterCriticalSection (&st->AudioCriticalSection);
 				if (st->Reducer >= st->Volume) {
 					st->Volume = 0;
 				} else {
@@ -484,14 +476,11 @@ void   maintenance_callback(void)
 					st->PlayBuffer->SetVolume ( Convert_HMI_To_Backend_Volume( ( LockedData.SoundVolume*(st->Volume >>7))/256) );
 				}
 
-				//LeaveCriticalSection (&st->AudioCriticalSection);
 			}
 			st++;
 		}
 		LockedData._int--;
 	}
-
-	//LeaveCriticalSection(&GlobalAudioCriticalSection);
 }
 
 

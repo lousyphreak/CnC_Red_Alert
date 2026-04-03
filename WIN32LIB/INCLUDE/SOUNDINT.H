@@ -182,12 +182,6 @@ typedef struct {
 	int32_t Remainder;
 
 	/*
-	**	Object to use with Enter/LeaveCriticalSection
-	**
-	*/
-	CRITICAL_SECTION AudioCriticalSection;
-
-	/*
 	**	Samples maintain a priority which is used to determine
 	**	which sounds live or die when the maximum number of
 	**	sounds are being played.

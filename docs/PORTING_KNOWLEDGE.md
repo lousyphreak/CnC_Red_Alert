@@ -1,5 +1,15 @@
 # Porting Knowledge
 
+## Find_Path edge-follow terminator bounds
+
+- `CODE/FINDPATH.CPP::Follow_Edge(...)` needs one free command slot beyond the last recorded move.
+  - `Register_Cell(...)` increments `path->Length` when it appends a move.
+  - On the success path, `Follow_Edge(...)` then writes `path->Command[path->Length] = END`.
+  - Practical consequence: a loop condition of `path->Length < max_cells` is off by one for caller-supplied command buffers, because a completely full move list leaves no room for the required trailing `END`.
+- Safe rule for this path: reserve space for the terminator explicitly.
+  - The current fix is to run the edge-follow loop only while `path->Length + 1 < max_cells`.
+  - That keeps the existing algorithm intact while making the buffer contract match how `PathType::Command` is actually terminated.
+
 ## Formation/audio sanitizer pitfalls
 
 - `WIN32LIB/AUDIO/SOUNDIO.CPP::Play_Sample_Handle(...)` must validate the requested sample handle before indexing `LockedData.SampleTracker[id]`.
@@ -97,7 +107,7 @@
 - This matters on LP64 hosts because `_SOS_COMPRESS_INFO` is shared with `CODE/ADPCM.CPP`. If the audio-local copy still uses old `long`/`unsigned long` spellings while the decoder side uses fixed-width 32-bit fields, the structure layout diverges and gameplay music/SFX decoding silently breaks even though VQA movie audio still works.
 - Practical symptom when `WIN32LIB/AUDIO/SOSCOMP.H` drifts from the canonical fixed-width form: movie audio can still work, but normal music and sound effects fail because the non-movie stream/sample path in `WIN32LIB/AUDIO/{SOUNDIO,SOUNDINT}.CPP` passes a mismatched `_SOS_COMPRESS_INFO` into the shared ADPCM decoder.
 
-_Last updated: 2026-04-02_
+_Last updated: 2026-04-03_
 
 ## Repo facts
 
@@ -363,7 +373,7 @@ _Last updated: 2026-04-02_
   - Safe cleanup rule: when a legacy helper name is just a thin alias for an SDL API, update the active callers to spell the SDL function directly and add an explicit SDL include at the use site if needed; then delete the alias from `win32_compat.h` instead of preserving it as permanent baggage. Treat comments and obsolete text snippets separately so the code cleanup stays behavior-neutral.
 - `WIN32LIB/AUDIO/SOUNDIO.CPP` is still a live implementation file and must not be deleted yet.
   - It is still compiled by the active CMake build.
-  - It still provides live entry points used directly by the game: `Audio_Init`, `Sound_End`, `Sound_Callback`, `Play_Sample`, `Stop_Sample`, `Sample_Status`, `Fade_Sample`, `File_Stream_Sample_Vol`, `Set_Primary_Buffer_Format`, `Start_Primary_Sound_Buffer`, `Stop_Primary_Sound_Buffer`, `Suspend_Audio_Thread`, and `Resume_Audio_Thread`.
+  - It still provides live entry points used directly by the game: `Audio_Init`, `Sound_End`, `Sound_Callback`, `Play_Sample`, `Stop_Sample`, `Sample_Status`, `Fade_Sample`, `File_Stream_Sample_Vol`, `Set_Primary_Buffer_Format`, `Start_Primary_Sound_Buffer`, and `Stop_Primary_Sound_Buffer`.
   - Concrete callers include `CODE/{STARTUP,NULLDLG,CONQUER,EGOS,THEME,AUDIO,ENDING,INTRO,MAPSEL,SCENARIO,SCORE,OPTIONS,WINSTUB}.CPP` plus `WIN32LIB/PALETTE/PALETTE.CPP`.
   - Safe cleanup direction for later work is **inside** `SOUNDIO.CPP`: trim dead helper paths or stale thread-era leftovers after proving they have no remaining callers. Do not treat the whole translation unit as dead just because some old compatibility internals inside it are no longer needed.
 
@@ -535,8 +545,14 @@ _Last updated: 2026-04-02_
   - `AudioBackendDevice`, `AudioBackendBuffer`, and `AudioBufferFormat` replace the active DirectSound types.
   - The backend uses SDL3 audio streams/device output internally while preserving the old primary/secondary buffer contract expected by `SOUNDIO.CPP` and `SOUNDINT.CPP`.
 - `WIN32LIB/AUDIO/SOUNDIO.CPP` no longer uses `DirectSoundCreate()` or WinMM timer callbacks on the active path.
-  - maintenance now runs through `Pump_Sound_Service()` plus `Start_Sound_Thread()` / `Stop_Sound_Thread()`;
-  - the service thread still uses the generic Win32-compat thread helpers, but audio transport/output is SDL-backed.
+  - maintenance now runs through `Pump_Sound_Service()` on the caller/main thread;
+  - the old `Start_Sound_Thread()` / `Stop_Sound_Thread()` and `CRITICAL_SECTION` bookkeeping were vestigial and have been removed from the active Linux/SDL3 path.
+- The gameplay engine should stay single-threaded.
+  - No game-side thread creation remains in `CODE/` or `WIN32LIB/`.
+  - The only real asynchronous path left is SDL's own audio callback/device-stream machinery inside `WIN32LIB/AUDIO/SDLAUDIOBACKEND.CPP`.
+  - SDL3's `SDL_AudioStream` callback runs under the stream's internal mutex, so any control-path code that must not race the callback should first serialize with `SDL_LockAudioStream()` / `SDL_UnlockAudioStream()` and only then mutate device state or destroy/rebuild the stream.
+  - The backend still keeps its own `std::mutex` protection for shared audio-buffer/device state, but SDL stream locking is the callback-exclusion point.
+  - Do not make the callback drop to silence just because that backend mutex is temporarily busy. If playback time advances while `PlaybackCursorFrames` does not, streamed music/speech can later resume from stale source positions and sound like short sections were replayed.
 - The gameplay `.AUD` loader/parser is separate from the working movie-audio path. If movies sound right but menu music or sound effects do not, investigate `WIN32LIB/AUDIO/SOUNDIO.CPP` and the active `AUDHeaderType` definitions before touching VQA audio code.
 - The active gameplay `AUDHeaderType` must stay at the original 12-byte on-disk layout.
   - Leaving legacy `long` fields in `WIN32LIB/AUDIO/AUDIO.H` / `WIN32LIB/INCLUDE/AUDIO.H` grows the header to 20 bytes on LP64 hosts.
@@ -830,8 +846,7 @@ _Last updated: 2026-04-02_
 
 - Old `#pragma pack` state leaks easily through the audio headers; keep those headers balanced with `push` / `pop`.
 - The active SDL audio backend still has to preserve the DirectSound-era buffer contract closely enough for legacy sound code to populate formats, lock regions, and play/status flags safely.
-- Some translation units include `windows.h` under `#pragma pack(4)`. The compatibility `CRITICAL_SECTION` therefore needs explicit pointer alignment (`alignas(void*)`) so its internal mutex pointer is not placed at 4-byte-aligned addresses on 64-bit Linux.
-- The runtime sound bookkeeping structs (`SampleTrackerType`, `LockedDataType`) need native alignment for pointer-bearing members and `CRITICAL_SECTION`. Keeping them under forced 4-byte packing produces sanitizer-reported misaligned accesses during `Audio_Init()`.
+- The runtime sound bookkeeping structs (`SampleTrackerType`, `LockedDataType`) still need native alignment for their pointer-bearing members. Keeping them under forced 4-byte packing produces sanitizer-reported misaligned accesses during `Audio_Init()`.
 - `SOSDATA.H` / `SOSFNCT.H` are declaration-only headers; any `#pragma pack` there is just state pollution. Leave them unpacked and let the real struct-owning headers manage their own layout.
 - The VQA/VQ file headers (`VQAHeader`, `VQHeader`) are already naturally laid out with their current fixed-width field ordering; prefer size assertions to redundant header-wide packing there.
 - In the old VQM32/WINVQ mix headers, only the on-disk `MIXHeader` / `MIXSubBlock` should stay packed. The in-memory `MIXHandle` carries a host pointer and should not live under the packed region.

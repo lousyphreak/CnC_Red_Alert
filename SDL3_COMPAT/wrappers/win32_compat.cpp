@@ -677,35 +677,6 @@ BOOL CloseHandle(HANDLE handle)
     return TRUE;
 }
 
-void InitializeCriticalSection(CRITICAL_SECTION* critical_section)
-{
-    if (critical_section) {
-        critical_section->mutex = new std::recursive_mutex();
-    }
-}
-
-void DeleteCriticalSection(CRITICAL_SECTION* critical_section)
-{
-    if (critical_section && critical_section->mutex) {
-        delete critical_section->mutex;
-        critical_section->mutex = nullptr;
-    }
-}
-
-void EnterCriticalSection(CRITICAL_SECTION* critical_section)
-{
-    if (critical_section && critical_section->mutex) {
-        critical_section->mutex->lock();
-    }
-}
-
-void LeaveCriticalSection(CRITICAL_SECTION* critical_section)
-{
-    if (critical_section && critical_section->mutex) {
-        critical_section->mutex->unlock();
-    }
-}
-
 HANDLE CreateEvent(LPVOID, BOOL manual_reset, BOOL initial_state, LPCSTR name)
 {
     return new EventHandle(manual_reset != FALSE, initial_state != FALSE);
