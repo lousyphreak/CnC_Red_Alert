@@ -757,6 +757,15 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
     - `cmake --build build --target redalert -j16` and `cmake --build build-asan --target redalert -j16` both still succeed.
     - traced `gdb` smoke runs forcing `Try_Play_Movie("SIZZLE", THEME_NONE, true)` now exercise the active buffered `320x200` movie path (`SIZZLE.VQA`) successfully on both normal and ASan builds;
     - the ASan movie smoke run still only reports the previously known non-movie UBSan warnings in `CODE/SHA.CPP` and `CODE/RANDOM.CPP`, not a new movie-path failure.
+- Fixed live palette fades and final palette brightness on the SDL path.
+  - `WIN32LIB/PALETTE/PALETTE.CPP::Set_Palette_Range()` and `Set_Palette_Register()` now flag `InterpolationPaletteChanged` and re-point `InterpolationPalette` at `CurrentPalette` whenever the active 6-bit palette changes, so `Interpolate_2X_Scale()` stops reusing stale interpolation data while fade steps or palette-register writes are in flight.
+  - `CODE/WINSTUB.CPP::SetPalette()` now restores `InterpolationPalette` after movie palette installs and clears the dirty flag when it loads a precomputed interpolation table, preserving the existing low-resolution movie path while keeping subsequent runtime interpolation-table rebuilds tied to the palette actually on screen.
+  - Follow-up score-screen comparison showed the SDL palette bridge must preserve the original DAC-style `<< 2` mapping rather than bit-replicating 6-bit values; the temporary replication change blew out highlights and flattened smooth gradients on screens such as the post-mission score presentation.
+  - The single-player score screen was still overbright because `CODE/SCORE.CPP::Presentation()` loaded a PCX palette through `Read_PCX_File()` (which already normalizes palette entries down to 6-bit DAC values) and then applied an extra `Increase_Palette_Luminance(ScorePalette, 30, 30, 30, 63)` before fading the palette in.
+  - Removing that extra luminance step keeps the score background on the palette authored in the asset instead of clipping bright regions like the lower-right artwork to the DAC maximum.
+  - Validation:
+    - `cmake --build build --target redalert -j16` succeeds.
+    - `cmake --build build-asan --target redalert -j16` succeeds.
 
 ## Build layout in use
 

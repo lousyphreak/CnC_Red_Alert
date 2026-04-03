@@ -790,10 +790,12 @@ void  SetPalette(uint8_t *palette, int32_t numbytes, uint32_t slowpal)
 	}
 
 	Set_Palette(movie_palette);
+	InterpolationPalette = CurrentPalette;
 
 	if (!used_precomputed_palette) {
-		InterpolationPalette = CurrentPalette;
 		Create_Palette_Interpolation_Table();
+	} else {
+		InterpolationPaletteChanged = FALSE;
 	}
 }
 

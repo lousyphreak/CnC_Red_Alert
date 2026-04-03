@@ -458,7 +458,6 @@ void ScoreClass::Presentation(void)
 /* --- Now display the background animation --- */
 	Hide_Mouse();
 	Load_Title_Screen(ScreenNames[house], &HidPage, ScorePalette);
-	Increase_Palette_Luminance (ScorePalette , 30, 30, 30, 63);
 	HidPage.Blit(SeenPage);
 	HidPage.Blit(*PseudoSeenBuff);
 	ScorePalette.Set(FADE_PALETTE_FAST, Call_Back);

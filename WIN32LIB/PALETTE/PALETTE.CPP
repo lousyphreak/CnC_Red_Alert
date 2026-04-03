@@ -60,6 +60,8 @@ uint8_t CurrentPalette[768];
 }
 
 extern "C" void Set_Video_Palette(void *palette);
+extern "C" uint8_t *InterpolationPalette;
+extern int32_t InterpolationPaletteChanged;
 
 /*
 ******************************** Prototypes *********************************
@@ -67,6 +69,13 @@ extern "C" void Set_Video_Palette(void *palette);
 
 PRIVATE void  Determine_Bump_Rate(void *palette, int32_t delay, int16_t *ticks, int16_t *rate);
 PRIVATE int32_t  Bump_Palette(void *palette1, uint32_t step);
+PRIVATE void Mark_Interpolation_Palette_Dirty(void);
+
+PRIVATE void Mark_Interpolation_Palette_Dirty(void)
+{
+	InterpolationPalette = CurrentPalette;
+	InterpolationPaletteChanged = TRUE;
+}
 
 /*
 ******************************** Code *********************************
@@ -390,6 +399,7 @@ extern "C" void  Set_Palette_Range(void *palette)
 	}
 
 	memcpy(CurrentPalette, palette, 768);
+	Mark_Interpolation_Palette_Dirty();
 	Set_Video_Palette(CurrentPalette);
 }
 
@@ -406,5 +416,6 @@ extern "C" void Set_Palette_Register(int32_t number, int32_t red, int32_t green,
 	entry[0] = (uint8_t)MAX(0, MIN(red, 63));
 	entry[1] = (uint8_t)MAX(0, MIN(green, 63));
 	entry[2] = (uint8_t)MAX(0, MIN(blue, 63));
+	Mark_Interpolation_Palette_Dirty();
 	Set_Video_Palette(CurrentPalette);
 }
