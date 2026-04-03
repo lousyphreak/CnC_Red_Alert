@@ -30,6 +30,9 @@ extern "C" {
 #include <assert.h>
 }
 
+#include <SDL3/SDL_loadso.h>
+
+#include "ra_messagebox.h"
 #include "win32_compat.h"
 
 #define     STATUS_OK    1
@@ -80,22 +83,22 @@ Init_Type Init_DLL;
 Find_Num_Connections_Type Find_Num_Connections_DLL;
 
 
-FARPROC MPGetProcAddress(HMODULE hModule, char const * lpProcName) {
-        FARPROC ret=GetProcAddress(hModule, lpProcName);
+void* MPGetProcAddress(SDL_SharedObject* module, char const * lpProcName) {
+        void* ret = SDL_LoadFunction(module, lpProcName);
         if (!ret) {
                 char msg[255];
                 sprintf(msg, "Unable to load function %s from %s",
 						lpProcName, "RA95MP.DLL");
-                MessageBox(0, msg, "Warning", MB_OK);
+                RA_ShowMessageBox(msg, "Warning", MB_OK);
         }
         return ret;
 }
 
 MPlayerManClass::MPlayerManClass(void) : ConnManClass()
 {
-	HMODULE lib;
+	SDL_SharedObject* lib;
 
-	lib = LoadLibrary("ra95mp.dll");
+	lib = SDL_LoadObject("ra95mp.dll");
 	if (lib != 0) {
 		MPlayerManCreate = (MPlayerInit_Type) MPGetProcAddress(lib,
 			"MPlayerManCreate");
@@ -128,7 +131,7 @@ MPlayerManClass::MPlayerManClass(void) : ConnManClass()
 		Find_Num_Connections_DLL = (Find_Num_Connections_Type) MPGetProcAddress(lib,
 			"Find_Num_Connections");
 	} else {
-       MessageBox(0, "RA95MP.DLL not found!", "Warning", MB_OK);
+       RA_ShowMessageBox("RA95MP.DLL not found!", "Warning", MB_OK);
 		 exit(0);
 	}
 	

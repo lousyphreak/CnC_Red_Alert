@@ -409,7 +409,7 @@ void VisualControlsClass::Process(void)
 			pressed = false;
 		}
 		if (process) {
-			Sleep(16);
+			SDL_Delay(16);
 		}
 	}
 }

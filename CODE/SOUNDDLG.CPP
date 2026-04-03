@@ -384,7 +384,7 @@ void SoundControlsClass::Process(void)
 				break;
 		}
 		if (process) {
-			Sleep(16);
+			SDL_Delay(16);
 		}
 	}
 

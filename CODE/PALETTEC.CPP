@@ -314,7 +314,7 @@ void PaletteClass::Set(int time, void (* callback)(void)) const
 				callback();
 			}
 			if (timer == holdtime) {
-				Sleep(1);
+				SDL_Delay(1);
 			}
 		}
 	}

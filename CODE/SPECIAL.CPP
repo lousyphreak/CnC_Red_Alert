@@ -204,7 +204,7 @@ void Special_Dialog(bool simple)
 				break;
 		}
 		if (process && Session.Type == GAME_NORMAL) {
-			Sleep(16);
+			SDL_Delay(16);
 		}
 	}
 
@@ -579,7 +579,7 @@ int Fetch_Difficulty(void)
 				break;
 		}
 		if (process) {
-			Sleep(16);
+			SDL_Delay(16);
 		}
 	}
 

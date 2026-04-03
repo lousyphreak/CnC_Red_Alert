@@ -62,6 +62,7 @@
 #include	"FUNCTION.H"
 #include	"LOADDLG.H"
 #include "SDLINPUT.H"
+#include <SDL3/SDL_time.h>
 #include	<cstdarg>
 #include	<cstdio>
 #include	<cstdlib>
@@ -2074,24 +2075,26 @@ void Init_Random(void)
 		**	easily guessed from the system clock (most clocks are fairly accurate
 		**	and thus predictable).
 		*/
-		SYSTEMTIME t;
-		GetSystemTime(&t);
-		CryptRandom.Seed_Byte(t.wMilliseconds);
-		CryptRandom.Seed_Bit(t.wSecond);
-		CryptRandom.Seed_Bit(t.wSecond>>1);
-		CryptRandom.Seed_Bit(t.wSecond>>2);
-		CryptRandom.Seed_Bit(t.wSecond>>3);
-		CryptRandom.Seed_Bit(t.wSecond>>4);
-		CryptRandom.Seed_Bit(t.wMinute);
-		CryptRandom.Seed_Bit(t.wMinute>>1);
-		CryptRandom.Seed_Bit(t.wMinute>>2);
-		CryptRandom.Seed_Bit(t.wMinute>>3);
-		CryptRandom.Seed_Bit(t.wMinute>>4);
-		CryptRandom.Seed_Bit(t.wHour);
-		CryptRandom.Seed_Bit(t.wDay);
-		CryptRandom.Seed_Bit(t.wDayOfWeek);
-		CryptRandom.Seed_Bit(t.wMonth);
-		CryptRandom.Seed_Bit(t.wYear);
+		SDL_Time current_time = 0;
+		SDL_DateTime t = {};
+		SDL_GetCurrentTime(&current_time);
+		SDL_TimeToDateTime(current_time, &t, false);
+		CryptRandom.Seed_Byte(t.nanosecond / SDL_NS_PER_MS);
+		CryptRandom.Seed_Bit(t.second);
+		CryptRandom.Seed_Bit(t.second>>1);
+		CryptRandom.Seed_Bit(t.second>>2);
+		CryptRandom.Seed_Bit(t.second>>3);
+		CryptRandom.Seed_Bit(t.second>>4);
+		CryptRandom.Seed_Bit(t.minute);
+		CryptRandom.Seed_Bit(t.minute>>1);
+		CryptRandom.Seed_Bit(t.minute>>2);
+		CryptRandom.Seed_Bit(t.minute>>3);
+		CryptRandom.Seed_Bit(t.minute>>4);
+		CryptRandom.Seed_Bit(t.hour);
+		CryptRandom.Seed_Bit(t.day);
+		CryptRandom.Seed_Bit(t.day_of_week);
+		CryptRandom.Seed_Bit(t.month);
+		CryptRandom.Seed_Bit(t.year);
 
 #ifdef FIXIT_MULTI_SAVE
 	//

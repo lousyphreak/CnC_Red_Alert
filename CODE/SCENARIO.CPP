@@ -828,12 +828,12 @@ void Do_Win(void)
 		CountDownTimer = TIMER_SECOND * 3;
 		while (Is_Speaking()) {
 			Call_Back();
-			Sleep(1);
+			SDL_Delay(1);
 		}
 		Speak(VOX_ACCOMPLISHED);
 		while (CountDownTimer || Is_Speaking()) {
 			Call_Back();
-			Sleep(1);
+			SDL_Delay(1);
 		}
 	}
 
@@ -1091,12 +1091,12 @@ void Do_Lose(void)
 	CountDownTimer = TIMER_SECOND * 3;
 	while (Is_Speaking()) {
 		Call_Back();
-		Sleep(1);
+		SDL_Delay(1);
 	}
 	Speak(VOX_FAIL);
 	while (CountDownTimer || Is_Speaking()) {
 		Call_Back();
-		Sleep(1);
+		SDL_Delay(1);
 	}
 
 	/*
@@ -1184,12 +1184,12 @@ void Do_Draw(void)
 	CountDownTimer = TIMER_SECOND * 3;
 	while (Is_Speaking()) {
 		Call_Back();
-		Sleep(1);
+		SDL_Delay(1);
 	}
 	Speak(VOX_CONTROL_EXIT);
 	while (CountDownTimer || Is_Speaking()) {
 		Call_Back();
-		Sleep(1);
+		SDL_Delay(1);
 	}
 
 	/*
@@ -1252,7 +1252,7 @@ void Do_Restart(void)
 	*/
 	while (timer > 0) {
 		Call_Back();
-		Sleep(1);
+		SDL_Delay(1);
 	}
 	Keyboard->Clear();
 
@@ -1552,7 +1552,7 @@ int BGMessageBox(char const * msg, int btn1, int btn2)
 			do {
 				Call_Back();
 				if (!Keyboard->Check() && cd) {
-					Sleep(1);
+					SDL_Delay(1);
 				}
 			} while(!Keyboard->Check() && cd);
 		}
@@ -1701,7 +1701,7 @@ int BGMessageBox(char const * msg, int btn1, int btn2)
 				pressed = false;
 			}
 			if (process) {
-				Sleep(16);
+				SDL_Delay(16);
 			}
 		}
 

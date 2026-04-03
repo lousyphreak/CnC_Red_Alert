@@ -218,7 +218,7 @@ void Fade_Palette_To(void *palette1, uint32_t delay, void (*callback)() )
 					(*cb_ptr)();
 				}
 				if (WWTickCount.Time() < timer) {
-					Sleep(1);
+					SDL_Delay(1);
 				}
 			}
 		}

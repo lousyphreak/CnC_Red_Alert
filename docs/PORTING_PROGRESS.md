@@ -8,6 +8,13 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Removed the trivial Win32 pass-through wrappers from `SDL3_COMPAT/wrappers/win32_compat.{h,cpp}` and rewired their callers to direct SDL/std/project-native code:
+  - audited the wrapper pair and split the truly trivial surface from the still-meaningful compat seams; the deleted pass-throughs were the old `GetSystemMetrics` / `ExitProcess` / `MessageBox` / `OutputDebugString` / `GetTickCount` / `GetSystemTime` / `GetLocalTime` / `GlobalMemoryStatus` / `LoadLibrary` / `GetProcAddress` / `FreeLibrary` / `GetModuleFileName` exports plus the unused inline `lstr*`, `ZeroMemory`, `CopyMemory`, `itoa`, `ltoa`, `_rotl`, and `_lrotl` helpers;
+  - updated the call sites to use direct SDL or stdlib behavior instead of the Win32 shim names: `Sleep(...)` loops now call `SDL_Delay(...)` directly, startup/WOL/MPlayer DLL loading now uses `SDL_LoadObject` / `SDL_LoadFunction` / `SDL_UnloadObject`, the old modal message-box callers now share the SDL-native `RA_ShowMessageBox(...)` helper in `SDL3_COMPAT/wrappers/ra_messagebox.h`, and the handful of time/memory/path probes now query SDL directly at the call site (`SDL_GetCurrentTime` / `SDL_TimeToDateTime`, `SDL_GetSystemRAM`, `SDL_GetBasePath`, and direct display-bounds reads);
+  - kept the non-trivial compat layer intact where it still carries real porting behavior: `RAWindow` / presentation-rect helpers, event-handle synchronization, SDL/WWFS-backed file handles, and virtual-drive / volume queries all remain in `win32_compat`;
+  - cleaned the last direct integer-string call sites in the radar/graphic-buffer code to use plain formatted output instead of the deleted inline Win32 conversion helpers, and moved the remaining debug popups/log calls onto SDL-native helpers (`RA_ShowMessageBox`, `SDL_Log`);
+  - validation for this checkpoint: `cmake --build build --target redalert -j4` and `cmake --build build-asan --target redalert -j4` both succeed after the wrapper removal.
+
 - Removed the dead DIB helper shim from the active SDL3 build and trimmed the now-unused Win32 compat heap stubs:
   - audited `CODE/DIBAPI.H` / `CODE/DIBCOMPAT.CPP` against the current CMake build and repo call sites; the only real consumers were inside the already-disabled `WOLAPI_INTEGRATION` path (`CODE/ICONLIST.CPP` / WOL UI code), while the supported build never defines that path anymore;
   - deleted `CODE/DIBAPI.H` and `CODE/DIBCOMPAT.CPP`, and removed the manual `CODE/DIBCOMPAT.CPP` append from `CMakeLists.txt` so the build no longer carries that dead WOL-era bitmap seam;

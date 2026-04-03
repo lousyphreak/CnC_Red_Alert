@@ -1304,7 +1304,7 @@ void ScoreClass::Input_Name(char str[], int xpos, int ypos, char const pal[])
 			}
 		}
 		if (key != KA_RETURN) {
-			Sleep(1);
+			SDL_Delay(1);
 		}
 	} while (key != KA_RETURN);					//	} while(key != KN_RETURN && key!=KN_KEYPAD_RETURN);
 }
@@ -1543,7 +1543,7 @@ void Call_Back_Delay(int time)
 		}
 		Animate_Score_Objs();
 		if (cd) {
-			Sleep(1);
+			SDL_Delay(1);
 		}
 	} while (cd);
 	StreamLowImpact = false;

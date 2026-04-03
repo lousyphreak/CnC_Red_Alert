@@ -512,7 +512,7 @@ void GameControlsClass::Process(void)
 			pressed = false;
 		}
 		if (process && (Session.Type == GAME_NORMAL || Session.Type == GAME_SKIRMISH)) {
-			Sleep(16);
+			SDL_Delay(16);
 		}
 	}
 }

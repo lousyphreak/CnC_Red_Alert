@@ -523,7 +523,7 @@ bool Expansion_Dialog(void)
 				break;
 		}
 		if (process) {
-			Sleep(16);
+			SDL_Delay(16);
 		}
 	}
 

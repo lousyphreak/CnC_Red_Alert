@@ -133,6 +133,7 @@
 #include <WW_WIN.H>
 #endif
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "ICONCACH.H"
@@ -999,7 +1000,8 @@ inline uint32_t	GraphicViewPortClass::Print(int32_t num, int32_t x, int32_t y, i
 
 	uint32_t	return_code=0;
 	if (Lock()){
-		return_code = (Buffer_Print(this, itoa(num, str, 10), x, y, fcol, bcol));
+		sprintf(str, "%d", num);
+		return_code = Buffer_Print(this, str, x, y, fcol, bcol);
 	}
 	Unlock();
 	return ( return_code );
@@ -1022,7 +1024,8 @@ inline uint32_t	GraphicViewPortClass::Print(int16_t num, int32_t x, int32_t y, i
 
 	uint32_t	return_code=0;
 	if (Lock()){
-		return_code = (Buffer_Print(this, itoa(num, str, 10), x, y, fcol, bcol));
+		sprintf(str, "%d", num);
+		return_code = Buffer_Print(this, str, x, y, fcol, bcol);
 	}
 	Unlock();
 	return ( return_code );

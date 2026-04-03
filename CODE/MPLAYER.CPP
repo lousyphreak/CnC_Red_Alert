@@ -397,7 +397,7 @@ GameType Select_MPlayer_Game (void)
 			pressed = false;
 		}
 		if (process) {
-			Sleep(16);
+			SDL_Delay(16);
 		}
 	}
 	return(retval);
@@ -827,7 +827,7 @@ int Surrender_Dialog(int text)
 				break;
 		}
 		if (process) {
-			Sleep(16);
+			SDL_Delay(16);
 		}
 	}
 
@@ -1021,7 +1021,7 @@ int Abort_Dialog(void)
 				break;
 		}
 		if (process) {
-			Sleep(16);
+			SDL_Delay(16);
 		}
 	}
 

@@ -52,6 +52,7 @@
 
 #include "win32_compat.h"
 #include "sdl_draw.h"
+#include <SDL3/SDL_log.h>
 #include "MISC.H"
 #include "ICONCACH.H"
 #include "GBUFFER.H"
@@ -573,7 +574,7 @@ void IconCacheClass::Draw_It (WWSurface* dest_surface , int32_t x_pixel, int32_t
 	if ( return_code != WWDRAW_ERROR_SURFACELOST && return_code != WWDRAW_OK ) {
 		char temp[100];
 		sprintf(temp,"DD Error code %d\n", return_code & 0xFFFF);
-		OutputDebugString(temp);
+		SDL_Log("%s", temp);
 	}
 
 	TimesDrawn++;

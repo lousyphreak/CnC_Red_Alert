@@ -38,6 +38,7 @@
 
 #include <stdint.h>
 
+#include <SDL3/SDL_log.h>
 #include <SDL3/SDL_timer.h>
 
 #include <WWSTD.H>
@@ -137,7 +138,7 @@ WinTimerClass::WinTimerClass (uint32_t freq, int32_t partial)
 	}else{
 		char error_str [128];
 		sprintf (error_str, "Error - timer system failed to start. Error code %d\n", GetLastError());
-		OutputDebugString(error_str);
+		SDL_Log("%s", error_str);
 	}
 }
 

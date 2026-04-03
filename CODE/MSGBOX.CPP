@@ -365,7 +365,7 @@ int WWMessageBox::Process(const char * msg, const char * b1txt, const char * b2t
 			}
 
 			if (process) {
-				Sleep(16);
+				SDL_Delay(16);
 			}
 
 			if (pressed) {

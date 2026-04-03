@@ -843,7 +843,7 @@ void EventClass::Execute(void)
 			Speak(VOX_CONTROL_EXIT);
 			while (Is_Speaking()) {
 				Call_Back();
-				Sleep(1);
+				SDL_Delay(1);
 			}
 			GameActive = false;
 			break;
@@ -890,7 +890,7 @@ void EventClass::Execute(void)
 
 				while (timer > 0) {
 					Call_Back();
-					Sleep(1);
+					SDL_Delay(1);
 				}
 
 				HidPage.Clear();

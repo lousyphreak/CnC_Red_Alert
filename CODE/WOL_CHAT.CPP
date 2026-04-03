@@ -620,7 +620,7 @@ int WOL_Chat_Dialog( WolapiObject* pWO )
 		while( Get_Mouse_State() )
 			Show_Mouse();
 		//	Be nice to other apps.
-		Sleep( 50 );
+		SDL_Delay( 50 );
 
 		//.....................................................................
 		//	Get user input

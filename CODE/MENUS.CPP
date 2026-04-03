@@ -37,6 +37,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "FUNCTION.H"
+#include <SDL3/SDL_time.h>
 /*****************************
 **	Function prototypes
 ******************************/
@@ -424,7 +425,7 @@ int Do_Menu(char const ** strings, bool )
 		selection = Check_Menu(0, strings, NULL, 0xFFL, 0);
 		if (UnknownKey != 0 || UnknownKey == KN_ESC || UnknownKey==KN_LMOUSE || UnknownKey==KN_RMOUSE) break;
 		if (selection == -1) {
-			Sleep(16);
+			SDL_Delay(16);
 		}
 	}
 	Keyboard->Clear();
@@ -769,9 +770,11 @@ int Main_Menu(uint32_t )
 		**	to the cryptographic random number generator.
 		*/
 		if (input != 0) {
-				SYSTEMTIME t;
-				GetSystemTime(&t);
-				CryptRandom.Seed_Byte(t.wMilliseconds);
+				SDL_Time current_time = 0;
+				SDL_DateTime t = {};
+				SDL_GetCurrentTime(&current_time);
+				SDL_TimeToDateTime(current_time, &t, false);
+				CryptRandom.Seed_Byte(t.nanosecond / SDL_NS_PER_MS);
 		}
 
 		/*
@@ -944,7 +947,7 @@ int Main_Menu(uint32_t )
 		}
 
 		if (process) {
-			Sleep(16);
+			SDL_Delay(16);
 		}
 	}
 

@@ -51,6 +51,7 @@
 #include	<cstdarg>
 #include	<cstdio>
 #include	<cstdlib>
+#include <ctime>
 
 #ifdef NETWORK_UDP
 #include "WSPROTO.H"
@@ -89,6 +90,28 @@ void winstub_trace(const char* format, ...)
 	std::fputc('\n', stderr);
 	std::fflush(stderr);
 	va_end(arguments);
+}
+
+int get_primary_display_metric(int index)
+{
+	SDL_Rect bounds{};
+	if (!SDL_GetDisplayBounds(SDL_GetPrimaryDisplay(), &bounds)) {
+		if (index == SM_CXSCREEN) {
+			return 640;
+		}
+		if (index == SM_CYSCREEN) {
+			return 480;
+		}
+		return 0;
+	}
+
+	if (index == SM_CXSCREEN) {
+		return bounds.w;
+	}
+	if (index == SM_CYSCREEN) {
+		return bounds.h;
+	}
+	return 0;
 }
 
 void apply_window_show_command(RAWindow* window, int command_show)
@@ -207,7 +230,7 @@ void Check_For_Focus_Loss(void)
 				return;
 			}
 			if (cd.Time()) {
-				Sleep(1);
+				SDL_Delay(1);
 			}
 
 		} while (cd.Time());
@@ -274,7 +297,7 @@ void Main_Window_Destroy(void)
 #ifndef NETWORK_UDP
 			if (Winsock.Get_Connected()) Winsock.Close();
 #endif	//NETWORK_UDP
-			ExitProcess(0);
+			std::exit(0);
 			break;
 
 		case 3:
@@ -392,8 +415,8 @@ void Create_Main_Window ( void* instance , int command_show , int width , int he
 	RAWindow*		hwnd ;
 	hwnd = RA_CreateWindow(
 		WINDOW_NAME,
-		GetSystemMetrics(SM_CXSCREEN),
-		GetSystemMetrics(SM_CYSCREEN),
+		get_primary_display_metric(SM_CXSCREEN),
+		get_primary_display_metric(SM_CYSCREEN),
 		SDL_WINDOW_RESIZABLE);
 // Denzil
 width = width; height = height;
@@ -666,7 +689,6 @@ void Assert_Failure (char *expression, int line, char *file)
 {
 	char	assertbuf[256];
 	char   timebuff[512];
-	SYSTEMTIME	time;
 
 	sprintf (assertbuf, "assert '%s' failed at line %d in module %s.\n", expression, line, file);
 
@@ -677,10 +699,33 @@ void Assert_Failure (char *expression, int line, char *file)
 
 	WWDebugString(assertbuf);
 
-	GetLocalTime(&time);
+	int time_month = 0;
+	int time_day = 0;
+	int time_year = 0;
+	int time_hour = 0;
+	int time_minute = 0;
+	int time_second = 0;
+	{
+		const std::time_t current_time = std::time(nullptr);
+		std::tm time_info{};
+#if defined(__unix__) || defined(__APPLE__) || defined(__linux__)
+		localtime_r(&current_time, &time_info);
+#else
+		const std::tm* source_time = std::localtime(&current_time);
+		if (source_time != NULL) {
+			time_info = *source_time;
+		}
+#endif
+		time_month = time_info.tm_mon + 1;
+		time_day = time_info.tm_mday;
+		time_year = time_info.tm_year + 1900;
+		time_hour = time_info.tm_hour;
+		time_minute = time_info.tm_min;
+		time_second = time_info.tm_sec;
+	}
 
-	sprintf (timebuff, "%02d/%02d/%04d %02d:%02d:%02d - %s", time.wMonth, time.wDay, time.wYear,
-																		time.wHour, time.wMinute, time.wSecond,
+	sprintf (timebuff, "%02d/%02d/%04d %02d:%02d:%02d - %s", time_month, time_day, time_year,
+																		time_hour, time_minute, time_second,
 																		assertbuf);
 
 
@@ -697,7 +742,7 @@ void Assert_Failure (char *expression, int line, char *file)
 	Prog_End();
 	Invalidate_Cached_Icons();
 	AllDone = TRUE;
-	ExitProcess(0);
+	std::exit(0);
 }
 #endif
 
@@ -736,7 +781,7 @@ void Memory_Error_Handler(void)
 		Keyboard->Check();
 	}while (ReadyToQuit == 1);
 
-	ExitProcess(0);
+	std::exit(0);
 }
 
 

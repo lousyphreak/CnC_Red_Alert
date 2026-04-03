@@ -25,12 +25,16 @@
 #include "WOL_GSUP.H"
 #include "WOLSTRNG.H"
 
+#include <SDL3/SDL_loadso.h>
+
 int WOL_Login_Dialog( WolapiObject* pWolapi );
 int WOL_Chat_Dialog( WolapiObject* pWolapi );
 const char* Game_Config_Section();
 
 bool ReregisterWolapiDLL();
 void HandleDLLFail();
+
+typedef HRESULT (*DllRegisterServerType)();
 
 WolapiObject* pWolapi = NULL;
 
@@ -209,28 +213,29 @@ bool ReregisterWolapiDLL()
 		}
 //			debugprint( "Found dll -> %s\n", szInstallPath );
 		//	Get the DLL to register itself.
-		void* hLib = LoadLibrary( szInstallPath );
+		SDL_SharedObject* hLib = SDL_LoadObject(szInstallPath);
 		if( !hLib )
 		{
 //				debugprint( "LoadLibrary failed, GetLastError is %i\n", GetLastError() );
 			return false;
 		}
-		FARPROC lpDllRegisterFunction = GetProcAddress( hLib, "DllRegisterServer" );
+		DllRegisterServerType lpDllRegisterFunction =
+			reinterpret_cast<DllRegisterServerType>(SDL_LoadFunction(hLib, "DllRegisterServer"));
 		if( !lpDllRegisterFunction )
 		{
-			FreeLibrary( hLib );
+			SDL_UnloadObject(hLib);
 			return false;
 		}
 		if( lpDllRegisterFunction() != S_OK )
 		{
-			FreeLibrary( hLib );
+			SDL_UnloadObject(hLib);
 			return false;
 		}
 		//	There is a bug in wolapi.dll that makes the following delay necessary.
 		//	Something about Neal's extra threads only getting half-way set up before they get deleted.
 		//	(The extra threads shouldn't really be created in this case, anyway...)
-		::Sleep( 1000 );
-		FreeLibrary( hLib );
+		SDL_Delay(1000);
+		SDL_UnloadObject(hLib);
 	}
 	else
 	{

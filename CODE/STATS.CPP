@@ -165,6 +165,8 @@ void			*PacketLater = NULL;
 
 #include "WOLDEBUG.H"
 
+#include <SDL3/SDL.h>
+
 #ifdef WOLAPI_INTEGRATION
 extern WolapiObject* pWolapi;
 
@@ -568,10 +570,9 @@ void Send_Statistics_Packet(void)
 		/*
 		** Memory
 		*/
-		MEMORYSTATUS	mem_info;
-		mem_info.dwLength=sizeof(mem_info);
-		GlobalMemoryStatus(&mem_info);
-		stats.Add_Field (FIELD_MEMORY, (uint32_t)mem_info.dwTotalPhys);
+		const int total_ram_mb = SDL_GetSystemRAM();
+		const uint64_t total_ram = total_ram_mb > 0 ? static_cast<uint64_t>(total_ram_mb) * 1024ULL * 1024ULL : 0ULL;
+		stats.Add_Field(FIELD_MEMORY, static_cast<uint32_t>(total_ram));
 
 		/*
 		** Video memory
@@ -602,7 +603,8 @@ void Send_Statistics_Packet(void)
 		char path_to_exe[280];
 		FILETIME write_time;		//File time is 64 bits
 
-		GetModuleFileName (ProgramInstance, path_to_exe, 280);
+		const char* base_path = SDL_GetBasePath();
+		std::snprintf(path_to_exe, sizeof(path_to_exe), "%s", (base_path != NULL) ? base_path : "./");
 
 		/*
 		**	Get the executable's modification time via SDL_GetPathInfo.

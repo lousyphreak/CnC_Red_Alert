@@ -38,10 +38,13 @@
 
 #include	"FUNCTION.H"
 #include	"SDLINPUT.H"
+#include "ra_messagebox.h"
 #include	<cstdarg>
 #include	<cstdio>
 #include	<cstdlib>
 #include <fcntl.h>
+
+#include <SDL3/SDL_filesystem.h>
 
 #ifdef WOLAPI_INTEGRATION
 //#include "WOLDEBUG.H"
@@ -72,6 +75,16 @@ void startup_trace(const char* format, ...)
 	std::fputc('\n', stderr);
 	std::fflush(stderr);
 	va_end(arguments);
+}
+
+void copy_base_path(char* buffer, size_t buffer_size)
+{
+	if (buffer == NULL || buffer_size == 0) {
+		return;
+	}
+
+	const char* base_path = SDL_GetBasePath();
+	std::snprintf(buffer, buffer_size, "%s", (base_path != NULL) ? base_path : "./");
 }
 }
 
@@ -149,7 +162,7 @@ int  WinMain ( void* instance , void* , char * command_line , int command_show )
 
 	if (strstr(command_line, "f:\\projects\\c&c0") != NULL ||
 			strstr(command_line, "F:\\PROJECTS\\C&C0") != NULL) {
-		MessageBox(0, "Playing off of the network is not allowed.", "Red Alert", MB_OK|MB_ICONSTOP);
+		RA_ShowMessageBox("Playing off of the network is not allowed.", "Red Alert", MB_OK|MB_ICONSTOP);
 		return(EXIT_FAILURE);
 	}
 
@@ -164,7 +177,7 @@ int  WinMain ( void* instance , void* , char * command_line , int command_show )
 	/*
 	** Get the full path to the .EXE
 	*/
-	GetModuleFileName (instance, &path_to_exe[0], 132);
+	copy_base_path(&path_to_exe[0], sizeof(path_to_exe));
 
 	/*
 	** First argument is supposed to be a pointer to the .EXE that is running
@@ -264,7 +277,7 @@ int  WinMain ( void* instance , void* , char * command_line , int command_show )
 	// or AllowSoloPlayOptions arguments are specified.
 	//
 	if (Session.AllowSolo==0 && Session.Type != GAME_TEN) {
-		MessageBox(NULL, "Red Alert for TEN\n (c) 1996 Westwood Studios",
+		RA_ShowMessageBox("Red Alert for TEN\n (c) 1996 Westwood Studios",
 			"Red Alert", MB_OK);
 		exit(0);
 	}
@@ -276,7 +289,7 @@ int  WinMain ( void* instance , void* , char * command_line , int command_show )
 	// or AllowSoloPlayOptions arguments are specified.
 	//
 	if (Session.AllowSolo==0 && Session.Type != GAME_MPATH) {
-		MessageBox(NULL, "Red Alert for MPATH\n (c) 1996 Westwood Studios",
+		RA_ShowMessageBox("Red Alert for MPATH\n (c) 1996 Westwood Studios",
 			"Red Alert", MB_OK);
 		exit(0);
 	}
@@ -285,9 +298,9 @@ int  WinMain ( void* instance , void* , char * command_line , int command_show )
 		WindowsTimer = new WinTimerClass(60, FALSE);
 
 		int time_test = WindowsTimer->Get_System_Tick_Count();
-		Sleep (1000);
+		SDL_Delay(1000);
 		if (WindowsTimer->Get_System_Tick_Count() == time_test){
-			MessageBox(0, TEXT_ERROR_TIMER, TEXT_SHORT_TITLE, MB_OK|MB_ICONSTOP);
+			RA_ShowMessageBox(TEXT_ERROR_TIMER, TEXT_SHORT_TITLE, MB_OK|MB_ICONSTOP);
 			return(EXIT_FAILURE);
 		}
 		RawFileClass cfile(CONFIG_FILE_NAME);
@@ -315,7 +328,7 @@ int  WinMain ( void* instance , void* , char * command_line , int command_show )
 
 			char	disk_space_message [512];
 			sprintf (disk_space_message, TEXT_CRITICALLY_LOW, (INIT_FREE_DISK_SPACE) / (1024 * 1024));
-			int reply = MessageBox(NULL, disk_space_message, TEXT_SHORT_TITLE, MB_ICONQUESTION|MB_YESNO);
+			int reply = RA_ShowMessageBox(disk_space_message, TEXT_SHORT_TITLE, MB_ICONQUESTION|MB_YESNO);
 			if (reply == IDNO) {
 				if ( WindowsTimer )
 					delete WindowsTimer;
@@ -359,7 +372,7 @@ int  WinMain ( void* instance , void* , char * command_line , int command_show )
 			}
 
 			if (!video_success) {
-				MessageBox(MainWindow, TEXT_VIDEO_ERROR, TEXT_SHORT_TITLE, MB_ICONEXCLAMATION|MB_OK);
+				RA_ShowMessageBox(TEXT_VIDEO_ERROR, TEXT_SHORT_TITLE, MB_ICONEXCLAMATION|MB_OK);
 				if (WindowsTimer) delete WindowsTimer;
 				//if (Palette) delete Palette;
 				return (EXIT_FAILURE);
@@ -381,7 +394,7 @@ int  WinMain ( void* instance , void* , char * command_line , int command_show )
 					** Aaaarrgghh!
 					*/
 					WWDebugString(TEXT_DDRAW_ERROR);WWDebugString("\n");
-					MessageBox(MainWindow, TEXT_DDRAW_ERROR, TEXT_SHORT_TITLE, MB_ICONEXCLAMATION|MB_OK);
+					RA_ShowMessageBox(TEXT_DDRAW_ERROR, TEXT_SHORT_TITLE, MB_ICONEXCLAMATION|MB_OK);
 					if (WindowsTimer) delete WindowsTimer;
 					return (EXIT_FAILURE);
 				}

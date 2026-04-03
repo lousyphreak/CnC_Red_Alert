@@ -2262,7 +2262,7 @@ static int Net_Join_Dialog(void)
 					}
 
 					while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
-						Sleep(1);
+						SDL_Delay(1);
 					}
 
 					//............................................................
@@ -2509,7 +2509,7 @@ static int Net_Join_Dialog(void)
 							Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 								1, &Session.HostAddress);
 							while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
-								Sleep(1);
+								SDL_Delay(1);
 							}
 							ready_packet_was_sent = true;
 
@@ -2553,7 +2553,7 @@ static int Net_Join_Dialog(void)
 							1, &Session.HostAddress);
 
 						while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
-							Sleep(1);
+							SDL_Delay(1);
 						}
 					}
 				} else {
@@ -2864,7 +2864,7 @@ static int Net_Join_Dialog(void)
 		//.....................................................................
 		Call_Back();
 		if (process) {
-			Sleep(16);
+			SDL_Delay(16);
 		}
 
 	}	// end of while
@@ -2909,7 +2909,7 @@ static int Net_Join_Dialog(void)
 			}
 
 			while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
-				Sleep(1);
+				SDL_Delay(1);
 			}
 
 			rc = -1;
@@ -2934,7 +2934,7 @@ static int Net_Join_Dialog(void)
 		starttime = TickCount;
 		while (TickCount - starttime < i) {
 			Udp.Service();
-			Sleep(1);
+			SDL_Delay(1);
 		}
 	}
 
@@ -3645,7 +3645,7 @@ static JoinEventType Get_Join_Responses(JoinStateType *joinstate, ListClass *gam
 			}
 
 			while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
-				Sleep(1);
+				SDL_Delay(1);
 			}
 
 			Session.GameName[0] = 0;
@@ -4699,7 +4699,7 @@ static int Net_New_Dialog(void)
 				i = max((int)(Udp.Global_Response_Time() * 2), 60);
 				while (TickCount - ok_timer < i) {
 					Udp.Service();
-					Sleep(1);
+					SDL_Delay(1);
 				}
 
 				//...............................................................
@@ -4739,7 +4739,7 @@ static int Net_New_Dialog(void)
 				Udp.Send_Global_Message (&Session.GPacket,
 					sizeof (GlobalPacketType), 0, NULL);
 				while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
-					Sleep(1);
+					SDL_Delay(1);
 				}
 
 				//...............................................................
@@ -4752,7 +4752,7 @@ static int Net_New_Dialog(void)
 						sizeof(GlobalPacketType), 0, &Session.BridgeNet);
 				}
 				while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
-					Sleep(1);
+					SDL_Delay(1);
 				}
 
 				//...............................................................
@@ -4770,7 +4770,7 @@ static int Net_New_Dialog(void)
 					Udp.Service();
 				}
 				while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
-					Sleep(1);
+					SDL_Delay(1);
 				}
 				Session.GameName[0] = 0;
 				process = false;
@@ -5009,7 +5009,7 @@ static int Net_New_Dialog(void)
 		//.....................................................................
 		Call_Back();
 		if (process) {
-			Sleep(16);
+			SDL_Delay(16);
 		}
 	}
 
@@ -5061,7 +5061,7 @@ static int Net_New_Dialog(void)
 		//.....................................................................
 		while (Udp.Global_Num_Send() > 0) {
 			Udp.Service();
-			Sleep(1);
+			SDL_Delay(1);
 		}
 
 		/*
@@ -5098,7 +5098,7 @@ static int Net_New_Dialog(void)
 					}
 				}
 			}
-			Sleep(1);
+			SDL_Delay(1);
 		} while ( num_responses < Session.Players.Count()-1 && response_timer );
 
 #ifdef FIXIT_VERSION_3
@@ -6121,7 +6121,7 @@ static int Net_Fake_New_Dialog(void)
 				Udp.Send_Global_Message (&Session.GPacket,
 					sizeof (GlobalPacketType), 0, NULL);
 				while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
-					Sleep(1);
+					SDL_Delay(1);
 				}
 
 				//...............................................................
@@ -6139,7 +6139,7 @@ static int Net_Fake_New_Dialog(void)
 					Udp.Service();
 				}
 				while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
-					Sleep(1);
+					SDL_Delay(1);
 				}
 				Session.GameName[0] = 0;
 				process = false;
@@ -6173,7 +6173,7 @@ static int Net_Fake_New_Dialog(void)
 					i = MAX(Udp.Global_Response_Time() * 2, 60*2);
 					while (TickCount - ok_timer < i) {
 						Udp.Service();
-						Sleep(1);
+						SDL_Delay(1);
 					}
 
 					//...............................................................
@@ -6306,7 +6306,7 @@ static int Net_Fake_New_Dialog(void)
 							0, NULL);
 
 						while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
-							Sleep(1);
+							SDL_Delay(1);
 						}
 
 						Clear_Listbox(&playerlist);
@@ -6381,7 +6381,7 @@ static int Net_Fake_New_Dialog(void)
 		//.....................................................................
 		Call_Back();
 		if (process) {
-			Sleep(16);
+			SDL_Delay(16);
 		}
 	}
 
@@ -6431,7 +6431,7 @@ static int Net_Fake_New_Dialog(void)
 		//.....................................................................
 		while (Udp.Global_Num_Send() > 0) {
 			Udp.Service();
-			Sleep(1);
+			SDL_Delay(1);
 		}
 
 
@@ -6470,7 +6470,7 @@ static int Net_Fake_New_Dialog(void)
 					}
 				}
 			}
-			Sleep(1);
+			SDL_Delay(1);
 		} while ( num_responses < Session.Players.Count()-1 && response_timer );
 
 		WWDebugString ("RA95 - Exited response wait loop.\n");
@@ -6500,7 +6500,7 @@ static int Net_Fake_New_Dialog(void)
 	int starttime = TickCount;
 	while (TickCount - starttime < i) {
 		Udp.Service();
-		Sleep(1);
+		SDL_Delay(1);
 	}
 
 	//------------------------------------------------------------------------
@@ -6945,7 +6945,7 @@ static int Net_Fake_Join_Dialog(void)
 					}
 
 					while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
-						Sleep(1);
+						SDL_Delay(1);
 					}
 
 					//............................................................
@@ -7061,7 +7061,7 @@ static int Net_Fake_Join_Dialog(void)
 								Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 									1, &Session.HostAddress);
 								while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
-									Sleep(1);
+									SDL_Delay(1);
 								}
 								ready_packet_was_sent = true;
 
@@ -7115,7 +7115,7 @@ static int Net_Fake_Join_Dialog(void)
 							Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 								1, &Session.HostAddress);
 							while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
-								Sleep(1);
+								SDL_Delay(1);
 							}
 						}
 					} else {
@@ -7158,7 +7158,7 @@ static int Net_Fake_Join_Dialog(void)
 					Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 						1, &Session.HostAddress);
 					while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
-						Sleep(1);
+						SDL_Delay(1);
 					}
 				}
 
@@ -7314,7 +7314,7 @@ static int Net_Fake_Join_Dialog(void)
 		//.....................................................................
 		Call_Back();
 		if (process) {
-			Sleep(16);
+			SDL_Delay(16);
 		}
 
 	}	// end of while
@@ -7359,7 +7359,7 @@ static int Net_Fake_Join_Dialog(void)
 			}
 
 			while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
-				Sleep(1);
+				SDL_Delay(1);
 			}
 
 			rc = -1;
@@ -7390,7 +7390,7 @@ static int Net_Fake_Join_Dialog(void)
 		starttime = TickCount;
 		while (TickCount - starttime < i) {
 			Udp.Service();
-			Sleep(1);
+			SDL_Delay(1);
 		}
 	}
 

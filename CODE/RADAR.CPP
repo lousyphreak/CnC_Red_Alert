@@ -17,6 +17,7 @@
 */
 
 /* $Header: /CounterStrike/RADAR.CPP 3     3/12/97 2:35p Joe_bostic $ */
+#include <cstdio>
 /***********************************************************************************************
  ***              C O N F I D E N T I A L  ---  W E S T W O O D  S T U D I O S               ***
  ***********************************************************************************************
@@ -2252,21 +2253,21 @@ bool RadarClass::Draw_House_Info(void)
 		y += (6 * RESFACTOR) + 1;
 
 // count & print buildings
-		itoa(ptr->CurBuildings, txt, 10);
+		std::snprintf(txt, sizeof(txt), "%d", ptr->CurBuildings);
 		Fancy_Text_Print(txt, RadX + RadOffX + (6 * RESFACTOR), y, color, BLACK, style);
 		y += (6 * RESFACTOR) + 1;
 
 		Fancy_Text_Print(TXT_UNITS, RadX + RadOffX + (6 * RESFACTOR), y, &ColorRemaps[PCOLOR_GREY], TBLACK, TPF_6PT_GRAD | TPF_NOSHADOW);
 		y += (6 * RESFACTOR) + 1;
 // count & print units
-		itoa(ptr->CurUnits, txt, 10);
+		std::snprintf(txt, sizeof(txt), "%d", ptr->CurUnits);
 		Fancy_Text_Print(txt, RadX + RadOffX + 6 * RESFACTOR, y, color, BLACK, style);
 		y += (6 * RESFACTOR) + 1;
 
 		Fancy_Text_Print(TXT_INFANTRY, RadX + RadOffX + (6 * RESFACTOR), y, &ColorRemaps[PCOLOR_GREY], TBLACK, TPF_6PT_GRAD | TPF_NOSHADOW);
 		y += (6 * RESFACTOR) + 1;
 // count & print infantry
-		itoa(ptr->CurInfantry, txt, 10);
+		std::snprintf(txt, sizeof(txt), "%d", ptr->CurInfantry);
 		Fancy_Text_Print(txt, RadX + RadOffX + (6 * RESFACTOR), y, color, BLACK, style);
 #if(0)
 		y += (6 * RESFACTOR) + 1;
@@ -2279,7 +2280,7 @@ bool RadarClass::Draw_House_Info(void)
 		for (i = AIRCRAFT_NONE+1, count = 0; i < AIRCRAFT_COUNT; i++) {
 			count += ptr->AQuantity[i];
 		}
-		itoa(count, txt, 10);
+		std::snprintf(txt, sizeof(txt), "%d", count);
 		Fancy_Text_Print(txt, RadX + RadOffX, y,
 				color, BLACK, style);
 #endif

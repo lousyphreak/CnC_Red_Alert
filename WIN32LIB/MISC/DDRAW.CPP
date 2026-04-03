@@ -43,6 +43,7 @@
 
 
 #include "MISC.H"
+#include "ra_messagebox.h"
 #include <GBUFFER.H>
 #include <PALETTE.H>
 
@@ -86,7 +87,7 @@ void Process_Draw_Result(HRESULT result, int32_t display_ok_msg)
 {
 	if (result == WWDRAW_OK) {
 		if (display_ok_msg) {
-			MessageBox(MainWindow, "SDL draw request succeeded.", "Note", MB_ICONEXCLAMATION|MB_OK);
+			RA_ShowMessageBox("SDL draw request succeeded.", "Note", MB_ICONEXCLAMATION|MB_OK);
 		}
 		return;
 	}
@@ -99,7 +100,7 @@ void Process_Draw_Result(HRESULT result, int32_t display_ok_msg)
 	} else if (result == WWDRAW_ERROR_NOPALETTEATTACHED) {
 		message = "SDL draw surface has no palette attached.";
 	}
-	MessageBox(MainWindow, message, "Note", MB_ICONEXCLAMATION|MB_OK);
+	RA_ShowMessageBox(message, "Note", MB_ICONEXCLAMATION|MB_OK);
 }
 
 

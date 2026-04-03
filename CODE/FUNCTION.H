@@ -39,6 +39,7 @@
 #define FUNCTION_H
 
 #include <stdint.h>
+#include <SDL3/SDL_timer.h>
 
 #include "sdl_config.h"
 

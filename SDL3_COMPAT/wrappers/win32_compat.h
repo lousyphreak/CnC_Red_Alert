@@ -63,8 +63,6 @@ using LRESULT = intptr_t;
 using MCIDEVICEID = UINT;
 using ATOM = WORD;
 using HANDLE = void*;
-using HMODULE = void*;
-using FARPROC = void (*)();
 using HGDIOBJ = void*;
 using LPVOID = void*;
 using LPCVOID = const void*;
@@ -87,69 +85,6 @@ using USHORT = uint16_t;
 using SOCKET = int;
 using VOID = void;
 using INT_PTR = intptr_t;
-
-inline LPSTR lstrcpy(LPSTR destination, LPCSTR source)
-{
-    return std::strcpy(destination, source);
-}
-
-inline LPSTR lstrcat(LPSTR destination, LPCSTR source)
-{
-    return std::strcat(destination, source);
-}
-
-inline int lstrcmp(LPCSTR string1, LPCSTR string2)
-{
-    return std::strcmp(string1, string2);
-}
-
-inline int lstrcmpi(LPCSTR string1, LPCSTR string2)
-{
-    return SDL_strcasecmp(string1, string2);
-}
-
-inline int lstrlen(LPCSTR string)
-{
-    return string ? static_cast<int>(std::strlen(string)) : 0;
-}
-
-inline LPSTR lstrcpyn(LPSTR destination, LPCSTR source, int max_length)
-{
-    if (!destination || max_length <= 0) {
-        return destination;
-    }
-
-    if (!source) {
-        destination[0] = '\0';
-        return destination;
-    }
-
-    std::strncpy(destination, source, static_cast<size_t>(max_length) - 1);
-    destination[max_length - 1] = '\0';
-    return destination;
-}
-
-struct MEMORYSTATUS {
-    DWORD dwLength;
-    DWORD dwMemoryLoad;
-    DWORD dwTotalPhys;
-    DWORD dwAvailPhys;
-    DWORD dwTotalPageFile;
-    DWORD dwAvailPageFile;
-    DWORD dwTotalVirtual;
-    DWORD dwAvailVirtual;
-};
-
-struct SYSTEMTIME {
-    WORD wYear;
-    WORD wMonth;
-    WORD wDayOfWeek;
-    WORD wDay;
-    WORD wHour;
-    WORD wMinute;
-    WORD wSecond;
-    WORD wMilliseconds;
-};
 
 struct RAWindow;
 
@@ -379,18 +314,8 @@ bool RA_GameRectToWindowRect(RAWindow* window, const RECT* game_rect, SDL_Rect* 
 
 extern "C" {
 
-int GetSystemMetrics(int index);
-void ExitProcess(UINT exit_code);
-
-int MessageBox(RAWindow* window, LPCSTR text, LPCSTR caption, UINT type);
-void OutputDebugString(LPCSTR text);
 DWORD GetLastError(void);
 UINT SetErrorMode(UINT mode);
-void Sleep(DWORD milliseconds);
-DWORD GetTickCount(void);
-void GetSystemTime(SYSTEMTIME* system_time);
-void GetLocalTime(SYSTEMTIME* system_time);
-void GlobalMemoryStatus(MEMORYSTATUS* memory_status);
 DWORD WaitForSingleObject(HANDLE handle, DWORD milliseconds);
 BOOL CloseHandle(HANDLE handle);
 HANDLE CreateEvent(LPVOID attributes, BOOL manual_reset, BOOL initial_state, LPCSTR name);
@@ -405,74 +330,6 @@ UINT GetDriveType(LPCSTR root_path_name);
 BOOL GetVolumeInformation(LPCSTR root_path_name, LPSTR volume_name_buffer, DWORD volume_name_size, DWORD* volume_serial_number,
     DWORD* maximum_component_length, DWORD* file_system_flags, LPSTR file_system_name_buffer, DWORD file_system_name_size);
 
- HMODULE LoadLibrary(LPCSTR file_name);
- FARPROC GetProcAddress(HMODULE module, LPCSTR proc_name);
- BOOL FreeLibrary(HMODULE module);
-DWORD GetModuleFileName(void* instance, LPSTR file_name, DWORD size);
-
-}
-
-inline void ZeroMemory(void* memory, size_t size)
-{
-    std::memset(memory, 0, size);
-}
-
-inline void CopyMemory(void* dest, const void* src, size_t size)
-{
-    std::memcpy(dest, src, size);
-}
-
-inline char* ra_integer_to_string(int64_t value, char* str, int radix)
-{
-    if (!str || radix < 2 || radix > 36) {
-        return str;
-    }
-
-    const bool negative = (radix == 10) && (value < 0);
-    uint64_t current = negative ? static_cast<uint64_t>(-value) : static_cast<uint64_t>(value);
-    char* out = str;
-
-    do {
-        const uint32_t digit_value = static_cast<uint32_t>(current % static_cast<uint64_t>(radix));
-        *out++ = static_cast<char>(digit_value < 10 ? ('0' + digit_value) : ('a' + (digit_value - 10)));
-        current /= static_cast<uint64_t>(radix);
-    } while (current != 0);
-
-    if (negative) {
-        *out++ = '-';
-    }
-
-    *out = '\0';
-    for (char* left = str, *right = out - 1; left < right; ++left, --right) {
-        const char temp = *left;
-        *left = *right;
-        *right = temp;
-    }
-    return str;
-}
-
-inline char* itoa(int32_t value, char* str, int radix)
-{
-    return ra_integer_to_string(value, str, radix);
-}
-
-inline char* ltoa(int32_t value, char* str, int radix)
-{
-    return ra_integer_to_string(value, str, radix);
-}
-
-inline uint32_t _rotl(uint32_t value, int shift)
-{
-    shift &= 31;
-    if (shift == 0) {
-        return value;
-    }
-    return (value << shift) | (value >> (32 - shift));
-}
-
-inline uint32_t _lrotl(uint32_t value, int shift)
-{
-    return _rotl(value, shift);
 }
 
 

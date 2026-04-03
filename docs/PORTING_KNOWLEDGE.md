@@ -1,5 +1,15 @@
 # Porting Knowledge
 
+## Trivial Win32 pass-throughs should move to direct SDL/std call sites
+
+- `SDL3_COMPAT/wrappers/win32_compat.{h,cpp}` is not just for deleting dead stubs; it also needs audits for thin wrappers that merely rename SDL or libc behavior without carrying any Red Alert- or filesystem-specific logic.
+  - In this pass, the removable surface was the old `GetSystemMetrics` / `ExitProcess` / `MessageBox` / `OutputDebugString` / `GetTickCount` / `GetSystemTime` / `GetLocalTime` / `GlobalMemoryStatus` / `LoadLibrary` / `GetProcAddress` / `FreeLibrary` / `GetModuleFileName` exports plus the unused inline `lstr*`, `ZeroMemory`, `CopyMemory`, `itoa`, `ltoa`, `_rotl`, and `_lrotl` helpers.
+- Safe rule for this tree: if a compat helper is only forwarding to SDL/std/C runtime and does not encode active WWFS/event/window semantics, update the repo-owned callers to the real API and delete the compat name instead of preserving another fake Win32 layer.
+  - Good direct replacements from this cleanup: `Sleep(...)` -> `SDL_Delay(...)`, `LoadLibrary` / `GetProcAddress` / `FreeLibrary` -> `SDL_LoadObject` / `SDL_LoadFunction` / `SDL_UnloadObject`, time seeding -> `SDL_GetCurrentTime` + `SDL_TimeToDateTime`, RAM probes -> `SDL_GetSystemRAM`, and base-path discovery -> `SDL_GetBasePath`.
+  - If multiple call sites still need the same SDL behavior but the old Win32 signature is no longer appropriate, prefer a small project-native helper with SDL semantics rather than another Win32 compatibility export. The current example is `SDL3_COMPAT/wrappers/ra_messagebox.h`, which centralizes the SDL message-box policy without preserving the old `MessageBox(...)` wrapper itself.
+- Keep the real compat seams separate from the trivial ones.
+  - `win32_compat` still legitimately owns the SDL-backed event-handle primitives, the WWFS/file-handle compatibility layer, the virtual-drive/volume probes, and the `RAWindow` presentation helpers; those are not just renames and should not be flattened casually.
+
 ## Dead compat stubs should be deleted, not preserved
 
 - `SDL3_COMPAT/wrappers/win32_compat.{h,cpp}` still needs periodic audits for wrappers that have no SDL-side behavior at all.

@@ -2,8 +2,6 @@
 #include "sdl_fs.h"
 #include "SDLINPUT.H"
 
-#include <SDL3/SDL_loadso.h>
-
 #include <algorithm>
 #include <array>
 #include <cstdint>
@@ -53,7 +51,6 @@ struct EventHandle final : HandleBase {
 
 std::mutex g_last_error_mutex;
 DWORD g_last_error = ERROR_SUCCESS;
-std::chrono::steady_clock::time_point g_start_time = std::chrono::steady_clock::now();
 std::atomic<UINT> g_error_mode{0};
 
 } // end anonymous namespace
@@ -92,51 +89,6 @@ void set_last_error(DWORD value)
 {
     std::scoped_lock lock(g_last_error_mutex);
     g_last_error = value;
-}
-
-void populate_system_time(SYSTEMTIME* system_time, const std::tm& time_info, int milliseconds)
-{
-    if (!system_time) {
-        return;
-    }
-
-    system_time->wYear = static_cast<WORD>(time_info.tm_year + 1900);
-    system_time->wMonth = static_cast<WORD>(time_info.tm_mon + 1);
-    system_time->wDayOfWeek = static_cast<WORD>(time_info.tm_wday);
-    system_time->wDay = static_cast<WORD>(time_info.tm_mday);
-    system_time->wHour = static_cast<WORD>(time_info.tm_hour);
-    system_time->wMinute = static_cast<WORD>(time_info.tm_min);
-    system_time->wSecond = static_cast<WORD>(time_info.tm_sec);
-    system_time->wMilliseconds = static_cast<WORD>(milliseconds);
-}
-
-void fill_current_system_time(SYSTEMTIME* system_time, bool local_time)
-{
-    if (!system_time) {
-        return;
-    }
-
-    const auto now = std::chrono::system_clock::now();
-    const auto milliseconds = static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count() % 1000);
-    const std::time_t current_time = std::chrono::system_clock::to_time_t(now);
-    std::tm time_info{};
-
-#if defined(__unix__) || defined(__APPLE__) || defined(__linux__)
-    if (local_time) {
-        localtime_r(&current_time, &time_info);
-    } else {
-        gmtime_r(&current_time, &time_info);
-    }
-#else
-    const std::tm* source_time = local_time ? std::localtime(&current_time) : std::gmtime(&current_time);
-    if (source_time) {
-        time_info = *source_time;
-    } else {
-        std::memset(&time_info, 0, sizeof(time_info));
-    }
-#endif
-
-    populate_system_time(system_time, time_info, milliseconds);
 }
 
 std::string create_file_mode(DWORD desired_access, DWORD creation_disposition)
@@ -279,79 +231,6 @@ bool RA_GameRectToWindowRect(RAWindow* window, const RECT* game_rect, SDL_Rect* 
 
 extern "C" {
 
-int GetSystemMetrics(int index)
-{
-    SDL_Rect bounds{};
-    if (!SDL_GetDisplayBounds(SDL_GetPrimaryDisplay(), &bounds)) {
-        if (index == SM_CXSCREEN) {
-            return 640;
-        }
-        if (index == SM_CYSCREEN) {
-            return 480;
-        }
-        return 0;
-    }
-
-    if (index == SM_CXSCREEN) {
-        return bounds.w;
-    }
-    if (index == SM_CYSCREEN) {
-        return bounds.h;
-    }
-    return 0;
-}
-
-void ExitProcess(UINT exit_code)
-{
-    std::exit(static_cast<int>(exit_code));
-}
-
-int MessageBox(RAWindow*, LPCSTR text, LPCSTR caption, UINT type)
-{
-    Uint32 flags = SDL_MESSAGEBOX_INFORMATION;
-    switch (type & 0x000000F0U) {
-    case MB_ICONSTOP:
-        flags = SDL_MESSAGEBOX_ERROR;
-        break;
-    case MB_ICONEXCLAMATION:
-        flags = SDL_MESSAGEBOX_WARNING;
-        break;
-    default:
-        break;
-    }
-
-    if ((type & MB_YESNO) == MB_YESNO) {
-        const SDL_MessageBoxButtonData buttons[] = {
-            {SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, IDYES, "Yes"},
-            {SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, IDNO, "No"},
-        };
-        const SDL_MessageBoxData data = {
-            flags,
-            nullptr,
-            caption ? caption : "Red Alert",
-            text ? text : "",
-            2,
-            buttons,
-            nullptr,
-        };
-        int button_id = IDNO;
-        if (SDL_ShowMessageBox(&data, &button_id) == 0) {
-            return button_id;
-        }
-        return IDNO;
-    }
-
-    SDL_ShowSimpleMessageBox(flags, caption ? caption : "Red Alert", text ? text : "", nullptr);
-    return IDOK;
-}
-
-void OutputDebugString(LPCSTR text)
-{
-    if (text) {
-        SDL_Log("%s", text);
-    }
-}
-
 DWORD GetLastError(void)
 {
     std::scoped_lock lock(g_last_error_mutex);
@@ -361,49 +240,6 @@ DWORD GetLastError(void)
 UINT SetErrorMode(UINT mode)
 {
     return g_error_mode.exchange(mode);
-}
-
-void Sleep(DWORD milliseconds)
-{
-    SDL_Delay(milliseconds);
-}
-
-DWORD GetTickCount(void)
-{
-    auto elapsed = std::chrono::steady_clock::now() - g_start_time;
-    return static_cast<DWORD>(std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count());
-}
-
-void GetSystemTime(SYSTEMTIME* system_time)
-{
-    fill_current_system_time(system_time, false);
-}
-
-void GetLocalTime(SYSTEMTIME* system_time)
-{
-    fill_current_system_time(system_time, true);
-}
-
-void GlobalMemoryStatus(MEMORYSTATUS* memory_status)
-{
-    if (!memory_status) {
-        return;
-    }
-
-    ZeroMemory(memory_status, sizeof(*memory_status));
-    memory_status->dwLength = sizeof(*memory_status);
-
-    const int total_ram_mb = SDL_GetSystemRAM();
-    const uint64_t total_ram = total_ram_mb > 0 ? static_cast<uint64_t>(total_ram_mb) * 1024ULL * 1024ULL : 0ULL;
-    const uint64_t avail_ram = total_ram / 2ULL;
-
-    memory_status->dwTotalPhys = static_cast<DWORD>(total_ram);
-    memory_status->dwAvailPhys = static_cast<DWORD>(avail_ram);
-    memory_status->dwTotalPageFile = static_cast<DWORD>(total_ram);
-    memory_status->dwAvailPageFile = static_cast<DWORD>(avail_ram);
-    memory_status->dwTotalVirtual = static_cast<DWORD>(total_ram);
-    memory_status->dwAvailVirtual = static_cast<DWORD>(avail_ram);
-    memory_status->dwMemoryLoad = total_ram ? static_cast<DWORD>(((total_ram - avail_ram) * 100ULL) / total_ram) : 0U;
 }
 
 DWORD WaitForSingleObject(HANDLE handle, DWORD milliseconds)
@@ -600,35 +436,6 @@ BOOL GetVolumeInformation(LPCSTR root_path_name, LPSTR volume_name_buffer, DWORD
     }
 
     return TRUE;
-}
-
-HMODULE LoadLibrary(LPCSTR file_name)
-{
-    return SDL_LoadObject(file_name);
-}
-
-FARPROC GetProcAddress(HMODULE module, LPCSTR proc_name)
-{
-    return reinterpret_cast<FARPROC>(SDL_LoadFunction(reinterpret_cast<SDL_SharedObject*>(module), proc_name));
-}
-
-BOOL FreeLibrary(HMODULE module)
-{
-    if (!module) return FALSE;
-    SDL_UnloadObject(reinterpret_cast<SDL_SharedObject*>(module));
-    return TRUE;
-}
-
-DWORD GetModuleFileName(void*, LPSTR file_name, DWORD size)
-{
-    if (!file_name || size == 0) return 0;
-    std::string path;
-
-    const char* base_path = SDL_GetBasePath();
-    path = (base_path != nullptr) ? base_path : "./";
-
-    std::snprintf(file_name, size, "%s", path.c_str());
-    return static_cast<DWORD>(std::strlen(file_name));
 }
 
 } // extern "C"

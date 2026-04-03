@@ -405,7 +405,7 @@ int LoadOptionsClass::Process(void)
 					*/
 					while (timer > 0) {
 						Call_Back();
-						Sleep(1);
+						SDL_Delay(1);
 					}
 					Keyboard->Clear();
 
@@ -415,7 +415,7 @@ int LoadOptionsClass::Process(void)
 						Speak(VOX_LOAD1);
 						while (Is_Speaking()) {
 							Call_Back();
-							Sleep(1);
+							SDL_Delay(1);
 						}
 						Hide_Mouse();
 						SeenPage.Clear();
@@ -456,7 +456,7 @@ int LoadOptionsClass::Process(void)
 					Speak(VOX_SAVE1);
 					while (Is_Speaking()) {
 						Call_Back();
-						Sleep(1);
+						SDL_Delay(1);
 					}
 					CDTimerClass<SystemTimerClass> timer;
 //					timer.Start();
@@ -469,7 +469,7 @@ int LoadOptionsClass::Process(void)
 					*/
 					while (timer > 0) {
 						Call_Back();
-						Sleep(1);
+						SDL_Delay(1);
 					}
 					Keyboard->Clear();
 				}
@@ -554,7 +554,7 @@ int LoadOptionsClass::Process(void)
 				break;
 		}
 		if (process && (Session.Type == GAME_NORMAL || Session.Type == GAME_SKIRMISH)) {
-			Sleep(16);
+			SDL_Delay(16);
 		}
 	}
 

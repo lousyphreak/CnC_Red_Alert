@@ -40,6 +40,7 @@
 
 
 #include "FUNCTION.H"
+#include <SDL3/SDL.h>
 #include <cstddef>
 #include <cstdint>
 
@@ -223,12 +224,10 @@ void Enable_Uncompressed_Shapes (void)
 
 void Check_Use_Compressed_Shapes (void)
 {
-	MEMORYSTATUS	mem_info;
+	const int total_ram_mb = SDL_GetSystemRAM();
+	const uint64_t total_ram = total_ram_mb > 0 ? static_cast<uint64_t>(total_ram_mb) * 1024ULL * 1024ULL : 0ULL;
 
-	mem_info.dwLength=sizeof(mem_info);
-	GlobalMemoryStatus(&mem_info);
-
-	UseBigShapeBuffer = (mem_info.dwTotalPhys > 16*1024*1024) ? TRUE : FALSE;
+	UseBigShapeBuffer = (total_ram > 16ULL * 1024ULL * 1024ULL) ? TRUE : FALSE;
 #ifdef FIXIT_SCORE_CRASH
 	/*
 	** Keep track of our original decision about whether to use cached shapes.
