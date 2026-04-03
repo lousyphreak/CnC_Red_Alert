@@ -370,9 +370,9 @@ AudioBackendDevice::~AudioBackendDevice()
 }
 
 
-HRESULT AudioBackendDevice::SetWindow(HWND hwnd)
+HRESULT AudioBackendDevice::SetWindow(RAWindow* window)
 {
-	Window = hwnd;
+	Window = window;
 	return (RAAUDIO_OK);
 }
 

@@ -936,7 +936,7 @@ int32_t Set_Primary_Buffer_Format(void)
  *    2/7/96 10:17AM ST : Created                                                              *
  *=============================================================================================*/
 
-void Print_Sound_Error(char *sound_error, HWND window)
+void Print_Sound_Error(char *sound_error, RAWindow* window)
 {
 	MessageBox(window, sound_error, "Command & Conquer", MB_ICONEXCLAMATION|MB_OK);
 }
@@ -963,7 +963,7 @@ void Print_Sound_Error(char *sound_error, HWND window)
  *   08-24-95 10:01am ST : Modified for Windows 95 audio output                                *
  *=============================================================================================*/
 
-int32_t Audio_Init( HWND window , int32_t bits_per_sample, int32_t stereo , int32_t rate , int32_t reverse_channels)
+int32_t Audio_Init( RAWindow* window , int32_t bits_per_sample, int32_t stereo , int32_t rate , int32_t reverse_channels)
 {
 	int32_t	index;
 	int32_t	sample=1;

@@ -52,7 +52,7 @@
 /*
 ** Instance handle for the THIPX32 .DLL
 */
-HINSTANCE	IpxDllInstance = NULL;
+void*	IpxDllInstance = NULL;
 
 /*
 ** Function pointers

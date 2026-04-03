@@ -152,7 +152,7 @@ enum {
 
 
 extern uint32_t 	PlanetWestwoodGameID;
-extern HINSTANCE		ProgramInstance;
+extern void*		ProgramInstance;
 extern uint32_t 	PlanetWestwoodStartTime;
 
 extern "C" char	CPUType;

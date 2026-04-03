@@ -65,7 +65,7 @@ class AudioBackendDevice {
 public:
 	AudioBackendDevice(void);
 	~AudioBackendDevice();
-	HRESULT SetWindow(HWND hwnd);
+	HRESULT SetWindow(RAWindow* window);
 	HRESULT CreateBuffer(uint32_t buffer_bytes, const AudioBufferFormat *format, int32_t primary, AudioBackendBuffer **buffer);
 	HRESULT Release(void);
 
@@ -84,7 +84,7 @@ private:
 	void RefreshPrimaryFormatLocked(struct SDL_AudioStream **stream_to_destroy);
 
 	int32_t RefCount;
-	HWND Window;
+	RAWindow* Window;
 	std::mutex Mutex;
 	struct SDL_AudioStream *Stream;
 	struct SDL_AudioSpec MixSpec;

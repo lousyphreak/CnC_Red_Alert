@@ -78,8 +78,8 @@ void startup_trace(const char* format, ...)
 }
 
 //WinTimerClass * WinTimer;
-extern void Create_Main_Window ( HANDLE instance , int command_show , int width , int height);
-HINSTANCE	ProgramInstance;
+extern void Create_Main_Window ( void* instance , int command_show , int width , int height);
+void*	ProgramInstance;
 void Check_Use_Compressed_Shapes (void);
 void Read_Setup_Options(RawFileClass *config_file);
 bool VideoBackBufferAllowed = true;
@@ -117,8 +117,8 @@ const char* Game_Registry_Key();
  * HISTORY:                                                                                    *
  *   03/20/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-//int PASCAL WinMain(HINSTANCE, HINSTANCE, char *, int )
-int  WinMain ( HINSTANCE instance , HINSTANCE , char * command_line , int command_show )
+//int PASCAL WinMain(void*, void*, char *, int )
+int  WinMain ( void* instance , void* , char * command_line , int command_show )
 
 {
 

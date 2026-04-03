@@ -318,104 +318,13 @@ extern "C" {
 	void  Stop_Execution (void);
 }
 
-#pragma off(unreferenced)
-void WWKeyboardClass::Message_Handler(HWND , uint32_t message, uint32_t wParam, int32_t lParam)
-{
-	switch (message) {
-		case WM_SYSKEYDOWN:
-		case WM_KEYDOWN:
-			if (wParam == KN_SCROLLLOCK) {
-				Stop_Execution();
-			} else {
-				Put_Key_Message(wParam);
-			}
-			break;
-
-		case WM_SYSKEYUP:
-		case WM_KEYUP:
-			Put_Key_Message(wParam, TRUE);
-			break;
-
-		case WM_LBUTTONDOWN:
-			Put_Key_Message(KN_LMOUSE);
-			Put(LOWORD(lParam));
-			Put(HIWORD(lParam));
-			break;
-
-		case WM_LBUTTONUP:
-			Put_Key_Message(KN_LMOUSE, TRUE);
-			Put(LOWORD(lParam));
-			Put(HIWORD(lParam));
-			break;
-
-		case WM_LBUTTONDBLCLK:
-			Put_Key_Message(KN_LMOUSE, TRUE, TRUE);
-			Put(LOWORD(lParam));
-			Put(HIWORD(lParam));
-			break;
-
-		case WM_MBUTTONDOWN:
-			Put_Key_Message(LEGACY_MIDDLE_MOUSE);
-			Put(LOWORD(lParam));
-			Put(HIWORD(lParam));
-			break;
-
-		case WM_MBUTTONUP:
-			Put_Key_Message(LEGACY_MIDDLE_MOUSE, TRUE);
-			Put(LOWORD(lParam));
-			Put(HIWORD(lParam));
-			break;
-
-		case WM_MBUTTONDBLCLK:
-			Put_Key_Message(LEGACY_MIDDLE_MOUSE, TRUE, TRUE);
-			Put(LOWORD(lParam));
-			Put(HIWORD(lParam));
-			break;
-
-		case WM_RBUTTONDOWN:
-			Put_Key_Message(KN_RMOUSE);
-			Put(LOWORD(lParam));
-			Put(HIWORD(lParam));
-			break;
-
-		case WM_RBUTTONUP:
-			Put_Key_Message(KN_RMOUSE, TRUE);
-			Put(LOWORD(lParam));
-			Put(HIWORD(lParam));
-			break;
-
-		case WM_RBUTTONDBLCLK:
-			Put_Key_Message(KN_RMOUSE, TRUE, TRUE);
-			Put(LOWORD(lParam));
-			Put(HIWORD(lParam));
-			break;
-		case WM_MOUSEMOVE:
-			if (CurrentCursor)
-				SDL_GameInput_SetCursor(CurrentCursor);
-			break;
-	}
-}
-#pragma on(unreferenced)
 
 
 
 
 void Message_Loop(void)
 {
-
-	MSG	msg;
-
-	while (PeekMessage( &msg, NULL, 0, 0, PM_NOREMOVE )) {
-	  	if( !GetMessage( &msg, NULL, 0, 0 ) ){
-			return;
-		}
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
-	}
-
-
-
-
+	SDL_GameInput_Pump();
 }
 
 

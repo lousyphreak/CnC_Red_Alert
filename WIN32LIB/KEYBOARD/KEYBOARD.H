@@ -76,10 +76,6 @@ class WWKeyboardClass
 		int32_t 	Down(int32_t key);															// tests to see if a key is down
 		void	AI(void);																// messaging logic for key manager
 
-		/*===================================================================*/
-		/* Define the main hook for the message processing loop.					*/
-		/*===================================================================*/
-		void Message_Handler(HWND hwnd, uint32_t message, uint32_t wParam, int32_t lParam);
 
 		/*===================================================================*/
 		/* Define public routines which can be used on keys in general.		*/

@@ -58,11 +58,10 @@
 
 #define PLANET_WESTWOOD_HANDLE_MAX 20	// Max length of a Planet Westwood handle
 
-/*
-** Define events for Winsock callbacks
-*/
-#define WM_IPXASYNCEVENT		(WM_USER + 115)	// IPX socket Async event
-#define WM_UDPASYNCEVENT		(WM_USER + 116)	// UDP socket Async event
+enum WinsockProtocolEventType {
+	WINSOCK_PROTOCOL_EVENT_IPX = 1,
+	WINSOCK_PROTOCOL_EVENT_UDP = 2
+};
 
 
 /*
@@ -110,7 +109,7 @@ class WinsockInterfaceClass {
 			return (PROTOCOL_NONE);
 		};
 
-		virtual int Protocol_Event_Message (void) {
+		virtual int Protocol_Event_ID (void) {
 			return (0);
 		};
 
@@ -118,7 +117,7 @@ class WinsockInterfaceClass {
 			return (false);
 		};
 
-	 	virtual int32_t Message_Handler(HWND, uint32_t, uint32_t, int32_t) {
+	 	virtual int32_t Handle_Protocol_Event(uint32_t, uint32_t, int32_t) {
 			return (1);
 		}
 
@@ -171,7 +170,7 @@ class WinsockInterfaceClass {
 		/*
 		** Async object required for callbacks to our message handler.
 		*/
-		HANDLE				ASync;
+		void*				ASync;
 
 		/*
 		** Temporary receive buffer to use when querying Winsock for incoming packets.

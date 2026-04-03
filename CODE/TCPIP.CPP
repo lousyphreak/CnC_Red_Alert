@@ -364,9 +364,9 @@ void TcpipManagerClass::Write(void *buffer, int buffer_len)
 	** Send a message to ourselves to start off the event
 	*/
 	if (UseUDP){
-		SendMessage(MainWindow, WM_UDPASYNCEVENT, 0, (int32_t)FD_WRITE);
+		Handle_Async_Event(TCPIP_EVENT_UDP_SOCKET, (int32_t)FD_WRITE);
 	}else{
-		SendMessage(MainWindow, WM_ASYNCEVENT, 0, (int32_t)FD_WRITE);
+		Handle_Async_Event(TCPIP_EVENT_SOCKET, (int32_t)FD_WRITE);
 	}
 	/*
 	** Make sure the message loop gets called because all the Winsock notifications
@@ -428,14 +428,14 @@ int32_t TcpipManagerClass::Add_Client(void)
 	** Initiate an asynchronous host lookup by address. Our window will receive notification
 	** when this is complete or when it times out.
 	*/
-	Async = WSAAsyncGetHostByAddr (MainWindow, WM_HOSTBYADDRESS,
+	Async = WSAAsyncGetHostByAddr (MainWindow, TCPIP_EVENT_HOST_BY_ADDRESS,
 		(char const *)&addr.sin_addr, 4, PF_INET, &HostBuff[0],
 		MAXGETHOSTSTRUCT);
 
 	/*
 	** Enable asynchronous events on this socket
 	*/
-	if (WSAAsyncSelect (ConnectSocket, MainWindow, WM_ASYNCEVENT,
+	if (WSAAsyncSelect (ConnectSocket, MainWindow, TCPIP_EVENT_SOCKET,
 		FD_READ | FD_WRITE | FD_CLOSE) == SOCKET_ERROR){
 		WSACancelAsyncRequest(Async);
 		Close_Socket (ConnectSocket);
@@ -473,7 +473,7 @@ int32_t TcpipManagerClass::Add_Client(void)
 	/*
 	** Enable asynchronous events on this socket
 	*/
-	if (WSAAsyncSelect (UDPSocket, MainWindow, WM_UDPASYNCEVENT,
+	if (WSAAsyncSelect (UDPSocket, MainWindow, TCPIP_EVENT_UDP_SOCKET,
 		FD_READ | FD_WRITE) == SOCKET_ERROR){
 		WSACancelAsyncRequest(Async);
 		Close_Socket (UDPSocket);
@@ -503,7 +503,7 @@ int32_t TcpipManagerClass::Add_Client(void)
  *    3/20/96 3:05PM ST : Created                                                              *
  *=============================================================================================*/
 
-void TcpipManagerClass::Message_Handler(HWND, uint32_t message, uint32_t , int32_t lParam)
+void TcpipManagerClass::Handle_Async_Event(uint32_t event_type, int32_t lParam)
 {
 	struct 	hostent *hentry;
 	struct 	sockaddr_in addr;
@@ -511,12 +511,12 @@ void TcpipManagerClass::Message_Handler(HWND, uint32_t message, uint32_t , int32
 	int	 	rc;
 	int		addr_len;
 
-	switch (message){
+	switch (event_type){
 
 		/*
 		** Handle the GetHostByAddress result
 		*/
-		case WM_HOSTBYADDRESS:
+		case TCPIP_EVENT_HOST_BY_ADDRESS:
 
 			if (IsServer){
 				/*
@@ -551,7 +551,7 @@ void TcpipManagerClass::Message_Handler(HWND, uint32_t message, uint32_t , int32
 		** Retrieve host by name: Start connecting now that we have the
 		** address.
 		*/
-		case WM_HOSTBYNAME:
+		case TCPIP_EVENT_HOST_BY_NAME:
 			if (WSAGETASYNCERROR(lParam)==0) {
 				hentry = (struct hostent *)&HostBuff[0];
 				memcpy (&(Server.Addr.s_addr), hentry->h_addr, 4);
@@ -572,7 +572,7 @@ void TcpipManagerClass::Message_Handler(HWND, uint32_t message, uint32_t , int32
 		/*
 		** Connection is ready - accept the client
 		*/
-		case WM_ACCEPT:
+		case TCPIP_EVENT_ACCEPT:
 			rc = WSAGETSELECTERROR(lParam);
 			if (rc != 0) {
 				ConnectStatus = UNABLE_TO_ACCEPT_CLIENT;
@@ -592,7 +592,7 @@ void TcpipManagerClass::Message_Handler(HWND, uint32_t message, uint32_t , int32
 		/*
 		** Handle UDP packet events
 		*/
-		case WM_UDPASYNCEVENT:
+		case TCPIP_EVENT_UDP_SOCKET:
 			event = WSAGETSELECTEVENT(lParam);
 			switch (event) {
 
@@ -658,7 +658,7 @@ void TcpipManagerClass::Message_Handler(HWND, uint32_t message, uint32_t , int32
 		/*
 		** Handle the asynchronous event callbacks
 		*/
-		case WM_ASYNCEVENT:
+		case TCPIP_EVENT_SOCKET:
 			event = WSAGETSELECTEVENT(lParam);
 			switch (event) {
 				/*
@@ -673,7 +673,7 @@ void TcpipManagerClass::Message_Handler(HWND, uint32_t message, uint32_t , int32
 					if (Async != 0) {
 						WSACancelAsyncRequest(Async);
 					}
-					WSAAsyncSelect (ConnectSocket, MainWindow, WM_ASYNCEVENT, 0);
+					WSAAsyncSelect (ConnectSocket, MainWindow, TCPIP_EVENT_SOCKET, 0);
 					Close_Socket (ConnectSocket);
 					ConnectSocket = INVALID_SOCKET;
 					//Connected = FALSE;
@@ -828,7 +828,7 @@ void TcpipManagerClass::Start_Client(void)
 	/*
 	** Enable asynchronous events on the UDP socket
 	*/
-	if (WSAAsyncSelect (UDPSocket, MainWindow, WM_UDPASYNCEVENT,
+	if (WSAAsyncSelect (UDPSocket, MainWindow, TCPIP_EVENT_UDP_SOCKET,
 		FD_READ | FD_WRITE) == SOCKET_ERROR){
 		WSACancelAsyncRequest(Async);
 		Close_Socket (UDPSocket);
@@ -846,7 +846,7 @@ void TcpipManagerClass::Start_Client(void)
 	memcpy(&UDPIPAddress, &Server.Addr.s_addr, 4);
 	if (Server.Addr.s_addr == INADDR_NONE){
 		strcpy (Server.Name, PlanetWestwoodIPAddress);
-		Async = WSAAsyncGetHostByName(MainWindow, WM_HOSTBYNAME,
+		Async = WSAAsyncGetHostByName(MainWindow, TCPIP_EVENT_HOST_BY_NAME,
 			Server.Name, HostBuff, MAXGETHOSTSTRUCT);
 		ConnectStatus = RESOLVING_HOST_ADDRESS;
 	}else{

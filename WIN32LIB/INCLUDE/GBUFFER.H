@@ -176,7 +176,7 @@ class TPoint2D
 //
 //
 extern	WWDraw*	VideoDrawObject;	//pointer to direct draw object
-extern	HWND			MainWindow;			//handle to programs main window
+extern	RAWindow*		MainWindow;			//handle to programs main window
 
 /*
 ** Pointer to function to call if we detect a focus loss

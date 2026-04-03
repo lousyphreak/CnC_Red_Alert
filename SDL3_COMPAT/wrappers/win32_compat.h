@@ -64,7 +64,6 @@ using MCIDEVICEID = UINT;
 using ATOM = WORD;
 using HANDLE = void*;
 using HGLOBAL = void*;
-using HINSTANCE = void*;
 using HMODULE = void*;
 using FARPROC = void (*)();
 using HGDIOBJ = void*;
@@ -155,7 +154,6 @@ struct SYSTEMTIME {
 };
 
 struct RAWindow;
-using HWND = RAWindow*;
 
 #ifndef TRUE
 #define TRUE 1
@@ -332,19 +330,6 @@ struct RECT {
     LONG bottom;
 };
 
-struct tagMSG {
-    HWND hwnd;
-    UINT message;
-    WPARAM wParam;
-    LPARAM lParam;
-    DWORD time;
-    POINT pt;
-};
-using MSG = tagMSG;
-
-using WNDPROC = LRESULT (CALLBACK*)(HWND, UINT, WPARAM, LPARAM);
-using DLGPROC = INT_PTR (CALLBACK*)(HWND, UINT, WPARAM, LPARAM);
-
 struct FILETIME {
     DWORD dwLowDateTime;
     DWORD dwHighDateTime;
@@ -393,34 +378,25 @@ struct PALETTEENTRY {
 struct RAWindow {
     SDL_Window* sdl_window;
     std::string title;
-    WNDPROC wnd_proc;
     int width;
     int height;
 };
 
-HWND RA_CreateWindow(const char* title, int width, int height, SDL_WindowFlags flags, WNDPROC wnd_proc);
-void RA_DestroyWindow(HWND window);
-bool RA_GetPresentationRect(HWND window, SDL_FRect* rect);
-bool RA_GetRenderSourceRect(HWND window, SDL_FRect* rect);
-bool RA_WindowToGamePoint(HWND window, float window_x, float window_y, int* game_x, int* game_y);
-bool RA_GameRectToWindowRect(HWND window, const RECT* game_rect, SDL_Rect* window_rect);
+RAWindow* RA_CreateWindow(const char* title, int width, int height, SDL_WindowFlags flags);
+void RA_DestroyWindow(RAWindow* window);
+bool RA_GetPresentationRect(RAWindow* window, SDL_FRect* rect);
+bool RA_GetRenderSourceRect(RAWindow* window, SDL_FRect* rect);
+bool RA_WindowToGamePoint(RAWindow* window, float window_x, float window_y, int* game_x, int* game_y);
+bool RA_GameRectToWindowRect(RAWindow* window, const RECT* game_rect, SDL_Rect* window_rect);
 
 extern "C" {
 
-BOOL PeekMessage(MSG* message, HWND window, UINT min_filter, UINT max_filter, UINT remove_message);
-BOOL GetMessage(MSG* message, HWND window, UINT min_filter, UINT max_filter);
-BOOL TranslateMessage(const MSG* message);
-LRESULT DispatchMessage(const MSG* message);
-void PostQuitMessage(INT exit_code);
-BOOL PostMessage(HWND window, UINT message, WPARAM w_param, LPARAM l_param);
-LRESULT SendMessage(HWND window, UINT message, WPARAM w_param, LPARAM l_param);
-UINT RegisterWindowMessage(LPCSTR string);
 int GetSystemMetrics(int index);
-HGDIOBJ LoadIcon(HINSTANCE instance, LPCSTR icon_name);
-INT_PTR DialogBox(HINSTANCE instance, LPCTSTR template_name, HWND owner, DLGPROC dialog_proc);
+HGDIOBJ LoadIcon(void* instance, LPCSTR icon_name);
+INT_PTR DialogBox(void* instance, LPCTSTR template_name, RAWindow* owner, void* dialog_proc);
 void ExitProcess(UINT exit_code);
 
-int MessageBox(HWND window, LPCSTR text, LPCSTR caption, UINT type);
+int MessageBox(RAWindow* window, LPCSTR text, LPCSTR caption, UINT type);
 void OutputDebugString(LPCSTR text);
 DWORD GetLastError(void);
 DWORD GetVersion(void);
@@ -452,7 +428,7 @@ HGLOBAL GlobalFree(HGLOBAL memory);
 HMODULE LoadLibrary(LPCSTR file_name);
 FARPROC GetProcAddress(HMODULE module, LPCSTR proc_name);
 BOOL FreeLibrary(HMODULE module);
-DWORD GetModuleFileName(HINSTANCE instance, LPSTR file_name, DWORD size);
+DWORD GetModuleFileName(void* instance, LPSTR file_name, DWORD size);
 
 LONG RegOpenKeyEx(HKEY key, LPCSTR sub_key, DWORD options, DWORD sam_desired, HKEY* result);
 LONG RegQueryValueEx(HKEY key, LPCSTR value_name, DWORD* reserved, DWORD* type, LPBYTE data, DWORD* data_size);

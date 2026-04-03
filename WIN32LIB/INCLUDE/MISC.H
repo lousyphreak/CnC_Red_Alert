@@ -49,7 +49,7 @@ extern	WWSurface*	PaletteSurface;
 /* The following prototypes are for the file: DDRAW.CPP							*/
 /*=========================================================================*/
 void 		Process_Draw_Result(HRESULT result, int32_t display_ok_msg);
-int32_t 		Set_Video_Mode(HWND hwnd, int32_t w, int32_t h, int32_t bits_per_pixel);
+int32_t 		Set_Video_Mode(RAWindow* window, int32_t w, int32_t h, int32_t bits_per_pixel);
 void 		Reset_Video_Mode(void);
 uint32_t 	Get_Free_Video_Memory(void);
 uint32_t 	Get_Total_Video_Memory(void);
@@ -130,7 +130,7 @@ extern	SurfaceMonitorClass	AllSurfaces;				//List of all direct draw surfaces
 /* The following variables are declared in: DDRAW.CPP								*/
 /*=========================================================================*/
 extern	WWDraw*	VideoDrawObject;
-extern	HWND				MainWindow;
+extern	RAWindow*			MainWindow;
 extern int32_t 				SystemToVideoBlits;
 extern int32_t				VideoToSystemBlits;
 extern int32_t				SystemToSystemBlits;

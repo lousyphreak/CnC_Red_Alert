@@ -135,7 +135,7 @@ void *Load_Sample(char const *filename);
 int32_t Load_Sample_Into_Buffer(char const *filename, void *buffer, int32_t size);
 int32_t Sample_Read(int32_t fh, void *buffer, int32_t size);
 void Free_Sample(void const *sample);
-int32_t Audio_Init( HWND window , int32_t bits_per_sample, int32_t stereo , int32_t rate , int32_t reverse_channels);
+int32_t Audio_Init( RAWindow* window , int32_t bits_per_sample, int32_t stereo , int32_t rate , int32_t reverse_channels);
 void Sound_End(void);
 void Stop_Sample(int32_t handle);
 int32_t Sample_Status(int32_t handle);

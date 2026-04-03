@@ -34,7 +34,7 @@ RAWindow* ensure_window(RAWindow* window, int width, int height)
         return window;
     }
 
-    return RA_CreateWindow("Red Alert", width, height, SDL_WINDOW_RESIZABLE, nullptr);
+    return RA_CreateWindow("Red Alert", width, height, SDL_WINDOW_RESIZABLE);
 }
 
 void ensure_renderer(RAWindow* window, int width, int height)
@@ -226,7 +226,7 @@ const PALETTEENTRY* WWPalette::Entries() const
     return entries_;
 }
 
-WWSurface::WWSurface(int width, int height, bool primary, bool system_memory, HWND window)
+WWSurface::WWSurface(int width, int height, bool primary, bool system_memory, RAWindow* window)
     : width_(width), height_(height), primary_(primary), system_memory_(system_memory), window_(window), ref_count_(1), palette_(nullptr), pixels_(static_cast<size_t>(width) * static_cast<size_t>(height), 0)
 {
     if (primary_) {
@@ -365,7 +365,7 @@ const PALETTEENTRY* WWSurface::PaletteEntries() const { return palette_ ? palett
 bool WWSurface::IsPrimary() const { return primary_; }
 bool WWSurface::IsSystemMemory() const { return system_memory_; }
 bool WWSurface::UsesPalette(const WWPalette* palette) const { return palette_ == palette; }
-HWND WWSurface::Window() const { return window_; }
+RAWindow* WWSurface::Window() const { return window_; }
 void WWSurface::Present()
 {
     queue_present(this, window_);
@@ -376,9 +376,9 @@ WWDraw::WWDraw() : width_(640), height_(480), bits_per_pixel_(8), window_(nullpt
 {
 }
 
-void WWDraw::SetWindow(HWND hwnd)
+void WWDraw::SetWindow(RAWindow* window)
 {
-    window_ = hwnd;
+    window_ = window;
 }
 
 HRESULT WWDraw::SetDisplayMode(int width, int height, int bits_per_pixel)
@@ -491,7 +491,7 @@ HRESULT WWDraw::Release()
 
 int WWDraw::Width() const { return width_; }
 int WWDraw::Height() const { return height_; }
-HWND WWDraw::Window() const { return window_; }
+RAWindow* WWDraw::Window() const { return window_; }
 
 extern "C" HRESULT WWDraw_Create(WWDraw** direct_draw)
 {

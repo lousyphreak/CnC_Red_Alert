@@ -65,8 +65,6 @@ class WWKeyboardClass
 		char To_ASCII(uint16_t num);
 		bool Down(uint16_t key);
 
-		/* Define the main hook for the message processing loop.					*/
-		void Message_Handler(HWND hwnd, uint32_t message, uint32_t wParam, int32_t lParam);
 
 		/* Define the public access variables which are used with the			*/
 		/*   Keyboard Class.																	*/

@@ -2,12 +2,16 @@
 
 ## SDL main-window path no longer needs Win32 class/show/focus wrappers
 
+- Follow-up porting work removed the remaining fake Win32 message queue and window-proc seam from the active SDL/Linux build.
+  - `RAWindow` is now just SDL window state; it no longer carries a `wnd_proc`, and `RA_CreateWindow(...)` no longer accepts or stores a Win32-style callback.
+  - The live pump points that used to drain fake `MSG` traffic (`CODE/WINSTUB.CPP`, `CODE/KEY.CPP`, `WIN32LIB/KEYBOARD/KEYBOARD.CPP`) now just pump SDL input directly and use `AllDone` as the shutdown/loop-break signal.
+  - The live TCP/IP path no longer posts or sends messages to itself; `CODE/TCPIP.CPP` now calls `Handle_Async_Event(...)` directly with explicit internal event ids when it needs to kick socket processing.
+  - Practical benefit: the repo-owned game code no longer needs `HWND`, `HINSTANCE`, `MSG`, `WNDPROC`, `DLGPROC`, `PostMessage`, `SendMessage`, or `PostQuitMessage` to bootstrap, pump input, or drive the active network path.
 - The remaining `RegisterClass` / `CreateWindowEx` / `ShowWindow` / `SetForegroundWindow` / `SetFocus` / `UpdateWindow` / `DefWindowProc` compat surface was only propping up the legacy main-window lifecycle, not the whole event system.
   - The live callers were the main-window bootstrap/teardown flow in `CODE/WINSTUB.CPP`, SDL event translation in `CODE/SDLINPUT.CPP`, startup/emergency shutdown in `CODE/STARTUP.CPP`, and the focus-restoration waits in `CODE/NETDLG.CPP`.
-  - The actual async message machinery that still matters to gameplay/networking is narrower: `PeekMessage` / `GetMessage` / `DispatchMessage` / `SendMessage` / `PostMessage` are still used for legacy socket/event notifications and should not be conflated with window creation/show wrappers.
-- Safe rule for this port: keep the message target (`RAWindow::wnd_proc`) for non-window async dispatch, but handle window lifecycle directly through SDL.
+- Safe rule for this port: handle the active window, input, and network control paths directly through SDL/native helpers instead of preserving a fake Win32 queue just because the old Windows build used one.
   - Current fix pattern: create the main window with an SDL-backed helper (`RA_CreateWindow(...)`), then call SDL window APIs directly for show/maximize/raise and invoke explicit game helpers for focus change / close / destroy (`Main_Window_Handle_Focus_Change(...)`, `Main_Window_Handle_Close_Request()`, `Main_Window_Destroy()`).
-  - Practical benefit: this deletes dead Win32 window wrapper code without losing the legacy message path that the networking code still expects.
+  - Practical benefit: this deletes dead Win32 wrapper vocabulary instead of carrying a partial message emulation layer forward indefinitely.
 
 ## Find_Path edge-follow terminator bounds
 

@@ -213,7 +213,7 @@ bool ReregisterWolapiDLL()
 			}
 //			debugprint( "Found dll -> %s\n", szInstallPath );
 			//	Get the DLL to register itself.
-			HINSTANCE hLib = LoadLibrary( szInstallPath );
+			void* hLib = LoadLibrary( szInstallPath );
 			if( !hLib )
 			{
 //				debugprint( "LoadLibrary failed, GetLastError is %i\n", GetLastError() );

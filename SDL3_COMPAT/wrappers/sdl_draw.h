@@ -32,7 +32,7 @@ private:
 
 class WWSurface {
 public:
-    WWSurface(int width, int height, bool primary, bool system_memory, HWND window);
+    WWSurface(int width, int height, bool primary, bool system_memory, RAWindow* window);
     HRESULT Lock(RECT* rect, WWLockData* lock_data);
     HRESULT Unlock(LPVOID data);
     HRESULT Blit(RECT* dest_rect, WWSurface* src_surface, RECT* src_rect, bool use_source_key);
@@ -52,14 +52,14 @@ public:
     bool IsPrimary() const;
     bool IsSystemMemory() const;
     bool UsesPalette(const WWPalette* palette) const;
-    HWND Window() const;
+    RAWindow* Window() const;
     void Present();
 private:
     int width_;
     int height_;
     bool primary_;
     bool system_memory_;
-    HWND window_;
+    RAWindow* window_;
     int ref_count_;
     WWPalette* palette_;
     std::vector<uint8_t> pixels_;
@@ -68,7 +68,7 @@ private:
 class WWDraw {
 public:
     WWDraw();
-    void SetWindow(HWND hwnd);
+    void SetWindow(RAWindow* window);
     HRESULT SetDisplayMode(int width, int height, int bits_per_pixel);
     HRESULT CreatePalette(PALETTEENTRY* entries, WWPalette** palette);
     HRESULT CreatePrimarySurface(WWSurface** surface);
@@ -87,12 +87,12 @@ public:
 
     int Width() const;
     int Height() const;
-    HWND Window() const;
+    RAWindow* Window() const;
 private:
     int width_;
     int height_;
     int bits_per_pixel_;
-    HWND window_;
+    RAWindow* window_;
     int ref_count_;
 };
 

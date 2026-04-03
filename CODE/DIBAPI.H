@@ -65,7 +65,7 @@
 
 
 /* Handle to a DIB */
-#define HDIB HANDLE
+#define HDIB void*
 
 
 /* Print Area selection */

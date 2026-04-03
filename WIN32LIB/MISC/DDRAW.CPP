@@ -47,7 +47,7 @@
 #include <PALETTE.H>
 
 WWDraw*		VideoDrawObject=NULL;	// Pointer to the direct draw object
-HWND			MainWindow;					// Handle to programs main window
+RAWindow*		MainWindow;					// Handle to programs main window
 												// this is passed to SetCooperativeLevel
 												// so DirectDraw knows which window is ours
 
@@ -162,7 +162,7 @@ void Check_Overlapped_Blit_Capability(void)
  * HISTORY:                                                                                    *
  *   09/26/1995 PWG : Created.                                                                 *
  *=============================================================================================*/
-int32_t Set_Video_Mode(HWND hwnd, int32_t w, int32_t h, int32_t bits_per_pixel)
+int32_t Set_Video_Mode(RAWindow* window, int32_t w, int32_t h, int32_t bits_per_pixel)
 {
 	HRESULT result;
 	//
@@ -173,7 +173,7 @@ int32_t Set_Video_Mode(HWND hwnd, int32_t w, int32_t h, int32_t bits_per_pixel)
 		result = WWDraw_Create(&VideoDrawObject);
 		Process_Draw_Result(result, FALSE);
 		if (result == WWDRAW_OK){
-			VideoDrawObject->SetWindow(hwnd);
+			VideoDrawObject->SetWindow(window);
 		}else{
 			return (FALSE);
 		}

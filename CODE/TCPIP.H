@@ -70,22 +70,13 @@ extern bool Server;
 #define IP_ADDRESS_MAX 40
 #define PORT_NUMBER_MAX 6
 
-//...........................................................................
-// Custom messages: WM_USER + 1 to WM_USER + 100
-// These will be sent to the dialog procedure, for display only.
-//...........................................................................
-#define	WM_UPDATE_STATUS		(WM_USER + 1)	// update status text
-#define	WM_UPDATE_CLIENTS		(WM_USER + 2)	// update client list box
-#define	WM_UPDATE_MESSAGE		(WM_USER + 3)	// update received message list
-
-//...........................................................................
-// Messages for Async processing.
-//...........................................................................
-#define	WM_ACCEPT				(WM_USER + 101)	// client wants to connect
-#define	WM_HOSTBYADDRESS		(WM_USER + 102)	// async get host by address
-#define	WM_HOSTBYNAME			(WM_USER + 103)	// async get host by name
-#define	WM_ASYNCEVENT			(WM_USER + 104)	// other Async event
-#define	WM_UDPASYNCEVENT		(WM_USER + 105)	// UDP socket Async event
+enum TcpipAsyncEventType {
+	TCPIP_EVENT_ACCEPT = 1,
+	TCPIP_EVENT_HOST_BY_ADDRESS = 2,
+	TCPIP_EVENT_HOST_BY_NAME = 3,
+	TCPIP_EVENT_SOCKET = 4,
+	TCPIP_EVENT_UDP_SOCKET = 5
+};
 
 
 class TcpipManagerClass {
@@ -99,7 +90,7 @@ class TcpipManagerClass {
 		void Start_Server(void);
 		void Start_Client(void);
 		void Close_Socket(SOCKET s);
-	 	void Message_Handler(HWND window, uint32_t message, uint32_t wParam, int32_t lParam);
+	 	void Handle_Async_Event(uint32_t event_type, int32_t lParam);
 		void Copy_To_In_Buffer(int bytes);
 		int  Read(void *buffer, int buffer_len);
 		void Write(void *buffer, int buffer_len);
@@ -150,7 +141,7 @@ class TcpipManagerClass {
 		SOCKET				ConnectSocket;
 		SOCKET				UDPSocket;
 		IN_ADDR				ClientIPAddress;
-		HANDLE				Async;
+		void*				Async;
 		char					HostBuff[MAXGETHOSTSTRUCT];
 		char					ClientName[128];
 		char					ReceiveBuffer[WS_RECEIVE_BUFFER_LEN];

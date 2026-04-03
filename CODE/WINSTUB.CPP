@@ -92,7 +92,7 @@ void winstub_trace(const char* format, ...)
 	va_end(arguments);
 }
 
-void apply_window_show_command(HWND window, int command_show)
+void apply_window_show_command(RAWindow* window, int command_show)
 {
 	if (window == NULL || window->sdl_window == NULL) {
 		return;
@@ -190,18 +190,10 @@ void Focus_Restore(void)
 void Check_For_Focus_Loss(void)
 {
 	static int32_t	focus_last_time = 1;
-			 MSG	msg;
-
 
 	if ( !GameInFocus ) {
 		Focus_Loss();
-		while ( PeekMessage( &msg, NULL, 0, 0, PM_NOREMOVE | PM_NOYIELD ) ) {
-	  		if (!GetMessage( &msg, NULL, 0, 0 ) ) {
-				return;
-			}
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		}
+		SDL_GameInput_Pump();
 	}
 
 	if (!focus_last_time && GameInFocus) {
@@ -211,12 +203,9 @@ void Check_For_Focus_Loss(void)
 		cd.Set(60*1);
 
 		do {
-			while (PeekMessage( &msg, NULL, 0, 0, PM_NOREMOVE )) {
-	  			if (!GetMessage( &msg, NULL, 0, 0 ) ) {
-					return;
-				}
-				TranslateMessage(&msg);
-				DispatchMessage(&msg);
+			SDL_GameInput_Pump();
+			if (AllDone) {
+				return;
 			}
 			if (cd.Time()) {
 				Sleep(1);
@@ -274,7 +263,7 @@ void Main_Window_Destroy(void)
 		MainWindow = NULL;
 	}
 
-	PostQuitMessage(0);
+	AllDone = TRUE;
 
 	switch (ReadyToQuit) {
 		case 1:
@@ -318,111 +307,9 @@ void Main_Window_Show_Maximized(void)
 	apply_window_show_command(MainWindow, SW_SHOWMAXIMIZED);
 }
 
-int32_t   Windows_Procedure(HWND hwnd, uint32_t message, uint32_t wParam, int32_t lParam)
-{
-
-	int	low_param = LOWORD(wParam);
-
-#ifdef WINSOCK_IPX
-	/*
-	** Pass on any messages intended for the winsock message handler.
-	*/
-	if ( PacketTransport ) {
-		if ( message == (uint32_t) PacketTransport->Protocol_Event_Message() ) {
-			if ( PacketTransport->Message_Handler (hwnd, message, wParam, lParam) ){
-				return (0);
-			}else{
-				return (0);
-			}
-		}
-	}
-#endif	//WINSOCK_IPX
 
 
-	switch ( message ) {
-//		case WM_SYSKEYDOWN:
-//			Mono_Printf("wparam=%08X lparam=%08X\n", (long)wParam, (long)lParam);
-			// fall through
-
-//		case WM_MOUSEMOVE:
-//		case WM_KEYDOWN:
-//		case WM_SYSKEYUP:
-//		case WM_KEYUP:
-//		case WM_LBUTTONDOWN:
-//		case WM_LBUTTONUP:
-//		case WM_LBUTTONDBLCLK:
-//		case WM_MBUTTONDOWN:
-//		case WM_MBUTTONUP:
-//		case WM_MBUTTONDBLCLK:
-//		case WM_RBUTTONDOWN:
-//		case WM_RBUTTONUP:
-//		case WM_RBUTTONDBLCLK:
-//	 		Keyboard->Message_Handler(hwnd, message, wParam, lParam);
-//			return(0);
-
-			/*
-			** Windoze message says we have to shut down. Try and do it cleanly.
-			*/
-		case WM_DESTROY:
-			Main_Window_Destroy();
-			return(0);
-
-		case WM_ACTIVATEAPP:
-			Main_Window_Handle_Focus_Change(wParam != 0);
-			return(0);
-#ifdef NEVER
-		case WM_ACTIVATE:
-			if (low_param == WA_INACTIVE) {
-				GameInFocus = FALSE;
-				Focus_Loss();
-			}
-			return(0);
-#endif	//NEVER
-
-
-		case WM_CLOSE:
-			Main_Window_Handle_Close_Request();
-			return(0);
-
-		case WM_SYSCOMMAND:
-			switch ( wParam ) {
-
-				case SC_CLOSE:
-					Main_Window_Handle_Close_Request();
-					return (0);
-
-				case SC_SCREENSAVE:
-					/*
-					** Windoze is about to start the screen saver. If we just return without passing
-					** this message to DefWindowProc then the screen saver will not be allowed to start.
-					*/
-					return (0);
-			}
-			break;
-
-
-#ifndef WINSOCK_IPX
-		case WM_ACCEPT:
-		case WM_HOSTBYADDRESS:
-		case WM_HOSTBYNAME:
-		case WM_ASYNCEVENT:
-		case WM_UDPASYNCEVENT:
-	 		Winsock.Message_Handler(hwnd, message, wParam, lParam);
-			return (0);
-#endif	//WINSOCK_IPX
-	}
-
-
-
-	return (0);
-}
-
-
-
-
-
-
-HANDLE DebugFile = INVALID_HANDLE_VALUE;
+void* DebugFile = INVALID_HANDLE_VALUE;
 
 /***********************************************************************************************
  * WWDebugString -- sends a string to the debugger and echos it to disk                        *
@@ -508,16 +395,15 @@ void WWDebugString (char *string)
 #endif
 
 
-void Create_Main_Window ( HANDLE instance , int command_show , int width , int height )
+void Create_Main_Window ( void* instance , int command_show , int width , int height )
 
 {
-	HWND        	hwnd ;
+	RAWindow*		hwnd ;
 	hwnd = RA_CreateWindow(
 		WINDOW_NAME,
 		GetSystemMetrics(SM_CXSCREEN),
 		GetSystemMetrics(SM_CYSCREEN),
-		SDL_WINDOW_RESIZABLE,
-		Windows_Procedure);
+		SDL_WINDOW_RESIZABLE);
 // Denzil
 width = width; height = height;
 // End
@@ -533,9 +419,8 @@ width = width; height = height;
 }
 
 
-void Window_Dialog_Box(HANDLE  hinst, LPCTSTR  lpszTemplate, HWND  hwndOwner, DLGPROC  dlgprc)
+void Window_Dialog_Box(void*  hinst, LPCTSTR  lpszTemplate, RAWindow*  hwndOwner, void*  dlgprc)
 {
-	MSG					msg;
 	/*
 	** Get rid of the Westwood mouse cursor because we are showing a
 	** dialog box and we want to have the right windows cursor showing
@@ -550,10 +435,6 @@ void Window_Dialog_Box(HANDLE  hinst, LPCTSTR  lpszTemplate, HWND  hwndOwner, DL
 	*/
 
 	DialogBox(hinst, lpszTemplate, hwndOwner, dlgprc);
-	while (GetMessage(&msg, NULL, 0, 0) && !AllDone) {
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
-	}
 
 	/*
 	** Restore the westwood mouse cursor and get rid of the windows one
@@ -852,7 +733,7 @@ void Assert_Failure (char *expression, int line, char *file)
 
 	Prog_End();
 	Invalidate_Cached_Icons();
-	PostQuitMessage( 0 );
+	AllDone = TRUE;
 	ExitProcess(0);
 }
 #endif

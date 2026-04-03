@@ -63,15 +63,15 @@ class IPXInterfaceClass : public WinsockInterfaceClass {
 		IPXInterfaceClass (void);
 		//virtual ~IPXInterfaceClass(void){Close();};
 		bool Get_Network_Card_Address (int card_number, SOCKADDR_IPX *addr);
-	 	virtual int32_t Message_Handler(HWND window, uint32_t message, uint32_t wParam, int32_t lParam);
+	 	virtual int32_t Handle_Protocol_Event(uint32_t event_type, uint32_t wParam, int32_t lParam);
 		virtual bool Open_Socket ( SOCKET socketnum );
 
 		virtual ProtocolEnum Get_Protocol (void) {
 			return (PROTOCOL_IPX);
 		};
 
-		virtual int Protocol_Event_Message (void) {
-			return (WM_IPXASYNCEVENT);
+		virtual int Protocol_Event_ID (void) {
+			return (WINSOCK_PROTOCOL_EVENT_IPX);
 		};
 
 

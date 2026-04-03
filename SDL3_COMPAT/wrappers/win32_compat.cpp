@@ -12,8 +12,8 @@
 #include <cstring>
 #include <atomic>
 #include <chrono>
-#include <cmath>
 #include <condition_variable>
+#include <cmath>
 #include <ctime>
 #include <mutex>
 #include <unordered_map>
@@ -58,11 +58,6 @@ struct GlobalHandle final : HandleBase {
 
 std::mutex g_last_error_mutex;
 DWORD g_last_error = ERROR_SUCCESS;
-std::mutex g_message_queue_mutex;
-std::deque<MSG> g_message_queue;
-std::mutex g_registered_message_mutex;
-std::unordered_map<std::string, UINT> g_registered_messages;
-std::atomic<UINT> g_next_registered_message{0xC000};
 std::chrono::steady_clock::time_point g_start_time = std::chrono::steady_clock::now();
 std::atomic<UINT> g_error_mode{0};
 
@@ -79,12 +74,12 @@ bool registry_reports_expansion_installed(const char* mix_name)
     return mix_name && WWFS_GetPathInfo(mix_name, nullptr);
 }
 
-bool uses_stretched_640x400_presentation(HWND window)
+bool uses_stretched_640x400_presentation(RAWindow* window)
 {
     return window != nullptr && window->width == kStretchedGameWidth && window->height == kDisplayHeightForStretchedGame;
 }
 
-bool get_render_source_rect(HWND window, SDL_FRect* rect)
+bool get_render_source_rect(RAWindow* window, SDL_FRect* rect)
 {
     if (!window || !rect || window->width <= 0 || window->height <= 0) {
         return false;
@@ -172,48 +167,12 @@ std::string create_file_mode(DWORD desired_access, DWORD creation_disposition)
     }
 }
 
-BOOL next_message(MSG* message, bool remove, bool wait)
-{
-    auto try_dequeue = [&]() -> BOOL {
-        std::scoped_lock lock(g_message_queue_mutex);
-        if (g_message_queue.empty()) {
-            return FALSE;
-        }
-
-        if (message) {
-            *message = g_message_queue.front();
-        }
-        if (remove) {
-            g_message_queue.pop_front();
-        }
-        return TRUE;
-    };
-
-    if (try_dequeue()) {
-        return TRUE;
-    }
-
-    if (!wait) {
-        SDL_GameInput_Pump();
-        return try_dequeue();
-    }
-
-    while (!try_dequeue()) {
-        if (!SDL_GameInput_Wait()) {
-            return FALSE;
-        }
-    }
-
-    return TRUE;
-}
-
 } // namespace
 
-HWND RA_CreateWindow(const char* title, int width, int height, SDL_WindowFlags flags, WNDPROC wnd_proc)
+RAWindow* RA_CreateWindow(const char* title, int width, int height, SDL_WindowFlags flags)
 {
     auto* window = new RAWindow{};
     window->title = title ? title : "Red Alert";
-    window->wnd_proc = wnd_proc;
     window->width = width > 0 ? width : 640;
     window->height = height > 0 ? height : 480;
     window->sdl_window = SDL_CreateWindow(window->title.c_str(), window->width, window->height, flags);
@@ -224,7 +183,7 @@ HWND RA_CreateWindow(const char* title, int width, int height, SDL_WindowFlags f
     return window;
 }
 
-void RA_DestroyWindow(HWND window)
+void RA_DestroyWindow(RAWindow* window)
 {
     if (!window) {
         return;
@@ -236,7 +195,7 @@ void RA_DestroyWindow(HWND window)
     delete window;
 }
 
-bool RA_GetPresentationRect(HWND window, SDL_FRect* rect)
+bool RA_GetPresentationRect(RAWindow* window, SDL_FRect* rect)
 {
     if (!window || !window->sdl_window || !rect || window->width <= 0 || window->height <= 0) {
         return false;
@@ -258,12 +217,12 @@ bool RA_GetPresentationRect(HWND window, SDL_FRect* rect)
     return true;
 }
 
-bool RA_GetRenderSourceRect(HWND window, SDL_FRect* rect)
+bool RA_GetRenderSourceRect(RAWindow* window, SDL_FRect* rect)
 {
     return get_render_source_rect(window, rect);
 }
 
-bool RA_WindowToGamePoint(HWND window, float window_x, float window_y, int* game_x, int* game_y)
+bool RA_WindowToGamePoint(RAWindow* window, float window_x, float window_y, int* game_x, int* game_y)
 {
     if (!game_x || !game_y) {
         return false;
@@ -299,7 +258,7 @@ bool RA_WindowToGamePoint(HWND window, float window_x, float window_y, int* game
     return true;
 }
 
-bool RA_GameRectToWindowRect(HWND window, const RECT* game_rect, SDL_Rect* window_rect)
+bool RA_GameRectToWindowRect(RAWindow* window, const RECT* game_rect, SDL_Rect* window_rect)
 {
     if (!game_rect || !window_rect || !window || window->width <= 0 || window->height <= 0) {
         return false;
@@ -330,82 +289,6 @@ bool RA_GameRectToWindowRect(HWND window, const RECT* game_rect, SDL_Rect* windo
 
 extern "C" {
 
-BOOL PeekMessage(MSG* message, HWND, UINT, UINT, UINT remove_message)
-{
-    return next_message(message, (remove_message & PM_REMOVE) != 0, false);
-}
-
-BOOL GetMessage(MSG* message, HWND, UINT, UINT)
-{
-    if (!next_message(message, true, true)) {
-        return FALSE;
-    }
-    return message && message->message == WM_QUIT ? FALSE : TRUE;
-}
-
-BOOL TranslateMessage(const MSG*)
-{
-    return TRUE;
-}
-
-LRESULT DispatchMessage(const MSG* message)
-{
-    if (!message) return 0;
-    if (message->hwnd && message->hwnd->wnd_proc) {
-        return message->hwnd->wnd_proc(message->hwnd, message->message, message->wParam, message->lParam);
-    }
-    return 0;
-}
-
-void PostQuitMessage(INT exit_code)
-{
-    MSG msg{};
-    msg.message = WM_QUIT;
-    msg.wParam = static_cast<WPARAM>(exit_code);
-    std::scoped_lock lock(g_message_queue_mutex);
-    g_message_queue.push_back(msg);
-}
-
-BOOL PostMessage(HWND window, UINT message, WPARAM w_param, LPARAM l_param)
-{
-    MSG msg{};
-    msg.hwnd = window;
-    msg.message = message;
-    msg.wParam = w_param;
-    msg.lParam = l_param;
-    msg.time = static_cast<DWORD>(SDL_GetTicks());
-    std::scoped_lock lock(g_message_queue_mutex);
-    g_message_queue.push_back(msg);
-    return TRUE;
-}
-
-LRESULT SendMessage(HWND window, UINT message, WPARAM w_param, LPARAM l_param)
-{
-    MSG msg{};
-    msg.hwnd = window;
-    msg.message = message;
-    msg.wParam = w_param;
-    msg.lParam = l_param;
-    return DispatchMessage(&msg);
-}
-
-UINT RegisterWindowMessage(LPCSTR string)
-{
-    if (!string) {
-        return 0;
-    }
-
-    std::scoped_lock lock(g_registered_message_mutex);
-    auto it = g_registered_messages.find(string);
-    if (it != g_registered_messages.end()) {
-        return it->second;
-    }
-
-    const UINT value = g_next_registered_message++;
-    g_registered_messages.emplace(string, value);
-    return value;
-}
-
 int GetSystemMetrics(int index)
 {
     SDL_Rect bounds{};
@@ -428,12 +311,12 @@ int GetSystemMetrics(int index)
     return 0;
 }
 
-HGDIOBJ LoadIcon(HINSTANCE, LPCSTR)
+HGDIOBJ LoadIcon(void*, LPCSTR)
 {
     return nullptr;
 }
 
-INT_PTR DialogBox(HINSTANCE, LPCTSTR, HWND, DLGPROC)
+INT_PTR DialogBox(void*, LPCTSTR, RAWindow*, void*)
 {
     return 0;
 }
@@ -443,7 +326,7 @@ void ExitProcess(UINT exit_code)
     std::exit(static_cast<int>(exit_code));
 }
 
-int MessageBox(HWND, LPCSTR text, LPCSTR caption, UINT type)
+int MessageBox(RAWindow*, LPCSTR text, LPCSTR caption, UINT type)
 {
     Uint32 flags = SDL_MESSAGEBOX_INFORMATION;
     switch (type & 0x000000F0U) {
@@ -786,7 +669,7 @@ BOOL FreeLibrary(HMODULE module)
     return TRUE;
 }
 
-DWORD GetModuleFileName(HINSTANCE, LPSTR file_name, DWORD size)
+DWORD GetModuleFileName(void*, LPSTR file_name, DWORD size)
 {
     if (!file_name || size == 0) return 0;
     std::string path;

@@ -12,9 +12,10 @@
 #include <thread>
 
 #include <stdint.h>
-extern HWND MainWindow;
+extern RAWindow* MainWindow;
 extern void Main_Window_Handle_Focus_Change(bool focused);
 extern void Main_Window_Handle_Close_Request(void);
+extern int AllDone;
 extern int32_t GameInFocus;
 extern int32_t BootstrapFocusSeen;
 extern GraphicViewPortClass SeenBuff;
@@ -614,7 +615,7 @@ void handle_close_event(void)
 	if (MainWindow) {
 		Main_Window_Handle_Close_Request();
 	} else {
-		PostQuitMessage(0);
+		AllDone = TRUE;
 	}
 }
 
@@ -824,7 +825,7 @@ int32_t SDL_GameInput_GetCursorPos(POINT* point)
 	return (TRUE);
 }
 
-HANDLE SDL_GameInput_SetCursor(HANDLE cursor)
+void* SDL_GameInput_SetCursor(void* cursor)
 {
 	return (cursor);
 }

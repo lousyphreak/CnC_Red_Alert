@@ -103,22 +103,22 @@ inline int ioctlsocket(SOCKET socket_handle, LONG command, u_long* argp)
     return ioctl(socket_handle, command, argp);
 }
 
-inline int WSAAsyncSelect(SOCKET, HWND, uint32_t, LONG)
+inline int WSAAsyncSelect(SOCKET, RAWindow*, uint32_t, LONG)
 {
     return 0;
 }
 
-inline HANDLE WSAAsyncGetHostByName(HWND, uint32_t, const char*, char*, int)
+inline void* WSAAsyncGetHostByName(RAWindow*, uint32_t, const char*, char*, int)
 {
     return nullptr;
 }
 
-inline HANDLE WSAAsyncGetHostByAddr(HWND, uint32_t, const char*, int, int, char*, int)
+inline void* WSAAsyncGetHostByAddr(RAWindow*, uint32_t, const char*, int, int, char*, int)
 {
     return nullptr;
 }
 
-inline int WSACancelAsyncRequest(HANDLE)
+inline int WSACancelAsyncRequest(void*)
 {
     return 0;
 }
