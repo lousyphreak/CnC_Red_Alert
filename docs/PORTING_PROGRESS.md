@@ -928,6 +928,29 @@ Converted all remaining Win32 file I/O calls in the game-layer source files to S
     - `cd GameData && ASAN_OPTIONS=abort_on_error=1:detect_leaks=0 UBSAN_OPTIONS=print_stacktrace=1 timeout 20s ./redalert-asan`
     - the ASan run stayed up until killed by `timeout`, with no startup sanitizer crash.
 
+## Config-interface cleanup for SDL registry shims
+
+- Replaced the fake registry API in `SDL3_COMPAT/wrappers/win32_compat.{h,cpp}` with a small SDL-side config surface:
+  - added `RA_ReadConfigString(...)`, `RA_ReadConfigUint32(...)`, and `RA_DeleteConfigValue(...)`;
+  - removed the registry-only shim baggage from the public compat header (`HKEY`, `HKEY_LOCAL_MACHINE`, `KEY_READ`, `REG_SZ`, `REG_DWORD`, and the `RegOpenKeyEx` / `RegQueryValueEx` / `RegCloseKey` declarations).
+- Follow-up cleanup moved that config surface out of the Win32 wrapper entirely:
+  - new files `SDL3_COMPAT/wrappers/sdl_config.{h,cpp}` now own the config storage/lookup logic;
+  - `CODE/FUNCTION.H` includes `sdl_config.h` directly so game code keeps using the same API without depending on `win32_compat.h` for config declarations;
+  - `win32_compat.cpp` no longer carries any config-state helpers or deleted-value bookkeeping.
+- Updated the remaining live callers to use the config interface directly instead of opening fake registry handles:
+  - `CODE/CONQUER.CPP` now reads `CStrikeInstalled` / `AftermathInstalled` through `RA_ReadConfigUint32(...)`;
+  - `CODE/INIT.CPP` now reads `DVD` through `RA_ReadConfigUint32(...)`;
+  - `CODE/STARTUP.CPP` now probes and clears `WolapiInstallComplete` through `RA_ReadConfigUint32(...)` / `RA_DeleteConfigValue(...)`;
+  - `CODE/WOL_MAIN.CPP` now reads the WOL install path through `RA_ReadConfigString(...)`.
+- Preserved the existing SDL/Linux behavior behind the new interface:
+  - expansion install detection still comes from `WWFS_GetPathInfo(...)` on `EXPAND.MIX` / `EXPAND2.MIX`;
+  - the WOL/setup-related integer flags still default to `0`;
+  - deleting a config value now suppresses future reads through the compat layer for the rest of the process instead of depending on fake registry handles.
+- Validation:
+  - `cmake --build build --target redalert -j4`
+  - `cmake --build build-asan --target redalert -j4`
+  - both completed successfully after the config-interface conversion and the follow-up file split.
+
 ## Remaining validation work
 
 1. Re-check the live in-mission viewport on a real desktop session now that the forced `SCG01EA` mission-entry path keeps the tactical camera inside the loaded map bounds; this shell environment can prove the scenario/home-position state but cannot capture the visible mission window directly.
@@ -959,4 +982,4 @@ Converted all remaining Win32 file I/O calls in the game-layer source files to S
   - removed the comm-port constants, `DCB` / `COMMTIMEOUTS` / `COMSTAT` structs, and the stubbed `GetComm*` / `SetComm*` / `PurgeComm` / `EscapeCommFunction` / overlapped-serial helpers;
   - removed the unused `RegQueryInfoKey` / `RegEnumKeyEx` declarations and implementations that were only needed by the deleted modem registry-enumeration path;
   - removed additional dead leftovers after a second usage pass: `OVERLAPPED` / `LPOVERLAPPED`, the uncalled `FindWindow()` wrapper plus its stored window class-name field, and several now-unused Win32 constants/aliases (`SW_NORMAL`, `COLORREF`, `HKEY_CLASSES_ROOT`, `DRIVE_UNKNOWN`, `DRIVE_REMOTE`, `DRIVE_RAMDISK`, `FILE_ATTRIBUTE_HIDDEN`, `FILE_ATTRIBUTE_SYSTEM`, `FILE_ATTRIBUTE_TEMPORARY`);
-  - kept the generic `CreateFile` / `ReadFile` / `WriteFile` and basic registry lookup wrappers because the live tree still uses them in startup, WOL, and debug/logging paths.
+  - kept the generic `CreateFile` / `ReadFile` / `WriteFile` wrappers; the later SDL3 cleanup replaced the remaining fake registry entry points with the repo-owned config helpers `RA_ReadConfigString(...)`, `RA_ReadConfigUint32(...)`, and `RA_DeleteConfigValue(...)`.

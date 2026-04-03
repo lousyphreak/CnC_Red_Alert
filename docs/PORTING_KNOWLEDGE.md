@@ -73,8 +73,8 @@
 - The unified executable path for Counterstrike and Aftermath is already compiled in this tree.
   - `CODE/DEFINES.H` already enables both `FIXIT_CSII` and `FIXIT_VERSION_3`, so the expansion-aware menu flow, scenario filtering, rules loading, and packet loading are live without any extra CMake define.
   - `CODE/MENUS.CPP`, `CODE/EXPAND.CPP`, `CODE/SESSION.CPP`, and `CODE/INIT.CPP` all route expansion visibility through `Is_Counterstrike_Installed()` / `Is_Aftermath_Installed()`, not through a build-system option.
-- On the SDL3/Linux port, the practical gate was the fake registry implementation in `SDL3_COMPAT/wrappers/win32_compat.cpp`.
-  - `RegQueryValueEx(..., "CStrikeInstalled", ...)` and `RegQueryValueEx(..., "AftermathInstalled", ...)` were hardcoded to return `0`, so the front end behaved as if neither pack was installed even when `EXPAND.MIX` and `EXPAND2.MIX` were present in `GameData/`.
+- On the SDL3/Linux port, the practical gate was the old fake-registry branch in `SDL3_COMPAT/wrappers/win32_compat.cpp`.
+  - Before the config-interface cleanup, the compat layer answered `CStrikeInstalled` and `AftermathInstalled` as `0`, so the front end behaved as if neither pack was installed even when `EXPAND.MIX` and `EXPAND2.MIX` were present in `GameData/`.
   - Practical symptoms: main-menu expansion entries disappear, `AFTRMATH.INI` never loads, and `CSTRIKE.PKT` / `AFTMATH.PKT` scenario lists stay filtered out by `Is_*_Installed()` checks.
 - Safe rule for this port: make the compat-layer install flags reflect real expansion data presence.
   - Current fix policy: report `CStrikeInstalled=1` when `EXPAND.MIX` exists and `AftermathInstalled=1` when `EXPAND2.MIX` exists, using the low-level SDL filesystem wrapper (`WWFS_GetPathInfo(...)`).
@@ -723,7 +723,7 @@ _Last updated: 2026-04-03_
 - The codebase still leans on compatibility wrappers for:
   - file I/O (`CreateFile`, `ReadFile`, `WriteFile`, `CloseHandle`);
   - timing / Win32 scheduling helpers (`Sleep`, thread priority helpers);
-  - registry access (`RegOpenKeyEx`, `RegQueryValueEx`, `RegCloseKey`);
+  - the small SDL-side config surface in `SDL3_COMPAT/wrappers/sdl_config.{h,cpp}` (`RA_ReadConfigString`, `RA_ReadConfigUint32`, `RA_DeleteConfigValue`);
   - directory enumeration (`FindFirstFile`, `FindNextFile`, `FindClose`);
   - DirectDraw compatibility types used by legacy rendering code.
 - `SDL3_COMPAT/wrappers/process.h` was removed after confirming there were no remaining non-generated source includes or `_beginthread()` call sites in the tree.
@@ -820,9 +820,9 @@ _Last updated: 2026-04-03_
 - `CODE/SENDFILE.CPP`'s scenario-transfer path is shared, but the active SDL3 port only uses the network side of it.
   - After the serial backend is removed, keep the existing transfer flow and packet layout, but switch the command usage to the network `NET_*` file-transfer commands and treat the legacy `gametype` parameter as ignored compatibility baggage until callers are cleaned further.
 - The modem removal unlocks a useful follow-up cleanup in `SDL3_COMPAT/wrappers/win32_compat.{h,cpp}`.
-  - The live SDL3/Linux tree still needs the generic Win32-style file I/O and simple registry lookup surface (`CreateFile` / `ReadFile` / `WriteFile`, `RegOpenKeyEx` / `RegQueryValueEx` / `RegCloseKey`) for startup, WOL, and debug paths.
+  - The live SDL3/Linux tree still needs the generic Win32-style file I/O surface (`CreateFile` / `ReadFile` / `WriteFile`) plus a tiny repo-owned config interface in `SDL3_COMPAT/wrappers/sdl_config.{h,cpp}` (`RA_ReadConfigString` / `RA_ReadConfigUint32` / `RA_DeleteConfigValue`) for startup, WOL, and debug paths.
   - It does not need the comm-port compatibility layer anymore: the `DCB` / `COMMTIMEOUTS` / `COMSTAT` structs, related modem-control constants, and the stubbed `GetComm*` / `SetComm*` / `PurgeComm` / `EscapeCommFunction` / overlapped-serial helpers were only there for the deleted modem/null-modem backend.
-  - The registry enumeration helpers (`RegQueryInfoKey`, `RegEnumKeyEx`) also become removable once `MODEMREG` is deleted, because the remaining code only queries a few known values directly.
+  - Once the registry-shaped callers are gone, the old `HKEY` / `Reg*` shims can go too; the remaining paths only need direct reads of a few known values, not fake registry handles or registry enumeration helpers.
   - After those are gone, a second pass is still worthwhile: `OVERLAPPED` / `LPOVERLAPPED`, `FindWindow()`, and a handful of old Win32 constants/aliases may remain in the compat header even though nothing in the live tree references them anymore.
 - `ListClass` stores caller-provided string pointers verbatim; it does not take ownership through a copying layer.
   - Callers that populate list-box text with `new char[]` buffers (for example `SoundControlsClass::Process()` in `CODE/SOUNDDLG.CPP`) must preserve a `char *` / `char const *` pointer type all the way to `delete[]`.

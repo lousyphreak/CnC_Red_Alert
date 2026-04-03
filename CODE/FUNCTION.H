@@ -40,6 +40,8 @@
 
 #include <stdint.h>
 
+#include "sdl_config.h"
+
 /*
 **	!!!DEFINE!!!  "NDEBUG" if the assertion code is to be !!!REMOVED!!! from the project.
 */

@@ -82,7 +82,7 @@ void Check_Use_Compressed_Shapes (void);
 void Read_Setup_Options(RawFileClass *config_file);
 bool VideoBackBufferAllowed = true;
 
-const char* Game_Registry_Key();
+const char* Game_Config_Section();
 
 #if (ENGLISH)
 #define WINDOW_NAME		"Red Alert"
@@ -232,24 +232,20 @@ int  WinMain ( void* instance , void* , char * command_line , int command_show )
 	bool bWOLSetupFile = WWFS_GetPathInfo("wolsetup.exe", &wfd_info);
 //	if( bWOLSetupFile )
 //		debugprint( "Found wolsetup.exe\n" );
-	//	Look for special registry entry that tells us when the setup exe has done its thing.
-	HKEY hKey;
-	RegOpenKeyEx( HKEY_LOCAL_MACHINE, Game_Registry_Key(), 0, KEY_READ, &hKey );
+	//	Look for the setup-complete config flag that wolsetup.exe leaves behind.
 	uint32_t dwValue;
-	uint32_t dwBufSize = sizeof( uint32_t );
-	if( RegQueryValueEx( hKey, "WolapiInstallComplete", 0, NULL, (LPBYTE)&dwValue, &dwBufSize ) == ERROR_SUCCESS )
+	if( RA_ReadConfigUint32( Game_Config_Section(), "WolapiInstallComplete", &dwValue ) )
 	{
-//		debugprint( "Found WolapiInstallComplete in registry\n" );
+//		debugprint( "Found WolapiInstallComplete in config\n" );
 		//	Setup has finished. Delete the setup exe and remove reg key.
 		if( bWOLSetupFile )
 		{
 			if( WWFS_RemovePath("wolsetup.exe") )
-				RegDeleteValue( hKey, "WolapiInstallComplete" );
+				RA_DeleteConfigValue( Game_Config_Section(), "WolapiInstallComplete" );
 		}
 		else
-			RegDeleteValue( hKey, "WolapiInstallComplete" );
+			RA_DeleteConfigValue( Game_Config_Section(), "WolapiInstallComplete" );
 	}
-	RegCloseKey( hKey );
 
 	//	I've been having problems getting the patch to delete "conquer.eng", which is present in the game
 	//	directory for 1.08, but which must NOT be present for this version (Aftermath mix files provide the

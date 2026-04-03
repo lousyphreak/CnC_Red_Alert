@@ -75,7 +75,7 @@ extern "C" void WWDraw_Flush_Present(void);
  *   Theater_From_Name -- Converts ASCII name into a theater number.                           *
  *   Unselect_All -- Causes all selected objects to become unselected.                         *
  *   VQ_Call_Back -- Maintenance callback used for VQ movies.                                  *
- *   Game_Registry_Key -- Returns pointer to string containing the registry subkey for the game.
+ *   Game_Config_Section -- Returns pointer to string containing the game config section.
  *   Is_Counterstrike_Installed -- Function to determine the availability of the CS expansion.
  *   Is_Aftermath_Installed -- Function to determine the availability of the AM expansion.
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -5132,12 +5132,11 @@ void Crummy(int crumb1, int crumb2)
 
 
 /***********************************************************************************************
- * Game_Registry_Key -- Returns pointer to string containing the registry subkey for the game.
- *                      This is located under HKEY_LOCAL_MACHINE.
+ * Game_Config_Section -- Returns the config section identifier for the game.
  * HISTORY:
  *    11/19/98 ajw : Created
  *=============================================================================================*/
-const char* Game_Registry_Key()
+const char* Game_Config_Section()
 {
 #ifdef ENGLISH
 	static char szKey[] = "SOFTWARE\\Westwood\\Red Alert Windows 95 Edition";
@@ -5174,17 +5173,8 @@ bool Is_Counterstrike_Installed (void)
 
 	if( !bAlreadyChecked )
 	{
-		HKEY hKey;
-		if( RegOpenKeyEx( HKEY_LOCAL_MACHINE, Game_Registry_Key(), 0, KEY_READ, &hKey ) != ERROR_SUCCESS )
-			return false;
-		uint32_t dwValue;
-		uint32_t dwBufSize = sizeof( uint32_t );
-		if( RegQueryValueEx( hKey, "CStrikeInstalled", 0, NULL, (LPBYTE)&dwValue, &dwBufSize ) != ERROR_SUCCESS )
-			bInstalled = false;
-		else
-			bInstalled = (bool)dwValue;			//	(Presumably true, if it's there...)
-
-		RegCloseKey( hKey );
+		uint32_t dwValue = 0;
+		bInstalled = RA_ReadConfigUint32( Game_Config_Section(), "CStrikeInstalled", &dwValue ) && (bool)dwValue;
 		bAlreadyChecked = true;
 	}
 	return bInstalled;
@@ -5204,17 +5194,8 @@ bool Is_Aftermath_Installed (void)
 
 	if( !bAlreadyChecked )
 	{
-		HKEY hKey;
-		if( RegOpenKeyEx( HKEY_LOCAL_MACHINE, Game_Registry_Key(), 0, KEY_READ, &hKey ) != ERROR_SUCCESS )
-			return false;
-		uint32_t dwValue;
-		uint32_t dwBufSize = sizeof( uint32_t );
-		if( RegQueryValueEx( hKey, "AftermathInstalled", 0, NULL, (LPBYTE)&dwValue, &dwBufSize ) != ERROR_SUCCESS )
-			bInstalled = false;
-		else
-			bInstalled = (bool)dwValue;			//	(Presumably true, if it's there...)
-
-		RegCloseKey( hKey );
+		uint32_t dwValue = 0;
+		bInstalled = RA_ReadConfigUint32( Game_Config_Section(), "AftermathInstalled", &dwValue ) && (bool)dwValue;
 		bAlreadyChecked = true;
 	}
 	return bInstalled;

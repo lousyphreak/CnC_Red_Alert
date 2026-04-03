@@ -72,6 +72,3 @@ bool	ConnectionLost;										//Flag that the connection to the other player was
 #if defined(ENGLISH) || defined(GERMAN)
 #define TXT_HACKHACK  Text_String(TXT_CONNECTING)
 #endif
-
-extern HKEY Get_Registry_Sub_Key (HKEY base_key, char *search_key, int32_t close);
-

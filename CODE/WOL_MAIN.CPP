@@ -27,7 +27,7 @@
 
 int WOL_Login_Dialog( WolapiObject* pWolapi );
 int WOL_Chat_Dialog( WolapiObject* pWolapi );
-const char* Game_Registry_Key();
+const char* Game_Config_Section();
 
 bool ReregisterWolapiDLL();
 void HandleDLLFail();
@@ -104,7 +104,7 @@ int WOL_Main()
 		}
 		pWolapi->PrepareButtonsAndIcons();
 		//	Undocumented hack needed for patch downloading, per Neal.
-		pWolapi->pChat->SetAttributeValue( "RegPath", Game_Registry_Key() );
+		pWolapi->pChat->SetAttributeValue( "RegPath", Game_Config_Section() );
 		//	(Not that anything's really "documented".)
 	}
 
@@ -197,52 +197,40 @@ bool ReregisterWolapiDLL()
 {
 	//	Attempt to reregister wolapi.dll.
 	//	Returns true if we think we succeeded.
-	HKEY hKey;
 	char szInstallPath[ _MAX_PATH ];
-	if( ::RegOpenKeyEx( HKEY_LOCAL_MACHINE, "Software\\Westwood\\WOLAPI", 0, KEY_READ, &hKey ) == ERROR_SUCCESS )
+	uint32_t dwBufSize = sizeof( szInstallPath );
+	if( RA_ReadConfigString( "Software\\Westwood\\WOLAPI", "InstallPath", szInstallPath, &dwBufSize ) )
 	{
-		uint32_t dwBufSize = _MAX_PATH;
-		if( ::RegQueryValueEx( hKey, "InstallPath", 0, NULL, (LPBYTE)szInstallPath, &dwBufSize ) == ERROR_SUCCESS )
+		SDL_PathInfo wfd_info;
+		if( !SDL_GetPathInfo( szInstallPath, &wfd_info ) )
 		{
-			SDL_PathInfo wfd_info;
-			if( !SDL_GetPathInfo( szInstallPath, &wfd_info ) )
-			{
-				//	File is not there.
-				::RegCloseKey( hKey );
-				return false;
-			}
-//			debugprint( "Found dll -> %s\n", szInstallPath );
-			//	Get the DLL to register itself.
-			void* hLib = LoadLibrary( szInstallPath );
-			if( !hLib )
-			{
-//				debugprint( "LoadLibrary failed, GetLastError is %i\n", GetLastError() );
-				::RegCloseKey( hKey );
-				return false;
-			}
-			FARPROC lpDllRegisterFunction = GetProcAddress( hLib, "DllRegisterServer" );
-			if( !lpDllRegisterFunction )
-			{
-				::RegCloseKey( hKey );
-				return false;
-			}
-			if( lpDllRegisterFunction() != S_OK )
-			{
-				::RegCloseKey( hKey );
-				return false;
-			}
-			//	There is a bug in wolapi.dll that makes the following delay necessary.
-			//	Something about Neal's extra threads only getting half-way set up before they get deleted.
-			//	(The extra threads shouldn't really be created in this case, anyway...)
-			::Sleep( 1000 );
-			FreeLibrary( hLib );
-		}
-		else
-		{
-			::RegCloseKey( hKey );
+			//	File is not there.
 			return false;
 		}
-		::RegCloseKey( hKey );
+//			debugprint( "Found dll -> %s\n", szInstallPath );
+		//	Get the DLL to register itself.
+		void* hLib = LoadLibrary( szInstallPath );
+		if( !hLib )
+		{
+//				debugprint( "LoadLibrary failed, GetLastError is %i\n", GetLastError() );
+			return false;
+		}
+		FARPROC lpDllRegisterFunction = GetProcAddress( hLib, "DllRegisterServer" );
+		if( !lpDllRegisterFunction )
+		{
+			FreeLibrary( hLib );
+			return false;
+		}
+		if( lpDllRegisterFunction() != S_OK )
+		{
+			FreeLibrary( hLib );
+			return false;
+		}
+		//	There is a bug in wolapi.dll that makes the following delay necessary.
+		//	Something about Neal's extra threads only getting half-way set up before they get deleted.
+		//	(The extra threads shouldn't really be created in this case, anyway...)
+		::Sleep( 1000 );
+		FreeLibrary( hLib );
 	}
 	else
 	{

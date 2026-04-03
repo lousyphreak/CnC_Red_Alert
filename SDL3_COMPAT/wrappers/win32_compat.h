@@ -67,7 +67,6 @@ using HGLOBAL = void*;
 using HMODULE = void*;
 using FARPROC = void (*)();
 using HGDIOBJ = void*;
-using HKEY = void*;
 using LPVOID = void*;
 using LPCVOID = const void*;
 using PBYTE = BYTE*;
@@ -297,11 +296,6 @@ struct RAWindow;
 #define SEM_FAILCRITICALERRORS 0x0001
 #define SEM_NOOPENFILEERRORBOX 0x8000
 
-#define KEY_READ 0x20019
-#define REG_SZ 1
-#define REG_DWORD 4
-#define HKEY_LOCAL_MACHINE ((HKEY)(intptr_t)0x80000002)
-
 #define WSAEWOULDBLOCK 10035
 #define FD_WRITE 0x0002
 
@@ -426,10 +420,6 @@ HMODULE LoadLibrary(LPCSTR file_name);
 FARPROC GetProcAddress(HMODULE module, LPCSTR proc_name);
 BOOL FreeLibrary(HMODULE module);
 DWORD GetModuleFileName(void* instance, LPSTR file_name, DWORD size);
-
-LONG RegOpenKeyEx(HKEY key, LPCSTR sub_key, DWORD options, DWORD sam_desired, HKEY* result);
-LONG RegQueryValueEx(HKEY key, LPCSTR value_name, DWORD* reserved, DWORD* type, LPBYTE data, DWORD* data_size);
-LONG RegCloseKey(HKEY key);
 
 }
 

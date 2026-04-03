@@ -3244,25 +3244,13 @@ void Extract(char* filename, char* outname)
 
 bool bUsingDVD = false;
 
-const char* Game_Registry_Key();
+const char* Game_Config_Section();
 
 //***********************************************************************************************
 bool Is_DVD_Installed()
 {
-	bool bInstalled;
-	HKEY hKey;
-	if( RegOpenKeyEx( HKEY_LOCAL_MACHINE, Game_Registry_Key(), 0, KEY_READ, &hKey ) != ERROR_SUCCESS )
-		return false;
-	uint32_t dwValue;
-	uint32_t dwBufSize = sizeof( uint32_t );
-	if( RegQueryValueEx( hKey, "DVD", 0, NULL, (LPBYTE)&dwValue, &dwBufSize ) != ERROR_SUCCESS )
-		bInstalled = false;
-	else
-		bInstalled = (bool)dwValue;			//	(Presumably true, if it's there...)
-
-	RegCloseKey( hKey );
-
-	return bInstalled;
+	uint32_t dwValue = 0;
+	return RA_ReadConfigUint32( Game_Config_Section(), "DVD", &dwValue ) && (bool)dwValue;
 }
 
 //***********************************************************************************************

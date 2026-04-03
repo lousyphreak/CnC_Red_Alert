@@ -16,6 +16,7 @@
 #include <cmath>
 #include <ctime>
 #include <mutex>
+#include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -68,11 +69,6 @@ namespace {
 constexpr int kStretchedGameWidth = 640;
 constexpr int kStretchedGameHeight = 400;
 constexpr int kDisplayHeightForStretchedGame = 480;
-
-bool registry_reports_expansion_installed(const char* mix_name)
-{
-    return mix_name && WWFS_GetPathInfo(mix_name, nullptr);
-}
 
 bool uses_stretched_640x400_presentation(RAWindow* window)
 {
@@ -664,72 +660,6 @@ DWORD GetModuleFileName(void*, LPSTR file_name, DWORD size)
 
     std::snprintf(file_name, size, "%s", path.c_str());
     return static_cast<DWORD>(std::strlen(file_name));
-}
-
-LONG RegOpenKeyEx(HKEY, LPCSTR sub_key, DWORD, DWORD, HKEY* result)
-{
-    if (!result) return ERROR_INVALID_HANDLE;
-    *result = new std::string(sub_key ? sub_key : "");
-    return ERROR_SUCCESS;
-}
-
-LONG RegQueryValueEx(HKEY key, LPCSTR value_name, DWORD*, DWORD* type, LPBYTE data, DWORD* data_size)
-{
-    if (!key || !data_size) return ERROR_INVALID_HANDLE;
-    const char* name = value_name ? value_name : "";
-
-    auto write_string_value = [&](const char* value) -> LONG {
-        if (type) *type = REG_SZ;
-        const size_t value_size = std::strlen(value) + 1;
-        if (!data || *data_size < value_size) {
-            *data_size = static_cast<DWORD>(value_size);
-            return ERROR_SUCCESS;
-        }
-        std::memcpy(data, value, value_size);
-        *data_size = static_cast<DWORD>(value_size);
-        return ERROR_SUCCESS;
-    };
-
-    auto write_dword_value = [&](DWORD value) -> LONG {
-        if (type) *type = REG_DWORD;
-        if (!data || *data_size < sizeof(value)) {
-            *data_size = sizeof(value);
-            return ERROR_SUCCESS;
-        }
-        std::memcpy(data, &value, sizeof(value));
-        *data_size = sizeof(value);
-        return ERROR_SUCCESS;
-    };
-
-    if (std::strcmp(name, "InstallPath") == 0) {
-        const char* base_path = SDL_GetBasePath();
-        return write_string_value(base_path ? base_path : "./");
-    }
-
-    if (std::strcmp(name, "DVD") == 0 ||
-        std::strcmp(name, "WolapiInstallComplete") == 0 ||
-        std::strcmp(name, "WOLAPI Find Enabled") == 0 ||
-        std::strcmp(name, "WOLAPI Page Enabled") == 0 ||
-        std::strcmp(name, "WOLAPI Lang Filter") == 0 ||
-        std::strcmp(name, "WOLAPI Show All Games") == 0) {
-        return write_dword_value(0);
-    }
-
-    if (std::strcmp(name, "CStrikeInstalled") == 0) {
-        return write_dword_value(registry_reports_expansion_installed("EXPAND.MIX") ? 1u : 0u);
-    }
-
-    if (std::strcmp(name, "AftermathInstalled") == 0) {
-        return write_dword_value(registry_reports_expansion_installed("EXPAND2.MIX") ? 1u : 0u);
-    }
-
-    return ERROR_FILE_NOT_FOUND;
-}
-
-LONG RegCloseKey(HKEY key)
-{
-    delete static_cast<std::string*>(key);
-    return ERROR_SUCCESS;
 }
 
 } // extern "C"
