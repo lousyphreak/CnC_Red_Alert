@@ -822,7 +822,7 @@ bool FootClass::Follow_Edge(CELL start, CELL target, PathType * path, FacingType
 	**	Continue until we find our target, find our original starting spot,
 	**	or run out of moves.
 	*/
-	while (path->Length < max_cells) {
+	while (path->Length + 1 < max_cells) {
 
 		/*
 		**	Look in all the adjacent cells to determine a passable one that
