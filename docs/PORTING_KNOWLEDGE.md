@@ -7,7 +7,18 @@
   - Safe rule: if a compat wrapper is both non-functional and either unused or only feeding dead repo-owned code, delete the wrapper and remove the repo-owned caller chain instead of carrying a fake API forward.
 - `CODE/IPX95.CPP::Load_IPX_Dll()` is one concrete example of how to collapse a dead stub chain safely.
   - Before cleanup, the SDL port called `Get_OS_Version()`, which called the stubbed `GetVersion()`, which always made `WindowsNT` true and therefore forced `Load_IPX_Dll()` to return `false`.
-  - Safe cleanup rule: when a stubbed compat probe already deterministically forces one outcome, replace the call chain with that explicit outcome and delete the dead intermediate state/functions.
+- Safe cleanup rule: when a stubbed compat probe already deterministically forces one outcome, replace the call chain with that explicit outcome and delete the dead intermediate state/functions.
+
+## TCP/IP socket compatibility belongs in repo-owned networking headers, not SDL compat wrappers
+
+- `SDL3_COMPAT/wrappers/winsock.h` had turned into a mixed bag of socket type aliases, byte-order macros, and WinSock no-op stubs that the repo-owned network code was depending on directly.
+  - Practical problem: that made `CODE/TCPIP.CPP` look cross-platform while Unix was really just riding through fake `WSAAsync*` calls, and it tied unrelated repo-owned headers (`TCPIP.H`, `FIELD.H`, `WSPROTO.H`, `UTRACKER.CPP`) to an SDL compat wrapper they did not semantically need.
+- Safe rule for this tree: keep the legacy socket vocabulary in a repo-owned networking seam and split live behavior in the implementation file.
+  - Current fix pattern: `CODE/SOCKETS.H` now owns the shared `SOCKET`/`WSADATA`/`SOCKADDR_IPX`/macro surface for repo-owned code, while `_WIN32` includes the real system `<winsock.h>` and Unix provides the minimal POSIX-backed aliases the old code still expects.
+  - `CODE/TCPIP.CPP` then does the real behavior split: preserve the WinSock async path on Windows, but use direct Unix hostname lookup (`gethostbyname()` / `gethostbyaddr()`) and POSIX socket semantics instead of carrying WinSock no-op wrappers forward.
+- Socket-option and error handling need a small Unix-specific adjustment even when the surrounding gameplay logic stays unchanged.
+  - Passing hardcoded `4`-byte option lengths is a Windows-era assumption; use `sizeof(int)`-driven helper calls instead so the same code is correct on both targets.
+  - On Unix, reading `SO_ERROR` with `getsockopt()` is the portable way to consume the pending socket error; trying to clear it with `setsockopt(SO_ERROR, ...)` is not a portable replacement for the WinSock behavior.
 
 ## SDL main-window path no longer needs Win32 class/show/focus wrappers
 

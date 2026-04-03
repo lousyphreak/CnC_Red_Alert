@@ -43,7 +43,7 @@
 /*
 ** Include standard Winsock 1.0 header file.
 */
-#include	<winsock.h>
+#include	"SOCKETS.H"
 
 /*
 ** Misc defines

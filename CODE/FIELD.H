@@ -38,9 +38,8 @@
 #define __FIELD_H
 #include <stdint.h>
 
-#include "win32_compat.h"
 #include <cstdint>
-#include <winsock.h>
+#include "SOCKETS.H"
 
 #define FIELD_HEADER_SIZE	(sizeof(FieldClass) - (sizeof(void *) * 2))
 

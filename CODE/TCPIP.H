@@ -45,7 +45,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 
-#include <winsock.h>
+#include "SOCKETS.H"
 
 #include <stdint.h>
 #ifndef WOLAPI_INTEGRATION
@@ -186,4 +186,3 @@ extern bool PlanetWestwoodIsHost;
 #define TXT_WINSOCK_UNABLE_TO_CONNECT				4567+19
 #define TXT_WINSOCK_CONNECTION_LOST					4567+20
 #define TXT_WINSOCK_RESOLVING_HOST_ADDRESS			4567+21
-

@@ -47,7 +47,7 @@
 
 
 #include "FUNCTION.H"
-#include <winsock.h>
+#include "SOCKETS.H"
 
 
 /***********************************************************************************************
@@ -223,4 +223,3 @@ void UnitTrackerClass::To_PC_Format (void)
 	}
 	InNetworkFormat = 0;		// Flag that data is now in PC format
 }
-

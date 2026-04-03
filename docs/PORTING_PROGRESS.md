@@ -8,6 +8,13 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Replaced the old SDL compat `winsock.h` shim with a repo-owned cross-platform socket surface and split `CODE/TCPIP.CPP` into native Windows vs Unix behavior:
+  - added `CODE/SOCKETS.H` as the shared networking seam for the remaining legacy socket vocabulary used inside `CODE/` (`SOCKET`, `WSADATA`, `SOCKADDR_IPX`, byte-order/socket macros, and Unix-side `closesocket`/error aliases), while keeping the `_WIN32` path on the real system `<winsock.h>`;
+  - switched the remaining repo-owned include sites that depended on `<winsock.h>` (`CODE/{TCPIP.H,FIELD.H,WSPROTO.H,UTRACKER.CPP}`) over to `CODE/SOCKETS.H`, then deleted `SDL3_COMPAT/wrappers/winsock.h` entirely so the active build no longer depends on that compat wrapper;
+  - refactored `CODE/TCPIP.CPP` so Unix now uses explicit `_WIN32` splits instead of the old no-op async shim path: reverse/forward hostname lookup is handled directly with `gethostbyaddr()` / `gethostbyname()`, WinSock-only `WSAAsync*` registration/cancellation calls stay on Windows, socket option writes now use correctly sized `int` values instead of hardcoded `4`-byte literals, and Unix socket error clearing now relies on `getsockopt(SO_ERROR)` rather than trying to write `SO_ERROR` back with `setsockopt()`;
+  - fixed one directly coupled cleanup bug while touching the close path: `TcpipManagerClass::Close()` now actually closes `UDPSocket` instead of accidentally calling `Close_Socket(ListenSocket)` twice;
+  - validation for this checkpoint: `cmake --build build --target redalert -j2` and `cmake --build build-asan --target redalert -j2` both succeed after the TCP/IP cleanup.
+
 - Removed the remaining repo-owned no-op Win32 compat stubs and their dead callers:
   - audited `SDL3_COMPAT/wrappers/win32_compat.{h,cpp}` for wrappers that had no SDL-side behavior at all and confirmed three repo-owned dead ends: `LoadIcon(...)` always returned `nullptr`, `DialogBox(...)` always returned `0`, and `GetVersion()` always returned `0`;
   - deleted the unused `LoadIcon(...)` declarations/definitions entirely because the repo-owned code no longer references them at all;

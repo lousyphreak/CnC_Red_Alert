@@ -60,6 +60,71 @@
 #include "FUNCTION.H"
 #include "TCPIP.H"
 
+namespace {
+
+#ifdef _WIN32
+using SocketLengthType = int;
+#else
+using SocketLengthType = socklen_t;
+#endif
+
+inline SocketLengthType Socket_Length(size_t length)
+{
+	return static_cast<SocketLengthType>(length);
+}
+
+inline int Set_Int_Socket_Option(SOCKET socket_handle, int level, int option_name, int value)
+{
+#ifdef _WIN32
+	return setsockopt(socket_handle, level, option_name, (char*)&value, sizeof(value));
+#else
+	return setsockopt(socket_handle, level, option_name, &value, Socket_Length(sizeof(value)));
+#endif
+}
+
+#ifndef _WIN32
+void Copy_Socket_String(char* destination, size_t destination_size, const char* source)
+{
+	if (destination_size == 0) {
+		return;
+	}
+
+	if (source == nullptr) {
+		destination[0] = '\0';
+		return;
+	}
+
+	strncpy(destination, source, destination_size - 1);
+	destination[destination_size - 1] = '\0';
+}
+
+bool Lookup_Host_By_Address(const IN_ADDR& address, char* name_buffer, size_t name_buffer_size)
+{
+	struct hostent* hentry =
+		gethostbyaddr((const char*)&address.s_addr, (int)sizeof(address.s_addr), AF_INET);
+	if (hentry == nullptr || hentry->h_name == nullptr) {
+		return false;
+	}
+
+	Copy_Socket_String(name_buffer, name_buffer_size, hentry->h_name);
+	return true;
+}
+
+bool Lookup_Host_By_Name(const char* host_name, IN_ADDR* address, char* dot_address, size_t dot_address_size)
+{
+	struct hostent* hentry = gethostbyname(host_name);
+	if (hentry == nullptr || hentry->h_addr == nullptr || hentry->h_length != (int)sizeof(address->s_addr)) {
+		return false;
+	}
+
+	memcpy(&address->s_addr, hentry->h_addr, sizeof(address->s_addr));
+	Copy_Socket_String(dot_address, dot_address_size, inet_ntoa(*address));
+	return true;
+}
+#endif
+
+}
+
 /*
 ** Nasty globals
 */
@@ -141,7 +206,9 @@ void TcpipManagerClass::Close(void)
 	** Cancel any outstaning asyncronous events
 	*/
 	if (Async){
+#ifdef _WIN32
 		WSACancelAsyncRequest(Async);
+#endif
 	}
 
 	/*
@@ -158,7 +225,7 @@ void TcpipManagerClass::Close(void)
 	}
 
 	if (UDPSocket != INVALID_SOCKET){
-		Close_Socket(ListenSocket);
+		Close_Socket(UDPSocket);
 		UDPSocket = INVALID_SOCKET;
 	}
 
@@ -190,7 +257,7 @@ void TcpipManagerClass::Close(void)
 
 int32_t TcpipManagerClass::Init(void)
 {
-	int16_t version;
+	uint16_t version;
 	int 	rc;
 
 	/*
@@ -202,7 +269,7 @@ int32_t TcpipManagerClass::Init(void)
 	** Initialise sockets to null
 	*/
 	ListenSocket = INVALID_SOCKET;
-	ConnectSocket =INVALID_SOCKET;
+	ConnectSocket = INVALID_SOCKET;
 	UDPSocket = INVALID_SOCKET;
 
 	/*
@@ -398,13 +465,13 @@ void TcpipManagerClass::Write(void *buffer, int buffer_len)
 int32_t TcpipManagerClass::Add_Client(void)
 {
 	struct 	sockaddr_in addr;
-	int 		addrsize;
-	bool 		delay = TRUE;
+	SocketLengthType addrsize;
+	int 		delay = TRUE;
 
 	/*
 	** Accept the connection. If there is an error then dont do anything else
 	*/
-	addrsize = sizeof(addr);
+	addrsize = Socket_Length(sizeof(addr));
 	ConnectSocket = accept (ListenSocket, (LPSOCKADDR)&addr, &addrsize);
 	if (ConnectSocket == INVALID_SOCKET) {
 		//Show_Error("accept", WSAGetLastError());
@@ -414,9 +481,9 @@ int32_t TcpipManagerClass::Add_Client(void)
 	/*
 	** Set options for this socket
 	*/
-	setsockopt (ConnectSocket, IPPROTO_TCP, TCP_NODELAY, (char*)&delay, 4);
-	setsockopt (ConnectSocket, SOL_SOCKET, SO_RCVBUF, (char*)&SocketReceiveBuffer, 4);
-	setsockopt (ConnectSocket, SOL_SOCKET, SO_SNDBUF, (char*)&SocketSendBuffer, 4);
+	Set_Int_Socket_Option(ConnectSocket, IPPROTO_TCP, TCP_NODELAY, delay);
+	Set_Int_Socket_Option(ConnectSocket, SOL_SOCKET, SO_RCVBUF, SocketReceiveBuffer);
+	Set_Int_Socket_Option(ConnectSocket, SOL_SOCKET, SO_SNDBUF, SocketSendBuffer);
 
 	/*
 	** Save the clients address
@@ -428,19 +495,28 @@ int32_t TcpipManagerClass::Add_Client(void)
 	** Initiate an asynchronous host lookup by address. Our window will receive notification
 	** when this is complete or when it times out.
 	*/
+#ifdef _WIN32
 	Async = WSAAsyncGetHostByAddr (MainWindow, TCPIP_EVENT_HOST_BY_ADDRESS,
-		(char const *)&addr.sin_addr, 4, PF_INET, &HostBuff[0],
+		(char const *)&addr.sin_addr, sizeof(addr.sin_addr), PF_INET, &HostBuff[0],
 		MAXGETHOSTSTRUCT);
+#else
+	if (!Lookup_Host_By_Address(addr.sin_addr, &ClientName[0], sizeof(ClientName))) {
+		ClientName[0] = 0;
+	}
+	Async = 0;
+#endif
 
 	/*
 	** Enable asynchronous events on this socket
 	*/
+#ifdef _WIN32
 	if (WSAAsyncSelect (ConnectSocket, MainWindow, TCPIP_EVENT_SOCKET,
 		FD_READ | FD_WRITE | FD_CLOSE) == SOCKET_ERROR){
 		WSACancelAsyncRequest(Async);
 		Close_Socket (ConnectSocket);
 		return(FALSE);
 	}
+#endif
 
 	/*
 	** Create our UDP socket
@@ -467,12 +543,13 @@ int32_t TcpipManagerClass::Add_Client(void)
 	/*
 	** Set options for the UDP socket
 	*/
-	setsockopt (UDPSocket, SOL_SOCKET, SO_RCVBUF, (char*)&SocketReceiveBuffer, 4);
-	setsockopt (UDPSocket, SOL_SOCKET, SO_SNDBUF, (char*)&SocketSendBuffer, 4);
+	Set_Int_Socket_Option(UDPSocket, SOL_SOCKET, SO_RCVBUF, SocketReceiveBuffer);
+	Set_Int_Socket_Option(UDPSocket, SOL_SOCKET, SO_SNDBUF, SocketSendBuffer);
 
 	/*
 	** Enable asynchronous events on this socket
 	*/
+#ifdef _WIN32
 	if (WSAAsyncSelect (UDPSocket, MainWindow, TCPIP_EVENT_UDP_SOCKET,
 		FD_READ | FD_WRITE) == SOCKET_ERROR){
 		WSACancelAsyncRequest(Async);
@@ -480,6 +557,7 @@ int32_t TcpipManagerClass::Add_Client(void)
 		Close_Socket (ConnectSocket);
 		return(FALSE);
 	}
+#endif
 
 	return (TRUE);
 
@@ -505,11 +583,13 @@ int32_t TcpipManagerClass::Add_Client(void)
 
 void TcpipManagerClass::Handle_Async_Event(uint32_t event_type, int32_t lParam)
 {
+#ifdef _WIN32
 	struct 	hostent *hentry;
+#endif
 	struct 	sockaddr_in addr;
 	int	 	event;
 	int	 	rc;
-	int		addr_len;
+	SocketLengthType addr_len;
 
 	switch (event_type){
 
@@ -517,7 +597,7 @@ void TcpipManagerClass::Handle_Async_Event(uint32_t event_type, int32_t lParam)
 		** Handle the GetHostByAddress result
 		*/
 		case TCPIP_EVENT_HOST_BY_ADDRESS:
-
+#ifdef _WIN32
 			if (IsServer){
 				/*
 				** We are the server
@@ -545,6 +625,10 @@ void TcpipManagerClass::Handle_Async_Event(uint32_t event_type, int32_t lParam)
 				Async = 0;
 				return;
 			}
+#else
+			Async = 0;
+			return;
+#endif
 
 
 		/*
@@ -552,6 +636,7 @@ void TcpipManagerClass::Handle_Async_Event(uint32_t event_type, int32_t lParam)
 		** address.
 		*/
 		case TCPIP_EVENT_HOST_BY_NAME:
+#ifdef _WIN32
 			if (WSAGETASYNCERROR(lParam)==0) {
 				hentry = (struct hostent *)&HostBuff[0];
 				memcpy (&(Server.Addr.s_addr), hentry->h_addr, 4);
@@ -567,6 +652,10 @@ void TcpipManagerClass::Handle_Async_Event(uint32_t event_type, int32_t lParam)
 			}
 			Async = 0;
 			return;
+#else
+			Async = 0;
+			return;
+#endif
 
 
 		/*
@@ -602,7 +691,7 @@ void TcpipManagerClass::Handle_Async_Event(uint32_t event_type, int32_t lParam)
 						Clear_Socket_Error(UDPSocket);
 						return;
 					}
-					addr_len = sizeof(addr);
+					addr_len = Socket_Length(sizeof(addr));
 					rc = recvfrom(UDPSocket, ReceiveBuffer, WS_RECEIVE_BUFFER_LEN, 0,
 					(LPSOCKADDR)&addr, &addr_len);
 					if (rc == SOCKET_ERROR) {
@@ -670,10 +759,12 @@ void TcpipManagerClass::Handle_Async_Event(uint32_t event_type, int32_t lParam)
 						ConnectStatus = CONNECTION_LOST;
 						return;
 					}
+#ifdef _WIN32
 					if (Async != 0) {
 						WSACancelAsyncRequest(Async);
 					}
 					WSAAsyncSelect (ConnectSocket, MainWindow, TCPIP_EVENT_SOCKET, 0);
+#endif
 					Close_Socket (ConnectSocket);
 					ConnectSocket = INVALID_SOCKET;
 					//Connected = FALSE;
@@ -765,7 +856,6 @@ void TcpipManagerClass::Set_Host_Address(char *address)
 void TcpipManagerClass::Start_Client(void)
 {
 	struct 	sockaddr_in addr;
-	bool		delay = true;
 	int 		i;
 
 	addr.sin_family = AF_INET;
@@ -822,12 +912,13 @@ void TcpipManagerClass::Start_Client(void)
 	/*
 	** Set options for the UDP socket
 	*/
-	setsockopt (UDPSocket, SOL_SOCKET, SO_RCVBUF, (char*)&SocketReceiveBuffer, 4);
-	setsockopt (UDPSocket, SOL_SOCKET, SO_SNDBUF, (char*)&SocketSendBuffer, 4);
+	Set_Int_Socket_Option(UDPSocket, SOL_SOCKET, SO_RCVBUF, SocketReceiveBuffer);
+	Set_Int_Socket_Option(UDPSocket, SOL_SOCKET, SO_SNDBUF, SocketSendBuffer);
 
 	/*
 	** Enable asynchronous events on the UDP socket
 	*/
+#ifdef _WIN32
 	if (WSAAsyncSelect (UDPSocket, MainWindow, TCPIP_EVENT_UDP_SOCKET,
 		FD_READ | FD_WRITE) == SOCKET_ERROR){
 		WSACancelAsyncRequest(Async);
@@ -836,6 +927,7 @@ void TcpipManagerClass::Start_Client(void)
 		ConnectStatus = NOT_CONNECTING;
 		return;
 	}
+#endif
 
 	/*
 	** If the name is not a dot-decimal ip address then do a nameserver lookup
@@ -846,10 +938,24 @@ void TcpipManagerClass::Start_Client(void)
 	memcpy(&UDPIPAddress, &Server.Addr.s_addr, 4);
 	if (Server.Addr.s_addr == INADDR_NONE){
 		strcpy (Server.Name, PlanetWestwoodIPAddress);
+#ifdef _WIN32
 		Async = WSAAsyncGetHostByName(MainWindow, TCPIP_EVENT_HOST_BY_NAME,
 			Server.Name, HostBuff, MAXGETHOSTSTRUCT);
 		ConnectStatus = RESOLVING_HOST_ADDRESS;
+#else
+		if (Lookup_Host_By_Name(Server.Name, &Server.Addr, Server.DotAddr, sizeof(Server.DotAddr))) {
+			memcpy(&UDPIPAddress, &Server.Addr.s_addr, sizeof(Server.Addr.s_addr));
+			ConnectStatus = CONNECTED_OK;
+			Connected = TRUE;
+		} else {
+			Server.Name[0] = 0;
+			strcpy(Server.DotAddr, "????");
+			ConnectStatus = SERVER_ADDRESS_LOOKUP_FAILED;
+		}
+		Async = 0;
+#endif
 	}else{
+		strcpy(Server.DotAddr, inet_ntoa(Server.Addr));
 		ConnectStatus = CONNECTED_OK;
 		Connected = TRUE;
 	}
@@ -893,14 +999,15 @@ void TcpipManagerClass::Set_Protocol_UDP(int32_t state)
 
 void TcpipManagerClass::Clear_Socket_Error(SOCKET socket)
 {
-	uint32_t error_code;
-	int length = 4;
+	int error_code;
+	SocketLengthType length = Socket_Length(sizeof(error_code));
 
 	getsockopt (socket, SOL_SOCKET, SO_ERROR, (char*)&error_code, &length);
+#ifdef _WIN32
 	error_code = 0;
 	setsockopt (socket, SOL_SOCKET, SO_ERROR, (char*)&error_code, length);
+#endif
 }
-
 
 
 
