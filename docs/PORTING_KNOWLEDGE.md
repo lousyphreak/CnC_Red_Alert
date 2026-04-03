@@ -1,5 +1,17 @@
 # Porting Knowledge
 
+## Removing `win32_compat.h` macros cleanly
+
+- `SDL3_COMPAT/wrappers/win32_compat.h` can be reduced to types/structs/function declarations only; its Win32-style `#define` surface does not need to survive as long as each live use is rewritten where it actually belongs.
+  - Good cleanup pattern from this pass: replace the include guard with `#pragma once`, delete the macro block outright, then let the compiler identify the remaining real dependencies.
+- The safest rewrites depend on what the old macro was actually doing at the use site.
+  - For wrapper-internal sentinels and numeric protocol values (`WAIT_*`, `INFINITE`, file-open modes, drive ids, invalid-handle sentinel), prefer file-local `constexpr` values or tiny helpers inside the implementation file that actually uses them.
+  - For UI/message-box code, prefer rewriting the helper API to native SDL semantics instead of preserving Win32-style flag vocabulary. In this tree, `RA_ShowMessageBox(...)` became a simple SDL-flag helper and the old `MB_*` / `ID*` bits disappeared from the repo-owned callers.
+  - For one-off startup/path/show-command uses, folding directly to context-appropriate literals is fine when the value is already a fixed Win32 ABI constant (`260` for path buffers, `1` / `3` for startup show commands, `5U` for the CD-ROM drive-type comparison).
+- Important audit rule: a token matching an old Win32 macro name does **not** automatically mean it still belongs to `win32_compat.h`.
+  - In this tree, `TRUE` / `FALSE` still come from `WIN32LIB`'s `WWSTD.H`, and the active socket/event helpers (`INVALID_SOCKET`, `SOCKET_ERROR`, `FD_WRITE`, `WSAEWOULDBLOCK`, `LOWORD`, `HIWORD`) intentionally live in `CODE/SOCKETS.H` as part of the repo-owned networking seam.
+  - Practical consequence: after removing the compat-header macros, verify the remaining hits by ownership and meaning before trying to delete them too.
+
 ## Trivial Win32 pass-throughs should move to direct SDL/std call sites
 
 - `SDL3_COMPAT/wrappers/win32_compat.{h,cpp}` is not just for deleting dead stubs; it also needs audits for thin wrappers that merely rename SDL or libc behavior without carrying any Red Alert- or filesystem-specific logic.

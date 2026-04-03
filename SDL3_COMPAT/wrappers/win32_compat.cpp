@@ -22,6 +22,28 @@
 
 namespace {
 
+constexpr DWORD kErrorSuccess = 0;
+constexpr DWORD kErrorFileNotFound = 2;
+constexpr DWORD kWaitObject0 = 0x00000000UL;
+constexpr DWORD kWaitTimeout = 0x00000102UL;
+constexpr DWORD kWaitFailed = 0xFFFFFFFFU;
+constexpr DWORD kInfiniteWait = 0xFFFFFFFFU;
+constexpr DWORD kGenericRead = 0x80000000U;
+constexpr DWORD kGenericWrite = 0x40000000U;
+constexpr DWORD kCreateAlways = 2U;
+constexpr DWORD kOpenExisting = 3U;
+constexpr DWORD kOpenAlways = 4U;
+constexpr DWORD kFileCurrent = 1U;
+constexpr DWORD kFileEnd = 2U;
+constexpr UINT kDriveNoRootDir = 1U;
+constexpr UINT kDriveFixed = 3U;
+constexpr UINT kDriveCdrom = 5U;
+
+HANDLE invalid_handle_value()
+{
+    return reinterpret_cast<HANDLE>(static_cast<intptr_t>(-1));
+}
+
 enum class HandleKind {
     None,
     File,
@@ -50,7 +72,7 @@ struct EventHandle final : HandleBase {
 };
 
 std::mutex g_last_error_mutex;
-DWORD g_last_error = ERROR_SUCCESS;
+DWORD g_last_error = kErrorSuccess;
 std::atomic<UINT> g_error_mode{0};
 
 } // end anonymous namespace
@@ -93,15 +115,15 @@ void set_last_error(DWORD value)
 
 std::string create_file_mode(DWORD desired_access, DWORD creation_disposition)
 {
-    const bool can_read = (desired_access & GENERIC_READ) != 0;
-    const bool can_write = (desired_access & GENERIC_WRITE) != 0;
+    const bool can_read = (desired_access & kGenericRead) != 0;
+    const bool can_write = (desired_access & kGenericWrite) != 0;
 
     switch (creation_disposition) {
-        case CREATE_ALWAYS:
+        case kCreateAlways:
             return can_read ? "w+b" : "wb";
-        case OPEN_ALWAYS:
+        case kOpenAlways:
             return can_write ? (can_read ? "a+b" : "ab") : "rb";
-        case OPEN_EXISTING:
+        case kOpenExisting:
         default:
             if (can_read && can_write) return "r+b";
             if (can_write) return "wb";
@@ -244,32 +266,32 @@ UINT SetErrorMode(UINT mode)
 
 DWORD WaitForSingleObject(HANDLE handle, DWORD milliseconds)
 {
-    if (!handle) return WAIT_FAILED;
+    if (!handle) return kWaitFailed;
     auto* base = static_cast<HandleBase*>(handle);
     switch (base->kind) {
         case HandleKind::Event: {
             auto* event = static_cast<EventHandle*>(base);
             std::unique_lock lock(event->mutex);
             if (!event->signaled) {
-                if (milliseconds == INFINITE) {
+                if (milliseconds == kInfiniteWait) {
                     event->condition.wait(lock, [event]() { return event->signaled; });
                 } else if (!event->condition.wait_for(lock, std::chrono::milliseconds(milliseconds), [event]() { return event->signaled; })) {
-                    return WAIT_TIMEOUT;
+                    return kWaitTimeout;
                 }
             }
             if (!event->manual) {
                 event->signaled = false;
             }
-            return WAIT_OBJECT_0;
+            return kWaitObject0;
         }
         default:
-            return WAIT_FAILED;
+            return kWaitFailed;
     }
 }
 
 BOOL CloseHandle(HANDLE handle)
 {
-    if (!handle || handle == INVALID_HANDLE_VALUE) return TRUE;
+    if (!handle || handle == invalid_handle_value()) return 1;
     auto* base = static_cast<HandleBase*>(handle);
     if (base->kind == HandleKind::File) {
         auto* file = static_cast<FileHandle*>(base);
@@ -278,31 +300,31 @@ BOOL CloseHandle(HANDLE handle)
         }
     }
     delete base;
-    return TRUE;
+    return 1;
 }
 
 HANDLE CreateEvent(LPVOID, BOOL manual_reset, BOOL initial_state, LPCSTR name)
 {
-    return new EventHandle(manual_reset != FALSE, initial_state != FALSE);
+    return new EventHandle(manual_reset != 0, initial_state != 0);
 }
 
 BOOL SetEvent(HANDLE handle)
 {
-    if (!handle) return FALSE;
+    if (!handle) return 0;
     auto* event = static_cast<EventHandle*>(handle);
     std::scoped_lock lock(event->mutex);
     event->signaled = true;
     event->condition.notify_all();
-    return TRUE;
+    return 1;
 }
 
 BOOL ResetEvent(HANDLE handle)
 {
-    if (!handle) return FALSE;
+    if (!handle) return 0;
     auto* event = static_cast<EventHandle*>(handle);
     std::scoped_lock lock(event->mutex);
     event->signaled = false;
-    return TRUE;
+    return 1;
 }
 
 HANDLE CreateFile(LPCSTR file_name, DWORD desired_access, DWORD, LPVOID, DWORD creation_disposition, DWORD, HANDLE)
@@ -311,8 +333,8 @@ HANDLE CreateFile(LPCSTR file_name, DWORD desired_access, DWORD, LPVOID, DWORD c
     const std::string normalized_path = WWFS_NormalizePath(file_name);
     SDL_IOStream* io = SDL_IOFromFile(normalized_path.c_str(), mode.c_str());
     if (!io) {
-        set_last_error(ERROR_FILE_NOT_FOUND);
-        return INVALID_HANDLE_VALUE;
+        set_last_error(kErrorFileNotFound);
+        return invalid_handle_value();
     }
     return new FileHandle(io, normalized_path);
 }
@@ -320,19 +342,19 @@ HANDLE CreateFile(LPCSTR file_name, DWORD desired_access, DWORD, LPVOID, DWORD c
 BOOL ReadFile(HANDLE handle, LPVOID buffer, DWORD number_of_bytes_to_read, LPDWORD number_of_bytes_read, LPVOID)
 {
     if (number_of_bytes_read) *number_of_bytes_read = 0;
-    if (!handle || handle == INVALID_HANDLE_VALUE) return FALSE;
+    if (!handle || handle == invalid_handle_value()) return 0;
     auto* file = static_cast<FileHandle*>(handle);
     const size_t read = SDL_ReadIO(file->io, buffer, number_of_bytes_to_read);
     if (number_of_bytes_read) {
         *number_of_bytes_read = static_cast<DWORD>(read);
     }
-    return TRUE;
+    return 1;
 }
 
 BOOL WriteFile(HANDLE handle, LPCVOID buffer, DWORD number_of_bytes_to_write, LPDWORD number_of_bytes_written, LPVOID)
 {
     if (number_of_bytes_written) *number_of_bytes_written = 0;
-    if (!handle || handle == INVALID_HANDLE_VALUE) return FALSE;
+    if (!handle || handle == invalid_handle_value()) return 0;
     auto* file = static_cast<FileHandle*>(handle);
     const size_t written = SDL_WriteIO(file->io, buffer, number_of_bytes_to_write);
     if (number_of_bytes_written) {
@@ -343,11 +365,11 @@ BOOL WriteFile(HANDLE handle, LPCVOID buffer, DWORD number_of_bytes_to_write, LP
 
 DWORD SetFilePointer(HANDLE handle, LONG distance_to_move, LONG*, DWORD move_method)
 {
-    if (!handle || handle == INVALID_HANDLE_VALUE) return 0xffffffffu;
+    if (!handle || handle == invalid_handle_value()) return 0xffffffffu;
     auto* file = static_cast<FileHandle*>(handle);
     SDL_IOWhence whence = SDL_IO_SEEK_SET;
-    if (move_method == FILE_CURRENT) whence = SDL_IO_SEEK_CUR;
-    if (move_method == FILE_END) whence = SDL_IO_SEEK_END;
+    if (move_method == kFileCurrent) whence = SDL_IO_SEEK_CUR;
+    if (move_method == kFileEnd) whence = SDL_IO_SEEK_END;
     Sint64 result = SDL_SeekIO(file->io, distance_to_move, whence);
     return result < 0 ? 0xffffffffu : static_cast<DWORD>(result);
 }
@@ -355,30 +377,30 @@ DWORD SetFilePointer(HANDLE handle, LONG distance_to_move, LONG*, DWORD move_met
 UINT GetDriveType(LPCSTR root_path_name)
 {
     if (!root_path_name || !*root_path_name) {
-        return DRIVE_NO_ROOT_DIR;
+        return kDriveNoRootDir;
     }
 
     if (WWFS_GetVirtualCDIndexForDriveLetter(root_path_name[0]) >= 0) {
-        return DRIVE_CDROM;
+        return kDriveCdrom;
     }
 
     const std::string normalized_path = WWFS_NormalizePath(root_path_name);
     if (!WWFS_GetPathInfo(normalized_path.c_str(), nullptr)) {
-        return DRIVE_NO_ROOT_DIR;
+        return kDriveNoRootDir;
     }
 
     if (normalized_path.find("cdrom") != std::string::npos || normalized_path.find("CDROM") != std::string::npos) {
-        return DRIVE_CDROM;
+        return kDriveCdrom;
     }
 
-    return DRIVE_FIXED;
+    return kDriveFixed;
 }
 
 BOOL GetVolumeInformation(LPCSTR root_path_name, LPSTR volume_name_buffer, DWORD volume_name_size, DWORD* volume_serial_number,
     DWORD* maximum_component_length, DWORD* file_system_flags, LPSTR file_system_name_buffer, DWORD file_system_name_size)
 {
     if (!root_path_name || !*root_path_name) {
-        return FALSE;
+        return 0;
     }
 
     int virtual_cd_index = -1;
@@ -400,11 +422,11 @@ BOOL GetVolumeInformation(LPCSTR root_path_name, LPSTR volume_name_buffer, DWORD
         if (file_system_name_buffer && file_system_name_size > 0) {
             std::snprintf(file_system_name_buffer, file_system_name_size, "%s", "SDLFS");
         }
-        return TRUE;
+        return 1;
     }
 
     if (!WWFS_GetPathInfo(normalized_path.c_str(), nullptr)) {
-        return FALSE;
+        return 0;
     }
 
     // Extract the last path component as the "volume name"
@@ -435,7 +457,7 @@ BOOL GetVolumeInformation(LPCSTR root_path_name, LPSTR volume_name_buffer, DWORD
         std::snprintf(file_system_name_buffer, file_system_name_size, "%s", "SDLFS");
     }
 
-    return TRUE;
+    return 1;
 }
 
 } // extern "C"

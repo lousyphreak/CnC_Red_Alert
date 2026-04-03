@@ -201,7 +201,7 @@ bool ReregisterWolapiDLL()
 {
 	//	Attempt to reregister wolapi.dll.
 	//	Returns true if we think we succeeded.
-	char szInstallPath[ _MAX_PATH ];
+	char szInstallPath[260];
 	uint32_t dwBufSize = sizeof( szInstallPath );
 	if( RA_ReadConfigString( "Software\\Westwood\\WOLAPI", "InstallPath", szInstallPath, &dwBufSize ) )
 	{
@@ -251,8 +251,8 @@ void HandleDLLFail()
 	//	still is not working. Show an error message and delete pWolapi.
 	//	We show either "call tech support" or "download IE3", depending on whether oleaut32.dll looks out of date.
 
-	char szPath[ _MAX_PATH + 1 ];
-	::GetSystemDirectory( szPath, _MAX_PATH );
+	char szPath[260 + 1];
+	::GetSystemDirectory(szPath, 260);
 	if( *szPath && szPath[ strlen( szPath ) - 1 ] != '\\' )
 		strcat( szPath, "\\" );
 

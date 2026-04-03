@@ -89,7 +89,7 @@ void* MPGetProcAddress(SDL_SharedObject* module, char const * lpProcName) {
                 char msg[255];
                 sprintf(msg, "Unable to load function %s from %s",
 						lpProcName, "RA95MP.DLL");
-                RA_ShowMessageBox(msg, "Warning", MB_OK);
+                RA_ShowMessageBox(msg, "Warning");
         }
         return ret;
 }
@@ -131,7 +131,7 @@ MPlayerManClass::MPlayerManClass(void) : ConnManClass()
 		Find_Num_Connections_DLL = (Find_Num_Connections_Type) MPGetProcAddress(lib,
 			"Find_Num_Connections");
 	} else {
-       RA_ShowMessageBox("RA95MP.DLL not found!", "Warning", MB_OK);
+       RA_ShowMessageBox("RA95MP.DLL not found!", "Warning");
 		 exit(0);
 	}
 	

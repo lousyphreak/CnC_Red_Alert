@@ -839,7 +839,7 @@ bool Is_Mission_Aftermath (char *file_name)
 {
 	//	ajw added
 	//	Must start with "scm".
-	char szCopy[ _MAX_PATH + 1 ];
+	char szCopy[260 + 1];
 	strcpy( szCopy, file_name );
 	SDL_strlwr( szCopy );
 	if( strstr( szCopy, "scm" ) != szCopy )

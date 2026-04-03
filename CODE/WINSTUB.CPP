@@ -92,23 +92,28 @@ void winstub_trace(const char* format, ...)
 	va_end(arguments);
 }
 
-int get_primary_display_metric(int index)
+enum class DisplayMetric {
+	Width,
+	Height,
+};
+
+int get_primary_display_metric(DisplayMetric metric)
 {
 	SDL_Rect bounds{};
 	if (!SDL_GetDisplayBounds(SDL_GetPrimaryDisplay(), &bounds)) {
-		if (index == SM_CXSCREEN) {
+		if (metric == DisplayMetric::Width) {
 			return 640;
 		}
-		if (index == SM_CYSCREEN) {
+		if (metric == DisplayMetric::Height) {
 			return 480;
 		}
 		return 0;
 	}
 
-	if (index == SM_CXSCREEN) {
+	if (metric == DisplayMetric::Width) {
 		return bounds.w;
 	}
-	if (index == SM_CYSCREEN) {
+	if (metric == DisplayMetric::Height) {
 		return bounds.h;
 	}
 	return 0;
@@ -116,27 +121,33 @@ int get_primary_display_metric(int index)
 
 void apply_window_show_command(RAWindow* window, int command_show)
 {
+	constexpr int kShowHide = 0;
+	constexpr int kShowMinimized = 2;
+	constexpr int kShowMaximized = 3;
+	constexpr int kShowMinimize = 6;
+	constexpr int kShowRestore = 9;
+
 	if (window == NULL || window->sdl_window == NULL) {
 		return;
 	}
 
 	switch (command_show) {
-		case SW_HIDE:
+		case kShowHide:
 			SDL_HideWindow(window->sdl_window);
 			return;
 
-		case SW_MINIMIZE:
-		case SW_SHOWMINIMIZED:
+		case kShowMinimize:
+		case kShowMinimized:
 			SDL_ShowWindow(window->sdl_window);
 			SDL_MinimizeWindow(window->sdl_window);
 			return;
 
-		case SW_SHOWMAXIMIZED:
+		case kShowMaximized:
 			SDL_ShowWindow(window->sdl_window);
 			SDL_MaximizeWindow(window->sdl_window);
 			break;
 
-		case SW_RESTORE:
+		case kShowRestore:
 			SDL_ShowWindow(window->sdl_window);
 			SDL_RestoreWindow(window->sdl_window);
 			break;
@@ -318,12 +329,12 @@ void Main_Window_Handle_Close_Request(void)
 
 void Main_Window_Show_Maximized(void)
 {
-	apply_window_show_command(MainWindow, SW_SHOWMAXIMIZED);
+	apply_window_show_command(MainWindow, 3);
 }
 
 
 
-void* DebugFile = INVALID_HANDLE_VALUE;
+void* DebugFile = nullptr;
 
 /***********************************************************************************************
  * WWDebugString -- sends a string to the debugger and echos it to disk                        *
@@ -347,16 +358,16 @@ void WWDebugString (char *string)
 	sprintf (outstr, "%s", string);
 
 	uint32_t	actual;
-	if (DebugFile == INVALID_HANDLE_VALUE){
-		DebugFile = CreateFile("debug.txt", GENERIC_WRITE, 0,
-												NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (DebugFile == nullptr) {
+		DebugFile = CreateFile("debug.txt", 0x40000000U, 0,
+												NULL, 2U, 0x00000080U, NULL);
 	}else{
-		DebugFile = CreateFile("debug.txt", GENERIC_WRITE, 0,
-												NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		DebugFile = CreateFile("debug.txt", 0x40000000U, 0,
+												NULL, 3U, 0x00000080U, NULL);
 	}
 
-	if (DebugFile != INVALID_HANDLE_VALUE){
-		SetFilePointer (DebugFile, 0, NULL, FILE_END);
+	if (DebugFile != nullptr) {
+		SetFilePointer(DebugFile, 0, NULL, 2U);
 		WriteFile(DebugFile, outstr, strlen(outstr)+1, &actual, NULL);
 		CloseHandle (DebugFile);
 	}
@@ -415,8 +426,8 @@ void Create_Main_Window ( void* instance , int command_show , int width , int he
 	RAWindow*		hwnd ;
 	hwnd = RA_CreateWindow(
 		WINDOW_NAME,
-		get_primary_display_metric(SM_CXSCREEN),
-		get_primary_display_metric(SM_CYSCREEN),
+		get_primary_display_metric(DisplayMetric::Width),
+		get_primary_display_metric(DisplayMetric::Height),
 		SDL_WINDOW_RESIZABLE);
 // Denzil
 width = width; height = height;

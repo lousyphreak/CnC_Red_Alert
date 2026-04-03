@@ -162,7 +162,7 @@ int  WinMain ( void* instance , void* , char * command_line , int command_show )
 
 	if (strstr(command_line, "f:\\projects\\c&c0") != NULL ||
 			strstr(command_line, "F:\\PROJECTS\\C&C0") != NULL) {
-		RA_ShowMessageBox("Playing off of the network is not allowed.", "Red Alert", MB_OK|MB_ICONSTOP);
+		RA_ShowMessageBox("Playing off of the network is not allowed.", "Red Alert", SDL_MESSAGEBOX_ERROR);
 		return(EXIT_FAILURE);
 	}
 
@@ -223,8 +223,8 @@ int  WinMain ( void* instance , void* , char * command_line , int command_show )
 	**	case where there is no path attached to argv[0].
 	*/
 	char drive[_MAX_DRIVE];
-	char path[_MAX_PATH];
-	char working_directory[_MAX_PATH];
+	char path[260];
+	char working_directory[260];
 	WWFS_SplitPath(argv[0], drive, path, NULL, NULL);
 	if (!path[0]) {
 		strcpy(path, ".");
@@ -278,7 +278,7 @@ int  WinMain ( void* instance , void* , char * command_line , int command_show )
 	//
 	if (Session.AllowSolo==0 && Session.Type != GAME_TEN) {
 		RA_ShowMessageBox("Red Alert for TEN\n (c) 1996 Westwood Studios",
-			"Red Alert", MB_OK);
+			"Red Alert");
 		exit(0);
 	}
 #endif	// TEN
@@ -290,7 +290,7 @@ int  WinMain ( void* instance , void* , char * command_line , int command_show )
 	//
 	if (Session.AllowSolo==0 && Session.Type != GAME_MPATH) {
 		RA_ShowMessageBox("Red Alert for MPATH\n (c) 1996 Westwood Studios",
-			"Red Alert", MB_OK);
+			"Red Alert");
 		exit(0);
 	}
 #endif	// MPATH
@@ -300,7 +300,7 @@ int  WinMain ( void* instance , void* , char * command_line , int command_show )
 		int time_test = WindowsTimer->Get_System_Tick_Count();
 		SDL_Delay(1000);
 		if (WindowsTimer->Get_System_Tick_Count() == time_test){
-			RA_ShowMessageBox(TEXT_ERROR_TIMER, TEXT_SHORT_TITLE, MB_OK|MB_ICONSTOP);
+			RA_ShowMessageBox(TEXT_ERROR_TIMER, TEXT_SHORT_TITLE, SDL_MESSAGEBOX_ERROR);
 			return(EXIT_FAILURE);
 		}
 		RawFileClass cfile(CONFIG_FILE_NAME);
@@ -328,8 +328,7 @@ int  WinMain ( void* instance , void* , char * command_line , int command_show )
 
 			char	disk_space_message [512];
 			sprintf (disk_space_message, TEXT_CRITICALLY_LOW, (INIT_FREE_DISK_SPACE) / (1024 * 1024));
-			int reply = RA_ShowMessageBox(disk_space_message, TEXT_SHORT_TITLE, MB_ICONQUESTION|MB_YESNO);
-			if (reply == IDNO) {
+			if (!RA_ShowConfirmationMessageBox(disk_space_message, TEXT_SHORT_TITLE)) {
 				if ( WindowsTimer )
 					delete WindowsTimer;
 				return (EXIT_FAILURE);
@@ -372,7 +371,7 @@ int  WinMain ( void* instance , void* , char * command_line , int command_show )
 			}
 
 			if (!video_success) {
-				RA_ShowMessageBox(TEXT_VIDEO_ERROR, TEXT_SHORT_TITLE, MB_ICONEXCLAMATION|MB_OK);
+				RA_ShowMessageBox(TEXT_VIDEO_ERROR, TEXT_SHORT_TITLE, SDL_MESSAGEBOX_WARNING);
 				if (WindowsTimer) delete WindowsTimer;
 				//if (Palette) delete Palette;
 				return (EXIT_FAILURE);
@@ -394,7 +393,7 @@ int  WinMain ( void* instance , void* , char * command_line , int command_show )
 					** Aaaarrgghh!
 					*/
 					WWDebugString(TEXT_DDRAW_ERROR);WWDebugString("\n");
-					RA_ShowMessageBox(TEXT_DDRAW_ERROR, TEXT_SHORT_TITLE, MB_ICONEXCLAMATION|MB_OK);
+					RA_ShowMessageBox(TEXT_DDRAW_ERROR, TEXT_SHORT_TITLE, SDL_MESSAGEBOX_WARNING);
 					if (WindowsTimer) delete WindowsTimer;
 					return (EXIT_FAILURE);
 				}

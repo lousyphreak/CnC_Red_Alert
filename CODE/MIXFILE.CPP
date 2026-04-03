@@ -339,7 +339,7 @@ MixFileClass<T> * MixFileClass<T>::Finder(char const * filename)
 {
 	MixFileClass<T> * ptr = List.First();
 	while (ptr->Is_Valid()) {
-		char path[_MAX_PATH];
+		char path[260];
 		char name[_MAX_FNAME];
 		char ext[_MAX_EXT];
 

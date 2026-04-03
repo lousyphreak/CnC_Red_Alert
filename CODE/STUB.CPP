@@ -49,7 +49,7 @@ int main(int argc, char* argv[])
 	std::vector<char> command_buffer(command_line.begin(), command_line.end());
 	command_buffer.push_back('\0');
 
-	return WinMain(nullptr, nullptr, command_buffer.data(), SW_SHOWNORMAL);
+	return WinMain(nullptr, nullptr, command_buffer.data(), 1);
 }
 
 #endif

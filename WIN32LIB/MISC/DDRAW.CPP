@@ -87,7 +87,7 @@ void Process_Draw_Result(HRESULT result, int32_t display_ok_msg)
 {
 	if (result == WWDRAW_OK) {
 		if (display_ok_msg) {
-			RA_ShowMessageBox("SDL draw request succeeded.", "Note", MB_ICONEXCLAMATION|MB_OK);
+			RA_ShowMessageBox("SDL draw request succeeded.", "Note", SDL_MESSAGEBOX_WARNING);
 		}
 		return;
 	}
@@ -100,7 +100,7 @@ void Process_Draw_Result(HRESULT result, int32_t display_ok_msg)
 	} else if (result == WWDRAW_ERROR_NOPALETTEATTACHED) {
 		message = "SDL draw surface has no palette attached.";
 	}
-	RA_ShowMessageBox(message, "Note", MB_ICONEXCLAMATION|MB_OK);
+	RA_ShowMessageBox(message, "Note", SDL_MESSAGEBOX_WARNING);
 }
 
 

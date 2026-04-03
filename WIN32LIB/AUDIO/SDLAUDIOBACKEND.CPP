@@ -383,7 +383,7 @@ HRESULT AudioBackendDevice::CreateBuffer(uint32_t buffer_bytes, const AudioBuffe
 		return (RAAUDIOERR_GENERIC);
 	}
 
-	*buffer = new AudioBackendBuffer(this, primary ? 4096 : buffer_bytes, format, primary != FALSE);
+	*buffer = new AudioBackendBuffer(this, primary ? 4096 : buffer_bytes, format, primary != 0);
 	if (*buffer == NULL) {
 		return (RAAUDIOERR_GENERIC);
 	}

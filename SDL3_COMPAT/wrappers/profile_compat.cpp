@@ -1,9 +1,9 @@
 #include "win32_compat.h"
 
-extern "C" void __cdecl Start_Profiler(void)
+extern "C" void Start_Profiler(void)
 {
 }
 
-extern "C" void __cdecl Stop_Profiler(void)
+extern "C" void Stop_Profiler(void)
 {
 }

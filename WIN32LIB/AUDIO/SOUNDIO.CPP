@@ -939,7 +939,7 @@ int32_t Set_Primary_Buffer_Format(void)
 
 void Print_Sound_Error(char *sound_error, RAWindow* window)
 {
-	RA_ShowMessageBox(sound_error, "Command & Conquer", MB_ICONEXCLAMATION|MB_OK);
+	RA_ShowMessageBox(sound_error, "Command & Conquer", SDL_MESSAGEBOX_WARNING);
 }
 
 

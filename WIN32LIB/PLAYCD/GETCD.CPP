@@ -77,7 +77,7 @@ GetCDClass::GetCDClass(void)
 
 	for (char i='c' ; i<='z' ; i++){
 		path[0]=i;
-		if (GetDriveType (path) == DRIVE_CDROM){
+		if (GetDriveType(path) == 5U) {
 			CDDrives[CDCount++] = (int32_t) (i-'a');
 		}
 	}
@@ -88,7 +88,7 @@ GetCDClass::GetCDClass(void)
 	if (CDCount == 0) {
 		for (char i='a' ; i<='b' ; i++){
 			path[0]=i;
-			if (GetDriveType (path) == DRIVE_CDROM){
+			if (GetDriveType(path) == 5U) {
 				CDDrives[CDCount++] = (int32_t) (i-'a');
 			}
 		}
@@ -118,4 +118,3 @@ GetCDClass::~GetCDClass(void)
 }
 
 /* ==================================================================== */
-

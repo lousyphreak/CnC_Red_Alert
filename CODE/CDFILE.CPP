@@ -323,8 +323,8 @@ nextpath:
  *=============================================================================================*/
 int CDFileClass::Set_Search_Drives(char * pathlist)
 {
-	int found = FALSE;
-	int empty = FALSE;
+	int found = false;
+	int empty = false;
 
 	/*
 	**	If there is no pathlist to add, then just return.
@@ -544,7 +544,7 @@ char const * CDFileClass::Set_Name(char const *filename)
 	SearchDriveType * srch = First;
 
 	while (srch) {
-		char path[_MAX_PATH];
+		char path[260];
 
 		/*
 		**	Build a pathname to search for.
