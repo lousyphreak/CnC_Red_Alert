@@ -1,12 +1,18 @@
 # Porting Progress
 
-_Last updated: 2026-04-02_
+_Last updated: 2026-04-03_
 
 ## Goal
 
 Port the Red Alert codebase to a reproducible cross-platform build using SDL3 for platform-specific functionality, with working builds on Linux, Windows, and other supported SDL3 platforms.
 
 ## Current status
+
+- Fixed the skirmish setup slider stack layout regression in the skirmish-only `NULLDLG` rewrite:
+  - compared the original skirmish setup screenshot against the current SDL port and traced the bad geometry to `CODE/NULLDLG.CPP::Com_Scenario_Dialog(...)`, not the network dialogs in `NETDLG.CPP`;
+  - confirmed this was a porting regression introduced when the old serial/null-modem dialog was replaced with a skirmish-only implementation: the rewrite hard-coded the count/level/credits/AI slider column to `d_dialog_x + 32 * RESFACTOR`, which moved the whole stack too far left and pushed the right-aligned labels (`Unit Count`, `Tech Level`, `Credits`, `A Players`) partly or fully off-screen;
+  - restored the original skirmish anchor math by recreating the hidden player-list reference column (`d_playerlist_x` / `d_playerlist_w`) and deriving the slider x-position from that original geometry again, which brings the gauges and their labels back to the same placement as the legacy dialog without changing behavior;
+  - validation for this checkpoint: `cmake --build build --target redalert -j8` and `cmake --build build-asan --target redalert -j8` both succeed after the fix.
 
 - Fixed the non-square-pixel presentation quirk in the SDL path so `640x480` mode now displays the intended `640x400` game image stretched to `4:3` instead of showing built-in top/bottom black borders:
   - traced the visible bars to the SDL compat presenter using the full `640x480` primary surface as its texture source even when `CODE/STARTUP.CPP` had attached the live gameplay viewport as centered `640x400` content at `(0,40)`;

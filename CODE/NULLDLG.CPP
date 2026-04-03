@@ -87,6 +87,9 @@ int d_color_h = 9 * RESFACTOR;
 int d_color_y = d_name_y;
 int d_color_x = d_dialog_x + ((d_dialog_w / 4) * 3) - (d_color_w * 3);
 
+int d_playerlist_w = 118 * RESFACTOR;
+int d_playerlist_x = d_dialog_x + d_margin1 + d_margin1 + 5 * RESFACTOR;
+
 int d_scenariolist_w = 162 * RESFACTOR;
 int d_scenariolist_h = ((6 * 6 * RESFACTOR) + 3 * RESFACTOR) * 2;
 int d_scenariolist_x = d_dialog_x + (d_dialog_w - d_scenariolist_w) / 2;
@@ -94,7 +97,7 @@ int d_scenariolist_y = d_color_y + d_color_h + d_margin2 + 2 * RESFACTOR;
 
 int d_count_w = 25 * RESFACTOR;
 int d_count_h = d_txt6_h;
-int d_count_x = d_dialog_x + 32 * RESFACTOR;
+int d_count_x = d_playerlist_x + (d_playerlist_w / 2) + 20 * RESFACTOR;
 int d_count_y = d_scenariolist_y + d_scenariolist_h + d_margin1 - 2 * RESFACTOR;
 
 int d_level_w = 25 * RESFACTOR;

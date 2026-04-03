@@ -744,6 +744,10 @@ _Last updated: 2026-04-02_
 - The old serial multiplayer support was not isolated to the transport backend.
   - `CODE/NULLDLG.CPP` historically mixed modem/null-modem setup with the still-live skirmish scenario picker, so deleting the file outright would also remove `Com_Scenario_Dialog(true)`.
   - The safe cleanup is to keep the file in place, replace it with a skirmish-only dialog implementation, and retain `Find_Local_Scenario(...)` because `NETDLG` and `WOL_GSUP` still rely on that helper.
+- The skirmish-only `NULLDLG` replacement still needs to preserve the original hidden dialog geometry, even for controls that are no longer visible.
+  - In the original `Com_Scenario_Dialog(true)` flow, the slider stack for `Unit Count` / `Tech Level` / `Credits` / `A Players` was not anchored directly to the dialog edge; it was derived from the old left player-list column with `d_count_x = d_playerlist_x + (d_playerlist_w / 2) + 20 * RESFACTOR`.
+  - Replacing that with a new absolute x-position (`d_dialog_x + 32 * RESFACTOR`) shifts the whole stack left and causes the right-aligned labels to clip off the screen on the SDL path even though the rest of the dialog still renders.
+  - When simplifying legacy front-end dialogs, keep their original anchor relationships unless a screenshot-verified replacement layout is intentionally being designed.
 - Once modem/null-modem support is removed, `SessionClass` can drop the serial settings/phone-book/init-string state entirely.
   - Those structures were only used by the deleted serial dialogs/backend, and removing them also lets `VECTOR.CPP` / `DYNAVEC.CPP` drop their `PhoneEntryClass *` explicit template instantiations.
   - Preserve the surviving `GameType` numeric values explicitly when deleting `GAME_MODEM` / `GAME_NULL_MODEM`; some multiplayer/session state is serialized and should not be renumbered accidentally.
