@@ -39,7 +39,7 @@ bool bSpecialAftermathScenario(const char* szScenarioDescription)
 }
 #endif
 
-#ifdef WOLAPI_INTEGRATION			//	Now implies also WINSOCK_IPX and FIXIT_CSII must be true
+#ifdef WOLAPI_INTEGRATION			//	Now implies also NETWORK_UDP and FIXIT_CSII must be true
 
 #include "WOL_GSUP.H"
 #include "FUNCTION.H"
@@ -706,7 +706,7 @@ RESULT_WOLGSUP WOL_GameSetupDialog::Show()
 	//------------------------------------------------------------------------
 	while (bProcess) {
 		#if(SHOW_MONO)
-		Ipx.Mono_Debug_Print(-1,0);
+		Udp.Mono_Debug_Print(-1,0);
 		#endif
 
 		//	Check for change of house. Occurs on first loop and when user changes house.
@@ -3365,7 +3365,7 @@ void WOL_GameSetupDialog::TriggerGameStart( char* szGoMessage )
 	WWDebugString ("RA95 - About to call Init_Network.\n");
 	Init_Network();
 
-	Ipx.Set_Timing (	30, 		// retry 2 times per second
+	Udp.Set_Timing (	30, 		// retry 2 times per second
 						-1, 		// ignore max retries
 						600);		// give up after 10 seconds
 
@@ -3456,7 +3456,7 @@ void WOL_GameSetupDialog::TriggerGameStart( char* szGoMessage )
 
 	pWO->GameInfoCurrent.iPlayerCount = Session.Players.Count();
 
-	Ipx.Set_Timing (25, (uint32_t) -1, 1000);
+	Udp.Set_Timing (25, (uint32_t) -1, 1000);
 
 
 	if( bHost )
@@ -3480,7 +3480,7 @@ void WOL_GameSetupDialog::TriggerGameStart( char* szGoMessage )
 	}
 
 	Session.CommProtocol = COMM_PROTOCOL_MULTI_E_COMP;
-	Ipx.Set_Timing (30, (uint32_t) -1, 600);
+	Udp.Set_Timing (30, (uint32_t) -1, 600);
 
 	pWO->bEnableNewAftermathUnits = bAftermathUnits;
 	bAftermathMultiplayer = bAftermathUnits;

@@ -4148,7 +4148,7 @@ void DisplayClass::Read_INI(CCINIClass & ini)
 #ifndef FIXIT_VERSION_3		//	Map size no longer restricted.
 
 #ifdef FIXIT_CSII	//	checked - ajw
-	if ((Session.Type == GAME_IPX || Session.Type == GAME_INTERNET) && PlayingAgainstVersion < VERSION_AFTERMATH_CS) {
+	if ((Session.Type == GAME_UDP || Session.Type == GAME_INTERNET) && PlayingAgainstVersion < VERSION_AFTERMATH_CS) {
 		/*
 		**	HACK ALERT:
 		**	Force the map to be limited to the size that 96x96 would be. If the

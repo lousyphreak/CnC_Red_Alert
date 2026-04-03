@@ -16,14 +16,14 @@
 **	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/* $Header: /CounterStrike/IPXMGR.H 1     3/03/97 10:24a Joe_bostic $ */
+/* $Header: /CounterStrike/UDPMGR.H 1     3/03/97 10:24a Joe_bostic $ */
 /***************************************************************************
  **   C O N F I D E N T I A L --- W E S T W O O D    S T U D I O S        **
  ***************************************************************************
  *                                                                         *
  *                 Project Name : Command & Conquer                        *
  *                                                                         *
- *                    File Name : IPXMGR.H                                 *
+ *                    File Name : UDPMGR.H                                 *
  *                                                                         *
  *                   Programmer : Bill Randolph                            *
  *                                                                         *
@@ -33,43 +33,43 @@
  *                                                                         *
  *-------------------------------------------------------------------------*
  *                                                                         *
- * This is the Connection Manager for IPX network communications.  It		*
- * creates, manages, & orchestrates multiple IPX connections, as well as	*
+ * This is the Connection Manager for UDP network communications.  It		*
+ * creates, manages, & orchestrates multiple UDP connections, as well as	*
  * the "global" connection ("Global Channel"), which can talk to any 		*
  * system on the net.																		*
  *																									*
  * Use the Global Channel to query systems for their names, ID's, &			*
- * IPX addresses.  Then, create a Private Connection with each system		*
+ * UDP addresses.  Then, create a Private Connection with each system		*
  * that joins your game, and use the Private Channel to send game packets	*
  * (the private channel will perform somewhat faster, & gives you better	*
  * control than the Global Channel; it can detect retries, and the Global	*
  * Channel can't).																			*
  * 																								*
  * HOW THIS CLASS WORKS:																	*
- * This class has to set up an IPX Event Service Routine in low (DOS)		*
+ * This class has to set up an UDP Event Service Routine in low (DOS)		*
  * memory.  So, it uses DPMI to allocate & lock a chunk of DOS memory;		*
  * this memory is used for all incoming packet buffers, the outgoing			*
  * packet buffer, and the actual code for the event handler.  The real-		*
  * mode handler code & this class share a portion of memory that's mapped	*
  * into a "RealModeDataType" structure.  As packets come in, the handler	*
- * points IPX to the next available packet buffer & restarts listening;		*
+ * points UDP to the next available packet buffer & restarts listening;		*
  * it sets a flag to tell this class that a packet is present at that		*
  * buffer slot.  This class must read all the packets & determine which		*
  * connection they go with (the Global Channel, or one of the Private		*
  * Channels).  This parsing is done in the Service routine for this class.	*
  * 																								*
- * Constructor:	Just inits some variables, checks to see if IPX is there	*
- * Destructor:		Complete shutdown; stops IPX listening, frees all memory	*
+ * Constructor:	Just inits some variables, checks to see if UDP is there	*
+ * Destructor:		Complete shutdown; stops UDP listening, frees all memory	*
  * Init:				Should only be called once (but can be called more); 		*
  * 					allocates all memory, creates the Global Channel			*
- * 					connection, starts IPX listening.  By not placing this 	*
+ * 					connection, starts UDP listening.  By not placing this 	*
  * 					step in the constructor, the app can control when 			*
  * 					listening actually starts; also, you don't get a bunch	*
- *						of allocations just by declaring an IPXManagerClass		*
+ *						of allocations just by declaring an UDPManagerClass		*
  *						instance.  You have to call Init() for the allocations	*
  *						to occur.																*
  * Connection utilities: Create & manage Private Connections.  Each 			*
- *						connection has its own IPX address, numerical ID, and		*
+ *						connection has its own UDP address, numerical ID, and		*
  *						character name (presumably the name of the other			*
  *						player).																	*
  * Send/Get_Global_Message: adds a packet to the Global Connection queue,	*
@@ -92,19 +92,19 @@
  *						|--------------------------------|								*
  *						|  Real-mode event handler code  |								*
  *						|--------------------------------|								*
- *						|  IPX Header & Packet Buffer 0  |								*
+ *						|  UDP Header & Packet Buffer 0  |								*
  *						|--------------------------------|								*
- *						|  IPX Header & Packet Buffer 1  |								*
+ *						|  UDP Header & Packet Buffer 1  |								*
  *						|--------------------------------|								*
- *						|  IPX Header & Packet Buffer 2  |								*
+ *						|  UDP Header & Packet Buffer 2  |								*
  *						|--------------------------------|								*
  *						|             . . .              |								*
  *						|--------------------------------|								*
- *						|  IPX Header & Packet Buffer N  |								*
+ *						|  UDP Header & Packet Buffer N  |								*
  *						|--------------------------------|								*
  *						|    Send Event Control Block    |								*
  *						|--------------------------------|								*
- *						|         Send IPX Header        |								*
+ *						|         Send UDP Header        |								*
  *						|--------------------------------|								*
  *						|       Send Packet Buffer       |								*
  *						|--------------------------------|								*
@@ -113,17 +113,17 @@
  *																									*
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#ifndef IPXMANAGER_H
-#define IPXMANAGER_H
+#ifndef UDPMANAGER_H
+#define UDPMANAGER_H
 #include <stdint.h>
 
 
 /*
 ********************************* Includes **********************************
 */
-#include "IPXCONN.H"
-#include "IPXGCONN.H"
-#include "IPXADDR.H"
+#include "UDPCONN.H"
+#include "UDPGCONN.H"
+#include "UDPADDR.H"
 #include "CONNMGR.H"
 /*
 ********************************** Defines **********************************
@@ -134,24 +134,15 @@ This is Virgin Interactive Entertainment's registered socket ID.
 #define	VIRGIN_SOCKET		0x8813
 
 /*---------------------------------------------------------------------------
-This is the maximum number of IPX connections supported.  Just change this
+This is the maximum number of UDP connections supported.  Just change this
 value to support more.
 ---------------------------------------------------------------------------*/
 #define	CONNECT_MAX			7
 
-/*---------------------------------------------------------------------------
-These routines report the location & length of the real-mode routine, as
-it's stored in protected-mode memory.
----------------------------------------------------------------------------*/
-extern "C" {
-	void *  Get_RM_IPX_Address(void);
-	int32_t  Get_RM_IPX_Size(void);
-}
-
 /*
 ***************************** Class Declaration *****************************
 */
-class IPXManagerClass : public ConnManClass
+class UDPManagerClass : public ConnManClass
 {
 	/*
 	---------------------------- Public Interface ----------------------------
@@ -160,15 +151,15 @@ class IPXManagerClass : public ConnManClass
 		/*.....................................................................
 		Constructor/destructor.
 		.....................................................................*/
-		IPXManagerClass (int glb_maxlen, int pvt_maxlen, int glb_num_packets,
+		UDPManagerClass (int glb_maxlen, int pvt_maxlen, int glb_num_packets,
 			int pvt_num_packets, uint16_t socket, uint16_t product_id);
-		virtual ~IPXManagerClass ();	// stop listening
+		virtual ~UDPManagerClass ();	// stop listening
 
 		/*.....................................................................
 		Initialization routines.
 		.....................................................................*/
 		int Init (void);
-		int Is_IPX(void);
+		int Is_UDP(void);
 		virtual void Set_Timing (uint32_t retrydelta, uint32_t maxretries,
 			uint32_t timeout);
 		void Set_Bridge(NetNumType bridge);
@@ -177,12 +168,12 @@ class IPXManagerClass : public ConnManClass
 		These routines control creation of the "Connections" (data queues) for
 		each remote system.
 		.....................................................................*/
-		int Create_Connection(int id, char *name, IPXAddressClass *address);
+		int Create_Connection(int id, char *name, UDPAddressClass *address);
 		int Delete_Connection(int id);
 		virtual int Num_Connections(void);
 		virtual int Connection_ID(int index);
 		char *Connection_Name(int id);
-		IPXAddressClass * Connection_Address(int id);
+		UDPAddressClass * Connection_Address(int id);
 		virtual int Connection_Index(int id);
 		void Set_Connection_Parms(int index, int id, char *name);
 
@@ -190,8 +181,8 @@ class IPXManagerClass : public ConnManClass
 		This is how the application sends & receives messages.
 		.....................................................................*/
 		int Send_Global_Message (void *buf, int buflen, int ack_req = 0,
-			IPXAddressClass *address = NULL);
-		int Get_Global_Message (void *buf, int *buflen, IPXAddressClass *address,
+			UDPAddressClass *address = NULL);
+		int Get_Global_Message (void *buf, int *buflen, UDPAddressClass *address,
 			uint16_t *product_id);
 
 		virtual int Send_Private_Message (void *buf, int buflen,
@@ -218,7 +209,7 @@ class IPXManagerClass : public ConnManClass
 		virtual int Private_Num_Receive(int id = CONNECTION_NONE);
 
 		/*.....................................................................
-		This routine changes the socket ID assigned the IPX Manager when it
+		This routine changes the socket ID assigned the UDP Manager when it
 		was constructed.  Do not call this function after calling Init()!
 		The Socket ID should be known by both ends of the communications before
 		any packets are sent.
@@ -258,7 +249,7 @@ class IPXManagerClass : public ConnManClass
 		/*.....................................................................
 		Misc variables
 		.....................................................................*/
-		uint32_t IPXStatus : 1;		// 0 = no IPX, 1 = IPX found
+		uint32_t UDPStatus : 1;		// 0 = no UDP, 1 = UDP found
 		uint32_t Listening : 1;		// 1 = Listening is on
 		uint32_t RealMemAllocd : 1;	// 1 = Real-mode memory has been alloc'd
 
@@ -285,9 +276,9 @@ class IPXManagerClass : public ConnManClass
 		/*.....................................................................
 		Array of connection queues
 		.....................................................................*/
-		IPXConnClass * Connection[CONNECT_MAX]; // array of connection object ptrs
+		UDPConnClass * Connection[CONNECT_MAX]; // array of connection object ptrs
 		int NumConnections;						// # connection objects in use
-		IPXGlobalConnClass *GlobalChannel;	// the Global Channel
+		UDPGlobalConnClass *GlobalChannel;	// the Global Channel
 
 		/*.....................................................................
 		Current queue for polling for received packets
@@ -312,10 +303,10 @@ class IPXManagerClass : public ConnManClass
 			ECBType ListenECB;					// the Listening ECB
 			int16_t NumBufs;							// # of buffers we're giving to the handler
 			char *BufferFlags;					// array of buffer-avail flags
-			int16_t PacketSize;						// size of packet including IPX header
-			IPXHeaderType *FirstPacketBuf;	// ptr to 1st packet buffer
+			int16_t PacketSize;						// size of packet including UDP header
+			UDPHeaderType *FirstPacketBuf;	// ptr to 1st packet buffer
 			int16_t CurIndex;						// handler's current packet index
-			IPXHeaderType *CurPacketBuf;		// handler's current packet buf
+			UDPHeaderType *CurPacketBuf;		// handler's current packet buf
 			int16_t FuncOffset;						// contains offset of code
 			char Semaphore;						// prevents re-entrancy
 			int16_t ReEntrantCount;				// times we've been called re-entrantly
@@ -333,8 +324,8 @@ class IPXManagerClass : public ConnManClass
 		The number & size of packet buffers in low memory
 		.....................................................................*/
 		int NumBufs;								// # packet buffers allocated
-		int PacketLen;								// size of packet without IPX header
-		int FullPacketLen;						// size of packet including IPX header
+		int PacketLen;								// size of packet without UDP header
+		int FullPacketLen;						// size of packet including UDP header
 
 		/*.....................................................................
 		Selector & Segment of the DOS allocation;
@@ -361,26 +352,26 @@ class IPXManagerClass : public ConnManClass
 		/*.....................................................................
 		ptr to the 1st header & data buffers in the packet buffer array
 		.....................................................................*/
-		IPXHeaderType *FirstHeaderBuf;		// array of packet headers & buffers
+		UDPHeaderType *FirstHeaderBuf;		// array of packet headers & buffers
 		char *FirstDataBuf;						// 1st data buffer area
 
 		/*.....................................................................
 		Current packet index & ptrs for parsing packets
 		.....................................................................*/
 		int CurIndex;								// Current packet index, for reading
-		IPXHeaderType *CurHeaderBuf;			// Current packet ptr, for reading
+		UDPHeaderType *CurHeaderBuf;			// Current packet ptr, for reading
 		char *CurDataBuf;							// Current actual data ptr
 
 		/*.....................................................................
 		ECB, header, & buffer for sending
 		.....................................................................*/
 		ECBType *SendECB;							// ECB for sending
-		IPXHeaderType *SendHeader;				// Header for sending
+		UDPHeaderType *SendHeader;				// Header for sending
 		char *SendBuf;								// buffer for sending
 
 		/*.....................................................................
 		Flags indicating whether a buffer contains data or not (1 = full)
-		The IPXManager must clear this flag; the real-mode routine will set it.
+		The UDPManager must clear this flag; the real-mode routine will set it.
 		.....................................................................*/
 		char *BufferFlags;						// array of rx-buffer-avail flags
 
@@ -394,4 +385,4 @@ class IPXManagerClass : public ConnManClass
 
 #endif
 
-/*************************** end of ipxmgr.h *******************************/
+/*************************** end of udpmgr.h *******************************/

@@ -100,11 +100,11 @@ B<A> test;
 
 #include	"FUNCTION.H"
 #include	"SDLINPUT.H"
-#ifdef WINSOCK_IPX
+#ifdef NETWORK_UDP
 #include	"WSPROTO.H"
-#else	//WINSOCK_IPX
+#else	//NETWORK_UDP
 #include	"TCPIP.H"
-#endif	//WINSOCK_IPX
+#endif	//NETWORK_UDP
 #include	<stdlib.h>
 #include	<stdio.h>
 #include	<string.h>
@@ -472,7 +472,7 @@ void Main_Game(int argc, char * argv[])
 			Session.RecordFile.Close();
 		}
 
-		if (Session.Type == GAME_IPX) {
+		if (Session.Type == GAME_UDP) {
 			if (!Session.Play) {
 				Shutdown_Network();
 			}
@@ -1159,13 +1159,13 @@ static void Message_Input(KeyNumType &input)
 		**	F1-F7 = "To <name> (house):" (only allowed if we're not in ObiWan mode)
 		**	F8 = "To All:"
 		*/
-		if ((Session.Type == GAME_IPX || Session.Type == GAME_INTERNET) && !Session.Messages.Is_Edit()) {
+		if ((Session.Type == GAME_UDP || Session.Type == GAME_INTERNET) && !Session.Messages.Is_Edit()) {
 		/*
 		**	Network game message addressing
 		*/
 			if (input==(KN_F1 + Session.MaxPlayers - 1)) {
 
-				Session.MessageAddress = IPXAddressClass();		// set to broadcast
+				Session.MessageAddress = UDPAddressClass();		// set to broadcast
 				strcpy(txt, Text_String(TXT_TO_ALL));	// "To All:"
 
 				Session.Messages.Add_Edit(Session.ColorIdx,
@@ -1174,13 +1174,13 @@ static void Message_Input(KeyNumType &input)
 				Map.Flag_To_Redraw(false);
 
 #ifdef WOLAPI_INTEGRATION
-			} else if ((input - KN_F1) < Ipx.Num_Connections() && !Session.ObiWan && input != PAGE_RESPOND_KEY ) {
+			} else if ((input - KN_F1) < Udp.Num_Connections() && !Session.ObiWan && input != PAGE_RESPOND_KEY ) {
 #else
-			} else if ((input - KN_F1) < Ipx.Num_Connections() && !Session.ObiWan) {
+			} else if ((input - KN_F1) < Udp.Num_Connections() && !Session.ObiWan) {
 #endif
-				id = Ipx.Connection_ID(input - KN_F1);
-				Session.MessageAddress = (*(Ipx.Connection_Address (id)));
-				sprintf(txt, Text_String(TXT_TO), Ipx.Connection_Name(id));
+				id = Udp.Connection_ID(input - KN_F1);
+				Session.MessageAddress = (*(Udp.Connection_Address (id)));
+				sprintf(txt, Text_String(TXT_TO), Udp.Connection_Name(id));
 
 				Session.Messages.Add_Edit(Session.ColorIdx,
 					TPF_6PT_GRAD | TPF_USE_GRAD_PAL | TPF_FULLSHADOW, txt, 0, 232 * RESFACTOR);
@@ -1198,7 +1198,7 @@ static void Message_Input(KeyNumType &input)
 					NetNodeType blop;
 					memset( blip, 0, 4 );
 					memset( blop, 0, 6 );
-					Session.MessageAddress = IPXAddressClass( blip, blop );
+					Session.MessageAddress = UDPAddressClass( blip, blop );
 
 					//	Tell pWolapi not to reset szExternalPager for the time being.
 					pWolapi->bFreezeExternalPager = true;
@@ -1319,7 +1319,7 @@ static void Message_Input(KeyNumType &input)
 	**	Send a message
 	*/
 	if ((rc==3 || rc==4) && Session.Type != GAME_NORMAL && Session.Type != GAME_SKIRMISH) {
-		if (Session.Type == GAME_IPX || Session.Type == GAME_INTERNET) {
+		if (Session.Type == GAME_UDP || Session.Type == GAME_INTERNET) {
 #ifdef WOLAPI_INTEGRATION
 			NetNumType blip;
 			NetNodeType blop;
@@ -1365,11 +1365,11 @@ static void Message_Input(KeyNumType &input)
 			Enable_Secret_Units();
 		}
 	#endif
-					for (i = 0; i < Ipx.Num_Connections(); i++) {
-						Ipx.Send_Global_Message(&Session.GPacket,
+					for (i = 0; i < Udp.Num_Connections(); i++) {
+						Udp.Send_Global_Message(&Session.GPacket,
 							sizeof(GlobalPacketType), 1,
-							Ipx.Connection_Address(Ipx.Connection_ID(i)));
-						Ipx.Service();
+							Udp.Connection_Address(Udp.Connection_ID(i)));
+						Udp.Service();
 					}
 				} else {
 
@@ -1377,10 +1377,10 @@ static void Message_Input(KeyNumType &input)
 					**	Otherwise, MessageAddress contains the exact address to send to.
 					**	Send to that address only.
 					*/
-					Ipx.Send_Global_Message(&Session.GPacket,
+					Udp.Send_Global_Message(&Session.GPacket,
 						sizeof(GlobalPacketType), 1,
 						&Session.MessageAddress);
-					Ipx.Service();
+					Udp.Service();
 
 				}
 
@@ -1591,10 +1591,10 @@ void Call_Back(void)
 	/*
 	**	Network maintenance.
 	*/
-	if (Session.Type == GAME_IPX || Session.Type == GAME_INTERNET) {
-		if (trace_callback) Conquer_Trace("Call_Back IPX start");
-		IPX_Call_Back();
-		if (trace_callback) Conquer_Trace("Call_Back IPX complete");
+	if (Session.Type == GAME_UDP || Session.Type == GAME_INTERNET) {
+		if (trace_callback) Conquer_Trace("Call_Back UDP start");
+		UDP_Call_Back();
+		if (trace_callback) Conquer_Trace("Call_Back UDP complete");
 	}
 
 	/*
@@ -1661,18 +1661,18 @@ void Call_Back(void)
 }
 
 
-void IPX_Call_Back(void)
+void UDP_Call_Back(void)
 {
-	Ipx.Service();
+	Udp.Service();
 
 	/*
 	** Read packets only if the game is "closed", so we don't steal global
 	** messages from the connection dialogs.
 	*/
 	if (!Session.NetOpen) {
-		if (Ipx.Get_Global_Message (&Session.GPacket, &Session.GPacketlen, &Session.GAddress, &Session.GProductID)) {
+		if (Udp.Get_Global_Message (&Session.GPacket, &Session.GPacketlen, &Session.GAddress, &Session.GProductID)) {
 
-			if (Session.GProductID == IPXGlobalConnClass::COMMAND_AND_CONQUER0) {
+			if (Session.GProductID == UDPGlobalConnClass::COMMAND_AND_CONQUER0) {
 
 				/*
 				**	If this is another player signing off, remove the connection &
@@ -1680,11 +1680,11 @@ void IPX_Call_Back(void)
 				**	it over.
 				*/
 				if (Session.GPacket.Command == NET_SIGN_OFF) {
-					for (int i = 0; i < Ipx.Num_Connections(); i++) {
+					for (int i = 0; i < Udp.Num_Connections(); i++) {
 
-						int id = Ipx.Connection_ID(i);
+						int id = Udp.Connection_ID(i);
 
-						if (Session.GAddress == (*Ipx.Connection_Address(id))) {
+						if (Session.GAddress == (*Udp.Connection_Address(id))) {
 							Destroy_Connection(id, 0);
 						}
 					}

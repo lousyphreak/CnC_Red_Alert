@@ -340,7 +340,7 @@ extern CELL 						CurrentCell;
 #endif
 
 extern SessionClass				Session;
-extern IPXManagerClass 	 		Ipx;
+extern UDPManagerClass 	 		Udp;
 
 #if(TEN)
 extern TenConnManClass			*Ten;

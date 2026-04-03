@@ -46,10 +46,10 @@
 #include	"TACTION.H"
 #include	"TEVENT.H"
 #include "VECTOR.H"
-#ifdef WINSOCK_IPX
+#ifdef NETWORK_UDP
 #include	"WSPROTO.H"
 #include	"WSPUDP.H"
-#endif	//WINSOCK_IPX
+#endif	//NETWORK_UDP
 #include <string.h>
 #include	<stdio.h>
 

@@ -48,18 +48,10 @@ struct WSADATA {
 	char* lpVendorInfo;
 };
 
-struct SOCKADDR_IPX {
-	int16_t sa_family;
-	char sa_netnum[4];
-	char sa_nodenum[6];
-	uint16_t sa_socket;
-};
-
 using SOCKADDR = struct sockaddr;
 using LPSOCKADDR = struct sockaddr*;
 using SOCKADDR_IN = struct sockaddr_in;
 using LPSOCKADDR_IN = struct sockaddr_in*;
-using LPSOCKADDR_IPX = SOCKADDR_IPX*;
 using IN_ADDR = struct in_addr;
 using LPIN_ADDR = struct in_addr*;
 using LINGER = struct linger;
@@ -74,22 +66,6 @@ using LINGER = struct linger;
 
 #ifndef MAXGETHOSTSTRUCT
 #define MAXGETHOSTSTRUCT 1024
-#endif
-
-#ifndef AF_IPX
-#define AF_IPX 4
-#endif
-
-#ifndef NSPROTO_IPX
-#define NSPROTO_IPX 1000
-#endif
-
-#ifndef IPX_PTYPE
-#define IPX_PTYPE 0x4001
-#endif
-
-#ifndef IPX_FILTERPTYPE
-#define IPX_FILTERPTYPE 0x4002
 #endif
 
 #ifndef FD_READ

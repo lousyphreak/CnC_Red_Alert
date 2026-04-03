@@ -16,14 +16,14 @@
 **	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/* $Header: /CounterStrike/IPXMGR.CPP 3     10/13/97 2:20p Steve_t $ */
+/* $Header: /CounterStrike/UDPMGR.CPP 3     10/13/97 2:20p Steve_t $ */
 /***************************************************************************
  **   C O N F I D E N T I A L --- W E S T W O O D    S T U D I O S        **
  ***************************************************************************
  *                                                                         *
  *                 Project Name : Command & Conquer                        *
  *                                                                         *
- *                    File Name : IPXMGR.CPP                               *
+ *                    File Name : UDPMGR.CPP                               *
  *                                                                         *
  *                   Programmer : Bill Randolph                            *
  *                                                                         *
@@ -33,58 +33,47 @@
  *                                                                         *
  *-------------------------------------------------------------------------*
  * Functions:                                                       			*
- *   IPXManagerClass::IPXManagerClass -- class constructor                 *
- *   IPXManagerClass::~IPXManagerClass -- class destructor                 *
- *   IPXManagerClass::Init -- initialization routine								*
- *   IPXManagerClass::Is_IPX -- tells if IPX is installed or not				*
- *   IPXManagerClass::Set_Timing -- sets timing for all connections			*
- *   IPXManagerClass::Create_Connection -- creates a new connection        *
- *   IPXManagerClass::Delete_Connection -- deletes a connection            *
- *   IPXManagerClass::Num_Connections -- gets the # of connections			*
- *   IPXManagerClass::Connection_ID -- gets the given connection's ID      *
- *   IPXManagerClass::Connection_Name -- gets name for given connection    *
- *   IPXManagerClass::Connection_Address -- retrieves connection's address	*
- *   IPXManagerClass::Connection_Index -- gets given connection's index    *
- *   IPXManagerClass::Set_Connection_Parms -- sets connection's name & id	*
- *   IPXManagerClass::Send_Global_Message -- sends a Global Message			*
- *   IPXManagerClass::Get_Global_Message -- polls the Global Message queue	*
- *   IPXManagerClass::Send_Private_Message -- Sends a Private Message		*
- *   IPXManagerClass::Get_Private_Message -- Polls Private Message queue	*
- *   IPXManagerClass::Service -- main polling routine for IPX Connections	*
- *   IPXManagerClass::Get_Bad_Connection -- returns bad connection ID      *
- *   IPXManagerClass::Global_Num_Send	-- gets # entries in send queue	   *
- *   IPXManagerClass::Global_Num_Receive -- gets # entries in recv queue   *
- *   IPXManagerClass::Private_Num_Send -- gets # entries in send queue	   *
- *   IPXManagerClass::Private_Num_Receive -- gets # entries in recv queue  *
- *   IPXManagerClass::Set_Bridge -- prepares to cross a bridge             *
- *   IPXManagerClass::Set_Socket -- sets socket ID for all connections		*
- *   IPXManagerClass::Response_Time -- Returns largest Avg Response Time   *
- *   IPXManagerClass::Global_Response_Time -- Returns Avg Response Time    *
- *   IPXManagerClass::Reset_Response_Time -- Reset response time 				*
- *   IPXManagerClass::Oldest_Send -- gets ptr to oldest send buf           *
- *   IPXManagerClass::Mono_Debug_Print -- debug output routine					*
- *   IPXManagerClass::Alloc_RealMode_Mem -- allocates real-mode memory		*
- *   IPXManagerClass::Free_RealMode_Mem -- frees real-mode memory				*
+ *   UDPManagerClass::UDPManagerClass -- class constructor                 *
+ *   UDPManagerClass::~UDPManagerClass -- class destructor                 *
+ *   UDPManagerClass::Init -- initialization routine								*
+ *   UDPManagerClass::Is_UDP -- tells if UDP is installed or not				*
+ *   UDPManagerClass::Set_Timing -- sets timing for all connections			*
+ *   UDPManagerClass::Create_Connection -- creates a new connection        *
+ *   UDPManagerClass::Delete_Connection -- deletes a connection            *
+ *   UDPManagerClass::Num_Connections -- gets the # of connections			*
+ *   UDPManagerClass::Connection_ID -- gets the given connection's ID      *
+ *   UDPManagerClass::Connection_Name -- gets name for given connection    *
+ *   UDPManagerClass::Connection_Address -- retrieves connection's address	*
+ *   UDPManagerClass::Connection_Index -- gets given connection's index    *
+ *   UDPManagerClass::Set_Connection_Parms -- sets connection's name & id	*
+ *   UDPManagerClass::Send_Global_Message -- sends a Global Message			*
+ *   UDPManagerClass::Get_Global_Message -- polls the Global Message queue	*
+ *   UDPManagerClass::Send_Private_Message -- Sends a Private Message		*
+ *   UDPManagerClass::Get_Private_Message -- Polls Private Message queue	*
+ *   UDPManagerClass::Service -- main polling routine for UDP Connections	*
+ *   UDPManagerClass::Get_Bad_Connection -- returns bad connection ID      *
+ *   UDPManagerClass::Global_Num_Send	-- gets # entries in send queue	   *
+ *   UDPManagerClass::Global_Num_Receive -- gets # entries in recv queue   *
+ *   UDPManagerClass::Private_Num_Send -- gets # entries in send queue	   *
+ *   UDPManagerClass::Private_Num_Receive -- gets # entries in recv queue  *
+ *   UDPManagerClass::Set_Bridge -- prepares to cross a bridge             *
+ *   UDPManagerClass::Set_Socket -- sets socket ID for all connections		*
+ *   UDPManagerClass::Response_Time -- Returns largest Avg Response Time   *
+ *   UDPManagerClass::Global_Response_Time -- Returns Avg Response Time    *
+ *   UDPManagerClass::Reset_Response_Time -- Reset response time 				*
+ *   UDPManagerClass::Oldest_Send -- gets ptr to oldest send buf           *
+ *   UDPManagerClass::Mono_Debug_Print -- debug output routine					*
+ *   UDPManagerClass::Alloc_RealMode_Mem -- allocates real-mode memory		*
+ *   UDPManagerClass::Free_RealMode_Mem -- frees real-mode memory				*
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include	"FUNCTION.H"
 #include <stdio.h>
 #include <string.h>
-#include "IPXMGR.H"
+#include "UDPMGR.H"
 #include "WWLIB32.H"
-// to enable mono output
-
-#ifdef WINSOCK_IPX
-
-#include "WSPROTO.H"
-#include "WSPIPX.H"
-
-#else	//WINSOCK_IPX
-
-#include "IPX95.H"
 #include "TCPIP.H"
-
-#endif	//WINSOCK_IPX
+// to enable mono output
 
 // Turn off "expression is not meaningful".
 #pragma warning 628 9
@@ -92,7 +81,7 @@
 #include "WOLDEBUG.H"
 
 /***************************************************************************
- * IPXManagerClass::IPXManagerClass -- class constructor                   *
+ * UDPManagerClass::UDPManagerClass -- class constructor                   *
  *                                                                         *
  * INPUT:                                                                  *
  *		glb_maxlen		Global Channel maximum packet length						*
@@ -104,51 +93,23 @@
  *		none.																						*
  *                                                                         *
  * WARNINGS:                                                               *
- *		The socket number is byte-swapped, since IPX requires socket ID's		*
+ *		The socket number is byte-swapped, since UDP requires socket ID's		*
  *		to be stored high/low.																*
  *                                                                         *
  * HISTORY:                                                                *
  *   12/20/1994 BR : Created.                                              *
  *=========================================================================*/
-IPXManagerClass::IPXManagerClass (int glb_maxlen, int pvt_maxlen,
+UDPManagerClass::UDPManagerClass (int glb_maxlen, int pvt_maxlen,
 	int glb_num_packets, int pvt_num_packets, uint16_t socket,
 	uint16_t product_id)
 {
 	int i;
-#ifdef WINSOCK_IPX
-	/*
-	** Find out if Packet protocol services are available through Winsock.
-	*/
-	if ( PacketTransport ) {
-		delete  PacketTransport;
-		PacketTransport = NULL;
-	}
-	PacketTransport = new WinsockInterfaceClass;
-	assert ( PacketTransport != NULL );
 
-	if ( PacketTransport->Init() ){
-		IPXStatus = 1;
-	}else{
-		IPXStatus = 0;
-	}
-	delete PacketTransport;
-	PacketTransport = NULL;
-
-#else	//WINSOCK_IPX
-
-	//------------------------------------------------------------------------
-	//	Initialize data members
-	//------------------------------------------------------------------------
-	//........................................................................
-	//	IPXStatus = 1 if IPX is installed, 0 if not
-	//........................................................................
-	if (IPX_SPX_Installed()==0) {
-		IPXStatus = 0;
-	}
-	else {
-		IPXStatus = 1;
-	}
-#endif	//WINSOCK_IPX
+#if RA_ENABLE_UDP
+	UDPStatus = 1;
+#else
+	UDPStatus = 0;
+#endif
 
 	//........................................................................
 	//	Set listening state flag to off
@@ -173,21 +134,9 @@ IPXManagerClass::IPXManagerClass (int glb_maxlen, int pvt_maxlen,
 	//........................................................................
 	ProductID = product_id;
 
-	//........................................................................
-	//	Save our socket ID number
-	//........................................................................
-	Socket = (uint16_t)( (((uint32_t)socket & 0x00ff) << 8) |
-		(((uint32_t)socket & 0xff00) >> 8));
+	Socket = socket;
 
-	//------------------------------------------------------------------------
-	//	Get the user's IPX local connection number
-	//------------------------------------------------------------------------
 	ConnectionNum = 0;
-#ifndef WINSOCK_IPX
-	if (IPXStatus) {
-		ConnectionNum = IPX_Get_Connection_Number();
-	}
-#endif	//WINSOCK_IPX
 
 	//------------------------------------------------------------------------
 	//	Init connection states
@@ -210,11 +159,11 @@ IPXManagerClass::IPXManagerClass (int glb_maxlen, int pvt_maxlen,
 	MaxRetries = -1;		// disregard # retries
 	Timeout = 60;			// report bad connection after 1 second
 
-}	/* end of IPXManagerClass */
+}	/* end of UDPManagerClass */
 
 
 /***************************************************************************
- * IPXManagerClass::~IPXManagerClass -- class destructor                   *
+ * UDPManagerClass::~UDPManagerClass -- class destructor                   *
  *                                                                         *
  * INPUT:                                                                  *
  *		none.																						*
@@ -228,15 +177,15 @@ IPXManagerClass::IPXManagerClass (int glb_maxlen, int pvt_maxlen,
  * HISTORY:                                                                *
  *   12/20/1994 BR : Created.                                              *
  *=========================================================================*/
-IPXManagerClass::~IPXManagerClass()
+UDPManagerClass::~UDPManagerClass()
 {
 	int i;
 
 	//------------------------------------------------------------------------
-	//	Stop all IPX events
+	//	Stop all UDP events
 	//------------------------------------------------------------------------
 	if (Listening) {
-		IPXConnClass::Stop_Listening();
+		UDPConnClass::Stop_Listening();
 		Listening = 0;
 	}
 
@@ -260,16 +209,11 @@ IPXManagerClass::~IPXManagerClass()
 		Free_RealMode_Mem();
 		RealMemAllocd = 0;
 	}
-#ifdef FIXIT_CSII	//	checked - ajw 9/28/98
-#ifndef WINSOCK_IPX
-	Unload_IPX_Dll();
-#endif
-#endif
-}	/* end of ~IPXManagerClass */
+}	/* end of ~UDPManagerClass */
 
 
 /***************************************************************************
- * IPXManagerClass::Init -- initialization routine									*
+ * UDPManagerClass::Init -- initialization routine									*
  *                                                                         *
  * This routine allocates memory, & initializes variables						*
  *                                                                         *
@@ -285,40 +229,22 @@ IPXManagerClass::~IPXManagerClass()
  * HISTORY:                                                                *
  *   12/20/1994 BR : Created.                                              *
  *=========================================================================*/
-int IPXManagerClass::Init()
+int UDPManagerClass::Init()
 {
 	int i;
 
-	if (Session.Type != GAME_INTERNET) {
+	if (!UDPStatus) {
+		return(0);
+	}
 
-		//------------------------------------------------------------------------
-		//	Error if IPX not installed
-		//------------------------------------------------------------------------
-		if (!IPXStatus) {
-			return(0);
-		}
+	if (Listening) {
+		UDPConnClass::Stop_Listening();
+		Listening = 0;
+	}
 
-		//------------------------------------------------------------------------
-		//	Stop Listening
-		//------------------------------------------------------------------------
-		if (Listening) {
-			IPXConnClass::Stop_Listening();
-			Listening = 0;
-		}
-
-		//------------------------------------------------------------------------
-		//	Free Real-mode memory
-		//------------------------------------------------------------------------
-		if (RealMemAllocd) {
-			Free_RealMode_Mem();
-			RealMemAllocd = 0;
-		}
-
-	} else {
-		/*
-		** Pretend IPX is available for Internet games whether it is or not
-		*/
-		IPXStatus = 1;
+	if (RealMemAllocd) {
+		Free_RealMode_Mem();
+		RealMemAllocd = 0;
 	}
 
 	//------------------------------------------------------------------------
@@ -334,18 +260,10 @@ int IPXManagerClass::Init()
 	}
 	NumConnections = 0;
 
-	if (Session.Type != GAME_INTERNET) {
-		//------------------------------------------------------------------------
-		//	Allocate real-mode memory
-		//------------------------------------------------------------------------
-		if (!Alloc_RealMode_Mem()) return(0);
-		RealMemAllocd = 1;
-	}
-
 	//------------------------------------------------------------------------
 	//	Allocate the Global Channel
 	//------------------------------------------------------------------------
-	GlobalChannel = new IPXGlobalConnClass (Glb_NumPackets, Glb_NumPackets,
+	GlobalChannel = new UDPGlobalConnClass (Glb_NumPackets, Glb_NumPackets,
 		Glb_MaxPacketLen, ProductID);
 	if (!GlobalChannel) {
 		return(0);
@@ -356,17 +274,15 @@ int IPXManagerClass::Init()
 	GlobalChannel->Set_TimeOut (Timeout);
 
 	//------------------------------------------------------------------------
-	//	Configure the IPX Connections
+	//	Configure the UDP Connections
 	//------------------------------------------------------------------------
-	IPXConnClass::Configure(Socket, ConnectionNum, ListenECB, SendECB,
+	UDPConnClass::Configure(Socket, ConnectionNum, ListenECB, SendECB,
 		FirstHeaderBuf, SendHeader, FirstDataBuf, SendBuf, Handler, PacketLen);
 
 	//------------------------------------------------------------------------
 	//	Start Listening
 	//------------------------------------------------------------------------
-	if (Session.Type != GAME_INTERNET) {
-		if (!IPXConnClass::Start_Listening()) return(0);
-	}
+	if (!UDPConnClass::Start_Listening()) return(0);
 	Listening = 1;
 
 	return(1);
@@ -375,13 +291,13 @@ int IPXManagerClass::Init()
 
 
 /***************************************************************************
- * IPXManagerClass::Is_IPX -- tells if IPX is installed or not					*
+ * UDPManagerClass::Is_UDP -- tells if UDP is installed or not					*
  *                                                                         *
  * INPUT:                                                                  *
  *		none.																						*
  *                                                                         *
  * OUTPUT:                                                                 *
- *		1 = IPX is installed; 0 = isn't													*
+ *		1 = UDP is installed; 0 = isn't													*
  *                                                                         *
  * WARNINGS:                                                               *
  *		none.																						*
@@ -389,15 +305,15 @@ int IPXManagerClass::Init()
  * HISTORY:                                                                *
  *   12/20/1994 BR : Created.                                              *
  *=========================================================================*/
-int IPXManagerClass::Is_IPX(void)
+int UDPManagerClass::Is_UDP(void)
 {
-	return(IPXStatus);
+	return(UDPStatus);
 
-}	/* end of Is_IPX */
+}	/* end of Is_UDP */
 
 
 /***************************************************************************
- * IPXManagerClass::Set_Timing -- sets timing for all connections				*
+ * UDPManagerClass::Set_Timing -- sets timing for all connections				*
  *                                                                         *
  * This will set the timing parameters for all existing connections, and	*
  * all connections created from now on.  This allows an application to		*
@@ -417,7 +333,7 @@ int IPXManagerClass::Is_IPX(void)
  * HISTORY:                                                                *
  *   07/02/1995 BR : Created.                                              *
  *=========================================================================*/
-void IPXManagerClass::Set_Timing (uint32_t retrydelta,
+void UDPManagerClass::Set_Timing (uint32_t retrydelta,
 	uint32_t maxretries, uint32_t timeout)
 {
 	int i;
@@ -442,12 +358,12 @@ void IPXManagerClass::Set_Timing (uint32_t retrydelta,
 
 
 /***************************************************************************
- * IPXManagerClass::Create_Connection -- creates a new connection          *
+ * UDPManagerClass::Create_Connection -- creates a new connection          *
  *                                                                         *
  * INPUT:                                                                  *
  *		id				application-specific numerical ID for this connection		*
- *		node			ptr to IPXNodeIDType (name & address)							*
- *		address		IPX address for this connection									*
+ *		node			ptr to UDPNodeIDType (name & address)							*
+ *		address		UDP address for this connection									*
  *                                                                         *
  * OUTPUT:                                                                 *
  *		1 = OK, 0 = error																		*
@@ -458,13 +374,13 @@ void IPXManagerClass::Set_Timing (uint32_t retrydelta,
  * HISTORY:                                                                *
  *   12/20/1994 BR : Created.                                              *
  *=========================================================================*/
-int IPXManagerClass::Create_Connection(int id, char *name,
-	IPXAddressClass *address)
+int UDPManagerClass::Create_Connection(int id, char *name,
+	UDPAddressClass *address)
 {
 	//------------------------------------------------------------------------
-	//	Error if IPX not installed
+	//	Error if UDP not installed
 	//------------------------------------------------------------------------
-	if (!IPXStatus) {
+	if (!UDPStatus) {
 		return(0);
 	}
 
@@ -478,7 +394,7 @@ int IPXManagerClass::Create_Connection(int id, char *name,
 	//------------------------------------------------------------------------
 	//	Create new connection
 	//------------------------------------------------------------------------
-	Connection[NumConnections] = new IPXConnClass(Pvt_NumPackets,
+	Connection[NumConnections] = new UDPConnClass(Pvt_NumPackets,
 		Pvt_NumPackets, Pvt_MaxPacketLen, ProductID, address, id, name);
 	if (!Connection[NumConnections]) {
 		return(0);
@@ -497,7 +413,7 @@ int IPXManagerClass::Create_Connection(int id, char *name,
 
 
 /***************************************************************************
- * IPXManagerClass::Delete_Connection -- deletes a connection              *
+ * UDPManagerClass::Delete_Connection -- deletes a connection              *
  *                                                                         *
  * INPUT:                                                                  *
  *		id		ID of connection to delete													*
@@ -511,14 +427,14 @@ int IPXManagerClass::Create_Connection(int id, char *name,
  * HISTORY:                                                                *
  *   12/20/1994 BR : Created.                                              *
  *=========================================================================*/
-int IPXManagerClass::Delete_Connection(int id)
+int UDPManagerClass::Delete_Connection(int id)
 {
 	int i,j;
 
 	//------------------------------------------------------------------------
-	//	Error if IPX not installed
+	//	Error if UDP not installed
 	//------------------------------------------------------------------------
-	if (!IPXStatus) {
+	if (!UDPStatus) {
 		return(0);
 	}
 
@@ -565,7 +481,7 @@ int IPXManagerClass::Delete_Connection(int id)
 
 
 /***************************************************************************
- * IPXManagerClass::Num_Connections -- gets the # of connections				*
+ * UDPManagerClass::Num_Connections -- gets the # of connections				*
  *                                                                         *
  * INPUT:                                                                  *
  *		none.																						*
@@ -579,7 +495,7 @@ int IPXManagerClass::Delete_Connection(int id)
  * HISTORY:                                                                *
  *   01/25/1995 BR : Created.                                              *
  *=========================================================================*/
-int IPXManagerClass::Num_Connections(void)
+int UDPManagerClass::Num_Connections(void)
 {
 	return(NumConnections);
 
@@ -587,7 +503,7 @@ int IPXManagerClass::Num_Connections(void)
 
 
 /***************************************************************************
- * IPXManagerClass::Connection_ID -- gets the given connection's ID        *
+ * UDPManagerClass::Connection_ID -- gets the given connection's ID        *
  *                                                                         *
  * INPUT:                                                                  *
  *		index			index of connection to retrieve									*
@@ -601,7 +517,7 @@ int IPXManagerClass::Num_Connections(void)
  * HISTORY:                                                                *
  *   01/25/1995 BR : Created.                                              *
  *=========================================================================*/
-int IPXManagerClass::Connection_ID(int index)
+int UDPManagerClass::Connection_ID(int index)
 {
 	if (index >= 0 && index < NumConnections) {
 		return(Connection[index]->ID);
@@ -613,7 +529,7 @@ int IPXManagerClass::Connection_ID(int index)
 
 
 /***************************************************************************
- * IPXManagerClass::Connection_Name -- retrieves name for given connection *
+ * UDPManagerClass::Connection_Name -- retrieves name for given connection *
  *                                                                         *
  * INPUT:                                                                  *
  *		id		ID of connection to get name of											*
@@ -627,7 +543,7 @@ int IPXManagerClass::Connection_ID(int index)
  * HISTORY:                                                                *
  *   01/19/1995 BR : Created.                                              *
  *=========================================================================*/
-char *IPXManagerClass::Connection_Name(int id)
+char *UDPManagerClass::Connection_Name(int id)
 {
 	int i;
 
@@ -643,7 +559,7 @@ char *IPXManagerClass::Connection_Name(int id)
 
 
 /***************************************************************************
- * IPXManagerClass::Connection_Address -- retrieves connection's address	*
+ * UDPManagerClass::Connection_Address -- retrieves connection's address	*
  *                                                                         *
  * INPUT:                                                                  *
  *		id		ID of connection to get address for										*
@@ -657,7 +573,7 @@ char *IPXManagerClass::Connection_Name(int id)
  * HISTORY:                                                                *
  *   01/19/1995 BR : Created.                                              *
  *=========================================================================*/
-IPXAddressClass * IPXManagerClass::Connection_Address(int id)
+UDPAddressClass * UDPManagerClass::Connection_Address(int id)
 {
 	int i;
 
@@ -673,7 +589,7 @@ IPXAddressClass * IPXManagerClass::Connection_Address(int id)
 
 
 /***************************************************************************
- * IPXManagerClass::Connection_Index -- gets given connection's index      *
+ * UDPManagerClass::Connection_Index -- gets given connection's index      *
  *                                                                         *
  * INPUT:                                                                  *
  *		ID to retrieve index for															*
@@ -687,7 +603,7 @@ IPXAddressClass * IPXManagerClass::Connection_Address(int id)
  * HISTORY:                                                                *
  *   01/25/1995 BR : Created.                                              *
  *=========================================================================*/
-int IPXManagerClass::Connection_Index(int id)
+int UDPManagerClass::Connection_Index(int id)
 {
 	int i;
 
@@ -703,7 +619,7 @@ int IPXManagerClass::Connection_Index(int id)
 
 
 /***************************************************************************
- * IPXManagerClass::Set_Connection_Parms -- sets connection's name & id		*
+ * UDPManagerClass::Set_Connection_Parms -- sets connection's name & id		*
  *                                                                         *
  * INPUT:                                                                  *
  *		index		connection index															*
@@ -719,7 +635,7 @@ int IPXManagerClass::Connection_Index(int id)
  * HISTORY:                                                                *
  *   01/25/1995 BR : Created.                                              *
  *=========================================================================*/
-void IPXManagerClass::Set_Connection_Parms(int index, int id, char *name)
+void UDPManagerClass::Set_Connection_Parms(int index, int id, char *name)
 {
 	if (index >= NumConnections)
 		return;
@@ -731,7 +647,7 @@ void IPXManagerClass::Set_Connection_Parms(int index, int id, char *name)
 
 
 /***************************************************************************
- * IPXManagerClass::Send_Global_Message -- sends a Global Message				*
+ * UDPManagerClass::Send_Global_Message -- sends a Global Message				*
  *                                                                         *
  * INPUT:                                                                  *
  *		buf			buffer to send															*
@@ -748,15 +664,15 @@ void IPXManagerClass::Set_Connection_Parms(int index, int id, char *name)
  * HISTORY:                                                                *
  *   01/25/1995 BR : Created.                                              *
  *=========================================================================*/
-int IPXManagerClass::Send_Global_Message(void *buf, int buflen,
-	int ack_req, IPXAddressClass *address)
+int UDPManagerClass::Send_Global_Message(void *buf, int buflen,
+	int ack_req, UDPAddressClass *address)
 {
 	int rc;
 
 	//------------------------------------------------------------------------
-	//	Error if IPX not installed or not Listening
+	//	Error if UDP not installed or not Listening
 	//------------------------------------------------------------------------
-	if (!IPXStatus || !Listening) return(0);
+	if (!UDPStatus || !Listening) return(0);
 
 	rc = GlobalChannel->Send_Packet (buf, buflen, address, ack_req);
 	if (!rc) {
@@ -769,12 +685,12 @@ int IPXManagerClass::Send_Global_Message(void *buf, int buflen,
 
 
 /***************************************************************************
- * IPXManagerClass::Get_Global_Message -- polls the Global Message queue	*
+ * UDPManagerClass::Get_Global_Message -- polls the Global Message queue	*
  *                                                                         *
  * INPUT:                                                                  *
  *		buf				buffer to store received packet								*
  *		buflen			length of data placed in 'buf'								*
- *		address			IPX address of sender											*
+ *		address			UDP address of sender											*
  *		product_id		product ID of sender												*
  *                                                                         *
  * OUTPUT:                                                                 *
@@ -786,13 +702,13 @@ int IPXManagerClass::Send_Global_Message(void *buf, int buflen,
  * HISTORY:                                                                *
  *   01/25/1995 BR : Created.                                              *
  *=========================================================================*/
-int IPXManagerClass::Get_Global_Message(void *buf, int *buflen,
-	IPXAddressClass *address, uint16_t *product_id)
+int UDPManagerClass::Get_Global_Message(void *buf, int *buflen,
+	UDPAddressClass *address, uint16_t *product_id)
 {
 	//------------------------------------------------------------------------
-	//	Error if IPX not installed or not Listening
+	//	Error if UDP not installed or not Listening
 	//------------------------------------------------------------------------
-	if (!IPXStatus || !Listening) return(0);
+	if (!UDPStatus || !Listening) return(0);
 
 	return(GlobalChannel->Get_Packet (buf, buflen, address, product_id));
 
@@ -800,7 +716,7 @@ int IPXManagerClass::Get_Global_Message(void *buf, int *buflen,
 
 
 /***************************************************************************
- * IPXManagerClass::Send_Private_Message -- Sends a Private Message			*
+ * UDPManagerClass::Send_Private_Message -- Sends a Private Message			*
  *                                                                         *
  * INPUT:                                                                  *
  *		buf			buffer to send															*
@@ -817,17 +733,17 @@ int IPXManagerClass::Get_Global_Message(void *buf, int *buflen,
  * HISTORY:                                                                *
  *   01/25/1995 BR : Created.                                              *
  *=========================================================================*/
-int IPXManagerClass::Send_Private_Message(void *buf, int buflen, int ack_req,
+int UDPManagerClass::Send_Private_Message(void *buf, int buflen, int ack_req,
 	int conn_id)
 {
 	int i;						// loop counter
 	int connect_idx;			// index of channel to send to, if specified
 
 	//------------------------------------------------------------------------
-	//	Error if IPX not installed or not Listening
+	//	Error if UDP not installed or not Listening
 	//------------------------------------------------------------------------
 
-	if (!IPXStatus || !Listening || (NumConnections==0)) {
+	if (!UDPStatus || !Listening || (NumConnections==0)) {
 		return(0);
 	}
 
@@ -885,7 +801,7 @@ int IPXManagerClass::Send_Private_Message(void *buf, int buflen, int ack_req,
 
 
 /***************************************************************************
- * IPXManagerClass::Get_Private_Message -- Polls the Private Message queue	*
+ * UDPManagerClass::Get_Private_Message -- Polls the Private Message queue	*
  *                                                                         *
  * INPUT:                                                                  *
  *		buf			buffer to store incoming packet									*
@@ -901,16 +817,16 @@ int IPXManagerClass::Send_Private_Message(void *buf, int buflen, int ack_req,
  * HISTORY:                                                                *
  *   01/25/1995 BR : Created.                                              *
  *=========================================================================*/
-int IPXManagerClass::Get_Private_Message(void *buf, int *buflen, int *conn_id)
+int UDPManagerClass::Get_Private_Message(void *buf, int *buflen, int *conn_id)
 {
 	int i;
 	int rc;
 	int c_id;
 
 	//------------------------------------------------------------------------
-	//	Error if IPX not installed or not Listening
+	//	Error if UDP not installed or not Listening
 	//------------------------------------------------------------------------
-	if (!IPXStatus || !Listening || (NumConnections==0)) {
+	if (!UDPStatus || !Listening || (NumConnections==0)) {
 		return(0);
 	}
 
@@ -955,7 +871,7 @@ int IPXManagerClass::Get_Private_Message(void *buf, int *buflen, int *conn_id)
 
 
 /***************************************************************************
- * IPXManagerClass::Service -- main polling routine for IPX Connections		*
+ * UDPManagerClass::Service -- main polling routine for UDP Connections		*
  *                                                                         *
  * INPUT:                                                                  *
  *		none.																						*
@@ -969,109 +885,13 @@ int IPXManagerClass::Get_Private_Message(void *buf, int *buflen, int *conn_id)
  * HISTORY:                                                                *
  *   01/25/1995 BR : Created.                                              *
  *=========================================================================*/
-int IPXManagerClass::Service(void)
+int UDPManagerClass::Service(void)
 {
 	int rc = 1;
 	int i;
 	CommHeaderType *packet;
 	int packetlen;
-	IPXAddressClass address;
-
-#ifdef WINSOCK_IPX
-
-
-	uint8_t temp_receive_buffer[1024];
-	int	temp_receive_buffer_len;
-	int	temp_address_len;
-
-
-	char temp_address [128];
-
-	if ( PacketTransport ) {
-
-		do {
-			temp_receive_buffer_len = sizeof (temp_receive_buffer);
-			temp_address_len = sizeof (temp_address);
-			packetlen = PacketTransport->Read ( temp_receive_buffer, temp_receive_buffer_len, temp_address, temp_address_len );
-			if ( packetlen ) {
-				CurDataBuf = (char*)temp_receive_buffer;
-				address = *((IPXAddressClass*) temp_address);
-
-				packet = (CommHeaderType *)CurDataBuf;
-				if (packet->MagicNumber == GlobalChannel->Magic_Num()) {
-
-					/*
-					** Put the packet in the Global Queue
-					*/
-					if (!GlobalChannel->Receive_Packet (packet, packetlen, &address))
-						ReceiveOverflows++;
-				} else {
-					if (packet->MagicNumber == ProductID) {
-
-						/*
-						** Find the Private Queue that this packet is for
-						*/
-						bool found_address = false;
-						for (i = 0; i < NumConnections; i++) {
-							if (Connection[i]->Address == address) {
-								found_address = true;
-								if (!Connection[i]->Receive_Packet (packet, packetlen))
-									ReceiveOverflows++;
-								break;
-							}
-						}
-						if( Session.Type == GAME_INTERNET )
-						{
-							/*
-							** This packet came from an unknown source. If it looks like one of our players
-							** packets then it might be from a player whos IP has changed.
-							*/
-							if (!found_address) {
-								if (packet->Code == ConnectionClass::PACKET_DATA_NOACK){
-									/*
-									** Magic number and packet code are valid. It's probably a C&C packet.
-									*/
-									EventClass *event = (EventClass*) (((char*) packet) + sizeof (CommHeaderType));
-
-									/*
-									** If this is a framesync packet then grab the address and match it to an existing player.
-									*/
-									if (event->Type == EventClass::FRAMESYNC) {
-										int id = event->ID;
-
-										assert (id != PlayerPtr->ID);
-										for ( int i=1 ; i<Session.Players.Count() ; i++) {
-											if (Session.Players[i]->Player.ID == id) {
-
-												int iConnectionIndex = Connection_Index(id);
-												if( iConnectionIndex != CONNECTION_NONE ) //	(else Create_Connections() has not yet been called)
-												{
-													/*
-													** Found a likely candidate. Update his address. It should be OK to drop this
-													** packet since it's a framesync packet and will will pick up the next one.
-													*/
-													Session.Players[i]->Address = address;
-													Connection[iConnectionIndex]->Address = address;
-												}
-												break;
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-
-		} while (packetlen);
-
-	}
-
-
-
-
-#else	//WINSOCK_IPX
+	UDPAddressClass address;
 
 
 	uint8_t temp_receive_buffer[1024];
@@ -1090,12 +910,12 @@ int IPXManagerClass::Service(void)
 			CurDataBuf = (char*)&temp_receive_buffer[0];
 
 			/*.....................................................................
-			Compute the length of the packet (byte-swap the length in the IPX hdr)
+			Compute the length of the packet (byte-swap the length in the UDP hdr)
 			.....................................................................*/
 			packetlen = recv_length;
 
 			/*.....................................................................
-			Extract the sender's address from the IPX header
+			Extract the sender's address from the UDP header
 			.....................................................................*/
 			address.Set_Address (CurHeaderBuf);
 
@@ -1127,43 +947,19 @@ int IPXManagerClass::Service(void)
 
 		}
 	} else {
+		while ((packetlen = UDPConnClass::Receive((char*)&temp_receive_buffer[0], sizeof(temp_receive_buffer), &address)) != 0) {
+			CurHeaderBuf = NULL;
+			CurDataBuf = (char*)&temp_receive_buffer[0];
 
-		while (IPX_Get_Outstanding_Buffer95(&temp_receive_buffer[0])) {
-
-			CurHeaderBuf = (IPXHEADER*)&temp_receive_buffer[0];
-			CurDataBuf = (char*)&temp_receive_buffer[sizeof(IPXHeaderType)];
-
-			/*.....................................................................
-			Compute the length of the packet (byte-swap the length in the IPX hdr)
-			.....................................................................*/
-			packetlen = ((CurHeaderBuf->Length & 0xff) << 8) |
-				(CurHeaderBuf->Length >> 8);
-			packetlen -= sizeof(IPXHeaderType);
-
-			/*.....................................................................
-			Extract the sender's address from the IPX header
-			.....................................................................*/
-			address.Set_Address (CurHeaderBuf);
-
-			/*.....................................................................
-			Examine the Magic Number of the received packet to determine if this
-			packet goes into the Global Queue, or into one of the Private Queues
-			.....................................................................*/
 			packet = (CommHeaderType *)CurDataBuf;
 			if (packet->MagicNumber == GlobalChannel->Magic_Num()) {
-				/*..................................................................
-				Put the packet in the Global Queue
-				..................................................................*/
-				if (!GlobalChannel->Receive_Packet (packet, packetlen, &address))
+				if (!GlobalChannel->Receive_Packet(packet, packetlen, &address))
 					ReceiveOverflows++;
 			} else {
 				if (packet->MagicNumber == ProductID) {
-					/*..................................................................
-					Find the Private Queue that this packet is for
-					..................................................................*/
 					for (i = 0; i < NumConnections; i++) {
 						if (Connection[i]->Address == address) {
-							if (!Connection[i]->Receive_Packet (packet, packetlen))
+							if (!Connection[i]->Receive_Packet(packet, packetlen))
 								ReceiveOverflows++;
 							break;
 						}
@@ -1172,9 +968,6 @@ int IPXManagerClass::Service(void)
 			}
 		}
 	}
-
-
-#endif	//WINSOCK_IPX
 
 	//------------------------------------------------------------------------
 	//	Service all connections.  If a connection reports that it's gone "bad",
@@ -1204,7 +997,7 @@ int IPXManagerClass::Service(void)
 }	/* end of Service */
 
 /***************************************************************************
- * IPXManagerClass::Get_Bad_Connection -- returns bad connection ID        *
+ * UDPManagerClass::Get_Bad_Connection -- returns bad connection ID        *
  *                                                                         *
  * INPUT:                                                                  *
  *		none.																						*
@@ -1218,7 +1011,7 @@ int IPXManagerClass::Service(void)
  * HISTORY:                                                                *
  *   05/04/1995 BRR : Created.                                             *
  *=========================================================================*/
-int IPXManagerClass::Get_Bad_Connection(void)
+int UDPManagerClass::Get_Bad_Connection(void)
 {
 	return(BadConnection);
 
@@ -1226,7 +1019,7 @@ int IPXManagerClass::Get_Bad_Connection(void)
 
 
 /***************************************************************************
- * IPXManagerClass::Global_Num_Send	-- reports # entries in send queue		*
+ * UDPManagerClass::Global_Num_Send	-- reports # entries in send queue		*
  *                                                                         *
  * INPUT:                                                                  *
  *		none.																						*
@@ -1240,12 +1033,12 @@ int IPXManagerClass::Get_Bad_Connection(void)
  * HISTORY:                                                                *
  *   01/25/1995 BR : Created.                                              *
  *=========================================================================*/
-int IPXManagerClass::Global_Num_Send(void)
+int UDPManagerClass::Global_Num_Send(void)
 {
 	//------------------------------------------------------------------------
-	//	Error if IPX not installed or not Listening
+	//	Error if UDP not installed or not Listening
 	//------------------------------------------------------------------------
-	if (!IPXStatus || !Listening) {
+	if (!UDPStatus || !Listening) {
 		return(0);
 	}
 
@@ -1255,7 +1048,7 @@ int IPXManagerClass::Global_Num_Send(void)
 
 
 /***************************************************************************
- * IPXManagerClass::Global_Num_Receive -- reports # entries in recv queue	*
+ * UDPManagerClass::Global_Num_Receive -- reports # entries in recv queue	*
  *                                                                         *
  * INPUT:                                                                  *
  *		none.																						*
@@ -1269,12 +1062,12 @@ int IPXManagerClass::Global_Num_Send(void)
  * HISTORY:                                                                *
  *   01/25/1995 BR : Created.                                              *
  *=========================================================================*/
-int IPXManagerClass::Global_Num_Receive(void)
+int UDPManagerClass::Global_Num_Receive(void)
 {
 	//------------------------------------------------------------------------
-	//	Error if IPX not installed or not Listening
+	//	Error if UDP not installed or not Listening
 	//------------------------------------------------------------------------
-	if (!IPXStatus || !Listening) {
+	if (!UDPStatus || !Listening) {
 		return(0);
 	}
 
@@ -1284,7 +1077,7 @@ int IPXManagerClass::Global_Num_Receive(void)
 
 
 /***************************************************************************
- * IPXManagerClass::Private_Num_Send -- reports # entries in send queue		*
+ * UDPManagerClass::Private_Num_Send -- reports # entries in send queue		*
  *                                                                         *
  * INPUT:                                                                  *
  *		# entries in the Private Send Queue												*
@@ -1298,15 +1091,15 @@ int IPXManagerClass::Global_Num_Receive(void)
  * HISTORY:                                                                *
  *   01/25/1995 BR : Created.                                              *
  *=========================================================================*/
-int IPXManagerClass::Private_Num_Send(int id)
+int UDPManagerClass::Private_Num_Send(int id)
 {
 	int i;
 	int maxnum;
 
 	//------------------------------------------------------------------------
-	//	Error if IPX not installed or not Listening
+	//	Error if UDP not installed or not Listening
 	//------------------------------------------------------------------------
-	if (!IPXStatus || !Listening || (NumConnections==0)) {
+	if (!UDPStatus || !Listening || (NumConnections==0)) {
 		return(0);
 	}
 
@@ -1341,7 +1134,7 @@ int IPXManagerClass::Private_Num_Send(int id)
 
 
 /***************************************************************************
- * IPXManagerClass::Private_Num_Receive -- reports # entries in recv queue	*
+ * UDPManagerClass::Private_Num_Receive -- reports # entries in recv queue	*
  *                                                                         *
  * INPUT:                                                                  *
  *		id		ID of connection to query													*
@@ -1355,15 +1148,15 @@ int IPXManagerClass::Private_Num_Send(int id)
  * HISTORY:                                                                *
  *   01/25/1995 BR : Created.                                              *
  *=========================================================================*/
-int IPXManagerClass::Private_Num_Receive(int id)
+int UDPManagerClass::Private_Num_Receive(int id)
 {
 	int i;
 	int maxnum;
 
 	//------------------------------------------------------------------------
-	//	Error if IPX not installed or not Listening
+	//	Error if UDP not installed or not Listening
 	//------------------------------------------------------------------------
-	if (!IPXStatus || !Listening || (NumConnections==0))
+	if (!UDPStatus || !Listening || (NumConnections==0))
 		return(0);
 
 	//------------------------------------------------------------------------
@@ -1397,7 +1190,7 @@ int IPXManagerClass::Private_Num_Receive(int id)
 
 
 /***************************************************************************
- * IPXManagerClass::Set_Socket -- sets socket ID for all connections			*
+ * UDPManagerClass::Set_Socket -- sets socket ID for all connections			*
  *                                                                         *
  * INPUT:                                                                  *
  *		socket	new socket ID to use														*
@@ -1408,22 +1201,21 @@ int IPXManagerClass::Private_Num_Receive(int id)
  * WARNINGS:                                                               *
  *		Do not call this function after communications have started; you		*
  *		must call it before calling Init().												*
- *		The socket number is byte-swapped, since IPX requires socket ID's		*
+ *		The socket number is byte-swapped, since UDP requires socket ID's		*
  *		to be stored high/low.																*
  *                                                                         *
  * HISTORY:                                                                *
  *   01/25/1995 BR : Created.                                              *
  *=========================================================================*/
-void IPXManagerClass::Set_Socket(uint16_t socket)
+void UDPManagerClass::Set_Socket(uint16_t socket)
 {
-	Socket = (uint16_t)( (((uint32_t)socket & 0x00ff) << 8) |
-		(((uint32_t)socket & 0xff00) >> 8));
+	Socket = socket;
 
 }	/* end of Set_Socket */
 
 
 /***************************************************************************
- * IPXManagerClass::Response_Time -- Returns largest Avg Response Time     *
+ * UDPManagerClass::Response_Time -- Returns largest Avg Response Time     *
  *                                                                         *
  * INPUT:                                                                  *
  *		none.																						*
@@ -1437,7 +1229,7 @@ void IPXManagerClass::Set_Socket(uint16_t socket)
  * HISTORY:                                                                *
  *   05/04/1995 BRR : Created.                                             *
  *=========================================================================*/
-uint32_t IPXManagerClass::Response_Time(void)
+uint32_t UDPManagerClass::Response_Time(void)
 {
 	uint32_t resp;
 	uint32_t maxresp = 0;
@@ -1456,7 +1248,7 @@ uint32_t IPXManagerClass::Response_Time(void)
 
 
 /***************************************************************************
- * IPXManagerClass::Global_Response_Time -- Returns Avg Response Time      *
+ * UDPManagerClass::Global_Response_Time -- Returns Avg Response Time      *
  *                                                                         *
  * INPUT:                                                                  *
  *		none.																						*
@@ -1470,7 +1262,7 @@ uint32_t IPXManagerClass::Response_Time(void)
  * HISTORY:                                                                *
  *   05/04/1995 BRR : Created.                                             *
  *=========================================================================*/
-uint32_t IPXManagerClass::Global_Response_Time(void)
+uint32_t UDPManagerClass::Global_Response_Time(void)
 {
 	if (GlobalChannel) {
 		return (GlobalChannel->Queue->Avg_Response_Time());
@@ -1483,7 +1275,7 @@ uint32_t IPXManagerClass::Global_Response_Time(void)
 
 
 /***************************************************************************
- * IPXManagerClass::Reset_Response_Time -- Reset response time					*
+ * UDPManagerClass::Reset_Response_Time -- Reset response time					*
  *                                                                         *
  * INPUT:                                                                  *
  *		none.																						*
@@ -1497,7 +1289,7 @@ uint32_t IPXManagerClass::Global_Response_Time(void)
  * HISTORY:                                                                *
  *   05/04/1995 BRR : Created.                                             *
  *=========================================================================*/
-void IPXManagerClass::Reset_Response_Time(void)
+void UDPManagerClass::Reset_Response_Time(void)
 {
 	int i;
 
@@ -1512,7 +1304,7 @@ void IPXManagerClass::Reset_Response_Time(void)
 
 
 /***************************************************************************
- * IPXManagerClass::Oldest_Send -- gets ptr to oldest send buf             *
+ * UDPManagerClass::Oldest_Send -- gets ptr to oldest send buf             *
  *                                                                         *
  * INPUT:                                                                  *
  *		none.																						*
@@ -1526,7 +1318,7 @@ void IPXManagerClass::Reset_Response_Time(void)
  * HISTORY:                                                                *
  *   05/04/1995 BRR : Created.                                             *
  *=========================================================================*/
-void * IPXManagerClass::Oldest_Send(void)
+void * UDPManagerClass::Oldest_Send(void)
 {
 	int i,j;
 	uint32_t time;
@@ -1570,7 +1362,7 @@ void * IPXManagerClass::Oldest_Send(void)
 
 
 /***************************************************************************
- * IPXManagerClass::Set_Bridge -- prepares to cross a bridge               *
+ * UDPManagerClass::Set_Bridge -- prepares to cross a bridge               *
  *                                                                         *
  * This routine is designed to prevent the connection from having to			*
  * call Get_Local_Target, except the minimum number of times, since that	*
@@ -1588,7 +1380,7 @@ void * IPXManagerClass::Oldest_Send(void)
  * HISTORY:                                                                *
  *   07/06/1995 BRR : Created.                                             *
  *=========================================================================*/
-void IPXManagerClass::Set_Bridge(NetNumType bridge)
+void UDPManagerClass::Set_Bridge(NetNumType bridge)
 {
 	if (GlobalChannel) {
 		GlobalChannel->Set_Bridge(bridge);
@@ -1598,7 +1390,7 @@ void IPXManagerClass::Set_Bridge(NetNumType bridge)
 
 
 /***************************************************************************
- * IPXManagerClass::Configure_Debug -- sets up special debug values        *
+ * UDPManagerClass::Configure_Debug -- sets up special debug values        *
  *                                                                         *
  * Mono_Debug_Print2() can look into a packet to pull out a particular		*
  * ID, and can print both that ID and a string corresponding to				*
@@ -1623,7 +1415,7 @@ void IPXManagerClass::Set_Bridge(NetNumType bridge)
  * HISTORY:                                                                *
  *   05/31/1995 BRR : Created.                                             *
  *=========================================================================*/
-void IPXManagerClass::Configure_Debug(int index, int type_offset,
+void UDPManagerClass::Configure_Debug(int index, int type_offset,
 	int type_size, char **names, int namestart, int namecount)
 {
 	if (index == -1) {
@@ -1639,7 +1431,7 @@ void IPXManagerClass::Configure_Debug(int index, int type_offset,
 
 
 /***************************************************************************
- * IPXManagerClass::Mono_Debug_Print -- debug output routine					*
+ * UDPManagerClass::Mono_Debug_Print -- debug output routine					*
  *                                                                         *
  * INPUT:                                                                  *
  *		index			index of connection to display (-1 = Global Channel)		*
@@ -1654,7 +1446,7 @@ void IPXManagerClass::Configure_Debug(int index, int type_offset,
  * HISTORY:                                                                *
  *   01/25/1995 BR : Created.                                              *
  *=========================================================================*/
-void IPXManagerClass::Mono_Debug_Print(int index, int refresh)
+void UDPManagerClass::Mono_Debug_Print(int index, int refresh)
 {
 #ifdef WWLIB32_H
 	char txt[80];
@@ -1668,7 +1460,7 @@ void IPXManagerClass::Mono_Debug_Print(int index, int refresh)
 
 	if (refresh) {
 		Mono_Set_Cursor (20,1);
-		Mono_Printf ("IPX Queue:");
+		Mono_Printf ("UDP Queue:");
 
 		Mono_Set_Cursor (9,2);
 		Mono_Printf ("Average Response Time:");
@@ -1719,7 +1511,7 @@ void IPXManagerClass::Mono_Debug_Print(int index, int refresh)
 
 
 /***************************************************************************
- * IPXManagerClass::Alloc_RealMode_Mem -- allocates real-mode memory			*
+ * UDPManagerClass::Alloc_RealMode_Mem -- allocates real-mode memory			*
  *                                                                         *
  * INPUT:                                                                  *
  *		none.																						*
@@ -1733,14 +1525,14 @@ void IPXManagerClass::Mono_Debug_Print(int index, int refresh)
  * HISTORY:                                                                *
  *   12/20/1994 BR : Created.                                              *
  *=========================================================================*/
-int IPXManagerClass::Alloc_RealMode_Mem(void)
+int UDPManagerClass::Alloc_RealMode_Mem(void)
 {
 	return (1);
 }	/* end of Alloc_Realmode_Mem */
 
 
 /***************************************************************************
- * IPXManagerClass::Free_RealMode_Mem -- frees real-mode memory				*
+ * UDPManagerClass::Free_RealMode_Mem -- frees real-mode memory				*
  *                                                                         *
  * INPUT:                                                                  *
  *		none.																						*
@@ -1754,9 +1546,9 @@ int IPXManagerClass::Alloc_RealMode_Mem(void)
  * HISTORY:                                                                *
  *   12/20/1994 BR : Created.                                              *
  *=========================================================================*/
-int IPXManagerClass::Free_RealMode_Mem(void)
+int UDPManagerClass::Free_RealMode_Mem(void)
 {
 	return (1);
 }	/* end of Free_Realmode_Mem */
 
-/*************************** end of ipxmgr.cpp *****************************/
+/*************************** end of udpmgr.cpp *****************************/

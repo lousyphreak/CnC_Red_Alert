@@ -16,14 +16,14 @@
 **	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/* $Header: /CounterStrike/IPXADDR.CPP 1     3/03/97 10:24a Joe_bostic $ */
+/* $Header: /CounterStrike/UDPADDR.CPP 1     3/03/97 10:24a Joe_bostic $ */
 /***************************************************************************
  **   C O N F I D E N T I A L --- W E S T W O O D    S T U D I O S        **
  ***************************************************************************
  *                                                                         *
  *                 Project Name : Command & Conquer                        *
  *                                                                         *
- *                    File Name : IPXADDR.CPP                              *
+ *                    File Name : UDPADDR.CPP                              *
  *                                                                         *
  *                   Programmer : Bill Randolph                            *
  *                                                                         *
@@ -33,29 +33,29 @@
  *                                                                         *
  *-------------------------------------------------------------------------*
  * Functions:                                                              *
- *   IPXAddressClass::IPXAddressClass -- class constructor                 *
- *   IPXAddressClass::IPXAddressClass -- class constructor form 2				*
- *   IPXAddressClass::IPXAddressClass -- class constructor form 3				*
- *   IPXAddressClass::Set_Address -- sets the IPX address values        	*
- *   IPXAddressClass::Set_Address -- sets the IPX values from a header		*
- *   IPXAddressClass::Get_Address -- retrieves the IPX address values      *
- *   IPXAddressClass::Get_Address -- copies address into an IPX header		*
- *   IPXAddressClass::Is_Broadcast -- tells if this is a broadcast address *
- *   IPXAddressClass::operator== -- overloaded comparison operator         *
- *   IPXAddressClass::operator!= -- overloaded comparison operator         *
+ *   UDPAddressClass::UDPAddressClass -- class constructor                 *
+ *   UDPAddressClass::UDPAddressClass -- class constructor form 2				*
+ *   UDPAddressClass::UDPAddressClass -- class constructor form 3				*
+ *   UDPAddressClass::Set_Address -- sets the UDP address values        	*
+ *   UDPAddressClass::Set_Address -- sets the UDP values from a header		*
+ *   UDPAddressClass::Get_Address -- retrieves the UDP address values      *
+ *   UDPAddressClass::Get_Address -- copies address into an UDP header		*
+ *   UDPAddressClass::Is_Broadcast -- tells if this is a broadcast address *
+ *   UDPAddressClass::operator== -- overloaded comparison operator         *
+ *   UDPAddressClass::operator!= -- overloaded comparison operator         *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "FUNCTION.H"
 #include <stdio.h>
 #include <string.h>
-#include "IPXADDR.H"
-#ifdef WINSOCK_IPX
+#include "UDPADDR.H"
+#ifdef NETWORK_UDP
 #include	"WSPROTO.H"
-#endif	//WINSOCK_IPX
+#endif	//NETWORK_UDP
 
 
 /***************************************************************************
- * IPXAddressClass::IPXAddressClass -- class constructor                   *
+ * UDPAddressClass::UDPAddressClass -- class constructor                   *
  *                                                                         *
  * This default constructor generates a broadcast address.						*
  *                                                                         *
@@ -72,7 +72,7 @@
  * HISTORY:                                                                *
  *   12/19/1994 BR : Created.                                              *
  *=========================================================================*/
-IPXAddressClass::IPXAddressClass(void)
+UDPAddressClass::UDPAddressClass(void)
 {
 	NetworkNumber[0] = 0xff;
 	NetworkNumber[1] = 0xff;
@@ -85,11 +85,11 @@ IPXAddressClass::IPXAddressClass(void)
 	NodeAddress[4] = 0xff;
 	NodeAddress[5] = 0xff;
 
-}	/* end of IPXAddressClass */
+}	/* end of UDPAddressClass */
 
 
 /***************************************************************************
- * IPXAddressClass::IPXAddressClass -- class constructor form 2				*
+ * UDPAddressClass::UDPAddressClass -- class constructor form 2				*
  *                                                                         *
  * INPUT:                                                                  *
  *		net		Network Number for this address										*
@@ -104,18 +104,18 @@ IPXAddressClass::IPXAddressClass(void)
  * HISTORY:                                                                *
  *   12/19/1994 BR : Created.                                              *
  *=========================================================================*/
-IPXAddressClass::IPXAddressClass(NetNumType net, NetNodeType node)
+UDPAddressClass::UDPAddressClass(NetNumType net, NetNodeType node)
 {
 	memcpy(NetworkNumber, net, 4);
 	memcpy(NodeAddress, node, 6);
 
-}	/* end of IPXAddressClass */
+}	/* end of UDPAddressClass */
 
 
 /***************************************************************************
- * IPXAddressClass::IPXAddressClass -- class constructor form 3				*
+ * UDPAddressClass::UDPAddressClass -- class constructor form 3				*
  *                                                                         *
- * This form of the constructor takes an IPX header as an argument.  It		*
+ * This form of the constructor takes an UDP header as an argument.  It		*
  * extracts the address from the Source address fields in the header.		*
  *                                                                         *
  * INPUT:                                                                  *
@@ -130,16 +130,16 @@ IPXAddressClass::IPXAddressClass(NetNumType net, NetNodeType node)
  * HISTORY:                                                                *
  *   12/19/1994 BR : Created.                                              *
  *=========================================================================*/
-IPXAddressClass::IPXAddressClass(IPXHeaderType *header)
+UDPAddressClass::UDPAddressClass(UDPHeaderType *header)
 {
 	memcpy(NetworkNumber,header->SourceNetworkNumber,4);
 	memcpy(NodeAddress,header->SourceNetworkNode,6);
 
-}	/* end of IPXAddressClass */
+}	/* end of UDPAddressClass */
 
 
 /***************************************************************************
- * IPXAddressClass::Set_Address -- sets the IPX address values        		*
+ * UDPAddressClass::Set_Address -- sets the UDP address values        		*
  *                                                                         *
  * INPUT:                                                                  *
  *		net		Network Number for this address										*
@@ -154,7 +154,7 @@ IPXAddressClass::IPXAddressClass(IPXHeaderType *header)
  * HISTORY:                                                                *
  *   12/19/1994 BR : Created.                                              *
  *=========================================================================*/
-void IPXAddressClass::Set_Address(NetNumType net, NetNodeType node)
+void UDPAddressClass::Set_Address(NetNumType net, NetNodeType node)
 {
 	memcpy(NetworkNumber,net,4);
 	memcpy(NodeAddress,node,6);
@@ -163,9 +163,9 @@ void IPXAddressClass::Set_Address(NetNumType net, NetNodeType node)
 
 
 /***************************************************************************
- * IPXAddressClass::Set_Address -- sets the IPX values from a header			*
+ * UDPAddressClass::Set_Address -- sets the UDP values from a header			*
  *                                                                         *
- * This routine extracts the source addresses from the given IPX header.	*
+ * This routine extracts the source addresses from the given UDP header.	*
  *                                                                         *
  * INPUT:                                                                  *
  *		net		Network Number for this address										*
@@ -180,27 +180,19 @@ void IPXAddressClass::Set_Address(NetNumType net, NetNodeType node)
  * HISTORY:                                                                *
  *   12/19/1994 BR : Created.                                              *
  *=========================================================================*/
-void IPXAddressClass::Set_Address(IPXHeaderType *header)
+void UDPAddressClass::Set_Address(UDPHeaderType *header)
 {
-#ifdef WINSOCK_IPX
-	ProtocolEnum protocol = PROTOCOL_IPX;
-	if ( PacketTransport ) protocol = PacketTransport->Get_Protocol();
-
-	switch ( protocol ) {
-
-		case PROTOCOL_IPX:
-			memcpy(NetworkNumber,header->SourceNetworkNumber,4);
-			memcpy(NodeAddress,header->SourceNetworkNode,6);
-			break;
-
-		case PROTOCOL_UDP:
-			uint8_t *addr = (uint8_t*) header;
-			memset (NodeAddress, 0, 6);
-			memcpy (NodeAddress, addr, 4);
-			memset (NetworkNumber, 0, 4);
-			break;
+#ifdef NETWORK_UDP
+	if (PacketTransport && PacketTransport->Get_Protocol() == PROTOCOL_UDP) {
+		uint8_t *addr = (uint8_t*) header;
+		memset (NodeAddress, 0, 6);
+		memcpy (NodeAddress, addr, 4);
+		memset (NetworkNumber, 0, 4);
+	} else {
+		memcpy(NetworkNumber,header->SourceNetworkNumber,4);
+		memcpy(NodeAddress,header->SourceNetworkNode,6);
 	}
-#else	//WINSOCK_IPX
+#else	//NETWORK_UDP
 
 	if (header) {
 		memcpy(NetworkNumber,header->SourceNetworkNumber,4);
@@ -213,13 +205,13 @@ void IPXAddressClass::Set_Address(IPXHeaderType *header)
 		memset(NodeAddress, 1, 6);
 	}
 
-#endif	//WINSOCK_IPX
+#endif	//NETWORK_UDP
 
 }	/* end of Set_Address */
 
 
 /***************************************************************************
- * IPXAddressClass::Get_Address -- retrieves the IPX address values        *
+ * UDPAddressClass::Get_Address -- retrieves the UDP address values        *
  *                                                                         *
  * INPUT:                                                                  *
  *		net		Network Number for this address										*
@@ -234,7 +226,7 @@ void IPXAddressClass::Set_Address(IPXHeaderType *header)
  * HISTORY:                                                                *
  *   12/19/1994 BR : Created.                                              *
  *=========================================================================*/
-void IPXAddressClass::Get_Address(NetNumType net, NetNodeType node)
+void UDPAddressClass::Get_Address(NetNumType net, NetNodeType node)
 {
 	memcpy(net,NetworkNumber,4);
 	memcpy(node,NodeAddress,6);
@@ -243,7 +235,7 @@ void IPXAddressClass::Get_Address(NetNumType net, NetNodeType node)
 
 
 /***************************************************************************
- * IPXAddressClass::Get_Address -- copies address into an IPX header			*
+ * UDPAddressClass::Get_Address -- copies address into an UDP header			*
  *                                                                         *
  * INPUT:                                                                  *
  *		net		Network Number for this address										*
@@ -258,7 +250,7 @@ void IPXAddressClass::Get_Address(NetNumType net, NetNodeType node)
  * HISTORY:                                                                *
  *   12/19/1994 BR : Created.                                              *
  *=========================================================================*/
-void IPXAddressClass::Get_Address(IPXHeaderType *header)
+void UDPAddressClass::Get_Address(UDPHeaderType *header)
 {
 	memcpy(header->DestNetworkNumber,NetworkNumber,4);
 	memcpy(header->DestNetworkNode,NodeAddress,6);
@@ -267,7 +259,7 @@ void IPXAddressClass::Get_Address(IPXHeaderType *header)
 
 
 /***************************************************************************
- * IPXAddressClass::Is_Broadcast -- tells if this is a broadcast address   *
+ * UDPAddressClass::Is_Broadcast -- tells if this is a broadcast address   *
  *                                                                         *
  * INPUT:                                                                  *
  *		none.																						*
@@ -281,7 +273,7 @@ void IPXAddressClass::Get_Address(IPXHeaderType *header)
  * HISTORY:                                                                *
  *   12/19/1994 BR : Created.                                              *
  *=========================================================================*/
-int IPXAddressClass::Is_Broadcast(void)
+int UDPAddressClass::Is_Broadcast(void)
 {
 	if (	NetworkNumber[0] == 0xff &&
 			NetworkNumber[1] == 0xff &&
@@ -303,7 +295,7 @@ int IPXAddressClass::Is_Broadcast(void)
 
 
 /***************************************************************************
- * IPXAddressClass::operator== -- overloaded comparison operator           *
+ * UDPAddressClass::operator== -- overloaded comparison operator           *
  *                                                                         *
  * Since, if NETX isn't running, the network number on a received packet	*
  * can be bogus (all 0's), only the node address is used for comparison 	*
@@ -321,7 +313,7 @@ int IPXAddressClass::Is_Broadcast(void)
  * HISTORY:                                                                *
  *   12/19/1994 BR : Created.                                              *
  *=========================================================================*/
-int IPXAddressClass::operator == (IPXAddressClass & addr)
+int UDPAddressClass::operator == (UDPAddressClass & addr)
 {
 	//------------------------------------------------------------------------
 	//	If either Network Number is all 0's (which can happen if the system is
@@ -361,7 +353,7 @@ int IPXAddressClass::operator == (IPXAddressClass & addr)
 
 
 /***************************************************************************
- * IPXAddressClass::operator!= -- overloaded comparison operator           *
+ * UDPAddressClass::operator!= -- overloaded comparison operator           *
  *                                                                         *
  * Since, if NETX isn't running, the network number on a received packet	*
  * can be bogus (all 0's), only the node address is used for comparison 	*
@@ -379,7 +371,7 @@ int IPXAddressClass::operator == (IPXAddressClass & addr)
  * HISTORY:                                                                *
  *   12/19/1994 BR : Created.                                              *
  *=========================================================================*/
-int IPXAddressClass::operator != (IPXAddressClass & addr)
+int UDPAddressClass::operator != (UDPAddressClass & addr)
 {
 	//------------------------------------------------------------------------
 	//	If either Network Number is all 0's (which can happen if the system is
@@ -418,7 +410,7 @@ int IPXAddressClass::operator != (IPXAddressClass & addr)
 
 
 /***************************************************************************
- * IPXAddressClass::operator > -- overloaded comparison operator           *
+ * UDPAddressClass::operator > -- overloaded comparison operator           *
  *                                                                         *
  * INPUT:                                                                  *
  *		addr		address to compare to													*
@@ -432,7 +424,7 @@ int IPXAddressClass::operator != (IPXAddressClass & addr)
  * HISTORY:                                                                *
  *   12/19/1994 BR : Created.                                              *
  *=========================================================================*/
-int IPXAddressClass::operator > (IPXAddressClass & addr)
+int UDPAddressClass::operator > (UDPAddressClass & addr)
 {
 	return(memcmp(this, &addr, 10) > 0);
 
@@ -440,7 +432,7 @@ int IPXAddressClass::operator > (IPXAddressClass & addr)
 
 
 /***************************************************************************
- * IPXAddressClass::operator < -- overloaded comparison operator           *
+ * UDPAddressClass::operator < -- overloaded comparison operator           *
  *                                                                         *
  * INPUT:                                                                  *
  *		addr		address to compare to													*
@@ -454,7 +446,7 @@ int IPXAddressClass::operator > (IPXAddressClass & addr)
  * HISTORY:                                                                *
  *   12/19/1994 BR : Created.                                              *
  *=========================================================================*/
-int IPXAddressClass::operator < (IPXAddressClass & addr)
+int UDPAddressClass::operator < (UDPAddressClass & addr)
 {
 	return(memcmp(this, &addr, 10) < 0);
 
@@ -462,7 +454,7 @@ int IPXAddressClass::operator < (IPXAddressClass & addr)
 
 
 /***************************************************************************
- * IPXAddressClass::operator >= -- overloaded comparison operator          *
+ * UDPAddressClass::operator >= -- overloaded comparison operator          *
  *                                                                         *
  * INPUT:                                                                  *
  *		addr		address to compare to													*
@@ -476,7 +468,7 @@ int IPXAddressClass::operator < (IPXAddressClass & addr)
  * HISTORY:                                                                *
  *   12/19/1994 BR : Created.                                              *
  *=========================================================================*/
-int IPXAddressClass::operator >= (IPXAddressClass & addr)
+int UDPAddressClass::operator >= (UDPAddressClass & addr)
 {
 	return(memcmp(this, &addr, 10) >= 0);
 
@@ -484,7 +476,7 @@ int IPXAddressClass::operator >= (IPXAddressClass & addr)
 
 
 /***************************************************************************
- * IPXAddressClass::operator <= -- overloaded comparison operator          *
+ * UDPAddressClass::operator <= -- overloaded comparison operator          *
  *                                                                         *
  * INPUT:                                                                  *
  *		addr		address to compare to													*
@@ -498,10 +490,10 @@ int IPXAddressClass::operator >= (IPXAddressClass & addr)
  * HISTORY:                                                                *
  *   12/19/1994 BR : Created.                                              *
  *=========================================================================*/
-int IPXAddressClass::operator <= (IPXAddressClass & addr)
+int UDPAddressClass::operator <= (UDPAddressClass & addr)
 {
 	return(memcmp(this, &addr, 10) <= 0);
 
 }	/* end of operator<= */
 
-/************************** end of ipxaddr.cpp *****************************/
+/************************** end of udpaddr.cpp *****************************/

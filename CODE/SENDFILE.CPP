@@ -47,12 +47,12 @@
 
 //#include "WOLDEBUG.H"
 
-#ifdef WINSOCK_IPX
+#ifdef NETWORK_UDP
 #include "WSPROTO.H"
 #else
 
 #include	"TCPIP.H"
-#endif	//WINSOCK_IPX
+#endif	//NETWORK_UDP
 
 bool Receive_Remote_File ( char *file_name, uint32_t file_length, int gametype);
 bool Send_Remote_File ( char *file_name, int gametype );
@@ -95,7 +95,7 @@ bool Get_Scenario_File_From_Host(char *return_name, int gametype)
 	uint32_t		packet_len;
 	uint16_t		product_id;
 
-	IPXAddressClass	sender_address;
+	UDPAddressClass	sender_address;
 
 	CDTimerClass<SystemTimerClass> response_timer;		// timeout timer for waiting for responses
 
@@ -104,7 +104,7 @@ bool Get_Scenario_File_From_Host(char *return_name, int gametype)
 	*/
 	memset ((void*)&net_send_packet, 0, sizeof (net_send_packet));
 	net_send_packet.Command = NET_REQ_SCENARIO;
-	Ipx.Send_Global_Message (&net_send_packet, sizeof (net_send_packet),
+	Udp.Send_Global_Message (&net_send_packet, sizeof (net_send_packet),
 		1, &(Session.HostAddress) );
 
 
@@ -162,7 +162,7 @@ bool Receive_Remote_File ( char *file_name, uint32_t file_length, int gametype)
 
 	//WWDebugString ("RA95 - In Receive_Remote_File\n");
 	uint16_t		product_id;
-	IPXAddressClass	sender_address;
+	UDPAddressClass	sender_address;
 
 	/*
 	** Dialog & button dimensions
@@ -341,18 +341,18 @@ bool Receive_Remote_File ( char *file_name, uint32_t file_length, int gametype)
 		}
 
 
-		Ipx.Service();
+		Udp.Service();
 
 		int receive_packet_len = sizeof (receive_packet);
-		if (Ipx.Get_Global_Message (&receive_packet, &receive_packet_len,
+		if (Udp.Get_Global_Message (&receive_packet, &receive_packet_len,
 			&sender_address, &product_id)){
 
-#ifdef WINSOCK_IPX
+#ifdef NETWORK_UDP
 			if (receive_packet.Command == NET_FILE_CHUNK && sender_address == Session.HostAddress){
-#else	//WINSOCK_IPX
+#else	//NETWORK_UDP
 			if (receive_packet.Command == NET_FILE_CHUNK &&
 						(Winsock.Get_Connected() || sender_address == Session.HostAddress)){
-#endif	//WINSOCK_IPX
+#endif	//NETWORK_UDP
 
 				if (receive_packet.BlockNumber == last_received_block + 1){
 
@@ -571,12 +571,12 @@ bool Send_Remote_File ( char *file_name, int gametype )
 		net_file_info.ScenarioInfo.FileLength = file_length;
 
 		for (int i=0 ; i<Session.RequestCount ; i++){
-			Ipx.Send_Global_Message (&net_file_info, sizeof (GlobalPacketType),
+			Udp.Send_Global_Message (&net_file_info, sizeof (GlobalPacketType),
 				1, &(Session.Players[Session.ScenarioRequests[i]]->Address) );
 		}
 
-		while (Ipx.Global_Num_Send() > 0 && response_timer) {
-			Ipx.Service();
+		while (Udp.Global_Num_Send() > 0 && response_timer) {
+			Udp.Service();
 		}
 
 
@@ -655,11 +655,11 @@ bool Send_Remote_File ( char *file_name, int gametype )
 		}
 
 
-		Ipx.Service();
+		Udp.Service();
 
 		if (block_number < total_blocks){
 
-			if ( Ipx.Global_Num_Send() == 0 ){
+			if ( Udp.Global_Num_Send() == 0 ){
 
 				send_packet.Command = NET_FILE_CHUNK;
 				send_packet.BlockNumber = block_number;
@@ -671,7 +671,7 @@ bool Send_Remote_File ( char *file_name, int gametype )
 
 				if (send_file.Read (read_ptr , send_packet.BlockLength) == send_packet.BlockLength){
 					for (int i=0 ; i<Session.RequestCount ; i++){
-						Ipx.Send_Global_Message (&send_packet, sizeof (send_packet),
+						Udp.Send_Global_Message (&send_packet, sizeof (send_packet),
 							1, &(Session.Players[Session.ScenarioRequests[i]]->Address) );
 					}
 				}
@@ -687,7 +687,7 @@ bool Send_Remote_File ( char *file_name, int gametype )
 
 			}
 		}else{
-			if (Ipx.Global_Num_Send() == 0){
+			if (Udp.Global_Num_Send() == 0){
 				process = false;
 				return_code = true;
 				progress_meter.Set_Value ( 100 );

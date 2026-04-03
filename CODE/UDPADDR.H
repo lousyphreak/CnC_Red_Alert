@@ -16,14 +16,14 @@
 **	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/* $Header: /CounterStrike/IPXADDR.H 1     3/03/97 10:24a Joe_bostic $ */
+/* $Header: /CounterStrike/UDPADDR.H 1     3/03/97 10:24a Joe_bostic $ */
 /***************************************************************************
  **   C O N F I D E N T I A L --- W E S T W O O D    S T U D I O S        **
  ***************************************************************************
  *                                                                         *
  *                 Project Name : Command & Conquer                        *
  *                                                                         *
- *                    File Name : IPXADDR.H                                *
+ *                    File Name : UDPADDR.H                                *
  *                                                                         *
  *                   Programmer : Bill Randolph                            *
  *                                                                         *
@@ -31,9 +31,9 @@
  *                                                                         *
  *                  Last Update : December 19, 1994   [BR]                 *
  *                                                                         *
- * This class is useful for any IPX-related code.  It's just a utility		*
- * to help manage those annoying IPX address fields.  This class lets you	*
- * compare addresses, copy addresses to & from the IPX header, etc.			*
+ * This class is useful for any UDP-related code.  It's just a utility		*
+ * to help manage those annoying UDP address fields.  This class lets you	*
+ * compare addresses, copy addresses to & from the UDP header, etc.			*
  *                                                                         *
  * The class has no virtual functions, so you can treat this class just		*
  * like a data structure; it can be loaded & saved, and even transmitted	*
@@ -41,16 +41,16 @@
  *                                                                         *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#ifndef IPXADDR_H
-#define IPXADDR_H
+#ifndef UDPADDR_H
+#define UDPADDR_H
 
-#include "IPX.H"
+#include "UDP.H"
 // for NetNumType & NetNodeType
 
 /*
 ***************************** Class Declaration *****************************
 */
-class IPXAddressClass
+class UDPAddressClass
 {
 	/*
 	---------------------------- Public Interface ----------------------------
@@ -59,22 +59,22 @@ class IPXAddressClass
 		/*.....................................................................
 		Constructors:
 		.....................................................................*/
-		IPXAddressClass(void);
-		IPXAddressClass(NetNumType net, NetNodeType node);
-		IPXAddressClass(IPXHeaderType *header);
+		UDPAddressClass(void);
+		UDPAddressClass(NetNumType net, NetNodeType node);
+		UDPAddressClass(UDPHeaderType *header);
 
 		/*.....................................................................
 		Set the address from explicit variables, or from the SOURCE values
-		in an IPX packet header.
+		in an UDP packet header.
 		.....................................................................*/
 		void Set_Address(NetNumType net, NetNodeType node);
-		void Set_Address(IPXHeaderType *header);
+		void Set_Address(UDPHeaderType *header);
 		/*.....................................................................
 		Get the address values explicitly, or copy them into the DESTINATION
-		values in an IPX packet header.
+		values in an UDP packet header.
 		.....................................................................*/
 		void Get_Address (NetNumType net, NetNodeType node);
-		void Get_Address(IPXHeaderType *header);
+		void Get_Address(UDPHeaderType *header);
 
 		/*.....................................................................
 		Tells if this address is a broadcast address
@@ -84,12 +84,12 @@ class IPXAddressClass
 		/*.....................................................................
 		Overloaded operators:
 		.....................................................................*/
-		int operator == (IPXAddressClass & addr);
-		int operator != (IPXAddressClass & addr);
-		int operator > (IPXAddressClass &addr);
-		int operator < (IPXAddressClass &addr);
-		int operator >= (IPXAddressClass &addr);
-		int operator <= (IPXAddressClass &addr);
+		int operator == (UDPAddressClass & addr);
+		int operator != (UDPAddressClass & addr);
+		int operator > (UDPAddressClass &addr);
+		int operator < (UDPAddressClass &addr);
+		int operator >= (UDPAddressClass &addr);
+		int operator <= (UDPAddressClass &addr);
 	/*
 	-------------------------- Protected Interface ---------------------------
 	*/
@@ -104,4 +104,4 @@ class IPXAddressClass
 
 #endif
 
-/**************************** end of ipxaddr.h *****************************/
+/**************************** end of udpaddr.h *****************************/

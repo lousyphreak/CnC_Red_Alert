@@ -16,14 +16,14 @@
 **	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/* $Header: /CounterStrike/IPXCONN.H 1     3/03/97 10:24a Joe_bostic $ */
+/* $Header: /CounterStrike/UDPCONN.H 1     3/03/97 10:24a Joe_bostic $ */
 /***************************************************************************
  **   C O N F I D E N T I A L --- W E S T W O O D    S T U D I O S        **
  ***************************************************************************
  *                                                                         *
  *                 Project Name : Command & Conquer                        *
  *                                                                         *
- *                    File Name : IPXCONN.H                                *
+ *                    File Name : UDPCONN.H                                *
  *                                                                         *
  *                   Programmer : Bill Randolph                            *
  *                                                                         *
@@ -33,7 +33,7 @@
  *                                                                         *
  *-------------------------------------------------------------------------*
  *                                                                         *
- * This is the Connection Class for IPX communications.  It inherits			*
+ * This is the Connection Class for UDP communications.  It inherits			*
  * a Queue, PacketBuf, timeout variables from ConnectionClass.  It 			*
  * inherits its Send_/Receive_/Get_Packet functions, and the sequenced		*
  * ACK/Retry logic in Service_Send_Queue & Service_Receive_Queue from		*
@@ -41,8 +41,8 @@
  *																									*
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#ifndef IPXCONN_H
-#define IPXCONN_H
+#ifndef UDPCONN_H
+#define UDPCONN_H
 #include <stdint.h>
 
 
@@ -50,12 +50,12 @@
 ********************************* Includes **********************************
 */
 #include "CONNECT.H"
-#include "IPXADDR.H"
+#include "UDPADDR.H"
 
 /*
 ***************************** Class Declaration *****************************
 */
-class IPXConnClass : public ConnectionClass
+class UDPConnClass : public ConnectionClass
 {
 	/*
 	---------------------------- Public Interface ----------------------------
@@ -64,17 +64,17 @@ class IPXConnClass : public ConnectionClass
 		/*.....................................................................
 		Various useful enums:
 		.....................................................................*/
-		enum IPXConnTag {
+		enum UDPConnTag {
 			CONN_NAME_MAX = 40			// max # chars allowed for connection name
 		};
 
 		/*.....................................................................
 		Constructor/destructor.
 		.....................................................................*/
-		IPXConnClass(int numsend, int numrecieve, int maxlen,
-			uint16_t magicnum, IPXAddressClass *address, int id, char *name,
+		UDPConnClass(int numsend, int numrecieve, int maxlen,
+			uint16_t magicnum, UDPAddressClass *address, int id, char *name,
 			int extralen = 0);
-		virtual ~IPXConnClass () {};
+		virtual ~UDPConnClass () {};
 
 		/*.....................................................................
 		Initialization.
@@ -88,23 +88,24 @@ class IPXConnClass : public ConnectionClass
 		.....................................................................*/
 		static void Configure(uint16_t socket,
 			int conn_num, ECBType *listen_ecb, ECBType *send_ecb,
-			IPXHeaderType *listen_header, IPXHeaderType *send_header,
+			UDPHeaderType *listen_header, UDPHeaderType *send_header,
 			char *listen_buf, char *send_buf, int32_t handler_rm_ptr,
 			int maxpacketlen);
 
 		/*.....................................................................
-		These routines tell IPX to start listening for packets, and to stop
+		These routines tell UDP to start listening for packets, and to stop
 		listening for packets.  They're static because they affect all
 		connections at once (there's no way to turn listening on for only one
 		connection; it's all or nothing).
 		.....................................................................*/
 		static int Start_Listening (void);
 		static int Stop_Listening (void);
+		static int Receive(char *buf, int buflen, UDPAddressClass *address);
 
 		/*.....................................................................
-		The Destination IPX Address for this connection
+		The Destination UDP Address for this connection
 		.....................................................................*/
-		IPXAddressClass Address;
+		UDPAddressClass Address;
 
 		/*.....................................................................
 		The "Immediate" (Bridge) address for this connection, and a flag
@@ -114,7 +115,7 @@ class IPXConnClass : public ConnectionClass
 		int Immed_Set;
 
 		/*.....................................................................
-		Each IPX Connection can have a Name & Unique numerical ID
+		Each UDP Connection can have a Name & Unique numerical ID
 		.....................................................................*/
 		int ID;
 		char Name[CONN_NAME_MAX];
@@ -131,14 +132,14 @@ class IPXConnClass : public ConnectionClass
 		virtual int Send (char *buf, int buflen, void *extrabuf, int extralen);
 
 		/*.....................................................................
-		These are the routines that access IPX.  Open_Socket & Close_Socket are
+		These are the routines that access UDP.  Open_Socket & Close_Socket are
 		static because they're called by Start_Listening & Stop_Listening.
-		Send_To & Broadcast are static since they're direct interfaces to IPX,
-		and there's only one IPX instance running.
+		Send_To & Broadcast are static since they're direct interfaces to UDP,
+		and there's only one UDP instance running.
 		.....................................................................*/
 		static int Open_Socket(uint16_t socket);
 		static void Close_Socket(uint16_t socket);
-		static int Send_To(char *buf, int buflen, IPXAddressClass *address,
+		static int Send_To(char *buf, int buflen, UDPAddressClass *address,
 			NetNodeType immed);
 		static int Broadcast(char *buf, int buflen);
 
@@ -160,24 +161,24 @@ class IPXConnClass : public ConnectionClass
 		static int PacketLen;
 
 		/*.....................................................................
-		Variables for Listening (created by the IPXManagerClass, and passed
-		in via Init).  All IPX connections share these buffers.
+		Variables for Listening (created by the UDPManagerClass, and passed
+		in via Init).  All UDP connections share these buffers.
 		.....................................................................*/
 		static ECBType *ListenECB;
-		static IPXHeaderType *ListenHeader;
+		static UDPHeaderType *ListenHeader;
 		static char *ListenBuf;
 
 		/*.....................................................................
-		Variables for Sending (created by the IPXManagerClass, and passed
-		in via Init).  All IPX connections share these buffers.
+		Variables for Sending (created by the UDPManagerClass, and passed
+		in via Init).  All UDP connections share these buffers.
 		.....................................................................*/
 		static ECBType *SendECB;
-		static IPXHeaderType *SendHeader;
+		static UDPHeaderType *SendHeader;
 		static char *SendBuf;
 
 		/*.....................................................................
-		This is a REAL-MODE pointer to the event-service-routine for IPX.
-		If it's 0, IPX will operate in polled mode.  Otherwise, the high word
+		This is a REAL-MODE pointer to the event-service-routine for UDP.
+		If it's 0, UDP will operate in polled mode.  Otherwise, the high word
 		must contain the segment, and the low word must contain the offset.
 		CS will be the high word value when the routine is called.  (Requiring
 		the segment/offset to be computed by the caller gives the caller
@@ -203,4 +204,4 @@ class IPXConnClass : public ConnectionClass
 
 #endif
 
-/*************************** end of ipxconn.h ******************************/
+/*************************** end of udpconn.h ******************************/

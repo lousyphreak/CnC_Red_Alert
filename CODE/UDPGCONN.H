@@ -16,14 +16,14 @@
 **	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/* $Header: /CounterStrike/IPXGCONN.H 1     3/03/97 10:24a Joe_bostic $ */
+/* $Header: /CounterStrike/UDPGCONN.H 1     3/03/97 10:24a Joe_bostic $ */
 /***************************************************************************
  **   C O N F I D E N T I A L --- W E S T W O O D    S T U D I O S        **
  ***************************************************************************
  *                                                                         *
  *                 Project Name : Command & Conquer                        *
  *                                                                         *
- *                    File Name : IPXGCONN.H                               *
+ *                    File Name : UDPGCONN.H                               *
  *                                                                         *
  *                   Programmer : Bill Randolph                            *
  *                                                                         *
@@ -33,13 +33,13 @@
  *                                                                         *
  *-------------------------------------------------------------------------*
  *                                                                         *
- * This class is a special type of IPX Connection.  It can talk to more		*
+ * This class is a special type of UDP Connection.  It can talk to more		*
  * than one system at a time.  It can Broadcast packets to all systems,		*
  * or send a packet to one individual system.  The packets it sends to		*
  * individual systems can be DATA_NOACK or DATA_ACK packets, but the			*
  * packets broadcast have to be DATA_NOACK packets.  This class is for		*
  * only the crudest "Who-are-you" type of network communications.  Once		*
- * the IPX Address of another system is identified, a "real" IPX				*
+ * the UDP Address of another system is identified, a "real" UDP				*
  * Connection should be created, & further communications done through it.	*
  *																									*
  * This means that the packet ID field no longer can be used to detect		*
@@ -75,12 +75,12 @@
  *																									*
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#ifndef IPXGLOBALCONN_H
-#define IPXGLOBALCONN_H
+#ifndef UDPGLOBALCONN_H
+#define UDPGLOBALCONN_H
 #include <stdint.h>
 
 
-#include "IPXCONN.H"
+#include "UDPCONN.H"
 
 /*
 ********************************** Defines **********************************
@@ -88,8 +88,8 @@
 //---------------------------------------------------------------------------
 // This is the header for Global Connection messages.  It includes the usual
 // "standard" header that the other connections do; but it also includes an
-// IPX address field, so the application can get the address of the sender
-// of this message.  This address field must be provided in by the IPX
+// UDP address field, so the application can get the address of the sender
+// of this message.  This address field must be provided in by the UDP
 // Connection Manager class, when it calls this class's Receive_Packet
 // function.
 //---------------------------------------------------------------------------
@@ -102,7 +102,7 @@ typedef struct {
 /*
 ***************************** Class Declaration *****************************
 */
-class IPXGlobalConnClass : public IPXConnClass
+class UDPGlobalConnClass : public UDPConnClass
 {
 	//------------------------------------------------------------------------
 	// Public Interface
@@ -134,19 +134,19 @@ class IPXGlobalConnClass : public IPXConnClass
 		//.....................................................................
 		// Constructor/destructor.
 		//.....................................................................
-		IPXGlobalConnClass (int numsend, int numrecieve, int maxlen,
+		UDPGlobalConnClass (int numsend, int numrecieve, int maxlen,
 			uint16_t product_id);
-		virtual ~IPXGlobalConnClass () {};
+		virtual ~UDPGlobalConnClass () {};
 
 		//.....................................................................
 		// Send/Receive routines.
 		//.....................................................................
 		virtual int Send_Packet (void * buf, int buflen,
-			IPXAddressClass *address, int ack_req);
+			UDPAddressClass *address, int ack_req);
 		virtual int Receive_Packet (void * buf, int buflen,
-			IPXAddressClass *address);
+			UDPAddressClass *address);
 		virtual int Get_Packet (void * buf, int *buflen,
-			IPXAddressClass *address, uint16_t *product_id);
+			UDPAddressClass *address, uint16_t *product_id);
 
 		//.....................................................................
 		// This is for telling the connection it can cross a bridge.
@@ -196,11 +196,11 @@ class IPXGlobalConnClass : public IPXConnClass
 		// Note that, if network traffic is heavy, it's still possible for an
 		// app to receive the same packet twice!
 		//.....................................................................
-		IPXAddressClass LastAddress[4];	// array of last 4 addresses
+		UDPAddressClass LastAddress[4];	// array of last 4 addresses
 		uint32_t LastPacketID[4];	// array of last 4 packet ID's
 		int LastRXIndex;						// index of next avail pos
 };
 
 #endif
 
-/*************************** end of ipxgconn.h *****************************/
+/*************************** end of udpgconn.h *****************************/

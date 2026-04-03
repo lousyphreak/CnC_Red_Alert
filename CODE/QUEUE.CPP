@@ -362,7 +362,7 @@ void Queue_AI(void)
 				Queue_AI_Normal();
 				break;
 
-			case GAME_IPX:
+			case GAME_UDP:
 			case GAME_INTERNET:
 			case GAME_TEN:
 			case GAME_MPATH:
@@ -596,10 +596,10 @@ static void Queue_AI_Multiplayer(void)
 	//------------------------------------------------------------------------
 	//	Initialize the packet buffer pointer & its max size
 	//------------------------------------------------------------------------
-	if (Session.Type == GAME_IPX || Session.Type == GAME_INTERNET) {
+	if (Session.Type == GAME_UDP || Session.Type == GAME_INTERNET) {
 		multi_packet_buf = Session.MetaPacket;
 		multi_packet_max = Session.MetaSize;
-		net = &Ipx;
+		net = &Udp;
 	}
 #if(TEN)
 	else if (Session.Type == GAME_TEN) {
@@ -1229,7 +1229,7 @@ static void Generate_Timing_Event(ConnManClass *net, int my_sent)
 			// response time.
 			//..................................................................
 			else {
-				if (Session.Type == GAME_IPX || Session.Type == GAME_INTERNET) {
+				if (Session.Type == GAME_UDP || Session.Type == GAME_INTERNET) {
 					ev.Data.FrameInfo.Delay = max(static_cast<uint32_t>(resp_time / 8),
 						 static_cast<uint32_t>(NETWORK_MIN_MAX_AHEAD));
 				}
@@ -2000,7 +2000,7 @@ static int Handle_Timeout(ConnManClass *net, int32_t *their_frame,
 	//------------------------------------------------------------------------
 	//	For network, destroy the oldest connection
 	//------------------------------------------------------------------------
-	if (Session.Type == GAME_IPX || Session.Type == GAME_INTERNET ||
+	if (Session.Type == GAME_UDP || Session.Type == GAME_INTERNET ||
 		Session.Type == GAME_TEN || Session.Type == GAME_MPATH) {
 		j = 0x7fffffff;
 		oldest_index = 0;
@@ -2029,7 +2029,7 @@ static int Handle_Timeout(ConnManClass *net, int32_t *their_frame,
 				their_sent[i] = their_sent[i+1];
 				their_recv[i] = their_recv[i+1];
 			}
-			if (Session.Type == GAME_IPX || Session.Type == GAME_INTERNET) {
+			if (Session.Type == GAME_UDP || Session.Type == GAME_INTERNET) {
 				Destroy_Connection(id,1);
 			}
 #if(TEN)
@@ -3119,7 +3119,7 @@ static int Execute_DoList(int max_houses, HousesType base_house,
 					//	for that player.  The HousesType for this event is the
 					// connection ID.
 					//............................................................
-						if ((Session.Type == GAME_IPX ||
+						if ((Session.Type == GAME_UDP ||
 							Session.Type == GAME_INTERNET ||
 							Session.Type == GAME_TEN ||
 							Session.Type == GAME_MPATH) && net) {
@@ -3130,7 +3130,7 @@ static int Execute_DoList(int max_houses, HousesType base_house,
 									their_sent[k] = their_sent[k+1];
 									their_recv[k] = their_recv[k+1];
 								}
-								if (Session.Type == GAME_IPX ||
+								if (Session.Type == GAME_UDP ||
 									Session.Type == GAME_INTERNET) {
 									Destroy_Connection(house,0);
 								}
@@ -3194,7 +3194,7 @@ static int Execute_DoList(int max_houses, HousesType base_house,
 
 							if (WWMessageBox().Process (TXT_OUT_OF_SYNC,
 								TXT_CONTINUE, TXT_STOP) == 0) {
-								if ((Session.Type == GAME_IPX ||
+								if ((Session.Type == GAME_UDP ||
 									Session.Type == GAME_INTERNET) && net) {
 									while (net->Num_Connections()) {
 										Keyboard->Check();
@@ -3280,7 +3280,7 @@ static void Clean_DoList(ConnManClass *net)
 		//	Discard events that have been executed, OR it's too late to execute.
 		//	(This happens if another player exits the game; he'll leave FRAMEINFO
 		//	events lying around in my queue.  They won't have been "executed",
-		//	because his IPX connection was destroyed.)
+		//	because his UDP connection was destroyed.)
 		//.....................................................................
 		if ( (DoList.First().IsExecuted) || (Frame > DoList.First().Frame) ) {
 			DoList.Next();

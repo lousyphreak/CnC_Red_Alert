@@ -38,7 +38,7 @@
 #define SESSION_H
 #include <stdint.h>
 
-#include "IPXADDR.H"
+#include "UDPADDR.H"
 #include "MSGLIST.H"
 #include "CONNECT.H"
 //---------------------------------------------------------------------------
@@ -63,10 +63,10 @@ class CellClass;
 
 //...........................................................................
 // Max sizes of packets we want to send
-// The IPX packet's size is IPX's max size (546), rounded down to accommodate
+// The UDP packet's size is UDP's max size (546), rounded down to accommodate
 // the max number of events possible.
 //...........................................................................
-#define	MAX_IPX_PACKET_SIZE			(((546 - sizeof(CommHeaderType)) / \
+#define	MAX_UDP_PACKET_SIZE			(((546 - sizeof(CommHeaderType)) / \
 												sizeof(EventClass) ) * sizeof(EventClass))
 #define	MAX_FILE_PACKET_SIZE			256
 
@@ -109,7 +109,7 @@ class CellClass;
 //...........................................................................
 typedef enum GameEnum {
 	GAME_NORMAL,									// not multiplayer
-	GAME_IPX = 3,									// IPX Network game
+	GAME_UDP = 3,									// UDP Network game
 	GAME_INTERNET = 4,							// Internet H2H
 	GAME_SKIRMISH = 5,							// 1 plr vs. AI's
 	GAME_TEN = 6,									// TEN Network game
@@ -161,7 +161,7 @@ typedef struct {
 //...........................................................................
 typedef struct NodeNameTag {
 	char Name[MPLAYER_NAME_MAX];		// player or game name
-		IPXAddressClass Address;
+		UDPAddressClass Address;
 #if(TEN)
 		int TenAddress;
 #endif
@@ -457,13 +457,13 @@ class SessionClass
 
 		char ScenarioRequests[20];		//Which players requested scenario files
 		int  RequestCount;
-		IPXAddressClass	HostAddress;
+		UDPAddressClass	HostAddress;
 
 		//.....................................................................
 		// This is the multiplayer messaging system
 		//.....................................................................
 		MessageListClass Messages;
-		IPXAddressClass MessageAddress;
+		UDPAddressClass MessageAddress;
 		char LastMessage[MAX_MESSAGE_LENGTH];
 
 		//.....................................................................
@@ -492,19 +492,19 @@ class SessionClass
 		unsigned Attract			 	: 1;
 
 		//.....................................................................
-		// IPX-specific variables
+		// UDP-specific variables
 		//.....................................................................
 		int IsBridge;								// 1 = we're crossing a bridge
-		IPXAddressClass BridgeNet;				// address of bridge
+		UDPAddressClass BridgeNet;				// address of bridge
 		bool NetStealth;							// makes us invisible
 		bool NetProtect;							// keeps others from messaging us
 		bool NetOpen;								// 1 = game is open for joining
 		char GameName[MPLAYER_NAME_MAX];		// game's name
 		GlobalPacketType GPacket;				// global packet
 		int GPacketlen;							// global packet length
-		IPXAddressClass GAddress;				// address of sender
+		UDPAddressClass GAddress;				// address of sender
 		uint16_t GProductID;				// product ID of sender
-		char MetaPacket[MAX_IPX_PACKET_SIZE]; // packet building buffer
+		char MetaPacket[MAX_UDP_PACKET_SIZE]; // packet building buffer
 		int MetaSize;								// size of MetaPacket
 		DynamicVectorClass <NodeNameType *> Games;	// list of games
 		DynamicVectorClass <NodeNameType *> Players;	// list of players

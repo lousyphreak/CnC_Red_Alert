@@ -43,8 +43,6 @@
 #include	<cstdlib>
 #include <fcntl.h>
 
-#include	"IPX95.H"
-
 #ifdef WOLAPI_INTEGRATION
 //#include "WOLDEBUG.H"
 #endif
@@ -692,7 +690,7 @@ void Read_Setup_Options( RawFileClass *config_file )
 		if (socket >0 ) {
 			socket += 0x4000;
 			if (socket >= 0x4000 && socket < 0x8000) {
-				Ipx.Set_Socket (socket);
+				Udp.Set_Socket (socket);
 			}
 		}
 
@@ -732,7 +730,7 @@ void Read_Setup_Options( RawFileClass *config_file )
 			if (i >= 4) {
 				Session.IsBridge = 1;
 				memset(node, 0xff, 6);
-				Session.BridgeNet = IPXAddressClass(net, node);
+				Session.BridgeNet = UDPAddressClass(net, node);
 			}
 		}
 	}

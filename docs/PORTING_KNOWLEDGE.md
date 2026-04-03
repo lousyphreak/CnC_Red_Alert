@@ -5,8 +5,8 @@
 - `SDL3_COMPAT/wrappers/win32_compat.{h,cpp}` still needs periodic audits for wrappers that have no SDL-side behavior at all.
   - In this pass, the repo-owned dead stubs were `LoadIcon(...)` (always `nullptr`), `DialogBox(...)` (always `0`), and `GetVersion()` (always `0`).
   - Safe rule: if a compat wrapper is both non-functional and either unused or only feeding dead repo-owned code, delete the wrapper and remove the repo-owned caller chain instead of carrying a fake API forward.
-- `CODE/IPX95.CPP::Load_IPX_Dll()` is one concrete example of how to collapse a dead stub chain safely.
-  - Before cleanup, the SDL port called `Get_OS_Version()`, which called the stubbed `GetVersion()`, which always made `WindowsNT` true and therefore forced `Load_IPX_Dll()` to return `false`.
+- The old legacy Novell transport DLL loader path was one concrete example of how to collapse a dead stub chain safely before deleting it entirely.
+  - Before cleanup, the SDL port called `Get_OS_Version()`, which called the stubbed `GetVersion()`, which always made `WindowsNT` true and therefore forced that loader path to return `false`.
 - Safe cleanup rule: when a stubbed compat probe already deterministically forces one outcome, replace the call chain with that explicit outcome and delete the dead intermediate state/functions.
 
 ## TCP/IP socket compatibility belongs in repo-owned networking headers, not SDL compat wrappers
@@ -14,11 +14,25 @@
 - `SDL3_COMPAT/wrappers/winsock.h` had turned into a mixed bag of socket type aliases, byte-order macros, and WinSock no-op stubs that the repo-owned network code was depending on directly.
   - Practical problem: that made `CODE/TCPIP.CPP` look cross-platform while Unix was really just riding through fake `WSAAsync*` calls, and it tied unrelated repo-owned headers (`TCPIP.H`, `FIELD.H`, `WSPROTO.H`, `UTRACKER.CPP`) to an SDL compat wrapper they did not semantically need.
 - Safe rule for this tree: keep the legacy socket vocabulary in a repo-owned networking seam and split live behavior in the implementation file.
-  - Current fix pattern: `CODE/SOCKETS.H` now owns the shared `SOCKET`/`WSADATA`/`SOCKADDR_IPX`/macro surface for repo-owned code, while `_WIN32` includes the real system `<winsock.h>` and Unix provides the minimal POSIX-backed aliases the old code still expects.
+  - Current fix pattern: `CODE/SOCKETS.H` now owns the shared `SOCKET`/`WSADATA`/macro surface for repo-owned code, while `_WIN32` includes the real system `<winsock.h>` and Unix provides the minimal POSIX-backed aliases the old code still expects.
   - `CODE/TCPIP.CPP` then does the real behavior split: preserve the WinSock async path on Windows, but use direct Unix hostname lookup (`gethostbyname()` / `gethostbyaddr()`) and POSIX socket semantics instead of carrying WinSock no-op wrappers forward.
 - Socket-option and error handling need a small Unix-specific adjustment even when the surrounding gameplay logic stays unchanged.
   - Passing hardcoded `4`-byte option lengths is a Windows-era assumption; use `sizeof(int)`-driven helper calls instead so the same code is correct on both targets.
   - On Unix, reading `SO_ERROR` with `getsockopt()` is the portable way to consume the pending socket error; trying to clear it with `setsockopt(SO_ERROR, ...)` is not a portable replacement for the WinSock behavior.
+
+## The live UDP path needs a direct transport, not dormant Windows-only abstractions
+
+- Before the UDP rename cleanup, the current SDL/Linux build was still running the old fallback LAN transport branch rather than the separate Windows-only networking layer.
+  - Practical consequence: the code that actually mattered for LAN play lived in the former fallback LAN transport sources, not in the excluded Windows-specific transport layer.
+  - Safe rule for this tree: audit the active compile path first before spending time on dormant compatibility branches.
+- The safest UDP migration point is the transport seam underneath the existing connection manager, not a top-down rewrite of multiplayer logic.
+  - `UDPManagerClass`, `UDPConnClass`, `UDPGlobalConnClass`, the queue classes, and the packet headers already encapsulate the ACK/retry/session behavior the game expects.
+  - Current fix pattern: keep that API surface stable and replace only the live send/receive/open/listen/address plumbing with a nonblocking UDP socket plus `recvfrom()` sender-address capture.
+- The existing `UDPAddressClass` storage is still useful as a compatibility container even after the Novell transport is gone.
+  - Current policy: store the sender IPv4 address in the 4-byte `NetworkNumber` field and the UDP port in the first 2 bytes of `NodeAddress`, leaving the higher-level session/player plumbing unchanged.
+  - Broadcast and bridge cases can continue to use the existing all-`0xff` conventions, with bridge sends treated as explicit directed UDP targets instead of Novell local-target lookups.
+- Once the live callers are gone, delete the compiled dead transport files instead of leaving “always false” compatibility shells around.
+  - In this tree that meant deleting the old legacy Novell transport source set after the active LAN path stopped referencing it.
 
 ## SDL main-window path no longer needs Win32 class/show/focus wrappers
 
@@ -216,7 +230,7 @@ _Last updated: 2026-04-03_
     - `SessionClass` unique IDs, per-node last-heard timestamps, multiplayer version/CRC fields, `MaxAhead`, `FrameSendRate`, and sync-debug frame markers;
     - PlanetWestwood start-time and port globals used by the networking/statistics path.
 - When changing a base timing/protocol API, check the whole inheritance surface before declaring success.
-  - `ConnManClass::Response_Time()` / `Set_Timing()` still used `unsigned long` after the first `IPXManagerClass` conversion.
+  - `ConnManClass::Response_Time()` / `Set_Timing()` still used `unsigned long` after the first `UDPManagerClass` conversion.
   - The correct fix was to move the abstract interface and the alternate implementations (`TENMGR`, `MPMGRW`, `MPMGRD`) to fixed-width types too, not to backslide the derived SDL/Linux code.
 - The old retry-forever sentinel is still semantically required in the connection layer.
   - Original code compared retry counts/timeouts against `-1`.
@@ -316,12 +330,12 @@ _Last updated: 2026-04-03_
 - `CODE/NETDLG.CPP` needed a second, more targeted audit after the broad UI pass.
   - The main dialog loops there already matched the normal modal pattern and now yield on the `process` path, but the more important remaining hotspots were the small internal waits that do not look like UI loops at first glance.
   - Hot examples were:
-    - `while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0)` packet-drain loops used during sign-off, join/startup handshakes, and per-player message fanout;
-    - `while (Ipx.Global_Num_Send() > 0)` ACK waits after broadcasting `NET_GO` / `NET_LOADGAME`;
+    - `while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0)` packet-drain loops used during sign-off, join/startup handshakes, and per-player message fanout;
+    - `while (Udp.Global_Num_Send() > 0)` ACK waits after broadcasting `NET_GO` / `NET_LOADGAME`;
     - `while (TickCount - ok_timer < i)` grace-period waits before accepting OK/start when a new player just joined;
     - `while (TickCount - starttime < i)` post-ACK settle windows meant to give remote systems time to receive acknowledgements before local loading begins;
-    - the `response_timer`-bounded `do { ... Ipx.Service(); ... } while (...)` loops waiting for `NET_READY_TO_GO` / `NET_REQ_SCENARIO`.
-  - Safe rule for this class of code: if the loop is only waiting for network progress or a timer window and it already calls `Ipx.Service()`, add a tiny `Sleep(1)` so it becomes scheduler-friendly without changing handshake order or timeout semantics.
+    - the `response_timer`-bounded `do { ... Udp.Service(); ... } while (...)` loops waiting for `NET_READY_TO_GO` / `NET_REQ_SCENARIO`.
+  - Safe rule for this class of code: if the loop is only waiting for network progress or a timer window and it already calls `Udp.Service()`, add a tiny `Sleep(1)` so it becomes scheduler-friendly without changing handshake order or timeout semantics.
   - `CODE/{VISUDLG,SOUNDDLG}.CPP` should sleep whenever `process` remains true, not only for `GAME_NORMAL` / `GAME_SKIRMISH`; otherwise multiplayer/network invocations of the same dialogs can still spin even after the single-player pass is fixed.
 
 ## Dead-code cleanup guardrails
@@ -329,7 +343,7 @@ _Last updated: 2026-04-03_
 - "Not selected by CMake" is not sufficient proof that a file is dead in this tree.
 - `CODE/ADPCM.CPP` still directly `#include`s `CODE/ITABLE.CPP` and `CODE/DTABLE.CPP`, so those two `.CPP` files are still active implementation fragments even though they are filtered from the top-level `CODE/*.CPP` build list.
 - `CODE/2KEYFRAM.CPP` is still a live build input because the current `CMakeLists.txt` globs `CODE/*.CPP` and does **not** exclude that file. It provides the active `Build_Frame()`, `Get_Build_Frame_Count()`, `Get_Build_Frame_Width()`, `Get_Build_Frame_Height()`, `Get_Shape_Header_Data()`, and `IsTheaterShape` symbols used throughout the game.
-- The broad dead-code cleanup safely removed non-built archive/tool trees such as `LAUNCH/`, `LAUNCHER/`, `TOOLS/`, `IPX/`, `WWFLAT32/`, `VQ/VQM32/`, and the non-built `WINVQ/` source subtrees, plus non-built `WIN32LIB` archive/test trees. If more cleanup is needed later, start from those categories before touching `CODE/` implementation fragments or globbed root `.CPP` files.
+- The broad dead-code cleanup safely removed non-built archive/tool trees such as `LAUNCH/`, `LAUNCHER/`, `TOOLS/`, the legacy Novell transport tools tree, `WWFLAT32/`, `VQ/VQM32/`, and the non-built `WINVQ/` source subtrees, plus non-built `WIN32LIB` archive/test trees. If more cleanup is needed later, start from those categories before touching `CODE/` implementation fragments or globbed root `.CPP` files.
 - A safe second-pass target category is legacy build metadata that the SDL3/CMake build never reads: Borland/Watcom/TASM config files (`*.MAK`, `MAKEFILE*`, `*.CFG`, `*.DEF`, old batch rebuild scripts), old backup files (`*.BAK*`), and empty/obsolete assembler include stubs such as `FUNCTION.I`.
 - The remaining `CODE/*.ASM` files that were deleted in the second pass were not live build inputs on the SDL3 port. The only surviving references were comments, old project files, or archive `.INC` declarations; there were no active CMake targets or in-tree source includes depending on those assembler files.
 - Orphan headers that belonged only to already-deleted non-built implementation files (`BMP8.H`, `DIBUTIL.H`, `DPMI.H`, `TARCOM.H`, `TURRET.H`) were also safe to remove once repository-wide reference checks came back empty.
@@ -395,7 +409,6 @@ _Last updated: 2026-04-03_
     - `WINAPI`: the still-compiled `Sound_Thread` declaration in `WIN32LIB/AUDIO/SOUNDIO.CPP`;
     - `CALLBACK`: `WIN32LIB/TIMER/TIMERINI.CPP::Timer_Callback`;
     - `PASCAL` / `FAR` / `_export`: `CODE/WINSTUB.CPP::Windows_Procedure`;
-    - `__stdcall`: active `CODE/IPX95.H` declarations and function-pointer typedefs;
     - `far` / `near`: surviving HMI/SOS-era headers and declarations that are still compiled.
   - `APIENTRY` was the only macro in that contiguous block that had no surviving in-repo usage beyond its own definition, so it was safe to remove.
   - `__declspec` is currently only referenced by the inactive `CODE/MOVIE.H` DLL interface (`DLLCALL`). That makes it a follow-up cleanup candidate tied to the dead movie-DLL surface, not evidence that `APIENTRY` or the rest of the block must remain.
@@ -417,7 +430,7 @@ _Last updated: 2026-04-03_
 - The removed WChat path previously covered:
   - single-instance/DDE handoff in `CODE/STARTUP.CPP`;
   - WChat startup/start-packet handling in `CODE/INIT.CPP` and `CODE/INTERNET.CPP`;
-  - WChat-specific timing/state adjustments in `CODE/EVENT.CPP` and `CODE/IPXMGR.CPP`;
+  - WChat-specific timing/state adjustments in `CODE/EVENT.CPP` and `CODE/UDPMGR.CPP`;
   - WChat failure/return/reporting hooks in `CODE/SCENARIO.CPP`, `CODE/SAVELOAD.CPP`, `CODE/NETDLG.CPP`, and `CODE/CONQUER.CPP`;
   - the separate fake/internal `WWChat` session mode in the multiplayer dialog flow.
 - Practical rule going forward:
@@ -499,9 +512,9 @@ _Last updated: 2026-04-03_
 ## Removed BIOS/register surface
 
 - `SDL3_COMPAT/wrappers/bios.h` is gone. Do not reintroduce `union REGS`, `struct SREGS`, `bioskey()`, `segread()`, or `int386*`-style shims for the SDL3 port.
-- The supported port no longer carries any BIOS/DPMI/VESA/IPX real-mode fallback code in active sources.
-  - `CODE/IPX.CPP` keeps only the Win32/IPX95 path;
-  - `CODE/IPXMGR.CPP::Alloc_RealMode_Mem()` / `Free_RealMode_Mem()` are now explicit no-op success stubs on the supported path;
+- The supported port no longer carries any BIOS/DPMI/VESA/legacy-network real-mode fallback code in active sources.
+  - the later UDP multiplayer rewrite deleted the old legacy transport source set entirely;
+  - `CODE/UDPMGR.CPP::Alloc_RealMode_Mem()` / `Free_RealMode_Mem()` are now explicit no-op success stubs on the supported path;
   - `CODE/CDFILE.CPP` and `CODE/NULLMGR.CPP` no longer keep register-access fallback branches;
   - `WIN32LIB/MEM/ALLOC.CPP` now preserves only the supported malloc/free path.
 - The duplicate archive headers under `WIN32LIB/`, `VQ/INCLUDE/WWLIB32/`, and `WWFLAT32/` were trimmed so they no longer expose BIOS/DPMI CD-audio or descriptor-management types.

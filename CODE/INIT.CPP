@@ -66,14 +66,13 @@
 #include	<cstdio>
 #include	<cstdlib>
 #include	<stdint.h>
-#ifdef WINSOCK_IPX
+#ifdef NETWORK_UDP
 #include	"WSPROTO.H"
 #include	"WSPUDP.H"
-#include	"WSPIPX.H"
 #include	"INTERNET.H"
-#else	//WINSOCK_IPX
+#else	//NETWORK_UDP
 #include	"TCPIP.H"
-#endif	//WINSOCK_IPX
+#endif	//NETWORK_UDP
 
 extern int32_t BootstrapFocusSeen;
 
@@ -432,7 +431,7 @@ bool Init_Game(int , char * [])
 	return(true);
 }
 
-#ifdef WINSOCK_IPX			//	Steve Tall missed this one - ajw
+#ifdef NETWORK_UDP			//	Steve Tall missed this one - ajw
 extern bool Get_Broadcast_Addresses (void);
 #endif
 
@@ -944,7 +943,7 @@ bool Select_Game(bool fade)
 #endif
 							break;
 
-#ifdef WOLAPI_INTEGRATION		//	implies also WINSOCK_IPX
+#ifdef WOLAPI_INTEGRATION		//	implies also NETWORK_UDP
 						case GAME_INTERNET:
 							if( PacketTransport )
 								delete PacketTransport;
@@ -991,34 +990,21 @@ bool Select_Game(bool fade)
 #endif
 
 						/*
-						**	Network (IPX): start a new network game.
+						**	Network (UDP): start a new network game.
 						*/
-						case GAME_IPX:
-							WWDebugString ("RA95 - Game type is IPX.\n");
+						case GAME_UDP:
+							WWDebugString ("RA95 - Game type is UDP.\n");
 							/*
 							** Init network system & remote-connect
 							*/
-#ifdef WINSOCK_IPX
+#ifdef NETWORK_UDP
 							if (PacketTransport ) delete PacketTransport;
-//							if (WWMessageBox().Process("Select a protocol to use for network play.", "UDP", "IPX")) {
-								PacketTransport = new IPXInterfaceClass;
-								assert ( PacketTransport != NULL);
-//							}else{
-//								PacketTransport = new UDPInterfaceClass;	//IPXInterfaceClass;
-//								assert ( PacketTransport != NULL);
-//								if (!Get_Broadcast_Addresses()) {
-//									Session.Type = GAME_NORMAL;
-//									display = true;
-//									selection = SEL_NONE;
-//									delete PacketTransport;
-//									PacketTransport = NULL;
-//									break;
-//								}
-//							}
+							PacketTransport = new UDPInterfaceClass;
+							assert ( PacketTransport != NULL);
 
-#endif	//WINSOCK_IPX
+#endif	//NETWORK_UDP
 							WWDebugString ("RA95 - About to call Init_Network.\n");
-							if (Session.Type == GAME_IPX && Init_Network() && Remote_Connect()) {
+							if (Session.Type == GAME_UDP && Init_Network() && Remote_Connect()) {
 #ifdef FIXIT_VERSION_3
 								Options.ScoreVolume = Options.MultiScoreVolume;
 #else
@@ -1030,10 +1016,10 @@ bool Select_Game(bool fade)
 								Session.Type = GAME_NORMAL;
 								display = true;
 								selection = SEL_NONE;
-#ifdef WINSOCK_IPX
+#ifdef NETWORK_UDP
 								delete PacketTransport;
 								PacketTransport = NULL;
-#endif	//WINSOCK_IPX
+#endif	//NETWORK_UDP
 							}
 							break;
 
@@ -1170,7 +1156,7 @@ bool Select_Game(bool fade)
 
 #ifdef FIXIT_CSII	//	checked - ajw 9/28/98
 	switch(Session.Type) {
-		case GAME_IPX:
+		case GAME_UDP:
 #ifdef FIXIT_VERSION_3
 			if( !bAftermathMultiplayer ) {
 #else
@@ -1618,7 +1604,7 @@ bool Parse_Command_Line(int argc, char * argv[])
 			if (i >= 4) {
 				Session.IsBridge = 1;
 				memset(node, 0xff, 6);
-				Session.BridgeNet = IPXAddressClass(net, node);
+				Session.BridgeNet = UDPAddressClass(net, node);
 			}
 			continue;
 		}
@@ -1632,7 +1618,7 @@ bool Parse_Command_Line(int argc, char * argv[])
 			socket = (uint16_t)(atoi(string + strlen("SOCKET")));
 			socket += 0x4000;
 			if (socket >= 0x4000 && socket < 0x8000) {
-				Ipx.Set_Socket (socket);
+				Udp.Set_Socket (socket);
 			}
 			continue;
 		}

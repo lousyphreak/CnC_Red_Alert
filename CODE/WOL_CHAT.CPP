@@ -375,8 +375,8 @@ int WOL_Chat_Dialog( WolapiObject* pWO )
 	//	Init Mono Output
 	//------------------------------------------------------------------------
 	#if(SHOW_MONO)
- 	Ipx.Configure_Debug(-1, sizeof (GlobalHeaderType), sizeof(NetCommandType), GlobalPacketNames, 0, 13);
-	Ipx.Mono_Debug_Print(-1,1);
+ 	Udp.Configure_Debug(-1, sizeof (GlobalHeaderType), sizeof(NetCommandType), GlobalPacketNames, 0, 13);
+	Udp.Mono_Debug_Print(-1,1);
 	#endif
 
 	//------------------------------------------------------------------------
@@ -385,7 +385,7 @@ int WOL_Chat_Dialog( WolapiObject* pWO )
 	while (process) 
 	{
 		#if(SHOW_MONO)
-		Ipx.Mono_Debug_Print(-1,0);
+		Udp.Mono_Debug_Print(-1,0);
 		#endif
 
 		//	Regularly check for incoming messages from wolapi.

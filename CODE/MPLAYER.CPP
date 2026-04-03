@@ -56,7 +56,7 @@ extern bool Is_Mission_Counterstrike (char *file_name);
  *      none.                                                                                  *
  *                                                                                             *
  * OUTPUT:                                                                                     *
- *      GAME_NORMAL, GAME_IPX, etc.                                                            *
+ *      GAME_NORMAL, GAME_UDP, etc.                                                            *
  *                                                                                             *
  * WARNINGS:                                                                                   *
  *      none.                                                                                  *
@@ -88,17 +88,17 @@ GameType Select_MPlayer_Game (void)
 	int d_skirmish_x = d_dialog_cx - d_skirmish_w / 2;
 	int d_skirmish_y = d_dialog_y + d_margin + d_txt6_h + d_margin;
 
-	int d_ipx_w = 80 *RESFACTOR;
-	int d_ipx_h = 9 *RESFACTOR;
-	int d_ipx_x = d_dialog_cx - d_ipx_w / 2;
-	int d_ipx_y = d_skirmish_y + d_skirmish_h + 2*RESFACTOR;
+	int d_udp_w = 80 *RESFACTOR;
+	int d_udp_h = 9 *RESFACTOR;
+	int d_udp_x = d_dialog_cx - d_udp_w / 2;
+	int d_udp_y = d_skirmish_y + d_skirmish_h + 2*RESFACTOR;
 
 #ifdef WOLAPI_INTEGRATION
 	//	ajw 7/2/98 - added button
 	int d_wol_w = 80 * RESFACTOR;
 	int d_wol_h = 9 * RESFACTOR;
 	int d_wol_x = d_dialog_cx - d_wol_w / 2;
-	int d_wol_y = d_ipx_y + d_ipx_h + 2*RESFACTOR;
+	int d_wol_y = d_udp_y + d_udp_h + 2*RESFACTOR;
 #endif
 
 	int d_cancel_w = 60 *RESFACTOR;
@@ -107,7 +107,7 @@ GameType Select_MPlayer_Game (void)
 #ifdef WOLAPI_INTEGRATION
 	int d_cancel_y = d_wol_y + d_wol_h + d_margin;
 #else
-	int d_cancel_y = d_ipx_y + d_ipx_h + d_margin;
+	int d_cancel_y = d_udp_y + d_udp_h + d_margin;
 #endif
 
 	GraphicBufferClass seen_buff_save(VisiblePage.Get_Width(), VisiblePage.Get_Height(), (void*)NULL);
@@ -117,7 +117,7 @@ GameType Select_MPlayer_Game (void)
 	//------------------------------------------------------------------------
 	enum {
 		BUTTON_SKIRMISH = 100,
-		BUTTON_IPX,
+		BUTTON_UDP,
 #ifdef WOLAPI_INTEGRATION
 		BUTTON_WOL,				//	ajw
 #endif
@@ -130,7 +130,7 @@ GameType Select_MPlayer_Game (void)
 #endif
 	};
 
-	int num_of_buttons = NUM_OF_BUTTONS - (Ipx.Is_IPX() ? 0 : 1);
+	int num_of_buttons = NUM_OF_BUTTONS - (Udp.Is_UDP() ? 0 : 1);
 	//------------------------------------------------------------------------
 	//	Redraw values: in order from "top" to "bottom" layer of the dialog
 	//------------------------------------------------------------------------
@@ -162,7 +162,7 @@ GameType Select_MPlayer_Game (void)
 	//------------------------------------------------------------------------
 	// The legacy serial-only fallback was removed with the modem cleanup.
 	//------------------------------------------------------------------------
-//	if ( !Ipx.Is_IPX() ) {
+//	if ( !Udp.Is_UDP() ) {
 //		return( Select_Serial_Dialog() );
 //	}
 
@@ -170,8 +170,8 @@ GameType Select_MPlayer_Game (void)
 	TextButtonClass skirmishbtn (BUTTON_SKIRMISH, TXT_SKIRMISH, TPF_BUTTON,
 		d_skirmish_x, d_skirmish_y, d_skirmish_w, d_skirmish_h);
 
-	TextButtonClass ipxbtn (BUTTON_IPX, TXT_NETWORK, TPF_BUTTON,
-		d_ipx_x, d_ipx_y, d_ipx_w, d_ipx_h);
+	TextButtonClass udpbtn (BUTTON_UDP, TXT_NETWORK, TPF_BUTTON,
+		d_udp_x, d_udp_y, d_udp_w, d_udp_h);
 
 #ifdef WOLAPI_INTEGRATION
 	//	ajw
@@ -179,8 +179,8 @@ GameType Select_MPlayer_Game (void)
 		d_wol_x, d_wol_y, d_wol_w, d_wol_h);
 #endif
 
-	if(!Ipx.Is_IPX()) {
-		d_cancel_y = d_ipx_y;
+	if(!Udp.Is_UDP()) {
+		d_cancel_y = d_udp_y;
 		d_dialog_h -= d_cancel_h;
 	}
 
@@ -196,8 +196,8 @@ GameType Select_MPlayer_Game (void)
 	//	Create the list
 	//------------------------------------------------------------------------
 	commands = &skirmishbtn;
-	if(Ipx.Is_IPX()) {
-		ipxbtn.Add_Tail(*commands);
+	if(Udp.Is_UDP()) {
+		udpbtn.Add_Tail(*commands);
 	}
 #ifdef WOLAPI_INTEGRATION
 	wolbtn.Add_Tail(*commands);			//	ajw
@@ -209,8 +209,8 @@ GameType Select_MPlayer_Game (void)
 	//------------------------------------------------------------------------
 	curbutton = 0;
 	buttons[0] = &skirmishbtn;
-	if(Ipx.Is_IPX()) {
-		buttons[1] = &ipxbtn;
+	if(Udp.Is_UDP()) {
+		buttons[1] = &udpbtn;
 #ifdef WOLAPI_INTEGRATION
 		buttons[2] = &wolbtn;			//	ajw
 		buttons[3] = &cancelbtn;
@@ -298,8 +298,8 @@ GameType Select_MPlayer_Game (void)
 				pressed = true;
 				break;
 
-			case (BUTTON_IPX | KN_BUTTON):
-				selection = BUTTON_IPX;
+			case (BUTTON_UDP | KN_BUTTON):
+				selection = BUTTON_UDP;
 				pressed = true;
 				break;
 
@@ -353,7 +353,7 @@ GameType Select_MPlayer_Game (void)
 			buttons[curbutton]->Turn_Off();
 			buttons[curbutton]->Flag_To_Redraw();
 			curbutton = selection - BUTTON_SKIRMISH;
-			if(selection == BUTTON_CANCEL && !Ipx.Is_IPX()) curbutton--;
+			if(selection == BUTTON_CANCEL && !Udp.Is_UDP()) curbutton--;
 			buttons[curbutton]->Turn_On();
 			buttons[curbutton]->IsPressed = true;
 			buttons[curbutton]->Draw_Me(true);
@@ -376,8 +376,8 @@ GameType Select_MPlayer_Game (void)
 					}
 					break;
 
-				case (BUTTON_IPX):
-					retval = GAME_IPX;
+				case (BUTTON_UDP):
+					retval = GAME_UDP;
 					process = false;
 					break;
 

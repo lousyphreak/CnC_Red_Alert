@@ -34,18 +34,18 @@
  *---------------------------------------------------------------------------------------------*
  *                                                                         						  *
  * These routines establish & maintain peer-to-peer connections between this system				  *
- * and all others in the game.  Each system finds out the IPX address of the others,			  *
- * and forms a direct connection (IPXConnectionClass) to that system.  Systems are				  *
+ * and all others in the game.  Each system finds out the UDP address of the others,			  *
+ * and forms a direct connection (UDPConnectionClass) to that system.  Systems are				  *
  * found out via broadcast queries.  Every system broadcasts its queries, and every				  *
  * system replies to queries it receives.  At the point when the game owner signals				  *
  * 'OK', every system must know about all the other systems in the game.							  *
  *                                                                         						  *
  * How Bridges are handled:																						  *
- * Currently, bridges are handled by specifying the destination IPX address of the				  *
+ * Currently, bridges are handled by specifying the destination UDP address of the				  *
  * "server" (game owner's system) on the command-line.  This address is used to					  *
  * derive a broadcast address to that destination network, and this system's queries			  *
  * are broadcast over its network & the server's network; replies to the queries come			  *
- * with each system's IPX address attached, so once we have the address, we can form			  *
+ * with each system's UDP address attached, so once we have the address, we can form			  *
  * a connection with any system on the bridged net.														  *
  *                                                                         						  *
  * The flaw in this plan is that we can only cross one bridge.  If there are 3 nets				  *
@@ -108,11 +108,11 @@
 
 #include "FUNCTION.H"
 #include "sdl_fs.h"
-#ifdef WINSOCK_IPX
+#ifdef NETWORK_UDP
 #include	"WSPROTO.H"
-#else	//WINSOCK_IPX
+#else	//NETWORK_UDP
 #include "TCPIP.H"
-#endif	//WINSOCK_IPX
+#endif	//NETWORK_UDP
 
 #include <time.h>
 #include "WOLDEBUG.H"
@@ -944,25 +944,25 @@ bool Init_Network (void)
 {
 	NetNumType net;
 	NetNodeType node;
-#ifdef WINSOCK_IPX
+#ifdef NETWORK_UDP
 	assert ( PacketTransport != NULL );
-#endif	//WINSOCK_IPX
+#endif	//NETWORK_UDP
 
 	//------------------------------------------------------------------------
 	//	This call allocates all necessary queue buffers, allocates Real-mode
-	//	memory, and commands IPX to start listening on the Global Channel.
+	//	memory, and commands UDP to start listening on the Global Channel.
 	//------------------------------------------------------------------------
-	if (!Ipx.Init()) {
+	if (!Udp.Init()) {
 		return(false);
 	}
 
 	//------------------------------------------------------------------------
-	//	Set up the IPX manager to cross a bridge
+	//	Set up the UDP manager to cross a bridge
 	//------------------------------------------------------------------------
 	if (Session.Type != GAME_INTERNET) {
 		if (Session.IsBridge) {
 			Session.BridgeNet.Get_Address(net,node);
-			Ipx.Set_Bridge(net);
+			Udp.Set_Bridge(net);
 		}
 	}
 
@@ -1013,15 +1013,15 @@ void Shutdown_Network (void)
 		Session.GPacket.Command = NET_SIGN_OFF;
 		strcpy (Session.GPacket.Name, Session.Players[0]->Name);
 
-		Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
+		Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 			0, NULL);
-		Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
+		Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 			0, NULL);
 
 		if (Session.IsBridge	&& !Winsock.Get_Connected()) {
-			Ipx.Send_Global_Message (&Session.GPacket, sizeof(GlobalPacketType), 0,
+			Udp.Send_Global_Message (&Session.GPacket, sizeof(GlobalPacketType), 0,
 				&Session.BridgeNet);
-			Ipx.Send_Global_Message (&Session.GPacket, sizeof(GlobalPacketType), 0,
+			Udp.Send_Global_Message (&Session.GPacket, sizeof(GlobalPacketType), 0,
 				&Session.BridgeNet);
 		}
 
@@ -1030,10 +1030,10 @@ void Shutdown_Network (void)
 		// times out)
 		//.....................................................................
 		for (;;) {
-			if (Ipx.Global_Num_Send()==0) {
+			if (Udp.Global_Num_Send()==0) {
 				break;
 			}
-			Ipx.Service();
+			Udp.Service();
 		}
 	}
 #endif
@@ -1067,7 +1067,7 @@ void Shutdown_Network (void)
  * HISTORY:                                                                						  *
  *   02/15/1995 BR : Created.                                              						  *
  *=============================================================================================*/
-bool Process_Global_Packet(GlobalPacketType *packet, IPXAddressClass *address)
+bool Process_Global_Packet(GlobalPacketType *packet, UDPAddressClass *address)
 {
 	GlobalPacketType mypacket;
 
@@ -1099,7 +1099,7 @@ bool Process_Global_Packet(GlobalPacketType *packet, IPXAddressClass *address)
 			strcpy(mypacket.Name, Session.GameName);
 			mypacket.GameInfo.IsOpen = Session.NetOpen;
 
-			Ipx.Send_Global_Message (&mypacket, sizeof(GlobalPacketType), 1,
+			Udp.Send_Global_Message (&mypacket, sizeof(GlobalPacketType), 1,
 				address);
 		}
 		return(true);
@@ -1120,7 +1120,7 @@ bool Process_Global_Packet(GlobalPacketType *packet, IPXAddressClass *address)
 		mypacket.PlayerInfo.Color = Session.ColorIdx;
 		mypacket.PlayerInfo.NameCRC = Compute_Name_CRC(Session.GameName);
 
-		Ipx.Send_Global_Message (&mypacket, sizeof(GlobalPacketType), 1, address);
+		Udp.Send_Global_Message (&mypacket, sizeof(GlobalPacketType), 1, address);
 		return(true);
 	}
 
@@ -1193,9 +1193,9 @@ void Destroy_Connection(int id, int error)
 	}
 
 	//------------------------------------------------------------------------
-	//	Delete the IPX connection
+	//	Delete the UDP connection
 	//------------------------------------------------------------------------
-	Ipx.Delete_Connection(id);
+	Udp.Delete_Connection(id);
 
 	//------------------------------------------------------------------------
 	//	Turn the player's house over to the computer's AI
@@ -1243,7 +1243,7 @@ bool Remote_Connect(void)
 	//	Init network timing parameters; these values should work for both a
 	// "real" network, and a simulated modem network (ie Kali)
 	//------------------------------------------------------------------------
-	Ipx.Set_Timing (	30, 		// retry 2 times per second
+	Udp.Set_Timing (	30, 		// retry 2 times per second
 							-1, 		// ignore max retries
 							600);		// give up after 10 seconds
 
@@ -1348,7 +1348,7 @@ bool Remote_Connect(void)
  * Any game running in Stealth mode won't show up on this dialog.                              *
  *                                                                                             *
  * The 'Players' vector matches one-for-one the contents of the list box.  The local system	  *
- * is always listed first; the IPX Address of the local system will NOT be valid in the		  *
+ * is always listed first; the UDP Address of the local system will NOT be valid in the		  *
  * Players vector.  The Games & Players vectors should be left filled in even after this		  *
  * routine is exited; their contents are used to form connections to the other players,		  *
  * after the scenario has been loaded.																			  *
@@ -1731,8 +1731,8 @@ static int Net_Join_Dialog(void)
 	//	Init Mono Output
 	//------------------------------------------------------------------------
 	#if(SHOW_MONO)
- 	Ipx.Configure_Debug(-1, sizeof (GlobalHeaderType), sizeof(NetCommandType), GlobalPacketNames, 0, 13);
-	Ipx.Mono_Debug_Print(-1,1);
+ 	Udp.Configure_Debug(-1, sizeof (GlobalHeaderType), sizeof(NetCommandType), GlobalPacketNames, 0, 13);
+	Udp.Mono_Debug_Print(-1,1);
 	#endif
 //char *fred;
 	//------------------------------------------------------------------------
@@ -1740,7 +1740,7 @@ static int Net_Join_Dialog(void)
 	//------------------------------------------------------------------------
 	while (process) {
 		#if(SHOW_MONO)
-		Ipx.Mono_Debug_Print(-1,0);
+		Udp.Mono_Debug_Print(-1,0);
 		#endif
 
 		/*
@@ -2247,21 +2247,21 @@ static int Net_Join_Dialog(void)
 					Session.GPacket.Command = NET_SIGN_OFF;
 					strcpy(Session.GPacket.Name,namebuf);
 					for (i = 1; i < Session.Chat.Count(); i++) {
-						Ipx.Send_Global_Message (&Session.GPacket, sizeof(GlobalPacketType), 1, &(Session.Chat[i]->Address));
-						Ipx.Service();
+						Udp.Send_Global_Message (&Session.GPacket, sizeof(GlobalPacketType), 1, &(Session.Chat[i]->Address));
+						Udp.Service();
 					}
 
 					//............................................................
 					//	Now broadcast a SIGN_OFF just to be thorough
 					//............................................................
-					Ipx.Send_Global_Message (&Session.GPacket,
+					Udp.Send_Global_Message (&Session.GPacket,
 						sizeof (GlobalPacketType), 0, NULL);
 					if (Session.IsBridge) {
-						Ipx.Send_Global_Message (&Session.GPacket,
+						Udp.Send_Global_Message (&Session.GPacket,
 							sizeof(GlobalPacketType), 0, &Session.BridgeNet);
 					}
 
-					while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+					while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
 						Sleep(1);
 					}
 
@@ -2380,20 +2380,20 @@ static int Net_Join_Dialog(void)
 					//............................................................
 					if (joinstate == JOIN_CONFIRMED) {
 						for (i = 1; i < Session.Players.Count(); i++) {
-							Ipx.Send_Global_Message (&Session.GPacket,
+							Udp.Send_Global_Message (&Session.GPacket,
 								sizeof(GlobalPacketType),
 								1, &(Session.Players[i]->Address));
-							Ipx.Service();
+							Udp.Service();
 						}
 					} else {
 					//............................................................
 					// Otherwise, send the message to all players in our chat list.
 					//............................................................
 						for (i = 1; i < Session.Chat.Count(); i++) {
-							Ipx.Send_Global_Message (&Session.GPacket,
+							Udp.Send_Global_Message (&Session.GPacket,
 								sizeof(GlobalPacketType),
 								1, &(Session.Chat[i]->Address));
-							Ipx.Service();
+							Udp.Service();
 						}
 						if (Obfuscate(Session.GPacket.Message.Buf) == 0x72A47EF6) {
 						}
@@ -2506,9 +2506,9 @@ static int Net_Join_Dialog(void)
 							*/
 							memset ((void*)&(Session.GPacket), 0, sizeof (Session.GPacket));
 							Session.GPacket.Command = NET_READY_TO_GO;
-							Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
+							Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 								1, &Session.HostAddress);
-							while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+							while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
 								Sleep(1);
 							}
 							ready_packet_was_sent = true;
@@ -2533,7 +2533,7 @@ static int Net_Join_Dialog(void)
 				**	need to request that it is sent. If we can identify the scenario locally then
 				**	we need to fix up the file name so we load the right one.
 				*/
-				Ipx.Set_Timing(25, static_cast<uint32_t>(-1), 1000);
+				Udp.Set_Timing(25, static_cast<uint32_t>(-1), 1000);
 				if (Find_Local_Scenario (Session.Options.ScenarioDescription,
 												Session.ScenarioFileName,
 												Session.ScenarioFileLength,
@@ -2549,10 +2549,10 @@ static int Net_Join_Dialog(void)
 					if ( !ready_packet_was_sent ){
 						memset ((void*)&(Session.GPacket), 0, sizeof (Session.GPacket));
 						Session.GPacket.Command = NET_READY_TO_GO;
-						Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
+						Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 							1, &Session.HostAddress);
 
-						while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+						while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
 							Sleep(1);
 						}
 					}
@@ -2588,7 +2588,7 @@ static int Net_Join_Dialog(void)
 #endif
 				}
 
-				Ipx.Set_Timing(30, static_cast<uint32_t>(-1), 600);
+				Udp.Set_Timing(30, static_cast<uint32_t>(-1), 600);
 				strcpy (Scen.ScenarioName, Session.ScenarioFileName);
 				rc = 0;
 				process = false;
@@ -2749,9 +2749,9 @@ static int Net_Join_Dialog(void)
 		}
 
 		//.....................................................................
-		//	Service the Ipx connections
+		//	Service the Udp connections
 		//.....................................................................
-		Ipx.Service();
+		Udp.Service();
 
 		if (process) {
 			//.....................................................................
@@ -2813,9 +2813,9 @@ static int Net_Join_Dialog(void)
 					memset (&Session.GPacket, 0, sizeof(GlobalPacketType));
 					Session.GPacket.Name[0] = 0;
 					Session.GPacket.Command = NET_CHAT_REQUEST;
-					Ipx.Send_Global_Message (&Session.GPacket,
+					Udp.Send_Global_Message (&Session.GPacket,
 						sizeof(GlobalPacketType), 0, &(Session.Chat[i]->Address));
-					Ipx.Service();
+					Udp.Service();
 					Session.Chat[i]->Chat.LastChance = 1;
 				}
 			}
@@ -2890,25 +2890,25 @@ static int Net_Join_Dialog(void)
 			// Don't send myself the message.
 			//..................................................................
 			for (i = 1; i < Session.Players.Count(); i++) {
-				Ipx.Send_Global_Message (&Session.GPacket,
+				Udp.Send_Global_Message (&Session.GPacket,
 					sizeof(GlobalPacketType), 1,
 					&(Session.Players[i]->Address));
-				Ipx.Service();
+				Udp.Service();
 			}
 
-			Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
+			Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 				0, NULL);
-			Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
+			Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 				0, NULL);
 
 			if (Session.IsBridge) {
-				Ipx.Send_Global_Message (&Session.GPacket, sizeof(GlobalPacketType),
+				Udp.Send_Global_Message (&Session.GPacket, sizeof(GlobalPacketType),
 					0, &Session.BridgeNet);
-				Ipx.Send_Global_Message (&Session.GPacket, sizeof(GlobalPacketType),
+				Udp.Send_Global_Message (&Session.GPacket, sizeof(GlobalPacketType),
 					0, &Session.BridgeNet);
 			}
 
-			while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+			while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
 				Sleep(1);
 			}
 
@@ -2926,14 +2926,14 @@ static int Net_Join_Dialog(void)
 		}
 
 		//.....................................................................
-		//	Wait a while, polling the IPX service routines, to give our ACK
+		//	Wait a while, polling the UDP service routines, to give our ACK
 		//	a chance to get to the other system.  If he doesn't get our ACK,
 		// he'll be waiting the whole time we load MIX files.
 		//.....................................................................
-		i = max((int)(Ipx.Global_Response_Time() * 2), 60);
+		i = max((int)(Udp.Global_Response_Time() * 2), 60);
 		starttime = TickCount;
 		while (TickCount - starttime < i) {
-			Ipx.Service();
+			Udp.Service();
 			Sleep(1);
 		}
 	}
@@ -2942,9 +2942,9 @@ static int Net_Join_Dialog(void)
 	//	Init network timing values, using previous response times as a measure
 	//	of what our retry delta & timeout should be.
 	//------------------------------------------------------------------------
-//	Ipx.Set_Timing (Ipx.Global_Response_Time() + 2, -1,
-//		Ipx.Global_Response_Time() * 4);
-	Ipx.Set_Timing(Ipx.Global_Response_Time() + 2, static_cast<uint32_t>(-1), max<uint32_t>(120U, Ipx.Global_Response_Time() * 8));
+//	Udp.Set_Timing (Udp.Global_Response_Time() + 2, -1,
+//		Udp.Global_Response_Time() * 4);
+	Udp.Set_Timing(Udp.Global_Response_Time() + 2, static_cast<uint32_t>(-1), max<uint32_t>(120U, Udp.Global_Response_Time() * 8));
 
 
 	//------------------------------------------------------------------------
@@ -3074,7 +3074,7 @@ static int Request_To_Join (char *playername, int join_index,
 	Session.GPacket.PlayerInfo.MaxVersion = VerNum.Max_Version();
 	Session.GPacket.PlayerInfo.CheatCheck = RuleINI.Get_Unique_ID();
 
-	Ipx.Send_Global_Message (&Session.GPacket, sizeof(GlobalPacketType), 1,
+	Udp.Send_Global_Message (&Session.GPacket, sizeof(GlobalPacketType), 1,
 		&(Session.Games[join_index]->Address));
 
 	return(true);
@@ -3127,13 +3127,13 @@ static void Unjoin_Game(char *namebuf,JoinStateType joinstate,
 	//	packet.  Don't send this to myself (index 0).
 	//------------------------------------------------------------------------
 	for (i = 1; i < Session.Players.Count(); i++) {
-		Ipx.Send_Global_Message (&Session.GPacket, sizeof(GlobalPacketType), 1,
+		Udp.Send_Global_Message (&Session.GPacket, sizeof(GlobalPacketType), 1,
 			&(Session.Players[i]->Address));
-		Ipx.Service();
+		Udp.Service();
 	}
 
 	if (joinstate == JOIN_WAIT_CONFIRM || joinstate == JOIN_CONFIRMED) {
-		Ipx.Send_Global_Message (&Session.GPacket, sizeof(GlobalPacketType), 1,
+		Udp.Send_Global_Message (&Session.GPacket, sizeof(GlobalPacketType), 1,
 			&(Session.Games[game_index]->Address));
 	}
 
@@ -3243,7 +3243,7 @@ static void Send_Join_Queries(int curgame, JoinStateType joinstate,
 
 		Session.GPacket.Command = NET_QUERY_GAME;
 
-		Ipx.Send_Global_Message (&Session.GPacket,
+		Udp.Send_Global_Message (&Session.GPacket,
 			sizeof(GlobalPacketType), 0, NULL);
 
 		//.....................................................................
@@ -3251,7 +3251,7 @@ static void Send_Join_Queries(int curgame, JoinStateType joinstate,
 		//	network, too.
 		//.....................................................................
 		if (Session.IsBridge) {
-			Ipx.Send_Global_Message (&Session.GPacket,
+			Udp.Send_Global_Message (&Session.GPacket,
 				sizeof(GlobalPacketType), 0, &Session.BridgeNet);
 		}
 	}
@@ -3271,7 +3271,7 @@ static void Send_Join_Queries(int curgame, JoinStateType joinstate,
 		Session.GPacket.Command = NET_QUERY_PLAYER;
 		strcpy (Session.GPacket.Name, Session.Games[curgame]->Name);
 
-		Ipx.Send_Global_Message (&Session.GPacket,
+		Udp.Send_Global_Message (&Session.GPacket,
 			sizeof(GlobalPacketType), 0, NULL);
 
 		//.....................................................................
@@ -3279,7 +3279,7 @@ static void Send_Join_Queries(int curgame, JoinStateType joinstate,
 		//	network, too.
 		//.....................................................................
 		if (Session.IsBridge) {
-			Ipx.Send_Global_Message (&Session.GPacket,
+			Udp.Send_Global_Message (&Session.GPacket,
 				sizeof(GlobalPacketType), 0, &Session.BridgeNet);
 		}
 	}
@@ -3298,11 +3298,11 @@ static void Send_Join_Queries(int curgame, JoinStateType joinstate,
 		Session.GPacket.Chat.ID = Session.UniqueID;
 		Session.GPacket.Chat.Color = Session.ColorIdx;
 
-		Ipx.Send_Global_Message (&Session.GPacket,
+		Udp.Send_Global_Message (&Session.GPacket,
 			sizeof(GlobalPacketType), 0, NULL);
 
 		if (Session.IsBridge) {
-			Ipx.Send_Global_Message (&Session.GPacket,
+			Udp.Send_Global_Message (&Session.GPacket,
 				sizeof(GlobalPacketType), 0, &Session.BridgeNet);
 		}
 	}
@@ -3363,9 +3363,9 @@ static JoinEventType Get_Join_Responses(JoinStateType *joinstate, ListClass *gam
 	//------------------------------------------------------------------------
 	//	If there is no incoming packet, just return
 	//------------------------------------------------------------------------
-	rc = Ipx.Get_Global_Message (&Session.GPacket, &Session.GPacketlen,
+	rc = Udp.Get_Global_Message (&Session.GPacket, &Session.GPacketlen,
 		&Session.GAddress, &Session.GProductID);
-	if (!rc || Session.GProductID != IPXGlobalConnClass::COMMAND_AND_CONQUER0)
+	if (!rc || Session.GProductID != UDPGlobalConnClass::COMMAND_AND_CONQUER0)
 		return(EV_NONE);
 
 	//------------------------------------------------------------------------
@@ -3631,20 +3631,20 @@ static JoinEventType Get_Join_Responses(JoinStateType *joinstate, ListClass *gam
 			strcpy (Session.GPacket.Name,my_name);
 
 			for (i = 1; i < Session.Players.Count(); i++) {
-				Ipx.Send_Global_Message (&Session.GPacket,
+				Udp.Send_Global_Message (&Session.GPacket,
 					sizeof(GlobalPacketType), 1,
 					&(Session.Players[i]->Address));
-				Ipx.Service();
+				Udp.Service();
 			}
 
-			Ipx.Send_Global_Message (&Session.GPacket,
+			Udp.Send_Global_Message (&Session.GPacket,
 				sizeof (GlobalPacketType), 0, NULL);
 			if (Session.IsBridge) {
-				Ipx.Send_Global_Message (&Session.GPacket, sizeof(GlobalPacketType),
+				Udp.Send_Global_Message (&Session.GPacket, sizeof(GlobalPacketType),
 					0, &Session.BridgeNet);
 			}
 
-			while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+			while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
 				Sleep(1);
 			}
 
@@ -3926,10 +3926,10 @@ static JoinEventType Get_Join_Responses(JoinStateType *joinstate, ListClass *gam
 			Session.GPacket.Chat.ID = Session.UniqueID;
 			Session.GPacket.Chat.Color = Session.ColorIdx;
 
-			Ipx.Send_Global_Message (&Session.GPacket,
+			Udp.Send_Global_Message (&Session.GPacket,
 				sizeof(GlobalPacketType), 1, &Session.GAddress);
 
-			Ipx.Service();
+			Udp.Service();
 		}
 	}
 
@@ -3969,7 +3969,7 @@ static JoinEventType Get_Join_Responses(JoinStateType *joinstate, ListClass *gam
 
 	//------------------------------------------------------------------------
 	//	NET_PING: Someone is pinging me to get a response time measure (will only
-	//	happen after I've joined a game).  Do nothing; the IPX Manager will handle
+	//	happen after I've joined a game).  Do nothing; the UDP Manager will handle
 	//	sending an ACK, and updating the response time measurements.
 	//------------------------------------------------------------------------
 	else if (Session.GPacket.Command==NET_PING) {
@@ -3996,7 +3996,7 @@ static JoinEventType Get_Join_Responses(JoinStateType *joinstate, ListClass *gam
  * the game initiator selectively approve each user.                                           *
  *                                                                                             *
  * The 'Players' vector matches one-for-one the contents of the list box.  The local system	  *
- * is always listed first; the IPX Address of the local system will NOT be valid in the		  *
+ * is always listed first; the UDP Address of the local system will NOT be valid in the		  *
  * Players vector.  The Games & Players vectors should be left filled in even after this		  *
  * routine is exited; their contents are used to form connections to the other players,		  *
  * after the scenario has been loaded.																			  *
@@ -4368,7 +4368,7 @@ static int Net_New_Dialog(void)
 	//------------------------------------------------------------------------
 	while (process) {
 		#if(SHOW_MONO)
-		Ipx.Mono_Debug_Print(-1,0);
+		Udp.Mono_Debug_Print(-1,0);
 		#endif
 
 		/*
@@ -4584,7 +4584,7 @@ static int Net_New_Dialog(void)
 
 				Session.GPacket.Command = NET_REJECT_JOIN;
 
-				Ipx.Send_Global_Message (&Session.GPacket,
+				Udp.Send_Global_Message (&Session.GPacket,
 					sizeof (GlobalPacketType), 1,
 					&(Session.Players[index]->Address));
 				break;
@@ -4696,9 +4696,9 @@ static int Net_New_Dialog(void)
 				//	an OK; force a wait longer than 1 second (to give all players
 				//	a chance to know about this new guy)
 				//...............................................................
-				i = max((int)(Ipx.Global_Response_Time() * 2), 60);
+				i = max((int)(Udp.Global_Response_Time() * 2), 60);
 				while (TickCount - ok_timer < i) {
-					Ipx.Service();
+					Udp.Service();
 					Sleep(1);
 				}
 
@@ -4734,11 +4734,11 @@ static int Net_New_Dialog(void)
 				//...............................................................
 				//	Broadcast my sign-off over my network
 				//...............................................................
-				Ipx.Send_Global_Message (&Session.GPacket,
+				Udp.Send_Global_Message (&Session.GPacket,
 					sizeof (GlobalPacketType), 0, NULL);
-				Ipx.Send_Global_Message (&Session.GPacket,
+				Udp.Send_Global_Message (&Session.GPacket,
 					sizeof (GlobalPacketType), 0, NULL);
-				while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+				while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
 					Sleep(1);
 				}
 
@@ -4746,12 +4746,12 @@ static int Net_New_Dialog(void)
 				//	Broadcast my sign-off over a bridged network if there is one
 				//...............................................................
 				if (Session.IsBridge) {
-					Ipx.Send_Global_Message (&Session.GPacket,
+					Udp.Send_Global_Message (&Session.GPacket,
 						sizeof(GlobalPacketType), 0, &Session.BridgeNet);
-					Ipx.Send_Global_Message (&Session.GPacket,
+					Udp.Send_Global_Message (&Session.GPacket,
 						sizeof(GlobalPacketType), 0, &Session.BridgeNet);
 				}
-				while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+				while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
 					Sleep(1);
 				}
 
@@ -4765,11 +4765,11 @@ static int Net_New_Dialog(void)
 				// Don't send this message to myself.
 				//...............................................................
 				for (i = 1; i < Session.Players.Count(); i++) {
-					Ipx.Send_Global_Message (&Session.GPacket,
+					Udp.Send_Global_Message (&Session.GPacket,
 						sizeof(GlobalPacketType), 1, &(Session.Players[i]->Address));
-					Ipx.Service();
+					Udp.Service();
 				}
-				while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+				while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
 					Sleep(1);
 				}
 				Session.GameName[0] = 0;
@@ -4833,10 +4833,10 @@ static int Net_New_Dialog(void)
 					// myself.
 					//............................................................
 					for (i = 1; i < Session.Players.Count(); i++) {
-						Ipx.Send_Global_Message (&Session.GPacket,
+						Udp.Send_Global_Message (&Session.GPacket,
 							sizeof(GlobalPacketType), 1,
 							&(Session.Players[i]->Address));
-						Ipx.Service();
+						Udp.Service();
 					}
 
 					//............................................................
@@ -4977,7 +4977,7 @@ static int Net_New_Dialog(void)
 				Session.GPacket.ScenarioInfo.Version = VerNum.Get_Clipped_Version();
 #endif
 
-				Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
+				Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 					1, &(Session.Players[i]->Address) );
 			}
 			Sound_Effect(VOC_OPTIONS_CHANGED);
@@ -4992,16 +4992,16 @@ static int Net_New_Dialog(void)
 			memset (&Session.GPacket, 0, sizeof(GlobalPacketType));
 			Session.GPacket.Command = NET_PING;
 			for (i = 1; i < Session.Players.Count(); i++) {
-				Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
+				Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 					1, &(Session.Players[i]->Address) );
 			}
 			ping_timer = TickCount;
 		}
 
 		//.....................................................................
-		//	Service the Ipx connections
+		//	Service the Udp connections
 		//.....................................................................
-		Ipx.Service();
+		Udp.Service();
 
 		//.....................................................................
 		//	Service the sounds & score; GameActive must be false at this point,
@@ -5031,16 +5031,16 @@ static int Net_New_Dialog(void)
 		//	  value, 4 more to convert from ticks to frames)
 		//.....................................................................
 		if (Session.CommProtocol == COMM_PROTOCOL_MULTI_E_COMP) {
-			Session.MaxAhead = max( ((((Ipx.Global_Response_Time() / 8) +
+			Session.MaxAhead = max( ((((Udp.Global_Response_Time() / 8) +
 				(Session.FrameSendRate - 1)) / Session.FrameSendRate) *
 				Session.FrameSendRate), (Session.FrameSendRate * 2) );
 		}
 		else {
-			Session.MaxAhead = max((int)(Ipx.Global_Response_Time() / 8),
+			Session.MaxAhead = max((int)(Udp.Global_Response_Time() / 8),
 									 NETWORK_MIN_MAX_AHEAD);
 		}
 
-		Ipx.Set_Timing(25, static_cast<uint32_t>(-1), 1000);
+		Udp.Set_Timing(25, static_cast<uint32_t>(-1), 1000);
 
 		//.....................................................................
 		//	Send all players the NET_GO packet.  Wait until all ACK's have been
@@ -5053,14 +5053,14 @@ static int Net_New_Dialog(void)
 			Session.GPacket.Command = NET_GO;
 		Session.GPacket.ResponseTime.OneWay = Session.MaxAhead;
 		for (i = 1; i < Session.Players.Count(); i++) {
-			Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
+			Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 				1, &(Session.Players[i]->Address) );
 		}
 		//.....................................................................
 		//	Wait for all the ACK's to come in.
 		//.....................................................................
-		while (Ipx.Global_Num_Send() > 0) {
-			Ipx.Service();
+		while (Udp.Global_Num_Send() > 0) {
+			Udp.Service();
 			Sleep(1);
 		}
 
@@ -5077,10 +5077,10 @@ static int Net_New_Dialog(void)
 		response_timer = 60*10;		// Wait for 10 seconds. If we dont hear by then assume someone crashed
 
 		do	{
-			Ipx.Service();
-			int retcode = Ipx.Get_Global_Message (&Session.GPacket, &Session.GPacketlen,
+			Udp.Service();
+			int retcode = Udp.Get_Global_Message (&Session.GPacket, &Session.GPacketlen,
 				&Session.GAddress, &Session.GProductID);
-			if (retcode && Session.GProductID == IPXGlobalConnClass::COMMAND_AND_CONQUER0) {
+			if (retcode && Session.GProductID == UDPGlobalConnClass::COMMAND_AND_CONQUER0) {
 
 				for ( i=1 ; i<Session.Players.Count() ; i++ ) {
 					if (Session.Players[i]->Address == Session.GAddress) {
@@ -5128,8 +5128,8 @@ static int Net_New_Dialog(void)
 	//	Init network timing values, using previous response times as a measure
 	//	of what our retry delta & timeout should be.
 	//------------------------------------------------------------------------
-	//Ipx.Set_Timing (Ipx.Global_Response_Time() + 2, -1, Ipx.Global_Response_Time() * 4);
-	Ipx.Set_Timing(Ipx.Global_Response_Time() + 2, static_cast<uint32_t>(-1), max<uint32_t>(120U, Ipx.Global_Response_Time() * 8));
+	//Udp.Set_Timing (Udp.Global_Response_Time() + 2, -1, Udp.Global_Response_Time() * 4);
+	Udp.Set_Timing(Udp.Global_Response_Time() + 2, static_cast<uint32_t>(-1), max<uint32_t>(120U, Udp.Global_Response_Time() * 8));
 
 	//------------------------------------------------------------------------
 	//	Clear all lists, but NOT the Games or Players vectors.
@@ -5219,9 +5219,9 @@ static JoinEventType Get_NewGame_Responses(ColorListClass *playerlist,
 	//------------------------------------------------------------------------
 	//	If there is no incoming packet, just return
 	//------------------------------------------------------------------------
-	rc = Ipx.Get_Global_Message (&Session.GPacket, &Session.GPacketlen,
+	rc = Udp.Get_Global_Message (&Session.GPacket, &Session.GPacketlen,
 		&Session.GAddress, &Session.GProductID);
-	if (!rc || Session.GProductID != IPXGlobalConnClass::COMMAND_AND_CONQUER0) {
+	if (!rc || Session.GProductID != UDPGlobalConnClass::COMMAND_AND_CONQUER0) {
 		return(EV_NONE);
 	}
 
@@ -5269,7 +5269,7 @@ static JoinEventType Get_NewGame_Responses(ColorListClass *playerlist,
 			memset (&Session.GPacket, 0, sizeof(GlobalPacketType));
 			Session.GPacket.Command = NET_REJECT_JOIN;
 			Session.GPacket.Reject.Why = (int)REJECT_DUPLICATE_NAME;
-			Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
+			Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 				1, &Session.GAddress);
 			return(EV_NONE);
 		}
@@ -5281,7 +5281,7 @@ static JoinEventType Get_NewGame_Responses(ColorListClass *playerlist,
 			memset (&Session.GPacket, 0, sizeof(GlobalPacketType));
 			Session.GPacket.Command = NET_REJECT_JOIN;
 			Session.GPacket.Reject.Why = (int)REJECT_GAME_FULL;
-			Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
+			Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 				1, &Session.GAddress);
 			return(EV_NONE);
 		}
@@ -5293,7 +5293,7 @@ static JoinEventType Get_NewGame_Responses(ColorListClass *playerlist,
 			memset (&Session.GPacket, 0, sizeof(GlobalPacketType));
 			Session.GPacket.Command = NET_REJECT_JOIN;
 			Session.GPacket.Reject.Why = (int)REJECT_MISMATCH;
-			Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType), 1, &Session.GAddress);
+			Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType), 1, &Session.GAddress);
 			return(EV_NONE);
 		}
 
@@ -5340,7 +5340,7 @@ static JoinEventType Get_NewGame_Responses(ColorListClass *playerlist,
 				memset (&Session.GPacket, 0, sizeof(GlobalPacketType));
 				Session.GPacket.Command = NET_REJECT_JOIN;
 				Session.GPacket.Reject.Why = (int)REJECT_VERSION_TOO_OLD;
-				Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
+				Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 					1, &Session.GAddress);
 				return(EV_NONE);
 			}
@@ -5352,7 +5352,7 @@ static JoinEventType Get_NewGame_Responses(ColorListClass *playerlist,
 				memset (&Session.GPacket, 0, sizeof(GlobalPacketType));
 				Session.GPacket.Command = NET_REJECT_JOIN;
 				Session.GPacket.Reject.Why = (int)REJECT_VERSION_TOO_NEW;
-				Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
+				Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 					1, &Session.GAddress);
 				return(EV_NONE);
 			}
@@ -5419,7 +5419,7 @@ static JoinEventType Get_NewGame_Responses(ColorListClass *playerlist,
 			Session.GPacket.PlayerInfo.House = who->Player.House;
 			Session.GPacket.PlayerInfo.Color = who->Player.Color;
 
-			Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
+			Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 				1, &Session.GAddress);
 
 			//..................................................................
@@ -5536,7 +5536,7 @@ uint32_t Compute_Name_CRC(char *name)
  * INPUT:                                                                  *
  *		reconn			1 = reconnect, 0 = waiting for first-time connection	*
  *		fresh				1 = draw from scratch, 0 = only update time counter	*
- *		oldest_index	IPX connection index of oldest connection 				*
+ *		oldest_index	UDP connection index of oldest connection 				*
  *							(only used for reconnection)									*
  *		timeval			value to print in the countdown field						*
  *                                                                         *
@@ -5579,12 +5579,12 @@ void Net_Reconnect_Dialog(int reconn, int fresh, int oldest_index,
 		Fancy_Text_Print("", 0, 0, scheme, TBLACK, TPF_CENTER | TPF_TEXT);
 
 		switch ( Session.Type) {
-			case GAME_IPX:
+			case GAME_UDP:
 			case GAME_INTERNET:
 				if (reconn) {
-					id = Ipx.Connection_ID(oldest_index);
+					id = Udp.Connection_ID(oldest_index);
 					sprintf(buf1,Text_String(TXT_RECONNECTING_TO),
-						Ipx.Connection_Name(id));
+						Udp.Connection_Name(id));
 				} else {
 					sprintf(buf1,Text_String(TXT_WAITING_FOR_CONNECTIONS));
 				}
@@ -5747,11 +5747,11 @@ void Start_Logging(void)
 	WWFS_FPrintf(fp,"            House:%s\n", housenames[Session.House]);
 	WWFS_FPrintf(fp,"\n");
 
-	for (i = 0; i < Ipx.Num_Connections(); i++) {
-		id = Ipx.Connection_ID(i);
+	for (i = 0; i < Udp.Num_Connections(); i++) {
+		id = Udp.Connection_ID(i);
 		house = (HouseClass)id;
 		WWFS_FPrintf(fp,"Connection %d:\n",i);
-		WWFS_FPrintf(fp,"             Name:%s\n", Ipx.Connection_Name(id));
+		WWFS_FPrintf(fp,"             Name:%s\n", Udp.Connection_Name(id));
 		WWFS_FPrintf(fp,"            Color:%s\n",
 			ColorNames[HouseClass::As_Pointer(house)->RemapColor);
 		WWFS_FPrintf(fp,"            House:%s\n", housenames[house]);
@@ -5810,7 +5810,7 @@ void Log_Message(char *msg)
  * the game initiator selectively approve each user.                                           *
  *                                                                                             *
  * The 'Players' vector matches one-for-one the contents of the list box.  The local system	  *
- * is always listed first; the IPX Address of the local system will NOT be valid in the		  *
+ * is always listed first; the UDP Address of the local system will NOT be valid in the		  *
  * Players vector.  The Games & Players vectors should be left filled in even after this		  *
  * routine is exited; their contents are used to form connections to the other players,		  *
  * after the scenario has been loaded.																			  *
@@ -6053,7 +6053,7 @@ static int Net_Fake_New_Dialog(void)
 	//------------------------------------------------------------------------
 	while (process) {
 		#if(SHOW_MONO)
-		Ipx.Mono_Debug_Print(-1,0);
+		Udp.Mono_Debug_Print(-1,0);
 		#endif
 
 		/*
@@ -6116,11 +6116,11 @@ static int Net_Fake_New_Dialog(void)
 				//...............................................................
 				//	Broadcast my sign-off over my network
 				//...............................................................
-				Ipx.Send_Global_Message (&Session.GPacket,
+				Udp.Send_Global_Message (&Session.GPacket,
 					sizeof (GlobalPacketType), 0, NULL);
-				Ipx.Send_Global_Message (&Session.GPacket,
+				Udp.Send_Global_Message (&Session.GPacket,
 					sizeof (GlobalPacketType), 0, NULL);
-				while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+				while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
 					Sleep(1);
 				}
 
@@ -6134,11 +6134,11 @@ static int Net_Fake_New_Dialog(void)
 				// Don't send this message to myself.
 				//...............................................................
 				for (i = 1; i < Session.Players.Count(); i++) {
-					Ipx.Send_Global_Message (&Session.GPacket,
+					Udp.Send_Global_Message (&Session.GPacket,
 						sizeof(GlobalPacketType), 1, &(Session.Players[i]->Address));
-					Ipx.Service();
+					Udp.Service();
 				}
-				while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+				while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
 					Sleep(1);
 				}
 				Session.GameName[0] = 0;
@@ -6170,9 +6170,9 @@ static int Net_Fake_New_Dialog(void)
 					//	an OK; force a wait longer than 1 second (to give all players
 					//	a chance to know about this new guy)
 					//...............................................................
-					i = MAX(Ipx.Global_Response_Time() * 2, 60*2);
+					i = MAX(Udp.Global_Response_Time() * 2, 60*2);
 					while (TickCount - ok_timer < i) {
-						Ipx.Service();
+						Udp.Service();
 						Sleep(1);
 					}
 
@@ -6294,18 +6294,18 @@ static int Net_Fake_New_Dialog(void)
 						// Don't send myself the message.
 						//..................................................................
 						for (i = 1; i < Session.Players.Count(); i++) {
-							Ipx.Send_Global_Message (&Session.GPacket,
+							Udp.Send_Global_Message (&Session.GPacket,
 								sizeof(GlobalPacketType), 1,
 								&(Session.Players[i]->Address));
-							Ipx.Service();
+							Udp.Service();
 						}
 
-						Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
+						Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 							0, NULL);
-						Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
+						Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 							0, NULL);
 
-						while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+						while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
 							Sleep(1);
 						}
 
@@ -6349,7 +6349,7 @@ static int Net_Fake_New_Dialog(void)
 				Session.GPacket.ScenarioInfo.GameSpeed = Options.GameSpeed;
 				Session.GPacket.ScenarioInfo.Version = VerNum.Get_Clipped_Version();
 
-				Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
+				Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 					1, &(Session.Players[i]->Address) );
 			}
 			Sound_Effect(VOC_OPTIONS_CHANGED);
@@ -6364,16 +6364,16 @@ static int Net_Fake_New_Dialog(void)
 			memset (&Session.GPacket, 0, sizeof(GlobalPacketType));
 			Session.GPacket.Command = NET_PING;
 			for (i = 1; i < Session.Players.Count(); i++) {
-				Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
+				Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 					1, &(Session.Players[i]->Address) );
 			}
 			ping_timer = TickCount;
 		}
 
 		//.....................................................................
-		//	Service the Ipx connections
+		//	Service the Udp connections
 		//.....................................................................
-		Ipx.Service();
+		Udp.Service();
 
 		//.....................................................................
 		//	Service the sounds & score; GameActive must be false at this point,
@@ -6403,12 +6403,12 @@ static int Net_Fake_New_Dialog(void)
 		//	  value, 4 more to convert from ticks to frames)
 		//.....................................................................
 		if (Session.CommProtocol == COMM_PROTOCOL_MULTI_E_COMP) {
-			Session.MaxAhead = MAX( ((((Ipx.Global_Response_Time() / 8) +
+			Session.MaxAhead = MAX( ((((Udp.Global_Response_Time() / 8) +
 				(Session.FrameSendRate - 1)) / Session.FrameSendRate) *
 				Session.FrameSendRate), (Session.FrameSendRate * 2) );
 		}
 		else {
-			Session.MaxAhead = MAX( (Ipx.Global_Response_Time() / 8),
+			Session.MaxAhead = MAX( (Udp.Global_Response_Time() / 8),
 										  NETWORK_MIN_MAX_AHEAD );
 		}
 
@@ -6423,14 +6423,14 @@ static int Net_Fake_New_Dialog(void)
 			Session.GPacket.Command = NET_GO;
 		Session.GPacket.ResponseTime.OneWay = Session.MaxAhead;
 		for (i = 1; i < Session.Players.Count(); i++) {
-			Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
+			Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 				1, &(Session.Players[i]->Address) );
 		}
 		//.....................................................................
 		//	Wait for all the ACK's to come in.
 		//.....................................................................
-		while (Ipx.Global_Num_Send() > 0) {
-			Ipx.Service();
+		while (Udp.Global_Num_Send() > 0) {
+			Udp.Service();
 			Sleep(1);
 		}
 
@@ -6449,10 +6449,10 @@ static int Net_Fake_New_Dialog(void)
 		response_timer = 60*30;		// Wait for 30 seconds. If we dont hear by then assume someone crashed
 
 		do	{
-			Ipx.Service();
-			int retcode = Ipx.Get_Global_Message (&Session.GPacket, &Session.GPacketlen,
+			Udp.Service();
+			int retcode = Udp.Get_Global_Message (&Session.GPacket, &Session.GPacketlen,
 				&Session.GAddress, &Session.GProductID);
-			if (retcode && Session.GProductID == IPXGlobalConnClass::COMMAND_AND_CONQUER0) {
+			if (retcode && Session.GProductID == UDPGlobalConnClass::COMMAND_AND_CONQUER0) {
 
 				for ( i=1 ; i<Session.Players.Count() ; i++ ) {
 					if (Session.Players[i]->Address == Session.GAddress) {
@@ -6492,14 +6492,14 @@ static int Net_Fake_New_Dialog(void)
 	}
 
 	//.....................................................................
-	//	Wait a while, polling the IPX service routines, to give our ACK
+	//	Wait a while, polling the UDP service routines, to give our ACK
 	//	a chance to get to the other system.  If he doesn't get our ACK,
 	// he'll be waiting the whole time we load MIX files.
 	//.....................................................................
-	i = MAX(Ipx.Global_Response_Time() * 2, 60*2);
+	i = MAX(Udp.Global_Response_Time() * 2, 60*2);
 	int starttime = TickCount;
 	while (TickCount - starttime < i) {
-		Ipx.Service();
+		Udp.Service();
 		Sleep(1);
 	}
 
@@ -6507,9 +6507,9 @@ static int Net_Fake_New_Dialog(void)
 	//	Init network timing values, using previous response times as a measure
 	//	of what our retry delta & timeout should be.
 	//------------------------------------------------------------------------
-	//Ipx.Set_Timing (Ipx.Global_Response_Time() + 2, -1,
-	//	Ipx.Global_Response_Time() * 4);
-	Ipx.Set_Timing(Ipx.Global_Response_Time() + 2, static_cast<uint32_t>(-1), max<uint32_t>(120U, Ipx.Global_Response_Time() * 8));
+	//Udp.Set_Timing (Udp.Global_Response_Time() + 2, -1,
+	//	Udp.Global_Response_Time() * 4);
+	Udp.Set_Timing(Udp.Global_Response_Time() + 2, static_cast<uint32_t>(-1), max<uint32_t>(120U, Udp.Global_Response_Time() * 8));
 
 	Clear_Listbox(&playerlist);
 
@@ -6584,7 +6584,7 @@ static int Net_Fake_New_Dialog(void)
  * Any game running in Stealth mode won't show up on this dialog.                              *
  *                                                                                             *
  * The 'Players' vector matches one-for-one the contents of the list box.  The local system	  *
- * is always listed first; the IPX Address of the local system will NOT be valid in the		  *
+ * is always listed first; the UDP Address of the local system will NOT be valid in the		  *
  * Players vector.  The Games & Players vectors should be left filled in even after this		  *
  * routine is exited; their contents are used to form connections to the other players,		  *
  * after the scenario has been loaded.																			  *
@@ -6928,23 +6928,23 @@ static int Net_Fake_Join_Dialog(void)
 					Session.GPacket.Command = NET_SIGN_OFF;
 					strcpy(Session.GPacket.Name,namebuf);
 					for (i = 1; i < Session.Chat.Count(); i++) {
-						Ipx.Send_Global_Message (&Session.GPacket,
+						Udp.Send_Global_Message (&Session.GPacket,
 							sizeof(GlobalPacketType),
 							1, &(Session.Chat[i]->Address));
-						Ipx.Service();
+						Udp.Service();
 					}
 
 					//............................................................
 					//	Now broadcast a SIGN_OFF just to be thorough
 					//............................................................
-					Ipx.Send_Global_Message (&Session.GPacket,
+					Udp.Send_Global_Message (&Session.GPacket,
 						sizeof (GlobalPacketType), 0, NULL);
 					if (Session.IsBridge) {
-						Ipx.Send_Global_Message (&Session.GPacket,
+						Udp.Send_Global_Message (&Session.GPacket,
 							sizeof(GlobalPacketType), 0, &Session.BridgeNet);
 					}
 
-					while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+					while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
 						Sleep(1);
 					}
 
@@ -7058,9 +7058,9 @@ static int Net_Fake_Join_Dialog(void)
 								*/
 								memset ((void*)&(Session.GPacket), 0, sizeof (Session.GPacket));
 								Session.GPacket.Command = NET_READY_TO_GO;
-								Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
+								Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 									1, &Session.HostAddress);
-								while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+								while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
 									Sleep(1);
 								}
 								ready_packet_was_sent = true;
@@ -7112,9 +7112,9 @@ static int Net_Fake_Join_Dialog(void)
 						if ( !ready_packet_was_sent ){
 							memset ((void*)&(Session.GPacket), 0, sizeof (Session.GPacket));
 							Session.GPacket.Command = NET_READY_TO_GO;
-							Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
+							Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 								1, &Session.HostAddress);
-							while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+							while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
 								Sleep(1);
 							}
 						}
@@ -7155,9 +7155,9 @@ static int Net_Fake_Join_Dialog(void)
 					*/
 					memset ((void*)&(Session.GPacket), 0, sizeof (Session.GPacket));
 					Session.GPacket.Command = NET_READY_TO_GO;
-					Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
+					Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 						1, &Session.HostAddress);
-					while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+					while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
 						Sleep(1);
 					}
 				}
@@ -7259,9 +7259,9 @@ static int Net_Fake_Join_Dialog(void)
 		}
 
 		//.....................................................................
-		//	Service the Ipx connections
+		//	Service the Udp connections
 		//.....................................................................
-		Ipx.Service();
+		Udp.Service();
 
 		if (process) {
 			//.....................................................................
@@ -7340,25 +7340,25 @@ static int Net_Fake_Join_Dialog(void)
 			// Don't send myself the message.
 			//..................................................................
 			for (i = 1; i < Session.Players.Count(); i++) {
-				Ipx.Send_Global_Message (&Session.GPacket,
+				Udp.Send_Global_Message (&Session.GPacket,
 					sizeof(GlobalPacketType), 1,
 					&(Session.Players[i]->Address));
-				Ipx.Service();
+				Udp.Service();
 			}
 
-			Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
+			Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 				0, NULL);
-			Ipx.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
+			Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 				0, NULL);
 
 			if (Session.IsBridge) {
-				Ipx.Send_Global_Message (&Session.GPacket, sizeof(GlobalPacketType),
+				Udp.Send_Global_Message (&Session.GPacket, sizeof(GlobalPacketType),
 					0, &Session.BridgeNet);
-				Ipx.Send_Global_Message (&Session.GPacket, sizeof(GlobalPacketType),
+				Udp.Send_Global_Message (&Session.GPacket, sizeof(GlobalPacketType),
 					0, &Session.BridgeNet);
 			}
 
-			while (Ipx.Global_Num_Send() > 0 && Ipx.Service() != 0) {
+			while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
 				Sleep(1);
 			}
 
@@ -7382,14 +7382,14 @@ static int Net_Fake_Join_Dialog(void)
 		}
 
 		//.....................................................................
-		//	Wait a while, polling the IPX service routines, to give our ACK
+		//	Wait a while, polling the UDP service routines, to give our ACK
 		//	a chance to get to the other system.  If he doesn't get our ACK,
 		// he'll be waiting the whole time we load MIX files.
 		//.....................................................................
-		i = MAX(Ipx.Global_Response_Time() * 2, 60*2);
+		i = MAX(Udp.Global_Response_Time() * 2, 60*2);
 		starttime = TickCount;
 		while (TickCount - starttime < i) {
-			Ipx.Service();
+			Udp.Service();
 			Sleep(1);
 		}
 	}
@@ -7398,9 +7398,9 @@ static int Net_Fake_Join_Dialog(void)
 	//	Init network timing values, using previous response times as a measure
 	//	of what our retry delta & timeout should be.
 	//------------------------------------------------------------------------
-	//Ipx.Set_Timing (Ipx.Global_Response_Time() + 2, -1,
-	//	Ipx.Global_Response_Time() * 4);
-	Ipx.Set_Timing(Ipx.Global_Response_Time() + 2, static_cast<uint32_t>(-1), max<uint32_t>(120U, Ipx.Global_Response_Time() * 8));
+	//Udp.Set_Timing (Udp.Global_Response_Time() + 2, -1,
+	//	Udp.Global_Response_Time() * 4);
+	Udp.Set_Timing(Udp.Global_Response_Time() + 2, static_cast<uint32_t>(-1), max<uint32_t>(120U, Udp.Global_Response_Time() * 8));
 
 	//------------------------------------------------------------------------
 	//	Clear all lists, but NOT the Games & Players vectors.
@@ -7457,7 +7457,7 @@ bool Server_Remote_Connect(void)
 	//	Init network timing parameters; these values should work for both a
 	// "real" network, and a simulated modem network (ie Kali)
 	//------------------------------------------------------------------------
-	Ipx.Set_Timing (	30, 		// retry 2 times per second
+	Udp.Set_Timing (	30, 		// retry 2 times per second
 							-1, 		// ignore max retries
 							600);		// give up after 10 seconds
 
@@ -7504,7 +7504,7 @@ bool Client_Remote_Connect(void)
 	//	Init network timing parameters; these values should work for both a
 	// "real" network, and a simulated modem network (ie Kali)
 	//------------------------------------------------------------------------
-	Ipx.Set_Timing (	30, 		// retry 2 times per second
+	Udp.Set_Timing (	30, 		// retry 2 times per second
 							-1, 		// ignore max retries
 							600);		// give up after 10 seconds
 

@@ -83,7 +83,7 @@ class ConnManClass
 		/*.....................................................................
 		Various useful enums:
 		.....................................................................*/
-		enum IPXConnTag {
+		enum UDPConnTag {
 			CONNECTION_NONE = -1			// value of an invalid connection ID
 		};
 

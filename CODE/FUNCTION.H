@@ -374,8 +374,8 @@ CELL Coord_Cell(COORDINATE coord);
 // Multiplayer chat message system
 #include "SESSION.H"
 // Multiplayer session class
-#include "IPXMGR.H"
-// IPX connection manager
+#include "UDPMGR.H"
+// UDP connection manager
 #include	"READLINE.H"
 #include	"VORTEX.H"
 #include "EGOS.H"
@@ -471,7 +471,7 @@ int Get_CD_Index (int cd_drive, int timeout);
 int Owner_From_Name(char const * text);
 CrateType Crate_From_Name(char const * name);
 Rect const Shape_Dimensions(void const * shapedata, int shapenum);
-void IPX_Call_Back(void);
+void UDP_Call_Back(void);
 bool Is_Counterstrike_Installed (void);
 #ifdef FIXIT_CSII	//	checked - ajw 9/28/98
 bool Is_Aftermath_Installed (void);
@@ -735,7 +735,7 @@ bool Init_Network (void);
 void Shutdown_Network (void);
 bool Remote_Connect (void);
 void Destroy_Connection(int id, int error);
-bool Process_Global_Packet(GlobalPacketType *packet, IPXAddressClass *address);
+bool Process_Global_Packet(GlobalPacketType *packet, UDPAddressClass *address);
 uint32_t Compute_Name_CRC(char *name);
 void Net_Reconnect_Dialog(int reconn, int fresh, int oldest_index, uint32_t timeval);
 

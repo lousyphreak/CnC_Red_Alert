@@ -57,10 +57,10 @@
 #include	"ICONLIST.H"
 #include	"TACTION.H"
 #include	"TEVENT.H"
-#ifdef WINSOCK_IPX
+#ifdef NETWORK_UDP
 #include	"WSPROTO.H"
 #include	"WSPUDP.H"
-#endif	//WINSOCK_IPX
+#endif	//NETWORK_UDP
 #include "VECTOR.H"
 #include <stdint.h>
 #include <string.h>

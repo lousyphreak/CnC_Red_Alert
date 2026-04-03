@@ -172,7 +172,7 @@ SessionClass::SessionClass(void)
 	GameName[0] = 0;
 	GProductID = 0;
 
-	MetaSize = MAX_IPX_PACKET_SIZE;
+	MetaSize = MAX_UDP_PACKET_SIZE;
 
 	TrapFrame = 0x7fffffff;		// frame to start trapping object values at
 	TrapObjType = RTTI_NONE;	// type of object to trap
@@ -296,7 +296,7 @@ int SessionClass::Create_Connections(void)
 {
 	int i;
 
-	if (Session.Type != GAME_IPX && Session.Type != GAME_INTERNET) {
+	if (Session.Type != GAME_UDP && Session.Type != GAME_INTERNET) {
 		return (0);
 	}
 
@@ -310,7 +310,7 @@ int SessionClass::Create_Connections(void)
 		//.....................................................................
 		if (!SDL_strcasecmp(Players[i]->Name,
 			HouseClass::As_Pointer(Players[i]->Player.ID)->IniName)) {
-			Ipx.Create_Connection((int)Players[i]->Player.ID, Players[i]->Name,
+			Udp.Create_Connection((int)Players[i]->Player.ID, Players[i]->Name,
 				&(Players[i]->Address) );
 		Players[i]->Player.ProcessTime = -1;
 		}

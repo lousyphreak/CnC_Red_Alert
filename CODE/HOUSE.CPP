@@ -3706,15 +3706,15 @@ void HouseClass::MPlayer_Defeated(void)
 		Tally_Score();
 
 		/*
-		**	Destroy all the IPX connections, since we have to go through the rest
+		**	Destroy all the UDP connections, since we have to go through the rest
 		**	of the Main_Loop() before we detect that the game is over, and we'll
 		**	end up waiting for frame sync packets from the other machines.
 		*/
-		if (Session.Type==GAME_IPX || Session.Type == GAME_INTERNET) {
+		if (Session.Type==GAME_UDP || Session.Type == GAME_INTERNET) {
 			i = 0;
-			while (Ipx.Num_Connections() && (i++ < 1000) ) {
-				id = Ipx.Connection_ID(0);
-				Ipx.Delete_Connection(id);
+			while (Udp.Num_Connections() && (i++ < 1000) ) {
+				id = Udp.Connection_ID(0);
+				Udp.Delete_Connection(id);
 			}
 			Session.NumPlayers = 0;
 		}

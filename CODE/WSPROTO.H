@@ -59,8 +59,7 @@
 #define PLANET_WESTWOOD_HANDLE_MAX 20	// Max length of a Planet Westwood handle
 
 enum WinsockProtocolEventType {
-	WINSOCK_PROTOCOL_EVENT_IPX = 1,
-	WINSOCK_PROTOCOL_EVENT_UDP = 2
+	WINSOCK_PROTOCOL_EVENT_UDP = 1
 };
 
 
@@ -69,7 +68,6 @@ enum WinsockProtocolEventType {
 */
 typedef enum tProtocolEnum {
 	PROTOCOL_NONE,
-	PROTOCOL_IPX,
 	PROTOCOL_UDP
 } ProtocolEnum;
 
@@ -78,8 +76,7 @@ typedef enum tProtocolEnum {
 /*
 **
 ** Class to interface with Winsock. This interface only supports connectionless packet protocols
-** like UDP & IPX. Connection orientated or streaming protocols like TCP are not supported by this
-** class.
+** like UDP. Connection orientated or streaming protocols like TCP are not supported by this class.
 **
 */
 class WinsockInterfaceClass {
@@ -144,7 +141,7 @@ class WinsockInterfaceClass {
 		** It acts as a temporary control for these packets.
 		*/
 		typedef struct tWinsockBufferType {
-			uint8_t		Address [64];	// Address. IN_ADDR, IPXAddressClass etc.
+			uint8_t		Address [64];	// Address. IN_ADDR, UDPAddressClass etc.
 			int					BufferLen;		// Length of data in buffer
 			bool					IsBroadcast;	// Flag to broadcast this packet
 			uint8_t		Buffer[1024];	// Buffer to store packet in.

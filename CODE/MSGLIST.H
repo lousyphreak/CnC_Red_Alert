@@ -68,7 +68,7 @@
  * - EditLabel points to the textmessage gadget for the current editable	*
  *   field.  EditBuf points to the char buffer being edited.  EditInitPos	*
  *   & EditCurPos define buffer index positions.									*
- * - EditSendAddress is the IPX Address to send the message to when RETURN	*
+ * - EditSendAddress is the UDP Address to send the message to when RETURN	*
  *   is pressed.																				*
  *																									*
  * The low word in the UserData field in the TextLabelClass tells what the *
