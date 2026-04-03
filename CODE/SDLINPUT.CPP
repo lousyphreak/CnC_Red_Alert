@@ -13,6 +13,8 @@
 
 #include <stdint.h>
 extern HWND MainWindow;
+extern void Main_Window_Handle_Focus_Change(bool focused);
+extern void Main_Window_Handle_Close_Request(void);
 extern int32_t GameInFocus;
 extern int32_t BootstrapFocusSeen;
 extern GraphicViewPortClass SeenBuff;
@@ -604,13 +606,13 @@ void handle_focus_event(bool focused)
 		return;
 	}
 
-	PostMessage(MainWindow, WM_ACTIVATEAPP, focused ? TRUE : FALSE, 0);
+	Main_Window_Handle_Focus_Change(focused);
 }
 
 void handle_close_event(void)
 {
 	if (MainWindow) {
-		PostMessage(MainWindow, WM_CLOSE, 0, 0);
+		Main_Window_Handle_Close_Request();
 	} else {
 		PostQuitMessage(0);
 	}

@@ -514,8 +514,8 @@ int  WinMain ( HINSTANCE instance , HINSTANCE , char * command_line , int comman
 			/*
 			** Post a message to our message handler to tell it to clean up.
 			*/
-			startup_trace("Posting WM_DESTROY for clean shutdown");
-			PostMessage(MainWindow, WM_DESTROY, 0, 0);
+			startup_trace("Destroying main window for clean shutdown");
+			Main_Window_Destroy();
 
 			/*
 			** Wait until the message handler has dealt with the message
@@ -628,8 +628,8 @@ void Emergency_Exit ( int code )
 			/*
 			** Post a message to our message handler to tell it to clean up.
 			*/
-			startup_trace("Posting WM_DESTROY for clean shutdown");
-			PostMessage(MainWindow, WM_DESTROY, 0, 0);
+			startup_trace("Destroying main window for emergency shutdown");
+			Main_Window_Destroy();
 
 	/*
 	** Wait until the message handler has dealt with the message

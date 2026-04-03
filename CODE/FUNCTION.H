@@ -868,6 +868,10 @@ int Fetch_Difficulty(void);
 **	STARTUP.CPP
 */
 void Print_Error_End_Exit(char *string);
+void Main_Window_Show_Maximized(void);
+void Main_Window_Handle_Focus_Change(bool focused);
+void Main_Window_Handle_Close_Request(void);
+void Main_Window_Destroy(void);
 void Emergency_Exit ( int code );
 
 /*

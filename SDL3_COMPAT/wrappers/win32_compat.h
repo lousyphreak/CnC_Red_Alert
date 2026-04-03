@@ -345,19 +345,6 @@ using MSG = tagMSG;
 using WNDPROC = LRESULT (CALLBACK*)(HWND, UINT, WPARAM, LPARAM);
 using DLGPROC = INT_PTR (CALLBACK*)(HWND, UINT, WPARAM, LPARAM);
 
-struct WNDCLASS {
-    UINT style;
-    WNDPROC lpfnWndProc;
-    INT cbClsExtra;
-    INT cbWndExtra;
-    HINSTANCE hInstance;
-    HGDIOBJ hIcon;
-    HGDIOBJ hCursor;
-    HGDIOBJ hbrBackground;
-    LPCSTR lpszMenuName;
-    LPCSTR lpszClassName;
-};
-
 struct FILETIME {
     DWORD dwLowDateTime;
     DWORD dwHighDateTime;
@@ -411,6 +398,8 @@ struct RAWindow {
     int height;
 };
 
+HWND RA_CreateWindow(const char* title, int width, int height, SDL_WindowFlags flags, WNDPROC wnd_proc);
+void RA_DestroyWindow(HWND window);
 bool RA_GetPresentationRect(HWND window, SDL_FRect* rect);
 bool RA_GetRenderSourceRect(HWND window, SDL_FRect* rect);
 bool RA_WindowToGamePoint(HWND window, float window_x, float window_y, int* game_x, int* game_y);
@@ -418,13 +407,6 @@ bool RA_GameRectToWindowRect(HWND window, const RECT* game_rect, SDL_Rect* windo
 
 extern "C" {
 
-ATOM RegisterClass(const WNDCLASS* wndclass);
-HWND CreateWindowEx(DWORD ex_style, LPCSTR class_name, LPCSTR window_name, DWORD style,
-    INT x, INT y, INT width, INT height, HWND parent, HANDLE menu, HINSTANCE instance, LPVOID param);
-BOOL ShowWindow(HWND window, INT command);
-BOOL SetForegroundWindow(HWND window);
-BOOL UpdateWindow(HWND window);
-LRESULT DefWindowProc(HWND window, UINT message, WPARAM w_param, LPARAM l_param);
 BOOL PeekMessage(MSG* message, HWND window, UINT min_filter, UINT max_filter, UINT remove_message);
 BOOL GetMessage(MSG* message, HWND window, UINT min_filter, UINT max_filter);
 BOOL TranslateMessage(const MSG* message);
@@ -434,7 +416,6 @@ BOOL PostMessage(HWND window, UINT message, WPARAM w_param, LPARAM l_param);
 LRESULT SendMessage(HWND window, UINT message, WPARAM w_param, LPARAM l_param);
 UINT RegisterWindowMessage(LPCSTR string);
 int GetSystemMetrics(int index);
-HWND SetFocus(HWND window);
 HGDIOBJ LoadIcon(HINSTANCE instance, LPCSTR icon_name);
 INT_PTR DialogBox(HINSTANCE instance, LPCTSTR template_name, HWND owner, DLGPROC dialog_proc);
 void ExitProcess(UINT exit_code);

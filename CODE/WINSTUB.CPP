@@ -47,6 +47,7 @@
 
 #include	"FUNCTION.H"
 #include "SDLINPUT.H"
+#include <SDL3/SDL_video.h>
 #include	<cstdarg>
 #include	<cstdio>
 #include	<cstdlib>
@@ -62,7 +63,6 @@ void output(int16_t,int16_t)
 {}
 
 
-uint32_t CCFocusMessage = WM_USER+50;	//Private message for receiving application focus
 extern	void VQA_PauseAudio(void);
 extern	void VQA_ResumeAudio(void);
 extern int32_t BootstrapFocusSeen;
@@ -90,6 +90,50 @@ void winstub_trace(const char* format, ...)
 	std::fputc('\n', stderr);
 	std::fflush(stderr);
 	va_end(arguments);
+}
+
+void apply_window_show_command(HWND window, int command_show)
+{
+	if (window == NULL || window->sdl_window == NULL) {
+		return;
+	}
+
+	switch (command_show) {
+		case SW_HIDE:
+			SDL_HideWindow(window->sdl_window);
+			return;
+
+		case SW_MINIMIZE:
+		case SW_SHOWMINIMIZED:
+			SDL_ShowWindow(window->sdl_window);
+			SDL_MinimizeWindow(window->sdl_window);
+			return;
+
+		case SW_SHOWMAXIMIZED:
+			SDL_ShowWindow(window->sdl_window);
+			SDL_MaximizeWindow(window->sdl_window);
+			break;
+
+		case SW_RESTORE:
+			SDL_ShowWindow(window->sdl_window);
+			SDL_RestoreWindow(window->sdl_window);
+			break;
+
+		default:
+			SDL_ShowWindow(window->sdl_window);
+			break;
+	}
+
+	SDL_RaiseWindow(window->sdl_window);
+}
+
+void restore_focus_after_loss(void)
+{
+	Start_Primary_Sound_Buffer(TRUE);
+	if (!InMovie) {
+		Theme.Stop();
+		Theme.Queue_Song(THEME_PICK_ANOTHER);
+	}
 }
 }
 
@@ -180,7 +224,7 @@ void Check_For_Focus_Loss(void)
 
 		} while (cd.Time());
 		VQA_ResumeAudio();
-		PostMessage (MainWindow, CCFocusMessage, 0, 0);
+		restore_focus_after_loss();
 //		AllSurfaces.Restore_Surfaces();
 //		VisiblePage.Clear();
 //		HiddenPage.Clear();
@@ -195,19 +239,89 @@ void Check_For_Focus_Loss(void)
 
 extern bool InMovie;
 
+void Main_Window_Handle_Focus_Change(bool focused)
+{
+	winstub_trace("Main window focus change hwnd=%p active=%u", MainWindow, focused ? 1u : 0u);
+	if (focused) {
+		BootstrapFocusSeen = TRUE;
+		GameInFocus = TRUE;
+		AllSurfaces.Set_Surface_Focus(TRUE);
+		AllSurfaces.Restore_Surfaces();
+	} else if (!BootstrapFocusSeen) {
+		GameInFocus = FALSE;
+		Focus_Loss();
+		AllSurfaces.Set_Surface_Focus(FALSE);
+		AllSurfaces.Restore_Surfaces();
+	} else {
+		winstub_trace("Ignoring post-bootstrap focus loss");
+		GameInFocus = TRUE;
+	}
+}
+
+void Main_Window_Destroy(void)
+{
+	winstub_trace("Main window destroy hwnd=%p ReadyToQuit=%d", MainWindow, ReadyToQuit);
+	Prog_End();
+	Invalidate_Cached_Icons();
+	VisiblePage.Un_Init();
+	HiddenPage.Un_Init();
+	AllSurfaces.Release();
+	if (!InDebugger) Reset_Video_Mode();
+	Stop_Profiler();
+
+	if (MainWindow != NULL) {
+		RA_DestroyWindow(MainWindow);
+		MainWindow = NULL;
+	}
+
+	PostQuitMessage(0);
+
+	switch (ReadyToQuit) {
+		case 1:
+			ReadyToQuit = 2;
+			break;
+
+		case 0:
+			Shutdown_Network();
+#ifndef WINSOCK_IPX
+			if (Winsock.Get_Connected()) Winsock.Close();
+			Unload_IPX_Dll();
+#endif	//WINSOCK_IPX
+			ExitProcess(0);
+			break;
+
+		case 3:
+			Shutdown_Network();
+#ifndef WINSOCK_IPX
+			if (Session.Type == GAME_IPX){
+				IPX_Shut_Down95();
+			}
+#ifdef FIXIT_CSII	//	checked - ajw 9/28/98
+#else
+			Unload_IPX_Dll();
+#endif
+			if (Winsock.Get_Connected()) Winsock.Close();
+#endif	//WINSOCK_IPX
+			ReadyToQuit = 2;
+			break;
+	}
+}
+
+void Main_Window_Handle_Close_Request(void)
+{
+	winstub_trace("Main window close request hwnd=%p", MainWindow);
+	Main_Window_Destroy();
+}
+
+void Main_Window_Show_Maximized(void)
+{
+	apply_window_show_command(MainWindow, SW_SHOWMAXIMIZED);
+}
+
 int32_t   Windows_Procedure(HWND hwnd, uint32_t message, uint32_t wParam, int32_t lParam)
 {
 
 	int	low_param = LOWORD(wParam);
-
-	if (message == CCFocusMessage) {
-		Start_Primary_Sound_Buffer(TRUE);
-		if (!InMovie) {
-			Theme.Stop();
-			Theme.Queue_Song(THEME_PICK_ANOTHER);
-		}
-		return(0);
-	}
 
 #ifdef WINSOCK_IPX
 	/*
@@ -216,7 +330,7 @@ int32_t   Windows_Procedure(HWND hwnd, uint32_t message, uint32_t wParam, int32_
 	if ( PacketTransport ) {
 		if ( message == (uint32_t) PacketTransport->Protocol_Event_Message() ) {
 			if ( PacketTransport->Message_Handler (hwnd, message, wParam, lParam) ){
-				return ( DefWindowProc (hwnd, message, wParam, lParam) );
+				return (0);
 			}else{
 				return (0);
 			}
@@ -250,85 +364,11 @@ int32_t   Windows_Procedure(HWND hwnd, uint32_t message, uint32_t wParam, int32_
 			** Windoze message says we have to shut down. Try and do it cleanly.
 			*/
 		case WM_DESTROY:
-			winstub_trace("WM_DESTROY hwnd=%p ReadyToQuit=%d", hwnd, ReadyToQuit);
-			Prog_End();
-			Invalidate_Cached_Icons();
-			VisiblePage.Un_Init();
-			HiddenPage.Un_Init();
-			AllSurfaces.Release();
-			if (!InDebugger) Reset_Video_Mode();
-			Stop_Profiler();
-			PostQuitMessage( 0 );
-
-			/*
-			** If we are shutting down gracefully than flag that the message loop has finished.
-			** If this is a forced shutdown (ReadyToQuit == 0) then try and close down everything
-			** before we exit.
-			*/
-			switch (ReadyToQuit) {
-				case 1:
-					ReadyToQuit = 2;
-					break;
-
-				case 0:
-					Shutdown_Network();
-#ifndef WINSOCK_IPX
-					if (Winsock.Get_Connected()) Winsock.Close();
-					/*
-					** Free the THIPX32 dll
-					*/
-					Unload_IPX_Dll();
-#endif	//WINSOCK_IPX
-					ExitProcess(0);
-					break;
-				case 3:
-					Shutdown_Network();
-#ifndef WINSOCK_IPX
-					/*
-					** Call the function to disable the IPX callback as horrible things can
-					** happen if we get a callback after the process has exited!
-					*/
-					if (Session.Type == GAME_IPX){
-						IPX_Shut_Down95();
-					}
-					/*
-					** Free the THIPX32 dll
-					*/
-#ifdef FIXIT_CSII	//	checked - ajw 9/28/98
-#else
-					Unload_IPX_Dll();
-#endif
-
-					if (Winsock.Get_Connected()) Winsock.Close();
-#endif	//WINSOCK_IPX
-					ReadyToQuit = 2;
-					break;
-
-			}
+			Main_Window_Destroy();
 			return(0);
 
 		case WM_ACTIVATEAPP:
-			winstub_trace("WM_ACTIVATEAPP hwnd=%p active=%u", hwnd, wParam);
-			if ((int32_t)wParam) {
-				BootstrapFocusSeen = TRUE;
-				GameInFocus = TRUE;
-				AllSurfaces.Set_Surface_Focus(TRUE);
-				AllSurfaces.Restore_Surfaces();
-			} else if (!BootstrapFocusSeen) {
-				GameInFocus = FALSE;
-				Focus_Loss();
-				AllSurfaces.Set_Surface_Focus(FALSE);
-				AllSurfaces.Restore_Surfaces();
-			} else {
-				winstub_trace("WM_ACTIVATEAPP ignoring post-bootstrap focus loss");
-				GameInFocus = TRUE;
-			}
-//			if (GameInFocus) {
-//				Restore_Cached_Icons();
-//				Map.Flag_To_Redraw(true);
-//				Start_Primary_Sound_Buffer(TRUE);
-//				if (WWMouse) WWMouse->Set_Cursor_Clip();
-//			}
+			Main_Window_Handle_Focus_Change(wParam != 0);
 			return(0);
 #ifdef NEVER
 		case WM_ACTIVATE:
@@ -341,16 +381,14 @@ int32_t   Windows_Procedure(HWND hwnd, uint32_t message, uint32_t wParam, int32_
 
 
 		case WM_CLOSE:
-			winstub_trace("WM_CLOSE hwnd=%p", hwnd);
-			PostMessage(hwnd, WM_DESTROY, 0, 0);
+			Main_Window_Handle_Close_Request();
 			return(0);
 
 		case WM_SYSCOMMAND:
 			switch ( wParam ) {
 
 				case SC_CLOSE:
-					winstub_trace("SC_CLOSE hwnd=%p", hwnd);
-					PostMessage(hwnd, WM_CLOSE, 0, 0);
+					Main_Window_Handle_Close_Request();
 					return (0);
 
 				case SC_SCREENSAVE:
@@ -376,7 +414,7 @@ int32_t   Windows_Procedure(HWND hwnd, uint32_t message, uint32_t wParam, int32_
 
 
 
-	return DefWindowProc (hwnd, message, wParam, lParam);
+	return (0);
 }
 
 
@@ -474,55 +512,19 @@ void Create_Main_Window ( HANDLE instance , int command_show , int width , int h
 
 {
 	HWND        	hwnd ;
-	WNDCLASS    	wndclass ;
-	//
-	// Register the window class
-	//
-
-	wndclass.style         = CS_HREDRAW | CS_VREDRAW ;
-	wndclass.lpfnWndProc   = Windows_Procedure ;
-	wndclass.cbClsExtra    = 0 ;
-	wndclass.cbWndExtra    = 0 ;
-	wndclass.hInstance     = instance ;
-	wndclass.hIcon         = LoadIcon (instance, MAKEINTRESOURCE(CC_ICON)) ;
-	wndclass.hCursor       = NULL;
-	wndclass.hbrBackground = NULL;
-	wndclass.lpszMenuName  = WINDOW_NAME;	//NULL
-	wndclass.lpszClassName = WINDOW_NAME;
-
-	RegisterClass (&wndclass) ;
-
-
-	//
-	// Create our main window
-	//
-	hwnd = CreateWindowEx (
-							WS_EX_TOPMOST,
-							WINDOW_NAME,
-							WINDOW_NAME,
-							WS_POPUP, // Denzil | WS_MAXIMIZE,
-							0,
-							0,
-							// Denzil 5/18/98 - Making window fullscreen prevents other apps
-							// from getting WM_PAINT messages
-							GetSystemMetrics(SM_CXSCREEN), //width,
-							GetSystemMetrics(SM_CYSCREEN), //height,
-							// End Denzil
-							NULL,
-							NULL,
-							instance,
-							NULL );
+	hwnd = RA_CreateWindow(
+		WINDOW_NAME,
+		GetSystemMetrics(SM_CXSCREEN),
+		GetSystemMetrics(SM_CYSCREEN),
+		SDL_WINDOW_RESIZABLE,
+		Windows_Procedure);
 // Denzil
 width = width; height = height;
 // End
 
-	ShowWindow (hwnd, command_show );
-	UpdateWindow (hwnd);
-	SetFocus (hwnd);
+	apply_window_show_command(hwnd, command_show);
 	MainWindow=hwnd;			//Save the handle to our main window
 	hInstance = instance;
-
-	CCFocusMessage = RegisterWindowMessage ("CC_GOT_FOCUS");
 
 	Audio_Focus_Loss_Function = &Focus_Loss;
 	Misc_Focus_Loss_Function = &Focus_Loss;
@@ -884,7 +886,7 @@ void Memory_Error_Handler(void)
 
 	ReadyToQuit = 1;
 
-	PostMessage(MainWindow, WM_DESTROY, 0, 0);
+	Main_Window_Destroy();
 	do
 	{
 		Keyboard->Check();

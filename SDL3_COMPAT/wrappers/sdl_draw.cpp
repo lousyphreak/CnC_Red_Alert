@@ -34,12 +34,7 @@ RAWindow* ensure_window(RAWindow* window, int width, int height)
         return window;
     }
 
-    auto* created = new RAWindow{};
-    created->title = "Red Alert";
-    created->width = width;
-    created->height = height;
-    created->sdl_window = SDL_CreateWindow(created->title.c_str(), width, height, SDL_WINDOW_RESIZABLE);
-    return created;
+    return RA_CreateWindow("Red Alert", width, height, SDL_WINDOW_RESIZABLE, nullptr);
 }
 
 void ensure_renderer(RAWindow* window, int width, int height)

@@ -1,5 +1,14 @@
 # Porting Knowledge
 
+## SDL main-window path no longer needs Win32 class/show/focus wrappers
+
+- The remaining `RegisterClass` / `CreateWindowEx` / `ShowWindow` / `SetForegroundWindow` / `SetFocus` / `UpdateWindow` / `DefWindowProc` compat surface was only propping up the legacy main-window lifecycle, not the whole event system.
+  - The live callers were the main-window bootstrap/teardown flow in `CODE/WINSTUB.CPP`, SDL event translation in `CODE/SDLINPUT.CPP`, startup/emergency shutdown in `CODE/STARTUP.CPP`, and the focus-restoration waits in `CODE/NETDLG.CPP`.
+  - The actual async message machinery that still matters to gameplay/networking is narrower: `PeekMessage` / `GetMessage` / `DispatchMessage` / `SendMessage` / `PostMessage` are still used for legacy socket/event notifications and should not be conflated with window creation/show wrappers.
+- Safe rule for this port: keep the message target (`RAWindow::wnd_proc`) for non-window async dispatch, but handle window lifecycle directly through SDL.
+  - Current fix pattern: create the main window with an SDL-backed helper (`RA_CreateWindow(...)`), then call SDL window APIs directly for show/maximize/raise and invoke explicit game helpers for focus change / close / destroy (`Main_Window_Handle_Focus_Change(...)`, `Main_Window_Handle_Close_Request()`, `Main_Window_Destroy()`).
+  - Practical benefit: this deletes dead Win32 window wrapper code without losing the legacy message path that the networking code still expects.
+
 ## Find_Path edge-follow terminator bounds
 
 - `CODE/FINDPATH.CPP::Follow_Edge(...)` needs one free command slot beyond the last recorded move.

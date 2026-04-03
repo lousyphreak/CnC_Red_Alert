@@ -17,7 +17,6 @@
 #include <ctime>
 #include <mutex>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -59,10 +58,6 @@ struct GlobalHandle final : HandleBase {
 
 std::mutex g_last_error_mutex;
 DWORD g_last_error = ERROR_SUCCESS;
-std::mutex g_window_class_mutex;
-std::unordered_map<std::string, WNDCLASS> g_window_classes;
-std::mutex g_window_mutex;
-std::unordered_set<HWND> g_windows;
 std::mutex g_message_queue_mutex;
 std::deque<MSG> g_message_queue;
 std::mutex g_registered_message_mutex;
@@ -106,29 +101,6 @@ bool get_render_source_rect(HWND window, SDL_FRect* rect)
     }
 
     return true;
-}
-
-HWND first_window()
-{
-    std::scoped_lock lock(g_window_mutex);
-    if (g_windows.empty()) {
-        return nullptr;
-    }
-    return *g_windows.begin();
-}
-
-HWND window_for_id(SDL_WindowID window_id)
-{
-    if (window_id != 0) {
-        std::scoped_lock lock(g_window_mutex);
-        for (HWND window : g_windows) {
-            if (window && window->sdl_window && SDL_GetWindowID(window->sdl_window) == window_id) {
-                return window;
-            }
-        }
-    }
-
-    return first_window();
 }
 
 void set_last_error(DWORD value)
@@ -237,6 +209,33 @@ BOOL next_message(MSG* message, bool remove, bool wait)
 
 } // namespace
 
+HWND RA_CreateWindow(const char* title, int width, int height, SDL_WindowFlags flags, WNDPROC wnd_proc)
+{
+    auto* window = new RAWindow{};
+    window->title = title ? title : "Red Alert";
+    window->wnd_proc = wnd_proc;
+    window->width = width > 0 ? width : 640;
+    window->height = height > 0 ? height : 480;
+    window->sdl_window = SDL_CreateWindow(window->title.c_str(), window->width, window->height, flags);
+    if (!window->sdl_window) {
+        delete window;
+        return nullptr;
+    }
+    return window;
+}
+
+void RA_DestroyWindow(HWND window)
+{
+    if (!window) {
+        return;
+    }
+    if (window->sdl_window) {
+        SDL_DestroyWindow(window->sdl_window);
+        window->sdl_window = nullptr;
+    }
+    delete window;
+}
+
 bool RA_GetPresentationRect(HWND window, SDL_FRect* rect)
 {
     if (!window || !window->sdl_window || !rect || window->width <= 0 || window->height <= 0) {
@@ -331,87 +330,6 @@ bool RA_GameRectToWindowRect(HWND window, const RECT* game_rect, SDL_Rect* windo
 
 extern "C" {
 
-ATOM RegisterClass(const WNDCLASS* wndclass)
-{
-    if (!wndclass || !wndclass->lpszClassName) {
-        set_last_error(ERROR_INVALID_HANDLE);
-        return 0;
-    }
-    std::scoped_lock lock(g_window_class_mutex);
-    g_window_classes[wndclass->lpszClassName] = *wndclass;
-    return 1;
-}
-
-HWND CreateWindowEx(DWORD, LPCSTR class_name, LPCSTR window_name, DWORD, INT, INT, INT width, INT height, HWND, HANDLE, HINSTANCE, LPVOID)
-{
-    WNDCLASS klass{};
-    {
-        std::scoped_lock lock(g_window_class_mutex);
-        auto it = g_window_classes.find(class_name ? class_name : "");
-        if (it != g_window_classes.end()) {
-            klass = it->second;
-        }
-    }
-
-    auto* window = new RAWindow{};
-    window->title = window_name ? window_name : "Red Alert";
-    window->wnd_proc = klass.lpfnWndProc;
-    window->width = width > 0 ? width : 640;
-    window->height = height > 0 ? height : 480;
-    window->sdl_window = SDL_CreateWindow(window->title.c_str(), window->width, window->height, SDL_WINDOW_RESIZABLE);
-    {
-        std::scoped_lock lock(g_window_mutex);
-        g_windows.insert(window);
-    }
-    return window;
-}
-
-BOOL ShowWindow(HWND window, INT command)
-{
-    if (!window || !window->sdl_window) return FALSE;
-    if (command == SW_HIDE) {
-        SDL_HideWindow(window->sdl_window);
-    } else if (command == SW_MINIMIZE || command == SW_SHOWMINIMIZED) {
-        SDL_MinimizeWindow(window->sdl_window);
-    } else if (command == SW_MAXIMIZE || command == SW_SHOWMAXIMIZED) {
-        SDL_MaximizeWindow(window->sdl_window);
-    } else if (command == SW_RESTORE) {
-        SDL_RestoreWindow(window->sdl_window);
-    } else {
-        SDL_ShowWindow(window->sdl_window);
-    }
-    return TRUE;
-}
-
-BOOL SetForegroundWindow(HWND window)
-{
-    if (!window || !window->sdl_window) {
-        return FALSE;
-    }
-
-    SDL_ShowWindow(window->sdl_window);
-    SDL_RaiseWindow(window->sdl_window);
-    PostMessage(window, WM_ACTIVATEAPP, TRUE, 0);
-    return TRUE;
-}
-
-BOOL UpdateWindow(HWND)
-{
-    return TRUE;
-}
-
-LRESULT DefWindowProc(HWND, UINT message, WPARAM, LPARAM)
-{
-    if (message == WM_CLOSE) {
-        return 0;
-    }
-    if (message == WM_DESTROY) {
-        PostQuitMessage(0);
-        return 0;
-    }
-    return 0;
-}
-
 BOOL PeekMessage(MSG* message, HWND, UINT, UINT, UINT remove_message)
 {
     return next_message(message, (remove_message & PM_REMOVE) != 0, false);
@@ -436,7 +354,7 @@ LRESULT DispatchMessage(const MSG* message)
     if (message->hwnd && message->hwnd->wnd_proc) {
         return message->hwnd->wnd_proc(message->hwnd, message->message, message->wParam, message->lParam);
     }
-    return DefWindowProc(message->hwnd, message->message, message->wParam, message->lParam);
+    return 0;
 }
 
 void PostQuitMessage(INT exit_code)
@@ -508,14 +426,6 @@ int GetSystemMetrics(int index)
         return bounds.h;
     }
     return 0;
-}
-
-HWND SetFocus(HWND window)
-{
-    if (window) {
-        SetForegroundWindow(window);
-    }
-    return window;
 }
 
 HGDIOBJ LoadIcon(HINSTANCE, LPCSTR)
