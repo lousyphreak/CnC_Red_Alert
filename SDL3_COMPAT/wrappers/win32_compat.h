@@ -63,7 +63,6 @@ using LRESULT = intptr_t;
 using MCIDEVICEID = UINT;
 using ATOM = WORD;
 using HANDLE = void*;
-using HGLOBAL = void*;
 using HMODULE = void*;
 using FARPROC = void (*)();
 using HGDIOBJ = void*;
@@ -278,11 +277,6 @@ struct RAWindow;
 #define DRIVE_FIXED 3U
 #define DRIVE_CDROM 5U
 
-#define GHND 0x0042
-#define GMEM_FIXED 0x0000
-#define GMEM_MOVEABLE 0x0002
-#define GMEM_ZEROINIT 0x0040
-
 #define ERROR_SUCCESS 0L
 #define ERROR_FILE_NOT_FOUND 2L
 #define ERROR_PATH_NOT_FOUND 3L
@@ -411,14 +405,9 @@ UINT GetDriveType(LPCSTR root_path_name);
 BOOL GetVolumeInformation(LPCSTR root_path_name, LPSTR volume_name_buffer, DWORD volume_name_size, DWORD* volume_serial_number,
     DWORD* maximum_component_length, DWORD* file_system_flags, LPSTR file_system_name_buffer, DWORD file_system_name_size);
 
-HGLOBAL GlobalAlloc(UINT flags, size_t bytes);
-LPVOID GlobalLock(HGLOBAL memory);
-BOOL GlobalUnlock(HGLOBAL memory);
-HGLOBAL GlobalFree(HGLOBAL memory);
-
-HMODULE LoadLibrary(LPCSTR file_name);
-FARPROC GetProcAddress(HMODULE module, LPCSTR proc_name);
-BOOL FreeLibrary(HMODULE module);
+ HMODULE LoadLibrary(LPCSTR file_name);
+ FARPROC GetProcAddress(HMODULE module, LPCSTR proc_name);
+ BOOL FreeLibrary(HMODULE module);
 DWORD GetModuleFileName(void* instance, LPSTR file_name, DWORD size);
 
 }

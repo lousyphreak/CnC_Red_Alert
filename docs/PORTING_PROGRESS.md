@@ -8,6 +8,12 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Removed the dead DIB helper shim from the active SDL3 build and trimmed the now-unused Win32 compat heap stubs:
+  - audited `CODE/DIBAPI.H` / `CODE/DIBCOMPAT.CPP` against the current CMake build and repo call sites; the only real consumers were inside the already-disabled `WOLAPI_INTEGRATION` path (`CODE/ICONLIST.CPP` / WOL UI code), while the supported build never defines that path anymore;
+  - deleted `CODE/DIBAPI.H` and `CODE/DIBCOMPAT.CPP`, and removed the manual `CODE/DIBCOMPAT.CPP` append from `CMakeLists.txt` so the build no longer carries that dead WOL-era bitmap seam;
+  - removed the now-unused `HGLOBAL` / `GlobalAlloc` / `GlobalLock` / `GlobalUnlock` / `GlobalFree` compat surface plus the associated `GMEM_*` / `GHND` constants from `SDL3_COMPAT/wrappers/win32_compat.{h,cpp}`, because no remaining repo-owned code uses them once `DIBCOMPAT` is gone;
+  - validation for this checkpoint: `cmake --build build --target redalert -j4` and `cmake --build build-asan --target redalert -j4` both succeed after the cleanup.
+
 - Completed the multiplayer LAN transport cleanup so the active code is now fully UDP-backed and UDP-named while keeping the higher-level queue/session behavior intact:
   - audited the live SDL/Linux compile path and confirmed the supported build was still using the old fallback LAN transport branch rather than a separate Windows-only networking layer;
   - rewired `CODE/UDPCONN.CPP` so the non-internet path now uses one nonblocking UDP socket opened on the configured multiplayer socket number, with `recvfrom()`-based sender address capture and `sendto()`/broadcast writes, while leaving the existing `Winsock`-managed internet path alone;
@@ -374,7 +380,7 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - **`CODE/STATS.CPP`**: replaced `Get_File_Handle()`+`GetFileTime()` with `SDL_GetPathInfo()`+`SDL_TimeToDateTime()` for executable timestamp.
   - **`CODE/WINSTUB.CPP`**: replaced `mmioOpen`/`mmioWrite`/`mmioClose` with `SDL_IOFromFile`/`SDL_WriteIO`/`SDL_CloseIO` for ASSERT.TXT logging.
   - **`CODE/BMP8.CPP`**: replaced `CreateFile`/`ReadFile`/`CloseHandle` with `SDL_IOFromFile`/`SDL_ReadIO`/`SDL_CloseIO` for BMP loading.
-  - **`CODE/DIBFILE.CPP`**: this file was still excluded from the current CMake build, which is why the old Win16-style `OpenFile`/`_lread`/`_lwrite`/`_llseek`/`_lclose` path lingered there; it now uses `SDL_IOFromFile`/`SDL_ReadIO`/`SDL_WriteIO`/`SDL_SeekIO`/`SDL_CloseIO`, the unused file-size `lseek()` probe is removed entirely, and the duplicate dead `LoadDIB_FromMemory()` implementation is dropped in favor of the active `CODE/DIBCOMPAT.CPP` version.
+  - **`CODE/DIBFILE.CPP`**: this file was still excluded from the current CMake build, which is why the old Win16-style `OpenFile`/`_lread`/`_lwrite`/`_llseek`/`_lclose` path lingered there; it now uses `SDL_IOFromFile`/`SDL_ReadIO`/`SDL_WriteIO`/`SDL_SeekIO`/`SDL_CloseIO`, the unused file-size `lseek()` probe is removed entirely, and the duplicate dead `LoadDIB_FromMemory()` implementation was first consolidated into `CODE/DIBCOMPAT.CPP` and has since been removed entirely because only dead WOL-only code still referenced it.
   - **`CODE/SESSION.CPP`**: replaced 4× `FindFirstFile`/`FindNextFile`/`_dos_findfirst`/`_dos_findnext` with `SDL_GlobDirectory`.
   - **`CODE/STARTUP.CPP`**: replaced `FindFirstFile`/`FindClose`/`DeleteFile` with `SDL_GetPathInfo`/`SDL_RemovePath`.
   - **`CODE/LOADDLG.CPP`**: replaced `unlink` with `SDL_RemovePath`; `_dos_findfirst`/`_dos_findnext` with `SDL_GlobDirectory`.
@@ -822,7 +828,6 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - ASan builds refresh `GameData/redalert-asan`.
 - Sources:
   - `CODE/*.CPP`
-  - `CODE/DIBCOMPAT.CPP`
   - `VQ/VQA32/AUDIOCOMPAT.CPP`
   - `VQ/VQA32/AUDUNZAPCOMPAT.CPP`
   - `VQ/VQA32/CAPTION.CPP`
@@ -893,7 +898,7 @@ Converted all remaining Win32 file I/O calls in the game-layer source files to S
 - **`CODE/INIT.CPP`**: `_dos_findfirst`/`_dos_findnext` for `SC*.MIX` and `SS*.MIX` expansion files → `SDL_GlobDirectory`.
 - **`CODE/CDFILE.CPP`**: `_dos_findfirst` disk-inserted check → `SDL_GetPathInfo` with `WWFS_NormalizePath()`.
 - **`CODE/BMP8.CPP`**: Full `CreateFile`/`ReadFile`/`CloseHandle` BMP loading → `SDL_IOFromFile`/`SDL_ReadIO`/`SDL_CloseIO` (not in active build).
-- **`CODE/DIBFILE.CPP`**: old excluded disk-DIB path converted from `OpenFile`/`_lread`/`_lwrite`/`_llseek`/`_lclose` to SDL I/O, removed the dead unused `lseek()` file-size probe, removed dead local `LoadDIB_FromMemory()` duplication (active implementation remains in `CODE/DIBCOMPAT.CPP`), and fixed DIB header include casing.
+- **`CODE/DIBFILE.CPP`**: old excluded disk-DIB path converted from `OpenFile`/`_lread`/`_lwrite`/`_llseek`/`_lclose` to SDL I/O, removed the dead unused `lseek()` file-size probe, removed dead local `LoadDIB_FromMemory()` duplication (that temporary shared implementation in `CODE/DIBCOMPAT.CPP` has since been deleted because only dead WOL-only code still referenced it), and fixed DIB header include casing.
 - **`CODE/WOL_LOGN.CPP`**: Commented-out `LoadShpFile` → SDL3 equivalents in comment.
 - **`CODE/WOLAPIOB.CPP`**: Constructor temp-file creation/deletion → `SDL_IOFromFile`/`SDL_CloseIO`/`SDL_RemovePath`; commented-out `LoadFileIntoMemory` → SDL3 equivalents in comment (inside `WOLAPI_INTEGRATION` guard).
 - **`CODE/WOL_MAIN.CPP`**: `FindFirstFile`/`FindClose` for DLL existence and file-size checks → `SDL_GetPathInfo` (inside `WOLAPI_INTEGRATION` guard).

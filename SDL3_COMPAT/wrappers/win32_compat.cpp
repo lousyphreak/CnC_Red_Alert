@@ -28,7 +28,6 @@ enum class HandleKind {
     None,
     File,
     Event,
-    Global,
 };
 
 struct HandleBase {
@@ -50,11 +49,6 @@ struct EventHandle final : HandleBase {
     std::condition_variable condition;
     bool manual;
     bool signaled;
-};
-
-struct GlobalHandle final : HandleBase {
-    explicit GlobalHandle(size_t size) : HandleBase(HandleKind::Global), bytes(size) {}
-    std::vector<std::byte> bytes;
 };
 
 std::mutex g_last_error_mutex;
@@ -606,31 +600,6 @@ BOOL GetVolumeInformation(LPCSTR root_path_name, LPSTR volume_name_buffer, DWORD
     }
 
     return TRUE;
-}
-
-HGLOBAL GlobalAlloc(UINT, size_t bytes)
-{
-    return new GlobalHandle(bytes ? bytes : 1);
-}
-
-LPVOID GlobalLock(HGLOBAL memory)
-{
-    if (!memory) return nullptr;
-    auto* handle = static_cast<GlobalHandle*>(memory);
-    return handle->bytes.data();
-}
-
-BOOL GlobalUnlock(HGLOBAL)
-{
-    return TRUE;
-}
-
-HGLOBAL GlobalFree(HGLOBAL memory)
-{
-    if (memory) {
-        delete static_cast<GlobalHandle*>(memory);
-    }
-    return nullptr;
 }
 
 HMODULE LoadLibrary(LPCSTR file_name)

@@ -34,8 +34,114 @@
 //	Extra data included 3 item preceding icons, 1 fixed position icon, an extra string,
 //	an extra void pointer, and a color remapping value.
 
+#include <cstring>
+
 #include "ICONLIST.H"
-#include "DIBAPI.H"
+
+namespace {
+
+struct BITMAPCOREHEADER {
+	uint32_t bcSize;
+	uint16_t bcWidth;
+	uint16_t bcHeight;
+	uint16_t bcPlanes;
+	uint16_t bcBitCount;
+};
+
+struct RGBTRIPLE {
+	uint8_t rgbtBlue;
+	uint8_t rgbtGreen;
+	uint8_t rgbtRed;
+};
+
+bool Is_Win30_DIB( const char* pDIB )
+{
+	if( !pDIB )
+		return false;
+
+	uint32_t header_size = 0;
+	std::memcpy( &header_size, pDIB, sizeof( header_size ) );
+	return header_size == sizeof( BITMAPINFOHEADER );
+}
+
+uint16_t DIB_Num_Colors( const char* pDIB )
+{
+	if( !pDIB )
+		return 0;
+
+	if( Is_Win30_DIB( pDIB ) )
+	{
+		const BITMAPINFOHEADER* pHeader = (const BITMAPINFOHEADER*)pDIB;
+		if( pHeader->biClrUsed )
+			return (uint16_t)pHeader->biClrUsed;
+
+		switch( pHeader->biBitCount )
+		{
+		case 1:
+			return 2;
+		case 4:
+			return 16;
+		case 8:
+			return 256;
+		default:
+			return 0;
+		}
+	}
+
+	switch( ((const BITMAPCOREHEADER*)pDIB)->bcBitCount )
+	{
+	case 1:
+		return 2;
+	case 4:
+		return 16;
+	case 8:
+		return 256;
+	default:
+		return 0;
+	}
+}
+
+uint16_t DIB_Palette_Size( const char* pDIB )
+{
+	if( Is_Win30_DIB( pDIB ) )
+		return (uint16_t)( DIB_Num_Colors( pDIB ) * sizeof( RGBQUAD ) );
+
+	return (uint16_t)( DIB_Num_Colors( pDIB ) * sizeof( RGBTRIPLE ) );
+}
+
+uint32_t DIBWidth( const char* pDIB )
+{
+	if( !pDIB )
+		return 0;
+
+	if( Is_Win30_DIB( pDIB ) )
+		return (uint32_t)((const BITMAPINFOHEADER*)pDIB)->biWidth;
+
+	return (uint32_t)((const BITMAPCOREHEADER*)pDIB)->bcWidth;
+}
+
+uint32_t DIBHeight( const char* pDIB )
+{
+	if( !pDIB )
+		return 0;
+
+	if( Is_Win30_DIB( pDIB ) )
+		return (uint32_t)((const BITMAPINFOHEADER*)pDIB)->biHeight;
+
+	return (uint32_t)((const BITMAPCOREHEADER*)pDIB)->bcHeight;
+}
+
+const char* FindDIBBits( const char* pDIB )
+{
+	if( !pDIB )
+		return NULL;
+
+	uint32_t header_size = 0;
+	std::memcpy( &header_size, pDIB, sizeof( header_size ) );
+	return pDIB + header_size + DIB_Palette_Size( pDIB );
+}
+
+} // namespace
 
 int Format_Window_String_New( const char* string, int maxlinelen, int& width, int& height, char* szReturn, int iExtraChars );
 void CC_Draw_DIB( const char* pDIB, int xDest, int yDest, int iWidth, WindowNumberType window );

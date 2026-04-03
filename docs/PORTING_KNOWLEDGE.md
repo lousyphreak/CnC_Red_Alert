@@ -398,6 +398,17 @@ _Last updated: 2026-04-03_
   - Removed dead exports included: `UnregisterClass`, `IsWindow`, `DestroyWindow`, `LoadCursor`, `SetLastError`, `timeBeginPeriod`, `timeEndPeriod`, `GetCurrentThreadId`, `GetCurrentThread`, `GetCurrentProcess`, `DuplicateHandle`, `SetThreadPriority`, `CreateThread`, `WaitForInputIdle`, `GetExitCodeProcess`, `CreateMutex`, `ReleaseMutex`, `CreateProcess`, `GetFileSize`, `UnmapViewOfFile`, `RegQueryValue`, and the unused paint/palette/DIB stubs (`BeginPaint`, `EndPaint`, `GetDC`, `ReleaseDC`, `CreatePalette`, `SelectPalette`, `RealizePalette`, `DeleteObject`, `StretchDIBits`, `SetDIBitsToDevice`).
   - Matching dead internal baggage was also removable: `ProcessHandle`, `ThreadHandle`, `MutexHandle`, their `HandleKind` cases, the unused command-line splitter, dormant startup trace helpers, and the unused registry cache globals.
   - Matching dead header baggage was removable too: `MMRESULT`, `HDC`, `HPALETTE`, `PAINTSTRUCT`, `BITMAPINFO`, `LOGPALETTE`, `STARTUPINFO`, `PROCESS_INFORMATION`, `STILL_ACTIVE`, `DUPLICATE_SAME_ACCESS`, `THREAD_ALL_ACCESS`, and `THREAD_PRIORITY_TIME_CRITICAL`.
+
+## Dead WOL-only DIB helpers should not stay manually appended to the live build
+
+- `CODE/DIBCOMPAT.CPP` and `CODE/DIBAPI.H` looked active at first because `CMakeLists.txt` appended `CODE/DIBCOMPAT.CPP` explicitly even though the rest of the Westwood Online bitmap/UI path was already dead.
+  - Actual repo search showed the helper functions (`DIBWidth`, `DIBHeight`, `FindDIBBits`, `LoadDIB_FromMemory`, etc.) were only used inside `CODE/ICONLIST.CPP` and related WOL UI code under `#ifdef WOLAPI_INTEGRATION`.
+  - The supported SDL3/CMake build here does not define `WOLAPI_INTEGRATION`, so those DIB helpers were dead code in the active build despite still compiling.
+- Safe rule for this tree: if a helper is only reachable from already-disabled WOL code, remove it from the live build instead of preserving a special-case compile append.
+  - In this case that meant deleting `CODE/DIBAPI.H` / `CODE/DIBCOMPAT.CPP` and removing the manual `CMakeLists.txt` append rather than carrying an unused bitmap helper module forward.
+- Once that DIB helper seam is gone, the `win32_compat` global-memory shim becomes dead too.
+  - `HGLOBAL`, `GlobalAlloc`, `GlobalLock`, `GlobalUnlock`, `GlobalFree`, and the `GMEM_*` / `GHND` constants existed only to support `DIBCOMPAT`.
+  - Safe cleanup rule: delete those repo-owned Win32 heap stubs outright once no remaining repo-owned code references them.
 - After that cleanup, `WaitForSingleObject()` only needs to handle the kinds that are still real in the supported build: events. File handles, mappings, global allocations, registry handles, and windows still keep their own active helper paths where needed, but there is no longer a fake process/thread/mutex emulation layer underneath.
 - Practical rule going forward:
   - if a future porting change is tempted to add a Win32 symbol to `win32_compat`, first prove that an active supported code path still needs it;
