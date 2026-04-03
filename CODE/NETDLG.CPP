@@ -5522,7 +5522,7 @@ uint32_t Compute_Name_CRC(char *name)
 	SDL_strupr(buf);
 
 	for (i = 0; i < strlen(buf); i++) {
-		Add_CRC (&crc, (uint32_t*)buf[i]);
+		Add_CRC(&crc, (uint32_t)(uint8_t)buf[i]);
 	}
 
 	return (crc);

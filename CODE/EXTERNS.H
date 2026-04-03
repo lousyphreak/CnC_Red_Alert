@@ -122,7 +122,6 @@ extern uint8_t 	*InterpolatedPalettes[100];
 extern int32_t					PalettesRead;
 extern unsigned			PaletteCounter;
 extern int 					AllDone;
-extern void* 				hInstance;
 extern bool 				InMovie;
 extern WinTimerClass	*		WindowsTimer;
 extern WWMouseClass *		WWMouse;

@@ -88,7 +88,7 @@ private:
 	std::mutex Mutex;
 	struct SDL_AudioStream *Stream;
 	struct SDL_AudioSpec MixSpec;
-	uint16_t MixFormat;
+	SDL_AudioFormat MixFormat;
 	int32_t MixChannels;
 	int32_t MixRate;
 	bool PrimaryPlaying;

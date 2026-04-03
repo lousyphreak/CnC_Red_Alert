@@ -33,7 +33,7 @@
  *---------------------------------------------------------------------------------------------*
  * Functions:                                                                                  *
  *   Prog_End -- Cleans up library systems in prep for game exit.                              *
- *   main -- Initial startup routine (preps library systems).                                  *
+ *   RedAlert_Main -- Initial startup routine (preps library systems).                         *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include	"FUNCTION.H"
@@ -77,6 +77,23 @@ void startup_trace(const char* format, ...)
 	va_end(arguments);
 }
 
+bool command_line_contains_forbidden_network_path(int argc, char* argv[])
+{
+	for (int index = 1; index < argc; ++index) {
+		const char* argument = argv[index];
+		if (argument == NULL) {
+			continue;
+		}
+
+		if (strstr(argument, "f:\\projects\\c&c0") != NULL ||
+				strstr(argument, "F:\\PROJECTS\\C&C0") != NULL) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void copy_base_path(char* buffer, size_t buffer_size)
 {
 	if (buffer == NULL || buffer_size == 0) {
@@ -86,11 +103,17 @@ void copy_base_path(char* buffer, size_t buffer_size)
 	const char* base_path = SDL_GetBasePath();
 	std::snprintf(buffer, buffer_size, "%s", (base_path != NULL) ? base_path : "./");
 }
+
+void destroy_main_window_for_shutdown(int ready_to_quit, const char* reason)
+{
+	ReadyToQuit = ready_to_quit;
+	startup_trace("Destroying main window for %s shutdown", reason);
+	Main_Window_Destroy();
+}
 }
 
 //WinTimerClass * WinTimer;
-extern void Create_Main_Window ( void* instance , int command_show , int width , int height);
-void*	ProgramInstance;
+extern void Main_Window_Create(void);
 void Check_Use_Compressed_Shapes (void);
 void Read_Setup_Options(RawFileClass *config_file);
 bool VideoBackBufferAllowed = true;
@@ -112,7 +135,7 @@ const char* Game_Config_Section();
 
 
 /***********************************************************************************************
- * main -- Initial startup routine (preps library systems).                                    *
+ * RedAlert_Main -- Initial startup routine (preps library systems).                           *
  *                                                                                             *
  *    This is the routine that is first called when the program starts up. It basically        *
  *    handles the command line parsing and setting up library systems.                         *
@@ -128,14 +151,21 @@ const char* Game_Config_Section();
  * HISTORY:                                                                                    *
  *   03/20/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-//int PASCAL WinMain(void*, void*, char *, int )
-int  WinMain ( void* instance , void* , char * command_line , int command_show )
+int RedAlert_Main(int argc, char* argv[])
 
 {
-
 	bool surface_in_system_memory = false;
+	char path_to_exe[132];
+	char* fallback_argv[1];
 
-	startup_trace("WinMain entered command_line=\"%s\"", command_line ? command_line : "");
+	if (argv == NULL || argc <= 0 || argv[0] == NULL || argv[0][0] == '\0') {
+		copy_base_path(&path_to_exe[0], sizeof(path_to_exe));
+		fallback_argv[0] = &path_to_exe[0];
+		argv = fallback_argv;
+		argc = 1;
+	}
+
+	startup_trace("RedAlert_Main entered argc=%d argv0=\"%s\"", argc, argv[0] ? argv[0] : "");
 
 	if (Ram_Free(MEM_NORMAL) < 7000000) {
 		printf (TEXT_NO_RAM);
@@ -160,62 +190,10 @@ int  WinMain ( void* instance , void* , char * command_line , int command_show )
 	}
 
 
-	if (strstr(command_line, "f:\\projects\\c&c0") != NULL ||
-			strstr(command_line, "F:\\PROJECTS\\C&C0") != NULL) {
+	if (command_line_contains_forbidden_network_path(argc, argv)) {
 		RA_ShowMessageBox("Playing off of the network is not allowed.", "Red Alert", SDL_MESSAGEBOX_ERROR);
 		return(EXIT_FAILURE);
 	}
-
-	int		argc;				//Command line argument count
-	unsigned	command_scan;
-	char		command_char;
-	char *	argv[20];		//Pointers to command line arguments
-	char		path_to_exe[132];
-
-	ProgramInstance = instance;
-
-	/*
-	** Get the full path to the .EXE
-	*/
-	copy_base_path(&path_to_exe[0], sizeof(path_to_exe));
-
-	/*
-	** First argument is supposed to be a pointer to the .EXE that is running
-	**
-	*/
-	argc=1;							//Set argument count to 1
-	argv[0]=&path_to_exe[0];	//Set 1st command line argument to point to full path
-
-	/*
-	** Get pointers to command line arguments just like if we were in DOS
-	**
-	** The command line we get is cr/zero? terminated.
-	**
-	*/
-
-	command_scan=0;
-
-	do {
-		/*
-		** Scan for non-space character on command line
-		*/
-		do {
-			command_char = *( command_line+command_scan++ );
-		} while ( command_char==' ' );
-
-		if ( command_char!=0 && command_char != 13 ) {
-			argv[argc++]=command_line+command_scan-1;
-
-			/*
-			** Scan for space character on command line
-			*/
-			do {
-				command_char = *( command_line+command_scan++ );
-			} while ( command_char!=' ' && command_char != 0 && command_char!=13 );
-		*( command_line+command_scan-1 ) = 0;
-		}
-
-	} while ( command_char != 0 && command_char != 13 && argc<20 );
 
 
 	/*
@@ -279,7 +257,7 @@ int  WinMain ( void* instance , void* , char * command_line , int command_show )
 	if (Session.AllowSolo==0 && Session.Type != GAME_TEN) {
 		RA_ShowMessageBox("Red Alert for TEN\n (c) 1996 Westwood Studios",
 			"Red Alert");
-		exit(0);
+		return(EXIT_SUCCESS);
 	}
 #endif	// TEN
 
@@ -291,14 +269,14 @@ int  WinMain ( void* instance , void* , char * command_line , int command_show )
 	if (Session.AllowSolo==0 && Session.Type != GAME_MPATH) {
 		RA_ShowMessageBox("Red Alert for MPATH\n (c) 1996 Westwood Studios",
 			"Red Alert");
-		exit(0);
+		return(EXIT_SUCCESS);
 	}
 #endif	// MPATH
 
 		WindowsTimer = new WinTimerClass(60, FALSE);
 
 		int time_test = WindowsTimer->Get_System_Tick_Count();
-		SDL_Delay(1000);
+		SDL_GameInput_Delay(1000);
 		if (WindowsTimer->Get_System_Tick_Count() == time_test){
 			RA_ShowMessageBox(TEXT_ERROR_TIMER, TEXT_SHORT_TITLE, SDL_MESSAGEBOX_ERROR);
 			return(EXIT_FAILURE);
@@ -345,8 +323,8 @@ int  WinMain ( void* instance , void* , char * command_line , int command_show )
 			*/
 			Read_Setup_Options( &cfile );
 
-			Create_Main_Window( instance , command_show , ScreenWidth , ScreenHeight );
-			startup_trace("Create_Main_Window complete hwnd=%p size=%dx%d", MainWindow, ScreenWidth, ScreenHeight);
+			Main_Window_Create();
+			startup_trace("Main_Window_Create complete hwnd=%p size=%dx%d", MainWindow, ScreenWidth, ScreenHeight);
 			SoundOn = Audio_Init ( MainWindow , 16 , false , 11025*2 , 0 );
 			startup_trace("Audio_Init complete SoundOn=%d", SoundOn);
 
@@ -511,25 +489,7 @@ int  WinMain ( void* instance , void* , char * command_line , int command_show )
 			VisiblePage.Clear();
 			HiddenPage.Clear();
 			Memory_Error_Exit = Print_Error_Exit;
-
-			/*
-			** Flag that this is a clean shutdown (not killed with Ctrl-Alt-Del)
-			*/
-			ReadyToQuit = 1;
-
-			/*
-			** Post a message to our message handler to tell it to clean up.
-			*/
-			startup_trace("Destroying main window for clean shutdown");
-			Main_Window_Destroy();
-
-			/*
-			** Wait until the message handler has dealt with the message
-			*/
-			do
-			{
-				Keyboard->Check();
-			}while (ReadyToQuit == 1);
+			destroy_main_window_for_shutdown(1, "clean");
 
 			return (EXIT_SUCCESS);
 
@@ -624,29 +584,7 @@ void Emergency_Exit ( int code )
 	HiddenPage.Clear();
 	BlackPalette.Set();
 	Memory_Error_Exit = Print_Error_Exit;
-
-	/*
-	** Flag that this is an emergency shut down - not a clean shutdown but
-	** not killed with Ctrl-Alt-Del either.
-	*/
-	ReadyToQuit = 3;
-
-			/*
-			** Post a message to our message handler to tell it to clean up.
-			*/
-			startup_trace("Destroying main window for emergency shutdown");
-			Main_Window_Destroy();
-
-	/*
-	** Wait until the message handler has dealt with the message
-	*/
-	do
-	{
-		Keyboard->Check();
-	}while (ReadyToQuit == 3);
-
-
-
+	destroy_main_window_for_shutdown(3, "emergency");
 	exit ( code );
 }
 

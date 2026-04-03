@@ -190,7 +190,9 @@ int32_t WWKeyboardClass::Get(void)
 {
 	int32_t temp,bits;										// store temp holding spot for key
 
-	while (!Check()) {}								// wait for key in buffer
+	while (!Check()) {
+		SDL_GameInput_Delay(1);
+	}
 	temp = Buff_Get();								// get key from the buffer
 
 	bits = temp & 0xFF00;							// save of keyboard bits

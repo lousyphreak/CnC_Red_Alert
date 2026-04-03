@@ -365,7 +365,7 @@ class GraphicBufferClass : public GraphicViewPortClass, public BufferClass {
 		void Video_Init(GBC_Enum flags);
 		void Init(int32_t w, int32_t h, void *buffer, int32_t size, GBC_Enum flags);
 		void Un_Init(void);
-		void GraphicBufferClass::Attach_Surface (GraphicBufferClass * attach_buffer);
+		void Attach_Surface (GraphicBufferClass * attach_buffer);
 		int32_t Lock(void);
 		int32_t Unlock(void);
 

@@ -186,7 +186,9 @@ uint16_t WWKeyboardClass::Check(void) const
  *=============================================================================================*/
 uint16_t WWKeyboardClass::Get(void)
 {
-	while (!Check()) {}								// wait for key in buffer
+	while (!Check()) {
+		SDL_GameInput_Delay(1);
+	}
 	return (Buff_Get());
 }
 

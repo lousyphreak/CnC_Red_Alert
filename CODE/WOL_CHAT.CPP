@@ -1176,7 +1176,7 @@ bool EnterChannel( WolapiObject* pWO, IconListClass& chatlist, Channel* pChannel
 		{
 		case CHAT_E_BADCHANNELPASSWORD:
 		{
-			Fancy_Text_Print( TXT_NONE, 0, 0, TBLACK, TBLACK, TPF_TEXT );	//	Required before String_Pixel_Width() call, for god's sake.
+			Fancy_Text_Print( TXT_NONE, 0, 0, nullptr, TBLACK, TPF_TEXT );	//	Required before String_Pixel_Width() call, for god's sake.
 #ifdef ENGLISH
 			SimpleEditDlgClass* pEditDlg = new SimpleEditDlgClass( 300, TXT_WOL_JOINPRIVATETITLE, TXT_WOL_JOINPRIVATEPROMPT,
 												WOL_CHANKEY_LEN_MAX );
@@ -1312,7 +1312,7 @@ void CreateChatChannel( WolapiObject* pWO )
 	}
 	else
 */	{
-		Fancy_Text_Print( TXT_NONE, 0, 0, TBLACK, TBLACK, TPF_TEXT );	//	Required before String_Pixel_Width() call, for god's sake.
+		Fancy_Text_Print( TXT_NONE, 0, 0, nullptr, TBLACK, TPF_TEXT );	//	Required before String_Pixel_Width() call, for god's sake.
 		pEditDlg = new SimpleEditDlgClass( 350, TXT_WOL_CREATECHANNELTITLE, TXT_WOL_CREATECHANNELPROMPT,
 											WOL_CHANNAME_LEN_MAX, TXT_WOL_OPTIONALPASSPROMPT, WOL_CHANKEY_LEN_MAX );
 		pWO->bPump_In_Call_Back = true;

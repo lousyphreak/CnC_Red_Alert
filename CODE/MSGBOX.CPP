@@ -39,6 +39,7 @@
 #include	"FUNCTION.H"
 #include	"MSGBOX.H"
 #include "GADGET.H"
+#include "SDLINPUT.H"
 
 
 #ifdef FIXIT_VERSION_3
@@ -365,7 +366,7 @@ int WWMessageBox::Process(const char * msg, const char * b1txt, const char * b2t
 			}
 
 			if (process) {
-				SDL_Delay(16);
+				SDL_GameInput_Delay(16);
 			}
 
 			if (pressed) {

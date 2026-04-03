@@ -37,6 +37,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "FUNCTION.H"
+#include "SDLINPUT.H"
 #include <SDL3/SDL_time.h>
 /*****************************
 **	Function prototypes
@@ -425,7 +426,7 @@ int Do_Menu(char const ** strings, bool )
 		selection = Check_Menu(0, strings, NULL, 0xFFL, 0);
 		if (UnknownKey != 0 || UnknownKey == KN_ESC || UnknownKey==KN_LMOUSE || UnknownKey==KN_RMOUSE) break;
 		if (selection == -1) {
-			SDL_Delay(16);
+			SDL_GameInput_Delay(16);
 		}
 	}
 	Keyboard->Clear();
@@ -944,11 +945,11 @@ int Main_Menu(uint32_t )
 
 			default:
 				break;
-		}
+			}
 
-		if (process) {
-			SDL_Delay(16);
-		}
+			if (process) {
+				SDL_GameInput_Delay(16);
+			}
 	}
 
 	Options.Set_Score_Volume(oldvolume, false);

@@ -1,5 +1,57 @@
 # Porting Knowledge
 
+## Current SDL callback startup strategy
+
+- The current startup path now uses SDL app callbacks on every supported build, and `CODE/STUB.CPP` no longer carries a target-specific loop split.
+  - `CODE/STUB.CPP` now provides `SDL_AppInit`, `SDL_AppIterate`, `SDL_AppEvent`, and `SDL_AppQuit` universally, and the old repo-owned `main() -> WinMain()` forwarding stub is gone from the SDL build.
+  - `CODE/STARTUP.CPP` now exposes `RedAlert_Main(int argc, char* argv[])` instead of a Win32-style `WinMain(...)`, so the SDL path no longer needs fake `instance`, `previous_instance`, or `command_show` arguments or a rebuilt raw command-line buffer.
+  - Practical rule: do not reintroduce WinMain-style startup signatures or build-specific callback ownership in the active SDL path; the callback layer should hand real `argc` / `argv` data to `RedAlert_Main(...)`, and any platform-specific yielding belongs in the lower SDL input/wait seam instead.
+- Event ownership has to stay single-sourced once SDL callbacks are active.
+  - The legacy runtime still contains long-lived modal/menu/movie loops, so `CODE/SDLINPUT.CPP` now owns a callback-mode compatibility bridge: enabling callback mode installs an SDL event watch, `SDL_GameInput_Pump()` gathers OS events with `SDL_PumpEvents()`, replays the copied key/mouse/window-close/focus events through the existing legacy handlers, and flushes the handled SDL queue entries so SDL's queue does not accumulate stale duplicates while the synchronous code is still being ported.
+  - `SDL_AppEvent(...)` is therefore no longer the low-level input translator in the active bridge; the input seam is centralized in `CODE/SDLINPUT.{H,CPP}` so `CODE/STUB.CPP` can stay build-agnostic.
+  - Practical rule: if a future browser bug looks like "missing input" or "double-processed events", inspect `CODE/SDLINPUT.CPP` first: the event-watch queue, the callback-mode `SDL_GameInput_Pump()` path, and any accidental reintroduction of raw `SDL_PollEvent()` / `SDL_WaitEvent()` usage outside that seam.
+- Window startup should stay SDL-native.
+  - `CODE/WINSTUB.CPP` now exposes `Main_Window_Create()` plus SDL-native show/maximize helpers instead of a `Create_Main_Window(instance, command_show, ...)` API.
+  - Practical rule: keep the SDL startup path on explicit SDL window operations; do not carry unused Win32 show-command or instance-handle plumbing forward just because the original Windows code had it.
+- Asyncify is currently the mechanism that lets the old synchronous code survive inside the callback-owned app.
+  - The Emscripten target enables Asyncify, and the current bridge relies on SDL's default emscripten-asyncify behavior staying enabled so existing delay-heavy/menu/movie/gameplay flows can still yield cooperatively through `SDL_GameInput_Delay(...)`.
+  - `SDL_GameInput_Delay(...)` now calls `emscripten_sleep(...)` when callback mode is active on Emscripten, which keeps the browser main thread alive without reintroducing an Emscripten-only startup loop in `CODE/STUB.CPP`.
+  - Practical consequence: this is good enough for a first linked build, but a future no-Asyncify or lower-overhead web port would still need deeper state-machine work across `Init_Game(...)`, `Select_Game(...)`, modal dialogs, movies, and similar long-lived synchronous flows.
+- Asyncify needs its own stack budget; the normal wasm stack setting is not enough by itself.
+  - `-sSTACK_SIZE` and `-sASYNCIFY_STACK_SIZE` control different things in Emscripten. The first is the regular wasm call stack; the second is the buffer Asyncify uses to serialize active frames when the code yields through `emscripten_sleep(...)`.
+  - Practical rule: if the game relies on Asyncify to keep old synchronous flows alive, do not leave `ASYNCIFY_STACK_SIZE` at Emscripten's tiny default. The current build uses a conservative `-sASYNCIFY_STACK_SIZE=1048576` so deeper gameplay/menu/movie call chains do not immediately trip Asyncify buffer overflows before browser runtime profiling can tune it downward.
+- Leave SDL's main callback rate on its default browser timing.
+  - Setting `SDL_HINT_MAIN_CALLBACK_RATE` to a positive value on Emscripten makes SDL switch from `requestAnimationFrame` to `setTimeout(...)` timing after `SDL_AppInit()` returns.
+  - Practical rule: do not force `"60"` here; leaving the hint unset keeps the callback loop on RAF, which is the safer default for browser throttling/background-tab behavior.
+- Browser data packaging must stay explicit.
+  - `RA_EMSCRIPTEN_PACKAGE_GAMEDATA` exists in `CMakeLists.txt` and defaults to `OFF`, because the current `GameData/` tree is too large for a naive preload package.
+  - The current local `build-emscripten/` cache used for validation was configured with that option enabled, which does work and emits `redalert.data`, but Emscripten warns that the resulting bundle is roughly `1.6 GB`.
+  - Practical rule: treat the current `build-emscripten/redalert.html/js/wasm` (and optional `.data`) output as a working compiler/link milestone, not a shippable browser bundle; browser runtime validation still needs a real asset-delivery strategy.
+- Expect Emscripten/Clang to expose old C++ assumptions that the native Linux build tolerated.
+  - Important examples from this bring-up: exact SDL enum types (`SDL_AudioFormat`, `SDL_IOWhence`), no pointer arithmetic on `void *`, no using enum-zero values as null-pointer arguments, explicit dependent-base lookups in templates, stricter signed-byte initialization, and stricter overload resolution.
+  - Practical rule: when a future Emscripten failure looks "picky", prefer the precise standards-conforming fix instead of adding another compatibility shim; the same fixes usually make the native code healthier too.
+
+## SDL main-callback support still needs an explicit event-delivery seam
+
+- SDL callback apps must not call `SDL_PollEvent()` / `SDL_WaitEvent()` from the game code while SDL is already feeding `SDL_AppEvent(...)`.
+  - In this tree, the safe seam is `CODE/SDLINPUT.{H,CPP}`: callback mode now centralizes the translation through `handle_sdl_event(...)`, even though the current compatibility bridge still has to gather events from `SDL_PumpEvents()` during legacy modal loops because those loops do not yet return to `SDL_AppIterate()` often enough to rely on pure `SDL_AppEvent(...)` delivery.
+  - Practical rule: future cleanup should move more code toward true per-iterate callbacks, not grow more special cases in `CODE/STUB.CPP`; keep any temporary compatibility work in `SDLINPUT` so there is still only one SDL-event-to-legacy-input path.
+- Centralize intentional waits before attempting the browser target.
+  - The new `SDL_GameInput_Delay(...)` helper is the current seam for wait-heavy startup/menu/dialog/gameplay pacing (`WWKeyboardClass::Get()`, bootstrap focus waits, menu/dialog idle frames, score delays, sync waits, and exit/save waits).
+  - On the active desktop path it still maps to `SDL_Delay(...)`, but on Emscripten callback mode it now yields with `emscripten_sleep(...)`; keeping those waits behind one helper prevents the browser port from having to audit dozens of raw delay calls again when it is time to replace more of the synchronous flow.
+- `Main_Window_Destroy()` is synchronous on the active SDL path.
+  - Once the fake Win32 destroy-message path was removed, direct callers such as `STARTUP.CPP` and `Memory_Error_Handler()` no longer needed to spin on `ReadyToQuit` after calling `Main_Window_Destroy()`.
+  - Practical rule: if a path already calls `Main_Window_Destroy()` directly, do not preserve or reintroduce a follow-up `while (ReadyToQuit == ...) { Keyboard->Check(); }` loop; it only blocks the main thread and does not wait for any real asynchronous cleanup anymore.
+- Universal `SDL_AppInit` / `SDL_AppIterate` support does not mean the game is fully per-frame/state-machine driven yet.
+  - The outer startup/entrypoint switch is complete, but `Init_Game(...)`, `Select_Game(...)`, and the modal front-end/movie flows they call (`WWMessageBox().Process(...)`, `Fetch_Difficulty()`, `Choose_Side()`, `LoadOptionsClass::Process()`, `Select_MPlayer_Game()`, `Com_Scenario_Dialog()`, `Play_Movie()`, scenario startup, and similar paths) still own long-lived synchronous control flow.
+  - The current compromise is: `CODE/STUB.CPP` stays build-agnostic, while `CODE/SDLINPUT.CPP` and `SDL_GameInput_Delay(...)` provide the callback-safe compatibility bridge that keeps those legacy loops alive. A future cleanup can still split those areas into true per-iterate state machines if the port wants to remove Asyncify or reduce the amount of callback-mode compatibility pumping.
+
+## `FUNCTION.H` / `GBUFFER.H` type-definition quirk
+
+- `WIN32LIB/INCLUDE/GBUFFER.H` only provides `BitmapClass` / `TPoint2D` when `FUNCTION_H` is not already defined.
+  - Because `CODE/FUNCTION.H` is already active when it pulls in the `WWLIB32.H` / `GBUFFER.H` chain, forward declarations alone are not enough for translation units that instantiate those types.
+  - Practical rule: keep the full `BitmapClass` / `TPoint2D` compatibility definitions in `CODE/FUNCTION.H`, and keep them early in the file rather than burying them in the middle of the later include list.
+
 ## Removing `win32_compat.h` macros cleanly
 
 - `SDL3_COMPAT/wrappers/win32_compat.h` can be reduced to types/structs/function declarations only; its Win32-style `#define` surface does not need to survive as long as each live use is rewritten where it actually belongs.

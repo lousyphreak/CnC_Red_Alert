@@ -16,40 +16,118 @@
 **	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#if defined(__linux__) || defined(__unix__) || defined(__APPLE__)
+#define SDL_MAIN_USE_CALLBACKS 1
 
+#include <cstdlib>
 #include <string>
 #include <vector>
 
-#include "win32_compat.h"
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_filesystem.h>
+#include <SDL3/SDL_main.h>
 
-extern int  WinMain(void* instance, void* previous_instance, char* command_line, int command_show);
+#include "SDLINPUT.H"
+
+extern int RedAlert_Main(int argc, char* argv[]);
 
 namespace {
 
-std::string Build_Command_Line(int argc, char* argv[])
+struct CallbackAppState
 {
-	std::string command_line;
+	std::vector<std::string> arguments;
+	std::vector<char*> argv;
+	bool main_started = false;
+	bool main_finished = false;
+	int exit_code = EXIT_FAILURE;
+};
+
+void Build_Startup_Arguments(CallbackAppState& state, int argc, char* argv[])
+{
+	state.arguments.clear();
+	state.argv.clear();
+
+	const char* base_path = SDL_GetBasePath();
+	state.arguments.emplace_back((base_path != NULL && base_path[0] != '\0') ? base_path : "./");
 
 	for (int index = 1; index < argc; ++index) {
-		if (!command_line.empty()) {
-			command_line.push_back(' ');
-		}
-		command_line += argv[index];
+		state.arguments.emplace_back(argv[index] != NULL ? argv[index] : "");
 	}
 
-	return command_line;
+	state.argv.reserve(state.arguments.size());
+	for (std::string& argument : state.arguments) {
+		state.argv.push_back(argument.data());
+	}
+}
+
+void Run_RedAlert_Main(CallbackAppState* state)
+{
+	if (state == NULL) {
+		return;
+	}
+
+	state->main_started = true;
+	state->exit_code = RedAlert_Main(static_cast<int>(state->argv.size()), state->argv.data());
+	state->main_finished = true;
+}
+
+SDL_AppResult App_Result_From_Exit_Code(int exit_code)
+{
+	return (exit_code == EXIT_SUCCESS) ? SDL_APP_SUCCESS : SDL_APP_FAILURE;
 }
 
 } // namespace
 
-int main(int argc, char* argv[])
+SDL_AppResult SDLCALL SDL_AppInit(void** appstate, int argc, char* argv[])
 {
-	std::string command_line = Build_Command_Line(argc, argv);
-	std::vector<char> command_buffer(command_line.begin(), command_line.end());
-	command_buffer.push_back('\0');
+	CallbackAppState* state = new CallbackAppState();
+	Build_Startup_Arguments(*state, argc, argv);
 
-	return WinMain(nullptr, nullptr, command_buffer.data(), 1);
+	SDL_GameInput_Set_Main_Thread();
+	SDL_GameInput_Set_AppCallbacks_Mode(true);
+
+	*appstate = state;
+
+	return SDL_APP_CONTINUE;
 }
 
-#endif
+SDL_AppResult SDLCALL SDL_AppIterate(void* appstate)
+{
+	CallbackAppState* state = static_cast<CallbackAppState*>(appstate);
+	if (state == NULL) {
+		return SDL_APP_FAILURE;
+	}
+
+	if (!state->main_started) {
+		Run_RedAlert_Main(state);
+	}
+
+	if (state->main_finished) {
+		return App_Result_From_Exit_Code(state->exit_code);
+	}
+
+	return SDL_APP_CONTINUE;
+}
+
+SDL_AppResult SDLCALL SDL_AppEvent(void* appstate, SDL_Event* event)
+{
+	CallbackAppState* state = static_cast<CallbackAppState*>(appstate);
+	/*
+	** The legacy runtime still consumes input from Call_Back()/Message_Loop().
+	** SDLINPUT's callback-mode bridge translates pumped SDL events into that
+	** path, so the SDL callback entrypoint only needs to report shutdown here.
+	*/
+	(void)event;
+
+	if (state != NULL && state->main_finished) {
+		return App_Result_From_Exit_Code(state->exit_code);
+	}
+
+	return SDL_APP_CONTINUE;
+}
+
+void SDLCALL SDL_AppQuit(void* appstate, SDL_AppResult)
+{
+	CallbackAppState* state = static_cast<CallbackAppState*>(appstate);
+	SDL_GameInput_Set_AppCallbacks_Mode(false);
+	delete state;
+}

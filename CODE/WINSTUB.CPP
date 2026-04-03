@@ -40,7 +40,7 @@
  * Functions:                                                                                  *
  *   Assert_Failure -- display the line and source file where a failed assert occurred         *
  *   Check_For_Focus_Loss -- check for the end of the focus loss                               *
- *   Create_Main_Window -- opens the MainWindow for C&C                                        *
+ *   Main_Window_Create -- opens the MainWindow for C&C                                        *
  *   Focus_Loss -- this function is called when a library function detects focus loss          *
  *   Memory_Error_Handler -- Handle a possibly fatal failure to allocate memory                *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -119,44 +119,24 @@ int get_primary_display_metric(DisplayMetric metric)
 	return 0;
 }
 
-void apply_window_show_command(RAWindow* window, int command_show)
+void show_window(RAWindow* window)
 {
-	constexpr int kShowHide = 0;
-	constexpr int kShowMinimized = 2;
-	constexpr int kShowMaximized = 3;
-	constexpr int kShowMinimize = 6;
-	constexpr int kShowRestore = 9;
-
 	if (window == NULL || window->sdl_window == NULL) {
 		return;
 	}
 
-	switch (command_show) {
-		case kShowHide:
-			SDL_HideWindow(window->sdl_window);
-			return;
+	SDL_ShowWindow(window->sdl_window);
+	SDL_RaiseWindow(window->sdl_window);
+}
 
-		case kShowMinimize:
-		case kShowMinimized:
-			SDL_ShowWindow(window->sdl_window);
-			SDL_MinimizeWindow(window->sdl_window);
-			return;
-
-		case kShowMaximized:
-			SDL_ShowWindow(window->sdl_window);
-			SDL_MaximizeWindow(window->sdl_window);
-			break;
-
-		case kShowRestore:
-			SDL_ShowWindow(window->sdl_window);
-			SDL_RestoreWindow(window->sdl_window);
-			break;
-
-		default:
-			SDL_ShowWindow(window->sdl_window);
-			break;
+void maximize_window(RAWindow* window)
+{
+	if (window == NULL || window->sdl_window == NULL) {
+		return;
 	}
 
+	SDL_ShowWindow(window->sdl_window);
+	SDL_MaximizeWindow(window->sdl_window);
 	SDL_RaiseWindow(window->sdl_window);
 }
 
@@ -241,7 +221,7 @@ void Check_For_Focus_Loss(void)
 				return;
 			}
 			if (cd.Time()) {
-				SDL_Delay(1);
+				SDL_GameInput_Delay(1);
 			}
 
 		} while (cd.Time());
@@ -329,7 +309,7 @@ void Main_Window_Handle_Close_Request(void)
 
 void Main_Window_Show_Maximized(void)
 {
-	apply_window_show_command(MainWindow, 3);
+	maximize_window(MainWindow);
 }
 
 
@@ -391,11 +371,9 @@ void WWDebugString (char *string)
 
 
 /***********************************************************************************************
- * Create_Main_Window -- opens the MainWindow for C&C                                          *
+ * Main_Window_Create -- opens the MainWindow for C&C                                          *
  *                                                                                             *
  *                                                                                             *
- *                                                                                             *
- * INPUT:    instance -- handle to program instance                                            *
  *                                                                                             *
  * OUTPUT:   Nothing                                                                           *
  *                                                                                             *
@@ -420,7 +398,7 @@ void WWDebugString (char *string)
 #endif
 
 
-void Create_Main_Window ( void* instance , int command_show , int width , int height )
+void Main_Window_Create(void)
 
 {
 	RAWindow*		hwnd ;
@@ -429,13 +407,8 @@ void Create_Main_Window ( void* instance , int command_show , int width , int he
 		get_primary_display_metric(DisplayMetric::Width),
 		get_primary_display_metric(DisplayMetric::Height),
 		SDL_WINDOW_RESIZABLE);
-// Denzil
-width = width; height = height;
-// End
-
-	apply_window_show_command(hwnd, command_show);
+	show_window(hwnd);
 	MainWindow=hwnd;			//Save the handle to our main window
-	hInstance = instance;
 
 	Audio_Focus_Loss_Function = &Focus_Loss;
 	Misc_Focus_Loss_Function = &Focus_Loss;
@@ -782,16 +755,11 @@ void Memory_Error_Handler(void)
 	VisiblePage.Clear();
 	CCPalette.Set();
 	while (Get_Mouse_State()) {Show_Mouse();};
-	WWMessageBox().Process(TEXT_MEMORY_ERROR, TEXT_ABORT, false);
+	WWMessageBox().Process(TEXT_MEMORY_ERROR, TEXT_ABORT, NULL, NULL, false);
 
 	ReadyToQuit = 1;
 
 	Main_Window_Destroy();
-	do
-	{
-		Keyboard->Check();
-	}while (ReadyToQuit == 1);
-
 	std::exit(0);
 }
 

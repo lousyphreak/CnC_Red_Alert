@@ -2082,7 +2082,7 @@ static void Sync_Delay(void)
 		}
 
 		if (FrameTimer) {
-			SDL_Delay(1);
+			SDL_GameInput_Delay(1);
 		}
 	}
 	Color_Cycle();

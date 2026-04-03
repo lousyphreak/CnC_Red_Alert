@@ -426,7 +426,7 @@ void AudioBackendDevice::FeedAudio(SDL_AudioStream *stream, int32_t additional_a
 {
 	std::scoped_lock lock(Mutex);
 
-	const SDL_AudioFormat output_format = (SDL_AudioFormat)MixFormat;
+	const SDL_AudioFormat output_format = MixFormat;
 	const int32_t output_channels = std::max<int32_t>(1, MixChannels);
 	const int32_t sample_bytes = SDL_AUDIO_BYTESIZE(output_format);
 	const int32_t frame_bytes = output_channels * std::max(1, sample_bytes);
@@ -529,7 +529,7 @@ bool AudioBackendDevice::EnsureAudioStreamLocked(void)
 	if (PrimaryBuffer != NULL) {
 		std::scoped_lock primary_lock(PrimaryBuffer->Mutex);
 		const AudioBufferFormat &format = PrimaryBuffer->FormatData;
-		MixFormat = (uint16_t)resolve_audio_format(format);
+		MixFormat = resolve_audio_format(format);
 		if (MixFormat == SDL_AUDIO_UNKNOWN) {
 			return (false);
 		}
@@ -542,7 +542,7 @@ bool AudioBackendDevice::EnsureAudioStreamLocked(void)
 	}
 	MixSpec.channels = (Uint8)MixChannels;
 	MixSpec.freq = MixRate;
-	MixSpec.format = (SDL_AudioFormat)MixFormat;
+	MixSpec.format = MixFormat;
 
 	Stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &MixSpec, AudioCallback, this);
 	if (Stream == NULL) {

@@ -50,17 +50,24 @@ void WWFS_MakePath(char* path, const char* drive, const char* dir, const char* f
 #define _MAX_EXT 256
 #endif
 
-inline int WWFS_GetSeekWhence(int whence)
+inline bool WWFS_GetSeekWhence(int whence, SDL_IOWhence* sdl_whence)
 {
+    if (sdl_whence == nullptr) {
+        return false;
+    }
+
     switch (whence) {
     case SEEK_SET:
-        return SDL_IO_SEEK_SET;
+        *sdl_whence = SDL_IO_SEEK_SET;
+        return true;
     case SEEK_CUR:
-        return SDL_IO_SEEK_CUR;
+        *sdl_whence = SDL_IO_SEEK_CUR;
+        return true;
     case SEEK_END:
-        return SDL_IO_SEEK_END;
+        *sdl_whence = SDL_IO_SEEK_END;
+        return true;
     default:
-        return -1;
+        return false;
     }
 }
 
@@ -230,8 +237,8 @@ inline int64_t WWFS_Seek(int fd, int64_t offset, int whence)
         return -1;
     }
 
-    const int sdl_whence = WWFS_GetSeekWhence(whence);
-    if (sdl_whence < 0) {
+    SDL_IOWhence sdl_whence = SDL_IO_SEEK_SET;
+    if (!WWFS_GetSeekWhence(whence, &sdl_whence)) {
         errno = EINVAL;
         return -1;
     }
@@ -302,8 +309,8 @@ inline int WWFS_FSeek(SDL_IOStream* stream, int64_t offset, int whence)
         return -1;
     }
 
-    const int sdl_whence = WWFS_GetSeekWhence(whence);
-    if (sdl_whence < 0) {
+    SDL_IOWhence sdl_whence = SDL_IO_SEEK_SET;
+    if (!WWFS_GetSeekWhence(whence, &sdl_whence)) {
         errno = EINVAL;
         return -1;
     }

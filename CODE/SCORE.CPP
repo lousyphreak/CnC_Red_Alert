@@ -48,6 +48,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include	"FUNCTION.H"
+#include "SDLINPUT.H"
 #define SCORETEXT_X		184
 #define SCORETEXT_Y		8
 #define CASUALTY_Y		88
@@ -272,7 +273,7 @@ ScorePrintClass::ScorePrintClass(void const * string, int xpos, int ypos, void c
 void ScorePrintClass::Update(void)
 {
 	static char localstr[2]={0,0};
-	static char _whitepal[]={0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F};
+	static uint8_t const _whitepal[]={0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F};
 
 	if (Stage && (((char *)DataPtr)[Stage-1]==0) ) {
 		for (int i = 0; i < MAXSCOREOBJS; i++) {
@@ -313,7 +314,7 @@ void ScorePrintClass::Update(void)
 }
 
 
-ScoreScaleClass::ScoreScaleClass(void const * string, int xpos, int ypos, char const palette[]) :
+ScoreScaleClass::ScoreScaleClass(void const * string, int xpos, int ypos, uint8_t const palette[]) :
 	ScoreAnimClass(xpos, ypos, string)
 {
 	Palette = &palette[0];
@@ -383,10 +384,10 @@ int Alloc_Object(ScoreAnimClass *obj)
  * HISTORY:                                                                                    *
  *   05/02/1994     : Created.                                                                 *
  *=============================================================================================*/
-static char const  _bluepal[]={0xC0,0xC1,0xC1,0xC3,0xC2,0xC5,0xC3,0xC7,0xC4,0xC9,0xCA,0xCB,0xCC,0xCD,0xC0,0xCF};
-static char const _greenpal[]={0x70,0x71,0x7C,0x73,0x7D,0x75,0x7E,0x77,0x7F,0x79,0x7A,0x7B,0x7C,0x7D,0x7C,0x7F};
-static char const   _redpal[]={0xD0,0xD1,0xD7,0xD3,0xD9,0xD5,0xDA,0xD7,0xDB,0xD9,0xDA,0xDB,0xDC,0xDD,0xD6,0xDF};
-static char const _yellowpal[]={0x0,0x0,0xEC,0x0,0xEB,0x0,0xEA,0x0,0xE9,0x0,0x0,0x0,0x0,0x0,0xED,0x0};
+static uint8_t const  _bluepal[]={0xC0,0xC1,0xC1,0xC3,0xC2,0xC5,0xC3,0xC7,0xC4,0xC9,0xCA,0xCB,0xCC,0xCD,0xC0,0xCF};
+static uint8_t const _greenpal[]={0x70,0x71,0x7C,0x73,0x7D,0x75,0x7E,0x77,0x7F,0x79,0x7A,0x7B,0x7C,0x7D,0x7C,0x7F};
+static uint8_t const   _redpal[]={0xD0,0xD1,0xD7,0xD3,0xD9,0xD5,0xDA,0xD7,0xDB,0xD9,0xDA,0xDB,0xDC,0xDD,0xD6,0xDF};
+static uint8_t const _yellowpal[]={0x0,0x0,0xEC,0x0,0xEB,0x0,0xEA,0x0,0xE9,0x0,0x0,0x0,0x0,0x0,0xED,0x0};
 void ScoreClass::Presentation(void)
 {
 //	if (Keyboard != NULL) return;
@@ -703,7 +704,7 @@ Keyboard->Clear();
 	Set_Logic_Page(SeenBuff);
 
 	char maststr[NUMFAMENAMES*32];
-	char const *pal;
+	uint8_t const *pal;
 	for (i = 0; i < NUMFAMENAMES; i++) {
 		pal = hallfame[i].side ? _redpal : _bluepal;
 		Alloc_Object(new ScorePrintClass(hallfame[i].name, HALLFAME_X, HALLFAME_Y + (i*8), pal));
@@ -1103,7 +1104,7 @@ void ScoreClass::Do_Nod_Casualties_Graph(void)
 }
 
 
-void ScoreClass::Show_Credits(int house, char const pal[])
+void ScoreClass::Show_Credits(int house, uint8_t const pal[])
 {
 	static int _credsx[2]={276,276};
 	static int _credsy[2]={173,58};
@@ -1234,7 +1235,7 @@ void ScoreClass::Count_Up_Print(char *str, int percent, int maxval, int xpos, in
  * HISTORY:                                                                                    *
  *   05/15/1995 BWG : Created.                                                                 *
  *=============================================================================================*/
-void ScoreClass::Input_Name(char str[], int xpos, int ypos, char const pal[])
+void ScoreClass::Input_Name(char str[], int xpos, int ypos, uint8_t const pal[])
 {
 	int key = 0;
 	int ascii, index=0;
@@ -1543,7 +1544,7 @@ void Call_Back_Delay(int time)
 		}
 		Animate_Score_Objs();
 		if (cd) {
-			SDL_Delay(1);
+			SDL_GameInput_Delay(1);
 		}
 	} while (cd);
 	StreamLowImpact = false;

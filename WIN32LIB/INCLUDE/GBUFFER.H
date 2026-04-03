@@ -238,13 +238,13 @@ class GraphicViewPortClass {
 		/*===================================================================*/
 		/* define functions to get at the private data members					*/
 		/*===================================================================*/
-		intptr_t	Get_Offset(void);
-		int32_t	Get_Height(void);
-		int32_t	Get_Width(void);
-		int32_t	Get_XAdd(void);
-		int32_t	Get_XPos(void);
-		int32_t	Get_YPos(void);
-		int32_t	Get_Pitch(void);
+		intptr_t	Get_Offset(void) const;
+		int32_t	Get_Height(void) const;
+		int32_t	Get_Width(void) const;
+		int32_t	Get_XAdd(void) const;
+		int32_t	Get_XPos(void) const;
+		int32_t	Get_YPos(void) const;
+		int32_t	Get_Pitch(void) const;
 		inline int32_t	Get_IsVideoSurface(void);
 		GraphicBufferClass	*Get_Graphic_Buffer(void);
 
@@ -365,7 +365,7 @@ class GraphicBufferClass : public GraphicViewPortClass, public BufferClass {
 		void Video_Init(GBC_Enum flags);
 		void Init(int32_t w, int32_t h, void *buffer, int32_t size, GBC_Enum flags);
 		void Un_Init(void);
-		void GraphicBufferClass::Attach_Surface (GraphicBufferClass * attach_buffer);
+		void Attach_Surface (GraphicBufferClass * attach_buffer);
 		int32_t Lock(void);
 		int32_t Unlock(void);
 
@@ -494,7 +494,7 @@ inline int32_t GraphicViewPortClass::Unlock(void)
  * HISTORY:                                                                *
  *   06/07/1994 PWG : Created.                                             *
  *=========================================================================*/
-inline intptr_t GraphicViewPortClass::Get_Offset(void)
+inline intptr_t GraphicViewPortClass::Get_Offset(void) const
 {
 	return(Offset);
 }
@@ -509,7 +509,7 @@ inline intptr_t GraphicViewPortClass::Get_Offset(void)
  * HISTORY:                                                                *
  *   06/07/1994 PWG : Created.                                             *
  *=========================================================================*/
-inline int32_t GraphicViewPortClass::Get_Height(void)
+inline int32_t GraphicViewPortClass::Get_Height(void) const
 {
 	return(Height);
 }
@@ -524,7 +524,7 @@ inline int32_t GraphicViewPortClass::Get_Height(void)
  * HISTORY:                                                                *
  *   06/07/1994 PWG : Created.                                             *
  *=========================================================================*/
-inline int32_t GraphicViewPortClass::Get_Width(void)
+inline int32_t GraphicViewPortClass::Get_Width(void) const
 {
 	return(Width);
 }
@@ -540,7 +540,7 @@ inline int32_t GraphicViewPortClass::Get_Width(void)
  * HISTORY:                                                                *
  *   06/07/1994 PWG : Created.                                             *
  *=========================================================================*/
-inline int32_t GraphicViewPortClass::Get_XAdd(void)
+inline int32_t GraphicViewPortClass::Get_XAdd(void) const
 {
 	return(XAdd);
 }
@@ -554,7 +554,7 @@ inline int32_t GraphicViewPortClass::Get_XAdd(void)
  * HISTORY:                                                                *
  *   08/22/1994 SKB : Created.                                             *
  *=========================================================================*/
-inline int32_t GraphicViewPortClass::Get_XPos(void)
+inline int32_t GraphicViewPortClass::Get_XPos(void) const
 {
 	return(XPos);
 }
@@ -572,7 +572,7 @@ inline int32_t GraphicViewPortClass::Get_XPos(void)
  * HISTORY:                                                                *
  *   08/22/1994 SKB : Created.                                             *
  *=========================================================================*/
-inline int32_t GraphicViewPortClass::Get_YPos(void)
+inline int32_t GraphicViewPortClass::Get_YPos(void) const
 {
 	return(YPos);
 }
@@ -1238,7 +1238,7 @@ inline void GraphicViewPortClass::Remap(void *remap)
 	Unlock();
 }
 
-inline int32_t GraphicViewPortClass::Get_Pitch(void)
+inline int32_t GraphicViewPortClass::Get_Pitch(void) const
 {
 	return(Pitch);
 }

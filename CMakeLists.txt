@@ -17,6 +17,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(RA_ENABLE_ASAN "Enable AddressSanitizer" OFF)
 option(RA_ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer" OFF)
 option(RA_ENABLE_UDP "Enable UDP multiplayer transport" ON)
+option(RA_EMSCRIPTEN_PACKAGE_GAMEDATA "Package the GameData directory into the emscripten output" OFF)
+
+if(EMSCRIPTEN)
+    set(RA_ENABLE_UDP OFF CACHE BOOL "Enable UDP multiplayer transport" FORCE)
+endif()
 
 set(SDL_SHARED OFF CACHE BOOL "" FORCE)
 set(SDL_STATIC ON CACHE BOOL "" FORCE)
@@ -42,6 +47,10 @@ if(RA_ENABLE_UDP)
     list(APPEND RA_COMMON_DEFINITIONS RA_ENABLE_UDP=1)
 else()
     list(APPEND RA_COMMON_DEFINITIONS RA_ENABLE_UDP=0)
+endif()
+
+if(EMSCRIPTEN)
+    list(APPEND RA_COMMON_DEFINITIONS INTERNET_OFF)
 endif()
 
 set(RA_COMMON_INCLUDE_DIRS
@@ -253,9 +262,29 @@ target_link_libraries(redalert
         m
 )
 
-add_custom_command(TARGET redalert POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_FILE:redalert>
-        "${CMAKE_SOURCE_DIR}/GameData/${RA_RUNTIME_COPY_NAME}${CMAKE_EXECUTABLE_SUFFIX}"
-    VERBATIM
-)
+if(EMSCRIPTEN)
+    set_target_properties(redalert PROPERTIES SUFFIX ".html")
+    target_link_options(redalert PRIVATE
+        "-sASYNCIFY"
+        "-sASYNCIFY_STACK_SIZE=1048576"
+        "-sALLOW_MEMORY_GROWTH=1"
+        "-sINITIAL_MEMORY=268435456"
+        "-sSTACK_SIZE=8388608"
+        "-sMAX_WEBGL_VERSION=2"
+        "-sMIN_WEBGL_VERSION=1"
+        "-sENVIRONMENT=web"
+    )
+    if(RA_EMSCRIPTEN_PACKAGE_GAMEDATA)
+        target_link_options(redalert PRIVATE
+            "--preload-file"
+            "${CMAKE_SOURCE_DIR}/GameData@/"
+        )
+    endif()
+else()
+    add_custom_command(TARGET redalert POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:redalert>
+            "${CMAKE_SOURCE_DIR}/GameData/${RA_RUNTIME_COPY_NAME}${CMAKE_EXECUTABLE_SUFFIX}"
+        VERBATIM
+    )
+endif()

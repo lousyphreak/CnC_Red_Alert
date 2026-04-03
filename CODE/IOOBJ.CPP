@@ -630,7 +630,7 @@ void FootClass::Code_Pointers(void)
 	if (Member != NULL && Member->IsActive) {
 		Member = (FootClass *)Member->As_Target();
 	} else {
-		Member = TARGET_NONE;
+		Member = NULL;
 	}
 
 	TechnoClass::Code_Pointers();

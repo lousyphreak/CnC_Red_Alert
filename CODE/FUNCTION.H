@@ -43,6 +43,30 @@
 
 #include "sdl_config.h"
 
+#ifndef BITMAPCLASS
+#define BITMAPCLASS
+class BitmapClass
+{
+	public:
+		BitmapClass(int w, int h, uint8_t * data) :
+			Width(w), Height(h), Data(data) {};
+
+		int Width;
+		int Height;
+		uint8_t * Data;
+};
+
+class TPoint2D
+{
+	public:
+		TPoint2D(int xx, int yy) : x(xx), y(yy) {};
+		TPoint2D(void) : x(0), y(0) {};
+
+		int x;
+		int y;
+};
+#endif
+
 /*
 **	!!!DEFINE!!!  "NDEBUG" if the assertion code is to be !!!REMOVED!!! from the project.
 */
@@ -139,31 +163,6 @@ UnitTypeClass      �   BuildingTypeClass      �  VesselTypeClass
 
 
 
-#ifndef BITMAPCLASS
-#define BITMAPCLASS
-class BitmapClass
-{
-	public:
-		BitmapClass(int w, int h, uint8_t * data) :
-			Width(w), Height(h), Data(data) {};
-
-		int Width;
-		int Height;
-		uint8_t * Data;
-};
-
-class TPoint2D
-{
-	public:
-		TPoint2D(int xx, int yy) : x(xx), y(yy) {};
-		TPoint2D(void) : x(0), y(0) {};
-
-		int x;
-		int y;
-};
-#endif
-
-
 /**********************************************************************
 **	This class is solely used as a parameter to a constructor that does
 **	absolutely no initialization to the object being constructed. By using
@@ -213,15 +212,6 @@ class TPoint2D
 #include	"CRCSTRAW.H"
 #include	"SHASTRAW.H"
 #include	"RNDSTRAW.H"
-// Should be part of WWLIB.H. This is used in JSHELL.CPP.
-typedef struct {
-	uint8_t	SourceColor;
-	uint8_t	DestColor;
-	uint8_t	Fading;
-	uint8_t	reserved;
-} TLucentType;
-
-
 #include	<string.h>
 #include	<stdint.h>
 #include	<stdlib.h>
@@ -297,6 +287,11 @@ CELL Coord_Cell(COORDINATE coord);
 #include	"TEXTBTN.H"
 #include	"STATBTN.H"
 #include	"SLIDER.H"
+extern GraphicViewPortClass SeenBuff;
+void Fancy_Text_Print(char const *text, unsigned x, unsigned y, RemapControlType * fore, unsigned back, TextPrintType flag, ...);
+void Fancy_Text_Print(int text, unsigned x, unsigned y, RemapControlType * fore, unsigned back, TextPrintType flag, ...);
+uint16_t Get_Build_Frame_Width(void const *dataptr);
+uint16_t Get_Build_Frame_Height(void const *dataptr);
 #include "LIST.H"
 #include	"DROP.H"
 #include "CHEKLIST.H"
@@ -393,6 +388,14 @@ CELL Coord_Cell(COORDINATE coord);
 #endif
 
 #include	"EXTERNS.H"
+
+// Should be part of WWLIB.H. This is used in JSHELL.CPP.
+typedef struct {
+	uint8_t	SourceColor;
+	uint8_t	DestColor;
+	uint8_t	Fading;
+	uint8_t	reserved;
+} TLucentType;
 
 extern int Get_CD_Drive(void);
 extern void Fatal(char const *message, ...);
@@ -526,8 +529,8 @@ void Shake_The_Screen(int shakes);
 **	COORD.CPP
 */
 int16_t const * Coord_Spillage_List(COORDINATE coord, Rect const & rect, bool nocenter=true);
-void Normal_Move_Point(int16_t &x, int16_t &y, register DirType dir, uint16_t distance);
-void Move_Point(int16_t &x, int16_t &y, register DirType dir, uint16_t distance);
+void Normal_Move_Point(int16_t &x, int16_t &y, DirType dir, uint16_t distance);
+void Move_Point(int16_t &x, int16_t &y, DirType dir, uint16_t distance);
 COORDINATE Coord_Move(COORDINATE start, DirType facing, uint16_t distance);
 COORDINATE Coord_Scatter(COORDINATE coord, unsigned distance, bool lock=false);
 DirType Direction(CELL cell1, CELL cell2);
@@ -945,47 +948,5 @@ void Load_Title_Screen(char *name, GraphicViewPortClass *video_page, uint8_t *pa
 void Show_Who_Was_Responsible (void);
 
 #include	"INLINE.H"
-/*
-**	These declarations ensure that the templates will be expanded for these specified
-**	types. Doing this is required because some of the body functions for this template class
-**	are located in a .CPP module. Doing so results in faster compilation but requires declarations
-**	such as this for all types that will be required. There are no actual objects of with these
-**	names ever created, however there are other objects of this type (with different names) that
-**	are created.
-*/
-extern CCPtr<AircraftClass> y1;
-extern CCPtr<AnimClass> y2;
-extern CCPtr<BuildingClass> y3;
-extern CCPtr<BulletClass> y4;
-extern CCPtr<FactoryClass> y5;
-extern CCPtr<HouseClass> y6;
-extern CCPtr<InfantryClass> y7;
-extern CCPtr<OverlayClass> y8;
-extern CCPtr<SmudgeClass> y9;
-extern CCPtr<TeamClass> y10;
-extern CCPtr<TeamTypeClass> y11;
-extern CCPtr<TemplateClass> y12;
-extern CCPtr<TerrainClass> y13;
-extern CCPtr<TriggerClass> y14;
-extern CCPtr<TriggerTypeClass> y15;
-extern CCPtr<HouseTypeClass>		y16;
-extern CCPtr<BuildingTypeClass>	y17;
-extern CCPtr<AircraftTypeClass>	y18;
-extern CCPtr<InfantryTypeClass>	y19;
-extern CCPtr<BulletTypeClass>		y20;
-extern CCPtr<AnimTypeClass>		y21;
-extern CCPtr<UnitTypeClass>		y22;
-extern CCPtr<VesselTypeClass>		y23;
-extern CCPtr<TemplateTypeClass>	y24;
-extern CCPtr<TerrainTypeClass>	y25;
-extern CCPtr<OverlayTypeClass>	y26;
-extern CCPtr<SmudgeTypeClass>		y27;
-template<class T> class DynamicVectorClass;
-extern DynamicVectorClass<CCPtr<TeamTypeClass> > y002;
-extern DynamicVectorClass<CCPtr<TriggerTypeClass> > y001;
-extern DynamicVectorClass<TeamMissionClass *> xxx1;
-extern DynamicVectorClass<EventChoiceClass *> xxx2;
-extern DynamicVectorClass<ActionChoiceClass *> xxx3;
-extern DynamicVectorClass<EgoClass *> whatever;
 
 #endif

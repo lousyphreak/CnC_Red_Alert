@@ -1504,7 +1504,7 @@ int BGMessageBox(char const * msg, int btn1, int btn2)
 
 	VisiblePage.Blit(seen_buff_save);
 
-	static char _scorepal[]={0,1,12,13,4,5,6,7,8,9,10,255,252,253,14,248};
+	static uint8_t const _scorepal[]={0,1,12,13,4,5,6,7,8,9,10,255,252,253,14,248};
 	Set_Font_Palette(_scorepal);
 	temp.Set(FADE_PALETTE_MEDIUM, Call_Back);
 

@@ -8,8 +8,13 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <deque>
 #include <mutex>
 #include <thread>
+
+#if defined(__EMSCRIPTEN__)
+#include <emscripten.h>
+#endif
 
 #include <stdint.h>
 extern RAWindow* MainWindow;
@@ -39,6 +44,10 @@ uint32_t g_mouse_buttons = 0;
 std::atomic<bool> g_main_thread_set{false};
 std::thread::id g_main_thread_id;
 std::atomic<bool> g_is_pumping{false};
+std::atomic<bool> g_app_callbacks_mode{false};
+std::mutex g_callback_event_mutex;
+std::deque<SDL_Event> g_callback_events;
+bool g_callback_event_watch_installed = false;
 bool g_cursor_clip_active = false;
 RECT g_cursor_clip{};
 
@@ -631,6 +640,88 @@ void initialize_mouse_snapshot_locked(void)
 	g_mouse_buttons = translate_mouse_button_state(buttons);
 }
 
+void handle_sdl_event(const SDL_Event &event);
+
+bool should_capture_callback_event(const SDL_Event& event)
+{
+	switch (event.type) {
+		case SDL_EVENT_QUIT:
+		case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+		case SDL_EVENT_WINDOW_FOCUS_GAINED:
+		case SDL_EVENT_WINDOW_FOCUS_LOST:
+		case SDL_EVENT_KEY_DOWN:
+		case SDL_EVENT_KEY_UP:
+		case SDL_EVENT_MOUSE_MOTION:
+		case SDL_EVENT_MOUSE_BUTTON_DOWN:
+		case SDL_EVENT_MOUSE_BUTTON_UP:
+			return true;
+
+		default:
+			return false;
+	}
+}
+
+bool SDLCALL callback_event_watch(void*, SDL_Event* event)
+{
+	if (event == NULL || !g_app_callbacks_mode.load() || !should_capture_callback_event(*event)) {
+		return true;
+	}
+
+	std::scoped_lock lock(g_callback_event_mutex);
+	g_callback_events.push_back(*event);
+	return true;
+}
+
+void clear_callback_events_locked(void)
+{
+	g_callback_events.clear();
+}
+
+void drain_callback_events(void)
+{
+	std::deque<SDL_Event> pending_events;
+	{
+		std::scoped_lock lock(g_callback_event_mutex);
+		pending_events.swap(g_callback_events);
+	}
+
+	for (const SDL_Event& event : pending_events) {
+		handle_sdl_event(event);
+	}
+}
+
+void flush_callback_events_from_sdl_queue(void)
+{
+	SDL_FlushEvent(SDL_EVENT_QUIT);
+	SDL_FlushEvent(SDL_EVENT_WINDOW_CLOSE_REQUESTED);
+	SDL_FlushEvent(SDL_EVENT_WINDOW_FOCUS_GAINED);
+	SDL_FlushEvent(SDL_EVENT_WINDOW_FOCUS_LOST);
+	SDL_FlushEvent(SDL_EVENT_KEY_DOWN);
+	SDL_FlushEvent(SDL_EVENT_KEY_UP);
+	SDL_FlushEvent(SDL_EVENT_MOUSE_MOTION);
+	SDL_FlushEvent(SDL_EVENT_MOUSE_BUTTON_DOWN);
+	SDL_FlushEvent(SDL_EVENT_MOUSE_BUTTON_UP);
+}
+
+void set_callback_event_watch(bool enabled)
+{
+	if (enabled) {
+		if (!g_callback_event_watch_installed) {
+			SDL_AddEventWatch(callback_event_watch, NULL);
+			g_callback_event_watch_installed = true;
+		}
+		return;
+	}
+
+	if (g_callback_event_watch_installed) {
+		SDL_RemoveEventWatch(callback_event_watch, NULL);
+		g_callback_event_watch_installed = false;
+	}
+
+	std::scoped_lock lock(g_callback_event_mutex);
+	clear_callback_events_locked();
+}
+
 void handle_sdl_event(const SDL_Event &event)
 {
 	switch (event.type) {
@@ -697,6 +788,38 @@ void SDL_GameInput_Set_Main_Thread(void)
 	g_main_thread_set.store(true);
 }
 
+void SDL_GameInput_Set_AppCallbacks_Mode(bool enabled)
+{
+	if (enabled && !g_main_thread_set.load()) {
+		SDL_GameInput_Set_Main_Thread();
+	}
+
+	g_app_callbacks_mode.store(enabled);
+	set_callback_event_watch(enabled);
+}
+
+bool SDL_GameInput_Is_AppCallbacks_Mode(void)
+{
+	return (g_app_callbacks_mode.load());
+}
+
+void SDL_GameInput_Handle_Event(const SDL_Event& event)
+{
+	handle_sdl_event(event);
+}
+
+void SDL_GameInput_Delay(uint32_t milliseconds)
+{
+#if defined(__EMSCRIPTEN__)
+	if (g_app_callbacks_mode.load()) {
+		emscripten_sleep(static_cast<int>(milliseconds));
+		return;
+	}
+#endif
+
+	SDL_Delay(static_cast<Uint32>(milliseconds));
+}
+
 void SDL_GameInput_Handle_Key(SDL_Scancode scancode, SDL_Keycode keycode, SDL_Keymod mod_state, bool repeat, bool release)
 {
 	uint16_t legacy_key = legacy_key_from_scancode(scancode);
@@ -758,12 +881,30 @@ void SDL_GameInput_Handle_Mouse_Button(int button, int x, int y, bool release)
 
 void SDL_GameInput_Pump(void)
 {
+	if (!g_main_thread_set.load()) {
+		SDL_GameInput_Set_Main_Thread();
+	}
+
+	if (g_main_thread_set.load() && std::this_thread::get_id() != g_main_thread_id) {
+		return;
+	}
+
 	if (g_is_pumping.exchange(true)) {
 		return;
 	}
 
-	if (!g_main_thread_set.load()) {
-		SDL_GameInput_Set_Main_Thread();
+	if (g_app_callbacks_mode.load()) {
+		/*
+		** Legacy menus, movies, and dialogs still call Call_Back()/Message_Loop()
+		** from inside long-lived loops. In callback mode, gather OS events here,
+		** translate the copied watch events into the legacy input path, and flush
+		** the SDL queue entries so SDL_AppEvent doesn't double-handle them later.
+		*/
+		SDL_PumpEvents();
+		drain_callback_events();
+		flush_callback_events_from_sdl_queue();
+		g_is_pumping.store(false);
+		return;
 	}
 
 	SDL_Event event;
@@ -776,6 +917,10 @@ void SDL_GameInput_Pump(void)
 
 int32_t SDL_GameInput_Wait(void)
 {
+	if (g_app_callbacks_mode.load()) {
+		return (FALSE);
+	}
+
 	if (g_main_thread_set.load() && std::this_thread::get_id() != g_main_thread_id) {
 		return (FALSE);
 	}

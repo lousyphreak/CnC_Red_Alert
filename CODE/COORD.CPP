@@ -363,7 +363,7 @@ int16_t const * Coord_Spillage_List(COORDINATE coord, Rect const & rect, bool no
  * HISTORY:                                                                                    *
  *   05/27/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-COORDINATE Coord_Move(COORDINATE start, register DirType dir, uint16_t distance)
+COORDINATE Coord_Move(COORDINATE start, DirType dir, uint16_t distance)
 {
 #ifdef NEVER
 	int16_t x = Coord_X(start);
@@ -431,11 +431,11 @@ int calcy(int16_t factor, int16_t distance)
 	return(-((int)(((int32_t)factor * (int32_t)distance) >> 7)));
 }
 
-void Move_Point(int16_t &x, int16_t &y, register DirType dir, uint16_t distance)
+void Move_Point(int16_t &x, int16_t &y, DirType dir, uint16_t distance)
 {
 	uint32_t const index = (uint32_t)dir;
 
-	static char const CosTable[256] = {
+	static uint8_t const CosTable[256] = {
 		0x00,0x03,0x06,0x09,0x0c,0x0f,0x12,0x15,
 		0x18,0x1b,0x1e,0x21,0x24,0x27,0x2a,0x2d,
 		0x30,0x33,0x36,0x39,0x3b,0x3e,0x41,0x43,
@@ -473,7 +473,7 @@ void Move_Point(int16_t &x, int16_t &y, register DirType dir, uint16_t distance)
 		0xe8,0xeb,0xee,0xf1,0xf4,0xf7,0xfa,0xfd,
 	};
 
-	static char const SinTable[256] = {
+	static uint8_t const SinTable[256] = {
 		0x7f,0x7e,0x7e,0x7e,0x7e,0x7e,0x7d,0x7d,
 		0x7c,0x7b,0x7b,0x7a,0x79,0x78,0x77,0x76,
 		0x75,0x74,0x72,0x71,0x70,0x6e,0x6c,0x6b,
@@ -525,7 +525,7 @@ void Move_Point(int16_t &x, int16_t &y, register DirType dir, uint16_t distance)
 	_DX = _AX;
 	x += _DX;
 #else
-	x += calcx(CosTable[index], distance);
+	x += calcx((int8_t)CosTable[index], distance);
 #endif
 //	asm add [word ptr start],ax
 
@@ -543,7 +543,7 @@ void Move_Point(int16_t &x, int16_t &y, register DirType dir, uint16_t distance)
 	_DX = _AX;
 	y += _DX;
 #else
-	y += calcy(SinTable[index], distance);
+	y += calcy((int8_t)SinTable[index], distance);
 #endif
 //	asm add [word ptr start+2],ax
 
@@ -573,11 +573,11 @@ void Move_Point(int16_t &x, int16_t &y, register DirType dir, uint16_t distance)
  *=============================================================================================*/
 // Loss of precision in initializations (8 bits to 7 bits) warning. Hmmm.. can this be fixed?
 //lint -e569
-void Normal_Move_Point(int16_t &x, int16_t &y, register DirType dir, uint16_t distance)
+void Normal_Move_Point(int16_t &x, int16_t &y, DirType dir, uint16_t distance)
 {
 	uint32_t const index = (uint32_t)dir;
 
-	static int8_t const CosTable[256] = {
+	static uint8_t const CosTable[256] = {
 		0x00,0x03,0x06,0x09,0x0c,0x0f,0x12,0x15,
 		0x18,0x1b,0x1e,0x21,0x24,0x27,0x2a,0x2d,
 		0x30,0x33,0x36,0x39,0x3b,0x3e,0x41,0x43,
@@ -615,7 +615,7 @@ void Normal_Move_Point(int16_t &x, int16_t &y, register DirType dir, uint16_t di
 		0xe8,0xeb,0xee,0xf1,0xf4,0xf7,0xfa,0xfd,
 	};
 
-	static int8_t const SinTable[256] = {
+	static uint8_t const SinTable[256] = {
 		0x7f,0x7e,0x7e,0x7e,0x7e,0x7e,0x7d,0x7d,
 		0x7c,0x7b,0x7b,0x7a,0x79,0x78,0x77,0x76,
 		0x75,0x74,0x72,0x71,0x70,0x6e,0x6c,0x6b,
@@ -654,7 +654,7 @@ void Normal_Move_Point(int16_t &x, int16_t &y, register DirType dir, uint16_t di
 	};
 	distance = distance;		// Keep LINT quiet.
 
-	x += calcx(CosTable[index], distance);
+	x += calcx((int8_t)CosTable[index], distance);
 
-	y += calcy(SinTable[index] / 2, distance);
+	y += calcy((int8_t)SinTable[index] / 2, distance);
 }

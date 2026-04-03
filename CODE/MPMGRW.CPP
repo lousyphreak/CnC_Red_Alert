@@ -83,8 +83,8 @@ Init_Type Init_DLL;
 Find_Num_Connections_Type Find_Num_Connections_DLL;
 
 
-void* MPGetProcAddress(SDL_SharedObject* module, char const * lpProcName) {
-        void* ret = SDL_LoadFunction(module, lpProcName);
+SDL_FunctionPointer MPGetProcAddress(SDL_SharedObject* module, char const * lpProcName) {
+        SDL_FunctionPointer ret = SDL_LoadFunction(module, lpProcName);
         if (!ret) {
                 char msg[255];
                 sprintf(msg, "Unable to load function %s from %s",

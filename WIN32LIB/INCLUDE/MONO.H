@@ -38,6 +38,8 @@
 #ifndef MONOC_H
 #define MONOC_H
 
+#include <cstdint>
+
 
 class MonoClass {
 		/*
@@ -46,14 +48,14 @@ class MonoClass {
 		**	really made up of characters. This specifies which characters to use.
 		*/
 		typedef struct {
-			char	UpperLeft;
-			char	TopEdge;
-			char	UpperRight;
-			char	RightEdge;
-			char	BottomRight;
-			char	BottomEdge;
-			char	BottomLeft;
-			char	LeftEdge;
+			uint8_t	UpperLeft;
+			uint8_t	TopEdge;
+			uint8_t	UpperRight;
+			uint8_t	RightEdge;
+			uint8_t	BottomRight;
+			uint8_t	BottomEdge;
+			uint8_t	BottomLeft;
+			uint8_t	LeftEdge;
 		} BoxDataType;
 
 		/*
@@ -64,8 +66,8 @@ class MonoClass {
 		**	code.
 		*/
 		typedef struct {
-			char Character;			// Character to display.
-			char Attribute;			// Attribute.
+			uint8_t Character;			// Character to display.
+			uint8_t Attribute;			// Attribute.
 		} CellType;
 
 		/*
@@ -182,4 +184,3 @@ int32_t Mono_X(void);
 int32_t Mono_Y(void);
 
 #endif
-

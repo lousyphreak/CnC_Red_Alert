@@ -2837,6 +2837,9 @@ static void Bootstrap(void)
 	init_trace("Bootstrap waiting for focus GameInFocus=%d seen=%d", GameInFocus, BootstrapFocusSeen);
 	do {
 		Keyboard->Check();
+		if (!GameInFocus && !BootstrapFocusSeen) {
+			SDL_GameInput_Delay(1);
+		}
 	} while (!GameInFocus && !BootstrapFocusSeen);
 	init_trace("Bootstrap focus acquired GameInFocus=%d seen=%d", GameInFocus, BootstrapFocusSeen);
 	AllSurfaces.SurfacesRestored = false;
