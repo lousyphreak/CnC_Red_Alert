@@ -74,9 +74,9 @@ TriggerTypeClass::TriggerTypeClass(void) :
 	AbstractTypeClass(RTTI_TRIGGERTYPE, TriggerTypes.ID(this), TXT_NONE, "x"),
 	IsActive(true),
 	IsPersistant(VOLATILE),
+	House(HOUSE_SPAIN),
 	EventControl(MULTI_ONLY),
-	ActionControl(MULTI_ONLY),
-	House(HOUSE_SPAIN)
+	ActionControl(MULTI_ONLY)
 {
 }
 
@@ -1887,13 +1887,13 @@ void TriggerTypeClass::Read_INI(CCINIClass & ini)
 		for (int trig_index = 0; trig_index < TriggerTypes.Count(); trig_index++) {
 			TriggerTypeClass * trigger = TriggerTypes.Ptr(trig_index);
 
-			char * ptr = (char *)trigger->Action1.Trigger.Raw();
+			char * ptr = Take_Legacy_Action_Trigger_Name(&trigger->Action1);
 			if (ptr /*&& trigger->Action1.Trigger.Raw() != -1*/) {
 				trigger->Action1.Trigger = TriggerTypeClass::From_Name(ptr);
 				free(ptr);
 			}
 
-			ptr = (char *)trigger->Action2.Trigger.Raw();
+			ptr = Take_Legacy_Action_Trigger_Name(&trigger->Action2);
 			if (ptr /*&& trigger->Action2.Trigger.Raw() != -1*/) {
 				trigger->Action2.Trigger = TriggerTypeClass::From_Name(ptr);
 				free(ptr);

@@ -137,7 +137,7 @@ class CommBufferClass
 		/*
 		........................ Debug output routines ........................
 		*/
-		void Configure_Debug(int type_offset, int type_size, char **names, 
+		void Configure_Debug(int type_offset, int type_size, char const **names, 
 			int namestart, int namecount);
 		void Mono_Debug_Print(int refresh = 0);
 		void Mono_Debug_Print2(int refresh = 0);
@@ -183,7 +183,7 @@ class CommBufferClass
 		*/
 		int DebugOffset;							// offset into app's packet for ID
 		int DebugSize;								// size of app's ID
-		char **DebugNames;						// ptr to array of app-specific names
+		char const **DebugNames;				// ptr to array of app-specific names
 		int DebugNameStart;						// number of 1st ID
 		int DebugNameCount;						// # of names in array
 };
@@ -191,4 +191,3 @@ class CommBufferClass
 #endif
 
 /**************************** end of combuf.h ******************************/
-

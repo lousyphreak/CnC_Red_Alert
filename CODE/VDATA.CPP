@@ -562,7 +562,7 @@ void VesselTypeClass::One_Time(void)
 		char	buffer[_MAX_FNAME];
 		VesselTypeClass const & uclass = As_Reference(index);
 #ifdef FIXIT_CARRIER	//	checked - ajw 9/28/98
-		if (uclass.Level != -1 || index==VESSEL_CARRIER) {
+		if (uclass.Level != static_cast<unsigned>(-1) || index == VESSEL_CARRIER) {
 #else
 		if (uclass.Level != -1) {
 #endif
@@ -628,6 +628,9 @@ void VesselTypeClass::Turret_Adjust(DirType dir, int & x, int & y) const
 			Normal_Move_Point(xx, yy, dir+DIR_S, 8);
 			x = xx;
 			y = yy-4;
+			break;
+
+		default:
 			break;
 	}
 }

@@ -97,7 +97,7 @@ void const * Beepy6;
 int ControlQ;	// cheat key to skip past score/mapsel screens
 bool StillUpdating;
 
-char *ScreenNames[2]={"ALIBACKH.PCX", "SOVBACKH.PCX"};
+char const *ScreenNames[2]={"ALIBACKH.PCX", "SOVBACKH.PCX"};
 
 //TextBlitClass BlitList;
 //#endif
@@ -490,8 +490,6 @@ void ScoreClass::Presentation(void)
 	Play_Sample(sfx4, 255, Options.Normalize_Volume(150));
 	Call_Back_Delay(13);
 
-	int scorecounter = 0;
-
 	Keyboard->Clear();
 
 	/*
@@ -542,6 +540,9 @@ void ScoreClass::Presentation(void)
 		case DIFF_HARD:
 			uspoints += 3500;
 			break;
+
+		default:
+			break;
 	}
 
 
@@ -552,9 +553,6 @@ void ScoreClass::Presentation(void)
 	/*
 	**	Determine economy rating.
 	*/
-	int init = PlayerPtr->Control.InitialCredits;
-	int cred = PlayerPtr->Available_Money();
-
 	int economy = 100*fixed((unsigned)PlayerPtr->Available_Money()+1+PlayerPtr->StolenBuildingsCredits, PlayerPtr->HarvestedCredits + (unsigned)PlayerPtr->Control.InitialCredits+1);
 	economy=min(economy,150);
 
@@ -794,7 +792,7 @@ void Cycle_Wait_Click(bool cycle)
 		}
 
 		if(cycle) {
-			counter = ((++counter) & 7);
+			counter = (counter + 1) & 7;
 			if (counter == 0 && Options.IsPaletteScroll) {
 				RGBClass rgb = ScorePalette[233];
 				for (int i = 233; i < 237; i++) {
@@ -1208,7 +1206,7 @@ void ScoreClass::Print_Minutes(int minutes)
  * HISTORY:                                                                                    *
  *   04/07/1995 BWG : Created.                                                                 *
  *=============================================================================================*/
-void ScoreClass::Count_Up_Print(char *str, int percent, int maxval, int xpos, int ypos)
+void ScoreClass::Count_Up_Print(char const *str, int percent, int maxval, int xpos, int ypos)
 {
 	char destbuf[64];
 

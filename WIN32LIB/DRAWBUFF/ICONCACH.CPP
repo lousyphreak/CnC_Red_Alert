@@ -94,13 +94,10 @@ int32_t Optimize_Video_Memory_Cache (void)
 		(UnCachedIconsDrawn+CachedIconsDrawn > 1000) &&
 		UnCachedIconsDrawn > CachedIconsDrawn){
 
-		int32_t	cache_misses[MAX_CACHED_ICONS];
 		int32_t	cache_hits[MAX_CACHED_ICONS];
 		int32_t	total_cache_misses=0;
 		int32_t	total_cache_hits=0;
 		int32_t	counter;
-		int32_t	i;
-		int32_t	j;
 		int32_t	temp;
 		int32_t	swapped;
 
@@ -110,7 +107,7 @@ int32_t Optimize_Video_Memory_Cache (void)
 		for (counter=0 ; counter<MAX_CACHED_ICONS ; counter++){
 
 			if (CachedIcons[counter].TimesFailed>5){
-				cache_misses[total_cache_misses++] = counter;
+				total_cache_misses++;
 			}
 		}
 

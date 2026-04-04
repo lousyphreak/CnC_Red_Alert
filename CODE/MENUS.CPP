@@ -472,7 +472,6 @@ int Main_Menu(uint32_t )
 #endif	//FIXIT_VERSION_3
 	int	d_dialog_x = 85 * RESFACTOR;
 	int	d_dialog_y = 75 * RESFACTOR;
-	int	d_dialog_cx = d_dialog_x + (d_dialog_w / 2);
 
 	int	d_start_w = 118 * RESFACTOR;
 	int	d_start_h = 9 * RESFACTOR;
@@ -550,11 +549,10 @@ int Main_Menu(uint32_t )
 	bool expansions = Expansion_CS_Present();
 #endif
 #endif
-	KeyNumType input;								// input from user
+	int input;										// input from user
 	int retval;										// return value
 	int curbutton;
 	TextButtonClass * buttons[7];
-	uint32_t starttime;
 
 	/*
 	**	Buttons
@@ -618,7 +616,6 @@ int Main_Menu(uint32_t )
 	}
 	Set_Logic_Page(SeenBuff);
 	Keyboard->Clear();
-	starttime = TickCount;
 
 	/*
 	**	Create the list

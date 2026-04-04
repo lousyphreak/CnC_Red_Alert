@@ -46,6 +46,53 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include	"FUNCTION.H"
+
+namespace {
+	struct LegacyActionTriggerNameNode {
+		TActionClass * Action;
+		char * Name;
+		LegacyActionTriggerNameNode * Next;
+	};
+
+	LegacyActionTriggerNameNode * LegacyActionTriggerNames = 0;
+}
+
+char * Take_Legacy_Action_Trigger_Name(TActionClass * action)
+{
+	LegacyActionTriggerNameNode ** link = &LegacyActionTriggerNames;
+
+	while (*link != 0) {
+		if ((*link)->Action == action) {
+			LegacyActionTriggerNameNode * node = *link;
+			char * name = node->Name;
+
+			*link = node->Next;
+			delete node;
+			return(name);
+		}
+		link = &(*link)->Next;
+	}
+
+	return(0);
+}
+
+void Set_Legacy_Action_Trigger_Name(TActionClass * action, char * name)
+{
+	for (LegacyActionTriggerNameNode * node = LegacyActionTriggerNames; node != 0; node = node->Next) {
+		if (node->Action == action) {
+			free(node->Name);
+			node->Name = name;
+			return;
+		}
+	}
+
+	LegacyActionTriggerNameNode * node = new LegacyActionTriggerNameNode;
+	node->Action = action;
+	node->Name = name;
+	node->Next = LegacyActionTriggerNames;
+	LegacyActionTriggerNames = node;
+}
+
 static int32_t Normalize_Legacy_Action_Value(TActionType action, int32_t value)
 {
 	/*
@@ -297,7 +344,8 @@ void TActionClass::Read_INI(void)
 			**	Since triggers refer to other triggers, only record a copy of the trigger text
 			**	name. This will be fixed up later.
 			*/
-			Trigger.Set_Raw((int32_t)strdup(strtok(NULL, ",")));
+			Set_Legacy_Action_Trigger_Name(this, strdup(strtok(NULL, ",")));
+			Trigger.Set_Raw(-1);
 
 			Data.Value = Normalize_Legacy_Action_Value(Action, atoi(strtok(NULL, ",")));
 			break;
@@ -530,7 +578,7 @@ bool TActionClass::operator() (HousesType house, ObjectClass * object, int id, C
 		**	Remove time from the mission timer.
 		*/
 		case TACTION_SUB_TIMER:
-			if (Scen.MissionTimer <= Data.Value * (TICKS_PER_MINUTE/10)) {
+			if (Scen.MissionTimer <= static_cast<uint32_t>(Data.Value * (TICKS_PER_MINUTE/10))) {
 				Scen.MissionTimer = 0;
 			} else {
 				Scen.MissionTimer = Scen.MissionTimer - (Data.Value * (TICKS_PER_MINUTE/10));
@@ -921,4 +969,3 @@ NeedType Action_Needs(TActionType action)
 	}
 	return(NEED_NONE);
 }
-

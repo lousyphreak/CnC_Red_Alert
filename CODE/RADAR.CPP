@@ -103,13 +103,13 @@ static GraphicBufferClass _TileStage(24,24);
 RadarClass::RadarClass(void) :
 	IsToRedraw(false),
 	RadarCursorRedraw(false),
-	IsPulseActive(false),
-	RadarPulseFrame(0),
 	DoesRadarExist(false),
 	IsRadarActive(false),
 	IsRadarActivating(false),
 	IsRadarDeactivating(false),
 	IsRadarJammed(false),
+	IsPulseActive(false),
+	RadarPulseFrame(0),
 	SpecialRadarFrame(0),
 	RadarAnimFrame(0),
 	RadarX(0),
@@ -122,9 +122,9 @@ RadarClass::RadarClass(void) :
 	RadarWidth(0),
 	RadarHeight(0),
 	IsZoomed(true),
-	ZoomFactor(0),
 	IsPlayerNames(false),
 	IsHouseSpy(false),
+	ZoomFactor(0),
 	SpyingOn(HOUSE_SPAIN),
 	PixelPtr(0)
 {
@@ -356,7 +356,7 @@ void RadarClass::Draw_It(bool forced)
 {
 	DisplayClass::Draw_It(forced);
 
-	static char * _hiresradarnames[]={
+	static char const * _hiresradarnames[]={
 		"natoradr.shp",	//HOUSE_SPAIN,
 		"natoradr.shp",   //HOUSE_GREECE,
 		"ussrradr.shp",   //HOUSE_USSR,
@@ -368,7 +368,7 @@ void RadarClass::Draw_It(bool forced)
 		"natoradr.shp",	//HOUSE_GOOD
 		"ussrradr.shp",	//HOUSE_BAD
 	};
-	static char * _frames[]={
+	static char const * _frames[]={
 		"nradrfrm.shp",   //HOUSE_SPAIN,
 		"nradrfrm.shp",   //HOUSE_GREECE,
 		"uradrfrm.shp",   //HOUSE_USSR,
@@ -380,8 +380,6 @@ void RadarClass::Draw_It(bool forced)
 		"nradrfrm.shp",	//HOUSE_GOOD
 		"uradrfrm.shp",	//HOUSE_BAD
 	};
-
-	int radarforced = 0;
 
 	/*
 	**	Don't perform any rendering if none is requested.
@@ -481,7 +479,7 @@ void RadarClass::Draw_It(bool forced)
 					**	Render all pixels in the "to redraw" stack.
 					*/
 					if (LogicPage->Lock()) {
-						for (int index = 0; index < PixelPtr; index++) {
+						for (unsigned index = 0; index < PixelPtr; index++) {
 							CELL cell = PixelStack[index];
 					  		if (Cell_On_Radar(cell)) {
 								(*this)[cell].IsPlot = false;
@@ -527,7 +525,9 @@ void RadarClass::Draw_It(bool forced)
 				CC_Draw_Shape(RadarFrame, 1, RadX, RadY+(1 * RESFACTOR), WINDOW_MAIN, SHAPE_NORMAL);
 				if (BaseX || BaseY) {
 
-					if (!IsZoomed && BaseX && BaseY && RadarWidth< (RadIWidth-1) && RadarHeight < (RadIHeight-1)) {
+					if (!IsZoomed && BaseX && BaseY &&
+						RadarWidth < static_cast<unsigned>(RadIWidth - 1) &&
+						RadarHeight < static_cast<unsigned>(RadIHeight - 1)) {
 						LogicPage->Draw_Rect(RadX + RadOffX + BaseX -1,
 													RadY + RadOffY + BaseY -1,
 													RadX + RadOffX + BaseX + RadarWidth,
@@ -636,7 +636,7 @@ void RadarClass::Render_Terrain(CELL cell, int x, int y, int size)
 	** Now loop through all the occupiers and add them to the list if they
 	** are terrain type.
 	*/
-	for (lp = 0; lp < ARRAY_SIZE(Map[cell].Overlapper); lp ++) {
+	for (lp = 0; lp < static_cast<int>(ARRAY_SIZE(Map[cell].Overlapper)); lp ++) {
 		obj = Map[cell].Overlapper[lp];
 		if (obj && obj->What_Am_I() == RTTI_TERRAIN)
 			list[listidx++] = (TerrainClass *)obj;
@@ -1118,7 +1118,7 @@ int RadarClass::Click_In_Radar(int &ptr_x, int &ptr_y, bool change) const
 
 	x -= (RadX + RadOffX);
 	y -= (RadY + RadOffY);
-	if ((unsigned)x < RadIWidth && (unsigned)y < RadIHeight) {
+	if (x >= 0 && x < RadIWidth && y >= 0 && y < RadIHeight) {
 		x -= BaseX;
 		y -= BaseY;
 
@@ -1373,7 +1373,7 @@ bool RadarClass::UnJam_Cell(CELL cell, HouseClass * house)
  *   05/22/1991 JLB : Created.                                                                 *
  *   11/17/1995 PWG : Created.                                                                 *
  *=============================================================================================*/
-#pragma argsused
+
 void RadarClass::Radar_Cursor(int forced)
 {
 	static int				_last_pos = -1;
@@ -1881,7 +1881,7 @@ void RadarClass::Set_Radar_Position(CELL cell)
 	newy 		= oldy + MapCellY;
 	newcell	= XY_Cell(newx, newy);
 
-	if (RadarCell != newcell) {
+	if (RadarCell != static_cast<unsigned>(newcell)) {
    	int forced = FALSE;
 		int xmod = newx;
 		int ymod = newy;
@@ -1900,7 +1900,8 @@ void RadarClass::Set_Radar_Position(CELL cell)
 			if (radw < 1) forced = true;
 			if (radh < 1) forced = true;
 
-			if (!forced && (radw != RadarWidth || radh != RadarHeight)) {
+			if (!forced &&
+				(static_cast<unsigned>(radw) != RadarWidth || static_cast<unsigned>(radh) != RadarHeight)) {
 				/*
 				** Blit the section that is actually overlapping.
 				**
@@ -1965,8 +1966,8 @@ void RadarClass::Set_Radar_Position(CELL cell)
 						max = radx;
 					}
 					for (int x = min; x < max; x++ ) {
-						for (int y = 0; y < RadarCellHeight; y++ ) {
-							Radar_Pixel(XY_Cell(newx + x, newy + y));
+						for (unsigned y = 0; y < RadarCellHeight; y++ ) {
+							Radar_Pixel(XY_Cell(newx + x, newy + static_cast<int>(y)));
 						}
 					}
 				}
@@ -1981,8 +1982,8 @@ void RadarClass::Set_Radar_Position(CELL cell)
 						max = rady;
 					}
 					for (int y = min; y < max; y++ ) {
-						for ( int x = 0; x < RadarCellWidth; x++ ) {
-							Radar_Pixel(XY_Cell(newx + x, newy + y));
+						for (unsigned x = 0; x < RadarCellWidth; x++ ) {
+							Radar_Pixel(XY_Cell(newx + static_cast<int>(x), newy + y));
 						}
 					}
 				}

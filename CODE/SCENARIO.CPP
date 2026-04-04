@@ -156,13 +156,13 @@ ScenarioClass::ScenarioClass(void) :
 	IsNoMapSel(false),
 	IsTruckCrate(false),
 	IsMoneyTiberium(false),
+	FadeTimer(0)
 #ifdef FIXIT_VERSION_3			//	For endgame auto-sonar pulse.
 #define AUTOSONAR_PERIOD	TICKS_PER_SECOND * 40
-	AutoSonarTimer( AUTOSONAR_PERIOD ),
+	,AutoSonarTimer(AUTOSONAR_PERIOD)
 #endif
-	FadeTimer(0)
 {
-	for (int index = 0; index < ARRAY_SIZE(Waypoint); index++) {
+	for (int index = 0; index < static_cast<int>(ARRAY_SIZE(Waypoint)); index++) {
 		Waypoint[index] = -1;
 	}
 	strcpy(Description, "");
@@ -567,7 +567,7 @@ void Fill_In_Data(void)
 	** we won't get the wall of shadow at the edge of the map.
 	*/
 	int x,y;
-	for (x = Map.MapCellX-1; x < ((unsigned)(Map.MapCellX + Map.MapCellWidth + 1)); x++) {
+	for (x = Map.MapCellX - 1; x < (Map.MapCellX + Map.MapCellWidth + 1); x++) {
 		Map[XY_Cell(x, Map.MapCellY-1)].IsVisible =
 			Map[XY_Cell(x, Map.MapCellY-1)].IsMapped = true;
 
@@ -1321,7 +1321,7 @@ int BGMessageBox(char const * msg, int btn1, int btn2)
 	char buffer[BUFFSIZE];
 	int retval = 0;
 	bool process;								// loop while true
-	KeyNumType input;							// user input
+	int input;									// user input
 	int selection;
 	bool pressed;
 	int curbutton;
@@ -1495,7 +1495,7 @@ int BGMessageBox(char const * msg, int btn1, int btn2)
 	Hide_Mouse();
 
 	PaletteClass temp;
-	char *filename = "SOVPAPER.PCX";
+	char const *filename = "SOVPAPER.PCX";
 	if (PlayerPtr->Class->House != HOUSE_USSR && PlayerPtr->Class->House != HOUSE_UKRAINE) {
 		filename = "ALIPAPER.PCX";
 	}
@@ -2117,7 +2117,7 @@ bool Read_Scenario_INI(char * fname, bool )
 	**	Reset the rules values to their initial settings.
 	*/
 #ifdef FIXIT_NAME_OVERRIDE
-	for (int index = 0; index < ARRAY_SIZE(NameOverride); index++) {
+	for (int index = 0; index < static_cast<int>(ARRAY_SIZE(NameOverride)); index++) {
 		if (NameOverride[index] != NULL) free((void*)NameOverride[index]);
 		NameOverride[index] = NULL;
 		NameIDOverride[index] = 0;
@@ -2776,12 +2776,12 @@ static void Create_Units(bool official)
 	/*
 	**	For the current BuildLevel, find the max allowable index into the tables
 	*/
-	for (i = 0; i < ARRAY_SIZE(utable); i++) {
+	for (i = 0; i < static_cast<int>(ARRAY_SIZE(utable)); i++) {
 		if (PlayerPtr->Control.TechLevel >= utable[i].MinLevel) {
 			u_limit = i+1;
 		}
 	}
-	for (i = 0; i < ARRAY_SIZE(itable); i++) {
+	for (i = 0; i < static_cast<int>(ARRAY_SIZE(itable)); i++) {
 		if (PlayerPtr->Control.TechLevel >= itable[i].MinLevel) {
 			i_limit = i+1;
 		}
@@ -3382,6 +3382,9 @@ static CELL Clip_Move(CELL cell, FacingType facing, int dist)
 		case FACING_NW:
 			x -= dist;
 			y -= dist;
+			break;
+
+		default:
 			break;
 	}
 

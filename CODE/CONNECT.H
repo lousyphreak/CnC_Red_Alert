@@ -187,7 +187,7 @@ class ConnectionClass
 		uint32_t Time_Out (void) { return (Timeout); }
 		void Set_TimeOut (uint32_t t) { Timeout = t;}
 		uint32_t Max_Packet_Len (void) { return (static_cast<uint32_t>(MaxPacketLen)); }
-		static char * Command_Name(int command);
+		static char const * Command_Name(int command);
 
 		/*.....................................................................
 		The packet "queue"; this non-sequenced version isn't really much of
@@ -273,7 +273,7 @@ class ConnectionClass
 		/*.....................................................................
 		Names of all packet commands
 		.....................................................................*/
-		static char * Commands[PACKET_COUNT];
+		static char const * Commands[PACKET_COUNT];
 };
 
 #endif

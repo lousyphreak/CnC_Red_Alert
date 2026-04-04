@@ -144,7 +144,7 @@ inline bool XMP_Is_Negative(const digit * r, int precision)
 
 inline bool XMP_Test_Eq_Int(digit const * r, int i, int p)
 {
-	return( (*r == i ) && XMP_Significance(r,p) <= 1 );
+	return((*r == static_cast<digit>(i)) && XMP_Significance(r,p) <= 1);
 }
 
 

@@ -72,7 +72,7 @@ GetCDClass::GetCDClass(void)
 	/*
 	** Set all CD drive placeholders to empty
 	*/
-	memset (CDDrives, NO_CD_DRIVE, MAX_CD_DRIVES);
+	memset(CDDrives, NO_CD_DRIVE, sizeof(CDDrives));
 
 
 	for (char i='c' ; i<='z' ; i++){

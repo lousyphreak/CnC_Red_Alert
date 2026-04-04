@@ -136,7 +136,7 @@ void						*FileStreamBuffer = NULL;	//Buffer for streaming audio from CD
 /*
 ** Function to call if we detect focus loss
 */
-extern	void (*Audio_Focus_Loss_Function)(void) = NULL;
+void (*Audio_Focus_Loss_Function)(void) = NULL;
 
 
 /*=========================================================================*/
@@ -748,7 +748,7 @@ void *Load_Sample(char const *filename)
 	int32_t     fh;
 
 	if (LockedData.DigiHandle == -1 || !filename || !Find_File(filename)) {
-		return (NULL);
+		return nullptr;
 	}
 
 	fh = Open_File(filename, READ);
@@ -795,7 +795,7 @@ int32_t Load_Sample_Into_Buffer(char const *filename, void *buffer, int32_t size
 	**      Verify legality of parameters.
 	*/
 	if (!buffer || !size || LockedData.DigiHandle == -1 || !filename || !Find_File(filename)) {
-		return (NULL);
+		return 0;
 	}
 
 	fh = Open_File(filename, READ);
@@ -843,7 +843,7 @@ int32_t Sample_Read(int32_t fh, void *buffer, int32_t size)
 ** rate = 1m / (256-TC)
 */
 
-	if (!buffer || fh == WW_ERROR || size <= sizeof(RawHeader)) return(NULL);
+	if (!buffer || fh == WW_ERROR || size <= static_cast<int32_t>(sizeof(RawHeader))) return(0);
 
 	size -= sizeof(RawHeader);
 	outbuffer = Add_Long_To_Pointer(buffer, sizeof(RawHeader));
@@ -937,7 +937,7 @@ int32_t Set_Primary_Buffer_Format(void)
  *    2/7/96 10:17AM ST : Created                                                              *
  *=============================================================================================*/
 
-void Print_Sound_Error(char *sound_error, RAWindow* window)
+void Print_Sound_Error(char const * sound_error, RAWindow* window)
 {
 	RA_ShowMessageBox(sound_error, "Command & Conquer", SDL_MESSAGEBOX_WARNING);
 }
@@ -1489,7 +1489,7 @@ int32_t Attempt_Audio_Restore (AudioBackendBuffer * sound_buffer)
 
 	} while (restore_attempts++<2 && return_code == RAAUDIOERR_BUFFERLOST);
 
-	return ((int32_t) ~(return_code == RAAUDIOERR_BUFFERLOST));
+	return (return_code != RAAUDIOERR_BUFFERLOST);
 }
 
 
@@ -1558,7 +1558,6 @@ int32_t Play_Sample_Handle(void const *sample, int32_t priority, int32_t volume,
 	uint32_t					lock_length2;
 	uint32_t					play_status;
 	HRESULT				return_code;
-	int32_t					retries=0;
 
 
 	if (Any_Locked()) return(0);
@@ -1599,7 +1598,7 @@ int32_t Play_Sample_Handle(void const *sample, int32_t priority, int32_t volume,
 	st->Reducer             = 0;
 	st->Restart             = FALSE;
 	st->QueueBuffer 			= NULL;
-	st->QueueSize           = NULL;
+	st->QueueSize           = 0;
 	st->TrailerLen  			= 0;
 	st->Remainder           = RawHeader.Size;
 	st->Source              = Add_Long_To_Pointer((void *)sample, sizeof(RawHeader));

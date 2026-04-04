@@ -65,29 +65,28 @@ class PacketClass {
 		// These conveniance functions allow us to add a field directly to the list without
 		// having to worry about newing one first.
 		//
-		void Add_Field(char *field, char data) {Add_Field(new FieldClass(field, data));};
-		void Add_Field(char *field, uint8_t data) {Add_Field(new FieldClass(field, data));};
-		void Add_Field(char *field, int16_t data) {Add_Field(new FieldClass(field, data));};
-		void Add_Field(char *field, uint16_t data) {Add_Field(new FieldClass(field, data));};
-		void Add_Field(char *field, int32_t data) {Add_Field(new FieldClass(field, data));};
-		void Add_Field(char *field, uint32_t data) {Add_Field(new FieldClass(field, data));};
-		void Add_Field(char *field, char *data) {Add_Field(new FieldClass(field, data));};
-		void Add_Field(char *field, char const *data) {Add_Field(new FieldClass(field, const_cast<char*>(data)));};
-		void Add_Field(char *field, void *data, int length) {Add_Field(new FieldClass(field, data, length));};
+		void Add_Field(char const *field, char data) {Add_Field(new FieldClass(field, data));};
+		void Add_Field(char const *field, uint8_t data) {Add_Field(new FieldClass(field, data));};
+		void Add_Field(char const *field, int16_t data) {Add_Field(new FieldClass(field, data));};
+		void Add_Field(char const *field, uint16_t data) {Add_Field(new FieldClass(field, data));};
+		void Add_Field(char const *field, int32_t data) {Add_Field(new FieldClass(field, data));};
+		void Add_Field(char const *field, uint32_t data) {Add_Field(new FieldClass(field, data));};
+		void Add_Field(char const *field, char const *data) {Add_Field(new FieldClass(field, data));};
+		void Add_Field(char const *field, void *data, int length) {Add_Field(new FieldClass(field, data, length));};
 
 		//
 		// These functions search for a field of a given name in the list and
 		// return the data via a reference value.
 		//
-		FieldClass *Find_Field(char *id);
-		bool Get_Field(char *id, char &data);
-		bool Get_Field(char *id, uint8_t &data);
-		bool Get_Field(char *id, int16_t &data);
-		bool Get_Field(char *id, uint16_t &data);
-		bool Get_Field(char *id, int32_t &data);
-		bool Get_Field(char *id, uint32_t &data);
-		bool Get_Field(char *id, char *data);
-		bool Get_Field(char *id, void *data, int &length);
+		FieldClass *Find_Field(char const *id);
+		bool Get_Field(char const *id, char &data);
+		bool Get_Field(char const *id, uint8_t &data);
+		bool Get_Field(char const *id, int16_t &data);
+		bool Get_Field(char const *id, uint16_t &data);
+		bool Get_Field(char const *id, int32_t &data);
+		bool Get_Field(char const *id, uint32_t &data);
+		bool Get_Field(char const *id, char *data);
+		bool Get_Field(char const *id, void *data, int &length);
 
 		char *Create_Comms_Packet(int &size);
 

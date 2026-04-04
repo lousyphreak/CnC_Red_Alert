@@ -315,7 +315,7 @@ unsigned XMP_Encode(uint8_t * to, unsigned tobytes, digit const * from, int prec
  * HISTORY:                                                                                    *
  *   07/01/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-#pragma warning 364 9
+
 unsigned XMP_Encode(uint8_t * to, digit const * from, int precision)
 {
 	assert(to != NULL);
@@ -2358,7 +2358,7 @@ bool XMP_Rabin_Miller_Test(Straw & rng, digit const * w, int rounds, int precisi
 			continue;   // passes this round
 		}
 
-		int j;
+		unsigned j;
 		for (j = 1; j < a; j++) {
 			digit t2[MAX_UNIT_PRECISION];
 			xmp_exponent_mod(t2, z, temp, w, precision);

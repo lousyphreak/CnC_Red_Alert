@@ -55,7 +55,7 @@ class AnimClass : public ObjectClass, public StageClass {
 	public:
 
 		AnimClass(AnimType animnum, COORDINATE coord, uint8_t timedelay=0, uint8_t loop=1);
-		AnimClass(NoInitClass const & x) : ObjectClass(x), Class(x), StageClass(x) {};
+		AnimClass(NoInitClass const & x) : ObjectClass(x), StageClass(x), Class(x) {};
 		virtual ~AnimClass(void);
 
 		operator AnimType(void) const {return Class->Type;};
@@ -81,7 +81,7 @@ class AnimClass : public ObjectClass, public StageClass {
 		virtual LayerType In_Which_Layer(void) const;
 		virtual ObjectTypeClass const & Class_Of(void) const {return *Class;};
 		virtual int16_t const * Occupy_List(bool = false) const;
-		virtual int16_t const * Overlap_List(void) const;
+		virtual int16_t const * Overlap_List(bool redraw=false) const;
 		virtual void Draw_It(int x, int y, WindowNumberType window) const;
 		virtual void AI(void);
 		virtual void Detach(TARGET target, bool all);

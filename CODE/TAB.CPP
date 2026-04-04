@@ -136,7 +136,7 @@ void TabClass::Draw_Credits_Tab(void)
 	CC_Draw_Shape(TabShape, Map.MoneyFlashTimer > 1 ? 8 : 6, (320-EVA_WIDTH) * RESFACTOR, 0, WINDOW_MAIN, SHAPE_NORMAL);
 
 	if (Scen.MissionTimer.Is_Active()) {
-		bool light = (Scen.MissionTimer < TICKS_PER_MINUTE * Rule.TimerWarning) || Map.FlasherTimer > 0;
+		bool light = (Scen.MissionTimer < static_cast<uint32_t>(TICKS_PER_MINUTE * Rule.TimerWarning)) || Map.FlasherTimer > 0;
 		CC_Draw_Shape(TabShape, light ? 4 : 2, 320, 0, WINDOW_MAIN, SHAPE_NORMAL);
 	}
 }
@@ -145,13 +145,9 @@ void TabClass::Draw_Credits_Tab(void)
 void TabClass::Hilite_Tab(int tab)
 {
 	int xpos = 0;
-	int text = TXT_TAB_BUTTON_CONTROLS;
-	int textx = (EVA_WIDTH/2) * RESFACTOR;
 
 	if (tab) {
 		xpos = (320-EVA_WIDTH) * RESFACTOR;
-		text = TXT_TAB_SIDEBAR;
-		textx = (320-(EVA_WIDTH/2)) * RESFACTOR;
 	}
 
 	/*
@@ -189,8 +185,6 @@ void TabClass::AI(KeyNumType &input, int x, int y)
 	if (y >= 0 && y < (TAB_HEIGHT * RESFACTOR) && x < (SeenBuff.Get_Width() - 1) && x > 0) {
 
 		bool 	ok = false;
-		int	width = SeenBuff.Get_Width();
-
 		/*
 		**	If the mouse is at the top of the screen, then the tab bars only work
 		**	in certain areas. If the special scroll modification is not active, then

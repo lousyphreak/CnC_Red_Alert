@@ -322,7 +322,7 @@ class EListClass : public ListClass
  *=============================================================================================*/
 void EListClass::Draw_Entry(int index, int x, int y, int width, int selected)
 {
-	char buffer[128];
+	char buffer[256];
 	RemapControlType * scheme = GadgetClass::Get_Color_Scheme();
 
 	int text = TXT_NONE;
@@ -331,7 +331,7 @@ void EListClass::Draw_Entry(int index, int x, int y, int width, int selected)
 	} else {
 		text = TXT_SOVIET;
 	}
-	sprintf(buffer, "%s: %s", Text_String(text), Get_Object(index)->Name);
+	snprintf(buffer, sizeof(buffer), "%s: %s", Text_String(text), Get_Object(index)->Name);
 
 	TextPrintType flags = TextFlags;
 
@@ -383,7 +383,7 @@ bool Expansion_Dialog(void)
 		strcpy(buffer, TestNames2[index]);
 		strcpy(buffer2, TestNames2[index]);
 #endif
-		if(buffer[0] == NULL)
+		if (buffer[0] == '\0')
 		   break;
 
      	strcat(buffer, ".INI");
@@ -452,7 +452,6 @@ bool Expansion_Dialog(void)
 	}
 
 	Set_Logic_Page(SeenBuff);
-	bool recalc = true;
 	bool display = true;
 	bool process = true;
 	bool okval = true;
@@ -495,7 +494,7 @@ bool Expansion_Dialog(void)
 			Show_Mouse();
 		}
 
-		KeyNumType input = buttons->Input();
+		int input = buttons->Input();
 		switch (input) {
 			case 200|KN_BUTTON:
 			      	Whom = list.Current_Object()->House;

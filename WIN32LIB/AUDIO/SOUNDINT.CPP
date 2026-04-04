@@ -156,7 +156,7 @@ int32_t Simple_Copy(void ** source, int32_t * ssize, void ** alternate, int32_t 
  *   09/03/1994 JLB : Created.                                                                 *
  *   09/04/1994 JLB : Revamped entirely.                                                       *
  *=============================================================================================*/
-#pragma argsused
+
 int32_t Sample_Copy(SampleTrackerType *st, void ** source, int32_t * ssize, void ** alternate, int32_t * altsize, void * dest, int32_t size, SCompressType scomp, void * , int16_t *)
 {
 
@@ -191,16 +191,16 @@ int32_t Sample_Copy(SampleTrackerType *st, void ** source, int32_t * ssize, void
 					mptr = &magic;
 
 					s = Simple_Copy(source, ssize, alternate, altsize, &fptr, sizeof(fsize));
-					if (s < sizeof(fsize)) {
+					if (s < static_cast<int32_t>(sizeof(fsize))) {
 						return datasize;
 					}
 					s = Simple_Copy(source, ssize, alternate, altsize, &dptr, sizeof(dsize));
-					if (s < sizeof(dsize) || size < dsize) {
+					if (s < static_cast<int32_t>(sizeof(dsize)) || size < static_cast<int32_t>(dsize)) {
 						return datasize;
 					}
 
 					s = Simple_Copy(source, ssize, alternate, altsize, &mptr, sizeof(magic));
-					if (s < sizeof(magic) || magic != LockedData.MagicNumber) {
+					if (s < static_cast<int32_t>(sizeof(magic)) || magic != LockedData.MagicNumber) {
 						return datasize;
 					}
 

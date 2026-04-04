@@ -330,10 +330,10 @@ int16_t const * Coord_Spillage_List(COORDINATE coord, Rect const & rect, bool no
 			if (!nocenter || offset != 0) {
 				*ptr++ = offset;
 				count++;
-				if (count+2 >= ARRAY_SIZE(_spillagelist)) break;
+				if (count+2 >= static_cast<int>(ARRAY_SIZE(_spillagelist))) break;
 			}
 		}
-		if (count+2 >= ARRAY_SIZE(_spillagelist)) break;
+		if (count+2 >= static_cast<int>(ARRAY_SIZE(_spillagelist))) break;
 	}
 
 	/*

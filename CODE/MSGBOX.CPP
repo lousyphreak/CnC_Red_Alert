@@ -279,7 +279,7 @@ int WWMessageBox::Process(const char * msg, const char * b1txt, const char * b2t
 			/*
 			**	Fetch and process input.
 			*/
-			KeyNumType input = buttonlist->Input();
+			int input = buttonlist->Input();
 #ifdef FIXIT_VERSION_3
 			//	I really hate to do this, but...      ajw
 			if( cancel_current_msgbox )
@@ -442,7 +442,7 @@ int WWMessageBox::Process(const char * msg, const char * b1txt, const char * b2t
 		}
 		SeenBuff.Unlock();
 
-		delete[] back;
+		delete[] static_cast<char *>(back);
 		back = NULL;
 		Show_Mouse();
 	}

@@ -167,7 +167,7 @@ void Convert_HSV_To_RGB(uint32_t h, uint32_t s, uint32_t v, uint32_t *r, uint32_
 /* The following prototypes are for the file: VERSION.CPP						*/
 /*=========================================================================*/
 
-char   Version(void);
+char const * Version(void);
 
 
 /*=========================================================================*/

@@ -275,7 +275,7 @@ int RedAlert_Main(int argc, char* argv[])
 
 		WindowsTimer = new WinTimerClass(60, FALSE);
 
-		int time_test = WindowsTimer->Get_System_Tick_Count();
+		uint32_t time_test = WindowsTimer->Get_System_Tick_Count();
 		SDL_GameInput_Delay(1000);
 		if (WindowsTimer->Get_System_Tick_Count() == time_test){
 			RA_ShowMessageBox(TEXT_ERROR_TIMER, TEXT_SHORT_TITLE, SDL_MESSAGEBOX_ERROR);
@@ -305,7 +305,11 @@ int RedAlert_Main(int argc, char* argv[])
 		if (Disk_Space_Available() < INIT_FREE_DISK_SPACE) {
 
 			char	disk_space_message [512];
-			sprintf (disk_space_message, TEXT_CRITICALLY_LOW, (INIT_FREE_DISK_SPACE) / (1024 * 1024));
+#if (GERMAN | FRENCH)
+			snprintf(disk_space_message, sizeof(disk_space_message), TEXT_CRITICALLY_LOW, (INIT_FREE_DISK_SPACE) / (1024 * 1024));
+#else
+			snprintf(disk_space_message, sizeof(disk_space_message), "%s", TEXT_CRITICALLY_LOW);
+#endif
 			if (!RA_ShowConfirmationMessageBox(disk_space_message, TEXT_SHORT_TITLE)) {
 				if ( WindowsTimer )
 					delete WindowsTimer;
@@ -386,7 +390,7 @@ int RedAlert_Main(int argc, char* argv[])
 				*/
 				unsigned video_memory = Get_Free_Video_Memory();
 				unsigned video_capabilities = Get_Video_Hardware_Capabilities();
-				if (video_memory < ScreenWidth*ScreenHeight ||
+				if (video_memory < static_cast<unsigned>(ScreenWidth * ScreenHeight) ||
 						(! (video_capabilities & VIDEO_BLITTER)) ||
 						(video_capabilities & VIDEO_NO_HARDWARE_ASSIST) ||
 						!VideoBackBufferAllowed) {

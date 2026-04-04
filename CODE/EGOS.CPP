@@ -686,7 +686,6 @@ void Show_Who_Was_Responsible (void)
 	*/
 	PaletteClass credit_palette;
 	ComboPalPtr = (uint8_t *) &ComboPalette;
-	uint8_t *creditpal_ptr = (uint8_t *) &credit_palette;
 	memcpy (ComboPalette, CCPalette, sizeof (ComboPalette));
 
 	for (int index = 0 ; index < 256 ; index++ ){
@@ -832,7 +831,7 @@ void Show_Who_Was_Responsible (void)
 		/*
 		** Kill any spare time before blitting the hid page forward.
 		*/
-		while (TickCount - time < frame *speed && !Keyboard->Check()) {}
+		while (TickCount - time < static_cast<uint32_t>(frame * speed) && !Keyboard->Check()) {}
 
 		/*
 		** Blit all but the top and bottom of the hid page. This is beacuse the text print doesn't
@@ -900,7 +899,7 @@ void Show_Who_Was_Responsible (void)
 			/*
 			** Kill any spare time
 			*/
-			while (TickCount - time < frame *speed && !Keyboard->Check()) {}
+			while (TickCount - time < static_cast<uint32_t>(frame * speed) && !Keyboard->Check()) {}
 
 		}
 	}
@@ -928,7 +927,6 @@ void Show_Who_Was_Responsible (void)
 
 	EgoList.Clear();
 }
-
 
 
 

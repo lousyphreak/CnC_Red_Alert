@@ -70,9 +70,9 @@ class TPoint2D
 /*
 **	!!!DEFINE!!!  "NDEBUG" if the assertion code is to be !!!REMOVED!!! from the project.
 */
+#ifndef NDEBUG
 #define	NDEBUG
-
-#pragma warn -hid
+#endif
 
 #ifdef NEVER
 Map (screen) class heirarchy.
@@ -940,7 +940,7 @@ ArmorType Armor_From_Name(char const * name);
 /*
 ** Winstub.cpp
 */
-void Load_Title_Screen(char *name, GraphicViewPortClass *video_page, uint8_t *palette);
+void Load_Title_Screen(char const *name, GraphicViewPortClass *video_page, uint8_t *palette);
 
 /*
 ** Egos.CPP

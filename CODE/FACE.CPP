@@ -115,7 +115,7 @@ DirType Desired_Facing8(int x1, int y1, int x2, int y2)
 	**	the X axis.
 	*/
 	int adder = (index & 0x0040);
-	if (xdiff == bigger) {
+	if (static_cast<unsigned>(xdiff) == bigger) {
 		adder ^= 0x0040;
 	}
 	index += adder;

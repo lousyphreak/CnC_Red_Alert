@@ -208,7 +208,9 @@ int32_t VQA_Play(VQAHandle *vqa, int32_t mode)
 	VQADrawer *drawer;
 	int32_t      rc;
 	int32_t      i;
+#if(VQASTANDALONE)
 	int32_t      key;
+#endif
 
 	/* Dereference commonly used data members for quick access. */
 	vqabuf = ((VQAHandleP *)vqa)->VQABuf;
@@ -475,7 +477,7 @@ void VQA_GetStats(VQAHandle *vqa, VQAStatistics *stats)
 * SYNOPSIS
 *     Version = VQA_Version()
 *
-*     char *VQA_Version(void);
+*     char const * VQA_Version(void);
 *
 * FUNCTION
 *     Return the version of the VQA player library.
@@ -488,7 +490,7 @@ void VQA_GetStats(VQAHandle *vqa, VQAStatistics *stats)
 *
 ****************************************************************************/
 
-char *VQA_Version(void)
+char const * VQA_Version(void)
 {
 	return(VQA_VERSION);
 }
@@ -502,7 +504,7 @@ char *VQA_Version(void)
 * SYNOPSIS
 *     IDString = VQA_IDString()
 *
-*     char *VQA_IDString(void);
+*     char const * VQA_IDString(void);
 *
 * FUNCTION
 *     Return the ID string of this VQA player library.
@@ -515,7 +517,7 @@ char *VQA_Version(void)
 *
 ****************************************************************************/
 
-char *VQA_IDString(void)
+char const * VQA_IDString(void)
 {
 	return (VQA_IDSTRING);
 }

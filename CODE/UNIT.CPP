@@ -279,10 +279,10 @@ UnitClass::UnitClass(UnitType classid, HousesType house) :
 	Class(UnitTypes.Ptr((int)classid)),
 	Flagged(HOUSE_NONE),
 	IsDumping(false),
-	Gems(0),
 	Gold(0),
-	Tiberium(0),
+	Gems(0),
 	IsToScatter(false),
+	Tiberium(0),
 	ShroudBits(0xFFFFFFFFUL),
 	ShroudCenter(0),
 	Reload(0),
@@ -676,6 +676,8 @@ void UnitClass::Firing_AI(void)
 				Mark(MARK_OVERLAP_DOWN);
 				Do_Uncloak();
 				break;
+			default:
+				break;
 		}
 	}
 }
@@ -884,6 +886,8 @@ RadioMessageType UnitClass::Receive_Message(RadioClass * from, RadioMessageType 
 			}
 			DriveClass::Receive_Message(from, message, param);
 			return(RADIO_ROGER);
+		default:
+			break;
 
 	}
 	return(DriveClass::Receive_Message(from, message, param));
@@ -1899,8 +1903,6 @@ int UnitClass::Shape_Number(void) const
 
 	int			shapenum;		// Working shape number.
 	int			facing = Dir_To_32(PrimaryFacing);
-	int			tfacing = Dir_To_32(SecondaryFacing);
-	DirType		rotation = DIR_N;
 
 #ifdef FIXIT_ANTS
 	/*
@@ -2026,7 +2028,6 @@ void UnitClass::Draw_It(int x, int y, WindowNumberType window) const
 
 	int			shapenum;		// Working shape number.
 	void const	* shapefile;		// Working shape file pointer.
-	int			facing = Dir_To_32(PrimaryFacing);
 	int			tfacing = Dir_To_32(SecondaryFacing);
 	DirType		rotation = DIR_N;
 	int			scale = 0x0100;
@@ -2368,7 +2369,7 @@ int UnitClass::Mission_Unload(void)
 				Set_Rate(Rule.OreDumpRate);
 				break;
 			}
-			if (Fetch_Stage() < ARRAY_SIZE(Class->Harvester_Dump_List)-1) break;
+			if (Fetch_Stage() < static_cast<int>(ARRAY_SIZE(Class->Harvester_Dump_List)) - 1) break;
 
 			IsDumping = false;
 			if (Tiberium) {
@@ -2835,7 +2836,7 @@ int UnitClass::Mission_Harvest(void)
 				Set_Rate(Rule.OreDumpRate);
 			}
 
-			if (Fetch_Stage() < ARRAY_SIZE(Class->Harvester_Load_List)) return(1);
+			if (Fetch_Stage() < static_cast<int>(ARRAY_SIZE(Class->Harvester_Load_List))) return(1);
 			if (!Harvesting()) {
 				IsHarvesting = false;
 				if (Tiberium_Load() == 1) {
@@ -4746,10 +4747,10 @@ void UnitClass::Write_INI(CCINIClass & ini)
 	for (int index = 0; index < Units.Count(); index++) {
 		UnitClass * unit = Units.Ptr(index);
 		if (unit != NULL && !unit->IsInLimbo && unit->IsActive) {
-			char	uname[10];
+			char	uname[12];
 			char	buf[128];
 
-			sprintf(uname, "%d", index);
+			snprintf(uname, sizeof(uname), "%d", index);
 			sprintf(buf, "%s,%s,%d,%u,%d,%s,%s",
 				unit->House->Class->IniName,
 				unit->Class->IniName,

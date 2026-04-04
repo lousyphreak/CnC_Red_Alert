@@ -97,7 +97,7 @@ class TenConnManClass : public ConnManClass
 		// Debugging
 		//
 		virtual void Configure_Debug(int index, int type_offset, int type_size, 
-			char **names, int namestart, int namecount);
+			char const **names, int namestart, int namecount);
 		virtual void Mono_Debug_Print(int index, int refresh);
 
 		CommBufferClass *GlobalQueue;

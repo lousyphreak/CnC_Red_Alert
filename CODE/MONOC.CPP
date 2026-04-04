@@ -72,11 +72,6 @@
 
 
 extern void output(int16_t port, int16_t data);
-#pragma aux output parm [dx] [ax] =		\
-		"out	dx,al"		\
-		"inc	dx"			\
-		"mov	al,ah"		\
-		"out	dx,al"
 
 
 bool MonoClass::Enabled = 0;
@@ -456,7 +451,7 @@ void MonoClass::Clear(void)
  *=============================================================================================*/
 void MonoClass::Fill_Attrib(int x, int y, int w, int h, MonoAttribute attrib)
 {
-	if (!w || !h || (unsigned)x >= SubW || (unsigned)h >= SubH || (unsigned)x+w > SubW || (unsigned)y+h > SubH) return;
+	if (!w || !h || x < 0 || y < 0 || w < 0 || h < 0 || x >= SubW || y >= SubH || x + w > SubW || y + h > SubH) return;
 
 	for (int rows = y; rows < y+h; rows++) {
 		for (int cols = x; cols < x+w; cols++) {
@@ -1127,4 +1122,3 @@ int Mono_Printf(int string, ...)
 	}
 	return((int16_t)strlen(buffer));
 }
-

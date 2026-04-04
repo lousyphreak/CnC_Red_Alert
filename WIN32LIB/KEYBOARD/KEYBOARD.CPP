@@ -73,7 +73,7 @@ WWKeyboardClass::WWKeyboardClass(void)
 	// Initialize the keyboard remap table for our system (note it would be bad if someone
 	// switched keyboard modes after this happened.
 	//
-	memset(VKRemap, 0, 256);
+	memset(VKRemap, 0, sizeof(VKRemap));
 	memset(AsciiRemap, 0, 2048);
 	for (int16_t lp = 31; lp < 255; lp ++) {
 		if (isprint(lp)) {
@@ -89,7 +89,7 @@ WWKeyboardClass::WWKeyboardClass(void)
 	// Build a remap table of the different keys which are affected by the caps lock and
 	// the num lock.
 	//
-	memset(ToggleKeys, 0, 256);
+	memset(ToggleKeys, 0, sizeof(ToggleKeys));
 	for (int16_t lp = 0; lp < 255; lp++ ) {
 		if (isalpha(lp) && isupper(lp)) {
 			ToggleKeys[lp] = 1;
@@ -102,7 +102,7 @@ WWKeyboardClass::WWKeyboardClass(void)
 	//
 	// Our buffer should start devoid of keys.
 	//
-	memset(Buffer, 0, 256);
+	memset(Buffer, 0, sizeof(Buffer));
 	Head				= 0;
 	Tail				= 0;
 
@@ -294,7 +294,7 @@ void WWKeyboardClass::Clear(void)
 
 int32_t WWKeyboardClass::To_ASCII(int32_t key)
 {
-	if ( key && WWKEY_RLS_BIT)
+	if ( key & WWKEY_RLS_BIT)
 	  return(KN_NONE);
 	return(key);
 }
@@ -369,7 +369,7 @@ int32_t Check_Key_Num(void)
 
 	if (isupper(key)) {
 		key = tolower(key);
-		if ( !flags & WWKEY_VK_BIT ) {
+		if ( !(flags & WWKEY_VK_BIT) ) {
 			flags |= WWKEY_SHIFT_BIT;
 		}
 	}
@@ -386,7 +386,7 @@ int32_t Get_Key_Num(void)
 
 	if (isupper(key)) {
 		key = tolower(key);
-		if ( !flags & WWKEY_VK_BIT ) {
+		if ( !(flags & WWKEY_VK_BIT) ) {
 			flags |= WWKEY_SHIFT_BIT;
 		}
 	}

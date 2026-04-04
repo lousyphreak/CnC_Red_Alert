@@ -48,7 +48,20 @@
  *   MouseClass::Save -- Saves to a save game file.                                            *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+#include <stdint.h>
 #include "FUNCTION.H"
+
+template <typename T>
+static inline T * Encode_Target_Pointer(T * object)
+{
+	return(reinterpret_cast<T *>(static_cast<intptr_t>(object->As_Target())));
+}
+
+template <typename T>
+static inline TARGET Decode_Target_Pointer(T * object)
+{
+	return(static_cast<TARGET>(reinterpret_cast<intptr_t>(object)));
+}
 
 /***********************************************************************************************
  * CellClass::Should_Save -- Should the cell be written to disk?                               *
@@ -134,12 +147,12 @@ bool CellClass::Save(Pipe & file) const
 void CellClass::Code_Pointers(void)
 {
 	if (Cell_Occupier() != NULL) {
-		OccupierPtr = (ObjectClass *)OccupierPtr->As_Target();
+		OccupierPtr = Encode_Target_Pointer(OccupierPtr);
 	}
 
-	for (int index = 0; index < ARRAY_SIZE(Overlapper); index++) {
+	for (int index = 0; index < static_cast<int>(ARRAY_SIZE(Overlapper)); index++) {
 		if (Overlapper[index] != NULL && Overlapper[index]->IsActive) {
-			Overlapper[index] = (ObjectClass *)Overlapper[index]->As_Target();
+			Overlapper[index] = Encode_Target_Pointer(Overlapper[index]);
 		} else {
 			Overlapper[index] = NULL;
 		}
@@ -169,13 +182,13 @@ void CellClass::Code_Pointers(void)
 void CellClass::Decode_Pointers(void)
 {
 	if (OccupierPtr != NULL) {
-		OccupierPtr = As_Object((TARGET)OccupierPtr);
+		OccupierPtr = As_Object(Decode_Target_Pointer(OccupierPtr));
 		assert(OccupierPtr != NULL);
 	}
 
-	for (int index = 0; index < ARRAY_SIZE(Overlapper); index++) {
+	for (int index = 0; index < static_cast<int>(ARRAY_SIZE(Overlapper)); index++) {
 		if (Overlapper[index] != NULL) {
-			Overlapper[index] = As_Object((TARGET)Overlapper[index]);
+			Overlapper[index] = As_Object(Decode_Target_Pointer(Overlapper[index]));
 			assert(Overlapper[index] != NULL);
 		}
 	}
@@ -386,7 +399,7 @@ void DisplayClass::Code_Pointers(void)
 	**	Code PendingObjectPtr.
 	*/
 	if (PendingObjectPtr) {
-		PendingObjectPtr = (ObjectClass *)PendingObjectPtr->As_Target();
+		PendingObjectPtr = Encode_Target_Pointer(PendingObjectPtr);
 	}
 
 	/*
@@ -424,7 +437,7 @@ void DisplayClass::Decode_Pointers(void)
 	**	either.  These have to be done as last-minute fixups.
 	*/
 	if (PendingObjectPtr) {
-		PendingObjectPtr = As_Object((TARGET)PendingObjectPtr);
+		PendingObjectPtr = As_Object(Decode_Target_Pointer(PendingObjectPtr));
 		assert(PendingObjectPtr != NULL);
 	}
 

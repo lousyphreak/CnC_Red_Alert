@@ -95,6 +95,8 @@ typedef enum TActionType {
 TActionType Action_From_Name(char const * name);
 char const * Name_From_Action(TActionType action);
 NeedType Action_Needs(TActionType action);
+char * Take_Legacy_Action_Trigger_Name(struct TActionClass * action);
+void Set_Legacy_Action_Trigger_Name(struct TActionClass * action, char * name);
 
 class TriggerTypeClass;
 class TeamTypeClass;

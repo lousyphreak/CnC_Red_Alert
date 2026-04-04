@@ -387,8 +387,9 @@ void DisplayClass::Init_Theater(TheaterType theater)
 		TheaterData = new MFCD(fullname, &FastKey);
 		assert(TheaterData != NULL);
 
-		bool theaterload = TheaterData->Cache(TheaterBuffer);
+		bool const theaterload = TheaterData->Cache(TheaterBuffer);
 		assert(theaterload);
+		(void)theaterload;
 //		LastTheater = Scen.Theater;
 	}
 
@@ -665,8 +666,6 @@ bool DisplayClass::Passes_Proximity_Check(ObjectTypeClass const * object, Houses
 	int16_t const * ptr;
 	int retval = -1;
 	bool noradar = false;
-	bool nomapped = false;
-	bool shipyard = false;
 
 	if (house == PlayerPtr->Class->House) {
 		PassedProximity = false;
@@ -714,9 +713,6 @@ bool DisplayClass::Passes_Proximity_Check(ObjectTypeClass const * object, Houses
 
 				if (!In_Radar(newcell)) continue;
 
-				if (!(*this)[newcell].IsMapped) {
-					nomapped = true;
-				}
 				TechnoClass * base = (*this)[newcell].Cell_Techno();
 
 				/*
@@ -1529,12 +1525,12 @@ bool DisplayClass::Coord_To_Pixel(COORDINATE coord, int &x, int &y) const
 		int xoff = Pixel_To_Lepton(Lepton_To_Pixel(Coord_X(coord)));
 
 		xoff = (xoff+EDGE_ZONE) - xtac;
-		if ((unsigned)xoff <= TacLeptonWidth + EDGE_ZONE*2) {
+		if (xoff >= 0 && xoff <= TacLeptonWidth + EDGE_ZONE*2) {
 			int ytac = Pixel_To_Lepton(Lepton_To_Pixel(Coord_Y(TacticalCoord)));
 			int yoff = Pixel_To_Lepton(Lepton_To_Pixel(Coord_Y(coord)));
 
 			yoff = (yoff+EDGE_ZONE) - ytac;
-			if ((unsigned)yoff <= TacLeptonHeight + EDGE_ZONE*2) {
+			if (yoff >= 0 && yoff <= TacLeptonHeight + EDGE_ZONE*2) {
 				x = Lepton_To_Pixel(xoff)-CELL_PIXEL_W*2;
 				y = Lepton_To_Pixel(yoff)-CELL_PIXEL_H*2;
 				return(true);
@@ -2189,7 +2185,7 @@ ObjectClass * DisplayClass::Next_Object(ObjectClass * object) const
 	if (object == NULL) {
 		foundmatch = true;
 	}
-	for (unsigned uindex = 0; uindex < Layer[LAYER_GROUND].Count(); uindex++) {
+	for (int uindex = 0; uindex < Layer[LAYER_GROUND].Count(); uindex++) {
 		ObjectClass * obj = Layer[LAYER_GROUND][uindex];
 
 		/*
@@ -3259,6 +3255,8 @@ void DisplayClass::Mouse_Left_Up(CELL cell, bool shadow, ObjectClass * object, A
 						case RTTI_BUILDING:
 							text = TXT_ENEMY_STRUCTURE;
 							break;
+						default:
+							break;
 					}
 				}
 			}
@@ -3365,7 +3363,6 @@ void DisplayClass::Mouse_Left_Release(CELL cell, int x, int y, ObjectClass * obj
 				**	process, is necessary since multiple objects could be selected and each
 				**	might perform a different action when the click occurs.
 				*/
-				bool doflash = true;
 				AllowVoice = true;
 				FormMove = false;
 				FormSpeed = SPEED_WHEEL;
@@ -3412,7 +3409,7 @@ void DisplayClass::Mouse_Left_Release(CELL cell, int x, int y, ObjectClass * obj
 						**	formation offset, then it can't be a formation move.
 						*/
 						FootClass const * foot = (FootClass *)tobject;
-						if (foot->Group != group || foot->XFormOffset == 0x80000000) {
+						if (foot->Group != group || foot->XFormOffset == (int)0x80000000) {
 							FormMove = false;
 							break;
 						}
@@ -3480,7 +3477,6 @@ void DisplayClass::Mouse_Left_Release(CELL cell, int x, int y, ObjectClass * obj
 						** in formation when they arrive.
 						*/
 						CELL newmove = cell;
-						int whatami = tobject->What_Am_I();
 						if (action == ACTION_MOVE && tobject->Is_Foot()) {
 							int oldisform;
 							FootClass * foot = (FootClass *)tobject;
@@ -3895,8 +3891,8 @@ bool DisplayClass::In_View(CELL cell) const
 	COORDINATE coord = Coord_Whole(Cell_Coord(cell));
 	COORDINATE tcoord = Coord_Whole(TacticalCoord);
 
-	if ((unsigned)(Coord_X(coord) - Coord_X(tcoord)) > TacLeptonWidth+CELL_LEPTON_W-1) return(false);
-	if ((unsigned)(Coord_Y(coord) - Coord_Y(tcoord)) > TacLeptonHeight+CELL_LEPTON_H-1) return(false);
+	if ((unsigned)(Coord_X(coord) - Coord_X(tcoord)) > static_cast<unsigned>(TacLeptonWidth + CELL_LEPTON_W - 1)) return(false);
+	if ((unsigned)(Coord_Y(coord) - Coord_Y(tcoord)) > static_cast<unsigned>(TacLeptonHeight + CELL_LEPTON_H - 1)) return(false);
 	return(true);
 }
 

@@ -373,7 +373,6 @@ ResultType InfantryClass::Take_Damage(int & damage, int distance, WarheadType wa
 		**	will perform when killed.
 		*/
 		bool delthis = false;
-		TARGET us = As_Target();
 		switch (WarheadTypeClass::As_Pointer(warhead)->InfantryDeath) {
 			default:
 			case 0:
@@ -419,7 +418,7 @@ ResultType InfantryClass::Take_Damage(int & damage, int distance, WarheadType wa
 	**	When infantry gets hit, it gets scared.
 	*/
 	if (res != RESULT_DESTROYED) {
-		COORDINATE source_coord = (source) ? source->Coord : NULL;
+		COORDINATE source_coord = (source) ? source->Coord : 0;
 
 		/*
 		**	If an engineer is damaged and it is just sitting there, then tell it
@@ -852,8 +851,6 @@ void InfantryClass::Per_Cell_Process(PCPType why)
 					Scatter(Adjacent_Cell(Coord, PrimaryFacing), true, true);
 					Assign_Mission(MISSION_MOVE);
 
-					CELL cell = Coord_Cell(Center_Coord());
-					CellClass * cellptr = &Map[cell];
 					if (!Target_Legal(NavCom) || Map[As_Cell(NavCom)].Land_Type() == LAND_WATER) {
 						Mark(MARK_DOWN);		// Needed only so that Tanya will get destroyed by the explosion.
 					}
@@ -1052,8 +1049,6 @@ void InfantryClass::Assign_Destination(TARGET target)
 	/*
 	** If telling a dog to attack a human, start the dog running
 	*/
-	TechnoClass * tech = As_Techno(target);
-
 	/*
 	**	Handle entry logic here.
 	*/
@@ -1748,7 +1743,7 @@ bool InfantryClass::Random_Animate(void)
 		**		"When in darkness or in doubt, run in circles, scream, and shout!"
 		*/
 		if (Class->IsFraidyCat && !House->IsHuman && Fear > FEAR_ANXIOUS) {
-			Scatter(NULL, true);
+			Scatter(0, true);
 			return(true);
 		}
 
@@ -1803,7 +1798,7 @@ bool InfantryClass::Random_Animate(void)
 				PrimaryFacing.Set(Facing_Dir(Random_Pick(FACING_N, FACING_NW)));
 				Mark(MARK_CHANGE_REDRAW);
 				if (!House->IsHuman && Class->IsFraidyCat) {
-					Scatter(NULL, true);
+					Scatter(0, true);
 				}
 				break;
 
@@ -2215,7 +2210,7 @@ bool InfantryClass::Unlimbo(COORDINATE coord, DirType facing)
 	**	Make sure that the infantry start in a legal position on the map.
 	*/
 	coord = Map[coord].Closest_Free_Spot(coord, ScenarioInit);
-	if (coord == NULL) {
+	if (coord == 0) {
 		return(false);
 	}
 
@@ -3192,6 +3187,8 @@ ActionType InfantryClass::What_Action(CELL cell) const
 //			case TEMPLATE_BRIDGE_3A:
 //			case TEMPLATE_BRIDGE_3B:
 				return(ACTION_SABOTAGE);
+			default:
+				break;
 		}
 	}
 
@@ -3423,10 +3420,10 @@ void InfantryClass::Write_INI(CCINIClass & ini)
 	for (int index = 0; index < Infantry.Count(); index++) {
 		InfantryClass * infantry = Infantry.Ptr(index);
 		if (!infantry->IsInLimbo) {
-			char	uname[10];
+			char	uname[12];
 			char	buf[128];
 
-			sprintf(uname, "%d", index);
+			snprintf(uname, sizeof(uname), "%d", index);
 			sprintf(buf, "%s,%s,%d,%u,%d,%s,%d,%s",
 					infantry->House->Class->IniName,
 					infantry->Class->IniName,
@@ -3616,6 +3613,8 @@ void InfantryClass::Firing_AI(void)
 						NavCom = TARGET_NONE;
 						Path[0] = FACING_NONE;
 					}
+					break;
+				default:
 					break;
 			}
 		}

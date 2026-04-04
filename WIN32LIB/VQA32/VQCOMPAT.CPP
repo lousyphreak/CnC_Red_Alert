@@ -181,7 +181,7 @@ static void Draw_Char_To_View(GraphicViewPortClass *view, uint8_t character,
 
 
 int32_t  GetINIInt(char const *section, char const *entry,
-		int32_t deflt, char *fname)
+		int32_t deflt, char const * fname)
 {
 	INIClass ini;
 
@@ -197,7 +197,7 @@ int32_t  GetINIInt(char const *section, char const *entry,
 
 
 int32_t  GetINIString(char const *section, char const *entry,
-		char const *deflt, char *retbuffer, int32_t retlen, char *fname)
+		char const *deflt, char *retbuffer, int32_t retlen, char const * fname)
 {
 	INIClass ini;
 

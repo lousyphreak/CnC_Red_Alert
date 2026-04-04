@@ -234,7 +234,6 @@ RulesClass::RulesClass(void) :
 	ShroudRate(4),
 	CrateTime(10),
 	TimerWarning(2),
-	ChronoTechLevel(1),
 	SonarTime(14),
 	ChronoTime(3),
 	ParaBombTime(14),
@@ -298,6 +297,7 @@ RulesClass::RulesClass(void) :
 	RepairThreshhold(1000),
 	PathDelay(".016"),
 	MovieTime(fixed::_1_4),
+	ChronoTechLevel(1),
 	TiberiumShortScan(0x0600),
 	TiberiumLongScan(0x2000)
 {

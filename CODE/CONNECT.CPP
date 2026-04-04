@@ -58,7 +58,7 @@
 /*
 ********************************* Globals ***********************************
 */
-char *ConnectionClass::Commands[PACKET_COUNT] = {
+char const *ConnectionClass::Commands[PACKET_COUNT] = {
 	"ADATA",
 	"NDATA",
 	"ACK"
@@ -773,7 +773,6 @@ int ConnectionClass::Service_Receive_Queue (void)
  *=========================================================================*/
 uint32_t ConnectionClass::Time (void)
 {
-	static struct timeb mytime;			// DOS time
 	uint64_t msec;
 
 #ifdef WWLIB32_H
@@ -788,8 +787,7 @@ uint32_t ConnectionClass::Time (void)
 	Otherwise, use the DOS timer
 	------------------------------------------------------------------------*/
 	else {
-		ftime(&mytime);
-		msec = static_cast<uint64_t>(mytime.time) * 1000ULL + static_cast<uint64_t>(mytime.millitm);
+		msec = SDL_GetTicks();
 		return(static_cast<uint32_t>((msec / 100ULL) * 6ULL));
 	}
 
@@ -822,13 +820,13 @@ uint32_t ConnectionClass::Time (void)
  * HISTORY:                                                                *
  *   05/31/1995 BRR : Created.                                             *
  *=========================================================================*/
-char *ConnectionClass::Command_Name(int command)
+char const * ConnectionClass::Command_Name(int command)
 {
 	if (command >= 0 && command < PACKET_COUNT) {
 		return(Commands[command]);
 	}
 	else {
-		return(NULL);
+		return(nullptr);
 	}
 
 }	/* end of Command_Name */

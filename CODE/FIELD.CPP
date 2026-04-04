@@ -36,7 +36,7 @@
 #include <string.h>
 #include "FIELD.H"
 #include <stdint.h>
-FieldClass::FieldClass(char *id, char data)
+FieldClass::FieldClass(char const *id, char data)
 {
 	strncpy(ID, id, sizeof(ID));
 	DataType = TYPE_CHAR;
@@ -46,7 +46,7 @@ FieldClass::FieldClass(char *id, char data)
 	Next		= NULL;
 }
 
-FieldClass::FieldClass(char *id, uint8_t data)
+FieldClass::FieldClass(char const *id, uint8_t data)
 {
 	strncpy(ID, id, sizeof(ID));
 	DataType = TYPE_UNSIGNED_CHAR;
@@ -56,7 +56,7 @@ FieldClass::FieldClass(char *id, uint8_t data)
 	Next		= NULL;
 }
 
-FieldClass::FieldClass(char *id, int16_t data)
+FieldClass::FieldClass(char const *id, int16_t data)
 {
 	strncpy(ID, id, sizeof(ID));
 	DataType = TYPE_SHORT;
@@ -66,7 +66,7 @@ FieldClass::FieldClass(char *id, int16_t data)
 	Next		= NULL;
 }
 
-FieldClass::FieldClass(char *id, uint16_t data)
+FieldClass::FieldClass(char const *id, uint16_t data)
 {
 	strncpy(ID, id, sizeof(ID));
 	DataType = TYPE_UNSIGNED_SHORT;
@@ -76,7 +76,7 @@ FieldClass::FieldClass(char *id, uint16_t data)
 	Next		= NULL;
 }
 
-FieldClass::FieldClass(char *id, int32_t data)
+FieldClass::FieldClass(char const *id, int32_t data)
 {
 	strncpy(ID, id, sizeof(ID));
 	DataType = TYPE_LONG;
@@ -86,7 +86,7 @@ FieldClass::FieldClass(char *id, int32_t data)
 	Next		= NULL;
 }
 
-FieldClass::FieldClass(char *id, uint32_t data)
+FieldClass::FieldClass(char const *id, uint32_t data)
 {
 	strncpy(ID, id, sizeof(ID));
 	DataType = TYPE_UNSIGNED_LONG;
@@ -96,7 +96,7 @@ FieldClass::FieldClass(char *id, uint32_t data)
 	Next		= NULL;
 }
 
-FieldClass::FieldClass(char *id, char *data)
+FieldClass::FieldClass(char const *id, char const *data)
 {
 	strncpy(ID, id, sizeof(ID));
 	DataType = TYPE_STRING;
@@ -106,7 +106,7 @@ FieldClass::FieldClass(char *id, char *data)
 	Next		= NULL;
 }
 
-FieldClass::FieldClass(char *id, void *data, int length)
+FieldClass::FieldClass(char const *id, void *data, int length)
 {
 	strncpy(ID, id, sizeof(ID));
 	DataType = TYPE_CHUNK;
@@ -212,4 +212,3 @@ void FieldClass::Net_To_Host(void)
 			break;
 	}
 }
-

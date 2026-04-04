@@ -99,7 +99,7 @@ void DriveClass::Response_Select(void)
 		VOC_YESSIR,
 		VOC_AWAIT
 	};
-	VocType response = _response[Sim_Random_Pick(0, ARRAY_SIZE(_response)-1)];
+	VocType response = _response[Sim_Random_Pick(0, static_cast<int>(ARRAY_SIZE(_response) - 1))];
 	if (AllowVoice) {
 		Sound_Effect(response, fixed(1), -(ID+1));
 	}
@@ -128,7 +128,7 @@ void DriveClass::Response_Move(void)
 		VOC_ACKNOWL,
 		VOC_AFFIRM,
 	};
-	VocType response = _response[Sim_Random_Pick(0, ARRAY_SIZE(_response)-1)];
+	VocType response = _response[Sim_Random_Pick(0, static_cast<int>(ARRAY_SIZE(_response) - 1))];
 	if (AllowVoice) {
 		Sound_Effect(response, fixed(1), -(ID+1));
 	}
@@ -157,7 +157,7 @@ void DriveClass::Response_Attack(void)
 		VOC_AFFIRM,
 		VOC_ACKNOWL
 	};
-	VocType response = _response[Sim_Random_Pick(0, ARRAY_SIZE(_response)-1)];
+	VocType response = _response[Sim_Random_Pick(0, static_cast<int>(ARRAY_SIZE(_response) - 1))];
 	if (AllowVoice) {
 		Sound_Effect(response, fixed(1), -(ID+1));
 	}
@@ -461,13 +461,13 @@ void DriveClass::Force_Track(int track, COORDINATE coord)
  *=============================================================================================*/
 DriveClass::DriveClass(RTTIType rtti, int id, HousesType house) :
 	FootClass(rtti, id, house),
-	IsMoebius(false),
 	IsHarvesting(false),
+	IsMoebius(false),
+	MoebiusCountDown(0),
+	MoebiusCell(0),
 	IsTurretLockedDown(false),
 	IsOnShortTrack(false),
 	SpeedAccum(0),
-	MoebiusCountDown(0),
-	MoebiusCell(0),
 	TrackNumber(-1),
 	TrackIndex(0)
 {
@@ -782,6 +782,9 @@ bool DriveClass::While_Moving(void)
 									Map[c].Incoming(0, true, true);
 								}
 								break;
+
+							default:
+								break;
 						}
 					}
 				}
@@ -792,7 +795,7 @@ bool DriveClass::While_Moving(void)
 				Coord = Head_To_Coord();
 				Stop_Driver();
 				TrackNumber = -1;
-				TrackIndex = NULL;
+				TrackIndex = 0;
 
 				/*
 				**	Perform "per cell" activities.
@@ -921,7 +924,7 @@ bool DriveClass::Start_Of_Move(void)
 		if (Is_Target_Vessel(NavCom) || Is_Target_Unit(NavCom) || Is_Target_Infantry(NavCom)) {
 			dist = Lepton_To_Cell((LEPTON)Distance(NavCom));
 
-			if (dist < ARRAY_SIZE(Path)) {
+			if (dist < static_cast<int>(ARRAY_SIZE(Path))) {
 				Path[dist] = FACING_NONE;
 				facing = Path[0];		// Maybe needed.
 			}
@@ -1169,7 +1172,7 @@ bool DriveClass::Start_Of_Move(void)
 		if (cando != MOVE_OK) {
 		 	Path[0] = FACING_NONE;		// Path is blocked!
 			TrackNumber = -1;
-		 	dest = NULL;
+		 	dest = 0;
 		} else {
 
 			Overrun_Square(Coord_Cell(dest), true);
@@ -1222,7 +1225,7 @@ bool DriveClass::Start_Of_Move(void)
 
 						Path[0] = FACING_NONE;		// Path is blocked!
 						TrackNumber = -1;
-						dest = NULL;
+						dest = 0;
 						if (cando == MOVE_DESTROYABLE) {
 
 							if (Map[destcell].Cell_Object()) {
@@ -1710,7 +1713,7 @@ bool DriveClass::Ok_To_Move(DirType ) const
 **	Track 11= back up into refinery
 **	Track 12= drive out of refinery
 */
-#pragma warn -ias
+
 DriveClass::TrackType const DriveClass::Track1[24] = {
 	{0x00F50000L,(DirType)0},
 	{0x00EA0000L,(DirType)0},
@@ -2327,4 +2330,3 @@ DriveClass::TurnTrackType const DriveClass::TrackControl[67] = {
 	{12,	12,	DIR_SW_X2,	F_},															// Drive back into refinery.
 	{13,	13,	DIR_SW,	F_}																// Drive out of weapons factory.
 };
-

@@ -201,8 +201,7 @@ void Send_Statistics_Packet(void)
 	HouseClass	*player;
 	static int	packet_size;
 	int			index;
-	bool			packet_later = false;	// Should the packet be sent later
-	void			*packet;
+	char			*packet;
 
 	static char	field_player_handle[5] 				= { "NAM?" };
 	static char	field_player_team[5] 				= { "SID?" };
@@ -227,7 +226,7 @@ void Send_Statistics_Packet(void)
 	static char field_player_crates_found[5]		= { "CRA?" };
 	static char field_player_harvested[5]			= { "HRV?" };
 
-	static char *houses[] = {
+	static char const *houses[] = {
 		"SPA",
 		"GRE",
 		"USS",
@@ -600,8 +599,6 @@ void Send_Statistics_Packet(void)
 		stats.Add_Field (FIELD_GAME_VERSION, (char*)version);
 
 		char path_to_exe[280];
-		FILETIME write_time;		//File time is 64 bits
-
 		const char* base_path = SDL_GetBasePath();
 		std::snprintf(path_to_exe, sizeof(path_to_exe), "%s", (base_path != NULL) ? base_path : "./");
 
@@ -845,7 +842,7 @@ void Send_Statistics_Packet(void)
 		/*
 		** Send the packet we calculated earlier when the disconnect occurred
 		*/
-		packet = PacketLater;
+		packet = static_cast<char *>(PacketLater);
 		PacketLater = NULL;
 	}
 

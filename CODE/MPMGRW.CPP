@@ -272,7 +272,7 @@ MPlayerManClass::Set_Timing(uint32_t /*retrydelta*/,
 
 void
 MPlayerManClass::Configure_Debug(int /*index*/, int /*type_offset*/,
-                                 int /*type_size*/, char ** /*names*/,
+                                 int /*type_size*/, char const ** /*names*/,
                                  int /*namestart*/, int /*namecount*/)
 {
    // unsupported

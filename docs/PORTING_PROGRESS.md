@@ -1,12 +1,20 @@
 # Porting Progress
 
-_Last updated: 2026-04-03_
+_Last updated: 2026-04-04_
 
 ## Goal
 
 Port the Red Alert codebase to a reproducible cross-platform build using SDL3 for platform-specific functionality, with working builds on Linux, Windows, and other supported SDL3 platforms.
 
 ## Current status
+
+- Completed the native warning-cleanup sweep for the warning-enabled SDL/Linux build and brought the full `redalert` target down to zero warnings without intentionally changing gameplay behavior:
+  - fixed the broad warning tail across gameplay, save/load, networking, UI, and support code by keeping the original logic intact while tightening exact-width types, signed/unsigned comparisons, format strings, constructor init order, dead legacy locals, and other GCC `-Wall` diagnostics;
+  - normalized the remaining 64-bit-sensitive serialization/code-pointer paths in `CODE/SAVELOAD.CPP`, `CODE/IOOBJ.CPP`, and `CODE/IOMAP.CPP` to use `intptr_t` bridges when old load/save code temporarily stores `TARGET` ids inside pointer slots, and updated `CODE/MAP.CPP` to preserve the original low-32-bit validation checks with `uintptr_t` masking instead of truncating pointers to `uint32_t`;
+  - fixed one real 64-bit hazard in the legacy trigger loader by stopping the old `char *` storage in `CCPtr::Raw()`: `CODE/TACTION.{H,CPP}` now keeps duplicated trigger names in a side table and `CODE/TRIGTYPE.CPP` consumes them during legacy fixup;
+  - companion cleanup from the same pass included widening `SmartPtr` integer conversions to `intptr_t`, making `uint32_t` disabled-sentinel checks explicit with `static_cast<uint32_t>(-1)`, replacing the old `ftime()` fallback with the SDL tick path while preserving the original 60 Hz-style scaling, and clearing the final `HOUSE.CPP` / `IOOBJ.CPP` / `IOMAP.CPP` / `MAP.CPP` warning clusters;
+  - warning-count milestones for this sweep were `650 -> 396 -> 332 -> 285 -> 245 -> 209 -> 179 -> 158 -> 83 -> 35 -> 0` warning lines on clean native rebuilds of the warning-enabled target;
+  - validation for this checkpoint: the dedicated warning-enabled native build tree now completes a full clean `redalert` rebuild with zero warnings, `cmake --build build-asan --target redalert -j8` succeeds, and `cd GameData && timeout -k 5s 20s env ASAN_OPTIONS=abort_on_error=1:detect_leaks=0 UBSAN_OPTIONS=print_stacktrace=1 ../build-asan/redalert "Erik Yeo"` still exits only via the external timeout/SIGKILL window (`137`) with no `AddressSanitizer` or `runtime error:` matches in the captured log.
 
 - Reworked the Emscripten asset-delivery path so the browser build no longer depends on a monolithic multi-gigabyte preload bundle:
   - `CMakeLists.txt` now adds `RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA` (default `ON`) for the practical web path, generates a case-preserving `ra-assets-manifest.txt` from `GameData/`, embeds that tiny manifest into the web executable, links `-sFORCE_FILESYSTEM` plus `-lidbfs.js`, and suppresses `RA_EMSCRIPTEN_PACKAGE_GAMEDATA`'s old `redalert.data` preload path whenever lazy fetch is enabled even if an existing build cache still has the packaging option turned on;

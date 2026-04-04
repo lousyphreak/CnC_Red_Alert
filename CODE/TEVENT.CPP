@@ -250,6 +250,8 @@ bool TEventClass::operator () (TDEventClass & td, TEventType event, HousesType h
 		case TEVENT_TIME:
 			if (td.Timer != 0) return(false);
 			return(true);
+		default:
+			break;
 	}
 
 	/*
@@ -401,14 +403,14 @@ bool TEventClass::operator () (TDEventClass & td, TEventType event, HousesType h
 			**	Verify that the specified number of buildings have been destroyed.
 			*/
 			case TEVENT_NBUILDINGS_DESTROYED:
-				if (hptr->BuildingsLost < Data.Value) return(false);
+				if (static_cast<int32_t>(hptr->BuildingsLost) < Data.Value) return(false);
 				break;
 
 			/*
 			**	Verify that the specified number of units have been destroyed.
 			*/
 			case TEVENT_NUNITS_DESTROYED:
-				if (hptr->UnitsLost < Data.Value) return(false);
+				if (static_cast<int32_t>(hptr->UnitsLost) < Data.Value) return(false);
 				break;
 
 			default:

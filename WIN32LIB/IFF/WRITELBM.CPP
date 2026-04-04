@@ -127,7 +127,7 @@ PUBLIC int32_t Write_LBM_File(int32_t lbmhandle, BufferClass& buff, int32_t bitp
 	filesize += Write_BODY(lbmhandle, buff, bitplanes);
 
 		// Verify that we were able to write out the file without running out of space
-	if (Seek_File(lbmhandle, 0L, SEEK_END) != filesize) {
+	if (Seek_File(lbmhandle, 0L, SEEK_END) != static_cast<uint32_t>(filesize)) {
 		return(FALSE);
 	}
 
@@ -419,4 +419,3 @@ CHUNKS		-> + TINY	// add these to old definition
 
 
 #endif
-

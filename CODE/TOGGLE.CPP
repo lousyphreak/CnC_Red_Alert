@@ -143,7 +143,9 @@ int ToggleClass::Action(unsigned flags, KeyNumType &key)
 	**	must never actually function like a real call, but rather only performs any necessary
 	**	graphic updating.
 	*/
-	bool overbutton = ((unsigned)(Get_Mouse_X() - X) < Width && (unsigned)(Get_Mouse_Y() - Y) < Height );
+	int relx = Get_Mouse_X() - X;
+	int rely = Get_Mouse_Y() - Y;
+	bool overbutton = (relx >= 0 && relx < Width && rely >= 0 && rely < Height);
 	if (!flags) {
 		if (overbutton) {
 			if (!IsPressed) {
@@ -196,5 +198,4 @@ int ToggleClass::Action(unsigned flags, KeyNumType &key)
 	*/
 	return(ControlClass::Action(flags, key));
 }
-
 

@@ -63,6 +63,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "FUNCTION.H"
+#include <stdint.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -169,7 +170,7 @@ void MapClass::Init_Clear(void)
 	TiberiumGrowthExcess = 0;
 	TiberiumSpreadCount = 0;
 	TiberiumSpreadExcess = 0;
-	for (int index = 0; index < ARRAY_SIZE(Crates); index++) {
+	for (int index = 0; index < static_cast<int>(ARRAY_SIZE(Crates)); index++) {
 		Crates[index].Init();
 	}
 }
@@ -1032,7 +1033,7 @@ void MapClass::Logic(void)
 		**	Find any crate that has expired and then regenerate it at a new
 		**	spot.
 		*/
-		for (int index = 0; index < ARRAY_SIZE(Crates); index++) {
+		for (int index = 0; index < static_cast<int>(ARRAY_SIZE(Crates)); index++) {
 			if (Crates[index].Is_Expired()) {
 				Crates[index].Remove_It();
 				Place_Random_Crate();
@@ -1067,7 +1068,7 @@ void MapClass::Logic(void)
 				**	the list.
 				*/
 				if (Random_Pick(0, TiberiumGrowthExcess) <= TiberiumGrowthCount) {
-					if (TiberiumGrowthCount < sizeof(TiberiumGrowth)/sizeof(TiberiumGrowth[0])) {
+					if (TiberiumGrowthCount < static_cast<int>(sizeof(TiberiumGrowth)/sizeof(TiberiumGrowth[0]))) {
 						TiberiumGrowth[TiberiumGrowthCount++] = cell;
 					} else {
 						TiberiumGrowth[Random_Pick(0, TiberiumGrowthCount-1)] = cell;
@@ -1085,7 +1086,7 @@ void MapClass::Logic(void)
 				**	the list.
 				*/
 				if (Random_Pick(0, TiberiumSpreadExcess) <= TiberiumSpreadCount) {
-					if (TiberiumSpreadCount < ARRAY_SIZE(TiberiumSpread)) {
+					if (TiberiumSpreadCount < static_cast<int>(ARRAY_SIZE(TiberiumSpread))) {
 						TiberiumSpread[TiberiumSpreadCount++] = cell;
 					} else {
 						TiberiumSpread[Random_Pick(0, TiberiumSpreadCount-1)] = cell;
@@ -1199,10 +1200,10 @@ bool MapClass::Place_Random_Crate(void)
 	**	no free slots, then return with failure to place crate.
 	*/
 	int crateindex = 0;
-	for (crateindex = 0; crateindex < ARRAY_SIZE(Crates); crateindex++) {
+	for (crateindex = 0; crateindex < static_cast<int>(ARRAY_SIZE(Crates)); crateindex++) {
 		if (!Crates[crateindex].Is_Valid()) break;
 	}
-	if (crateindex == ARRAY_SIZE(Crates)) {
+	if (crateindex == static_cast<int>(ARRAY_SIZE(Crates))) {
 		return(false);
 	}
 
@@ -1237,7 +1238,7 @@ bool MapClass::Place_Random_Crate(void)
 bool MapClass::Remove_Crate(CELL cell)
 {
 	if (Session.Type != GAME_NORMAL) {
-		for (int index = 0; index < ARRAY_SIZE(Crates); index++) {
+		for (int index = 0; index < static_cast<int>(ARRAY_SIZE(Crates)); index++) {
 			if (Crates[index].Is_Here(cell)) {
 				return(Crates[index].Remove_It());
 			}
@@ -1252,7 +1253,7 @@ bool MapClass::Remove_Crate(CELL cell)
 			return(true);
 		}
 //	} else {
-//		for (int index = 0; index < ARRAY_SIZE(Crates); index++) {
+//		for (int index = 0; index < static_cast<int>(ARRAY_SIZE(Crates)); index++) {
 //			if (Crates[index].Is_Here(cell)) {
 //				return(Crates[index].Remove_It());
 //			}
@@ -1361,8 +1362,8 @@ if (BlubCell->Overlapper[1]) {
 		obj = (*this)[cell].Cell_Occupier();
 		if (obj) {
 			if (
-				((uint32_t)obj & 0xff000000) ||
-				((uint32_t)obj->Next & 0xff000000) ||
+				((reinterpret_cast<uintptr_t>(obj) & 0xff000000u) != 0) ||
+				((reinterpret_cast<uintptr_t>(static_cast<ObjectClass *>(obj->Next)) & 0xff000000u) != 0) ||
 //				((unsigned int)obj->Trigger & 0xff000000) ||
 				obj->IsInLimbo ||
 				((uint32_t)Coord_Cell(obj->Coord) >= MAP_CELL_TOTAL)) {
@@ -1374,12 +1375,12 @@ if (BlubCell->Overlapper[1]) {
 		/*
 		**	Validate Overlappers
 		*/
-		for (i = 0; i < ARRAY_SIZE((*this)[cell].CellClass::Overlapper); i++) {
+		for (i = 0; i < static_cast<int>(ARRAY_SIZE((*this)[cell].CellClass::Overlapper)); i++) {
 			obj = (*this)[cell].Overlapper[i];
 			if (obj) {
 				if (
-					((uint32_t)obj & 0xff000000) ||
-					((uint32_t)obj->Next & 0xff000000) ||
+					((reinterpret_cast<uintptr_t>(obj) & 0xff000000u) != 0) ||
+					((reinterpret_cast<uintptr_t>(static_cast<ObjectClass *>(obj->Next)) & 0xff000000u) != 0) ||
 //					((unsigned int)obj->Trigger & 0xff000000) ||
 					obj->IsInLimbo ||
 					((uint32_t)Coord_Cell(obj->Coord) >= MAP_CELL_TOTAL)) {
@@ -1421,7 +1422,7 @@ ObjectClass * MapClass::Close_Object(COORDINATE coord) const
 	**	closest object (within reason) to the specified coordinate.
 	*/
 	static int _offsets[] = {0, -1, 1, -MAP_CELL_W, MAP_CELL_W, MAP_CELL_W-1, MAP_CELL_W+1, -(MAP_CELL_W-1), -(MAP_CELL_W+1)};
-	for (int index = 0; index < (sizeof(_offsets) / sizeof(_offsets[0])); index++) {
+	for (int index = 0; index < static_cast<int>(sizeof(_offsets) / sizeof(_offsets[0])); index++) {
 
 		/*
 		**	Examine the cell for close object. Make sure that the cell actually is a
@@ -1918,6 +1919,8 @@ bool MapClass::Destroy_Bridge_At(CELL cell)
 						ttype++;
 						new TemplateClass(TemplateType(ttype), cell);
 						break;
+					default:
+						break;
 		 		}
 
 				/*
@@ -1968,6 +1971,8 @@ bool MapClass::Destroy_Bridge_At(CELL cell)
 						case TEMPLATE_BRIDGE_3D:
 							new TemplateClass(TemplateType(TEMPLATE_BRIDGE_3F), cell2);
 							break;
+						default:
+							break;
 					}
 				} else {
 					if (cellptr->TType == TEMPLATE_BRIDGE_2C) {
@@ -1981,6 +1986,8 @@ bool MapClass::Destroy_Bridge_At(CELL cell)
 								break;
 							case TEMPLATE_BRIDGE_3E:
 								new TemplateClass(TemplateType(TEMPLATE_BRIDGE_3F), cell2);
+								break;
+							default:
 								break;
 						}
 					}

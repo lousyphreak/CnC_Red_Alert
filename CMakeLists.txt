@@ -262,7 +262,7 @@ foreach(target sdl3_compat win32lib redalert)
         if(NOT CMAKE_SYSTEM_NAME STREQUAL "Windows")
             target_compile_definitions(${target} PRIVATE __cdecl=)
         endif()
-        target_compile_options(${target} PRIVATE -w -fpermissive)
+        target_compile_options(${target} PRIVATE -Wall -fpermissive)
     endif()
 endforeach()
 

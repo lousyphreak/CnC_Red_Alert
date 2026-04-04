@@ -107,7 +107,7 @@ template<class T>
 int DynamicVectorClass<T>::Resize(unsigned newsize, T const * array)
 {
 	if (VectorClass<T>::Resize(newsize, array)) {
-		if (this->Length() < ActiveCount) ActiveCount = this->Length();
+		if (ActiveCount > static_cast<int>(this->Length())) ActiveCount = static_cast<int>(this->Length());
 		return(true);
 	}
 	return(false);
@@ -162,7 +162,7 @@ int DynamicVectorClass<T>::ID(T const & object)
 template<class T>
 int DynamicVectorClass<T>::Add(T const & object)
 {
-	if (ActiveCount >= this->Length()) {
+	if (ActiveCount >= static_cast<int>(this->Length())) {
 		if ((this->IsAllocated || !this->VectorMax) && GrowthStep > 0) {
 			if (!Resize(this->Length() + GrowthStep)) {
 
@@ -208,7 +208,7 @@ int DynamicVectorClass<T>::Add(T const & object)
 template<class T>
 int DynamicVectorClass<T>::Add_Head(T const & object)
 {
-	if (ActiveCount >= this->Length()) {
+	if (ActiveCount >= static_cast<int>(this->Length())) {
 		if ((this->IsAllocated || !this->VectorMax) && GrowthStep > 0) {
 			if (!Resize(this->Length() + GrowthStep)) {
 
@@ -284,7 +284,7 @@ int DynamicVectorClass<T>::Delete(T const & object)
 template<class T>
 int DynamicVectorClass<T>::Delete(int index)
 {
-	if ((unsigned)index < ActiveCount) {
+	if (index >= 0 && index < ActiveCount) {
 		ActiveCount--;
 
 		/*

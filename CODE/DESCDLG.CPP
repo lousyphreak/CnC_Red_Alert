@@ -131,7 +131,7 @@ void DescriptionClass::Process(char * string)
 		/*
 		**	Get user input
 		*/
-		KeyNumType input = optionsbtn.Input();
+		int input = optionsbtn.Input();
 
 		/*
 		**	Process Input
@@ -146,7 +146,7 @@ void DescriptionClass::Process(char * string)
 
 			case KN_ESC:
 			case KeyNumType(BUTTON_CANCEL|KN_BUTTON):
-				string[0]= NULL;
+				string[0]= '\0';
 				strtrim(string);
 				process = false;
 				break;

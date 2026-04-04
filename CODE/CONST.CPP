@@ -208,7 +208,7 @@ char const * const ArmorName[ARMOR_COUNT] = {
 // HACK ALERT! This unused text string is here to stop Watcom from crashing. There is some
 // magic text heap length that causes a crash before the code executes. This dummy string
 // changes the text heap length enough to stop the crash. Who knows why, but it works.
-char * __test__ = "alskdfjlasdfjkajsdfkja;sldjfklasj9awutreqjfnfdkvnldzlknvadsjgflkasdjfkajsdfas";
+char const * __test__ = "alskdfjlasdfjkajsdfkja;sldjfklasj9awutreqjfnfdkvnldzlknvadsjgflkasdjfkajsdfas";
 
 
 /***************************************************************************

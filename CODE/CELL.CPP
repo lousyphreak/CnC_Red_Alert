@@ -143,7 +143,7 @@ CellClass::CellClass(void) :
 		Zones[zone] = 0;
 	}
 	Flag.Composite = 0;
-	for (int index = 0; index < ARRAY_SIZE(Overlapper); index++) {
+	for (int index = 0; index < static_cast<int>(ARRAY_SIZE(Overlapper)); index++) {
 		Overlapper[index] = 0;
 	}
 }
@@ -413,10 +413,12 @@ void CellClass::Redraw_Objects(bool forced)
 #else
 				optr->Mark(MARK_CHANGE);
 #endif
-				if (optr->Next != NULL && !optr->Next->IsActive) {
+				ObjectClass * next = optr->Next;
+				if (next != NULL && !next->IsActive) {
 					optr->Next = NULL;
+					next = NULL;
 				}
-				optr = optr->Next;
+				optr = next;
 			}
 		}
 
@@ -424,7 +426,7 @@ void CellClass::Redraw_Objects(bool forced)
 		/*
 		**	Flag any overlapping object in this cell to be redrawn.
 		*/
-		for (int index = 0; index < ARRAY_SIZE(Overlapper); index++) {
+		for (int index = 0; index < static_cast<int>(ARRAY_SIZE(Overlapper)); index++) {
 			if (Overlapper[index]) {
 				assert(Overlapper[index]->IsActive);
 				if (Overlapper[index]->Is_Techno() && ((TechnoClass *)Overlapper[index])->Visual_Character() != VISUAL_NORMAL) {
@@ -436,7 +438,7 @@ void CellClass::Redraw_Objects(bool forced)
 		/*
 		**	Flag any overlapping object in this cell to be redrawn.
 		*/
-		for (int index = 0; index < ARRAY_SIZE(Overlapper); index++) {
+		for (int index = 0; index < static_cast<int>(ARRAY_SIZE(Overlapper)); index++) {
 			if (Overlapper[index] != NULL) {
 				if (!Overlapper[index]->IsActive) {
 					Overlapper[index] = NULL;
@@ -619,10 +621,12 @@ void CellClass::Occupy_Down(ObjectClass * object)
 	*/
 	if (object->What_Am_I() == RTTI_BUILDING && Cell_Occupier()) {
 		optr = Cell_Occupier();
-		while (optr->Next != NULL) {
+		ObjectClass * next = optr->Next;
+		while (next != NULL) {
 			assert(optr != object);
 			assert(optr->What_Am_I() != RTTI_BUILDING);
-			optr = optr->Next;
+			optr = next;
+			next = optr->Next;
 		}
 		optr->Next = object;
 		object->Next = 0;
@@ -694,12 +698,10 @@ void CellClass::Occupy_Up(ObjectClass * object)
 		OccupierPtr = object->Next;
 		object->Next = 0;
 	} else {
-		bool found = false;
 		while (optr != NULL) {
 			if (optr->Next == object) {
 				optr->Next = object->Next;
 				object->Next = 0;
-				found = true;
 				break;
 			}
 			optr = optr->Next;
@@ -759,7 +761,7 @@ void CellClass::Overlap_Down(ObjectClass * object)
 
 	if (!object) return;
 
-	for (int index = 0; index < ARRAY_SIZE(Overlapper); index++) {
+	for (int index = 0; index < static_cast<int>(ARRAY_SIZE(Overlapper)); index++) {
 		if (Overlapper[index] == object) return;
 		if (!Overlapper[index]) ptr = &Overlapper[index];
 	}
@@ -769,7 +771,7 @@ void CellClass::Overlap_Down(ObjectClass * object)
 	**	else out in this case.
 	*/
 	if (!ptr && object->What_Am_I() == RTTI_BUILDING) {
-		for (int index = 0; index < ARRAY_SIZE(Overlapper); index++) {
+		for (int index = 0; index < static_cast<int>(ARRAY_SIZE(Overlapper)); index++) {
 			switch (Overlapper[index]->What_Am_I()) {
 				case RTTI_BUILDING:
 				case RTTI_TERRAIN:
@@ -777,7 +779,7 @@ void CellClass::Overlap_Down(ObjectClass * object)
 
 				default:
 					Overlapper[index] = object;
-					index = ARRAY_SIZE(Overlapper);
+					index = static_cast<int>(ARRAY_SIZE(Overlapper));
 					break;
 			}
 		}
@@ -814,7 +816,7 @@ void CellClass::Overlap_Up(ObjectClass * object)
 	assert((unsigned)Cell_Number() <= MAP_CELL_TOTAL);
 	assert(object != NULL && object->IsActive);
 
-	for (int index = 0; index < ARRAY_SIZE(Overlapper); index++) {
+	for (int index = 0; index < static_cast<int>(ARRAY_SIZE(Overlapper)); index++) {
 		if (Overlapper[index] == object) {
 			Overlapper[index] = 0;
 			break;
@@ -981,7 +983,6 @@ void CellClass::Draw_It(int x, int y, bool objects) const
 
 		TemplateTypeClass const * ttype = 0;
 		int	icon;		// The icon number to use from the template set.
-		CELL	cell = Cell_Number();
 		void * remap = NULL;
 	#ifdef SCENARIO_EDITOR
 		TemplateTypeClass * tptr;
@@ -1227,7 +1228,7 @@ void CellClass::Draw_It(int x, int y, bool objects) const
 			object = object->Next;
 			count++;
 		}
-		for (int index = 0; index < ARRAY_SIZE(Overlapper); index++) {
+		for (int index = 0; index < static_cast<int>(ARRAY_SIZE(Overlapper)); index++) {
 			object = Overlapper[index];
 			if (object != NULL && object->IsActive) {
 				object->IsToDisplay = true;
@@ -1845,7 +1846,7 @@ COORDINATE CellClass::Closest_Free_Spot(COORDINATE coord, bool any) const
 	**	Cells occupied by buildings or vehicles don't have any free spots.
 	*/
 	if (!any && (Flag.Occupy.Vehicle || Flag.Occupy.Monolith)) {
-		return(NULL);
+		return(0);
 	}
 
 	/*
@@ -2275,6 +2276,8 @@ bool CellClass::Goodie_Check(FootClass * object)
 						}
 					}
 					break;
+				default:
+					break;
 			}
 			/*
 			**	Possibly force it to be an MCV if there is
@@ -2467,7 +2470,7 @@ crate_money:
 						INFANTRY_E3,
 						INFANTRY_RENOVATOR
 					};
-					if (!InfantryTypeClass::As_Reference(_inf[Random_Pick(0, ARRAY_SIZE(_inf)-1)]).Create_And_Place(Cell_Number(), object->Owner())) {
+					if (!InfantryTypeClass::As_Reference(_inf[Random_Pick(0, static_cast<int>(ARRAY_SIZE(_inf) - 1))]).Create_And_Place(Cell_Number(), object->Owner())) {
 						if (index == 0) {
 							goto crate_money;
 						}
@@ -2864,6 +2867,8 @@ bool CellClass::Is_Bridge_Here(void) const
 		case TEMPLATE_BRIDGE_3E:
 		case TEMPLATE_BRIDGE_3F:
 			return(true);
+		default:
+			break;
 	}
 	return(false);
 }

@@ -42,35 +42,8 @@
 class PaletteClass;
 class HSVClass;
 
-#ifndef OUTPORTB
-#define OUTPORTB
-extern void outportb(int port, uint8_t data);
-#pragma aux outportb parm [edx] [al] =		\
-		"out	dx,al"
-
-extern void outport(int port, uint16_t data);
-#pragma aux outport parm [edx] [ax] =		\
-		"out	dx,al"		\
-		"inc	dx"			\
-		"mov	al,ah"		\
-		"out	dx,al"
-#endif
-
 extern void outrgb(uint8_t red, uint8_t green, uint8_t blue);
-#pragma aux outrgb parm [al] [bl] [cl] \
-		modify [dx al] = \
-		"mov	dx,03C9h"	\
-		"out	dx,al"		\
-		"jmp	e1"			\
-		"e1:"					\
-		"mov	al,bl" 		\
-		"out	dx,al"		\
-		"jmp	e2"			\
-		"e2:" 				\
-		"mov	al,cl" 		\
-		"out	dx,al"		\
-		"jmp	e3"			\
-		"e3:"
+extern void outportb(int port, uint8_t data);
 
 /*
 **	Each color entry is represented by this class. It holds the values for the color

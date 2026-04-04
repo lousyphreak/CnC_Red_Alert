@@ -172,7 +172,7 @@ bool ConfirmationClass::Process(char const * string)
 		/*
 		**	Get user input.
 		*/
-		KeyNumType input = yesbtn.Input();
+		int input = yesbtn.Input();
 
 		/*
 		**	Process Input.

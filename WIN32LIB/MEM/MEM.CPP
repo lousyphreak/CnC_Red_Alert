@@ -199,7 +199,7 @@ void *Mem_Alloc(void *poolptr, int32_t lsize, uint32_t id)
 	MemChain_Type	*node;			// Pointer to current memory node.
 	uint32_t	remainder=0;	// Remaining bytes that are still free.
 	int32_t				found;
-	int32_t				size;				// Paragraph size of allocation.
+	uint32_t		size;				// Paragraph size of allocation.
 
 
 	/*
@@ -214,7 +214,7 @@ void *Mem_Alloc(void *poolptr, int32_t lsize, uint32_t id)
 	*/
 	lsize += sizeof(MemChain_Type);	// Account for header.
 	lsize = (lsize + 0x0FL) & 0xFFFFFFF0L;
-	size = (int32_t)(lsize >> 4);
+	size = (lsize >> 4);
 
 	/*
 	**	If the total free is less than the size of the desired allocation,
@@ -1085,7 +1085,6 @@ PRIVATE void MemNode_Insert(MemPool_Type *pool, int32_t freechain, MemChain_Type
 		node->ID = id;
 	}
 }
-
 
 
 

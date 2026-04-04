@@ -330,7 +330,7 @@ void* DebugFile = nullptr;
  * HISTORY:                                                                                    *
  *    10/28/96 12:48PM ST : Created                                                              *
  *=============================================================================================*/
-void WWDebugString (char *string)
+void WWDebugString (char const *string)
 {
 #if (0)
 	char outstr[256];
@@ -443,7 +443,7 @@ int	DebugColour=1;
 
 
 extern "C" void Set_Palette_Register(int number, int red, int green, int blue);
-#pragma off (unreferenced)
+
 void Colour_Debug (int call_number)
 {
 	//#if 0
@@ -459,8 +459,6 @@ void Colour_Debug (int call_number)
 	//}
 	//#endif
 }
-
-#pragma on (unreferenced)
 
 
 
@@ -770,8 +768,8 @@ void Memory_Error_Handler(void)
 
 
 
-GraphicBufferClass* Read_PCX_File(char* name, char* Palette, void *Buff, int32_t Size);
-void Load_Title_Screen(char *name, GraphicViewPortClass *video_page, uint8_t *palette)
+GraphicBufferClass* Read_PCX_File(char const *name, char* Palette, void *Buff, int32_t Size);
+void Load_Title_Screen(char const *name, GraphicViewPortClass *video_page, uint8_t *palette)
 {
 
 	GraphicBufferClass *load_buffer;
@@ -823,12 +821,12 @@ void Load_Title_Screen(char *name, GraphicViewPortClass *video_page, uint8_t *pa
 							 }
 
 
-GraphicBufferClass* Read_PCX_File(char* name, char* palette, void *Buff, int32_t Size)
+GraphicBufferClass* Read_PCX_File(char const *name, char* palette, void *Buff, int32_t Size)
 {
-	unsigned					i, j;
+	int						i, j;
 	unsigned					rle;
 	unsigned					color;
-	unsigned					scan_pos;
+	int						scan_pos;
 	char						*file_ptr;
 	int						width;
 	int						height;
@@ -882,8 +880,12 @@ GraphicBufferClass* Read_PCX_File(char* name, char* palette, void *Buff, int32_t
 			}
       	}
 
-		if ( i == width ) rle = READ_CHAR ();
-		if ( rle > 192 )  rle = READ_CHAR ();
+		if (i == width) {
+			rle = READ_CHAR();
+		}
+		if (rle > 192) {
+			rle = READ_CHAR();
+		}
 
 	} else {
 
@@ -902,7 +904,7 @@ GraphicBufferClass* Read_PCX_File(char* name, char* palette, void *Buff, int32_t
 	}
 
 	if ( palette ) {
-		file_handle.Seek (- (256 * sizeof ( RGB )) , SEEK_END );
+		file_handle.Seek(-(256 * static_cast<int32_t>(sizeof(RGB))), SEEK_END);
 		file_handle.Read (palette , 256L * sizeof ( RGB ));
 
 		pal = ( RGB * ) palette;

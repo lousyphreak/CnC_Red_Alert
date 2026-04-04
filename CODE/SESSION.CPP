@@ -96,7 +96,7 @@ char SessionClass::Descriptions[100][40];
 // These values are used purely for the Mono debug display.  They show the
 // names of the Global Channel packet types, and the event types.
 //---------------------------------------------------------------------------
-char * SessionClass::GlobalPacketNames[] = {
+char const * SessionClass::GlobalPacketNames[] = {
 	"Game?",
 	"Game!",
 	"Player?",
@@ -1102,8 +1102,6 @@ void SessionClass::Read_Scenario_Descriptions (void)
  *=========================================================================*/
 void SessionClass::Free_Scenario_Descriptions(void)
 {
-	int i;
-
 	//------------------------------------------------------------------------
 	//	Clear the scenario descriptions & filenames
 	//------------------------------------------------------------------------
@@ -1284,7 +1282,6 @@ uint32_t SessionClass::Compute_Unique_ID(void)
 	time_t tm;
 	uint32_t id;
 	char *path;
-	int i;
 
 	//------------------------------------------------------------------------
 	// Start with the seconds since Jan 1, 1970 (system local time)
@@ -1306,8 +1303,9 @@ uint32_t SessionClass::Compute_Unique_ID(void)
 	//------------------------------------------------------------------------
 	path = getenv("PATH");
 	if (path) {
-		for (i = 0; i < strlen(path); i++) {
-			Add_CRC(&id, (uint32_t)path[i]);
+		size_t path_length = strlen(path);
+		for (size_t path_index = 0; path_index < path_length; path_index++) {
+			Add_CRC(&id, static_cast<uint32_t>(path[path_index]));
 		}
 	}
 

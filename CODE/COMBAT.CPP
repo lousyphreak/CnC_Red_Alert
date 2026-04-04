@@ -208,11 +208,11 @@ void Explosion_Damage(COORDINATE coord, int strength, TechnoClass * source, Warh
 			if (!object->IsToDamage && object != source) {
 				object->IsToDamage = true;
 				objects[count++] = object;
-				if (count >= ARRAY_SIZE(objects)) break;
+				if (count >= static_cast<int>(ARRAY_SIZE(objects))) break;
 			}
 			object = object->Next;
 		}
- 		if (count >= ARRAY_SIZE(objects)) break;
+ 		if (count >= static_cast<int>(ARRAY_SIZE(objects))) break;
 	}
 
 	/*
@@ -344,18 +344,18 @@ AnimType Combat_Anim(int damage, WarheadType warhead, LandType land)
 		case 4:
 			if (land == LAND_NONE) return(ANIM_FLAK);
 //	Fixed math error
-			if (land == LAND_WATER) return(_waterlist[(ARRAY_SIZE(_waterlist)-1) * fixed(min(damage, 90), 90)]);
-			return(_aplist[(ARRAY_SIZE(_aplist)-1) * fixed(min(damage, 90), 90)]);
+			if (land == LAND_WATER) return(_waterlist[fixed(min(damage, 90), 90) * static_cast<int>(ARRAY_SIZE(_waterlist) - 1)]);
+			return(_aplist[fixed(min(damage, 90), 90) * static_cast<int>(ARRAY_SIZE(_aplist) - 1)]);
 
 		case 5:
 			if (land == LAND_NONE) return(ANIM_FLAK);
-			if (land == LAND_WATER) return(_waterlist[(ARRAY_SIZE(_waterlist)-1) * fixed(min(damage, 130), 130)]);
-			return(_helist[(ARRAY_SIZE(_helist)-1) * fixed(min(damage, 130), 130)]);
+			if (land == LAND_WATER) return(_waterlist[fixed(min(damage, 130), 130) * static_cast<int>(ARRAY_SIZE(_waterlist) - 1)]);
+			return(_helist[fixed(min(damage, 130), 130) * static_cast<int>(ARRAY_SIZE(_helist) - 1)]);
 
 		case 3:
 			if (land == LAND_NONE) return(ANIM_FLAK);
-			if (land == LAND_WATER) return(_waterlist[(ARRAY_SIZE(_waterlist)-1) * fixed(min(damage, 150), 150)]);
-			return(_firelist[(ARRAY_SIZE(_firelist)-1) * fixed(min(damage, 150), 150)]);
+			if (land == LAND_WATER) return(_waterlist[fixed(min(damage, 150), 150) * static_cast<int>(ARRAY_SIZE(_waterlist) - 1)]);
+			return(_firelist[fixed(min(damage, 150), 150) * static_cast<int>(ARRAY_SIZE(_firelist) - 1)]);
 
 		case 1:
 			return(ANIM_PIFF);

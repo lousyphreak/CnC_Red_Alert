@@ -114,7 +114,7 @@ class CommQueueClass
 		/*
 		........................ Debug output routines ........................
 		*/
-		void Configure_Debug(int offset, int size, char **names, int maxnames);
+		void Configure_Debug(int offset, int size, char const **names, int maxnames);
 		void Mono_Debug_Print(int refresh = 0);
 		void Mono_Debug_Print2(int refresh = 0);
 
@@ -160,7 +160,7 @@ class CommQueueClass
 		*/
 		int DebugOffset;							// offset into app's packet for ID
 		int DebugSize;								// size of app's ID
-		char **DebugNames;						// ptr to array of app-specific names
+		char const **DebugNames;				// ptr to array of app-specific names
 		int DebugMaxNames;						// max # of names in array
 };
 

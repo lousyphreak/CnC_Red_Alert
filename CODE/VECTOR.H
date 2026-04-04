@@ -131,6 +131,8 @@ template<class T>
 class DynamicVectorClass : public VectorClass<T>
 {
 	public:
+		using VectorClass<T>::operator=;
+
 		DynamicVectorClass(unsigned size=0, T const * array=0);
 
 		// Change maximum size of vector.

@@ -530,7 +530,6 @@ enum
 // define for special 18.2 callback rate to dos
 #define  _TIMER_DOS_RATE   0xff00
 #pragma pack(pop)
-#pragma aux int_3 = "int 3"
 #pragma pack(push, 1)
 typedef struct
 {

@@ -58,7 +58,7 @@
  *=========================================================================*/
 
 //static char command [ 256 ] ;
-#pragma on (argsused)
+
 char *  Find_Argv(char const *str)
 {
 	return (NULL);

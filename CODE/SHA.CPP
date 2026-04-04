@@ -81,13 +81,17 @@ void SHAEngine::Process_Partial(void const * & data, int32_t & length)
 	**	a source block size, then partial processing is unnecessary.
 	**	Bail out in this case.
 	*/
-	if (PartialCount == 0 && length >= SRC_BLOCK_SIZE) return;
+	if (PartialCount == 0 && length >= static_cast<int32_t>(SRC_BLOCK_SIZE)) return;
 
 	/*
 	**	Attach as many bytes as possible from the source data into
 	**	the staging buffer.
 	*/
-	int add_count = min((int)length, SRC_BLOCK_SIZE - PartialCount);
+	int add_count = length;
+	int partial_space = static_cast<int>(SRC_BLOCK_SIZE) - PartialCount;
+	if (add_count > partial_space) {
+		add_count = partial_space;
+	}
 	memcpy(&Partial[PartialCount], data, add_count);
 	data = ((char const *&)data) + add_count;
 	PartialCount += add_count;
@@ -207,8 +211,8 @@ int SHAEngine::Result(void * result) const
 	**	count value.
 	*/
 	SHADigest acc = Acc;
-	if ((SRC_BLOCK_SIZE - partialcount) < 9) {
-		if (partialcount+1 < SRC_BLOCK_SIZE) {
+	if ((static_cast<int>(SRC_BLOCK_SIZE) - partialcount) < 9) {
+		if (partialcount + 1 < static_cast<int>(SRC_BLOCK_SIZE)) {
 			memset(&partial[partialcount+1], '\0', SRC_BLOCK_SIZE - (partialcount+1));
 		}
 		Process_Block(&partial[0], acc);
@@ -228,7 +232,7 @@ int SHAEngine::Result(void * result) const
 
 	SHADigest & final_result = const_cast<SHADigest &>(FinalResult);
 	memcpy((char *)&final_result, &acc, sizeof(acc));
-	for (int index = 0; index < sizeof(FinalResult)/sizeof(uint32_t); index++) {
+	for (int index = 0; index < static_cast<int>(sizeof(FinalResult)/sizeof(uint32_t)); index++) {
 //	for (int index = 0; index < SRC_BLOCK_SIZE/sizeof(uint32_t); index++) {
 		final_result.Long[index] = Reverse_LONG(final_result.Long[index]);
 	}
@@ -243,7 +247,7 @@ int SHAEngine::Result(void * result) const
 **	_rotl() function is called but will NOT give the warning when the _lrotl() function
 **	is called even though they both have the same parameters and declaration attributes.
 */
-#pragma warn -sig
+
 template<class T>
 T _rotl(T X, int n)
 {
@@ -287,13 +291,13 @@ void SHAEngine::Process_Block(void const * source, SHADigest & acc) const
 	**	data that will be transformed by the secure hash algorithm.
 	*/
 	int index;
-	for (index = 0; index < SRC_BLOCK_SIZE/sizeof(uint32_t); index++) {
+	for (index = 0; index < static_cast<int>(SRC_BLOCK_SIZE/sizeof(uint32_t)); index++) {
 		uint32_t value;
 		std::memcpy(&value, (char const *)source + (index * sizeof(uint32_t)), sizeof(value));
 		block[index] = Reverse_LONG(value);
 	}
 
-	for (index = SRC_BLOCK_SIZE/sizeof(uint32_t); index < PROC_BLOCK_SIZE/sizeof(uint32_t); index++) {
+	for (index = static_cast<int>(SRC_BLOCK_SIZE/sizeof(uint32_t)); index < static_cast<int>(PROC_BLOCK_SIZE/sizeof(uint32_t)); index++) {
 //		block[index] = _rotl(block[(index-3)&15] ^ block[(index-8)&15] ^ block[(index-14)&15] ^ block[(index-16)&15], 1);
 		block[index] = _rotl(block[index-3] ^ block[index-8] ^ block[index-14] ^ block[index-16], 1);
 	}
@@ -303,7 +307,7 @@ void SHAEngine::Process_Block(void const * source, SHADigest & acc) const
 	**	transformation of 512 bit source data with a 2560 bit intermediate buffer.
 	*/
 	SHADigest alt = acc;
-	for (index = 0; index < PROC_BLOCK_SIZE/sizeof(uint32_t); index++) {
+	for (index = 0; index < static_cast<int>(PROC_BLOCK_SIZE/sizeof(uint32_t)); index++) {
 		uint32_t temp = _rotl(alt.Long[0], 5) + Do_Function(index, alt.Long[1], alt.Long[2], alt.Long[3]) + alt.Long[4] + block[index] + Get_Constant(index);
 		alt.Long[4] = alt.Long[3];
 		alt.Long[3] = alt.Long[2];

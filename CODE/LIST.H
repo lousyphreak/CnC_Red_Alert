@@ -42,6 +42,8 @@
 #include "SHAPEBTN.H"
 #include "SLIDER.H"
 
+void Draw_Box(int x, int y, int w, int h, BoxStyleEnum up, bool filled);
+
 /***************************************************************************
  * ListClass -- Like a Windows ListBox structure									*
  *                                                                         *

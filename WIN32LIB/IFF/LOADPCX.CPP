@@ -73,10 +73,10 @@
 
 GraphicBufferClass* Read_PCX_File(char* name, char* Palette, void *Buff, int32_t Size)
 {
-  uint32_t     i , j ;
+  int32_t      i , j ;
   uint32_t     rle ;
   uint32_t     color ;
-  uint32_t		scan_pos ;
+  int32_t		scan_pos ;
   char		 * file_ptr ;
   int32_t				width	;
   int32_t				height ;
@@ -124,8 +124,9 @@ GraphicBufferClass* Read_PCX_File(char* name, char* Palette, void *Buff, int32_t
 		 		 i += rle ;
 	        } else * ( buffer + scan_pos + i ++ ) = (char)rle ;
 	    }
-		 if ( i == width )
-		 rle = READ_CHAR () ;
+		 if ( i == width ) {
+		 	rle = READ_CHAR () ;
+		 }
 //		 if ( rle > 192 ) rle = READ_CHAR ();
     }
 

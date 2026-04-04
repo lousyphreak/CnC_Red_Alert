@@ -124,7 +124,6 @@ BulletClass::~BulletClass(void)
 			InfantryClass * dog = (InfantryClass *)Payback;
 			if (dog) {
 				bool unlimbo = false;
-				DirType dogface = dog->PrimaryFacing;
 				COORDINATE newcoord = Coord;
 
 				/*

@@ -36,7 +36,7 @@
 #include <WWSTD.H>
 
 
-PRIVATE char *version = "Westwood Studios - 32 Bit Library Version "
+PRIVATE char const * version = "Westwood Studios - 32 Bit Library Version "
 	__DATE__
 	"\r\n";
 
@@ -55,7 +55,7 @@ PRIVATE char *version = "Westwood Studios - 32 Bit Library Version "
  * HISTORY:                                                                *
  *   07/26/1991 JLB : Created.                                             *
  *=========================================================================*/
-char *  Version(void)
+char const * Version(void)
 {
 	return(version);
 }

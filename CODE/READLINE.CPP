@@ -26,7 +26,6 @@
 
 #include <stdint.h>
 // Disable the "temporary object used to initialize a non-constant reference" warning.
-#pragma warning 665 9
 
 
 void strtrim(char * buffer)

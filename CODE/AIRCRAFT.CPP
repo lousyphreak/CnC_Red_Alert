@@ -3845,7 +3845,7 @@ void AircraftClass::Response_Attack(void)
 		VOC_AFFIRM,
 		VOC_ACKNOWL
 	};
-	VocType response = _response[Sim_Random_Pick(0, ARRAY_SIZE(_response)-1)];
+	VocType response = _response[Sim_Random_Pick(0, static_cast<int>(ARRAY_SIZE(_response) - 1))];
 	if (AllowVoice) {
 		Sound_Effect(response, fixed(1), -(ID+1));
 	}
@@ -3875,7 +3875,7 @@ void AircraftClass::Response_Move(void)
 		VOC_ACKNOWL,
 		VOC_AFFIRM
 	};
-	VocType response = _response[Sim_Random_Pick(0, ARRAY_SIZE(_response)-1)];
+	VocType response = _response[Sim_Random_Pick(0, static_cast<int>(ARRAY_SIZE(_response) - 1))];
 	if (AllowVoice) {
 		Sound_Effect(response, fixed(1), -(ID+1));
 	}
@@ -3909,7 +3909,7 @@ void AircraftClass::Response_Select(void)
 		VOC_YESSIR,
 		VOC_AWAIT
 	};
-	VocType response = _response[Sim_Random_Pick(0, ARRAY_SIZE(_response)-1)];
+	VocType response = _response[Sim_Random_Pick(0, static_cast<int>(ARRAY_SIZE(_response) - 1))];
 	if (AllowVoice) {
 		Sound_Effect(response, fixed(1), -(ID+1));
 	}
@@ -4213,7 +4213,7 @@ void AircraftClass::Movement_AI(void)
 			Mark(MARK_DOWN);
 		} else {
 			Mark(MARK_CHANGE_REDRAW);
-			if (Physics(Coord, PrimaryFacing) != RESULT_NONE) {
+			if (Physics(Coord, PrimaryFacing) != IMPACT_NONE) {
 				Mark(MARK_CHANGE_REDRAW);
 			}
 		}

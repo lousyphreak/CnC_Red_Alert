@@ -878,7 +878,7 @@ bool Load_Game(int id)
 	*/
 	CCINIClass ini;
 	CCFileClass scenfile(Scen.ScenarioName);
-	int result = ini.Load(scenfile, true);
+	ini.Load(scenfile, true);
 
 	/*
 	**	Reset the rules values to their initial settings.
@@ -1230,7 +1230,7 @@ void Code_All_Pointers(void)
 	**	Currently-selected objects.
 	*/
 	for (i = 0; i < CurrentObject.Count(); i++) {
-		CurrentObject[i] = (ObjectClass *)CurrentObject[i]->As_Target();
+		CurrentObject[i] = reinterpret_cast<ObjectClass *>(static_cast<intptr_t>(CurrentObject[i]->As_Target()));
 	}
 
 	/*
@@ -1315,7 +1315,7 @@ void Decode_All_Pointers(void)
 	**	Currently-selected objects.
 	*/
 	for (int index = 0; index < CurrentObject.Count(); index++) {
-		CurrentObject[index] = As_Object((TARGET)CurrentObject[index]);
+		CurrentObject[index] = As_Object(static_cast<TARGET>(reinterpret_cast<intptr_t>(CurrentObject[index])));
 		assert(CurrentObject[index] != NULL);
 	}
 

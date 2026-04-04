@@ -429,7 +429,7 @@ TeamTypeClass const * TeamTypeClass::Suggested_New_Team(HouseClass * house, int3
 			maxnum = 0;
 		}
 
-		if (choicecount >= ARRAY_SIZE(choices)) break;
+		if (choicecount >= static_cast<int>(ARRAY_SIZE(choices))) break;
 
 		if (ttype != NULL && ttype->House == house->Class->House && ttype->Number < maxnum) {
 
@@ -1869,4 +1869,3 @@ void TeamTypeClass::Build_INI_Entry(char * buf)
 		buf += strlen(buf);
 	}
 }
-

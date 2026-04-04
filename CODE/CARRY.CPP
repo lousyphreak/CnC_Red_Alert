@@ -111,27 +111,24 @@ CarryoverClass::CarryoverClass(TechnoClass * techno) :
 bool CarryoverClass::Create(void) const
 {
 	TechnoClass * techno = 0;
-	TechnoTypeClass const * ttype = 0;
 
 	switch (RTTI) {
 		case RTTI_UNIT:
-			ttype = &UnitTypeClass::As_Reference(Type.Unit);
 			techno = new UnitClass(Type.Unit, House);
 			break;
 
 		case RTTI_INFANTRY:
-			ttype = &InfantryTypeClass::As_Reference(Type.Infantry);
 			techno = new InfantryClass(Type.Infantry, House);
 			break;
 
 		case RTTI_BUILDING:
-			ttype = &BuildingTypeClass::As_Reference(Type.Building);
 			techno = new BuildingClass(Type.Building, House);
 			break;
 
 		case RTTI_VESSEL:
-			ttype = &VesselTypeClass::As_Reference(Type.Vessel);
 			techno = new VesselClass(Type.Vessel, House);
+			break;
+		default:
 			break;
 	}
 

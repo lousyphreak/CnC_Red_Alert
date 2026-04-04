@@ -61,7 +61,9 @@
 */
 //#define	INTERNAL_VERSION
 //#define	PLAYTEST_VERSION
+#ifndef RELEASE_VERSION
 #define	RELEASE_VERSION
+#endif
 
 /**********************************************************************
 ** ColinM
@@ -78,15 +80,21 @@
 //#define	BOGUSCD
 //#endif
 
+#ifndef FIXIT_SCORE_CRASH
 #define	FIXIT_SCORE_CRASH			// Fixes score screen crash
+#endif
+#ifndef FIXIT_MULTI_SAVE
 #define	FIXIT_MULTI_SAVE			// Fixes multiplayer save/load
+#endif
 #define	FIXIT_NO_COMP_ALLY		// Prevent ally with computer
 #define	FIXIT_DESTNET				// Fixes -destnet parameter in Win95
 #define	FIXIT_RANDOM_GAME			// Fixes random seed at start of multiplayer games
 #define	FIXIT_FORCE_CD				// Forces correct CD load after scenario #1
 #define	FIXIT_IP_CRASH				// Fixes crash if internet game aborts too quickly
 #define	FIXIT_IP_STATS				// Fixes so vessels show up in internet stat info
+#ifndef FIXIT_NAME_OVERRIDE
 #define	FIXIT_NAME_OVERRIDE     // Allows changing of unit names
+#endif
 #define	FIXIT_RADAR_JAMMED		// Fixes unjamming by merely starting to build a radar facility
 #define	FIXIT_CAPTURE_BIB			// Fixes so that if fake is captured, you still can't build off of it.
 #define	FIXIT_BASE_ANNOUNCE		// Fixes so player controlled buildings count as base when attacked.

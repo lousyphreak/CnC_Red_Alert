@@ -47,7 +47,6 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 //
-#pragma inline
 #include	"MONO.H"
 #include	<stdlib.h>
 #include	<stdio.h>
@@ -57,15 +56,10 @@
 
 
 extern void output(int16_t port, int16_t data);
-#pragma aux output parm [dx] [ax] =		\
-		"out	dx,al"		\
-		"inc	dx"			\
-		"mov	al,ah"		\
-		"out	dx,al"
 
 int32_t MonoClass::Enabled = 0;
 MonoClass * MonoClass::PageUsage[MonoClass::MAX_MONO_PAGES] = {0,0,0,0,0,0,0,0};
-void * MonoClass::MonoSegment = (void*)0x000b0000;
+uint8_t * MonoClass::MonoSegment = reinterpret_cast<uint8_t *>(static_cast<uintptr_t>(0x000b0000));
 
 /*
 **	These are the IBM linedraw characters.
@@ -131,7 +125,7 @@ MonoClass::MonoClass(void)
  *=============================================================================================*/
 MonoClass::~MonoClass(void)
 {
-	PageUsage[Page] = 0;
+	PageUsage[static_cast<uint8_t>(Page)] = 0;
 }
 
 
@@ -328,8 +322,8 @@ void MonoClass::Scroll(int32_t lines)
 
 	if (!Enabled || lines <= 0) return;
 
-	memmove( (void*)((int32_t)MonoSegment + Offset(0, 0)),
-				(void*)((int32_t)MonoSegment + Offset(0, lines)),
+	memmove(Mono_Bytes(0, 0),
+				Mono_Bytes(0, lines),
 				(LINES-lines)*COLUMNS*sizeof(CellType));
 
 
@@ -567,7 +561,7 @@ void MonoClass::Print(int32_t text)
  *=============================================================================================*/
 MonoClass & MonoClass::operator = (MonoClass const & src)
 {
-	memcpy((void*)((int32_t)MonoSegment + src.Offset(0, 0)), (void*)((int32_t)MonoSegment + Offset(0, 0)), SIZE_OF_PAGE);
+	memcpy(src.Mono_Bytes(0, 0), Mono_Bytes(0, 0), SIZE_OF_PAGE);
 	Set_Cursor(src.X, src.Y);
 	return(*this);
 }
@@ -607,8 +601,8 @@ void MonoClass::View(void)
 		char temp[SIZE_OF_PAGE];
 
 		memcpy(&temp[0], MonoSegment, SIZE_OF_PAGE);
-		memcpy(MonoSegment, (void*)((int32_t)MonoSegment + Offset(0, 0)), SIZE_OF_PAGE);
-		memcpy((void*)((int32_t)MonoSegment + Offset(0, 0)), &temp[0], SIZE_OF_PAGE);
+		memcpy(MonoSegment, Mono_Bytes(0, 0), SIZE_OF_PAGE);
+		memcpy(Mono_Bytes(0, 0), &temp[0], SIZE_OF_PAGE);
 
 		displace->Page = Page;
 
@@ -618,9 +612,9 @@ void MonoClass::View(void)
 		**	Just copy the new page over since the display page is not assigned
 		**	to a real monochrome page object.
 		*/
-		memcpy(MonoSegment, (void*)((int32_t)MonoSegment + Offset(0, 0)), SIZE_OF_PAGE);
+		memcpy(MonoSegment, Mono_Bytes(0, 0), SIZE_OF_PAGE);
 	}
-	PageUsage[Page] = displace;
+	PageUsage[static_cast<uint8_t>(Page)] = displace;
 	PageUsage[0] = this;
 	Page = 0;
 
@@ -785,4 +779,3 @@ int32_t Mono_Printf(int32_t string, ...)
 	return((int16_t)strlen(buffer));
 }
 #endif
-

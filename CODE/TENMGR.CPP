@@ -861,7 +861,7 @@ void TenConnManClass::Set_Timing(uint32_t /*retrydelta*/,
  *   07/22/1996 BRR : Created.                                             * 
  *=========================================================================*/
 void TenConnManClass::Configure_Debug(int /*index*/, int /*type_offset*/, 
-	int /*type_size*/, char **/*names*/, int /*namestart*/, int /*namecount*/)
+	int /*type_size*/, char const **/*names*/, int /*namestart*/, int /*namecount*/)
 {
 	//
 	// (This function intentionally left blank.)

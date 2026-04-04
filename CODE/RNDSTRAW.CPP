@@ -114,7 +114,9 @@ void RandomStraw::Reset(void)
 {
 	SeedBits = 0;
 	Current = 0;
-	memset(Random, '\0', sizeof(Random));
+	for (int index = 0; index < static_cast<int>(sizeof(Random) / sizeof(Random[0])); ++index) {
+		Random[index] = RandomClass();
+	}
 }
 
 
@@ -220,7 +222,7 @@ void RandomStraw::Seed_Byte(char seed)
  *=============================================================================================*/
 void RandomStraw::Seed_Short(int16_t seed)
 {
-	for (int index = 0; index < (sizeof(seed)*CHAR_BIT); index++) {
+	for (int index = 0; index < static_cast<int>(sizeof(seed) * CHAR_BIT); index++) {
 		Seed_Bit(seed);
 		seed >>= 1;
 	}
@@ -243,7 +245,7 @@ void RandomStraw::Seed_Short(int16_t seed)
  *=============================================================================================*/
 void RandomStraw::Seed_Long(int32_t seed)
 {
-	for (int index = 0; index < (sizeof(seed)*CHAR_BIT); index++) {
+	for (int index = 0; index < static_cast<int>(sizeof(seed) * CHAR_BIT); index++) {
 		Seed_Bit(seed);
 		seed >>= 1;
 	}
@@ -272,7 +274,7 @@ void RandomStraw::Scramble_Seed(void)
 {
 	SHAEngine sha;
 
-	for (int index = 0; index < sizeof(Random); index++) {
+	for (int index = 0; index < static_cast<int>(sizeof(Random)); index++) {
 		char digest[20];
 
 		sha.Hash(&Random[0], sizeof(Random));

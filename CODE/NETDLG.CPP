@@ -1472,6 +1472,7 @@ static int Net_Join_Dialog(void)
 		int d_cancel_h = 9 *RESFACTOR;
 		int d_cancel_x = d_dialog_cx - d_cancel_w / 2;
 		int d_cancel_y = d_join_y;
+		(void)d_cancel_h;
 
 #ifdef FRENCH
 		int d_new_w = 60 *RESFACTOR;
@@ -1481,6 +1482,7 @@ static int Net_Join_Dialog(void)
 		int d_new_h = 9 *RESFACTOR;
 		int d_new_x = d_dialog_x + ((d_dialog_w * 5) / 6) - (d_new_w / 2);
 		int d_new_y = d_join_y;
+		(void)d_new_h;
 
 		int d_send_w = d_message1_w;
 		int d_send_h = 9 *RESFACTOR;
@@ -1529,7 +1531,7 @@ static int Net_Join_Dialog(void)
 	//------------------------------------------------------------------------
 	RedrawType display = REDRAW_ALL;		// redraw level
 	bool process = true;						// process while true
-	KeyNumType input;
+	int input;
 	int cbox_x[] = {
 							d_color_x,
 							d_color_x + d_color_w,
@@ -1542,6 +1544,7 @@ static int Net_Join_Dialog(void)
 							};
 	char housetext[25] = "";				// buffer for house droplist
 	int isdropped = 0;
+	(void)isdropped;
 
 	JoinStateType joinstate = JOIN_NOTHING;	// current "state" of this dialog
 	char namebuf[MPLAYER_NAME_MAX] = {0};		// buffer for player's name
@@ -2332,7 +2335,11 @@ static int Net_Join_Dialog(void)
 				//...............................................................
 				//	Service keyboard input for any message being edited.
 				//...............................................................
-				i = Session.Messages.Input(input);
+				{
+					KeyNumType message_input = static_cast<KeyNumType>(input);
+					i = Session.Messages.Input(message_input);
+					input = message_input;
+				}
 
 				//...............................................................
 				//	If 'Input' returned 1, it means refresh the message display.
@@ -2831,7 +2838,7 @@ static int Net_Join_Dialog(void)
 				while (Session.Chat.Count() > playerlist.Count()) {
 					item = new char [MPLAYER_NAME_MAX];
 					item[0] = 0;
-					playerlist.Add_Item(item);
+					playerlist.Add_Item(static_cast<char const *>(item), NULL);
 					playerlist.Flag_To_Redraw();
 				}
 				while (playerlist.Count() > Session.Chat.Count()) {
@@ -2932,7 +2939,7 @@ static int Net_Join_Dialog(void)
 		//.....................................................................
 		i = max((int)(Udp.Global_Response_Time() * 2), 60);
 		starttime = TickCount;
-		while (TickCount - starttime < i) {
+		while (TickCount - starttime < static_cast<uint32_t>(i)) {
 			Udp.Service();
 			SDL_Delay(1);
 		}
@@ -4031,6 +4038,9 @@ static int Net_New_Dialog(void)
 	int d_txt6_h = 6*RESFACTOR+1;												// ht of 6-pt text
 	int d_margin1 = 5*RESFACTOR;												// margin width/height
 	int d_margin2 = 2*RESFACTOR;												// margin width/height
+	(void)d_margin2;
+	(void)d_margin2;
+	(void)d_margin2;
 
 //BG	int d_playerlist_w = 118*RESFACTOR;
 	int d_playerlist_w = 124*RESFACTOR;
@@ -4133,11 +4143,11 @@ static int Net_New_Dialog(void)
 	//------------------------------------------------------------------------
 	RedrawType display = REDRAW_ALL;		// redraw level
 	bool process = true;						// process while true
-	KeyNumType input;
+	int input;
 
 	int transmit;								// 1 = re-transmit new game options
 
-	int32_t ok_timer = 0;						// for timing OK button
+	uint32_t ok_timer = 0;						// for timing OK button
 	int index;									// index for rejecting a player
 	int rc;
 	int i,j;
@@ -4697,7 +4707,7 @@ static int Net_New_Dialog(void)
 				//	a chance to know about this new guy)
 				//...............................................................
 				i = max((int)(Udp.Global_Response_Time() * 2), 60);
-				while (TickCount - ok_timer < i) {
+				while (TickCount - ok_timer < static_cast<uint32_t>(i)) {
 					Udp.Service();
 					SDL_Delay(1);
 				}
@@ -4789,7 +4799,11 @@ static int Net_New_Dialog(void)
 				//	Re-draw the messages & service keyboard input for any message
 				//	being edited.
 				//...............................................................
-				i = Session.Messages.Input(input);
+				{
+					KeyNumType message_input = static_cast<KeyNumType>(input);
+					i = Session.Messages.Input(message_input);
+					input = message_input;
+				}
 
 				//...............................................................
 				//	If 'Input' returned 1, it means refresh the message display.
@@ -5516,12 +5530,11 @@ uint32_t Compute_Name_CRC(char *name)
 {
 	char buf[80];
 	uint32_t crc = 0L;
-	int i;
 
 	strcpy (buf, name);
 	SDL_strupr(buf);
 
-	for (i = 0; i < strlen(buf); i++) {
+	for (size_t i = 0; i < strlen(buf); i++) {
 		Add_CRC(&crc, (uint32_t)(uint8_t)buf[i]);
 	}
 
@@ -5613,6 +5626,9 @@ void Net_Reconnect_Dialog(int reconn, int fresh, int oldest_index,
 					sprintf(buf1,Text_String(TXT_WAITING_FOR_CONNECTIONS));
 				}
 #endif	// MPATH
+			default:
+				sprintf(buf1,Text_String(TXT_WAITING_FOR_CONNECTIONS));
+				break;
 		}
 
 		sprintf(buf2,Text_String(TXT_TIME_ALLOWED), timeval + 1);
@@ -5622,6 +5638,9 @@ void Net_Reconnect_Dialog(int reconn, int fresh, int oldest_index,
 
 #ifdef FIXIT_VERSION_3
 		bool show_tournament_cancel_warning = false;
+#ifndef WOLAPI_INTEGRATION
+		(void)show_tournament_cancel_warning;
+#endif
 #ifdef WOLAPI_INTEGRATION
 		char szNewCancelMessage[300];
 		sprintf(szNewCancelMessage, "%s%s", buf3, TXT_WOL_CANCELMEANSFORFEIT);
@@ -5696,7 +5715,7 @@ void Net_Reconnect_Dialog(int reconn, int fresh, int oldest_index,
 void Start_Logging(void)
 {
 	SDL_IOStream *fp;
-	static char *ColorNames[6] = {
+	static char const *ColorNames[6] = {
 		"Yellow",
 		"Red",
 		"BlueGreen",
@@ -5867,6 +5886,7 @@ static int Net_Fake_New_Dialog(void)
 	int d_txt6_h = 6*RESFACTOR+1;												// ht of 6-pt text
 	int d_margin1 = 5*RESFACTOR;												// margin width/height
 	int d_margin2 = 2*RESFACTOR;												// margin width/height
+	(void)d_margin2;
 
 	int d_playerlist_w = 118*RESFACTOR;
 	int d_playerlist_h = ((6 * 6) + 3)*RESFACTOR;			// 6 rows high
@@ -5909,16 +5929,17 @@ static int Net_Fake_New_Dialog(void)
 	//------------------------------------------------------------------------
 	RedrawType display = REDRAW_ALL;		// redraw level
 	bool process = true;						// process while true
-	KeyNumType input;
+	int input;
 
 	int transmit;								// 1 = re-transmit new game options
 
-	int32_t ok_timer = 0;						// for timing OK button
+	uint32_t ok_timer = 0;						// for timing OK button
 	int rc;
 	int i;
 	char *item;
 	int tabs[] = {77};						// tabs for player list box
 	int optiontabs[] = {8};					// tabs for option list box
+	(void)optiontabs;
 
 	NodeNameType *who;						// node to add to Players
 	int32_t ping_timer = 0;						// for sending Ping packets
@@ -6171,7 +6192,7 @@ static int Net_Fake_New_Dialog(void)
 					//	a chance to know about this new guy)
 					//...............................................................
 					i = MAX(Udp.Global_Response_Time() * 2, 60*2);
-					while (TickCount - ok_timer < i) {
+					while (TickCount - ok_timer < static_cast<uint32_t>(i)) {
 						Udp.Service();
 						SDL_Delay(1);
 					}
@@ -6183,7 +6204,7 @@ static int Net_Fake_New_Dialog(void)
 						rc = TRUE;
 						process = FALSE;
 					} else {
-						WWMessageBox().Process (TXT_ONLY_ONE,TXT_OOPS,NULL);
+						WWMessageBox().Process(TXT_ONLY_ONE, TXT_OOPS, TXT_NONE);
 						display = REDRAW_ALL;
 						Sound_Effect(VOC_SYS_ERROR);
 					}
@@ -6497,8 +6518,8 @@ static int Net_Fake_New_Dialog(void)
 	// he'll be waiting the whole time we load MIX files.
 	//.....................................................................
 	i = MAX(Udp.Global_Response_Time() * 2, 60*2);
-	int starttime = TickCount;
-	while (TickCount - starttime < i) {
+	uint32_t starttime = TickCount;
+	while (TickCount - starttime < static_cast<uint32_t>(i)) {
 		Udp.Service();
 		SDL_Delay(1);
 	}
@@ -6652,6 +6673,7 @@ static int Net_Fake_Join_Dialog(void)
 		int d_txt6_h = 6 *RESFACTOR+1;												// ht of 6-pt text
 		int d_margin1 = 5 *RESFACTOR;												// large margin
 		int d_margin2 = 7 *RESFACTOR;												// small margin
+		(void)d_margin1;
 
 		int d_gamelist_w = 160 *RESFACTOR;
 		int d_gamelist_h = ((6 * 6) + 3) *RESFACTOR;		// 6 rows high
@@ -6701,9 +6723,11 @@ static int Net_Fake_Join_Dialog(void)
 	//------------------------------------------------------------------------
 	RedrawType display = REDRAW_ALL;		// redraw level
 	bool process = true;						// process while true
-	KeyNumType input;
+	int input;
 	char housetext[25] = "";				// buffer for house droplist
 	int isdropped = 0;
+	(void)housetext;
+	(void)isdropped;
 
 	JoinStateType joinstate = JOIN_NOTHING;	// current "state" of this dialog
 	char namebuf[MPLAYER_NAME_MAX] = {0};		// buffer for player's name
@@ -6721,6 +6745,9 @@ static int Net_Fake_Join_Dialog(void)
 	int lastclick_idx = 0;					// index of item last clicked on
 	RemapControlType * scheme = GadgetClass::Get_Color_Scheme();
 	int ready_to_go = 0;
+	(void)optiontabs;
+	(void)lastclick_idx;
+	(void)ready_to_go;
 	Session.Options.ScenarioDescription[0] = 0;	//Flag that we dont know the scenario name yet
 	int	width;
 	int	height;
@@ -6769,6 +6796,7 @@ static int Net_Fake_Join_Dialog(void)
 		TPF_CENTER | TPF_TEXT);
 
 	lastclick_timer = 0;
+	(void)lastclick_timer;
 
 	//------------------------------------------------------------------------
 	//	Clear the list of games, players, and the chat list
@@ -6970,6 +6998,7 @@ static int Net_Fake_Join_Dialog(void)
 					//Session.House = (HousesType)housebtn.Current_Index();
 					join_index = gamelist.Current_Index();
 					parms_received = 0;
+					(void)parms_received;
 					if (Request_To_Join (namebuf, join_index, Session.House,
 						Session.ColorIdx)) {
 						joinstate = JOIN_WAIT_CONFIRM;
@@ -7230,6 +7259,7 @@ static int Net_Fake_Join_Dialog(void)
 			Sound_Effect(VOC_OPTIONS_CHANGED);
 
 			parms_received = 1;
+			(void)parms_received;
 			display = REDRAW_PARMS;
 		}
 
@@ -7388,7 +7418,7 @@ static int Net_Fake_Join_Dialog(void)
 		//.....................................................................
 		i = MAX(Udp.Global_Response_Time() * 2, 60*2);
 		starttime = TickCount;
-		while (TickCount - starttime < i) {
+		while (TickCount - starttime < static_cast<uint32_t>(i)) {
 			Udp.Service();
 			SDL_Delay(1);
 		}

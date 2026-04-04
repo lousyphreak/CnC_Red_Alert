@@ -141,6 +141,10 @@ class UDPGlobalConnClass : public UDPConnClass
 		//.....................................................................
 		// Send/Receive routines.
 		//.....................................................................
+		using ConnectionClass::Send_Packet;
+		using ConnectionClass::Receive_Packet;
+		using ConnectionClass::Get_Packet;
+
 		virtual int Send_Packet (void * buf, int buflen,
 			UDPAddressClass *address, int ack_req);
 		virtual int Receive_Packet (void * buf, int buflen,

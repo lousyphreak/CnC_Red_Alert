@@ -165,7 +165,7 @@ static void trace_buffer_frame(VQAHandle *vqa, VQAFrameNode *curframe,
 	}
 
 	fprintf(stderr,
-			"[vqa] draw frame=%d flags=0x%08x pal=%d ptr=%02x%02x%02x%02x cb=%02x%02x%02x%02x pix_nonzero=%lu/%lu first=",
+			"[vqa] draw frame=%d flags=0x%08x pal=%d ptr=%02x%02x%02x%02x cb=%02x%02x%02x%02x pix_nonzero=%u/%u first=",
 			(int)curframe->FrameNum,
 			(unsigned)curframe->Flags,
 			(int)curframe->PaletteSize,
@@ -177,8 +177,8 @@ static void trace_buffer_frame(VQAHandle *vqa, VQAFrameNode *curframe,
 			(unsigned)curframe->Codebook->Buffer[1],
 			(unsigned)curframe->Codebook->Buffer[2],
 			(unsigned)curframe->Codebook->Buffer[3],
-			nonzero,
-			pixel_count);
+			(unsigned)nonzero,
+			(unsigned)pixel_count);
 	for (index = 0; index < sample_count; ++index) {
 		fprintf(stderr, "%s%02x", (index == 0) ? "" : ",",
 				(unsigned)buffer[index]);

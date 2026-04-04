@@ -620,7 +620,7 @@ void ChronalVortexClass::Attack(void)
 	/*
 	** First scan - find any object directly above the vortex.
 	*/
-	for (unsigned i= 0; i < Map.Layer[LAYER_GROUND].Count(); i++) {
+	for (int i = 0; i < Map.Layer[LAYER_GROUND].Count(); i++) {
 		ObjectClass * obj = Map.Layer[LAYER_GROUND][i];
 
 		if ( obj->Is_Techno() && obj->Strength > 0 ) {
@@ -649,7 +649,7 @@ void ChronalVortexClass::Attack(void)
 	int chance = Random_Pick (0, 1000);
 	if (chance > Frame - LastAttackFrame) return;
 
-	for (unsigned i = 0; i < Map.Layer[LAYER_GROUND].Count(); i++) {
+	for (int i = 0; i < Map.Layer[LAYER_GROUND].Count(); i++) {
 		ObjectClass * obj = Map.Layer[LAYER_GROUND][i];
 
 		if ( obj && obj->Is_Techno() ) {

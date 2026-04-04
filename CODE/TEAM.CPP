@@ -285,7 +285,7 @@ void TeamClass::operator delete(void * ptr)
 TeamClass::~TeamClass(void)
 {
 	if (GameActive && Class.Is_Valid()) {
-		while (Member != NULL) {
+		while (static_cast<FootClass *>(Member) != NULL) {
 			Remove(Member);
 		}
 		Class->Number--;
@@ -337,7 +337,6 @@ TeamClass::TeamClass(TeamTypeClass const * type, HouseClass * owner) :
 	IsNextMission(true),
 	IsLeaveMap(false),
 	Suspended(false),
-	Trigger(NULL),
 	Zone(TARGET_NONE),
 	ClosestMember(TARGET_NONE),
 	MissionTarget(TARGET_NONE),
@@ -346,6 +345,7 @@ TeamClass::TeamClass(TeamTypeClass const * type, HouseClass * owner) :
 	Risk(0),
 	Formation(FORMATION_NONE),
 	SuspendTimer(0),
+	Trigger(NULL),
 	CurrentMission(-1),
 	TimeOut(0),
 	Member(0)
@@ -467,7 +467,6 @@ void TeamClass::AI(void)
 
 	int	desired		= 0;
 	int	old_under	= IsUnderStrength;
-	int	old_full		= IsFullStrength;
 
 	/*
 	** If the team has been suspended then we need to check if it's time for
@@ -669,7 +668,7 @@ void TeamClass::AI(void)
 	**	If there are no members of the team and the team has reached
 	**	full strength at one time, then delete the team.
 	*/
-	if (Member == NULL && IsHasBeen) {
+	if (static_cast<FootClass *>(Member) == NULL && IsHasBeen) {
 
 		/*
 		**	If this team had no members (i.e., the team object wasn't terminated by some
@@ -709,7 +708,7 @@ void TeamClass::AI(void)
 					break;
 
 				case TMISSION_MOVE:
-					if ((unsigned)mission->Data.Value < WAYPT_COUNT && Member != NULL) {
+					if ((unsigned)mission->Data.Value < WAYPT_COUNT && static_cast<FootClass *>(Member) != NULL) {
 						FootClass * leader = Fetch_A_Leader();
 						CELL movecell = Scen.Waypoint[mission->Data.Value];
 						if (!Is_Leaving_Map()) {
@@ -748,7 +747,7 @@ void TeamClass::AI(void)
 	/*
 	**	Perform mission of the team. This depends on the mission list.
 	*/
-	if (Member != NULL && IsMoving && !IsReforming && !IsUnderStrength) {
+	if (static_cast<FootClass *>(Member) != NULL && IsMoving && !IsReforming && !IsUnderStrength) {
 
 		/*
 		** If the current Target has been dealt with but the mission target
@@ -837,6 +836,8 @@ void TeamClass::AI(void)
 			case TMISSION_LOOP:
 				TMission_Loop();
 				break;
+			default:
+				break;
 		}
 
 		/*
@@ -849,6 +850,8 @@ void TeamClass::AI(void)
 				if (TimeOut == 0) {
 					IsNextMission = true;
 				}
+				break;
+			default:
 				break;
 		}
 
@@ -902,7 +905,7 @@ bool TeamClass::Add(FootClass * obj)
 	**	Actually add the object to the team.
 	*/
 	Quantity[typeindex]++;
-	obj->IsInitiated = (Member == NULL);
+	obj->IsInitiated = (static_cast<FootClass *>(Member) == NULL);
 	obj->Member = Member;
 	Member = obj;
 	obj->Team = this;
@@ -1082,7 +1085,7 @@ bool TeamClass::Remove(FootClass * obj, int typeindex)
 	/*
 	**	Decrement the counter for the team class. There is now one less of this object type.
 	*/
-	if ((unsigned)typeindex < Class->ClassCount) {
+	if (typeindex >= 0 && typeindex < static_cast<int>(Class->ClassCount)) {
 		Quantity[typeindex]--;
 	}
 
@@ -1137,7 +1140,7 @@ bool TeamClass::Remove(FootClass * obj, int typeindex)
 	**	team captain. Mark the center location of the team as invalid so that
 	**	it will be centered around the captain.
 	*/
-	if (!initiated && Member != NULL) {
+	if (!initiated && static_cast<FootClass *>(Member) != NULL) {
 		Member->IsInitiated = true;
 		Zone = TARGET_NONE;
 	}
@@ -1314,6 +1317,8 @@ int TeamClass::Recruit(int typeindex)
 						}
 					}
 				}
+				break;
+			default:
 				break;
 		}
 	}
@@ -1643,7 +1648,7 @@ void TeamClass::Coordinate_Attack(void)
 	**	can "attack" an empty cell and this is perfectly ok (paratrooper drop and parabombs
 	**	are prime examples).
 	*/
-	if (Is_Target_Cell(Target) && Member != NULL && Fetch_A_Leader()->What_Am_I() != RTTI_AIRCRAFT) {
+	if (Is_Target_Cell(Target) && static_cast<FootClass *>(Member) != NULL && Fetch_A_Leader()->What_Am_I() != RTTI_AIRCRAFT) {
 		CellClass *cellptr = &Map[As_Cell(Target)];
 		TemplateType tt = cellptr->TType;
 		if (cellptr->Cell_Object()) {
@@ -2349,7 +2354,6 @@ void TeamClass::Suspend_Teams(int priority, HouseClass const * house)
 		**	destroyed. The team members are then free to be reassigned.
 		*/
 		if (team != NULL && team->House == house && team->Class->RecruitPriority < priority) {
-			FootClass * unit = team->Member;
 			while (team->Member) {
 				team->Remove(team->Member);
 			}
@@ -2598,6 +2602,8 @@ int TeamClass::TMission_Formation(void)
 				xdir += 2;
 			}
 			break;
+		default:
+			break;
 	}
 
 	/*
@@ -2680,7 +2686,7 @@ int TeamClass::TMission_Formation(void)
  *=============================================================================================*/
 int TeamClass::TMission_Attack(void)
 {
-	if (!Target_Legal(MissionTarget) && Member != NULL) {
+	if (!Target_Legal(MissionTarget) && static_cast<FootClass *>(Member) != NULL) {
 		TeamMissionClass const * mission = &Class->MissionList[CurrentMission];
 
 		/*

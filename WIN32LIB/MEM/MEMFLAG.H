@@ -73,8 +73,6 @@ int32_t	Ram_Free(MemoryFlagType flag);
 int32_t	Heap_Size(MemoryFlagType flag);
 int32_t	Total_Ram_Free(MemoryFlagType flag);
 
-#pragma option -Jgd
-
 inline void * operator new(size_t size, MemoryFlagType flag)
 {
 	return(Alloc(size, flag));
@@ -83,8 +81,6 @@ inline void * operator new[] (size_t size, MemoryFlagType flag)
 {
 	return(Alloc(size, flag));
 }
-
-#pragma option -Jgd
 
 /*=========================================================================*/
 /* The following prototypes are for the file: MEM_COPY.ASM						*/

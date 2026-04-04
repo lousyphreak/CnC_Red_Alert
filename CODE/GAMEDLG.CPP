@@ -75,7 +75,6 @@ void GameControlsClass::Process(void)
 
 	int	d_txt6_h = (6 * RESFACTOR) + 1;												// ht of 6-pt text
 	int	d_margin1 = (5 * RESFACTOR);												// large margin
-	int	d_margin2 = (2 * RESFACTOR);												// small margin
 
 	int	d_speed_w = d_dialog_w - (34 * RESFACTOR);
 	int	d_speed_h = 6 * RESFACTOR;
@@ -156,7 +155,7 @@ void GameControlsClass::Process(void)
 	/*
 	**	Dialog variables
 	*/
-	KeyNumType input;
+	int input;
 
 	int gamespeed = Options.GameSpeed;
 	int scrollrate = Options.ScrollRate;
@@ -516,4 +515,3 @@ void GameControlsClass::Process(void)
 		}
 	}
 }
-

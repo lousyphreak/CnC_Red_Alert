@@ -849,11 +849,6 @@ bool WWFS_GetSyntheticEmscriptenPathInfo(const std::string&, SDL_PathInfo*)
 {
     return false;
 }
-
-bool WWFS_EnsureEmscriptenAssetCached(const std::string&, std::string*)
-{
-    return false;
-}
 #endif
 
 bool WWFS_GetPathInfoAbsolute(const std::string& normalized_path, SDL_PathInfo* info)
@@ -954,8 +949,7 @@ int virtual_cd_index_for_drive_letter(char drive_letter)
         return -1;
     }
 
-    char mix_name[16];
-    std::snprintf(mix_name, sizeof(mix_name), "MAIN%d.MIX", index + 1);
+    const std::string mix_name = "MAIN" + std::to_string(index + 1) + ".MIX";
 
     std::string mix_path = WWFS_BaseDirectory();
     if (!mix_path.empty() && mix_path.back() != '/' && mix_path.back() != '\\') {
@@ -991,8 +985,7 @@ bool resolve_virtual_cd_path(const char* windows_path, std::string& resolved_pat
     if (relative.empty()) {
         resolved_path = base_path;
     } else if (SDL_strcasecmp(relative.c_str(), "main.mix") == 0) {
-        char mix_name[16];
-        std::snprintf(mix_name, sizeof(mix_name), "MAIN%d.MIX", index + 1);
+        const std::string mix_name = "MAIN" + std::to_string(index + 1) + ".MIX";
         resolved_path = base_path + "/" + mix_name;
     } else {
         resolved_path = base_path + "/" + relative;

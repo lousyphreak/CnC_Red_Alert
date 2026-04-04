@@ -3102,7 +3102,7 @@ void BuildingTypeClass::One_Time(void)
 		/*
 		**	Fetch the sidebar cameo image for this building.
 		*/
-		if (building.Level != -1) {
+		if (building.Level != static_cast<unsigned>(-1)) {
 //		if (building.IsBuildable) {
 			sprintf(buffer, "%sICON", building.Graphic_Name());
 

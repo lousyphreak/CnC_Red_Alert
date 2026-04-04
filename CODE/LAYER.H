@@ -44,6 +44,7 @@ class ObjectClass;
 class LayerClass : public DynamicVectorClass<ObjectClass *>
 {
 	public:
+		using DynamicVectorClass<ObjectClass *>::operator=;
 
 		//-----------------------------------------------------------------
 		void Sort(void);

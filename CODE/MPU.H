@@ -59,12 +59,5 @@
  *   07/17/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
 uint32_t Get_CPU_Clock(uint32_t & high);
-#ifndef __BORLANDC__
-#pragma aux Get_CPU_Clock parm [esi] \
-	modify [edx] \
-	value [eax] = \
-	"db 0fh,031h" \
-	"mov [esi],edx"
-#endif
 
 #endif

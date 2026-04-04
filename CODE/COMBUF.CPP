@@ -813,7 +813,7 @@ void CommBufferClass::Reset_Response_Time(void)
  *   05/31/1995 BRR : Created.                                             *
  *=========================================================================*/
 void CommBufferClass::Configure_Debug(int type_offset, int type_size,
-	char **names, int namestart, int namecount)
+	char const **names, int namestart, int namecount)
 {
 	DebugOffset = type_offset;
 	DebugSize = type_size;
@@ -848,7 +848,6 @@ void CommBufferClass::Mono_Debug_Print(int refresh)
 	static int send_col[] = {1,14,28};			// coords of send queue columns
 	static int receive_col[] = {40,54,68};		// coords of recv queue columns
 	int row,col;										// current row,col for printing
-	int num;												// max # items to print
 
 	struct CommHdr {									// this mirrors the CommHeaderType
 		uint16_t MagicNumber;
@@ -899,12 +898,6 @@ void CommBufferClass::Mono_Debug_Print(int refresh)
 	//------------------------------------------------------------------------
 	//	Print Send Queue items
 	//------------------------------------------------------------------------
-	if (MaxSend <= 48) {
-		num = MaxSend;
-	}
-	else {
-		num = 48;
-	}
 	col = 0;
 	row = 0;
 	for (i = 0; i < MaxSend; i++) {
@@ -930,12 +923,6 @@ void CommBufferClass::Mono_Debug_Print(int refresh)
 	//------------------------------------------------------------------------
 	//	Print Receive Queue items
 	//------------------------------------------------------------------------
-	if (MaxReceive <= 48) {
-		num = MaxSend;
-	}
-	else {
-		num = 48;
-	}
 	col = 0;
 	row = 0;
 	for (i = 0; i < MaxReceive; i++) {
@@ -1161,5 +1148,3 @@ void CommBufferClass::Mono_Debug_Print2(int refresh)
 
 
 /************************** end of combuf.cpp ******************************/
-
-

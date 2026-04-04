@@ -88,11 +88,11 @@ bool Get_Scenario_File_From_Host(char *return_name, int gametype)
 	(void)gametype;
 	//WWDebugString ("RA95 - In Get_Scenario_From_Host\n");
 
-	uint32_t file_length;
+	uint32_t file_length = 0;
 
 	GlobalPacketType	net_send_packet;
 	GlobalPacketType	net_receive_packet;
-	uint32_t		packet_len;
+	int			packet_len;
 	uint16_t		product_id;
 
 	UDPAddressClass	sender_address;
@@ -120,11 +120,28 @@ bool Get_Scenario_File_From_Host(char *return_name, int gametype)
 //sprintf (rt, "RA95 - response_timer = %d\n", response_timer );
 //WWDebugString (rt);
 
+	while (response_timer) {
+		Udp.Service();
+
+		packet_len = sizeof(net_receive_packet);
+		if (Udp.Get_Global_Message(&net_receive_packet, &packet_len, &sender_address, &product_id)) {
+#ifdef NETWORK_UDP
+			if (net_receive_packet.Command == NET_FILE_INFO && sender_address == Session.HostAddress) {
+#else
+			if (net_receive_packet.Command == NET_FILE_INFO && (Winsock.Get_Connected() || sender_address == Session.HostAddress)) {
+#endif
+				strcpy(return_name, net_receive_packet.ScenarioInfo.ShortFileName);
+				file_length = net_receive_packet.ScenarioInfo.FileLength;
+				break;
+			}
+		}
+	}
+
 	/*
 	** If we timed out then something horrible has happened to the other player so just
 	** return failure.
 	*/
-	if (!response_timer) return (false);
+	if (!response_timer || file_length == 0) return (false);
 
 //	debugprint( "about to download '%s'\n", return_name );
 
@@ -172,9 +189,6 @@ bool Receive_Remote_File ( char *file_name, uint32_t file_length, int gametype)
 	int d_dialog_x = ((320*RESFACTOR - d_dialog_w) / 2);				// dialog x-coord
 	int d_dialog_y = ((200*RESFACTOR - d_dialog_h) / 2);				// centered y-coord
 	int d_dialog_cx = d_dialog_x + (d_dialog_w / 2);		// center x-coord
-
-	int d_margin1=10;
-	int d_txt6_h=15;
 
 #if (GERMAN | FRENCH)
 	int d_cancel_w = 50*RESFACTOR;
@@ -240,7 +254,7 @@ bool Receive_Remote_File ( char *file_name, uint32_t file_length, int gametype)
 
 	bool 			process = true;
 	RedrawType 	display = REDRAW_ALL;		// redraw level
-	KeyNumType 	input;
+	int 		input;
 	GadgetClass *commands;					// button list
 	bool			return_code;
 	int			update_time = 0;
@@ -251,8 +265,6 @@ bool Receive_Remote_File ( char *file_name, uint32_t file_length, int gametype)
 
 	int 				last_received_block = -1;		//No blocks received yet
 	uint32_t 	total_length = 0;
-	uint32_t	packet_len;
-
 	/*
 	** If the file name is already in use, use the temp file name
 	*/
@@ -394,6 +406,8 @@ bool Receive_Remote_File ( char *file_name, uint32_t file_length, int gametype)
 					process = false;
 					return_code = false;
 					break;
+				default:
+					break;
 			}
 		}
 
@@ -446,9 +460,6 @@ bool Send_Remote_File ( char *file_name, int gametype )
 	int d_dialog_x = ((320*factor - d_dialog_w) / 2);				// dialog x-coord
 	int d_dialog_y = ((200*factor - d_dialog_h) / 2);				// centered y-coord
 	int d_dialog_cx = d_dialog_x + (d_dialog_w / 2);		// center x-coord
-
-	int d_margin1=10;
-	int d_txt6_h=15;
 
 #if (GERMAN | FRENCH)
 	int d_cancel_w = 50*factor;
@@ -516,7 +527,7 @@ bool Send_Remote_File ( char *file_name, int gametype )
 
 	bool 			process = true;
 	RedrawType 	display = REDRAW_ALL;		// redraw level
-	KeyNumType 	input;
+	int 		input;
 	GadgetClass *commands;					// button list
 	bool			return_code;
 	int			update_time = 0;
@@ -526,8 +537,6 @@ bool Send_Remote_File ( char *file_name, int gametype )
 	int block_number;
 	int max_chunk_size;
 	int total_blocks;
-	int bytes_left;
-
 	void *read_ptr;
 
 	RemoteFileTransferType	send_packet;
@@ -582,8 +591,6 @@ bool Send_Remote_File ( char *file_name, int gametype )
 
 	max_chunk_size = MAX_SEND_FILE_PACKET_SIZE;
 	total_blocks = (file_length + max_chunk_size-1) / max_chunk_size;
-	bytes_left = file_length;
-
 	send_file.Open ( READ );
 
 
@@ -711,6 +718,8 @@ bool Send_Remote_File ( char *file_name, int gametype )
 				case (BUTTON_CANCEL | KN_BUTTON):
 					process = false;
 					return_code = false;
+					break;
+				default:
 					break;
 			}
 		}

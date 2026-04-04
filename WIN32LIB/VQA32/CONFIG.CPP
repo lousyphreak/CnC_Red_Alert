@@ -77,7 +77,7 @@ static VQAConfig _defaultconfig = {
 	/* NotifyFlags: Flags representing the events the client wishes to be
 	 * notified about during playback.
 	 */
-	NULL,
+	0,
 
 	/* Vmode: Video mode to use. */
 	MCGA,
@@ -248,7 +248,7 @@ VideoModeTag VideoModeTags[] = {
 	{"VESA_320X200_BUF",VMTAG_VESA320X200_BUF},
 	#endif /* VQAVESA_ON */
 
-	{NULL, NULL}
+	{NULL, 0}
 };
 #endif /* VQAVIDEO_ON */
 
@@ -276,9 +276,11 @@ VideoModeTag VideoModeTags[] = {
 
 void VQA_INIConfig(VQAConfig *config)
 {
-	char *ininame;
+	char const * ininame;
 	char buf[80];
+#if(VQAVIDEO_ON)
 	int32_t i;
+#endif
 
 	/* Set all Config entries to 0. */
 	memset(config, 0, sizeof(VQAConfig));

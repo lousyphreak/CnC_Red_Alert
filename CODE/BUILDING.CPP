@@ -287,6 +287,7 @@ RadioMessageType BuildingClass::Receive_Message(RadioClass * from, RadioMessageT
 			}
 
 			if (Transmit_Message(RADIO_NEED_TO_MOVE) == RADIO_ROGER) {
+				param = TARGET_NONE;
 				switch (Class->Type) {
 					case STRUCT_AIRSTRIP:
 						param = As_Target();
@@ -304,6 +305,8 @@ RadioMessageType BuildingClass::Receive_Message(RadioClass * from, RadioMessageT
 					case STRUCT_REFINERY:
 						param = ::As_Target(Coord_Cell(Adjacent_Cell(Center_Coord(), DIR_S)));
 						break;
+					default:
+						break;
 				}
 
 				/*
@@ -317,7 +320,7 @@ RadioMessageType BuildingClass::Receive_Message(RadioClass * from, RadioMessageT
 					*/
 					Transmit_Message(RADIO_TETHER);
 					if (*this == STRUCT_REFINERY && Transmit_Message(RADIO_BACKUP_NOW, from) != RADIO_ROGER) {
-						from->Scatter(NULL, true, true);
+						from->Scatter(0, true, true);
 					}
 				}
 			}
@@ -722,7 +725,6 @@ bool BuildingClass::Mark(MarkType mark)
 	assert(IsActive);
 
 	if (TechnoClass::Mark(mark)) {
-		int16_t const * offset = Overlap_List();
 		int16_t const * occupy = Occupy_List();
 		CELL cell = Coord_Cell(Coord);
 		SmudgeType bib;
@@ -1231,7 +1233,7 @@ ResultType BuildingClass::Take_Damage(int & damage, int distance, WarheadType wa
 				**	Add the building to the base prebuild list if allowed. This will force
 				**	the computer to rebuild this structure if it can.
 				*/
-				if (IsToRebuild && Class->Level != -1 && Base.House == House->Class->House && Base.Get_Node(this) == 0) {
+				if (IsToRebuild && Class->Level != static_cast<unsigned>(-1) && Base.House == House->Class->House && Base.Get_Node(this) == 0) {
 //				if (IsToRebuild && Class->IsBuildable && Base.House == House->Class->House && Base.Get_Node(this) == 0) {
 					Base.Nodes.Add(BaseNodeClass(Class->Type, Coord_Cell(Coord)));
 				}
@@ -1582,8 +1584,8 @@ BuildingClass::BuildingClass(StructType type, HousesType house) :
 	QueueBState(BSTATE_NONE),
 	WhoLastHurtMe(house),
 	WhomToRepay(TARGET_NONE),
-	AnimToTrack(TARGET_NONE),
 	LastStrength(0),
+	AnimToTrack(TARGET_NONE),
 	PlacementDelay(0)
 {
 	House->Tracking_Add(this);
@@ -1890,8 +1892,6 @@ int BuildingClass::Exit_Object(TechnoClass * base)
 	assert(IsActive);
 
 	if (!base) return(0);
-
-	TechnoTypeClass const * ttype = (TechnoTypeClass const *)&base->Class_Of();
 
 	/*
 	**	A unit exiting a building is always considered to be "locked". That means, it
@@ -4435,7 +4435,7 @@ DirType BuildingClass::Fire_Direction(void) const
  * HISTORY:                                                                                    *
  *   07/08/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-void const * BuildingClass::Remap_Table(void)
+void const * BuildingClass::Remap_Table(void) const
 {
 	assert(Buildings.ID(this) == ID);
 	assert(IsActive);
@@ -5128,10 +5128,10 @@ void BuildingClass::Write_INI(CCINIClass & ini)
 	for (int index = 0; index < Buildings.Count(); index++) {
 		BuildingClass * building = Buildings.Ptr(index);
 		if (!building->IsInLimbo) {
-			char	uname[10];
+			char	uname[12];
 			char	buf[127];
 
-			sprintf(uname, "%d", index);
+			snprintf(uname, sizeof(uname), "%d", index);
 			sprintf(buf, "%s,%s,%d,%u,%d,%s,%d,%d",
 				building->House->Class->IniName,
 				building->Class->IniName,

@@ -604,7 +604,7 @@ static VoxType CurrentVoice = VOX_NONE;
 
 static bool Is_Any_Speech_Buffer_Playing(void)
 {
-	for (int index = 0; index < ARRAY_SIZE(SpeechBuffer); index++) {
+	for (int index = 0; index < static_cast<int>(ARRAY_SIZE(SpeechBuffer)); index++) {
 		if (SpeechBuffer[index] != NULL && Is_Sample_Playing(SpeechBuffer[index])) {
 			return(true);
 		}
@@ -615,7 +615,7 @@ static bool Is_Any_Speech_Buffer_Playing(void)
 
 static void Stop_All_Speech_Buffers(void)
 {
-	for (int index = 0; index < ARRAY_SIZE(SpeechBuffer); index++) {
+	for (int index = 0; index < static_cast<int>(ARRAY_SIZE(SpeechBuffer)); index++) {
 		if (SpeechBuffer[index] != NULL) {
 			Stop_Sample_Playing(SpeechBuffer[index]);
 		}
@@ -700,7 +700,7 @@ void Speak_AI(void)
 			**	speech buffers.
 			*/
 			void const * speech = NULL;
-			for (int index = 0; index < ARRAY_SIZE(SpeechRecord); index++) {
+			for (int index = 0; index < static_cast<int>(ARRAY_SIZE(SpeechRecord)); index++) {
 				if (SpeechRecord[index] == SpeakQueue) break;
 			}
 

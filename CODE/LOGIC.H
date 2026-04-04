@@ -46,6 +46,8 @@
 class LogicClass : public LayerClass
 {
 	public:
+		using LayerClass::operator=;
+
 		void AI(void);
 		void Detach(TARGET target, bool all=true);
 		#ifdef CHEAT_KEYS

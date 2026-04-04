@@ -63,9 +63,8 @@ static void Write_Pcx_ScanLine ( int32_t file_handle , int32_t scansize , char *
 int32_t Write_PCX_File (char* name, GraphicViewPortClass& pic, uint8_t* palette )
 {
  	uint8_t palcopy[256 * 3];
-	uint32_t     i ;
-	uint32_t	   width ;
-	int32_t 	      file_handle ;
+ 	int32_t      i ;
+ 	int32_t 	      file_handle ;
 	int32_t				VP_Scan_Line ;
 	char	     * ptr ;
 	RGB  		  * pal ;
@@ -89,7 +88,7 @@ int32_t Write_PCX_File (char* name, GraphicViewPortClass& pic, uint8_t* palette 
 	ptr += ( (pic.Get_YPos() * VP_Scan_Line) + pic.Get_XPos() );
 
 	for ( i = 0 ; i < header.height + 1 ; i ++ )
-   	Write_Pcx_ScanLine ( file_handle , header.byte_per_line, ptr + i * VP_Scan_Line ) ;
+    	Write_Pcx_ScanLine ( file_handle , header.byte_per_line, ptr + i * VP_Scan_Line ) ;
 
 	Mem_Copy(palette, palcopy, 256 * 3);
 	pal = ( RGB * ) palcopy ;
@@ -134,7 +133,7 @@ int32_t Write_PCX_File (char* name, GraphicViewPortClass& pic, uint8_t* palette 
 
 void Write_Pcx_ScanLine ( int32_t file_handle , int32_t scansize , char * ptr )
 {
-	uint32_t     i ;
+ 	int32_t      i ;
 	uint32_t     rle ;
 	uint32_t     color ;
 	uint32_t		last ;
@@ -178,4 +177,3 @@ void Write_Pcx_ScanLine ( int32_t file_handle , int32_t scansize , char * ptr )
 
 	Write_File(file_handle, pool, static_cast<int32_t>(file_ptr - pool));
 }
-

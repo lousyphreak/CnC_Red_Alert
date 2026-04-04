@@ -74,14 +74,12 @@ void VisualControlsClass::Process(void)
 	int option_height = OPTION_HEIGHT * RESFACTOR;			// Height of dialog box.
 	int option_x = OPTION_X * RESFACTOR;
 	int option_y = OPTION_Y * RESFACTOR;
-	int text_x = TEXT_X * RESFACTOR;
 	int text_y = TEXT_Y * RESFACTOR;
 	int slider_x = SLIDER_X * RESFACTOR;
 	int slider_y = SLIDER_Y * RESFACTOR;
 	int slider_width = SLIDER_WIDTH * RESFACTOR;				// Width of each control slider.
 	int slider_height = SLIDER_HEIGHT * RESFACTOR;			// Height of each control slider.
 	int slider_y_spacing = SLIDER_Y_SPACING * RESFACTOR;	// Vertical spacing between sliders.
-	int button_x = BUTTON_X * RESFACTOR;	 						// Options button x pos
 	int button_y = BUTTON_Y * RESFACTOR; 						// Options button y pos
 
 
@@ -222,7 +220,7 @@ void VisualControlsClass::Process(void)
 			/*
 			**	Draw the titles.
 			*/
-			for (int i = 0; i < (sizeof(_titles)/sizeof(_titles[0])); i++) {
+			for (int i = 0; i < static_cast<int>(sizeof(_titles)/sizeof(_titles[0])); i++) {
 				Fancy_Text_Print(_titles[i], slider_x - (8 * RESFACTOR), text_y + (i*slider_y_spacing),
 					GadgetClass::Get_Color_Scheme(), TBLACK, TPF_TEXT|TPF_RIGHT| ((curbutton == i) ? TPF_BRIGHT_COLOR : TPF_TEXT));
 			}
@@ -234,7 +232,7 @@ void VisualControlsClass::Process(void)
 		/*
 		**	Get and process player input.
 		*/
-		KeyNumType input = optionsbtn.Input();
+		int input = optionsbtn.Input();
 		switch (input) {
 			case (BUTTON_BRIGHTNESS | KN_BUTTON):
 				Options.Set_Brightness(fixed(brightness.Get_Value(), 256));

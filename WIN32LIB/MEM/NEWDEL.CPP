@@ -99,12 +99,12 @@ void * operator new[](size_t size)
  * HISTORY:                                                                *
  *   06/21/1994 SKB : Created.                                             *
  *=========================================================================*/
-void operator delete(void *ptr) 
+void operator delete(void *ptr) noexcept
 {
 	Free(ptr);
 }
 
-void operator delete(void *ptr, size_t)
+void operator delete(void *ptr, size_t) noexcept
 {
 	Free(ptr);
 }
@@ -123,14 +123,12 @@ void operator delete(void *ptr, size_t)
  * HISTORY:                                                                *
  *   10/20/1994 SKB : Created.                                             *
  *=========================================================================*/
-void operator delete[](void *ptr) 
+void operator delete[](void *ptr) noexcept
 {
 	Free(ptr);
 }
 
-void operator delete[](void *ptr, size_t)
+void operator delete[](void *ptr, size_t) noexcept
 {
 	Free(ptr);
 }
-
-

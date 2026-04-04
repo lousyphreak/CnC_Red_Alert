@@ -281,7 +281,7 @@ class BuildingClass : public TechnoClass
 		**	Display and rendering support functionality. Supports imagery and how
 		**	object interacts with the map and thus indirectly controls rendering.
 		*/
-		virtual void const * Remap_Table(void);
+		virtual void const * Remap_Table(void) const;
 		virtual int Exit_Object(TechnoClass * base);
 		virtual void Draw_It(int x, int y, WindowNumberType window) const;
 		virtual bool Mark(MarkType mark=MARK_CHANGE);
@@ -344,7 +344,7 @@ class BuildingClass : public TechnoClass
 		*/
 		static void Read_INI(CCINIClass & ini);
 		static void Write_INI(CCINIClass & ini);
-		static char *INI_Name(void) {return "STRUCTURES";};
+		static char const * INI_Name(void) {return "STRUCTURES";};
 		bool Load(Straw & file);
 		bool Save(Pipe & file) const;
 

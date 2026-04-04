@@ -481,7 +481,7 @@ class SessionClass
 		static char Descriptions[100][40];
 		static int CountMin[2];
 		static int CountMax[2];
-		static char * GlobalPacketNames[];
+		static char const * GlobalPacketNames[];
 
 		//.....................................................................
 		// For Recording & Playing back a file

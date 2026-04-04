@@ -98,7 +98,7 @@ void mix_trace(const char* format, ...)
 **	with the mixfile system.
 */
 template<class T>
-List<MixFileClass<T> > MixFileClass<T>::List;
+List<MixFileClass<T> > MixFileClass<T>::MixList;
 
 
 /***********************************************************************************************
@@ -155,7 +155,7 @@ MixFileClass<T>::~MixFileClass(void)
 		free((char *)Filename);
 	}
 	if (Data != NULL && IsAllocated) {
-		delete [] Data;
+		delete [] static_cast<char *>(Data);
 		IsAllocated = false;
 	}
 	Data = NULL;
@@ -191,10 +191,10 @@ MixFileClass<T>::~MixFileClass(void)
  *=============================================================================================*/
 template<class T>
 MixFileClass<T>::MixFileClass(char const * filename, PKey const * key) :
+	Filename(0),
 	IsDigest(false),
 	IsEncrypted(false),
 	IsAllocated(false),
-	Filename(0),
 	Count(0),
 	DataSize(0),
 	DataStart(0),
@@ -232,7 +232,7 @@ MixFileClass<T>::MixFileClass(char const * filename, PKey const * key) :
 	**	whether this is an extended mixfile format or the plain format. An
 	**	extended format may have extra options or data layout.
 	*/
-	int got = straw->Get(&alternate, sizeof(alternate));
+	straw->Get(&alternate, sizeof(alternate));
 
 	/*
 	**	Detect if this is an extended mixfile. If so, then see if it is encrypted
@@ -286,7 +286,7 @@ MixFileClass<T>::MixFileClass(char const * filename, PKey const * key) :
 	/*
 	**	Attach to list of mixfiles.
 	*/
-	List.Add_Tail(this);
+	MixList.Add_Tail(this);
 }
 
 
@@ -337,7 +337,7 @@ void const * MixFileClass<T>::Retrieve(char const * filename)
 template<class T>
 MixFileClass<T> * MixFileClass<T>::Finder(char const * filename)
 {
-	MixFileClass<T> * ptr = List.First();
+	MixFileClass<T> * ptr = MixList.First();
 	while (ptr->Is_Valid()) {
 		char path[260];
 		char name[_MAX_FNAME];
@@ -460,7 +460,7 @@ bool MixFileClass<T>::Cache(Buffer const * buffer)
 		*/
 		int32_t actual = straw->Get(Data, DataSize);
 		if (actual != DataSize) {
-			delete [] Data;
+			delete [] static_cast<char *>(Data);
 			Data = NULL;
 			file.Error(EIO);
 			return(false);
@@ -477,7 +477,7 @@ bool MixFileClass<T>::Cache(Buffer const * buffer)
 			sha.Result(digest2);
 			fstraw.Get(digest1, sizeof(digest1));
 			if (memcmp(digest1, digest2, sizeof(digest1)) != 0) {
-				delete [] Data;
+				delete [] static_cast<char *>(Data);
 				Data = NULL;
 				return(false);
 			}
@@ -511,7 +511,7 @@ template<class T>
 void MixFileClass<T>::Free(void)
 {
 	if (Data != NULL && IsAllocated) {
-		delete [] Data;
+		delete [] static_cast<char *>(Data);
 	}
 	Data = NULL;
 	IsAllocated = false;
@@ -580,7 +580,7 @@ assert(filename != NULL);//BG
 	/*
 	**	Sweep through all registered mixfiles, trying to find the file in question.
 	*/
-	ptr = List.First();
+	ptr = MixList.First();
 	while (ptr->Is_Valid()) {
 		SubBlock * block;
 

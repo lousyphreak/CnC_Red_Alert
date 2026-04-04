@@ -358,7 +358,7 @@ TextLabelClass * MessageListClass::Add_Message(char const * name, int id, char c
 		} else {
 			mess_start = 0;
 		}
-		for (int i=1 ; i<strlen(txt) ; i++) {
+		for (int i = 1; i < static_cast<int>(strlen(txt)); i++) {
 			strncpy (&temp[mess_start], txt, i);
 			temp [mess_start + i] = 0;
 			wid = String_Pixel_Width(temp);
@@ -489,7 +489,7 @@ char * MessageListClass::Get_Message(int id)
 	if (MessageList) {
 		gadg = MessageList;
 		while (gadg) {
-			if (gadg->UserData2 == id) {
+			if (gadg->UserData2 == static_cast<uint32_t>(id)) {
 				return (gadg->Text);
 			}
 			gadg = (TextLabelClass *)gadg->Get_Next();
@@ -526,7 +526,7 @@ TextLabelClass * MessageListClass::Get_Label(int id)
 	if (MessageList) {
 		gadg = MessageList;
 		while (gadg) {
-			if (gadg->UserData2 == id) {
+			if (gadg->UserData2 == static_cast<uint32_t>(id)) {
 				return (gadg);
 			}
 			gadg = (TextLabelClass *)gadg->Get_Next();
@@ -580,7 +580,7 @@ int MessageListClass::Concat_Message(char const * name, int id, char const * txt
 	if (MessageList) {
 		tlabel = MessageList;
 		while (tlabel) {
-			if (tlabel->UserData2 == id &&
+			if (tlabel->UserData2 == static_cast<uint32_t>(id) &&
 				!memcmp(tlabel->Text,name,strlen(name))) {
 				found = 1;
 				break;
@@ -604,7 +604,7 @@ int MessageListClass::Concat_Message(char const * name, int id, char const * txt
 	//------------------------------------------------------------------------
 	// If there's room enough in the message, just add the given string
 	//------------------------------------------------------------------------
-	if ( (strlen(msg) + strlen(txt)) < MaxChars) {
+	if ( (strlen(msg) + strlen(txt)) < static_cast<size_t>(MaxChars)) {
 
 		//---------------------------------------------------------------------
 		// We need to trim the message if there is no room to draw it
@@ -734,7 +734,7 @@ bool MessageListClass::Has_Edit_Focus (void)
  *   05/22/1995 BRR : Created.                                             *
  *=========================================================================*/
 TextLabelClass * MessageListClass::Add_Edit(PlayerColorType color,
-	TextPrintType style, char * to, char cursor, int width)
+	TextPrintType style, char const * to, char cursor, int width)
 {
 	int i;
 	TextLabelClass * txtlabel;

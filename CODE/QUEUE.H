@@ -47,7 +47,6 @@
 #include	"MISSION.H"
 #include	"TARGET.H"
 #include	"DEFINES.H"
-#pragma warn -inl
 
 /*
 **	This class implements a classic FIFO queue (also known as - standing in line). Objects

@@ -332,8 +332,6 @@ int VesselClass::Shape_Number(void) const
 	/*
 	**	For eight facing units, adjust the facing number accordingly.
 	*/
-	FacingType facing = Dir_Facing(PrimaryFacing.Current());
-
 	int shapenum = UnitClass::BodyShape[Dir_To_16(PrimaryFacing)*2]>>1;
 
 	/*
@@ -392,7 +390,6 @@ void VesselClass::Draw_It(int x, int y, WindowNumberType window) const
 	**	with the render process.
 	*/
 	if (Visual_Character() != VISUAL_HIDDEN) {
-		int			facing = Dir_To_32(PrimaryFacing);
 		int			tfacing = Dir_To_32(SecondaryFacing);
 		DirType		rotation = DIR_N;
 		int			scale = 0x0100;
@@ -681,8 +678,6 @@ void VesselClass::Per_Cell_Process(PCPType why)
 	BStart(BENCH_PCP);
 
 	if (why == PCP_END) {
-		CELL cell = Coord_Cell(Coord);
-
 		/*
 		**	The unit performs looking around at this time. If the
 		**	unit moved further than one square during the last track
@@ -697,7 +692,7 @@ void VesselClass::Per_Cell_Process(PCPType why)
 				CELL cell = Coord_Cell(Adjacent_Cell(Center_Coord(), face));
 				SmartPtr<BuildingClass> whom;
 				whom = Map[cell].Cell_Building();
-				if (whom != NULL && ((*whom == STRUCT_SHIP_YARD) || (*whom == STRUCT_SUB_PEN)) ) {
+				if (static_cast<BuildingClass *>(whom) != NULL && ((*whom == STRUCT_SHIP_YARD) || (*whom == STRUCT_SUB_PEN)) ) {
 					if (IsOwnedByPlayer) Speak(VOX_REPAIRING);
 					IsSelfRepairing = true;
 					IsToSelfRepair = false;
@@ -754,12 +749,12 @@ ActionType VesselClass::What_Action(ObjectClass const * object) const
 // check to see if the transporter can unload.
 			bool found = 0;
 #ifdef FIXIT_CARRIER	//	checked - ajw 9/28/98
-		if (*this != VESSEL_CARRIER)
+		if (*this != VESSEL_CARRIER) {
 #endif
 			for (FacingType face = FACING_N; face < FACING_COUNT && !found; face++) {
 				CELL cellnum = Adjacent_Cell(Coord_Cell(Coord), face);
 				CellClass * cell = &Map[cellnum];
-				if (Map.In_Radar(cellnum) && Ground[cell->Land_Type()].Cost[SPEED_FOOT] == 0 || cell->Flag.Occupy.Building || cell->Flag.Occupy.Vehicle || cell->Flag.Occupy.Monolith || (cell->Flag.Composite & 0x01F) == 0x01F) {
+				if ((Map.In_Radar(cellnum) && Ground[cell->Land_Type()].Cost[SPEED_FOOT] == 0) || cell->Flag.Occupy.Building || cell->Flag.Occupy.Vehicle || cell->Flag.Occupy.Monolith || (cell->Flag.Composite & 0x01F) == 0x01F) {
 					continue;
 				} else {
 					found = true;
@@ -768,6 +763,9 @@ ActionType VesselClass::What_Action(ObjectClass const * object) const
 			if (!found) {
 				action = ACTION_NONE;
 			}
+#ifdef FIXIT_CARRIER	//	checked - ajw 9/28/98
+		}
+#endif
 		}
 	}
 
@@ -1447,7 +1445,7 @@ RadioMessageType VesselClass::Receive_Message(RadioClass * from, RadioMessageTyp
 					if (Transmit_Message(RADIO_NEED_TO_MOVE, from) == RADIO_ROGER) {
 
 						CELL cell;
-						DirType dir = Desired_Load_Dir(from, cell);
+						Desired_Load_Dir(from, cell);
 
 						/*
 						**	If no adjacent free cells are detected, then passenger loading
@@ -1519,6 +1517,8 @@ RadioMessageType VesselClass::Receive_Message(RadioClass * from, RadioMessageTyp
 			}
 			DriveClass::Receive_Message(from, message, param);
 			return(RADIO_ROGER);
+		default:
+			break;
 
 	}
 	return(DriveClass::Receive_Message(from, message, param));
@@ -1554,13 +1554,6 @@ DirType VesselClass::Desired_Load_Dir(ObjectClass * passenger, CELL & moveto) co
 	**	Determine the ideal facing that provides the least resistance. This would be the direction
 	**	of the potential passenger or the current transport facing if it is going to unload.
 	*/
-	DirType faceto;
-	if (passenger != NULL) {
-		faceto = Direction(passenger);
-	} else {
-		faceto = PrimaryFacing.Current() + DIR_S;
-	}
-
 	/*
 	**	Sweep through the adjacent cells in order to find the best candidate.
 	*/
@@ -2060,10 +2053,10 @@ void VesselClass::Write_INI(CCINIClass & ini)
 	for (int index = 0; index < Vessels.Count(); index++) {
 		VesselClass * vessel = Vessels.Ptr(index);
 		if (vessel != NULL && !vessel->IsInLimbo && vessel->IsActive) {
-			char	uname[10];
+			char	uname[12];
 			char	buf[128];
 
-			sprintf(uname, "%d", index);
+			snprintf(uname, sizeof(uname), "%d", index);
 			sprintf(buf, "%s,%s,%d,%u,%d,%s,%s",
 				vessel->House->Class->IniName,
 				vessel->Class->IniName,
@@ -2230,6 +2223,8 @@ void VesselClass::Combat_AI(void)
 				IsFiring = false;
 				Mark(MARK_OVERLAP_DOWN);
 				Do_Uncloak();
+				break;
+			default:
 				break;
 		}
 	}

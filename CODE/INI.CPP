@@ -85,7 +85,6 @@
 
 
 // Disable the "temporary object used to initialize a non-constant reference" warning.
-#pragma warning 665 9
 
 
 /***********************************************************************************************
@@ -644,7 +643,7 @@ bool INIClass::Put_TextBlock(char const * section, char const * text)
 	Clear(section);
 
 	int index = 1;
-	while (text != NULL && *text != NULL) {
+	while (text != NULL && *text != '\0') {
 
 		char buffer[128];
 

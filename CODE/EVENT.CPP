@@ -96,7 +96,7 @@ uint8_t EventClass::EventLength[EventClass::LAST_EVENT] = {
 #endif
 };
 
-char * EventClass::EventNames[EventClass::LAST_EVENT] = {
+char const * EventClass::EventNames[EventClass::LAST_EVENT] = {
 	"EMPTY",
 	"ALLY",
 	"MEGAMISSION",
@@ -501,6 +501,7 @@ void EventClass::Execute(void)
 //	CELL cell = 0;
 	char txt[80];
 	bool formation = false;
+	int i;
 //	RTTIType rt;
 
 	if (Debug_Print_Events) {
@@ -910,16 +911,16 @@ void EventClass::Execute(void)
 		** - Re-sort the ID array
 		** - Place his units on the map
 		*/
-		case ADDPLAYER:
-			int i;
+		case ADDPLAYER: {
 			printf("ADDPLAYER EVENT!\n");
-			for (i=0;i<Data.Variable.Size;i++) {
+			for (uint32_t i = 0; i < Data.Variable.Size; ++i) {
 				printf("%d\n", ((char *)Data.Variable.Pointer)[i]);
 			}
 			if (ID != PlayerPtr->ID) {
-				delete [] Data.Variable.Pointer;
+				delete [] static_cast<char *>(Data.Variable.Pointer);
 			}
 			break;
+		}
 
 		//
 		// This event tells all systems to use new timing values.  It's like

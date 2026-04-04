@@ -41,7 +41,7 @@ void Delay(int32_t duration)
 
 	while (duration--) {
 		count = timer.Time() + 1L;
-		while (count >= timer.Time()) {
+		while (count >= static_cast<uint32_t>(timer.Time())) {
 			;
 		}
 	}

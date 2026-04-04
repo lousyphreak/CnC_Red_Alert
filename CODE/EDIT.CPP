@@ -343,8 +343,8 @@ void EditClass::Draw_Text(char const * text)
 
 	Conquer_Clip_Text_Print(text, X+1, Y+1, Color, TBLACK, TextFlags | flags, Width-2);
 
-	if (Has_Focus() && strlen(text) < MaxLength &&
-		(String_Pixel_Width(text) + String_Pixel_Width ("_") < Width-2) ) {
+	if (Has_Focus() && strlen(text) < static_cast<size_t>(MaxLength) &&
+		(String_Pixel_Width(text) + String_Pixel_Width("_") < static_cast<uint32_t>(Width - 2))) {
 		Conquer_Clip_Text_Print( "_", X+1+String_Pixel_Width(text), Y+1, Color, TBLACK, TextFlags | flags);
 	}
 }
@@ -409,7 +409,7 @@ bool EditClass::Handle_Key(KeyASCIIType ascii)
 			/*
 			**	Don't add a character if the length is greater than edit width.
 			*/
-			if ((String_Pixel_Width(String) + Char_Pixel_Width(ascii) ) >= (Width-2)) {
+			if ((String_Pixel_Width(String) + Char_Pixel_Width(ascii)) >= static_cast<uint32_t>(Width - 2)) {
 				break;
 			}
 

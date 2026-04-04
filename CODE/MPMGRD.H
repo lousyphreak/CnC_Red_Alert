@@ -66,7 +66,7 @@ public:
    void Set_Timing(uint32_t retrydelta, uint32_t maxretries, uint32_t timeout);
 
    // debug
-   void Configure_Debug(int index, int type_offset, int type_size, char **names, int namestart,
+   void Configure_Debug(int index, int type_offset, int type_size, char const **names, int namestart,
       int namecount);
    void Mono_Debug_Print(int index, int refresh);
 

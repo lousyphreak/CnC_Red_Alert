@@ -120,7 +120,7 @@ void LayerClass::Sort(void)
  *=============================================================================================*/
 int LayerClass::Sorted_Add(ObjectClass const * const object)
 {
-	if (ActiveCount >= Length()) {
+	if (ActiveCount >= static_cast<int>(Length())) {
 		if ((IsAllocated || !VectorMax) && GrowthStep > 0) {
 			if (!Resize(Length() + GrowthStep)) {
 
@@ -160,4 +160,3 @@ int LayerClass::Sorted_Add(ObjectClass const * const object)
 	ActiveCount++;
 	return(true);
 }
-

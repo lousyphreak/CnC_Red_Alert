@@ -42,9 +42,6 @@
 #include	<stddef.h>
 #include	<assert.h>
 
-
-#pragma warn -inl
-
 /*
 **	This is a doubly linked list node. Typical use of this node is to derive
 **	objects from this node. The interface class for this node can be used for
@@ -90,7 +87,7 @@ class GenericNode {
 
 		GenericNode * Next(void) const {return(NextNode);}
 		GenericNode * Prev(void) const {return(PrevNode);}
-		bool Is_Valid(void) const {return(this != NULL && NextNode != NULL && PrevNode != NULL);}
+		bool Is_Valid(void) const {return(NextNode != NULL && PrevNode != NULL);}
 
 	protected:
 		GenericNode * NextNode;

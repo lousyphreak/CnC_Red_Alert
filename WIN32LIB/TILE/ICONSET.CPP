@@ -121,6 +121,7 @@ void *  Load_Icon_Set(char const *filename, void *iconsetptr, int32_t buffsize)
 	void	*returnptr=NULL;	// Iconset pointer returned by routine.
 	int32_t	allocated=FALSE;	// Was the iconset block allocated?
 	IControl_Type	*idata=NULL;	// Icon data loaded.
+	uint32_t	required_size;
 	int32_t	id;				// ID of file openned.
 	struct {
 		char	Width;		// Width of icon in bytes.
@@ -150,6 +151,7 @@ void *  Load_Icon_Set(char const *filename, void *iconsetptr, int32_t buffsize)
 			size = Get_Iff_Chunk_Size(fh,FORM_SSET);
 				transsize = Get_Iff_Chunk_Size(fh, FORM_TRNS);
 			mapsize = Get_Iff_Chunk_Size(fh, FORM_MAP);
+			required_size = size + transsize + mapsize + sizeof(IControl_Type);
 
 			/*
 			**	Allocate the icon buffer if one isn't provided.  First try EMS and
@@ -157,14 +159,14 @@ void *  Load_Icon_Set(char const *filename, void *iconsetptr, int32_t buffsize)
 			*/
 			allocated = FALSE;
 			if (!iconsetptr) {
-					buffsize = size + transsize + mapsize + sizeof(IControl_Type);
+					buffsize = static_cast<int32_t>(required_size);
 
 				Misc = buffsize;
 				iconsetptr = Alloc(buffsize, MEM_NORMAL);
 				allocated = (iconsetptr != NULL);
 			}
 
-			if (iconsetptr && (size+transsize+mapsize+sizeof(IControl_Type)) <= buffsize) {
+			if (iconsetptr && required_size <= static_cast<uint32_t>(buffsize)) {
 
 				idata = (IControl_Type *)iconsetptr;
 
@@ -199,8 +201,8 @@ void *  Load_Icon_Set(char const *filename, void *iconsetptr, int32_t buffsize)
 				**	raw icon data because it might have been compressed and thus need any
 				**	extra space to perform an overlapped decompression.
 				*/
-					if (buffsize > size + transsize + mapsize + sizeof(IControl_Type)) {
-						buffsize = size + transsize + mapsize + sizeof(IControl_Type);
+					if (static_cast<uint32_t>(buffsize) > required_size) {
+						buffsize = static_cast<int32_t>(required_size);
 					}
 
 					transptr = Add_Long_To_Pointer(iconsetptr, idata->TransFlag);

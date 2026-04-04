@@ -255,7 +255,7 @@ class EventClass
 		};
 
 		static uint8_t EventLength[LAST_EVENT];
-		static char * EventNames[LAST_EVENT];
+		static char const * EventNames[LAST_EVENT];
 };
 
 #endif

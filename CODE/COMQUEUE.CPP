@@ -678,7 +678,7 @@ void CommQueueClass::Reset_Response_Time(void)
  * HISTORY:                                                                * 
  *   05/31/1995 BRR : Created.                                             * 
  *=========================================================================*/
-void CommQueueClass::Configure_Debug(int offset, int size, char **names, 
+void CommQueueClass::Configure_Debug(int offset, int size, char const **names, 
 	int maxnames)
 {
 	DebugOffset = offset;
@@ -712,7 +712,6 @@ void CommQueueClass::Mono_Debug_Print(int refresh)
 	static int send_col[] = {1,14,28};			// coords of send queue columns
 	static int receive_col[] = {40,54,68};		// coords of recv queue columns
 	int row,col;										// current row,col for printing
-	int num;												// max # items to print
 
 	struct CommHdr {									// this mirrors the CommHeaderType
 		uint16_t MagicNumber;
@@ -763,11 +762,6 @@ void CommQueueClass::Mono_Debug_Print(int refresh)
 	/*
 	**	Print Send Queue items
 	*/
-	if (MaxSend <= 48) {
-		num = MaxSend;
-	} else {
-		num = 48;
-	}
 	col = 0;
 	row = 0;
 	for (i = 0; i < MaxSend; i++) {
@@ -792,11 +786,6 @@ void CommQueueClass::Mono_Debug_Print(int refresh)
 	/*
 	**	Print Receive Queue items
 	*/
-	if (MaxReceive <= 48) {
-		num = MaxSend;
-	} else {
-		num = 48;
-	}
 	col = 0;
 	row = 0;
 	for (i = 0; i < MaxReceive; i++) {
@@ -1000,4 +989,3 @@ void CommQueueClass::Mono_Debug_Print2(int refresh)
 	refresh = refresh;
 #endif	
 }
-

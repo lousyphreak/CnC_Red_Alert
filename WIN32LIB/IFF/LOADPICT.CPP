@@ -104,8 +104,10 @@ typedef struct {
 /*=========================================================================*/
 
 PRIVATE void  ILBM_To_MCGA(BufferClass& src, BufferClass& dest, int32_t planes);
+#if MAKE_AMIGA_ART
 PRIVATE void  ILBM_To_Amiga(BufferClass& src, BufferClass& dest, int32_t planes);
 PRIVATE void  PBM_To_Amiga(BufferClass& src, BufferClass& dest, int32_t planes);
+#endif
 
 
 /*= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =*/
@@ -399,7 +401,9 @@ int32_t  Load_Picture(char const *filename, BufferClass& scratchbuf, BufferClass
 		if (palette)
 		{
 			int32_t	pbytes ;			       	// Number of CMAP bytes required.
+#if MAKE_AMIGA_ART
 			uint8_t	color;			// Palette color value.
+#endif
 			uint8_t *paletteptr;		// Allocated buffer for palette conversions.
 			uint8_t *source;		  	// Scratch source CMAP data pointer.
 			uint8_t *dest2;		  	// Scratch destination palette pointer.

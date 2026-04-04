@@ -50,8 +50,6 @@
 #include "GBUFFER.H"
 #include "MISC.H"
 #endif
-#pragma inline
-
 int32_t		TotalLocks;
 int32_t 	AllowHardwareBlitFills = TRUE;
 
@@ -82,8 +80,8 @@ int32_t 	AllowHardwareBlitFills = TRUE;
  *   05/09/1994 PWG : Created.                                             *
  *=========================================================================*/
 GraphicViewPortClass::GraphicViewPortClass(GraphicBufferClass *gbuffer, int32_t x, int32_t y, int32_t w, int32_t h) :
-	LockCount(0),
-	GraphicBuff(NULL)
+	GraphicBuff(NULL),
+	LockCount(0)
 {
 	Attach(gbuffer, x, y, w, h);
 }

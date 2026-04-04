@@ -72,7 +72,7 @@ class UDPConnClass : public ConnectionClass
 		Constructor/destructor.
 		.....................................................................*/
 		UDPConnClass(int numsend, int numrecieve, int maxlen,
-			uint16_t magicnum, UDPAddressClass *address, int id, char *name,
+			uint16_t magicnum, UDPAddressClass *address, int id, char const *name,
 			int extralen = 0);
 		virtual ~UDPConnClass () {};
 

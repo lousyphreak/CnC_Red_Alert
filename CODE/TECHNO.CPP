@@ -1673,7 +1673,7 @@ bool TechnoClass::Evaluate_Object(ThreatType method, int mask, int range, Techno
 	**	the fake building's value.
 	*/
 	if ((method & THREAT_FAKES) && otype == RTTI_BUILDING) {
-		switch (!((BuildingTypeClass const *)tclass)->Type) {
+		switch (((BuildingTypeClass const *)tclass)->Type) {
 			case STRUCT_FAKECONST:
 			case STRUCT_FAKEWEAP:
 			case STRUCT_FAKE_YARD:
@@ -2518,6 +2518,8 @@ void TechnoClass::Cloaking_AI(void)
 								Scatter(0, true);
 							}
 							break;
+						default:
+							break;
 					}
 					break;
 
@@ -2531,6 +2533,8 @@ void TechnoClass::Cloaking_AI(void)
 						Mark(MARK_CHANGE);
 					}
 #endif
+					break;
+				default:
 					break;
 			}
 		}
@@ -3132,6 +3136,8 @@ BulletClass * TechnoClass::Fire_At(TARGET target, int which)
 
 			case ANIM_SAM_N:
 				a = AnimType(ANIM_SAM_N + Dir_Facing(PrimaryFacing.Current()));
+				break;
+			default:
 				break;
 		}
 
@@ -4637,8 +4643,6 @@ void TechnoClass::Base_Is_Attacked(TechnoClass const * enemy)
 	int weakest = 0;
 	int desired = enemy->Risk() * House->Control.TechLevel;
 	int risktotal = 0;
-	int zone = Map[Center_Coord()].Zones[Techno_Type_Class()->MZone];
-
 	/*
 	** Humans have to deal with their own base is attacked problems.
 	*/
@@ -4741,7 +4745,7 @@ void TechnoClass::Base_Is_Attacked(TechnoClass const * enemy)
 				continue;
 			}
 
-			if (count < ARRAY_SIZE(defender)) {
+			if (count < static_cast<int>(ARRAY_SIZE(defender))) {
 				defender[count] = infantry;
 				value[count] = threat;
 				count++;
@@ -4825,7 +4829,7 @@ void TechnoClass::Base_Is_Attacked(TechnoClass const * enemy)
 				continue;
 			}
 
-			if (count < ARRAY_SIZE(defender)) {
+			if (count < static_cast<int>(ARRAY_SIZE(defender))) {
 				defender[count] = unit;
 				value[count] = threat;
 				count++;
@@ -5450,7 +5454,6 @@ void TechnoClass::Draw_Pips(int x, int y, WindowNumberType window) const
 			int greenpips  = pips * fixed(nickel, Rule.BailCount);
 
 			while (greenpips + graypips < pips) {
-				int ironnickelmax = max(iron, nickel);
 				if (iron > nickel) {
 					graypips++;
 				} else {
@@ -5976,8 +5979,8 @@ TechnoTypeClass::TechnoTypeClass(
 	IsNominal(is_nominal),
 	IsTheater(is_theater),
 	IsTurretEquipped(is_turret_equipped),
-	IsCrew(false),
 	IsRepairable(true),
+	IsCrew(false),
 	IsRemappable(is_remappable),
 	IsCloakable(false),
 	IsSelfHealing(false),
@@ -6260,7 +6263,7 @@ bool TechnoTypeClass::Read_INI(CCINIClass & ini)
 			/*
 			**	Insert the new name text into the buffer list.
 			*/
-			for (int index = 0; index < ARRAY_SIZE(NameOverride); index++) {
+			for (int index = 0; index < static_cast<int>(ARRAY_SIZE(NameOverride)); index++) {
 				if (NameIDOverride[index] == 0)  {
 					NameOverride[index] = strdup(buffer);
 					NameIDOverride[index] = id;

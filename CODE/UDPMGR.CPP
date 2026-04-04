@@ -76,7 +76,6 @@
 // to enable mono output
 
 // Turn off "expression is not meaningful".
-#pragma warning 628 9
 
 #include "WOLDEBUG.H"
 
@@ -1416,7 +1415,7 @@ void UDPManagerClass::Set_Bridge(NetNumType bridge)
  *   05/31/1995 BRR : Created.                                             *
  *=========================================================================*/
 void UDPManagerClass::Configure_Debug(int index, int type_offset,
-	int type_size, char **names, int namestart, int namecount)
+	int type_size, char const **names, int namestart, int namecount)
 {
 	if (index == -1) {
 		GlobalChannel->Queue->Configure_Debug (type_offset, type_size, names,

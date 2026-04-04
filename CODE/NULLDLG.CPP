@@ -158,7 +158,7 @@ RedrawType display = REDRAW_ALL;
 bool process = true;
 bool changed = false;
 bool rc = false;
-KeyNumType input;
+int input;
 int i;
 char *item;
 char namebuf[MPLAYER_NAME_MAX] = {0};
@@ -616,7 +616,8 @@ char digest_buffer[32];
 for (int index = 0; index < Session.Scenarios.Count(); index++) {
 if (!strcmp(Session.Scenarios[index]->Description(), description)) {
 CCFileClass file(Session.Scenarios[index]->Get_Filename());
-if (file.Is_Available() && file.Size() == length) {
+int32_t file_size = file.Size();
+if (file.Is_Available() && file_size >= 0 && static_cast<uint32_t>(file_size) == length) {
 if (!official) {
 INIClass ini;
 ini.Load(file);

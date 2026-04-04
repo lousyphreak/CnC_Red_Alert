@@ -564,7 +564,7 @@ void  Close_Animation( void *handle )
  * HISTORY:                                                                *
  *   11/27/1991  SB : Created.                                             *
  *=========================================================================*/
-#pragma off (unreferenced)
+
 int32_t  Animate_Frame(void *handle, GraphicViewPortClass& view,
                          int32_t frame_number, int32_t x_pixel, int32_t y_pixel,
                          WSAType flags_and_prio, void *magic_cols, void *magic)
@@ -761,7 +761,7 @@ int32_t  Animate_Frame(void *handle, GraphicViewPortClass& view,
  * HISTORY:                                                                *
  *   11/27/1991  SB : Created.                                             *
  *=========================================================================*/
-#pragma argsused
+
 #ifdef cuts
 int32_t  Animate_Frame(void *handle, GraphicViewPortClass& view,
                          int32_t frame_number, int32_t x_pixel, int32_t y_pixel,
@@ -1280,7 +1280,8 @@ PRIVATE int32_t Apply_Delta(SysAnimHeaderType *sys_header, int32_t curr_frame, c
 		Seek_File(file_handle, frame_offset, SEEK_SET);
 		delta_back 	= (char *)Add_Long_To_Pointer(delta_back, sys_header->largest_frame_size - frame_data_size);
 
-		if (Read_File(file_handle, delta_back, frame_data_size) != frame_data_size) {
+		const int32_t bytes_read = Read_File(file_handle, delta_back, frame_data_size);
+		if (bytes_read < 0 || static_cast<uint32_t>(bytes_read) != frame_data_size) {
 			return(FALSE);
 		}
 	}

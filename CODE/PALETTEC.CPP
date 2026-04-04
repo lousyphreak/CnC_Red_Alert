@@ -119,7 +119,9 @@ PaletteClass & PaletteClass::operator = (PaletteClass const & palette)
 		return(*this);
 	}
 
-	memcpy(&Palette[0], &palette.Palette[0], sizeof(Palette));
+	for (int index = 0; index < COLOR_COUNT; index++) {
+		Palette[index] = palette.Palette[index];
+	}
 	return(*this);
 }
 

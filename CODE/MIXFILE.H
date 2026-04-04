@@ -120,7 +120,7 @@ class MixFileClass : public Node<MixFileClass<T>>
 		*/
 		void * Data;						// Pointer to raw data.
 
-		static List<MixFileClass<T>> List;
+		static List<MixFileClass<T>> MixList;
 };
 
 #endif

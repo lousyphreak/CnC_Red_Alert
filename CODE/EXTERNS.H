@@ -439,7 +439,7 @@ void Do_Vortex (int x, int y, int frame);
 extern int ReadyToQuit;							//Are we about to exit cleanly
 extern bool InDebugger;							//Are we being run from a debugger
 void Memory_Error_Handler(void);				//Memory error handler function
-void WWDebugString (char *string);
+void WWDebugString (char const *string);
 
 
 /*************************************************************

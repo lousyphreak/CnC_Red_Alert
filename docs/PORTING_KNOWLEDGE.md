@@ -1,5 +1,25 @@
 # Porting Knowledge
 
+## Warning-cleanup / 64-bit porting patterns
+
+- Old load/save code in this tree sometimes repurposes object pointer fields to temporarily hold 32-bit `TARGET` ids during pointer coding/decoding.
+  - Practical rule: do not route those conversions through `long`, `int`, or `int32_t` on 64-bit hosts. Use a pointer-sized integer bridge instead: encode with `reinterpret_cast<T *>(static_cast<intptr_t>(target))` and decode with `static_cast<TARGET>(reinterpret_cast<intptr_t>(static_cast<T *>(ptr)))`.
+  - This same rule applies to the corresponding code-pointer helpers in `CODE/SAVELOAD.CPP`, `CODE/IOOBJ.CPP`, and `CODE/IOMAP.CPP`.
+- `SmartPtr<T>` fields need the same bridge, but the raw pointer has to be made explicit.
+  - Practical example from this tree: template helpers that accept `T *` do not deduce through `SmartPtr<T>`, so `TeamClass::Member` / `ObjectClass::Next` style fields must convert through either `field->As_Target()` on the encode side or `static_cast<T *>(field)` on the decode/validation side.
+  - Related cleanup: `CODE/JSHELL.H` now exposes pointer-sized integer conversion via `intptr_t`; leaving `SmartPtr` on `int32_t` is a real 64-bit truncation hazard, not just a warning.
+- Preserve old low-32-bit pointer-validation intent explicitly instead of truncating pointers.
+  - Practical example from `CODE/MAP.CPP`: legacy validation code only cared whether the high byte of the original 32-bit pointer value was set.
+  - Practical rule: on 64-bit builds, use `reinterpret_cast<uintptr_t>(ptr) & 0xff000000u` (or the raw pointer behind any `SmartPtr`) rather than casting the pointer to `uint32_t`; that keeps the original low-32-bit check semantics without precision-loss warnings.
+- Do not stash arbitrary non-pointer payloads in legacy pointer containers just because old 32-bit code got away with it.
+  - Practical example from the trigger loader: the old path stored duplicated trigger names as `char *` inside `CCPtr::Raw()`, which is not safe once pointer-sized assumptions matter.
+  - Practical rule: if a legacy read/fixup path only needs temporary side data, keep that data in an explicit side table keyed by the owning object and consume it deliberately during the later fixup pass.
+- Make unsigned sentinel values and count/size comparisons explicit.
+  - Practical rule: if an old `uint32_t` field uses all-bits-set as a disabled sentinel, compare against `static_cast<uint32_t>(-1)` instead of `-1`.
+  - Likewise, when looping against `ARRAY_SIZE(...)` or other unsigned counts, cast intentionally rather than relying on implicit signed/unsigned promotions; most of the remaining `HOUSE.CPP`, `MAP.CPP`, and support-file warnings in this sweep were mechanical instances of that rule.
+- When replacing obsolete platform helpers to clear warnings, preserve the original behavioral contract rather than "modernizing" the gameplay code.
+  - Concrete examples from this sweep: the deprecated `ftime()` fallback was replaced with `SDL_GetTicks()` but kept the original `((msec / 100) * 6)` 60 Hz-style scaling; raw packet/header copies still use byte-wise `memcpy`; and palette copies that warned on class-memaccess were rewritten as element-wise assignment instead of changing layout or semantics.
+
 ## Current SDL callback startup strategy
 
 - The current startup path now uses SDL app callbacks on every supported build, and `CODE/STUB.CPP` no longer carries a target-specific loop split.

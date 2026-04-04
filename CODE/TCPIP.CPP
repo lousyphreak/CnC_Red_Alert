@@ -369,7 +369,6 @@ void TcpipManagerClass::Start_Server(void)
 int TcpipManagerClass::Read(void *buffer, int buffer_len)
 {
 	int 	bytes_copied = 0;
-	char 	*dest_buf = (char*) buffer;
 
 	/*
 	** Make sure the message loop gets called because all the Winsock notifications
@@ -413,8 +412,6 @@ int TcpipManagerClass::Read(void *buffer, int buffer_len)
 
 void TcpipManagerClass::Write(void *buffer, int buffer_len)
 {
-	char 	*source_buf = (char*) buffer;
-
 	/*
 	** Copy the data to one of the classes internal buffers
 	*/
@@ -1008,6 +1005,5 @@ void TcpipManagerClass::Clear_Socket_Error(SOCKET socket)
 	setsockopt (socket, SOL_SOCKET, SO_ERROR, (char*)&error_code, length);
 #endif
 }
-
 
 

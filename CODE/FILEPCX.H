@@ -72,8 +72,8 @@ typedef	struct	{
 						  char	   filler [ 58 ] ;
 						} PCX_HEADER ;
 
-GraphicBufferClass* Read_PCX_File (char* name, char* palette= NULL,void *buff=NULL, int32_t size=0);
-GraphicBufferClass* Read_PCX_File (char* name, BufferClass& Buff,char* palette= NULL) ;
+GraphicBufferClass* Read_PCX_File (char const *name, char* palette= NULL,void *buff=NULL, int32_t size=0);
+GraphicBufferClass* Read_PCX_File (char const *name, BufferClass& Buff,char* palette= NULL) ;
 int Write_PCX_File (char* name, GraphicViewPortClass& pic, uint8_t* palette );
 class PaletteClass;
 int Write_PCX_File(FileClass & file, GraphicBufferClass & pic, PaletteClass * palette);

@@ -637,7 +637,7 @@ void DeleteNick( WolapiObject* pWO, int iOneBasedEntryToDelete )
 	}
 }
 
-/*
+//
 //***********************************************************************************************
 char* LoadShpFile( const char* szShpFile )
 {

@@ -45,6 +45,7 @@
 #include <unistd.h>
 
 #include <errno.h>
+#include <stdint.h>
 
 int32_t FontXSpacing = 0;
 int32_t FontYSpacing = 0;
@@ -99,7 +100,7 @@ void *  Load_Font(char const *name)
 		Read_File(fh, ptr + 2, size - 2);
 		Close_File(fh);
 	} else {
-		return ((void*)errno);
+		return reinterpret_cast<void *>(static_cast<intptr_t>(errno));
 	}
 
 

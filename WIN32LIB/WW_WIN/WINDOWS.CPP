@@ -91,7 +91,7 @@ uint32_t WinW=40;
 uint32_t Window=0;
 
 int32_t MoreOn = TRUE;
-char *TXT_MoreText = "--More--";
+char const * TXT_MoreText = "--More--";
 void (*Window_More_Ptr)(char const *,int32_t,int32_t,int32_t) = Standard_More_Prompt;
 
 extern GraphicViewPortClass *LogicPage;
@@ -175,7 +175,7 @@ void Standard_More_Prompt(char const *prompt, int32_t space, int32_t fcolor, int
 void Set_More_Prompt(char const *prompt, int32_t space, int32_t fcolor, int32_t bcolor)
 {
 	if (prompt) {
-		TXT_MoreText = (char*)prompt;
+		TXT_MoreText = prompt;
 		MoreSpace = space;
 		MoreFColor = fcolor;
 		MoreBColor = bcolor;
@@ -653,7 +653,7 @@ void Window_Print(char const string[], ...)
 				Line[Pos++] = c;
 				Line[Pos] = '\0';
 
-				if (WinCx + PPos > WindowWidth) {
+				if (static_cast<int32_t>(WinCx) + PPos > WindowWidth) {
 					Flush_Line();
 				}
 				break;
@@ -760,9 +760,9 @@ PRIVATE void Flush_Line(void)
 	** beyond the bottom of the window.  If this is the case, then scroll the
 	**	window and proceed with the line flush.
 	*/
-	while (WinCy >= WindowLines /*&& Pos > 0*/) {
+	while (static_cast<int32_t>(WinCy) >= WindowLines /*&& Pos > 0*/) {
 		Scroll_Window();
-		if (WinCy >= WindowLines) WinCy--;
+		if (static_cast<int32_t>(WinCy) >= WindowLines) WinCy--;
 	}
 	//if (WinCy >= WindowLines) WinCy = WindowLines-1;
 
@@ -780,7 +780,7 @@ PRIVATE void Flush_Line(void)
 	*/
 	breakpoint = Pos;
 	breaksize = PPos;
-	if (WinCx + breaksize > breakwidth) {
+	if (static_cast<int32_t>(WinCx) + breaksize > breakwidth) {
 
 		/*
 		**	Since the text WILL spill past the edge of the window, determine the
@@ -855,7 +855,7 @@ PRIVATE void Flush_Line(void)
 	**	not been completed.  Scroll to next line and repeat the text flushing
 	**	process.
 	*/
-	if (Pos || WinCx >= WindowWidth) {
+	if (Pos || static_cast<int32_t>(WinCx) >= WindowWidth) {
 		WinCx = WPos = 0;
 		#if(FALSE)
 			if (WinCy >= WindowLines-1) {
@@ -926,8 +926,8 @@ PRIVATE void In_Char(char *str)
 		next = c & (char)0x07;
 		c = (char)((c & (char)0x78) >> 3);
 
-		next = Dipthong[c][next];	// Dipthong character.
-		c = Common[c];				// Common character.
+		next = Dipthong[static_cast<uint8_t>(c)][static_cast<uint8_t>(next)];	// Dipthong character.
+		c = Common[static_cast<uint8_t>(c)];				// Common character.
 	}
 
 	*str++ = c;

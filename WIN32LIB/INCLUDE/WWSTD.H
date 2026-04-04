@@ -98,7 +98,6 @@
 #endif
 #define GET_SIZE(a)					((sizeof(a) / sizeof(*a)))
 
-#pragma option -Jg
 // Returns the absolute value of the number.
 #ifdef ABS
 #undef ABS
@@ -145,7 +144,6 @@ inline int32_t MAX(int32_t a, int32_t b)
 {
 	return MAX<int32_t>(a, b);
 }
-#pragma option -Jgd
 
 // Returns the low word of a long
 #define	LOW_WORD(a)		((uint16_t)((uint32_t)(a) & UINT32_C(0x0000FFFF)))
@@ -184,7 +182,6 @@ inline int32_t MAX(int32_t a, int32_t b)
 // WORD and UWORD should be an INT or UINT, especially on the stack and structures that will
 // not be in large arrays.  When size efficiency is more important then speed, use WORD UWORD.
 
-#pragma	warn -eas
 #define	TRUE		1
 #define	FALSE		0
 

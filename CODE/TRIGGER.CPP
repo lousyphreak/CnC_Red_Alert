@@ -127,8 +127,8 @@ void TriggerClass::Draw_It(int , int x, int y, int width, int height, bool selec
 TriggerClass::TriggerClass(TriggerTypeClass * trigtype) :
 	RTTI(RTTI_TRIGGER),
 	ID(Triggers.ID(this)),
-	IsActive(true),
 	Class(trigtype),
+	IsActive(true),
 	AttachCount(0),
 	Cell(0)
 {

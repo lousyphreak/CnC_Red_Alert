@@ -144,7 +144,7 @@ GameType Select_MPlayer_Game (void)
 	//------------------------------------------------------------------------
 	//	Dialog variables:
 	//------------------------------------------------------------------------
-	KeyNumType input;								// input from user
+	int input;										// input from user
 	bool process;									// loop while true
 	RedrawType display;							// true = re-draw everything
 	GameType retval;								// return value
@@ -775,7 +775,7 @@ int Surrender_Dialog(int text)
 		//.....................................................................
 		//	Get user input
 		//.....................................................................
-		KeyNumType input = commands->Input();
+		int input = commands->Input();
 
 		//.....................................................................
 		//	Process input
@@ -969,7 +969,7 @@ int Abort_Dialog(void)
 		//.....................................................................
 		//	Get user input
 		//.....................................................................
-		KeyNumType input = commands->Input();
+		int input = commands->Input();
 
 		//.....................................................................
 		//	Process input

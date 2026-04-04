@@ -116,7 +116,7 @@ SmudgeClass::SmudgeClass(SmudgeType type, COORDINATE pos, HousesType house) :
 	ObjectClass(RTTI_SMUDGE, Smudges.ID(this)),
 	Class(SmudgeTypes.Ptr((int)type))
 {
-	if (pos != -1) {
+	if (pos != static_cast<COORDINATE>(-1)) {
 		ToOwn = house;
 		if (!Unlimbo(pos)) {
 			delete this;

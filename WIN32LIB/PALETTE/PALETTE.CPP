@@ -207,7 +207,7 @@ void Fade_Palette_To(void *palette1, uint32_t delay, void (*callback)() )
 		.................. Wait for time increment to elapse ..................
 		*/
 		if (changed) {
-			while (WWTickCount.Time() < timer) {
+			while (static_cast<uint32_t>(WWTickCount.Time()) < timer) {
 				/*
 				................. Update callback while waiting .................
 				*/
@@ -217,7 +217,7 @@ void Fade_Palette_To(void *palette1, uint32_t delay, void (*callback)() )
 #endif
 					(*cb_ptr)();
 				}
-				if (WWTickCount.Time() < timer) {
+				if (static_cast<uint32_t>(WWTickCount.Time()) < timer) {
 					SDL_Delay(1);
 				}
 			}

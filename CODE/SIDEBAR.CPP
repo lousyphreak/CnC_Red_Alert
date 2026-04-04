@@ -1238,7 +1238,8 @@ void SidebarClass::StripClass::Init_Theater(TheaterType theater)
 		**	Make sure that remapping doesn't occur on the colors that cycle.
 		*/
 		PaletteClass pal = OriginalPalette;
-		memset(&pal[CYCLE_COLOR_START*3], 0x3f, CYCLE_COLOR_COUNT*3);
+		uint8_t *pal_data = pal;
+		memset(pal_data + (CYCLE_COLOR_START * 3), 0x3f, CYCLE_COLOR_COUNT * 3);
 		Build_Translucent_Table(pal, &ClockCols[0], 1, (void*)ClockTranslucentTable);
 
 //		Mem_Copy(GamePalette, OriginalPalette, 768);
@@ -1259,7 +1260,7 @@ void SidebarClass::StripClass::Reload_LogoShapes(void)
 	/*
 	** Load hi-res strip art here since it is player side specific
 	*/
-	static char * stripnames[]={
+	static char const * stripnames[]={
 		"stripna.shp",		//Nato
 		"stripna.shp",
 		"stripus.shp",		//USSR
@@ -1584,6 +1585,8 @@ bool SidebarClass::StripClass::AI(KeyNumType & input, int , int )
 									OutList.Add(EventClass(EventClass::PLACE, pending->What_Am_I(), -1));
 									Speak(VOX_UNIT_READY);
 									break;
+								default:
+									break;
 							}
 						}
 					}
@@ -1674,7 +1677,7 @@ void SidebarClass::StripClass::Draw_It(bool complete)
 			**	Fetch the shape number for the object type located at this current working
 			**	slot. This shape pointer is used to draw the underlying graphic there.
 			*/
-			if ((unsigned)index < BuildableCount) {
+			if (index < BuildableCount) {
 				ObjectTypeClass const * obj = NULL;
 				SpecialWeaponType spc = SPC_NONE;
 

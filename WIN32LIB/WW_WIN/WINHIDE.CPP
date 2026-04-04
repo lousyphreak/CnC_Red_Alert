@@ -67,6 +67,10 @@ void Window_Hide_Mouse(int32_t window)
 	y = WindowList[window][WINDOWY];
 	w = WindowList[window][WINDOWWIDTH]<<3;
 	h = WindowList[window][WINDOWHEIGHT];
+	static_cast<void>(x);
+	static_cast<void>(y);
+	static_cast<void>(w);
+	static_cast<void>(h);
 //	Conditional_Hide_Mouse(x,y,x+w-1,y+h-1);
 }
 

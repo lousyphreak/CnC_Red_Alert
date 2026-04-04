@@ -561,7 +561,7 @@ static CCFileClass Handles[10];
 
 int Open_File(char const * file_name, int mode)
 {
-	for (int index = 0; index < ARRAY_SIZE(Handles); index++) {
+	for (int index = 0; index < static_cast<int>(ARRAY_SIZE(Handles)); index++) {
 		if (!Handles[index].Is_Open()) {
 			if (Handles[index].Open(file_name, mode)) {
 				return(index);

@@ -144,14 +144,15 @@ class MonoClass {
 		*/
 		int32_t Offset(int32_t x=0, int32_t y=0) const {return (SIZE_OF_PAGE*Page) + sizeof(CellType)*(x + (y*COLUMNS));};
 		void Scroll(int32_t lines);
+		uint8_t * Mono_Bytes(int32_t x=0, int32_t y=0) const {return MonoSegment + Offset(x, y);}
 		void Store_Cell(CellType &cell, int32_t x, int32_t y) {
-			*(CellType *)((int32_t)MonoSegment + Offset(x, y)) = cell;
+			*reinterpret_cast<CellType *>(Mono_Bytes(x, y)) = cell;
 		};
 
 		/*
 		**	This is the segment/selector of the monochrome screen.
 		*/
-		static void * MonoSegment;
+		static uint8_t * MonoSegment;
 
 		/*
 		** This the the arrays of characters used for drawing boxes.

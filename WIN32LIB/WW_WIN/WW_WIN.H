@@ -87,10 +87,8 @@ extern uint32_t WinW;
 extern uint32_t Window;
 
 extern int32_t MoreOn;
-extern char *TXT_MoreText;
+extern char const * TXT_MoreText;
 
 extern void (*Window_More_Ptr)(char const *, int32_t, int32_t, int32_t);
 
 #endif //WINDOWS_H
-
-

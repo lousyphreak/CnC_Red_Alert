@@ -329,7 +329,7 @@ bool AnimClass::Mark(MarkType mark)
  * HISTORY:                                                                                    *
  *   03/19/1995 JLB : Created.                                                                 *
  *=============================================================================================*/
-int16_t const * AnimClass::Overlap_List(void) const
+int16_t const * AnimClass::Overlap_List(bool) const
 {
 #ifdef VIC
 	assert(Anims.ID(this) == ID);

@@ -180,7 +180,7 @@ COORDINATE AbstractTypeClass::Coord_Fixup(COORDINATE coord) const
 int AbstractTypeClass::Full_Name(void) const
 {
 #ifdef FIXIT_NAME_OVERRIDE
-	for (int index = 0; index < ARRAY_SIZE(NameOverride); index++) {
+	for (int index = 0; index < static_cast<int>(ARRAY_SIZE(NameOverride)); index++) {
 		if (NameIDOverride[index] == ((RTTI+1) * 100) + ID)  {
 			return(-(index+1));
 		}
@@ -210,6 +210,5 @@ int AbstractTypeClass::Get_Ownable(void) const
 {
 	return(HOUSEF_ALLIES | HOUSEF_SOVIET | HOUSEF_OTHERS);
 }
-
 
 

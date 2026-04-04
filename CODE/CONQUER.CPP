@@ -1127,7 +1127,7 @@ void Toggle_Formation(void) {
  * HISTORY:                                                                                    *
  *   05/22/1995 BRR : Created.                                                                 *
  *=============================================================================================*/
-#pragma off (unreferenced)
+
 static void Message_Input(KeyNumType &input)
 {
 	int rc;
@@ -1444,7 +1444,6 @@ static void Message_Input(KeyNumType &input)
 		Map.Flag_To_Redraw(true);
 	}
 }
-#pragma on (unreferenced)
 
 
 /***********************************************************************************************
@@ -2685,12 +2684,12 @@ int Load_Interpolated_Palettes(char const * filename, int32_t add)
 	CCFileClass	file(filename);
 
 	if (!add) {
-		for (i=0; i < ARRAY_SIZE(InterpolatedPalettes); i++) {
+		for (i = 0; i < static_cast<int>(ARRAY_SIZE(InterpolatedPalettes)); i++) {
 			InterpolatedPalettes[i]=NULL;
 		}
 		start_palette=0;
 	} else {
-		for (start_palette = 0; start_palette < ARRAY_SIZE(InterpolatedPalettes); start_palette++) {
+		for (start_palette = 0; start_palette < static_cast<int>(ARRAY_SIZE(InterpolatedPalettes)); start_palette++) {
 			if (!InterpolatedPalettes[start_palette]) break;
 		}
 	}
@@ -2728,7 +2727,7 @@ int Load_Interpolated_Palettes(char const * filename, int32_t add)
 
 void Free_Interpolated_Palettes(void)
 {
-	for (int i = 0; i < ARRAY_SIZE(InterpolatedPalettes) ;i++) {
+	for (int i = 0; i < static_cast<int>(ARRAY_SIZE(InterpolatedPalettes)); i++) {
 		if (InterpolatedPalettes[i]) {
 			free(InterpolatedPalettes[i]);
 			InterpolatedPalettes[i]=NULL;
@@ -3895,7 +3894,7 @@ void Handle_View(int view, int action)
 #define ROR_NOT_READY 21
 #endif
 
-static char * _CD_Volume_Label[] = {
+static char const * _CD_Volume_Label[] = {
 	"CD1",
 	"CD2",
 	"CD3",
@@ -4051,7 +4050,7 @@ bool Force_CD_Available( int cd_desired )				//	ajw
 	static int _last = -1;
 	static void *font;
 #ifdef FRENCH
-	static char * _cd_name[] = {
+	static char const * _cd_name[] = {
 		"ALERTE ROUGE CD1",
 		"ALERTE ROUGE CD2",
 		"CD Missions Taiga",
@@ -4060,7 +4059,7 @@ bool Force_CD_Available( int cd_desired )				//	ajw
 };
 #endif
 #ifdef GERMAN
-	static char * _cd_name[] = {
+	static char const * _cd_name[] = {
 		"ALARMSTUFE ROT CD1",
 		"ALARMSTUFE ROT CD2",
 		"CD Gegenangriff einlegen",
@@ -4069,7 +4068,7 @@ bool Force_CD_Available( int cd_desired )				//	ajw
 	};
 #endif
 #ifdef ENGLISH
-	static char * _cd_name[] = {
+	static char const * _cd_name[] = {
 		"RED ALERT DISK 1",
 		"RED ALERT DISK 2",
 		"CounterStrike CD",
@@ -4081,8 +4080,6 @@ bool Force_CD_Available( int cd_desired )				//	ajw
 	int new_cd_drive = 0;
 	int cd_current;
 	int current_drive;
-
-	ThemeType theme_playing = THEME_NONE;
 
 	/*
 	** If the required CD is set to -2 then it means that the file is present
@@ -4130,7 +4127,7 @@ bool Force_CD_Available( int cd_desired )				//	ajw
 	/*
 	** Flag that we will have to restart the theme
 	*/
-	theme_playing = Theme.What_Is_Playing();
+	(void)Theme.What_Is_Playing();
 	Theme.Stop();
 
 	// Check the last drive
@@ -4272,7 +4269,7 @@ bool Force_CD_Available( int cd_desired )				//	ajw
 			}
 
 			GraphicViewPortClass * oldpage = Set_Logic_Page(SeenBuff);
-			theme_playing = Theme.What_Is_Playing();
+			(void)Theme.What_Is_Playing();
 			Theme.Stop();
 			int hidden = Get_Mouse_State();
 			font = (void *)FontPtr;
@@ -4362,7 +4359,7 @@ bool Force_CD_Available(int cd)
 //	static char _hold[256];
 	static void *font;
 #ifdef FRENCH
-	static char * _cd_name[] = {
+	static char const * _cd_name[] = {
 		"ALERTE ROUGE CD1",
 		"ALERTE ROUGE CD2",
 		"CD Missions Taiga",
@@ -4376,7 +4373,7 @@ bool Force_CD_Available(int cd)
 
 #endif
 #ifdef GERMAN
-	static char * _cd_name[] = {
+	static char const * _cd_name[] = {
 		"ALARMSTUFE ROT CD1 einlegen",
 		"ALARMSTUFE ROT CD2 einlegen",
 		"CD Gegenangriff einlegen",
@@ -4389,7 +4386,7 @@ bool Force_CD_Available(int cd)
 	};
 #endif
 #ifdef ENGLISH
-	static char * _cd_name[] = {
+	static char const * _cd_name[] = {
 		"RED ALERT DISK 1",
 		"RED ALERT DISK 2",
 		"CounterStrike CD",
@@ -5056,7 +5053,7 @@ void Shake_The_Screen(int shakes)
 	int oldyoff = 0;
 	int newyoff = 0;
 	while(shakes--) {
-		int x = TickCount;
+		uint32_t x = TickCount;
 //		CountDownTimer = 1;
 		do {
 			newyoff = Sim_Random_Pick(0,2) - 1;

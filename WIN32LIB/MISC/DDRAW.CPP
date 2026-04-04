@@ -68,8 +68,8 @@ int32_t						OverlappedVideoBlits = TRUE;	// Can video driver blit overlapped re
 /*
 ** Function to call if we detect focus loss
 */
-extern	void (*Misc_Focus_Loss_Function)(void) = NULL;
-extern	void (*Misc_Focus_Restore_Function)(void) = NULL;
+void (*Misc_Focus_Loss_Function)(void) = NULL;
+void (*Misc_Focus_Restore_Function)(void) = NULL;
 
 
 /***********************************************************************************************

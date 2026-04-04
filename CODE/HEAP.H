@@ -117,6 +117,8 @@ template<class T>
 class TFixedHeapClass : public FixedHeapClass
 {
 	public:
+		using FixedHeapClass::ID;
+
 		TFixedHeapClass(void) : FixedHeapClass(sizeof(T)) {};
 		virtual ~TFixedHeapClass(void) {};
 
@@ -173,6 +175,9 @@ template<class T>
 class TFixedIHeapClass : public FixedIHeapClass
 {
 	public:
+		using FixedIHeapClass::ID;
+		using FixedIHeapClass::Logical_ID;
+
 		TFixedIHeapClass(void) : FixedIHeapClass(sizeof(T)) {};
 		virtual ~TFixedIHeapClass(void) {};
 
@@ -193,5 +198,4 @@ class TFixedIHeapClass : public FixedIHeapClass
 
 
 #endif
-
 

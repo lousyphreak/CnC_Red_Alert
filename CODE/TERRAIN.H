@@ -62,7 +62,7 @@ class TerrainClass : public ObjectClass, public StageClass
 		static void * operator new(size_t , void * ptr) {return(ptr);};
 		static void operator delete(void *ptr);
 		TerrainClass(TerrainType id, CELL cell);
-		TerrainClass(NoInitClass const & x) : ObjectClass(x), Class(x), StageClass(x) {};
+		TerrainClass(NoInitClass const & x) : ObjectClass(x), StageClass(x), Class(x) {};
 		virtual ~TerrainClass(void);
 		operator TerrainType(void) const {return Class->Type;};
 
@@ -131,7 +131,7 @@ class TerrainClass : public ObjectClass, public StageClass
 		*/
 		static void Read_INI(CCINIClass & ini);
 		static void Write_INI(CCINIClass & ini);
-		static char *INI_Name(void) {return "TERRAIN";};
+		static char const * INI_Name(void) {return "TERRAIN";};
 		bool Load(Straw & file);
 		bool Save(Pipe & file) const;
 

@@ -156,7 +156,7 @@ int					UDPConnClass::PacketLen;
  * UDPConnClass::UDPConnClass -- class constructor             				*
  *=========================================================================*/
 UDPConnClass::UDPConnClass (int numsend, int numreceive, int maxlen,
-	uint16_t magicnum, UDPAddressClass *address, int id, char *name,
+	uint16_t magicnum, UDPAddressClass *address, int id, char const *name,
 	int extralen) :
 	ConnectionClass (numsend, numreceive, maxlen, magicnum,
 		2,

@@ -87,6 +87,14 @@ extern WolapiObject* pWolapi;
 bool bReconnectDialogCancelled;
 #endif
 
+static void Zero_Event_Memory(EventClass &event)
+{
+	unsigned char *bytes = reinterpret_cast<unsigned char *>(&event);
+	for (size_t index = 0; index < sizeof(EventClass); ++index) {
+		bytes[index] = 0;
+	}
+}
+
 
 /********************************** Defines *********************************/
 #define SHOW_MONO	0
@@ -104,7 +112,7 @@ static uint32_t CRC[32] =
 	 0,0,0,0,0,0,0,0,0,0,
 	 0,0,0,0,0,0,0,0,0,0,
 	 0,0};
-static char *ColorNames[8] = {
+static char const *ColorNames[8] = {
 	"Yellow",
 	"LtBlue",
 	"Red",
@@ -592,6 +600,7 @@ static void Queue_AI_Multiplayer(void)
 	int i;
 	RetcodeType rc;
 	int reconnect_dlg = 0;				// 1 = the reconnect dialog is displayed
+	(void)reconnect_dlg;
 
 	//------------------------------------------------------------------------
 	//	Initialize the packet buffer pointer & its max size
@@ -904,7 +913,6 @@ static RetcodeType Wait_For_Players(int first_time, ConnManClass *net,
 	//........................................................................
 	// Variables for sending, receiving & parsing packets:
 	//........................................................................
-	EventClass *event;					// event ptr for parsing incoming packets
 	int packetlen;							// size of meta-packet sent, & received
 	int id;									// id of other player
 	int messages_this_loop;				// to limit # messages processed each loop
@@ -1065,8 +1073,6 @@ static RetcodeType Wait_For_Players(int first_time, ConnManClass *net,
 			/*..................................................................
 			Get an event ptr to the incoming message
 			..................................................................*/
-			event = (EventClass *)multi_packet_buf;
-
 			//------------------------------------------------------------------
 			//	Process the incoming packet
 			//------------------------------------------------------------------
@@ -1447,8 +1453,8 @@ static int Process_Send_Period(ConnManClass *net)	//, int init)
 	// If the current frame # is not an even multiple of 'FrameSendRate', then
 	// it's not time to send a packet; just return.
 	//------------------------------------------------------------------------
-	if (Frame != (((Frame + (Session.FrameSendRate - 1)) /
-		Session.FrameSendRate) * Session.FrameSendRate) ) {
+	if (Frame != static_cast<int32_t>(((Frame + (Session.FrameSendRate - 1)) /
+		Session.FrameSendRate) * Session.FrameSendRate)) {
 
 		net->Service();
 
@@ -1628,7 +1634,7 @@ static void Send_FrameSync(ConnManClass *net, int cmd_count)
 	// scenario-based CRC rather than a game-state-based CRC, to let the
 	// games compare scenario CRC's on startup.
 	//------------------------------------------------------------------------
-	memset (&packet, 0, sizeof(EventClass));
+	Zero_Event_Memory(packet);
 	packet.Type = EventClass::FRAMESYNC;
 	if (Session.CommProtocol == COMM_PROTOCOL_MULTI_E_COMP) {
 		packet.Frame = ((Frame + Session.MaxAhead + (Session.FrameSendRate - 1)) /
@@ -2326,7 +2332,7 @@ static int Add_Compressed_Events(void *buf, int bufsize, int frame_delay,
 	//------------------------------------------------------------------------
 	// clear previous event
 	//------------------------------------------------------------------------
-	memset (&prevevent, 0, sizeof(EventClass));
+	Zero_Event_Memory(prevevent);
 
 	if (Debug_Print_Events) {
 		printf("\n(%d) Building Send Packet\n", Frame);
@@ -2389,13 +2395,13 @@ static int Add_Compressed_Events(void *buf, int bufsize, int frame_delay,
 
 					if (Debug_Print_Events) {
 						printf("      adding Whom:%x (%x) Mission:%s Target:%x (%x) Dest:%x (%x)\n",
-						OutList.First().Data.MegaMission.Whom.As_TARGET(),
-						OutList.First().Data.MegaMission.Whom,
+						static_cast<unsigned int>(OutList.First().Data.MegaMission.Whom.As_TARGET()),
+						static_cast<unsigned int>(OutList.First().Data.MegaMission.Whom.As_TARGET()),
 						MissionClass::Mission_Name(OutList.First().Data.MegaMission.Mission),
-						OutList.First().Data.MegaMission.Target.As_TARGET(),
-						OutList.First().Data.MegaMission.Target,
-						OutList.First().Data.MegaMission.Destination.As_TARGET(),
-						OutList.First().Data.MegaMission.Destination);
+						static_cast<unsigned int>(OutList.First().Data.MegaMission.Target.As_TARGET()),
+						static_cast<unsigned int>(OutList.First().Data.MegaMission.Target.As_TARGET()),
+						static_cast<unsigned int>(OutList.First().Data.MegaMission.Destination.As_TARGET()),
+						static_cast<unsigned int>(OutList.First().Data.MegaMission.Destination.As_TARGET()));
 					}
 
 					datasize = sizeof(prevevent.Data.MegaMission.Whom);
@@ -2673,7 +2679,7 @@ static int Extract_Uncompressed_Events(void *buf, int bufsize)
 	//------------------------------------------------------------------------
 	// Loop until there are no more events in the packet
 	//------------------------------------------------------------------------
-	while (leftover >= sizeof(EventClass) ) {
+	while (leftover >= static_cast<int>(sizeof(EventClass))) {
 
 		Keyboard->Check();
 
@@ -2701,7 +2707,7 @@ static int Extract_Uncompressed_Events(void *buf, int bufsize)
 
 			if (!DoList.Add( *event )) {
 				if (event->Type == EventClass::ADDPLAYER) {
-					delete [] event->Data.Variable.Pointer;
+					delete [] static_cast<char *>(event->Data.Variable.Pointer);
 				}
 				return (-1);
 			}
@@ -2756,7 +2762,7 @@ static int Extract_Compressed_Events(void *buf, int bufsize)
 	//------------------------------------------------------------------------
 	// Clear work event structure
 	//------------------------------------------------------------------------
-	memset (&eventdata, 0, sizeof(EventClass));
+	Zero_Event_Memory(eventdata);
 
 	//------------------------------------------------------------------------
 	// Assume the first event is a FRAMEINFO event
@@ -2768,7 +2774,7 @@ static int Extract_Compressed_Events(void *buf, int bufsize)
 		size_of(EventClass, Data.FrameInfo)) - sizeof(EventClass::EventType);
 	event = (EventClass *)(((char *)buf) + pos);
 
-	while (leftover >= (datasize + sizeof(EventClass::EventType)) ) {
+	while (leftover >= (datasize + static_cast<int>(sizeof(EventClass::EventType))) ) {
 
 		Keyboard->Check();
 
@@ -2886,7 +2892,7 @@ static int Extract_Compressed_Events(void *buf, int bufsize)
 
 			if ( !DoList.Add( eventdata ) ) {
 				if (eventdata.Type == EventClass::ADDPLAYER) {
-					delete [] eventdata.Data.Variable.Pointer;
+					delete [] static_cast<char *>(eventdata.Data.Variable.Pointer);
 				}
 				return (-1);
 			}

@@ -111,7 +111,7 @@ void Special_Dialog(bool simple)
 	cancel.Add(*buttons);
 	int index;
 
-	for (index = 0; index < sizeof(_options)/sizeof(_options[0]); index++) {
+	for (index = 0; index < static_cast<int>(sizeof(_options)/sizeof(_options[0])); index++) {
 		_options[index].Button = new CheckBoxClass(100+index, OPTION_X+17*RESFACTOR, OPTION_Y+20*RESFACTOR+(index*10*RESFACTOR));
 		if (_options[index].Button) {
 			_options[index].Button->Add(*buttons);
@@ -138,7 +138,6 @@ void Special_Dialog(bool simple)
 
 	Map.Override_Mouse_Shape(MOUSE_NORMAL);
 	Set_Logic_Page(SeenBuff);
-	bool recalc = true;
 	bool display = true;
 	bool process = true;
 	while (process) {
@@ -158,19 +157,19 @@ void Special_Dialog(bool simple)
 			Dialog_Box(OPTION_X, OPTION_Y, OPTION_WIDTH, OPTION_HEIGHT);
 			Draw_Caption(TXT_SPECIAL_OPTIONS, OPTION_X, OPTION_Y, OPTION_WIDTH);
 
-			for (index = 0; index < sizeof(_options)/sizeof(_options[0]); index++) {
+			for (index = 0; index < static_cast<int>(sizeof(_options)/sizeof(_options[0])); index++) {
 				Fancy_Text_Print(_options[index].Description, _options[index].Button->X+10*RESFACTOR, _options[index].Button->Y, GadgetClass::Get_Color_Scheme(), TBLACK, TPF_6PT_GRAD|TPF_USE_GRAD_PAL|TPF_NOSHADOW);
 			}
 			buttons->Draw_All();
 			Show_Mouse();
 		}
 
-		KeyNumType input = buttons->Input();
+		int input = buttons->Input();
 		switch (input) {
 			case KN_ESC:
 			case 200|KN_BUTTON:
 				process = false;
-				for (index = 0; index < sizeof(_options)/sizeof(_options[0]); index++) {
+				for (index = 0; index < static_cast<int>(sizeof(_options)/sizeof(_options[0])); index++) {
 					bool setting = _options[index].Setting;
 					switch (_options[index].Description) {
 						case TXT_THREE_POINT:
@@ -268,7 +267,7 @@ void PWEditClass::Draw_Text(char const * text)
 
 		Conquer_Clip_Text_Print(buffer, X+1, Y+1, Color, TBLACK, TextFlags | flags, Width-2);
 
-		if (Has_Focus() && strlen(buffer) < MaxLength) {
+		if (Has_Focus() && strlen(buffer) < static_cast<size_t>(MaxLength)) {
 			Conquer_Clip_Text_Print( "_", X+1+String_Pixel_Width(buffer), Y+1, Color, TBLACK, TextFlags | flags);
 		}
 	} else {
@@ -276,7 +275,7 @@ void PWEditClass::Draw_Text(char const * text)
 			&ColorRemaps[PCOLOR_DIALOG_BLUE] : &ColorRemaps[PCOLOR_GREY],
 			TBLACK, TextFlags, Width-2);
 
-		if (Has_Focus() && strlen(buffer) < MaxLength) {
+		if (Has_Focus() && strlen(buffer) < static_cast<size_t>(MaxLength)) {
 			Conquer_Clip_Text_Print("_", X+1+String_Pixel_Width(buffer), Y+1,
 				&ColorRemaps[PCOLOR_DIALOG_BLUE], TBLACK, TextFlags);
 		}
@@ -308,9 +307,7 @@ char const * Fetch_Password(int caption, int message, int btext)
 {
 	char buffer[BUFFSIZE];
 	bool process;								// loop while true
-	KeyNumType input;							// user input
-	bool pressed;
-	int curbutton;
+	int input;									// user input
 	TextButtonClass ok;
 
 	if (btext == TXT_NONE) btext = TXT_OK;
@@ -360,7 +357,6 @@ char const * Fetch_Password(int caption, int message, int btext)
 	PWEditClass button2(2, &pbuffer[0], sizeof(pbuffer), TPF_6PT_GRAD|TPF_NOSHADOW, editx, (y+height)-35*RESFACTOR, editwidth, 10*RESFACTOR);
 
 	TextButtonClass * buttonlist = 0;
-	curbutton = 0;
 
 	/*
 	**	Add and initialize the buttons to the button list.
@@ -393,7 +389,6 @@ char const * Fetch_Password(int caption, int message, int btext)
 	**	Main Processing Loop.
 	*/
 	process = true;
-	pressed = false;
 	bool first = true;
 	while (process) {
 
@@ -567,7 +562,7 @@ int Fetch_Difficulty(void)
 		/*
 		**	Fetch and process input.
 		*/
-		KeyNumType input = buttonlist->Input();
+		int input = buttonlist->Input();
 
 		switch (input) {
 			case KN_RETURN:

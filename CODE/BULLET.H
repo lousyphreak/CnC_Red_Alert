@@ -80,9 +80,9 @@ class BulletClass :	public ObjectClass,
 		static void operator delete(void *ptr);
 		BulletClass(BulletType id, TARGET target, TechnoClass * Payback, int strength, WarheadType warhead, int speed);
 #ifdef FIXIT_MULTI_SAVE
-		BulletClass(NoInitClass const & x) : ObjectClass(x), Class(x), FlyClass(x), FuseClass(x), PrimaryFacing(x) {};
+		BulletClass(NoInitClass const & x) : ObjectClass(x), FlyClass(x), FuseClass(x), Class(x), PrimaryFacing(x) {};
 #else
-		BulletClass(NoInitClass const & x) : ObjectClass(x), Class(x), FlyClass(x), FuseClass(x) {};
+		BulletClass(NoInitClass const & x) : ObjectClass(x), FlyClass(x), FuseClass(x), Class(x) {};
 #endif
 		virtual ~BulletClass(void);
 		operator BulletType(void) const {return Class->Type;};
@@ -105,7 +105,7 @@ class BulletClass :	public ObjectClass,
 		virtual bool Mark(MarkType mark=MARK_CHANGE);
 		virtual void AI(void);
 		virtual int16_t const * Occupy_List(bool = false) const;
-		virtual int16_t const * Overlap_List(void) const {return Occupy_List(false);};
+		virtual int16_t const * Overlap_List(bool = false) const {return Occupy_List(false);};
 		virtual COORDINATE Target_Coord(void) const;
 
 		/*
@@ -149,4 +149,3 @@ class BulletClass :	public ObjectClass,
 };
 
 #endif
-

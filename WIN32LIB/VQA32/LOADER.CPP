@@ -97,7 +97,7 @@ static void FreeBuffers(VQAData *vqa, VQAConfig *config, VQAHeader *header);
 static int32_t PrimeBuffers(VQAHandle *vqa);
 static int32_t Load_VQF(VQAHandleP *vqap, uint32_t iffsize);
 static int32_t Load_FINF(VQAHandleP *vqap, uint32_t iffsize);
-static int32_t Load_VQHD(VQAHandleP *vqap, uint32_t iffsize);
+int32_t Load_VQHD(VQAHandleP *vqap, uint32_t iffsize);
 static int32_t Load_CBF0(VQAHandleP *vqap, uint32_t iffsize);
 static int32_t Load_CBFZ(VQAHandleP *vqap, uint32_t iffsize);
 static int32_t Load_CBP0(VQAHandleP *vqap, uint32_t iffsize);
@@ -159,7 +159,6 @@ int32_t VQA_Open(VQAHandle *vqa, char const *filename, VQAConfig *config)
 	VQAHandleP  *vqap;
 	VQAHeader   *header;
 	ChunkHeader chunk;
-	int32_t        max_frm_size;
 	int32_t        i;
 	int32_t        done;
 	int32_t        found;
@@ -1180,7 +1179,7 @@ int32_t VQA_SeekFrame(VQAHandle *vqa, int32_t framenum, int32_t fromwhere)
 							* (audio->BitsPerSample >> 3)) / 2);
 
 					/* Mark 1/2 second of the audio buffer as loaded. */
-					for (i = 0; i < (audio->AudBufPos / config->HMIBufSize); i++) {
+					for (i = 0; i < static_cast<int32_t>(audio->AudBufPos / config->HMIBufSize); i++) {
 						audio->IsLoaded[i] = 1;
 					}
 				}
@@ -1999,7 +1998,7 @@ static int32_t Load_FINF(VQAHandleP *vqap, uint32_t iffsize)
 *
 ****************************************************************************/
 
-static int32_t Load_VQHD(VQAHandleP *vqap, uint32_t iffsize)
+int32_t Load_VQHD(VQAHandleP *vqap, uint32_t iffsize)
 {
 	/* Read the header */
 	if (vqap->IOHandler((VQAHandle *)vqap, VQACMD_READ, &vqap->Header,
@@ -2494,7 +2493,6 @@ static int32_t Load_VPTZ(VQAHandleP *vqap, uint32_t iffsize)
 static int32_t Load_SND0(VQAHandleP *vqap, uint32_t iffsize)
 {
 	VQAData       *vqabuf;
-	VQALoader     *loader;
 	VQAAudio      *audio;
 	VQAConfig     *config;
 	uint32_t      padsize;
@@ -2502,7 +2500,6 @@ static int32_t Load_SND0(VQAHandleP *vqap, uint32_t iffsize)
 
 	/* Dereference commonly used data members for quicker access. */
 	vqabuf = vqap->VQABuf;
-	loader = &vqabuf->Loader;
 	audio = &vqabuf->Audio;
 	config = &vqap->Config;
 	padsize = PADSIZE(iffsize);
@@ -2537,7 +2534,7 @@ static int32_t Load_SND0(VQAHandleP *vqap, uint32_t iffsize)
 		audio->AudBufPos += iffsize;
 
 		/* Flag the audio frame flags as loaded for the initial audio frame. */
-		for (i = 0; i < (iffsize / config->HMIBufSize); i++) {
+		for (i = 0; i < static_cast<int32_t>(iffsize / config->HMIBufSize); i++) {
 			audio->IsLoaded[i] = 1;
 		}
 
@@ -2587,7 +2584,6 @@ static int32_t Load_SND0(VQAHandleP *vqap, uint32_t iffsize)
 static int32_t Load_SND1(VQAHandleP *vqap, uint32_t iffsize)
 {
 	VQAData       *vqabuf;
-	VQALoader     *loader;
 	VQAAudio      *audio;
 	VQAConfig     *config;
 	uint8_t *loadbuf;
@@ -2597,7 +2593,6 @@ static int32_t Load_SND1(VQAHandleP *vqap, uint32_t iffsize)
 
 	/* Dereference commonly used data members for quicker access. */
 	vqabuf = vqap->VQABuf;
-	loader = &vqabuf->Loader;
 	audio = &vqabuf->Audio;
 	config = &vqap->Config;
 	padsize = PADSIZE(iffsize);
@@ -2658,7 +2653,7 @@ static int32_t Load_SND1(VQAHandleP *vqap, uint32_t iffsize)
 		/* Set buffer positions & flags */
 		audio->AudBufPos += zap.UnCompSize;
 
-		for (i = 0; i < (zap.UnCompSize / config->HMIBufSize); i++) {
+		for (i = 0; i < static_cast<int32_t>(zap.UnCompSize / config->HMIBufSize); i++) {
 			audio->IsLoaded[i] = 1;
 		}
 
@@ -2722,7 +2717,6 @@ static int32_t Load_SND1(VQAHandleP *vqap, uint32_t iffsize)
 static int32_t Load_SND2(VQAHandleP *vqap, uint32_t iffsize)
 {
 	VQAData       *vqabuf;
-	VQALoader     *loader;
 	VQAAudio      *audio;
 	VQAConfig     *config;
 	uint8_t *loadbuf;
@@ -2732,7 +2726,6 @@ static int32_t Load_SND2(VQAHandleP *vqap, uint32_t iffsize)
 
 	/* Dereference commonly used data members for quicker access. */
 	vqabuf = vqap->VQABuf;
-	loader = &vqabuf->Loader;
 	audio = &vqabuf->Audio;
 	config = &vqap->Config;
 	padsize = PADSIZE(iffsize);
@@ -2775,7 +2768,7 @@ static int32_t Load_SND2(VQAHandleP *vqap, uint32_t iffsize)
 		/* Set buffer positions & flags */
 		audio->AudBufPos += uncomp_size;
 
-		for (i = 0; i < (uncomp_size / config->HMIBufSize); i++) {
+		for (i = 0; i < static_cast<int32_t>(uncomp_size / config->HMIBufSize); i++) {
 			audio->IsLoaded[i] = 1;
 		}
 

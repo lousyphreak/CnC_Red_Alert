@@ -501,6 +501,7 @@ bool Select_Game(bool fade)
 #ifdef FIXIT_CSII	//	checked - ajw 9/28/98
 	int cdcheck = 0;
 	bool cs = Is_Counterstrike_Installed();
+	(void)cs;
 #endif
 
 //	#ifndef DVD // Denzil - We want the menu screen			ajw No we don't
@@ -922,6 +923,9 @@ bool Select_Game(bool fade)
 							}
 							break;
 
+						default:
+							break;
+
 					}
 #ifdef WOLAPI_INTEGRATION
 					}	//	if( !pWolapi )
@@ -1065,6 +1069,9 @@ bool Select_Game(bool fade)
 							}
 							break;
 #endif	// MPATH
+
+						default:
+							break;
 
 					}
 					break;
@@ -1448,7 +1455,6 @@ bool Parse_Command_Line(int argc, char * argv[])
 
 	for (int index = 1; index < argc; index++) {
 		char * string;		// Pointer to argument.
-		int32_t code = 0;
 
 		string = SDL_strupr(argv[index]);
 
@@ -2132,8 +2138,8 @@ void Init_Random(void)
 	** in the connection dialogs.  For single-player games, AND if we're not playing
 	** back a recording, init the Seed to a random value.
 	*/
-	if (Session.Type == GAME_NORMAL || Session.Type == GAME_SKIRMISH &&
-		!Session.Play) {
+	if (Session.Type == GAME_NORMAL || (Session.Type == GAME_SKIRMISH &&
+		!Session.Play)) {
 
 		/*
 		** Set the optional user-specified seed
@@ -2344,7 +2350,7 @@ static void Init_Heaps(void)
 	**	into a custom holding tank only as large as the largest speech file to
 	**	be played.
 	*/
-	for (int index = 0; index < ARRAY_SIZE(SpeechBuffer); index++) {
+	for (int index = 0; index < static_cast<int>(ARRAY_SIZE(SpeechBuffer)); index++) {
 		SpeechBuffer[index] = new char [SPEECH_BUFFER_SIZE];
 		SpeechRecord[index] = VOX_NONE;
 		assert(SpeechBuffer[index] != NULL);
@@ -2582,7 +2588,8 @@ static void Init_CDROM_Access(void)
 		int error;
 
 		do {
-			error = CCFileClass::Set_Search_Drives("?:\\");
+			char cd_search_path[] = "?:\\";
+			error = CCFileClass::Set_Search_Drives(cd_search_path);
 			switch (error) {
 				case 1:
 					VisiblePage.Clear();
@@ -2663,6 +2670,7 @@ static void Init_Bootstrap_Mixfiles(void)
 		new MFCD("EXPAND2.MIX", &FastKey);
 		bool ok = MFCD::Cache("EXPAND2.MIX");
 		assert(ok);
+		(void)ok;
 	}
 #endif
 
@@ -2671,6 +2679,7 @@ static void Init_Bootstrap_Mixfiles(void)
 	new MFCD("HIRES1.MIX", &FastKey);
 	ok1 = MFCD::Cache("HIRES1.MIX");
 	assert(ok1);
+	(void)ok1;
 #endif
 
 #ifdef FIXIT_ANTS	//	Ok. ajw
@@ -2679,6 +2688,7 @@ static void Init_Bootstrap_Mixfiles(void)
 		new MFCD("EXPAND.MIX", &FastKey);
 		bool ok = MFCD::Cache("EXPAND.MIX");
 		assert(ok);
+		(void)ok;
 	}
 #endif
 
@@ -2691,10 +2701,12 @@ static void Init_Bootstrap_Mixfiles(void)
 	new MFCD("LOCAL.MIX", &FastKey);			// Cached.
 	bool ok = MFCD::Cache("LOCAL.MIX");
 	assert(ok);
+	(void)ok;
 
 	new MFCD("HIRES.MIX", &FastKey);
 	ok = MFCD::Cache("HIRES.MIX");
 	assert(ok);
+	(void)ok;
 
 	new MFCD("NCHIRES.MIX", &FastKey);		//Non-cached hires stuff incl VQ palettes
 
@@ -3097,7 +3109,7 @@ static void Init_Bulk_Data(void)
 	INIClass ini;
 	CCFileClass tutorial_file("TUTORIAL.INI");
 	ini.Load(tutorial_file);
-	for (int index = 0; index < ARRAY_SIZE(TutorialText); index++) {
+	for (int index = 0; index < static_cast<int>(ARRAY_SIZE(TutorialText)); index++) {
 		TutorialText[index] = NULL;
 
 		char buffer[128];

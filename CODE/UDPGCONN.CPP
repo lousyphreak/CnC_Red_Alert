@@ -223,7 +223,7 @@ int UDPGlobalConnClass::Receive_Packet (void * buf, int buflen,
 			//..................................................................
 			resend = 0;
 			for (i = 0; i < 4; i++) {
-				if (i >= Queue->Receive_Total()) {
+				if (i >= static_cast<int>(Queue->Receive_Total())) {
 					break;
 				}
 				if ((*address)==LastAddress[i] &&

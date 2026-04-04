@@ -141,8 +141,6 @@
 
 #ifndef FUNCTION_H
 
-#pragma off (unreferenced)
-
 #ifndef BITMAPCLASS
 #define BITMAPCLASS
 class BitmapClass
@@ -167,7 +165,6 @@ class TPoint2D
 };
 #endif
 
-#pragma on (unreferenced)
 #endif
 
 

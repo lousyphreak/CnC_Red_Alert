@@ -63,7 +63,7 @@ static uint32_t TotalRam = 0L;
 static uint32_t Memory_Calls = 0L;
 
 void (*Memory_Error)(void) = NULL;
-extern void (*Memory_Error_Exit)(char *string)=NULL;
+void (*Memory_Error_Exit)(char *string)=NULL;
 
 
 //#define MEM_CHECK
@@ -305,4 +305,3 @@ int32_t Total_Ram_Free(MemoryFlagType )
 
 	return ( 64*1024*1024 );
 }
-
