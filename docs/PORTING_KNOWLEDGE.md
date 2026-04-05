@@ -2,6 +2,9 @@
 
 ## Radar / minimap redraw pitfalls
 
+- `CODE/RADAR.CPP::Render_Infantry(...)` must not assume every radar-visible techno is an infantry object.
+  - Practical example from this tree: units, vessels, and aircraft also pass through the same radar rendering path, but the common house remap color lives in `TechnoClass::House`, not in `InfantryClass`.
+  - Practical rule: when radar/UI code only needs shared techno ownership state, read it through `TechnoClass` and keep the `InfantryClass` cast inside the actual `RTTI_INFANTRY` branch for infantry-only behavior such as the spy color override.
 - `CODE/RADAR.CPP::Set_Radar_Position(...)` mixes cell-space and pixel-space values in one place, so scroll-copy code has to stay very explicit about units.
   - `radx`, `rady`, `radw`, and `radh` are in radar cells.
   - `RadarWidth` and `RadarHeight` are in pixels (`RadarCellWidth * ZoomFactor`, `RadarCellHeight * ZoomFactor` after centering/zoom calculations).
@@ -15,6 +18,9 @@
 
 ## Warning-cleanup / 64-bit porting patterns
 
+- Overlapping in-place list compaction must not use `memcpy(...)`, even when the old 32-bit code appeared to get away with it.
+  - Practical example from this tree: `CODE/SIDEBAR.CPP::SidebarClass::StripClass::Recalc()` removes unavailable `Buildables[]` entries by shifting the tail of the array down by one slot.
+  - Practical rule: when source and destination ranges can overlap inside one live game-state array, use an overlap-safe move (`memmove(...)`) or an explicit forward/backward element shift that preserves the old ordering. Treat ASan overlap reports as real UB even if the old code "worked" on Windows.
 - Old load/save code in this tree sometimes repurposes object pointer fields to temporarily hold 32-bit `TARGET` ids during pointer coding/decoding.
   - Practical rule: do not route those conversions through `long`, `int`, or `int32_t` on 64-bit hosts. Use a pointer-sized integer bridge instead: encode with `reinterpret_cast<T *>(static_cast<intptr_t>(target))` and decode with `static_cast<TARGET>(reinterpret_cast<intptr_t>(static_cast<T *>(ptr)))`.
   - This same rule applies to the corresponding code-pointer helpers in `CODE/SAVELOAD.CPP`, `CODE/IOOBJ.CPP`, and `CODE/IOMAP.CPP`.

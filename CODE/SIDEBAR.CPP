@@ -1885,7 +1885,9 @@ bool SidebarClass::StripClass::Recalc(void)
 			**	Removes this entry from the list.
 			*/
 			if (BuildableCount > 1 && index < BuildableCount-1) {
-				memcpy(&Buildables[index], &Buildables[index+1], sizeof(Buildables[0])*((BuildableCount-index)-1));
+				for (int move = index; move < BuildableCount - 1; move++) {
+					Buildables[move] = Buildables[move + 1];
+				}
 			}
 			TopIndex = 0;
 			IsToRedraw = true;

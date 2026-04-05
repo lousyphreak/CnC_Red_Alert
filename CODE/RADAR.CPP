@@ -709,14 +709,17 @@ void RadarClass::Render_Infantry(CELL cell, int x, int y, int size)
 	obj = (ObjectClass *)Map[cell].Cell_Occupier();
 	while (obj) {
 		if (obj->Is_Techno() && ((TechnoClass *)obj)->Is_Visible_On_Radar()) {
-			int color = ColorRemaps[((InfantryClass *)obj)->House->RemapColor].Bar;
+			TechnoClass * techno = (TechnoClass *)obj;
+			int color = ColorRemaps[techno->House->RemapColor].Bar;
 //			int color = ColorRemaps[((InfantryClass *)obj)->House->RemapColor].BrightColor;
 			int xoff;
 			int yoff;
 			int subsize = max(1, size/3);
 
 			switch (obj->What_Am_I()) {
-				case RTTI_INFANTRY:
+				case RTTI_INFANTRY: {
+					InfantryClass * infantry = (InfantryClass *)obj;
+
 					xoff = (Coord_XLepton(obj->Coord) / (CELL_LEPTON_W/(size+1))) - subsize/2;
 					xoff = max(xoff, 0);
 					xoff = min(xoff, size-subsize);
@@ -727,12 +730,13 @@ void RadarClass::Render_Infantry(CELL cell, int x, int y, int size)
 					/*
 					** Draw the infantryman's pixel.  If he's a spy, draw in my house color
 					*/
-					if (*(InfantryClass *)obj == INFANTRY_SPY) {
+					if (*infantry == INFANTRY_SPY) {
 						color = ColorRemaps[PlayerPtr->RemapColor].Bar;
 //						color = ColorRemaps[PlayerPtr->RemapColor].BrightColor;
 					}
 					LogicPage->Fill_Rect(x+xoff, y+yoff, x+xoff+(subsize-1), y+yoff+(subsize-1), color);
 					break;
+				}
 
 				case RTTI_UNIT:
 				case RTTI_VESSEL:

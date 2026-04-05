@@ -8,6 +8,12 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Fixed the reported SDL/Linux ASan/UBSan gameplay startup failures without changing intended behavior:
+  - `CODE/RADAR.CPP::Render_Infantry(...)` no longer downcasts every radar-visible techno to `InfantryClass` just to fetch the owning house remap color; the common radar color now comes from `TechnoClass::House`, and the infantry-only cast remains only inside the `RTTI_INFANTRY` branch for the existing spy special case;
+  - `CODE/SIDEBAR.CPP::SidebarClass::StripClass::Recalc()` no longer uses `memcpy(...)` to collapse overlapping `Buildables[]` entries after removing an unavailable cameo; it now shifts the entries forward element-by-element, preserving the original ordering while avoiding ASan's `memcpy-param-overlap` abort against the global `Map` object layout;
+  - follow-up runtime result: after those two fixes, the previously reported `CODE/MISSION.CPP:256` UBSan `MissionClass` member-access warning did not reproduce in the existing timed ASan/UBSan startup probe, so it was most likely fallout from the earlier undefined behavior rather than a separate still-live bug in the active startup path;
+  - validation for this checkpoint: `cmake --build build --target redalert -j8`, `cmake --build build-asan --target redalert -j8`, and `cd GameData && timeout -k 5s 20s env ASAN_OPTIONS=abort_on_error=1:detect_leaks=0 UBSAN_OPTIONS=print_stacktrace=1 ../build-asan/redalert "Erik Yeo"` all succeed as expected after the fix; the timed ASan/UBSan smoke run still exits only via the external timeout/SIGKILL window (`137`), and the captured log contains no `AddressSanitizer` or `runtime error:` matches.
+
 - Fixed a radar/minimap scroll redraw regression in the SDL port without changing gameplay behavior:
   - `CODE/RADAR.CPP::Set_Radar_Position(...)` now keeps the temporary overlap blit in pixel units for only the actually shared radar region (`radw * ZoomFactor` / `radh * ZoomFactor`) instead of copying the full radar surface width/height from an offset source rectangle;
   - the same routine now keys the top/bottom strip regeneration on the actual radar Y delta (`rady`) rather than the absolute `newy` map position, so vertical edge refresh only depends on movement and does not skip/over-trigger based on where the map currently sits;
