@@ -8,6 +8,13 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Fixed a radar/minimap scroll redraw regression in the SDL port without changing gameplay behavior:
+  - `CODE/RADAR.CPP::Set_Radar_Position(...)` now keeps the temporary overlap blit in pixel units for only the actually shared radar region (`radw * ZoomFactor` / `radh * ZoomFactor`) instead of copying the full radar surface width/height from an offset source rectangle;
+  - the same routine now keys the top/bottom strip regeneration on the actual radar Y delta (`rady`) rather than the absolute `newy` map position, so vertical edge refresh only depends on movement and does not skip/over-trigger based on where the map currently sits;
+  - follow-up hardening for correctness: zoomed radar-position changes now clear the partial radar dirty queue and always promote `forced` to `FullRedraw`; the earlier code only did that when `ZoomFactor > 4`, but the active zoomed radar path uses `ZoomFactor == 3`, which meant some scrolls still skipped the required full redraw and left black/stale areas behind;
+  - this addresses the visible stale-column/stale-strip artifacts when scrolling the minimap/radar view and deliberately favors correctness over the old incremental-copy optimization while the radar is zoomed;
+  - validation for this checkpoint: `cmake --build build --target redalert -j8`, `cmake --build build-asan --target redalert -j8`, and `cd GameData && timeout -k 5s 20s env ASAN_OPTIONS=abort_on_error=1:detect_leaks=0 UBSAN_OPTIONS=print_stacktrace=1 ../build-asan/redalert "Erik Yeo"` all complete as expected after the fix; the ASan smoke run still exits only via the external timeout/SIGKILL window (`137`) with no `AddressSanitizer` or `runtime error:` matches in the captured log.
+
 - Tightened the Emscripten browser filesystem so player-owned data now stays browser-local while still preserving server-provided defaults where appropriate:
   - `SDL3_COMPAT/wrappers/sdl_fs.cpp` now treats `REDALERT.INI`, `SAVEGAME.*`, `SAVEGAME.NET`, `HALLFAME.DAT`, `RECORD.BIN`, `ASSERT.TXT`, and local `CAP####.PCX` screenshots as local user data instead of generic lazy-fetched assets, so one player's remote deployment files no longer leak in as another player's savegames or personal state;
   - first-run settings seeding remains available for `REDALERT.INI`: if the local browser copy does not exist yet, the existing lazy-fetch path can still pull the server's default settings file once, but savegames and the other user-data files now report only the browser-local copy and never synthesize remote existence from the asset manifest;

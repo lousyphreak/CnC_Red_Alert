@@ -1899,6 +1899,7 @@ void RadarClass::Set_Radar_Position(CELL cell)
 
 			if (radw < 1) forced = true;
 			if (radh < 1) forced = true;
+			if (ZoomFactor != 1) forced = true;
 
 			if (!forced &&
 				(static_cast<unsigned>(radw) != RadarWidth || static_cast<unsigned>(radh) != RadarHeight)) {
@@ -1940,8 +1941,8 @@ void RadarClass::Set_Radar_Position(CELL cell)
 									(((rady < 0) ? -rady : 0) * ZoomFactor) + RadY + RadOffY + BaseY,
 									0,
 									0,
-									RadarWidth,
-									RadarHeight);
+									radw * ZoomFactor,
+									radh * ZoomFactor);
 
 					temp_surface.Blit(HidPage,
 									0,
@@ -1971,7 +1972,7 @@ void RadarClass::Set_Radar_Position(CELL cell)
 						}
 					}
 				}
-				if ( newy != 0 ) {
+				if ( rady != 0 ) {
 					int min;
 					int max;
 					if ( rady < 0 ) {  								// this mean regen the bottom edge
@@ -1989,12 +1990,16 @@ void RadarClass::Set_Radar_Position(CELL cell)
 				}
 			}
 		}
+		if (forced) {
+			PixelPtr = 0;
+			for (int index = 0; index < MAP_CELL_TOTAL; index++) {
+				(*this)[static_cast<CELL>(index)].IsPlot = false;
+			}
+		}
 		RadarCursorRedraw = IsRadarActive;
 		IsToRedraw 	= IsRadarActive;
 		Flag_To_Redraw(false);
-		if (ZoomFactor > 4) {
-			FullRedraw = forced;
-		}
+		FullRedraw = forced;
 	} else {
 		RadarCursorRedraw = IsRadarActive;
 		IsToRedraw 	= IsRadarActive;

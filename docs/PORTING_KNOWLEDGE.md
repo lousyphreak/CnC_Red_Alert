@@ -1,5 +1,18 @@
 # Porting Knowledge
 
+## Radar / minimap redraw pitfalls
+
+- `CODE/RADAR.CPP::Set_Radar_Position(...)` mixes cell-space and pixel-space values in one place, so scroll-copy code has to stay very explicit about units.
+  - `radx`, `rady`, `radw`, and `radh` are in radar cells.
+  - `RadarWidth` and `RadarHeight` are in pixels (`RadarCellWidth * ZoomFactor`, `RadarCellHeight * ZoomFactor` after centering/zoom calculations).
+  - Practical rule: when copying only the overlapped portion of the radar image, use `radw * ZoomFactor` / `radh * ZoomFactor` for blit width/height. Reusing full-surface `RadarWidth` / `RadarHeight` with an offset source rectangle can copy past the shared region and leave stale columns/rows behind while scrolling.
+- The same radar scroll path should test movement deltas, not absolute map positions, when deciding which edge bands need regeneration.
+  - Practical example from this tree: the redraw gate for the top/bottom radar strips must use `rady != 0`, not `newy != 0`.
+  - Practical rule: in partial redraw logic, conditions that mean "did we move on this axis?" should key off the signed delta (`radx`/`rady`) so behavior does not accidentally depend on whether the current radar origin happens to be at zero.
+- Forced radar redraws need to become real full redraws in the normal zoomed mode.
+  - Practical example from this tree: `Set_Radar_Position(...)` used to assign `FullRedraw = forced` only when `ZoomFactor > 4`, but the active zoomed radar mode uses `ZoomFactor == 3`.
+  - Practical rule: if the scroll path decides the radar needs a forced redraw, promote that unconditionally and clear any queued `IsPlot`/`PixelPtr` partial-work state first; otherwise the next frame can still try to use stale incremental state and leave black or outdated areas on the minimap.
+
 ## Warning-cleanup / 64-bit porting patterns
 
 - Old load/save code in this tree sometimes repurposes object pointer fields to temporarily hold 32-bit `TARGET` ids during pointer coding/decoding.
