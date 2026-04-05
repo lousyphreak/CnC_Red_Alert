@@ -8,6 +8,11 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Fixed the reported mission-select audio leak so map-select-owned sounds no longer bleed into later screens:
+  - `CODE/MAPSEL.CPP::Map_Selection()` now stops every sample it starts (`MAPWIPE2.AUD`, `BLEEP11.AUD`, `MAPWIPE5.AUD`, `TONEY7.AUD`, `BLEEP17.AUD`, `TONEY4.AUD`, `TONEY10.AUD`) with `Stop_Sample_Playing(...)` before returning, which keeps a stuck/looping mission-select effect from surviving into the next front-end or mission-start screen;
+  - the same teardown now uses `Theme.Stop()` for the `THEME_MAP` boundary instead of leaving cleanup to a later asynchronous fade request, so the looping mission-select music is cut when the screen ends rather than leaking forward until another caller services the theme queue;
+  - validation for this checkpoint: `cmake --build build-asan -j2` succeeds after the mission-select audio containment fix.
+
 - Fixed a score-screen streamed-music restart regression in the SDL port without changing the original intended end-of-track loop behavior:
   - validation against `git tag original` confirmed that `CODE/SCORE.CPP::ScoreClass::Presentation()` is supposed to queue `THEME_SCORE`, and `CODE/THEME.CPP` is supposed to restart that same track only after it finishes because the theme entry's `Repeat` flag is set;
   - the real port regression was in `CODE/SCORE.CPP::Call_Back_Delay(...)`: the original score-screen loop throttled full `Call_Back()` work to `TIMER_SECOND/4`, but the legacy engine still had independent background audio servicing, while the SDL port depends on explicit `Sound_Callback()` calls to keep streamed music fed;

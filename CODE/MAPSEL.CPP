@@ -263,6 +263,13 @@ char const * Map_Selection(void)
 		memcpy(&scenarioname[3], buf, 2);
 		scenarioname[6] = 'A' + selection;
 	}
+	Stop_Sample_Playing(appear1);
+	Stop_Sample_Playing(bleep11);
+	Stop_Sample_Playing(country4);
+	Stop_Sample_Playing(toney7);
+	Stop_Sample_Playing(bleep17);
+	Stop_Sample_Playing(scold1);
+	Stop_Sample_Playing(country1);
 	Theme.Fade_Out();
 //	Options.Set_Score_Volume(oldvolume);
 

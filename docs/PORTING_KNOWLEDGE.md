@@ -11,6 +11,13 @@
   - Important original-vs-port difference: the original engine had separate background audio servicing, so the throttled score-screen loop did not starve the music stream. In the SDL port, if no equivalent explicit servicing happens during long score-screen waits, the stream can fall inactive mid-song and `Theme.AI()` will restart the track from the beginning the next time it notices playback stopped.
   - Practical rule: in score/menu loops that intentionally throttle full `Call_Back()` work, preserve the old pacing but keep streamed audio maintenance running on its own sufficiently frequent cadence.
 
+## Mission-select audio containment
+
+- `CODE/MAPSEL.CPP::Map_Selection()` owns both the looping map theme and every UI sample it starts during the animation/selection flow.
+  - Practical example from this tree: the screen queues `THEME_MAP` and plays `MAPWIPE2.AUD`, `BLEEP11.AUD`, `MAPWIPE5.AUD`, `TONEY7.AUD`, `BLEEP17.AUD`, `TONEY4.AUD`, and `TONEY10.AUD`.
+  - Practical consequence on the SDL port: leaving mission select without explicitly stopping those exact sounds can leak them into the next front-end or mission-start screen before later transition code gets a chance to clean up.
+  - Practical rule: treat mission select as an audio containment boundary; on exit, stop the screen-owned sample pointers with `Stop_Sample_Playing(...)` and hard-stop `THEME_MAP` with `Theme.Stop()` rather than relying on a later asynchronous fade request.
+
 ## Palette fade presentation
 
 - On the SDL port, changing the palette and presenting the frame are separate steps.
