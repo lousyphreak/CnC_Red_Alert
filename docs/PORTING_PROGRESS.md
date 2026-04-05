@@ -8,6 +8,13 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Fixed a score-screen streamed-music restart regression in the SDL port without changing the original intended end-of-track loop behavior:
+  - validation against `git tag original` confirmed that `CODE/SCORE.CPP::ScoreClass::Presentation()` is supposed to queue `THEME_SCORE`, and `CODE/THEME.CPP` is supposed to restart that same track only after it finishes because the theme entry's `Repeat` flag is set;
+  - the real port regression was in `CODE/SCORE.CPP::Call_Back_Delay(...)`: the original score-screen loop throttled full `Call_Back()` work to `TIMER_SECOND/4`, but the legacy engine still had independent background audio servicing, while the SDL port depends on explicit `Sound_Callback()` calls to keep streamed music fed;
+  - `Call_Back_Delay(...)` now keeps the full callback cadence unchanged for general UI work, but it also runs `Sound_Callback()` on its own ~12 Hz timer between those full callbacks whenever digital audio is active, preventing score music from falling inactive mid-song during long score-screen waits and then being restarted from the beginning by `Theme.AI()`;
+  - follow-up note from the investigation: `WIN32LIB/AUDIO/FUNCTION.H` and `WIN32LIB/INCLUDE/FUNCTION.H` still carry an obsolete 2-argument `File_Stream_Sample_Vol(...)` declaration, but the active build also sees the correct 3-argument declaration via `WWLIB32.H -> AUDIO.H`; that stale prototype was unrelated to this bug and was intentionally left untouched in this checkpoint;
+  - validation for this checkpoint: `cmake --build build --target redalert -j4` and `cmake --build build-asan --target redalert -j4` both succeed after the score-screen audio fix.
+
 - Switched the SDL/Linux mouse confinement over to gameplay-only mission capture so tactical border scrolling can keep the pointer locked during live play without trapping it on menus, movies, or other front-end UI:
   - `CODE/SDLINPUT.{H,CPP}` now tracks mission-capture intent plus temporary UI suppression state, reapplies the legacy `WWMouse` viewport clip only while mission capture is active, and pairs that viewport clip with `SDL_SetWindowRelativeMouseMode(...)` so gameplay gets both the original 640x400 tactical bounds and OS-level mouse locking;
   - the same SDL input layer now warps the system pointer back to the current logical game-cursor position before disabling relative mode, so when gameplay capture ends the mouse reappears at the expected spot instead of jumping to an unrelated hidden SDL position;

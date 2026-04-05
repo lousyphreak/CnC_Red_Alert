@@ -1,5 +1,16 @@
 # Porting Knowledge
 
+## Score-screen music looping
+
+- The single-player score screen is supposed to restart `THEME_SCORE` after the track finishes; that behavior is not an SDL-port regression.
+  - Practical example from this tree and from `git tag original`: `CODE/SCORE.CPP::ScoreClass::Presentation()` queues `Theme.Queue_Song(THEME_SCORE)`, and `CODE/THEME.CPP` defines `THEME_SCORE` with `Repeat = true`.
+  - `ThemeClass::AI()` only asks `Next_Song(...)` for a replacement after `Still_Playing()` becomes false, and `ThemeClass::Next_Song(THEME_SCORE)` deliberately returns `THEME_SCORE` unchanged when the theme's `Repeat` flag is set.
+  - Practical rule: do not "fix" the score screen by disabling that repeat flag unless there is separate evidence of a false early-stop in the music system; otherwise the port would diverge from original game behavior.
+- Score-screen delay loops on the SDL port still need explicit stream maintenance even when full front-end callbacks stay throttled.
+  - Practical example from this tree: `CODE/SCORE.CPP::Call_Back_Delay(...)` only runs full `Call_Back()` work every `TIMER_SECOND/4`, matching the original front-end pacing, but the SDL port's streamed-score path depends on `Sound_Callback()` calls to keep the file stream alive.
+  - Important original-vs-port difference: the original engine had separate background audio servicing, so the throttled score-screen loop did not starve the music stream. In the SDL port, if no equivalent explicit servicing happens during long score-screen waits, the stream can fall inactive mid-song and `Theme.AI()` will restart the track from the beginning the next time it notices playback stopped.
+  - Practical rule: in score/menu loops that intentionally throttle full `Call_Back()` work, preserve the old pacing but keep streamed audio maintenance running on its own sufficiently frequent cadence.
+
 ## Palette fade presentation
 
 - On the SDL port, changing the palette and presenting the frame are separate steps.
