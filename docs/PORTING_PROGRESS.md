@@ -8,6 +8,12 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Tightened the Emscripten browser filesystem so player-owned data now stays browser-local while still preserving server-provided defaults where appropriate:
+  - `SDL3_COMPAT/wrappers/sdl_fs.cpp` now treats `REDALERT.INI`, `SAVEGAME.*`, `SAVEGAME.NET`, `HALLFAME.DAT`, `RECORD.BIN`, `ASSERT.TXT`, and local `CAP####.PCX` screenshots as local user data instead of generic lazy-fetched assets, so one player's remote deployment files no longer leak in as another player's savegames or personal state;
+  - first-run settings seeding remains available for `REDALERT.INI`: if the local browser copy does not exist yet, the existing lazy-fetch path can still pull the server's default settings file once, but savegames and the other user-data files now report only the browser-local copy and never synthesize remote existence from the asset manifest;
+  - writable browser user-data streams now go through an `SDL_OpenIO(...)` wrapper that flushes and syncs IDBFS back to IndexedDB after local writes/closes, and WWFS rename/remove helpers also sync after successful user-data mutations, so saves/settings/hall-of-fame/log files survive page reloads instead of depending on the tab lifetime;
+  - validation for this checkpoint: `cmake --build build-emscripten --target redalert -j8`, `cmake --build build --target redalert -j8`, and `cmake --build build-asan --target redalert -j8` all succeed after the browser user-data change.
+
 - Removed the dead legacy online-service multiplayer backends and their UI/session plumbing from the active tree:
   - deleted the unused legacy backend managers and startup helpers (`CODE/CCTEN.CPP`, `CODE/CCMPATH.CPP`, `CODE/TENMGR.*`, `CODE/MPMGRW.*`, `CODE/MPMGRD.H`) so the source tree no longer carries those dormant implementations at all;
   - scrubbed the remaining session/game/UI references from `CODE/{SESSION,INIT,QUEUE,CONQUER,NETDLG,STARTUP,FUNCTION,EXTERNS,GLOBALS,MPLAYER,VERSION,HOUSE,DEFINES}.CPP/.H`, leaving only the still-supported skirmish, UDP, and direct-internet session types in the non-vendored codebase;

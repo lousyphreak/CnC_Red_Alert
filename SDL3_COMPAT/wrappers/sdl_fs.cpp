@@ -146,6 +146,7 @@ constexpr char kWWFSEmscriptenAssetManifestPath[] = "/ra-assets-manifest.txt";
 constexpr char kWWFSEmscriptenDefaultAssetBaseUrl[] = "../GameData/";
 constexpr Sint64 kWWFSEmscriptenRangeChunkSize = 256 * 1024;
 constexpr Sint64 kWWFSEmscriptenRangeMaxChunksPerFetch = 8;
+constexpr char kWWFSEmscriptenSettingsFileName[] = "redalert.ini";
 
 struct WWFS_EmscriptenRangeFileCache {
     std::string remote_relative_path;
@@ -157,6 +158,11 @@ struct WWFS_EmscriptenRangeFileCache {
 struct WWFS_EmscriptenRangeStream {
     std::shared_ptr<WWFS_EmscriptenRangeFileCache> file;
     Sint64 position = 0;
+};
+
+struct WWFS_EmscriptenSyncedFileStream {
+    SDL_IOStream* stream = nullptr;
+    bool dirty = false;
 };
 
 std::mutex& WWFS_EmscriptenCacheMutex()
@@ -214,6 +220,11 @@ bool WWFS_IsReadOnlyOpenMode(const char* mode)
         && std::strchr(mode, 'w') == nullptr && std::strchr(mode, 'a') == nullptr;
 }
 
+bool WWFS_IsMutableOpenMode(const char* mode)
+{
+    return mode && (std::strchr(mode, 'w') != nullptr || std::strchr(mode, 'a') != nullptr || std::strchr(mode, '+') != nullptr);
+}
+
 bool WWFS_IsMixAssetPath(const std::string& path)
 {
     const std::string folded_path = WWFS_FoldPath(path);
@@ -260,6 +271,59 @@ bool WWFS_PathIsWithinBaseDirectory(const std::string& normalized_path, std::str
         *relative_path = normalized_path.substr(base_path.size() + 1);
     }
     return true;
+}
+
+bool WWFS_IsCaptureRelativePath(const std::string& folded_relative_path)
+{
+    return folded_relative_path.size() == 11
+        && folded_relative_path.compare(0, 3, "cap") == 0
+        && std::isdigit(static_cast<unsigned char>(folded_relative_path[3])) != 0
+        && std::isdigit(static_cast<unsigned char>(folded_relative_path[4])) != 0
+        && std::isdigit(static_cast<unsigned char>(folded_relative_path[5])) != 0
+        && std::isdigit(static_cast<unsigned char>(folded_relative_path[6])) != 0
+        && folded_relative_path.compare(7, 4, ".pcx") == 0;
+}
+
+bool WWFS_IsLocalUserDataRelativePath(const std::string& relative_path)
+{
+    if (relative_path.empty() || relative_path.find('/') != std::string::npos || relative_path.find('\\') != std::string::npos) {
+        return false;
+    }
+
+    const std::string folded_relative_path = WWFS_FoldPath(relative_path);
+    if (folded_relative_path == kWWFSEmscriptenSettingsFileName
+        || folded_relative_path == "savegame.net"
+        || folded_relative_path == "record.bin"
+        || folded_relative_path == "hallfame.dat"
+        || folded_relative_path == "assert.txt") {
+        return true;
+    }
+
+    if (WWFS_IsCaptureRelativePath(folded_relative_path)) {
+        return true;
+    }
+
+    return folded_relative_path.size() == 12 && folded_relative_path.compare(0, 9, "savegame.") == 0
+        && std::isdigit(static_cast<unsigned char>(folded_relative_path[9])) != 0
+        && std::isdigit(static_cast<unsigned char>(folded_relative_path[10])) != 0
+        && std::isdigit(static_cast<unsigned char>(folded_relative_path[11])) != 0;
+}
+
+bool WWFS_IsLocalUserDataPath(const std::string& normalized_path)
+{
+    std::string relative_path;
+    return WWFS_PathIsWithinBaseDirectory(normalized_path, &relative_path) && WWFS_IsLocalUserDataRelativePath(relative_path);
+}
+
+bool WWFS_ShouldSeedLocalUserDataRelativePath(const std::string& relative_path)
+{
+    return WWFS_FoldPath(relative_path) == kWWFSEmscriptenSettingsFileName;
+}
+
+bool WWFS_ShouldSeedLocalUserDataPath(const std::string& normalized_path)
+{
+    std::string relative_path;
+    return WWFS_PathIsWithinBaseDirectory(normalized_path, &relative_path) && WWFS_ShouldSeedLocalUserDataRelativePath(relative_path);
 }
 
 bool WWFS_LoadEmscriptenAssetManifest()
@@ -439,6 +503,24 @@ EM_ASYNC_JS(int, wwfs_emscripten_fetch_asset_js, (const char* local_path_c, cons
         return 1;
     } catch (err) {
         console.error(`Red Alert asset fetch failed for ${assetUrl}:`, err);
+        return 0;
+    }
+});
+
+EM_ASYNC_JS(int, wwfs_emscripten_sync_cache_js, (), {
+    try {
+        if (!Module.raWWFSCacheInitPromise) {
+            console.error('Red Alert Emscripten cache sync requested before initialization');
+            return 0;
+        }
+
+        await Module.raWWFSCacheInitPromise;
+        await new Promise((resolve, reject) => {
+            FS.syncfs(false, (err) => err ? reject(err) : resolve());
+        });
+        return 1;
+    } catch (err) {
+        console.error('Red Alert Emscripten cache sync failed:', err);
         return 0;
     }
 });
@@ -1202,6 +1284,10 @@ SDL_IOStream* WWFS_OpenEmscriptenRangeStream(const std::string& normalized_path)
 
 bool WWFS_GetSyntheticEmscriptenPathInfo(const std::string& normalized_path, SDL_PathInfo* info)
 {
+    if (WWFS_IsLocalUserDataPath(normalized_path) && !WWFS_ShouldSeedLocalUserDataPath(normalized_path)) {
+        return false;
+    }
+
     std::string actual_local_path;
     if (!WWFS_ResolveEmscriptenAssetPath(normalized_path, &actual_local_path, nullptr)) {
         return false;
@@ -1262,6 +1348,163 @@ bool WWFS_EnsureEmscriptenAssetCached(const std::string& normalized_path, std::s
         *resolved_path = actual_local_path;
     }
     return true;
+}
+
+bool WWFS_SyncEmscriptenAssetCache()
+{
+    if (!WWFS_InitializeEmscriptenAssetCache()) {
+        return false;
+    }
+
+    if (!wwfs_emscripten_sync_cache_js()) {
+        SDL_SetError("Failed to sync the Emscripten asset cache");
+        return false;
+    }
+
+    return true;
+}
+
+Sint64 SDLCALL WWFS_EmscriptenSyncedFileStreamSize(void* userdata)
+{
+    const auto* stream = static_cast<const WWFS_EmscriptenSyncedFileStream*>(userdata);
+    if (!stream || !stream->stream) {
+        SDL_SetError("Invalid Emscripten synced file stream");
+        return -1;
+    }
+
+    return SDL_GetIOSize(stream->stream);
+}
+
+Sint64 SDLCALL WWFS_EmscriptenSyncedFileStreamSeek(void* userdata, Sint64 offset, SDL_IOWhence whence)
+{
+    auto* stream = static_cast<WWFS_EmscriptenSyncedFileStream*>(userdata);
+    if (!stream || !stream->stream) {
+        SDL_SetError("Invalid Emscripten synced file stream");
+        return -1;
+    }
+
+    return SDL_SeekIO(stream->stream, offset, whence);
+}
+
+size_t SDLCALL WWFS_EmscriptenSyncedFileStreamRead(void* userdata, void* ptr, size_t size, SDL_IOStatus* status)
+{
+    auto* stream = static_cast<WWFS_EmscriptenSyncedFileStream*>(userdata);
+    if (!stream || !stream->stream) {
+        if (status) {
+            *status = SDL_IO_STATUS_ERROR;
+        }
+        SDL_SetError("Invalid Emscripten synced file stream");
+        return 0;
+    }
+
+    return SDL_ReadIO(stream->stream, ptr, size);
+}
+
+size_t SDLCALL WWFS_EmscriptenSyncedFileStreamWrite(void* userdata, const void* ptr, size_t size, SDL_IOStatus* status)
+{
+    auto* stream = static_cast<WWFS_EmscriptenSyncedFileStream*>(userdata);
+    if (!stream || !stream->stream) {
+        if (status) {
+            *status = SDL_IO_STATUS_ERROR;
+        }
+        SDL_SetError("Invalid Emscripten synced file stream");
+        return 0;
+    }
+
+    const size_t written = SDL_WriteIO(stream->stream, ptr, size);
+    if (written > 0) {
+        stream->dirty = true;
+    }
+    return written;
+}
+
+bool SDLCALL WWFS_EmscriptenSyncedFileStreamFlush(void* userdata, SDL_IOStatus* status)
+{
+    auto* stream = static_cast<WWFS_EmscriptenSyncedFileStream*>(userdata);
+    if (!stream || !stream->stream) {
+        if (status) {
+            *status = SDL_IO_STATUS_ERROR;
+        }
+        SDL_SetError("Invalid Emscripten synced file stream");
+        return false;
+    }
+
+    if (!SDL_FlushIO(stream->stream)) {
+        if (status) {
+            *status = SDL_IO_STATUS_ERROR;
+        }
+        return false;
+    }
+
+    if (stream->dirty && !WWFS_SyncEmscriptenAssetCache()) {
+        if (status) {
+            *status = SDL_IO_STATUS_ERROR;
+        }
+        return false;
+    }
+
+    if (status) {
+        *status = SDL_IO_STATUS_READY;
+    }
+    stream->dirty = false;
+    return true;
+}
+
+bool SDLCALL WWFS_EmscriptenSyncedFileStreamClose(void* userdata)
+{
+    std::unique_ptr<WWFS_EmscriptenSyncedFileStream> stream(static_cast<WWFS_EmscriptenSyncedFileStream*>(userdata));
+    if (!stream || !stream->stream) {
+        SDL_SetError("Invalid Emscripten synced file stream");
+        return false;
+    }
+
+    bool success = SDL_FlushIO(stream->stream);
+    if (success && stream->dirty) {
+        success = WWFS_SyncEmscriptenAssetCache();
+    }
+    if (!SDL_CloseIO(stream->stream)) {
+        success = false;
+    }
+    return success;
+}
+
+const SDL_IOStreamInterface& WWFS_EmscriptenSyncedFileStreamInterface()
+{
+    static const SDL_IOStreamInterface interface = []() {
+        SDL_IOStreamInterface iface;
+        SDL_INIT_INTERFACE(&iface);
+        iface.size = WWFS_EmscriptenSyncedFileStreamSize;
+        iface.seek = WWFS_EmscriptenSyncedFileStreamSeek;
+        iface.read = WWFS_EmscriptenSyncedFileStreamRead;
+        iface.write = WWFS_EmscriptenSyncedFileStreamWrite;
+        iface.flush = WWFS_EmscriptenSyncedFileStreamFlush;
+        iface.close = WWFS_EmscriptenSyncedFileStreamClose;
+        return iface;
+    }();
+
+    return interface;
+}
+
+SDL_IOStream* WWFS_OpenEmscriptenSyncedFileStream(SDL_IOStream* backing_stream, const char* mode)
+{
+    WWFS_EmscriptenSyncedFileStream* stream_state = new (std::nothrow) WWFS_EmscriptenSyncedFileStream();
+    if (!stream_state) {
+        SDL_OutOfMemory();
+        SDL_CloseIO(backing_stream);
+        return nullptr;
+    }
+
+    stream_state->stream = backing_stream;
+    stream_state->dirty = mode && (std::strchr(mode, 'w') != nullptr || std::strchr(mode, 'a') != nullptr);
+
+    SDL_IOStream* wrapped_stream = SDL_OpenIO(&WWFS_EmscriptenSyncedFileStreamInterface(), stream_state);
+    if (!wrapped_stream) {
+        SDL_CloseIO(backing_stream);
+        delete stream_state;
+        return nullptr;
+    }
+
+    return wrapped_stream;
 }
 #else
 bool WWFS_GetSyntheticEmscriptenPathInfo(const std::string&, SDL_PathInfo*)
@@ -1654,7 +1897,21 @@ char* WWFS_GetCurrentDirectory(char* buffer, int max_length)
 
 bool WWFS_CreateDirectory(const char* path)
 {
-    return path && *path && SDL_CreateDirectory(WWFS_NormalizePath(path).c_str());
+    if (!path || !*path) {
+        return false;
+    }
+
+    const std::string normalized = WWFS_NormalizePath(path);
+    if (!SDL_CreateDirectory(normalized.c_str())) {
+        return false;
+    }
+
+#if defined(__EMSCRIPTEN__) && RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA
+    if (WWFS_IsLocalUserDataPath(normalized) && !WWFS_SyncEmscriptenAssetCache()) {
+        return false;
+    }
+#endif
+    return true;
 }
 
 bool WWFS_GetPathInfo(const char* path, SDL_PathInfo* info)
@@ -1669,13 +1926,42 @@ bool WWFS_GetPathInfo(const char* path, SDL_PathInfo* info)
 
 bool WWFS_RemovePath(const char* path)
 {
-    return path && *path && SDL_RemovePath(WWFS_NormalizePath(path).c_str());
+    if (!path || !*path) {
+        return false;
+    }
+
+    const std::string normalized = WWFS_NormalizePath(path);
+    if (!SDL_RemovePath(normalized.c_str())) {
+        return false;
+    }
+
+#if defined(__EMSCRIPTEN__) && RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA
+    if (WWFS_IsLocalUserDataPath(normalized) && !WWFS_SyncEmscriptenAssetCache()) {
+        return false;
+    }
+#endif
+    return true;
 }
 
 bool WWFS_RenamePath(const char* old_path, const char* new_path)
 {
-    return old_path && *old_path && new_path && *new_path
-        && SDL_RenamePath(WWFS_NormalizePath(old_path).c_str(), WWFS_NormalizePath(new_path).c_str());
+    if (!old_path || !*old_path || !new_path || !*new_path) {
+        return false;
+    }
+
+    const std::string normalized_old_path = WWFS_NormalizePath(old_path);
+    const std::string normalized_new_path = WWFS_NormalizePath(new_path);
+    if (!SDL_RenamePath(normalized_old_path.c_str(), normalized_new_path.c_str())) {
+        return false;
+    }
+
+#if defined(__EMSCRIPTEN__) && RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA
+    if ((WWFS_IsLocalUserDataPath(normalized_old_path) || WWFS_IsLocalUserDataPath(normalized_new_path))
+        && !WWFS_SyncEmscriptenAssetCache()) {
+        return false;
+    }
+#endif
+    return true;
 }
 
 char** WWFS_GlobDirectory(const char* path, const char* pattern, SDL_GlobFlags flags, int* count)
@@ -1701,9 +1987,11 @@ SDL_IOStream* WWFS_OpenFile(const char* path, const char* mode)
 
     std::string normalized = WWFS_NormalizePath(path);
 #if defined(__EMSCRIPTEN__) && RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA
+    const bool is_local_user_data = WWFS_IsLocalUserDataPath(normalized);
+    const bool allow_seed_fetch = WWFS_ShouldSeedLocalUserDataPath(normalized);
     const bool allow_fetch = (std::strchr(mode, 'r') != nullptr) || (std::strchr(mode, '+') != nullptr);
-    if (allow_fetch && !WWFS_LocalPathExists(normalized.c_str())) {
-        if (WWFS_IsReadOnlyOpenMode(mode)) {
+    if (allow_fetch && !WWFS_LocalPathExists(normalized.c_str()) && (!is_local_user_data || allow_seed_fetch)) {
+        if (!is_local_user_data && WWFS_IsReadOnlyOpenMode(mode)) {
             SDL_IOStream* range_stream = WWFS_OpenEmscriptenRangeStream(normalized);
             if (range_stream) {
                 return range_stream;
@@ -1718,7 +2006,13 @@ SDL_IOStream* WWFS_OpenFile(const char* path, const char* mode)
         }
     }
 #endif
-    return SDL_IOFromFile(normalized.c_str(), mode);
+    SDL_IOStream* stream = SDL_IOFromFile(normalized.c_str(), mode);
+#if defined(__EMSCRIPTEN__) && RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA
+    if (stream && is_local_user_data && WWFS_IsMutableOpenMode(mode)) {
+        return WWFS_OpenEmscriptenSyncedFileStream(stream, mode);
+    }
+#endif
+    return stream;
 }
 
 SDL_Storage* WWFS_OpenFileStorage(const char* path)
