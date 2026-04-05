@@ -146,6 +146,30 @@
 - Once the live callers are gone, delete the compiled dead transport files instead of leaving “always false” compatibility shells around.
   - In this tree that meant deleting the old legacy Novell transport source set after the active LAN path stopped referencing it.
 
+## The networking stack is still split cleanly enough to support either direct-IP restoration or a new backend
+
+- The current tree still has a useful layering boundary despite all the legacy networking history.
+  - `ConnManClass` is still the interface consumed by the gameplay loop.
+  - `ConnectionClass` and the queue classes still own ACK/retry/timeout behavior.
+  - `SessionClass`, `NETDLG.CPP`, `SENDFILE.CPP`, and `QUEUE.CPP` still sit above that transport layer and mostly care about packet flow, peer lists, timing, and game state rather than raw sockets.
+- Practical consequence: future multiplayer work should start by deciding whether it can preserve that seam.
+  - If the goal is to revive direct head-to-head internet play, prefer wiring the existing `TcpipManagerClass` path back into the front-end rather than touching the dead WOL/TEN/MPath branches.
+  - If the goal is a new backend, prefer implementing it against `ConnManClass` or swapping transport plumbing under the still-live UDP manager surface instead of reviving `PacketTransport`, `WSPROTO`, or WOL-only integration hooks.
+- Safe rule for this tree: treat the active SDL/CMake networking path and the currently compiled code as the source of truth, and treat WOL/TEN/MPath/helper-transport code as reference material unless the build is deliberately expanded to support them again.
+
+## Networking restoration work has to preserve the current UI seams, not just the transport seams
+
+- In this tree, "networking support" is still partly a UI problem.
+  - The active supported flow is `Main_Menu()` -> `Select_Game()` -> `Select_MPlayer_Game()` -> UDP lobby/setup dialogs in `NETDLG.CPP`.
+  - The old direct-IP host/join dialogs still compile, but they are dormant because nothing in the active UI returns `GAME_INTERNET` anymore.
+  - The WOL screens are a different class of problem: they are mostly compile-gated away entirely under `WOLAPI_INTEGRATION`.
+- Practical consequence: re-enabling direct internet play or adding a new backend should usually start at `Select_MPlayer_Game()` rather than by reviving old main-menu or WOL branches.
+  - That chooser is the still-live place where backend selection already happens.
+  - `NETDLG.CPP` and `SENDFILE.CPP` already provide the modal lobby/reconnect/file-transfer patterns the game expects once a backend is selected.
+- SDL focus/redraw behavior is part of that contract now.
+  - The active dialogs still key off `GameInFocus`, `BootstrapFocusSeen`, and `AllSurfaces.SurfacesRestored`, while `WINSTUB.CPP` owns the SDL-native show/focus helpers they call.
+  - Safe rule for future multiplayer UI work: extend the current SDL dialog/window path; do not reintroduce fake Win32 message/focus plumbing just to mimic the original code structure more literally.
+
 ## SDL main-window path no longer needs Win32 class/show/focus wrappers
 
 - Follow-up porting work removed the remaining fake Win32 message queue and window-proc seam from the active SDL/Linux build.

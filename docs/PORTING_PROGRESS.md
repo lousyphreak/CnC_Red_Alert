@@ -81,6 +81,16 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - deleted the obsolete compiled legacy transport files that only supported the dead Novell-era implementation, renamed the active source/header set from the old transport naming to `UDP*`, and replaced the old Windows-only transport gate with `NETWORK_UDP`;
   - validation for this checkpoint: `cmake --build build --target redalert -j2` and `cmake --build build-asan --target redalert -j2` both succeed after the UDP switch and symbol cleanup.
 
+- Added a dedicated networking inventory document at `docs/NETWORKING_STATUS.md`:
+  - documented which networking layers are still active in the current SDL3/CMake build versus merely present in the tree, including the live LAN UDP path, the partially preserved direct TCP/IP path, and the dormant WOL/TEN/MPath/helper-transport code;
+  - traced the integration points through `CODE/{MPLAYER,INIT,NETDLG,QUEUE,SESSION,SENDFILE,TCPIP,UDPMGR}.CPP`, the current build gates in `CMakeLists.txt`, and the repo-owned socket seam in `CODE/SOCKETS.H`;
+  - recorded the practical re-enable scope for LAN UDP, direct internet head-to-head, and the archival online-service code, plus the lowest-risk seam for any future new backend (`ConnManClass` / `ConnectionClass` under the existing session and lockstep layers).
+
+- Expanded `docs/NETWORKING_STATUS.md` with the networking UI integration map:
+  - documented the active menu flow from `Main_Menu()` into `Select_MPlayer_Game()`, the currently reachable UDP/skirmish dialog stack, and the inactive main-menu/direct-internet branches hidden behind `FIXIT_VERSION_3` and `WOLAPI_INTEGRATION`;
+  - traced the user-facing networking dialogs in `CODE/{MPLAYER,NETDLG,SENDFILE,NULLDLG}.CPP`, including the active join/new/reconnect/file-transfer UI, the compiled-but-unreachable direct host/join dialogs, and the fully gated WOL UI set;
+  - captured the SDL-specific window/focus/redraw seams that the legacy network dialogs still rely on (`GameInFocus`, `BootstrapFocusSeen`, `AllSurfaces.SurfacesRestored`, and `Main_Window_Show_Maximized()`), so future backend/UI restoration work starts from the active SDL path instead of the dead Win32-era assumptions.
+
 - Replaced the old SDL compat `winsock.h` shim with a repo-owned cross-platform socket surface and split `CODE/TCPIP.CPP` into native Windows vs Unix behavior:
   - added `CODE/SOCKETS.H` as the shared networking seam for the remaining legacy socket vocabulary used inside `CODE/` (`SOCKET`, `WSADATA`, byte-order/socket macros, and Unix-side `closesocket`/error aliases), while keeping the `_WIN32` path on the real system `<winsock.h>`;
   - switched the remaining repo-owned include sites that depended on `<winsock.h>` (`CODE/{TCPIP.H,FIELD.H,WSPROTO.H,UTRACKER.CPP}`) over to `CODE/SOCKETS.H`, then deleted `SDL3_COMPAT/wrappers/winsock.h` entirely so the active build no longer depends on that compat wrapper;
