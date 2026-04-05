@@ -33,7 +33,7 @@ current progress is in `docs/PORTING_PROGRESS.md`, use it as reference, and keep
 - use CMake to build the project, and make sure to set up the build system correctly for both Windows and Linux.
 - use the original game data files for testing, and make sure to run the game to find any early problems with the port, such as crashes
 - use asan and ubsan to catch memory errors and undefined behavior during testing, and fix any issues found as soon as possible.
-
+- **ALWAYS** make sure all builds are clean and working
 
 
 - **DO NOT COMMIT** - the user will do that

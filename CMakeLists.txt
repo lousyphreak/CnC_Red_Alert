@@ -294,6 +294,11 @@ target_link_libraries(sdl3_compat
         ${RA_SDL_TARGET}
 )
 
+target_link_libraries(win32lib
+    PUBLIC
+        ${RA_SDL_TARGET}
+)
+
 target_link_libraries(redalert
     PRIVATE
         win32lib

@@ -145,6 +145,7 @@ std::string WWFS_AppendPathComponent(const std::string& base, const std::string&
 constexpr char kWWFSEmscriptenAssetManifestPath[] = "/ra-assets-manifest.txt";
 constexpr char kWWFSEmscriptenDefaultAssetBaseUrl[] = "../GameData/";
 constexpr Sint64 kWWFSEmscriptenRangeChunkSize = 256 * 1024;
+constexpr Sint64 kWWFSEmscriptenRangeMaxChunksPerFetch = 8;
 
 struct WWFS_EmscriptenRangeFileCache {
     std::string remote_relative_path;
@@ -449,7 +450,191 @@ EM_ASYNC_JS(int, wwfs_emscripten_query_range_asset_size_js, (const char* remote_
     const absoluteBaseUrl = new URL(configuredBaseUrl, globalThis.location.href);
     const assetUrl = new URL(remoteRelative, absoluteBaseUrl);
 
+    const ensureRangeCacheHelpers = () => {
+        if (Module.raWWFSRangeCacheHelpers) {
+            return Module.raWWFSRangeCacheHelpers;
+        }
+
+        const transactionDone = (tx) => new Promise((resolve, reject) => {
+            tx.oncomplete = () => resolve();
+            tx.onabort = () => reject(tx.error || new Error('IndexedDB transaction aborted'));
+            tx.onerror = () => reject(tx.error || new Error('IndexedDB transaction failed'));
+        });
+
+        const normalizeBytes = (bytes) => {
+            if (bytes instanceof Uint8Array) {
+                return bytes;
+            }
+            if (bytes instanceof ArrayBuffer) {
+                return new Uint8Array(bytes);
+            }
+            if (ArrayBuffer.isView(bytes)) {
+                return new Uint8Array(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
+            }
+            return new Uint8Array();
+        };
+
+        const parseContentRangeSize = (response) => {
+            const contentRange = response.headers.get('content-range') || response.headers.get('Content-Range') || '';
+            const slash = contentRange.lastIndexOf('/');
+            if (slash < 0) {
+                return -1;
+            }
+
+            const totalSize = Number.parseInt(contentRange.substring(slash + 1), 10);
+            return Number.isFinite(totalSize) && totalSize >= 0 ? totalSize : -1;
+        };
+
+        const openDb = () => {
+            if (!Module.raWWFSRangeCacheDbPromise) {
+                Module.raWWFSRangeCacheDbPromise = new Promise((resolve, reject) => {
+                    const request = globalThis.indexedDB.open('redalert-wwfs-range-cache', 1);
+                    request.onupgradeneeded = () => {
+                        const db = request.result;
+                        if (!db.objectStoreNames.contains('files')) {
+                            db.createObjectStore('files', { keyPath: 'key' });
+                        }
+                        if (!db.objectStoreNames.contains('chunks')) {
+                            db.createObjectStore('chunks', { keyPath: 'key' });
+                        }
+                    };
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error || new Error('Failed to open IndexedDB range cache'));
+                });
+            }
+            return Module.raWWFSRangeCacheDbPromise;
+        };
+
+        const getRecord = async (storeName, key) => {
+            const db = await openDb();
+            return await new Promise((resolve, reject) => {
+                const tx = db.transaction(storeName, 'readonly');
+                const request = tx.objectStore(storeName).get(key);
+                request.onsuccess = () => resolve(request.result || null);
+                request.onerror = () => reject(request.error || new Error(`Failed to read ${storeName} entry`));
+            });
+        };
+
+        const getChunks = async (assetKey, firstChunkIndex, chunkCount) => {
+            if (chunkCount <= 0) {
+                return [];
+            }
+
+            const db = await openDb();
+            return await new Promise((resolve, reject) => {
+                const tx = db.transaction('chunks', 'readonly');
+                const store = tx.objectStore('chunks');
+                const chunks = new Array(chunkCount);
+                let completed = 0;
+                let settled = false;
+
+                for (let i = 0; i < chunkCount; ++i) {
+                    const chunkIndex = firstChunkIndex + i;
+                    const request = store.get(chunkKey(assetKey, chunkIndex));
+                    request.onsuccess = () => {
+                        if (settled) {
+                            return;
+                        }
+
+                        const record = request.result;
+                        if (!record || record.chunkIndex !== chunkIndex) {
+                            settled = true;
+                            resolve(null);
+                            return;
+                        }
+
+                        chunks[i] = normalizeBytes(record.bytes);
+                        ++completed;
+                        if (completed === chunkCount) {
+                            settled = true;
+                            resolve(chunks);
+                        }
+                    };
+                    request.onerror = () => {
+                        if (!settled) {
+                            settled = true;
+                            reject(request.error || new Error('Failed to read cached range chunks'));
+                        }
+                    };
+                }
+            });
+        };
+
+        const putRecords = async (storeName, values) => {
+            if (!values.length) {
+                return;
+            }
+
+            const db = await openDb();
+            const tx = db.transaction(storeName, 'readwrite');
+            const store = tx.objectStore(storeName);
+            for (const value of values) {
+                store.put(value);
+            }
+            await transactionDone(tx);
+        };
+
+        const chunkKey = (assetKey, chunkIndex) => `${assetKey}\n${chunkIndex}`;
+
+        Module.raWWFSRangeCacheHelpers = {
+            assetKey(assetUrl) {
+                return assetUrl.href;
+            },
+            async getFileSize(assetKey) {
+                const record = await getRecord('files', assetKey);
+                return record && Number.isFinite(record.size) ? record.size : -1;
+            },
+            getChunks,
+            async putFileSize(assetKey, size) {
+                if (!Number.isFinite(size) || size < 0) {
+                    return;
+                }
+                await putRecords('files', [{ key: assetKey, size }]);
+            },
+            async getChunk(assetKey, chunkIndex) {
+                const record = await getRecord('chunks', chunkKey(assetKey, chunkIndex));
+                if (!record || record.chunkIndex !== chunkIndex) {
+                    return null;
+                }
+                return normalizeBytes(record.bytes);
+            },
+            async putFetchedChunks(assetKey, firstChunkIndex, chunkSize, bytes) {
+                const chunkBytes = normalizeBytes(bytes);
+                if (!chunkBytes.length) {
+                    return;
+                }
+
+                const records = [];
+                let cursor = 0;
+                let chunkIndex = firstChunkIndex;
+                while (cursor < chunkBytes.length) {
+                    const nextCursor = Math.min(cursor + chunkSize, chunkBytes.length);
+                    const chunk = chunkBytes.slice(cursor, nextCursor);
+                    records.push({
+                        key: chunkKey(assetKey, chunkIndex),
+                        chunkIndex,
+                        bytes: chunk
+                    });
+                    cursor = nextCursor;
+                    ++chunkIndex;
+                }
+
+                await putRecords('chunks', records);
+            },
+            parseContentRangeSize
+        };
+        return Module.raWWFSRangeCacheHelpers;
+    };
+
+    const rangeCache = ensureRangeCacheHelpers();
+    const cacheKey = rangeCache.assetKey(assetUrl);
+
     try {
+        const cachedSize = await rangeCache.getFileSize(cacheKey);
+        if (cachedSize >= 0) {
+            return cachedSize;
+        }
+
         const response = await fetch(assetUrl, {
             credentials: 'same-origin',
             headers: { 'Range': 'bytes=0-0' }
@@ -470,30 +655,216 @@ EM_ASYNC_JS(int, wwfs_emscripten_query_range_asset_size_js, (const char* remote_
             return -2;
         }
 
-        const contentRange = response.headers.get('content-range') || response.headers.get('Content-Range') || '';
-        const slash = contentRange.lastIndexOf('/');
-        if (slash < 0) {
-            await response.arrayBuffer();
-            return -1;
-        }
-
         await response.arrayBuffer();
-        const totalSize = Number.parseInt(contentRange.substring(slash + 1), 10);
-        return Number.isFinite(totalSize) && totalSize >= 0 ? totalSize : -1;
+        const totalSize = rangeCache.parseContentRangeSize(response);
+        if (totalSize >= 0) {
+            await rangeCache.putFileSize(cacheKey, totalSize);
+        }
+        return totalSize;
     } catch (err) {
         console.error(`Red Alert range size probe failed for ${assetUrl}:`, err);
         return -1;
     }
 });
 
-EM_ASYNC_JS(int, wwfs_emscripten_fetch_asset_range_js, (const char* remote_relative_c, const char* default_base_url_c, int offset, int length, unsigned char* dest, int dest_capacity), {
+EM_ASYNC_JS(int, wwfs_emscripten_load_or_fetch_asset_range_span_js, (const char* remote_relative_c, const char* default_base_url_c, int offset, int length, int chunk_size, unsigned char* dest, int dest_capacity), {
     const remoteRelative = UTF8ToString(remote_relative_c);
     const defaultBaseUrl = UTF8ToString(default_base_url_c);
     const configuredBaseUrl = Module.raAssetBaseUrl || globalThis.RA_ASSET_BASE_URL || defaultBaseUrl;
     const absoluteBaseUrl = new URL(configuredBaseUrl, globalThis.location.href);
     const assetUrl = new URL(remoteRelative, absoluteBaseUrl);
 
+    const ensureRangeCacheHelpers = () => {
+        if (Module.raWWFSRangeCacheHelpers) {
+            return Module.raWWFSRangeCacheHelpers;
+        }
+
+        const transactionDone = (tx) => new Promise((resolve, reject) => {
+            tx.oncomplete = () => resolve();
+            tx.onabort = () => reject(tx.error || new Error('IndexedDB transaction aborted'));
+            tx.onerror = () => reject(tx.error || new Error('IndexedDB transaction failed'));
+        });
+
+        const normalizeBytes = (bytes) => {
+            if (bytes instanceof Uint8Array) {
+                return bytes;
+            }
+            if (bytes instanceof ArrayBuffer) {
+                return new Uint8Array(bytes);
+            }
+            if (ArrayBuffer.isView(bytes)) {
+                return new Uint8Array(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
+            }
+            return new Uint8Array();
+        };
+
+        const parseContentRangeSize = (response) => {
+            const contentRange = response.headers.get('content-range') || response.headers.get('Content-Range') || '';
+            const slash = contentRange.lastIndexOf('/');
+            if (slash < 0) {
+                return -1;
+            }
+
+            const totalSize = Number.parseInt(contentRange.substring(slash + 1), 10);
+            return Number.isFinite(totalSize) && totalSize >= 0 ? totalSize : -1;
+        };
+
+        const openDb = () => {
+            if (!Module.raWWFSRangeCacheDbPromise) {
+                Module.raWWFSRangeCacheDbPromise = new Promise((resolve, reject) => {
+                    const request = globalThis.indexedDB.open('redalert-wwfs-range-cache', 1);
+                    request.onupgradeneeded = () => {
+                        const db = request.result;
+                        if (!db.objectStoreNames.contains('files')) {
+                            db.createObjectStore('files', { keyPath: 'key' });
+                        }
+                        if (!db.objectStoreNames.contains('chunks')) {
+                            db.createObjectStore('chunks', { keyPath: 'key' });
+                        }
+                    };
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error || new Error('Failed to open IndexedDB range cache'));
+                });
+            }
+            return Module.raWWFSRangeCacheDbPromise;
+        };
+
+        const getRecord = async (storeName, key) => {
+            const db = await openDb();
+            return await new Promise((resolve, reject) => {
+                const tx = db.transaction(storeName, 'readonly');
+                const request = tx.objectStore(storeName).get(key);
+                request.onsuccess = () => resolve(request.result || null);
+                request.onerror = () => reject(request.error || new Error(`Failed to read ${storeName} entry`));
+            });
+        };
+
+        const getChunks = async (assetKey, firstChunkIndex, chunkCount) => {
+            if (chunkCount <= 0) {
+                return [];
+            }
+
+            const db = await openDb();
+            return await new Promise((resolve, reject) => {
+                const tx = db.transaction('chunks', 'readonly');
+                const store = tx.objectStore('chunks');
+                const chunks = new Array(chunkCount);
+                let completed = 0;
+                let settled = false;
+
+                for (let i = 0; i < chunkCount; ++i) {
+                    const chunkIndex = firstChunkIndex + i;
+                    const request = store.get(chunkKey(assetKey, chunkIndex));
+                    request.onsuccess = () => {
+                        if (settled) {
+                            return;
+                        }
+
+                        const record = request.result;
+                        if (!record || record.chunkIndex !== chunkIndex) {
+                            settled = true;
+                            resolve(null);
+                            return;
+                        }
+
+                        chunks[i] = normalizeBytes(record.bytes);
+                        ++completed;
+                        if (completed === chunkCount) {
+                            settled = true;
+                            resolve(chunks);
+                        }
+                    };
+                    request.onerror = () => {
+                        if (!settled) {
+                            settled = true;
+                            reject(request.error || new Error('Failed to read cached range chunks'));
+                        }
+                    };
+                }
+            });
+        };
+
+        const putRecords = async (storeName, values) => {
+            if (!values.length) {
+                return;
+            }
+
+            const db = await openDb();
+            const tx = db.transaction(storeName, 'readwrite');
+            const store = tx.objectStore(storeName);
+            for (const value of values) {
+                store.put(value);
+            }
+            await transactionDone(tx);
+        };
+
+        const chunkKey = (assetKey, chunkIndex) => `${assetKey}\n${chunkIndex}`;
+
+        Module.raWWFSRangeCacheHelpers = {
+            assetKey(assetUrl) {
+                return assetUrl.href;
+            },
+            getChunks,
+            async putFetchedChunks(assetKey, firstChunkIndex, chunkSize, bytes) {
+                const chunkBytes = normalizeBytes(bytes);
+                if (!chunkBytes.length) {
+                    return;
+                }
+
+                const records = [];
+                let cursor = 0;
+                let chunkIndex = firstChunkIndex;
+                while (cursor < chunkBytes.length) {
+                    const nextCursor = Math.min(cursor + chunkSize, chunkBytes.length);
+                    const chunk = chunkBytes.slice(cursor, nextCursor);
+                    records.push({
+                        key: chunkKey(assetKey, chunkIndex),
+                        chunkIndex,
+                        bytes: chunk
+                    });
+                    cursor = nextCursor;
+                    ++chunkIndex;
+                }
+
+                await putRecords('chunks', records);
+            },
+            async putFileSize(assetKey, size) {
+                if (!Number.isFinite(size) || size < 0) {
+                    return;
+                }
+                await putRecords('files', [{ key: assetKey, size }]);
+            },
+            parseContentRangeSize
+        };
+        return Module.raWWFSRangeCacheHelpers;
+    };
+
+    const rangeCache = ensureRangeCacheHelpers();
+    const cacheKey = rangeCache.assetKey(assetUrl);
+    const firstChunkIndex = Math.floor(offset / chunk_size);
+    const lastChunkIndex = Math.floor((offset + length - 1) / chunk_size);
+    const chunkCount = lastChunkIndex - firstChunkIndex + 1;
+
     try {
+        const cachedChunks = await rangeCache.getChunks(cacheKey, firstChunkIndex, chunkCount);
+        if (cachedChunks) {
+            let copied = 0;
+            for (const chunkBytes of cachedChunks) {
+                if (copied >= dest_capacity || copied >= length) {
+                    break;
+                }
+
+                const toCopy = Math.min(chunkBytes.length, dest_capacity - copied, length - copied);
+                if (toCopy <= 0) {
+                    break;
+                }
+
+                HEAPU8.set(chunkBytes.subarray(0, toCopy), dest + copied);
+                copied += toCopy;
+            }
+            return copied;
+        }
+
         const response = await fetch(assetUrl, {
             credentials: 'same-origin',
             headers: { 'Range': `bytes=${offset}-${offset + length - 1}` }
@@ -515,6 +886,11 @@ EM_ASYNC_JS(int, wwfs_emscripten_fetch_asset_range_js, (const char* remote_relat
         }
 
         const bytes = new Uint8Array(await response.arrayBuffer());
+        await rangeCache.putFetchedChunks(cacheKey, firstChunkIndex, chunk_size, bytes);
+        const totalSize = rangeCache.parseContentRangeSize(response);
+        if (totalSize >= 0) {
+            await rangeCache.putFileSize(cacheKey, totalSize);
+        }
         const actual = Math.min(bytes.length, dest_capacity);
         HEAPU8.set(bytes.subarray(0, actual), dest);
         return actual;
@@ -567,33 +943,60 @@ std::shared_ptr<WWFS_EmscriptenRangeFileCache> WWFS_GetEmscriptenRangeFileCache(
     return inserted.second ? file_cache : inserted.first->second;
 }
 
-bool WWFS_EnsureEmscriptenRangeChunkLoaded(const std::shared_ptr<WWFS_EmscriptenRangeFileCache>& file_cache, Sint64 chunk_index)
+bool WWFS_HasEmscriptenRangeChunkLoaded(const std::shared_ptr<WWFS_EmscriptenRangeFileCache>& file_cache, Sint64 chunk_index)
 {
     if (!file_cache || chunk_index < 0) {
         return false;
     }
 
-    {
-        std::scoped_lock lock(file_cache->mutex);
-        if (file_cache->chunks.find(chunk_index) != file_cache->chunks.end()) {
-            return true;
-        }
+    std::scoped_lock lock(file_cache->mutex);
+    return file_cache->chunks.find(chunk_index) != file_cache->chunks.end();
+}
+
+Sint64 WWFS_CountMissingEmscriptenRangeChunks(const std::shared_ptr<WWFS_EmscriptenRangeFileCache>& file_cache,
+    Sint64 first_chunk_index,
+    Sint64 max_chunk_count)
+{
+    if (!file_cache || first_chunk_index < 0 || max_chunk_count <= 0) {
+        return 0;
     }
 
-    const Sint64 chunk_offset = chunk_index * kWWFSEmscriptenRangeChunkSize;
+    std::scoped_lock lock(file_cache->mutex);
+    Sint64 count = 0;
+    while (count < max_chunk_count) {
+        const Sint64 chunk_index = first_chunk_index + count;
+        if (file_cache->chunks.find(chunk_index) != file_cache->chunks.end()) {
+            break;
+        }
+        ++count;
+    }
+    return count;
+}
+
+bool WWFS_EnsureEmscriptenRangeChunkSpanLoaded(const std::shared_ptr<WWFS_EmscriptenRangeFileCache>& file_cache,
+    Sint64 first_chunk_index,
+    Sint64 chunk_count)
+{
+    if (!file_cache || first_chunk_index < 0 || chunk_count <= 0) {
+        return false;
+    }
+
+    const Sint64 chunk_offset = first_chunk_index * kWWFSEmscriptenRangeChunkSize;
     if (chunk_offset >= file_cache->size) {
         return false;
     }
 
-    const Sint64 max_chunk_size = file_cache->size - chunk_offset;
-    const size_t requested_size = static_cast<size_t>(std::min(max_chunk_size, kWWFSEmscriptenRangeChunkSize));
-    std::vector<unsigned char> chunk_data(requested_size);
-    const int bytes_fetched = wwfs_emscripten_fetch_asset_range_js(file_cache->remote_relative_path.c_str(),
+    const Sint64 max_span_size = file_cache->size - chunk_offset;
+    const Sint64 requested_span_size = std::min(max_span_size, chunk_count * kWWFSEmscriptenRangeChunkSize);
+    const size_t requested_size = static_cast<size_t>(requested_span_size);
+    std::vector<unsigned char> span_data(requested_size);
+    const int bytes_fetched = wwfs_emscripten_load_or_fetch_asset_range_span_js(file_cache->remote_relative_path.c_str(),
         kWWFSEmscriptenDefaultAssetBaseUrl,
         static_cast<int>(chunk_offset),
         static_cast<int>(requested_size),
-        chunk_data.data(),
-        static_cast<int>(chunk_data.size()));
+        static_cast<int>(kWWFSEmscriptenRangeChunkSize),
+        span_data.data(),
+        static_cast<int>(span_data.size()));
     if (bytes_fetched <= 0) {
         if (bytes_fetched == -2) {
             SDL_SetError("HTTP range requests are not available for '%s'", file_cache->remote_relative_path.c_str());
@@ -603,12 +1006,22 @@ bool WWFS_EnsureEmscriptenRangeChunkLoaded(const std::shared_ptr<WWFS_Emscripten
         return false;
     }
 
-    chunk_data.resize(static_cast<size_t>(bytes_fetched));
+    span_data.resize(static_cast<size_t>(bytes_fetched));
 
     std::scoped_lock lock(file_cache->mutex);
     auto& chunks = file_cache->chunks;
-    if (chunks.find(chunk_index) == chunks.end()) {
-        chunks.emplace(chunk_index, std::move(chunk_data));
+    size_t offset = 0;
+    Sint64 chunk_index = first_chunk_index;
+    while (offset < span_data.size()) {
+        const size_t bytes_left = span_data.size() - offset;
+        const size_t chunk_size = std::min(bytes_left, static_cast<size_t>(kWWFSEmscriptenRangeChunkSize));
+        if (chunks.find(chunk_index) == chunks.end()) {
+            chunks.emplace(chunk_index,
+                std::vector<unsigned char>(span_data.begin() + static_cast<std::ptrdiff_t>(offset),
+                    span_data.begin() + static_cast<std::ptrdiff_t>(offset + chunk_size)));
+        }
+        offset += chunk_size;
+        ++chunk_index;
     }
     return true;
 }
@@ -683,11 +1096,17 @@ size_t SDLCALL WWFS_EmscriptenRangeStreamRead(void* userdata, void* ptr, size_t 
     while (copied < requested) {
         const Sint64 absolute_offset = stream->position + static_cast<Sint64>(copied);
         const Sint64 chunk_index = absolute_offset / kWWFSEmscriptenRangeChunkSize;
-        if (!WWFS_EnsureEmscriptenRangeChunkLoaded(stream->file, chunk_index)) {
-            if (status) {
-                *status = SDL_IO_STATUS_ERROR;
+        if (!WWFS_HasEmscriptenRangeChunkLoaded(stream->file, chunk_index)) {
+            const Sint64 last_needed_offset = stream->position + static_cast<Sint64>(requested) - 1;
+            const Sint64 last_needed_chunk = last_needed_offset / kWWFSEmscriptenRangeChunkSize;
+            const Sint64 max_chunk_count = std::min(kWWFSEmscriptenRangeMaxChunksPerFetch, last_needed_chunk - chunk_index + 1);
+            const Sint64 missing_chunk_count = std::max<Sint64>(1, WWFS_CountMissingEmscriptenRangeChunks(stream->file, chunk_index, max_chunk_count));
+            if (!WWFS_EnsureEmscriptenRangeChunkSpanLoaded(stream->file, chunk_index, missing_chunk_count)) {
+                if (status) {
+                    *status = SDL_IO_STATUS_ERROR;
+                }
+                return copied;
             }
-            return copied;
         }
 
         std::scoped_lock lock(stream->file->mutex);
