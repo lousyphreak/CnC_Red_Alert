@@ -8,6 +8,11 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Fixed a mission-table out-of-bounds gameplay crash in the SDL/Linux ASan build without changing intended targeting or team-selection behavior:
+  - `CODE/TECHNO.CPP::TechnoClass::Evaluate_Object(...)` now treats `MISSION_NONE` as "not flagged harmless" instead of indexing `MissionControl[-1]` while evaluating nearby threats; this matches the existing mission constructor default and avoids the reported global-buffer-overflow between `NameIDOverride` and `MissionControl`;
+  - the same file's base-defense recruitment scans now use `MissionClass::Is_Recruitable_Mission(...)` for infantry/unit recruitability checks, so `MISSION_NONE` continues to mean "recruitable" per the established mission helper instead of leaving two more unguarded `MissionControl[mission]` lookups nearby;
+  - validation for this checkpoint: `cmake --build build --target redalert -j8`, `cmake --build build-asan --target redalert -j8`, and `cd GameData && timeout -k 5s 20s env ASAN_OPTIONS=abort_on_error=1:detect_leaks=0 UBSAN_OPTIONS=print_stacktrace=1 ../build-asan/redalert "Erik Yeo"` all succeed after the fix; the timed ASan/UBSan smoke run still exits only via the external timeout/SIGKILL window (`137`), and the captured log contains no `AddressSanitizer` or `runtime error:` matches.
+
 - Fixed the reported SDL/Linux ASan/UBSan gameplay startup failures without changing intended behavior:
   - `CODE/RADAR.CPP::Render_Infantry(...)` no longer downcasts every radar-visible techno to `InfantryClass` just to fetch the owning house remap color; the common radar color now comes from `TechnoClass::House`, and the infantry-only cast remains only inside the `RTTI_INFANTRY` branch for the existing spy special case;
   - `CODE/SIDEBAR.CPP::SidebarClass::StripClass::Recalc()` no longer uses `memcpy(...)` to collapse overlapping `Buildables[]` entries after removing an unavailable cameo; it now shifts the entries forward element-by-element, preserving the original ordering while avoiding ASan's `memcpy-param-overlap` abort against the global `Map` object layout;

@@ -1,5 +1,11 @@
 # Porting Knowledge
 
+## Mission table bounds
+
+- `MissionType` deliberately uses `MISSION_NONE = -1` as the default "no active mission" state.
+  - Practical example from this tree: `MissionClass::MissionClass(...)` initializes `Mission`, `SuspendedMission`, and `MissionQueue` to `MISSION_NONE`, so threat evaluation and team-selection code can legitimately observe `-1` during normal gameplay rather than only after corruption.
+  - Practical rule: never index `MissionControl[...]` unless the code has already proven the mission is not `MISSION_NONE` (or otherwise within `[MISSION_FIRST, MISSION_COUNT)`). For recruitability checks, reuse `MissionClass::Is_Recruitable_Mission(...)`, which already codifies the intended `MISSION_NONE -> true` behavior.
+
 ## Radar / minimap redraw pitfalls
 
 - `CODE/RADAR.CPP::Render_Infantry(...)` must not assume every radar-visible techno is an infantry object.
