@@ -1,10 +1,9 @@
 #include "sdl_draw.h"
+#include "FUNCTION.H"
 
 #include <SDL3/SDL_render.h>
 
 #include <algorithm>
-#include <cstdio>
-#include <cstdlib>
 #include <vector>
 
 namespace {
@@ -18,15 +17,6 @@ WWSurface* g_pending_surface = nullptr;
 RAWindow* g_pending_window = nullptr;
 int g_present_batch_depth = 0;
 bool g_present_pending = false;
-
-bool sdl_draw_trace_enabled()
-{
-    static int enabled = -1;
-    if (enabled == -1) {
-        enabled = std::getenv("RA_TRACE_STARTUP") != nullptr ? 1 : 0;
-    }
-    return enabled != 0;
-}
 
 RAWindow* ensure_window(RAWindow* window, int width, int height)
 {
@@ -69,7 +59,6 @@ void ensure_renderer(RAWindow* window, int width, int height)
 
 void present_surface(WWSurface* surface, RAWindow* window)
 {
-    static int present_trace_count = 0;
     if (!surface || !surface->IsPrimary()) {
         return;
     }
@@ -82,31 +71,6 @@ void present_surface(WWSurface* surface, RAWindow* window)
     std::vector<uint32_t> rgba(static_cast<size_t>(surface->Width()) * static_cast<size_t>(surface->Height()));
     const PALETTEENTRY* palette = surface->PaletteEntries();
     uint8_t* pixels = surface->Pixels();
-    size_t pixel_count = static_cast<size_t>(surface->Width()) * static_cast<size_t>(surface->Height());
-    size_t nonzero = 0;
-    for (size_t i = 0; i < pixel_count; ++i) {
-        if (pixels[i] != 0) {
-            ++nonzero;
-        }
-    }
-    if (sdl_draw_trace_enabled()
-        && present_trace_count < 24
-        && (present_trace_count < 4 || nonzero != 0 || palette == nullptr)) {
-        std::fprintf(stderr,
-            "[sdl_draw] present palette=%p pix_nonzero=%zu/%zu idx=%u,%u,%u,%u rgb0=%u,%u,%u\n",
-            static_cast<void const*>(palette),
-            nonzero,
-            pixel_count,
-            static_cast<unsigned>(pixels[0]),
-            static_cast<unsigned>(pixels[1]),
-            static_cast<unsigned>(pixels[2]),
-            static_cast<unsigned>(pixels[3]),
-            palette ? static_cast<unsigned>(palette[pixels[0]].peRed) : 0u,
-            palette ? static_cast<unsigned>(palette[pixels[0]].peGreen) : 0u,
-            palette ? static_cast<unsigned>(palette[pixels[0]].peBlue) : 0u);
-        std::fflush(stderr);
-        ++present_trace_count;
-    }
 
     for (int y = 0; y < surface->Height(); ++y) {
         for (int x = 0; x < surface->Width(); ++x) {

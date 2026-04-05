@@ -74,7 +74,11 @@ void RGBClass::Adjust(int ratio, RGBClass const & rgb)
 	**	Ratio conversion is limited to 0 through 100%. This is
 	**	the range of 0 to 255.
 	*/
-	ratio &= 0x00FF;
+	if (ratio < 0) {
+		ratio = 0;
+	} else if (ratio > 255) {
+		ratio = 255;
+	}
 
 	/*
 	**	Adjust the color guns by the ratio specified toward the

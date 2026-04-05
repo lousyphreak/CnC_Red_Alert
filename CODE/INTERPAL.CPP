@@ -145,7 +145,6 @@ void Write_Interpolation_Palette (char const * palette_file_name)
  *=========================================================================*/
 void Create_Palette_Interpolation_Table( void )
 {
-
 //	Asm_Create_Palette_Interpolation_Table();
 
 	#if (1)
@@ -450,7 +449,5 @@ void Interpolate_2X_Scale( GraphicBufferClass * source, GraphicViewPortClass * d
 //BG	long *longptr = (long *)&PaletteInterpolationTable[0][0];
 //BG	Mono_Printf("Clock cycles: %08x\n",*longptr);
 }
-
-
 
 

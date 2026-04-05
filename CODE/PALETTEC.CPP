@@ -48,6 +48,8 @@
 #include "FUNCTION.H"
 #include "PALETTEC.H"
 
+extern "C" void WWDraw_Flush_Present(void);
+
 PaletteClass const & PaletteClass::CurrentPalette = *reinterpret_cast<PaletteClass const *>(&::CurrentPalette[0]);
 
 
@@ -300,12 +302,16 @@ void PaletteClass::Set(int time, void (* callback)(void)) const
 	PaletteClass original = CurrentPalette;
 
 	while (timer) {
+		const uint32_t remaining = timer;
 		PaletteClass palette = original;
-		int adjust = ((time - static_cast<int>(timer)) * 256) / time;
+		int adjust = ((time - static_cast<int>(remaining)) * 256) / time;
 		palette.Adjust(adjust, *this);
 
-		uint32_t holdtime = timer;
+		uint32_t holdtime = remaining;
 		Set_Palette(palette.Get_Data());
+		if (!callback) {
+			WWDraw_Flush_Present();
+		}
 
 		if (callback) {
 			callback();
@@ -322,5 +328,10 @@ void PaletteClass::Set(int time, void (* callback)(void)) const
 	}
 
 	Set_Palette(const_cast<void *>(Get_Data()));
+	if (callback) {
+		callback();
+	} else {
+		WWDraw_Flush_Present();
+	}
 	((PaletteClass &)CurrentPalette) = *this;
 }

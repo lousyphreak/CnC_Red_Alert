@@ -254,7 +254,9 @@ target_compile_definitions(redalert
         ${RA_COMMON_DEFINITIONS}
 )
 
-foreach(target sdl3_compat win32lib redalert)
+set(RA_BUILD_TARGETS sdl3_compat win32lib redalert)
+
+foreach(target ${RA_BUILD_TARGETS})
     if(MSVC)
         target_compile_definitions(${target} PRIVATE _CRT_SECURE_NO_WARNINGS)
         target_compile_options(${target} PRIVATE /w)
@@ -275,7 +277,7 @@ if((CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang") AND (RA_ENABLE_ASAN OR RA_ENABLE_
         string(APPEND RA_SANITIZER_FLAGS " -fsanitize=undefined")
     endif()
     separate_arguments(RA_SANITIZER_FLAGS)
-    foreach(target sdl3_compat win32lib redalert)
+    foreach(target ${RA_BUILD_TARGETS})
         target_compile_options(${target} PRIVATE ${RA_SANITIZER_FLAGS})
         target_link_options(${target} PRIVATE ${RA_SANITIZER_FLAGS})
     endforeach()

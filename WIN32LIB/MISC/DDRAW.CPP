@@ -44,6 +44,7 @@
 
 #include "MISC.H"
 #include "ra_messagebox.h"
+#include <FUNCTION.H>
 #include <GBUFFER.H>
 #include <PALETTE.H>
 
@@ -385,7 +386,6 @@ void Set_Video_Palette ( void *palette )
 		uint8_t const *palette_get;
 
 	if ( VideoDrawObject && PaletteSurface ){
-
 		k=0;
 
 		palette_get = (uint8_t const*)palette;

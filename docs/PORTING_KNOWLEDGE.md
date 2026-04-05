@@ -1,5 +1,22 @@
 # Porting Knowledge
 
+## Palette fade presentation
+
+- On the SDL port, changing the palette and presenting the frame are separate steps.
+  - `WIN32LIB/MISC/DDRAW.CPP::Set_Video_Palette(...)` ultimately reaches `WWPalette::SetEntries(...)`, which only queues a present in `SDL3_COMPAT/wrappers/sdl_draw.cpp`; the actual `SDL_RenderPresent(...)` does not happen until `WWDraw_Flush_Present()` runs.
+  - Practical consequence: legacy fade loops that relied on a callback (normally `Call_Back()`) to keep the screen alive will visibly stall on SDL if they run with `callback == NULL`, even though the palette data itself is being updated correctly.
+  - Practical rule: any fade path that can run without `Call_Back()` must flush the queued SDL present itself after each palette step. In this tree that rule now lives in `CODE/PALETTEC.CPP::PaletteClass::Set(...)` and `WIN32LIB/PALETTE/PALETTE.CPP::Fade_Palette_To(...)`, but the general separation still matters when porting other palette-driven effects.
+- Callback-driven fades need one final callback/present after the exact target palette is committed.
+  - Practical example from this tree: `PaletteClass::Set(...)` performs intermediate callback-driven steps inside the `while (timer)` loop, but the exact target palette is committed afterward with a final `Set_Palette(Get_Data())`.
+  - Practical rule: if a fade path presents intermediate palette steps through a callback, use the same callback path for the final exact-target palette too; otherwise the fade can stop one frame short and leave the last palette update pending until some unrelated later redraw.
+
+## PCX palette normalization
+
+- Runtime palettes in Red Alert are stored as raw 6-bit DAC gun values (`0..63` per component), even though PCX files store palette bytes in full 8-bit (`0..255`) scale.
+  - Practical rule: when `Read_PCX_File(...)` normalizes a loaded PCX palette, the shift from 8-bit to 6-bit must operate on unsigned bytes.
+  - Important pitfall from this port: both `CODE/WINSTUB.CPP` and `WIN32LIB/IFF/LOADPCX.CPP` use a local `RGB` struct with `char` fields, so the normalization step must treat the loaded palette block as raw unsigned bytes rather than right-shifting signed `char` components in place.
+  - The safe conversion is to reinterpret the loaded palette block as `uint8_t*` and shift all `768` palette bytes logically, keeping title and menu palettes in the same 6-bit range as the rest of the engine.
+
 ## Mission table bounds
 
 - `MissionType` deliberately uses `MISSION_NONE = -1` as the default "no active mission" state.

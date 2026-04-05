@@ -83,7 +83,6 @@ GraphicBufferClass* Read_PCX_File(char* name, char* Palette, void *Buff, int32_t
   int32_t 	      file_handle ;
   char		 * buffer ;
   PCX_HEADER   header ;
-  RGB  		 * pal ;
   char 			pool [ POOL_SIZE ] ;
   GraphicBufferClass * pic	;
 
@@ -147,12 +146,9 @@ GraphicBufferClass* Read_PCX_File(char* name, char* Palette, void *Buff, int32_t
 	  Seek_File ( file_handle , 256 * sizeof ( RGB ) , SEEK_END ) ;
 	  Read_File ( file_handle,	Palette , 256L * sizeof ( RGB )) ;
 
-	  pal = ( RGB * ) Palette ;
-	  for ( i = 0 ; i < 256 ; i ++ ) {
-		 pal -> red >>= 2 ;
-		 pal -> green >>= 2 ;
-		 pal -> blue >>= 2 ;
-		 pal ++ ;
+	  uint8_t* raw_palette = reinterpret_cast<uint8_t*>(Palette);
+	  for ( i = 0 ; i < 256 * 3 ; i ++ ) {
+		 raw_palette[i] >>= 2 ;
 	  }
   }
  Close_File (file_handle) ;

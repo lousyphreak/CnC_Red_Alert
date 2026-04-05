@@ -8,6 +8,13 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Fixed the SDL palette fading regressions while preserving the original game behavior:
+  - `CODE/RGB.CPP::RGBClass::Adjust(...)` now clamps the fade ratio instead of wrapping `256` back to `0`, and `CODE/PALETTEC.CPP::PaletteClass::Set(...)` now snapshots the timer once per fade step so the end of a fade cannot jump back toward the source palette;
+  - `CODE/PALETTEC.CPP::PaletteClass::Set(...)` and `WIN32LIB/PALETTE/PALETTE.CPP::Fade_Palette_To(...)` now flush queued SDL presents on no-callback fade paths so each palette step is actually shown on screen;
+  - `CODE/PALETTEC.CPP::PaletteClass::Set(...)` now also runs the callback once after the exact final palette commit, keeping callback-driven fades from stopping one present short of their destination;
+  - `CODE/WINSTUB.CPP::Read_PCX_File(...)` and `WIN32LIB/IFF/LOADPCX.CPP::Read_PCX_File(...)` now normalize PCX palette bytes through `uint8_t*` instead of signed `char` component shifts, which keeps title/menu palettes in the correct `0..63` range during fades on Linux;
+  - validation for this checkpoint: `cmake --build build --target redalert -j8`, `cmake --build build-asan --target redalert -j8`, and `cd GameData && timeout -k 5s 20s env ASAN_OPTIONS=abort_on_error=1:detect_leaks=0 UBSAN_OPTIONS=print_stacktrace=1 ../build-asan/redalert "Erik Yeo"` all complete as expected after the fade fixes; the timed ASan/UBSan smoke run still exits only via the external timeout/SIGKILL window (`137`), and the captured log contains no `AddressSanitizer` or `runtime error:` matches.
+
 - Fixed a mission-table out-of-bounds gameplay crash in the SDL/Linux ASan build without changing intended targeting or team-selection behavior:
   - `CODE/TECHNO.CPP::TechnoClass::Evaluate_Object(...)` now treats `MISSION_NONE` as "not flagged harmless" instead of indexing `MissionControl[-1]` while evaluating nearby threats; this matches the existing mission constructor default and avoids the reported global-buffer-overflow between `NameIDOverride` and `MissionControl`;
   - the same file's base-defense recruitment scans now use `MissionClass::Is_Recruitable_Mission(...)` for infantry/unit recruitability checks, so `MISSION_NONE` continues to mean "recruitable" per the established mission helper instead of leaving two more unguarded `MissionControl[mission]` lookups nearby;

@@ -60,8 +60,10 @@ uint8_t CurrentPalette[768];
 }
 
 extern "C" void Set_Video_Palette(void *palette);
+extern "C" void WWDraw_Flush_Present(void);
 extern "C" uint8_t *InterpolationPalette;
 extern int32_t InterpolationPaletteChanged;
+
 
 /*
 ******************************** Prototypes *********************************
@@ -202,6 +204,9 @@ void Fade_Palette_To(void *palette1, uint32_t delay, void (*callback)() )
 		tickaccum &= 0x0FF;				// shave off high byte, keep roundoff bits
 
 		changed = Bump_Palette(palette1, jump);	// increment palette
+		if (changed && !callback) {
+			WWDraw_Flush_Present();
+		}
 
 		/*
 		.................. Wait for time increment to elapse ..................
