@@ -188,7 +188,6 @@ HouseClass::operator HousesType(void) const
 	return(Class->House);
 }
 
-
 /***********************************************************************************************
  * HouseClass::Tiberium_Fraction -- Calculates the tiberium fraction of capacity.              *
  *                                                                                             *
@@ -211,7 +210,6 @@ fixed HouseClass::Tiberium_Fraction(void) const
 	}
 	return(fixed(Tiberium, Capacity));
 }
-
 
 /***********************************************************************************************
  * HouseClass::As_Pointer -- Converts a house number into a house object pointer.              *
@@ -242,7 +240,6 @@ HouseClass * HouseClass::As_Pointer(HousesType house)
 	return(0);
 }
 
-
 /***********************************************************************************************
  * HouseClass::One_Time -- Handles one time initialization of the house array.                 *
  *                                                                                             *
@@ -262,7 +259,6 @@ void HouseClass::One_Time(void)
 {
 	BuildChoice.Set_Heap(STRUCT_COUNT);
 }
-
 
 /***********************************************************************************************
  * HouseClass::Assign_Handicap -- Assigns the specified handicap rating to the house.          *
@@ -312,8 +308,6 @@ DiffType HouseClass::Assign_Handicap(DiffType handicap)
 	return(old);
 }
 
-
-
 #ifdef CHEAT_KEYS
 
 void HouseClass::Print_Zone_Stats(int x, int y, ZoneType zone, MonoClass * mono) const
@@ -321,7 +315,6 @@ void HouseClass::Print_Zone_Stats(int x, int y, ZoneType zone, MonoClass * mono)
 	mono->Set_Cursor(x, y);
 	mono->Printf("A:%-5d I:%-5d V:%-5d", ZoneInfo[zone].AirDefense, ZoneInfo[zone].InfantryDefense, ZoneInfo[zone].ArmorDefense);
 }
-
 
 /***********************************************************************************************
  * HouseClass::Debug_Dump -- Dumps the house status data to the mono screen.                   *
@@ -393,7 +386,6 @@ void HouseClass::Debug_Dump(MonoClass * mono) const
 	mono->Set_Cursor(54, 11);mono->Printf("%04X", Coord_Cell(Center));
 	mono->Set_Cursor(71, 11);mono->Printf("%5d", (int32_t)DamageTime);
 
-
 	for (int index = 0; index < ARRAY_SIZE(Scen.GlobalFlags); index++) {
 		mono->Set_Cursor(1+index, 15);
 		if (Scen.GlobalFlags[index] != 0) {
@@ -443,7 +435,6 @@ void HouseClass::Debug_Dump(MonoClass * mono) const
 }
 #endif
 
-
 /***********************************************************************************************
  * HouseClass::new -- Allocator for a house class.                                             *
  *                                                                                             *
@@ -468,7 +459,6 @@ void * HouseClass::operator new(size_t)
 	return(ptr);
 }
 
-
 /***********************************************************************************************
  * HouseClass::delete -- Deallocator function for a house object.                              *
  *                                                                                             *
@@ -488,7 +478,6 @@ void HouseClass::operator delete(void * ptr)
 {
 	Houses.Free((HouseClass *)ptr);
 }
-
 
 /***********************************************************************************************
  * HouseClass::HouseClass -- Constructor for a house object.                                   *
@@ -692,7 +681,6 @@ HouseClass::HouseClass(HousesType house) :
 	}
 }
 
-
 /***********************************************************************************************
  * HouseClass::~HouseClass -- House class destructor                                           *
  *                                                                                             *
@@ -731,7 +719,6 @@ HouseClass::~HouseClass (void)
 	IsActive = false;
 }
 
-
 /***********************************************************************************************
  * HouseStaticClass::HouseStaticClass -- Default constructor for house static class.           *
  *                                                                                             *
@@ -760,7 +747,6 @@ HouseStaticClass::HouseStaticClass(void) :
 	Edge(SOURCE_NORTH)
 {
 }
-
 
 /***********************************************************************************************
  * HouseClass::Can_Build -- General purpose build legality checker.                            *
@@ -879,7 +865,6 @@ bool HouseClass::Can_Build(ObjectTypeClass const * type, HousesType house) const
 	return((pre & flags) == pre && static_cast<int>(((TechnoTypeClass const *)type)->Level) <= level);
 }
 
-
 /***************************************************************************
  * HouseClass::Init -- init's in preparation for new scenario              *
  *                                                                         *
@@ -904,7 +889,6 @@ void HouseClass::Init(void)
 		HouseTriggers[index].Clear();
 	}
 }
-
 
 /***********************************************************************************************
  * HouseClass::AI -- Process house logic.                                                      *
@@ -1325,7 +1309,6 @@ void HouseClass::AI(void)
 	AI_Infantry();
 	AI_Aircraft();
 
-
 	/*
 	**	If the production possibilities need to be recalculated, then do so now. This must
 	**	occur after the scan bits have been properly updated.
@@ -1361,7 +1344,6 @@ void HouseClass::AI(void)
 		Map.All_To_Look();
 	}
 }
-
 
 /***********************************************************************************************
  * HouseClass::Super_Weapon_Handler -- Handles the super weapon charge and discharge logic.    *
@@ -1674,7 +1656,6 @@ void HouseClass::Super_Weapon_Handler(void)
 		}
 	}
 
-
 	if (SuperWeapon[SPC_SPY_MISSION].Is_Present()) {
 		if ((ActiveBScan & STRUCTF_AIRSTRIP) == 0) {
 			if (SuperWeapon[SPC_SPY_MISSION].Remove()) {
@@ -1742,7 +1723,6 @@ void HouseClass::Super_Weapon_Handler(void)
 	}
 }
 
-
 /***********************************************************************************************
  * HouseClass::Attacked -- Lets player know if base is under attack.                           *
  *                                                                                             *
@@ -1781,7 +1761,6 @@ void HouseClass::Attacked(void)
 	}
 }
 
-
 /***********************************************************************************************
  * HouseClass::Harvested -- Adds Tiberium to the harvest storage.                              *
  *                                                                                             *
@@ -1814,7 +1793,6 @@ void HouseClass::Harvested(unsigned tiberium)
 	Silo_Redraw_Check(oldtib, Capacity);
 }
 
-
 /***********************************************************************************************
  * HouseClass::Stole -- Accounts for the value of a captured building.								  *
  *                                                                                             *
@@ -1838,7 +1816,6 @@ void HouseClass::Stole(unsigned worth)
 	StolenBuildingsCredits += worth;
 }
 
-
 /***********************************************************************************************
  * HouseClass::Available_Money -- Fetches the total credit worth of the house.                 *
  *                                                                                             *
@@ -1860,7 +1837,6 @@ int32_t HouseClass::Available_Money(void) const
 
 	return(Tiberium + Credits);
 }
-
 
 /***********************************************************************************************
  * HouseClass::Spend_Money -- Removes money from the house.                                    *
@@ -1895,7 +1871,6 @@ void HouseClass::Spend_Money(unsigned money)
 	CreditsSpent += money;
 }
 
-
 /***********************************************************************************************
  * HouseClass::Refund_Money -- Refunds money to back to the house.                             *
  *                                                                                             *
@@ -1920,7 +1895,6 @@ void HouseClass::Refund_Money(unsigned money)
 
 	Credits += money;
 }
-
 
 /***********************************************************************************************
  * HouseClass::Adjust_Capacity -- Adjusts the house Tiberium storage capacity.                 *
@@ -1962,7 +1936,6 @@ int HouseClass::Adjust_Capacity(int adjust, bool inanger)
 	return(retval);
 }
 
-
 /***********************************************************************************************
  * HouseClass::Silo_Redraw_Check -- Flags silos to be redrawn if necessary.                    *
  *                                                                                             *
@@ -2001,7 +1974,6 @@ void HouseClass::Silo_Redraw_Check(int32_t oldtib, int32_t oldcap)
 	}
 }
 
-
 /***********************************************************************************************
  * HouseClass::Is_Ally -- Determines if the specified house is an ally.                        *
  *                                                                                             *
@@ -2025,7 +1997,6 @@ bool HouseClass::Is_Ally(HousesType house) const
 	}
 	return(false);
 }
-
 
 /***********************************************************************************************
  * HouseClass::Is_Ally -- Determines if the specified house is an ally.                        *
@@ -2051,7 +2022,6 @@ bool HouseClass::Is_Ally(HouseClass const * house) const
 	return(false);
 }
 
-
 /***********************************************************************************************
  * HouseClass::Is_Ally -- Checks to see if the object is an ally.                              *
  *                                                                                             *
@@ -2075,7 +2045,6 @@ bool HouseClass::Is_Ally(ObjectClass const * object) const
 	}
 	return(false);
 }
-
 
 /***********************************************************************************************
  * HouseClass::Make_Ally -- Make the specified house an ally.                                  *
@@ -2167,29 +2136,10 @@ void HouseClass::Make_Ally(HousesType house)
 				Session.Messages.Add_Message(NULL, 0, buffer, RemapColor, TPF_6PT_GRAD|TPF_USE_GRAD_PAL|TPF_FULLSHADOW, TICKS_PER_MINUTE * Rule.MessageDelay);
 			}
 
-#if(TEN)
-			//
-			// Notify the TEN server of the new alliance
-			//
-			if (this == PlayerPtr && hptr != NULL && Session.Type == GAME_TEN) {
-				Send_TEN_Alliance(hptr->IniName, 1);
-			}
-#endif	// TEN
-
-#if(MPATH)
-			//
-			// Notify the MPATH server of the new alliance
-			//
-			//if (this == PlayerPtr && hptr != NULL && Session.Type == GAME_MPATH) {
-				//Send_MPATH_Alliance(hptr->IniName, 1);
-			//}
-#endif	// MPATH
-
 			Map.Flag_To_Redraw(false);
 		}
 	}
 }
-
 
 /***********************************************************************************************
  * HouseClass::Make_Enemy -- Make an enemy of the house specified.                             *
@@ -2238,28 +2188,9 @@ void HouseClass::Make_Enemy(HousesType house)
 			Session.Messages.Add_Message(NULL, 0, buffer, RemapColor, TPF_6PT_GRAD|TPF_USE_GRAD_PAL|TPF_FULLSHADOW, TICKS_PER_MINUTE * Rule.MessageDelay);
 			Map.Flag_To_Redraw(false);
 
-#if(TEN)
-			//
-			// Notify the TEN server of the broken alliance
-			//
-			if (this == PlayerPtr && enemy != NULL && Session.Type == GAME_TEN) {
-				Send_TEN_Alliance(enemy->IniName, 0);
-			}
-#endif	// TEN
-
-#if(MPATH)
-			//
-			// Notify the MPATH server of the broken alliance
-			//
-			//if (this == PlayerPtr && enemy != NULL && Session.Type == GAME_MPATH) {
-				//Send_MPATH_Alliance(enemy->IniName, 0);
-			//}
-#endif	// MPATH
-
 		}
 	}
 }
-
 
 /***********************************************************************************************
  * HouseClass::Remap_Table -- Fetches the remap table for this house object.                   *
@@ -2296,7 +2227,6 @@ uint8_t const * HouseClass::Remap_Table(bool blushing, RemapType remap) const
 	return(ColorRemaps[RemapColor].RemapTable);
 }
 
-
 /***********************************************************************************************
  * HouseClass::Suggested_New_Team -- Determine what team should be created.                    *
  *                                                                                             *
@@ -2320,7 +2250,6 @@ TeamTypeClass const * HouseClass::Suggested_New_Team(bool alertcheck)
 
 	return(TeamTypeClass::Suggested_New_Team(this, AScan, UScan, IScan, VScan, alertcheck));
 }
-
 
 /***********************************************************************************************
  * HouseClass::Adjust_Threat -- Adjust threat for the region specified.                        *
@@ -2370,7 +2299,6 @@ void HouseClass::Adjust_Threat(int region, int threat)
 		thr++;
 	}
 }
-
 
 /***********************************************************************************************
  * HouseClass::Begin_Production -- Starts production of the specified object type.             *
@@ -2432,7 +2360,6 @@ ProdFailType HouseClass::Begin_Production(RTTIType type, int id)
 	return(PROD_CANT);
 }
 
-
 /***********************************************************************************************
  * HouseClass::Suspend_Production -- Temporarily puts production on hold.                      *
  *                                                                                             *
@@ -2476,7 +2403,6 @@ ProdFailType HouseClass::Suspend_Production(RTTIType type)
 
 	return(PROD_OK);
 }
-
 
 /***********************************************************************************************
  * HouseClass::Abandon_Production -- Abandons production of item type specified.               *
@@ -2529,7 +2455,6 @@ ProdFailType HouseClass::Abandon_Production(RTTIType type)
 	return(PROD_OK);
 }
 
-
 /***********************************************************************************************
  * HouseClass::Special_Weapon_AI -- Fires special weapon.                                      *
  *                                                                                             *
@@ -2575,7 +2500,6 @@ void HouseClass::Special_Weapon_AI(SpecialWeaponType id)
 		Place_Special_Blast(id, cell);
 	}
 }
-
 
 /***********************************************************************************************
  * HouseClass::Place_Special_Blast -- Place a special blast effect at location specified.      *
@@ -2892,7 +2816,6 @@ bool HouseClass::Place_Special_Blast(SpecialWeaponType id, CELL cell)
 	return(true);
 }
 
-
 /***********************************************************************************************
  * HouseClass::Place_Object -- Places the object (building) at location specified.             *
  *                                                                                             *
@@ -3044,7 +2967,6 @@ bool HouseClass::Place_Object(RTTIType type, CELL cell)
 	return(true);
 }
 
-
 /***********************************************************************************************
  * HouseClass::Manual_Place -- Inform display system of building placement mode.               *
  *                                                                                             *
@@ -3089,7 +3011,6 @@ bool HouseClass::Manual_Place(BuildingClass * builder,  BuildingClass * object)
 	}
 	return(false);
 }
-
 
 /***************************************************************************
  * HouseClass::Clobber_All -- removes all objects for this house				*
@@ -3166,7 +3087,6 @@ void HouseClass::Clobber_All(void)
 	delete this;
 }
 
-
 /***********************************************************************************************
  * HouseClass::Detach -- Removes specified object from house tracking systems.                 *
  *                                                                                             *
@@ -3197,7 +3117,6 @@ void HouseClass::Detach(TARGET target, bool )
 	}
 }
 
-
 /***********************************************************************************************
  * HouseClass::Does_Enemy_Building_Exist -- Checks for enemy building of specified type.       *
  *                                                                                             *
@@ -3227,7 +3146,6 @@ bool HouseClass::Does_Enemy_Building_Exist(StructType btype) const
 	}
 	return(false);
 }
-
 
 /***********************************************************************************************
  * HouseClass::Suggest_New_Object -- Determine what would the next buildable object be.        *
@@ -3307,7 +3225,6 @@ TechnoTypeClass const * HouseClass::Suggest_New_Object(RTTIType objecttype, bool
 	return(0);
 }
 
-
 /***********************************************************************************************
  * HouseClass::Flag_Remove -- Removes the flag from the specified target.                      *
  *                                                                                             *
@@ -3374,7 +3291,6 @@ bool HouseClass::Flag_Remove(TARGET target, bool set_home)
 	}
 	return(false);
 }
-
 
 /***********************************************************************************************
  * HouseClass::Flag_Attach -- Attach flag to specified cell (or thereabouts).                  *
@@ -3493,7 +3409,6 @@ bool HouseClass::Flag_Attach(CELL cell, bool set_home)
 	return(false);
 }
 
-
 /***********************************************************************************************
  * HouseClass::Flag_Attach -- Attaches the house flag the specified unit.                      *
  *                                                                                             *
@@ -3527,7 +3442,6 @@ bool HouseClass::Flag_Attach(UnitClass * object, bool set_home)
 	}
 	return(false);
 }
-
 
 /***************************************************************************
  * HouseClass::MPlayer_Defeated -- multiplayer; house is defeated          *
@@ -3708,35 +3622,6 @@ void HouseClass::MPlayer_Defeated(void)
 			Session.NumPlayers = 0;
 		}
 
-#if(TEN)
-		//
-		// Tell the TEN server who won
-		//
-		if (Session.Type == GAME_TEN) {
-			Send_TEN_Win_Packet();
-		}
-#endif	// TEN
-
-#if(MPATH)
-		//
-		// Tell the MPATH server who won
-		//
-		if (Session.Type == GAME_MPATH) {
-			SDL_IOStream *fp;
-
-			fp = WWFS_FOpen("winner.txt","wt");
-			if (fp) {
-				for (i = 0; i < Session.Players.Count(); i++) {
-					hptr = HouseClass::As_Pointer(Session.Players[i]->Player.ID);
-					if (!hptr->IsDefeated) {
-						WWFS_FPrintf(fp,"%s\n",hptr->IniName);
-					}
-				}
-				WWFS_FClose(fp);
-			}
-		}
-#endif	// MPATH
-
 	}
 
 	/*
@@ -3744,7 +3629,6 @@ void HouseClass::MPlayer_Defeated(void)
 	*/
 	Map.Render();
 }
-
 
 /***************************************************************************
  * HouseClass::Tally_Score -- Fills in the score system for this round     *
@@ -3870,7 +3754,6 @@ void HouseClass::Tally_Score(void)
 		}
 	}
 }
-
 
 /***************************************************************************
  * HouseClass::Blowup_All -- blows up everything                           *
@@ -4008,7 +3891,6 @@ void HouseClass::Blowup_All(void)
 	}
 }
 
-
 /***********************************************************************************************
  * HouseClass::Flag_To_Die -- Flags the house to blow up soon.                                 *
  *                                                                                             *
@@ -4035,7 +3917,6 @@ bool HouseClass::Flag_To_Die(void)
 	return(IsToDie);
 }
 
-
 /***********************************************************************************************
  * HouseClass::Flag_To_Win -- Flags the house to win soon.                                     *
  *                                                                                             *
@@ -4061,7 +3942,6 @@ bool HouseClass::Flag_To_Win(void)
 	}
 	return(IsToWin);
 }
-
 
 /***********************************************************************************************
  * HouseClass::Flag_To_Lose -- Flags the house to die soon.                                    *
@@ -4090,7 +3970,6 @@ bool HouseClass::Flag_To_Lose(void)
 	}
 	return(IsToLose);
 }
-
 
 /***********************************************************************************************
  * HouseClass::Init_Data -- Initializes the multiplayer color data.                            *
@@ -4121,7 +4000,6 @@ void HouseClass::Init_Data(PlayerColorType color, HousesType house, int credits)
 	ActLike = house;
 }
 
-
 /***********************************************************************************************
  * HouseClass::Power_Fraction -- Fetches the current power output rating.                      *
  *                                                                                             *
@@ -4148,7 +4026,6 @@ fixed HouseClass::Power_Fraction(void) const
 	}
 	return(0);
 }
-
 
 /***********************************************************************************************
  * HouseClass::Sell_Wall -- Tries to sell the wall at the specified location.                  *
@@ -4233,7 +4110,6 @@ void HouseClass::Sell_Wall(CELL cell)
 	}
 }
 
-
 /***********************************************************************************************
  * HouseClass::Suggest_New_Building -- Examines the situation and suggests a building.         *
  *                                                                                             *
@@ -4259,7 +4135,6 @@ BuildingTypeClass const * HouseClass::Suggest_New_Building(void) const
 	}
 	return(NULL);
 }
-
 
 /***********************************************************************************************
  * HouseClass::Find_Building -- Finds a building of specified type.                            *
@@ -4306,7 +4181,6 @@ BuildingClass * HouseClass::Find_Building(StructType type, ZoneType zone) const
 	}
 	return(NULL);
 }
-
 
 /***********************************************************************************************
  * HouseClass::Find_Build_Location -- Finds a suitable building location.                      *
@@ -4411,7 +4285,6 @@ COORDINATE HouseClass::Find_Build_Location(BuildingClass * building) const
 
 	return(0);
 }
-
 
 /***********************************************************************************************
  * HouseClass::Recalc_Center -- Recalculates the center point of the base.                     *
@@ -4542,7 +4415,6 @@ void HouseClass::Recalc_Center(void)
 		}
 	}
 }
-
 
 /***********************************************************************************************
  * HouseClass::Expert_AI -- Handles expert AI processing.                                      *
@@ -4850,7 +4722,6 @@ int HouseClass::Expert_AI(void)
 	return(TICKS_PER_SECOND*5 + Random_Pick(1, TICKS_PER_SECOND/2));
 }
 
-
 UrgencyType HouseClass::Check_Build_Power(void) const
 {
 	assert(Houses.ID(this) == ID);
@@ -4880,7 +4751,6 @@ UrgencyType HouseClass::Check_Build_Power(void) const
 	return(urgency);
 }
 
-
 UrgencyType HouseClass::Check_Build_Defense(void) const
 {
 	assert(Houses.ID(this) == ID);
@@ -4892,7 +4762,6 @@ UrgencyType HouseClass::Check_Build_Defense(void) const
 	*/
 	return(URGENCY_NONE);
 }
-
 
 UrgencyType HouseClass::Check_Build_Offense(void) const
 {
@@ -4923,7 +4792,6 @@ UrgencyType HouseClass::Check_Attack(void) const
 	return(URGENCY_NONE);
 }
 
-
 UrgencyType HouseClass::Check_Build_Income(void) const
 {
 	assert(Houses.ID(this) == ID);
@@ -4936,7 +4804,6 @@ UrgencyType HouseClass::Check_Build_Income(void) const
 	*/
 	return(URGENCY_NONE);
 }
-
 
 UrgencyType HouseClass::Check_Fire_Sale(void) const
 {
@@ -4952,7 +4819,6 @@ UrgencyType HouseClass::Check_Fire_Sale(void) const
 	return(URGENCY_NONE);
 }
 
-
 UrgencyType HouseClass::Check_Build_Engineer(void) const
 {
 	assert(Houses.ID(this) == ID);
@@ -4964,7 +4830,6 @@ UrgencyType HouseClass::Check_Build_Engineer(void) const
 	*/
 	return(URGENCY_NONE);
 }
-
 
 /*
 **	Checks to see if money is critically low and something must be done
@@ -5022,7 +4887,6 @@ UrgencyType HouseClass::Check_Raise_Power(void) const
 	return(urgency);
 }
 
-
 bool HouseClass::AI_Attack(UrgencyType )
 {
 	assert(Houses.ID(this) == ID);
@@ -5079,7 +4943,6 @@ bool HouseClass::AI_Attack(UrgencyType )
 	return(true);
 }
 
-
 /*
 **	Given the specified urgency, build a power structure to meet
 **	this need.
@@ -5090,7 +4953,6 @@ bool HouseClass::AI_Build_Power(UrgencyType ) const
 
 	return(false);
 }
-
 
 /*
 **	Given the specified urgency, build base defensive structures
@@ -5124,7 +4986,6 @@ bool HouseClass::AI_Build_Income(UrgencyType ) const
 
 	return(false);
 }
-
 
 bool HouseClass::AI_Fire_Sale(UrgencyType urgency)
 {
@@ -5169,7 +5030,6 @@ bool HouseClass::AI_Lower_Power(UrgencyType ) const
 	}
 	return(false);
 }
-
 
 /***********************************************************************************************
  * HouseClass::AI_Raise_Power -- Try to raise power levels by selling off buildings.           *
@@ -5226,7 +5086,6 @@ bool HouseClass::AI_Raise_Power(UrgencyType urgency) const
 	}
 	return(false);
 }
-
 
 /***********************************************************************************************
  * HouseClass::AI_Raise_Money -- Raise emergency cash by selling buildings.                    *
@@ -5289,7 +5148,6 @@ bool HouseClass::AI_Raise_Money(UrgencyType urgency) const
 	}
 	return(false);
 }
-
 
 #ifdef NEVER
 
@@ -5379,7 +5237,6 @@ int HouseClass::AI_Base_Defense(void)
 	return(TICKS_PER_SECOND*5);
 }
 #endif
-
 
 /***********************************************************************************************
  * HouseClass::AI_Building -- Determines what building to build.                               *
@@ -5733,7 +5590,6 @@ int HouseClass::AI_Building(void)
 	return(TICKS_PER_SECOND);
 }
 
-
 /***********************************************************************************************
  * HouseClass::AI_Unit -- Determines what unit to build next.                                  *
  *                                                                                             *
@@ -5878,7 +5734,6 @@ int HouseClass::AI_Unit(void)
 	return(TICKS_PER_SECOND);
 }
 
-
 int HouseClass::AI_Vessel(void)
 {
 	assert(Houses.ID(this) == ID);
@@ -5983,8 +5838,6 @@ int HouseClass::AI_Vessel(void)
 
 	return(TICKS_PER_SECOND);
 }
-
-
 
 /***********************************************************************************************
  * HouseClass::AI_Infantry -- Determines the infantry unit to build.                           *
@@ -6181,7 +6034,6 @@ int HouseClass::AI_Infantry(void)
 	return(TICKS_PER_SECOND);
 }
 
-
 /***********************************************************************************************
  * HouseClass::AI_Aircraft -- Determines what aircraft to build next.                          *
  *                                                                                             *
@@ -6235,7 +6087,6 @@ int HouseClass::AI_Aircraft(void)
 
 	return(TICKS_PER_SECOND);
 }
-
 
 /***********************************************************************************************
  * HouseClass::Production_Begun -- Records that production has begun.                          *
@@ -6294,7 +6145,6 @@ void HouseClass::Production_Begun(TechnoClass const * product)
 		}
 	}
 }
-
 
 /***********************************************************************************************
  * HouseClass::Tracking_Remove -- Remove object from house tracking system.                    *
@@ -6362,7 +6212,6 @@ void HouseClass::Tracking_Remove(TechnoClass const * techno)
 			break;
 	}
 }
-
 
 /***********************************************************************************************
  * HouseClass::Tracking_Add -- Informs house of new inventory item.                            *
@@ -6467,7 +6316,6 @@ void HouseClass::Tracking_Add(TechnoClass const * techno)
 	}
 }
 
-
 /***********************************************************************************************
  * HouseClass::Factory_Counter -- Fetches a pointer to the factory counter value.              *
  *                                                                                             *
@@ -6514,7 +6362,6 @@ int * HouseClass::Factory_Counter(RTTIType rtti)
 	return(NULL);
 }
 
-
 /***********************************************************************************************
  * HouseClass::Active_Remove -- Remove this object from active duty for this house.            *
  *                                                                                             *
@@ -6542,7 +6389,6 @@ void HouseClass::Active_Remove(TechnoClass const * techno)
 	}
 }
 
-
 /***********************************************************************************************
  * HouseClass::Active_Add -- Add an object to active duty for this house.                      *
  *                                                                                             *
@@ -6569,7 +6415,6 @@ void HouseClass::Active_Add(TechnoClass const * techno)
 		}
 	}
 }
-
 
 /***********************************************************************************************
  * HouseClass::Which_Zone -- Determines what zone a coordinate lies in.                        *
@@ -6604,7 +6449,6 @@ ZoneType HouseClass::Which_Zone(COORDINATE coord) const
 	return(ZONE_WEST);
 }
 
-
 /***********************************************************************************************
  * HouseClass::Which_Zone -- Determines which base zone the specified object lies in.          *
  *                                                                                             *
@@ -6628,7 +6472,6 @@ ZoneType HouseClass::Which_Zone(ObjectClass const * object) const
 	return(Which_Zone(object->Center_Coord()));
 }
 
-
 /***********************************************************************************************
  * HouseClass::Which_Zone -- Determines which base zone the specified cell lies in.            *
  *                                                                                             *
@@ -6650,7 +6493,6 @@ ZoneType HouseClass::Which_Zone(CELL cell) const
 
 	return(Which_Zone(Cell_Coord(cell)));
 }
-
 
 /***********************************************************************************************
  * HouseClass::Recalc_Attributes -- Recalcs all houses existence bits.                         *
@@ -6750,7 +6592,6 @@ void HouseClass::Recalc_Attributes(void)
 	}
 }
 
-
 /***********************************************************************************************
  * HouseClass::Zone_Cell -- Finds the cell closest to the center of the zone.                  *
  *                                                                                             *
@@ -6793,7 +6634,6 @@ CELL HouseClass::Zone_Cell(ZoneType zone) const
 	return(0);
 }
 
-
 /***********************************************************************************************
  * HouseClass::Where_To_Go -- Determines where the object should go and wait.                  *
  *                                                                                             *
@@ -6828,7 +6668,6 @@ CELL HouseClass::Where_To_Go(FootClass const * object) const
 
 	return(Map.Nearby_Location(cell, SPEED_TRACK, Map[cell].Zones[MZONE_NORMAL], MZONE_NORMAL));
 }
-
 
 /***********************************************************************************************
  * HouseClass::Find_Juicy_Target -- Finds a suitable field target.                             *
@@ -6875,7 +6714,6 @@ TARGET HouseClass::Find_Juicy_Target(COORDINATE coord) const
 	return(TARGET_NONE);
 }
 
-
 /***********************************************************************************************
  * HouseClass::Get_Quantity -- Fetches the total number of aircraft of the specified type.     *
  *                                                                                             *
@@ -6896,7 +6734,6 @@ int  HouseClass::Get_Quantity(AircraftType aircraft)
 {
 	return(AQuantity[aircraft]);
 }
-
 
 /***********************************************************************************************
  * HouseClass::Fetch_Factory -- Finds the factory associated with the object type specified.   *
@@ -6960,7 +6797,6 @@ FactoryClass * HouseClass::Fetch_Factory(RTTIType rtti) const
 	}
 	return(NULL);
 }
-
 
 /***********************************************************************************************
  * HouseClass::Set_Factory -- Assign specified factory to house tracking.                      *
@@ -7028,7 +6864,6 @@ void HouseClass::Set_Factory(RTTIType rtti, FactoryClass * factory)
 	}
 }
 
-
 /***********************************************************************************************
  * HouseClass::Factory_Count -- Fetches the number of factories for specified type.            *
  *                                                                                             *
@@ -7053,7 +6888,6 @@ int HouseClass::Factory_Count(RTTIType rtti) const
 	return(0);
 }
 
-
 /***********************************************************************************************
  * HouseClass::Get_Quantity -- Gets the quantity of the building type specified.               *
  *                                                                                             *
@@ -7072,7 +6906,6 @@ int  HouseClass::Get_Quantity(StructType building)
 {
 	return(BQuantity[building]);
 }
-
 
 /***********************************************************************************************
  * HouseClass::Read_INI -- Reads house specific data from INI.                                 *
@@ -7126,7 +6959,6 @@ void HouseClass::Read_INI(CCINIClass & ini)
 		}
 	}
 }
-
 
 /***********************************************************************************************
  * HouseClass::Write_INI -- Writes the house data to the INI database.                         *
@@ -7202,7 +7034,6 @@ void HouseClass::Write_INI(CCINIClass & ini)
 	}
 }
 
-
 /***********************************************************************************************
  * HouseClass::Is_No_YakMig -- Determines if no more yaks or migs should be allowed.           *
  *                                                                                             *
@@ -7240,7 +7071,6 @@ bool HouseClass::Is_No_YakMig(void) const
 	return(false);
 }
 
-
 /***********************************************************************************************
  * HouseClass::Is_Hack_Prevented -- Is production of the specified type and id prohibted?      *
  *                                                                                             *
@@ -7266,7 +7096,6 @@ bool HouseClass::Is_Hack_Prevented(RTTIType rtti, int value) const
 	}
 	return(false);
 }
-
 
 /***********************************************************************************************
  * HouseClass::Fire_Sale -- Cause all buildings to be sold.                                    *
@@ -7296,7 +7125,6 @@ bool HouseClass::Fire_Sale(void)
 	}
 	return(false);
 }
-
 
 /***********************************************************************************************
  * HouseClass::Do_All_To_Hunt -- Send all units to hunt.                                       *
@@ -7354,7 +7182,6 @@ void HouseClass::Do_All_To_Hunt(void) const
 		}
 	}
 }
-
 
 /***********************************************************************************************
  * HouseClass::Is_Allowed_To_Ally -- Determines if this house is allied to make allies.        *
@@ -7454,7 +7281,6 @@ bool HouseClass::Is_Allowed_To_Ally(HousesType house) const
 	return(true);
 }
 
-
 /***********************************************************************************************
  * HouseClass::Computer_Paranoid -- Cause the computer players to becom paranoid.              *
  *                                                                                             *
@@ -7501,7 +7327,6 @@ void HouseClass::Computer_Paranoid(void)
 	}
 }
 
-
 /***********************************************************************************************
  * HouseClass::Adjust_Power -- Adjust the power value of the house.                            *
  *                                                                                             *
@@ -7524,7 +7349,6 @@ void HouseClass::Adjust_Power(int adjust)
 	Update_Spied_Power_Plants();
 }
 
-
 /***********************************************************************************************
  * HouseClass::Adjust_Drain -- Adjust the power drain value of the house.                      *
  *                                                                                             *
@@ -7545,7 +7369,6 @@ void HouseClass::Adjust_Drain(int adjust)
 	Drain += adjust;
 	Update_Spied_Power_Plants();
 }
-
 
 /***********************************************************************************************
  * HouseClass::Update_Spied_Power_Plants -- Redraw power graphs on spied-upon power plants.    *
@@ -7576,7 +7399,6 @@ void HouseClass::Update_Spied_Power_Plants(void)
 		}
 	}
 }
-
 
 /***********************************************************************************************
  * HouseClass::Find_Cell_In_Zone -- Finds a legal placement cell within the zone.              *
@@ -7646,7 +7468,6 @@ CELL HouseClass::Find_Cell_In_Zone(TechnoClass const * techno, ZoneType zone) co
 	*/
 	return(bestcell);
 }
-
 
 /***********************************************************************************************
  * HouseClass::Random_Cell_In_Zone -- Find a (technically) legal cell in the zone specified.   *

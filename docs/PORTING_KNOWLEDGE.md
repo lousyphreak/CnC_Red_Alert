@@ -155,10 +155,13 @@
   - `ConnManClass` is still the interface consumed by the gameplay loop.
   - `ConnectionClass` and the queue classes still own ACK/retry/timeout behavior.
   - `SessionClass`, `NETDLG.CPP`, `SENDFILE.CPP`, and `QUEUE.CPP` still sit above that transport layer and mostly care about packet flow, peer lists, timing, and game state rather than raw sockets.
+- The old legacy online-service branches are gone now.
+  - That cleanup removed their manager classes, session enum values, startup helpers, reconnect UI, and in-game message plumbing instead of just leaving them compile-gated.
+  - A repo-wide grep for the removed backend names is expected to stay clean outside vendored third-party files.
 - Practical consequence: future multiplayer work should start by deciding whether it can preserve that seam.
-  - If the goal is to revive direct head-to-head internet play, prefer wiring the existing `TcpipManagerClass` path back into the front-end rather than touching the dead WOL/TEN/MPath branches.
+  - If the goal is to revive direct head-to-head internet play, prefer wiring the existing `TcpipManagerClass` path back into the front-end rather than reviving removed legacy online-service branches.
   - If the goal is a new backend, prefer implementing it against `ConnManClass` or swapping transport plumbing under the still-live UDP manager surface instead of reviving `PacketTransport`, `WSPROTO`, or WOL-only integration hooks.
-- Safe rule for this tree: treat the active SDL/CMake networking path and the currently compiled code as the source of truth, and treat WOL/TEN/MPath/helper-transport code as reference material unless the build is deliberately expanded to support them again.
+- Safe rule for this tree: treat the active SDL/CMake networking path and the currently compiled code as the source of truth, and treat removed legacy online-service/helper-transport code as historical reference only.
 
 ## Networking restoration work has to preserve the current UI seams, not just the transport seams
 
@@ -370,7 +373,7 @@ _Last updated: 2026-04-03_
     - PlanetWestwood start-time and port globals used by the networking/statistics path.
 - When changing a base timing/protocol API, check the whole inheritance surface before declaring success.
   - `ConnManClass::Response_Time()` / `Set_Timing()` still used `unsigned long` after the first `UDPManagerClass` conversion.
-  - The correct fix was to move the abstract interface and the alternate implementations (`TENMGR`, `MPMGRW`, `MPMGRD`) to fixed-width types too, not to backslide the derived SDL/Linux code.
+  - The correct fix was to move the abstract interface and the alternate manager implementations that existed at the time to fixed-width types too, not to backslide the derived SDL/Linux code.
 - The old retry-forever sentinel is still semantically required in the connection layer.
   - Original code compared retry counts/timeouts against `-1`.
   - After converting those fields to `uint32_t`, preserve that behavior explicitly with a 32-bit all-bits-set sentinel (`static_cast<uint32_t>(-1)` / equivalent), and update nearby templated arithmetic so mixed `unsigned long` literals do not leak back in through overload resolution.

@@ -72,7 +72,6 @@ static VersionProtocolType VersionProtocol[] = {
 	{0x00010000,COMM_PROTOCOL_MULTI_E_COMP},
 };
 
-
 /***************************************************************************
  * VersionClass::VersionClass -- Class constructor                         *
  *                                                                         *
@@ -103,7 +102,6 @@ VersionClass::VersionClass(void) :
 	VersionText[0] = '\0';
 	VersionName[0] = '\0';
 }
-
 
 /***************************************************************************
  * VersionClass::Version_Number -- Returns program version number          *
@@ -178,7 +176,6 @@ uint32_t VersionClass::Version_Number(void)
 	return (Version);
 
 }	/* end of Version_Number */
-
 
 /***************************************************************************
  * VersionClass::Major_Version -- returns major version #                  *
@@ -276,7 +273,6 @@ uint16_t VersionClass::Major_Version(void)
 	return (MajorVer);
 
 }	/* end of Major_Version */
-
 
 /***************************************************************************
  * VersionClass::Minor_Version -- returns minor version (revision) number  *
@@ -399,7 +395,6 @@ uint16_t VersionClass::Minor_Version(void)
 
 }	/* end of Minor_Version */
 
-
 /***************************************************************************
  * VersionClass::Version_Name -- returns version # as char string          *
  *                                                                         *
@@ -445,7 +440,6 @@ char * VersionClass::Version_Name(void)
 
 }	/* end of Version_Name */
 
-
 /***************************************************************************
  * VersionClass::Read_Text_String -- reads version # text string from disk *
  *                                                                         *
@@ -476,7 +470,6 @@ void VersionClass::Read_Text_String(void)
 	}
 
 }	/* end of Read_Text_String */
-
 
 /***************************************************************************
  * VersionClass::Version_Protocol -- returns default protocol for version  *
@@ -522,7 +515,6 @@ CommProtocolType VersionClass::Version_Protocol(uint32_t version)
 
 }	/* end of Version_Protocol */
 
-
 /***************************************************************************
  * VersionClass::Init_Clipping -- Initializes version clipping             *
  *                                                                         *
@@ -549,7 +541,6 @@ void VersionClass::Init_Clipping(void)
 	MaxClipVer = Max_Version();
 
 }	/* end of Init_Clipping */
-
 
 /***************************************************************************
  * VersionClass::Clip_Version -- "clips" the given version range           *
@@ -616,7 +607,6 @@ uint32_t VersionClass::Clip_Version(uint32_t minver,
 
 }	/* end of Clip_Version */
 
-
 /***************************************************************************
  * VersionClass::Min_Version -- returns lowest version # to connect to     *
  *                                                                         *
@@ -670,7 +660,6 @@ uint32_t VersionClass::Min_Version(void)
 #endif
 
 }	/* end of Min_Version */
-
 
 /***************************************************************************
  * VersionClass::Max_Version -- returns highest version # to connect to    *
@@ -729,7 +718,6 @@ uint32_t VersionClass::Max_Version(void)
 #endif	//	FIXIT_VERSION_3
 
 }	/* end of Max_Version */
-
 
 char const * Version_Name(void)
 {
@@ -835,14 +823,6 @@ char const * Version_Name(void)
 	if (Is_Aftermath_Installed()) {
 		strcat (buffer, "AM");
 	}
-
-#if(TEN)
-	strcat(buffer, "Ten");		// Ten version
-#endif
-
-#if(MPATH)
-	strcat(buffer, "MPath");	// MPath version
-#endif
 
 	RawFileClass file("VERSION.TXT");
 	if (file.Is_Available()) {

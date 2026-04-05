@@ -158,14 +158,12 @@ GameType Select_MPlayer_Game (void)
 	//------------------------------------------------------------------------
 	ControlClass * commands = NULL;				// the button list
 
-
 	//------------------------------------------------------------------------
 	// The legacy serial-only fallback was removed with the modem cleanup.
 	//------------------------------------------------------------------------
 //	if ( !Udp.Is_UDP() ) {
 //		return( Select_Serial_Dialog() );
 //	}
-
 
 	TextButtonClass skirmishbtn (BUTTON_SKIRMISH, TXT_SKIRMISH, TPF_BUTTON,
 		d_skirmish_x, d_skirmish_y, d_skirmish_w, d_skirmish_h);
@@ -404,7 +402,6 @@ GameType Select_MPlayer_Game (void)
 
 }	/* end of Select_MPlayer_Game */
 
-
 /***************************************************************************
  * Clear_Listbox -- clears the given list box                              *
  *                                                                         *
@@ -439,7 +436,6 @@ void Clear_Listbox(ListClass * list)
 
 }	// end of Clear_Listbox
 
-
 /***************************************************************************
  * Clear_Vector -- clears the given NodeNameType vector                    *
  *                                                                         *
@@ -468,7 +464,6 @@ void Clear_Vector(DynamicVectorClass <NodeNameType *> * vector)
 	vector->Clear();
 
 }	// end of Clear_Vector
-
 
 /***************************************************************************
  * Computer_Message -- "sends" a message from the computer                 *
@@ -539,7 +534,6 @@ void Computer_Message(void)
 	}
 #endif
 }	/* end of Computer_Message */
-
 
 #ifdef NEVER
 /***************************************************************************
@@ -628,7 +622,6 @@ static void Garble_Message(char * buf)
 
 }	/* end of Garble_Message */
 #endif
-
 
 /***************************************************************************
  * Surrender_Dialog -- Prompts user for surrendering                       *
@@ -841,7 +834,6 @@ int Surrender_Dialog(int text)
 	return (retcode);
 }
 
-
 /***************************************************************************
  * Abort_Dialog -- Prompts user for confirmation on aborting the mission	*
  *                                                                         *
@@ -1034,187 +1026,5 @@ int Abort_Dialog(void)
 
 	return (retcode);
 }
-
-
-#if(TEN)
-/***************************************************************************
- * Read_TEN_Game_Options -- reads multiplayer game options from disk       *
- *                                                                         *
- * This routine is used for multiplayer games which read the game options	*
- * from disk, rather than through a connection dialog.							*
- *                                                                         *
- * INPUT:                                                                  *
- *		none.																						*
- *                                                                         *
- * OUTPUT:                                                                 *
- *		1 = OK, 0 = error																		*
- *                                                                         *
- * WARNINGS:                                                               *
- *		none.																						*
- *                                                                         *
- * HISTORY:                                                                *
- *   01/11/1996 BRR : Created.                                             *
- *=========================================================================*/
-int Read_TEN_Game_Options(void)
-{
-	INIClass ini;
-	if (!ini.Load(RawFileClass(Session.OptionsFile))) {
-		return (0);
-	}
-
-	ini.Get_String("Options", "Handle", "Noname",  Session.Handle,
-		sizeof(Session.Handle));
-	if (Session.TenPlayerID == -1) {
-		return (0);
-	}
-	Session.ColorIdx = (PlayerColorType)Session.TenPlayerID;
-	Session.House = (HousesType)
-		((int)HOUSE_USSR + ini.Get_Int("Options", "Side", 0));
-	Session.Options.Credits = ini.Get_Int("Options", "Credits", 3000);
-	Session.Options.Bases = ini.Get_Int("Options", "Bases", 1);
-	Session.Options.Tiberium = ini.Get_Int("Options", "Tiberium", 1);
-	Session.Options.Goodies = ini.Get_Int("Options", "Crates", 1);
-	Special.IsShadowGrow = ini.Get_Int ("Options", "Shadow", 0);
-	BuildLevel = ini.Get_Int("Options", "BuildLevel", 3);
-	Session.Options.UnitCount = ini.Get_Int("Options", "UnitCount", 5);
-	Seed = ini.Get_Int("Options", "Seed", 0);
-	Special.IsCaptureTheFlag = ini.Get_Int("Options", "CapFlag", 0);
-	Session.Options.AIPlayers = ini.Get_Int("Options", "AI", 0);
-	Session.NumPlayers = ini.Get_Int("Options", "Players", 2);
-
-	if (Session.Options.AIPlayers){
-		Session.Options.Ghosts = 1;
-	}
-
-	if (Session.Options.Tiberium) {
-		Special.IsTGrowth = 1;
-		Special.IsTSpread = 1;
-	} else {
-		Special.IsTGrowth = 0;
-		Special.IsTSpread = 0;
-	}
-
-	/*
-	** Read the scenario name from the .INI and try to match it with a scenario file in our list.
-	*/
-	ini.Get_String("Options", "Scenario", "Black Acres",
-										Session.Options.ScenarioDescription,
-										sizeof (Session.Options.ScenarioDescription));
-
-	Session.Options.ScenarioIndex = -1;
-	for (int i = 0; i < Session.Scenarios.Count(); i++) {
-		if (!strcmp (Session.Scenarios[i]->Description(),
-			Session.Options.ScenarioDescription) ) {
-			Session.Options.ScenarioIndex = i;
-			strcpy(Session.ScenarioFileName, Session.Scenarios[i]->Get_Filename());
-			strcpy(Scen.ScenarioName, Session.Scenarios[i]->Get_Filename());
-			break;
-		}
-	}
-
-	if (Session.Options.ScenarioIndex == -1) {
-		WWMessageBox().Process("Scenario not found!");
-		//Prog_End();
-		Emergency_Exit(0);
-	}
-
-	Options.GameSpeed = 0;
-
-	Session.MaxAhead = ini.Get_Int("Timing", "MaxAhead", 9);
-	Session.FrameSendRate = ini.Get_Int("Timing", "SendRate", 3);
-	Session.NetResponseTime = ini.Get_Int("Timing","Latency",600);
-
-	return (1);
-}
-#endif	// TEN
-
-
-#if(MPATH)
-/***************************************************************************
- * Read_MPATH_Game_Options -- reads multiplayer game options from disk     *
- *                                                                         *
- * This routine is used for multiplayer games which read the game options	*
- * from disk, rather than through a connection dialog.							*
- *                                                                         *
- * INPUT:                                                                  *
- *		none.																						*
- *                                                                         *
- * OUTPUT:                                                                 *
- *		1 = OK, 0 = error																		*
- *                                                                         *
- * WARNINGS:                                                               *
- *		none.																						*
- *                                                                         *
- * HISTORY:                                                                *
- *   01/11/1996 BRR : Created.                                             *
- *=========================================================================*/
-int Read_MPATH_Game_Options(void)
-{
-	INIClass ini;
-	if (!ini.Load(RawFileClass(Session.OptionsFile))) {
-		return (0);
-	}
-
-	ini.Get_String("Options", "Handle", "Noname",  Session.Handle,
-		sizeof(Session.Handle));
-	Session.ColorIdx = (PlayerColorType)ini.Get_Int("Options", "Color", 0);
-	Session.House = (HousesType)
-		((int)HOUSE_USSR + ini.Get_Int("Options", "Side", 0));
-	Session.Options.Credits = ini.Get_Int("Options", "Credits", 3000);
-	Session.Options.Bases = ini.Get_Int("Options", "Bases", 1);
-	Session.Options.Tiberium = ini.Get_Int("Options", "Tiberium", 1);
-	Session.Options.Goodies = ini.Get_Int("Options", "Crates", 1);
-	Special.IsShadowGrow = ini.Get_Int ("Options", "Shadow", 0);
-	BuildLevel = ini.Get_Int("Options", "BuildLevel", 3);
-	Session.Options.UnitCount = ini.Get_Int("Options", "UnitCount", 5);
-	Seed = ini.Get_Int("Options", "Seed", 0);
-	Special.IsCaptureTheFlag = ini.Get_Int("Options", "CapFlag", 0);
-	Session.Options.AIPlayers = ini.Get_Int("Options", "AI", 0);
-
-	if (Session.Options.AIPlayers){
-		Session.Options.Ghosts = 1;
-	}
-
-	if (Session.Options.Tiberium) {
-		Special.IsTGrowth = 1;
-		Special.IsTSpread = 1;
-	} else {
-		Special.IsTGrowth = 0;
-		Special.IsTSpread = 0;
-	}
-
-	/*
-	** Read the scenario name from the .INI and try to match it with a scenario file in our list.
-	*/
-	ini.Get_String("Options", "Scenario", "Black Acres",
-										Session.Options.ScenarioDescription,
-										sizeof (Session.Options.ScenarioDescription));
-
-	Session.Options.ScenarioIndex = -1;
-	for (int i = 0; i < Session.Scenarios.Count(); i++) {
-		if (!strcmp (Session.Scenarios[i]->Description(),
-			Session.Options.ScenarioDescription) ) {
-			Session.Options.ScenarioIndex = i;
-			strcpy(Session.ScenarioFileName, Session.Scenarios[i]->Get_Filename());
-			strcpy(Scen.ScenarioName, Session.Scenarios[i]->Get_Filename());
-			break;
-		}
-	}
-
-	if (Session.Options.ScenarioIndex == -1) {
-		WWMessageBox().Process("Scenario not found!");
-		//Prog_End();
-		Emergency_Exit(0);
-	}
-
-	Options.GameSpeed = 0;
-
-	Session.MaxAhead = ini.Get_Int("Timing", "MaxAhead", 9);
-	Session.FrameSendRate = ini.Get_Int("Timing", "SendRate", 3);
-	Session.NetResponseTime = ini.Get_Int("Timing","Latency",600);
-
-	return (1);
-}
-#endif	// MPATH
 
 /************************** end of mplayer.cpp *****************************/

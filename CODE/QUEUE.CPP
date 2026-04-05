@@ -95,10 +95,8 @@ static void Zero_Event_Memory(EventClass &event)
 	}
 }
 
-
 /********************************** Defines *********************************/
 #define SHOW_MONO	0
-
 
 /********************************** Globals *********************************/
 //---------------------------------------------------------------------------
@@ -218,7 +216,6 @@ void Dump_Packet_Too_Late_Stuff(EventClass *event, ConnManClass *net,
 	int32_t *their_frame, uint16_t *their_sent, uint16_t *their_recv);
 void Check_Mirror(void);
 
-
 /***************************************************************************
  * Queue_Mission -- Queue a mega mission event.                            *
  *                                                                         *
@@ -249,7 +246,6 @@ bool Queue_Mission(TargetClass whom, MissionType mission, TARGET target, TARGET 
 		return(true);
 	}
 }
-
 
 /***********************************************************************************************
  * Queue_Mission -- Queue a mega mission event, formation override for common speed.           *
@@ -285,7 +281,6 @@ bool Queue_Mission(TargetClass whom, MissionType mission, TARGET target, TARGET 
 	}
 }
 
-
 /***************************************************************************
  * Queue_Options -- Queue the options event.                               *
  *                                                                         *
@@ -312,7 +307,6 @@ bool Queue_Options(void)
 
 }		/* end of Queue_Options */
 
-
 /***************************************************************************
  * Queue_Exit -- Add the exit game event to the queue.                     *
  *                                                                         *
@@ -338,7 +332,6 @@ bool Queue_Exit(void)
 	}
 
 }		/* end of Queue_Exit */
-
 
 /***************************************************************************
  * Queue_AI -- Process all queued events.                                  *
@@ -372,15 +365,12 @@ void Queue_AI(void)
 
 			case GAME_UDP:
 			case GAME_INTERNET:
-			case GAME_TEN:
-			case GAME_MPATH:
 				Queue_AI_Multiplayer();
 				break;
 		}
 	}
 
 }	/* end of Queue_AI */
-
 
 /***************************************************************************
  * Queue_AI_Normal -- Process all queued events.                           *
@@ -443,7 +433,6 @@ static void Queue_AI_Normal(void)
 	Clean_DoList(NULL);
 
 }	/* end of Queue_AI_Normal */
-
 
 /***************************************************************************
  * Queue_AI_Multiplayer -- Process all queued events.                      *
@@ -610,20 +599,6 @@ static void Queue_AI_Multiplayer(void)
 		multi_packet_max = Session.MetaSize;
 		net = &Udp;
 	}
-#if(TEN)
-	else if (Session.Type == GAME_TEN) {
-		multi_packet_buf = Session.TenPacket;
-		multi_packet_max = Session.TenSize;
-		net = Ten;
-	}
-#endif
-#if(MPATH)
-	else if (Session.Type == GAME_MPATH) {
-		multi_packet_buf = Session.MPathPacket;
-		multi_packet_max = Session.MPathSize;
-		net = MPath;
-	}
-#endif
 
 	//------------------------------------------------------------------------
 	//	Debug stuff
@@ -873,7 +848,6 @@ static void Queue_AI_Multiplayer(void)
 
 }	// end of Queue_AI_Multiplayer
 
-
 /***************************************************************************
  * Wait_For_Players -- Waits for other systems to come on-line             *
  *                                                                         *
@@ -1059,10 +1033,6 @@ static RetcodeType Wait_For_Players(int first_time, ConnManClass *net,
 		messages_this_loop = 0;
 		message_limit = 5;
 
-		if (Session.Type == GAME_TEN || Session.Type == GAME_MPATH) {
-			message_limit = 9999;
-		}
-
 		while ( (messages_this_loop++ < message_limit) &&
 			net->Get_Private_Message (multi_packet_buf, &packetlen, &id) ) {
 
@@ -1163,7 +1133,6 @@ static RetcodeType Wait_For_Players(int first_time, ConnManClass *net,
 
 }	// end of Wait_For_Players
 
-
 /***************************************************************************
  * Generate_Timing_Event -- computes & queues a RESPONSE_TIME event        *
  *                                                                         *
@@ -1192,13 +1161,6 @@ static void Generate_Timing_Event(ConnManClass *net, int my_sent)
 	EventClass ev;
 
 	//
-	// For now, TEN & MPATH don't measure the net's response time, so there's
-	// no point in adjusting our timing.  Do nothing.
-	//
-	if (Session.Type == GAME_TEN || Session.Type == GAME_MPATH) {
-		return;
-	}
-
 	//------------------------------------------------------------------------
 	// Measure the current connection response time.  This time will be in
 	// 60ths of a second, and represents full round-trip time of a packet.
@@ -1239,17 +1201,12 @@ static void Generate_Timing_Event(ConnManClass *net, int my_sent)
 					ev.Data.FrameInfo.Delay = max(static_cast<uint32_t>(resp_time / 8),
 						 static_cast<uint32_t>(NETWORK_MIN_MAX_AHEAD));
 				}
-				else if (Session.Type == GAME_TEN || Session.Type == GAME_MPATH) {
-					ev.Data.FrameInfo.Delay = max(static_cast<uint32_t>(resp_time / 8),
-						 static_cast<uint32_t>(HIGH_LATENCY_MIN_MAX_AHEAD));
-				}
 			}
 			OutList.Add(ev);
 		}
 	}
 
 }	// end of Generate_Timing_Event
-
 
 /***************************************************************************
  * Generate_Real_Timing_Event -- Generates a TIMING event                  *
@@ -1369,7 +1326,6 @@ static void Generate_Real_Timing_Event(ConnManClass *net, int my_sent)
 
 }
 
-
 /***************************************************************************
  * Generate_Process_Time_Event -- Generates a PROCESS_TIME event           *
  *                                                                         *
@@ -1411,7 +1367,6 @@ static void Generate_Process_Time_Event(ConnManClass *net)
 		net->Set_Timing (resp_time + 10, -1, (resp_time * 4)+15);
 	}
 
-
 	if (IsMono) {
 		MonoClass::Enable();
 		Mono_Set_Cursor(0,23);
@@ -1428,7 +1383,6 @@ static void Generate_Process_Time_Event(ConnManClass *net)
 	Session.ProcessTicks = 0;
 	Session.ProcessFrames = 0;
 }
-
 
 /***************************************************************************
  * Process_Send_Period -- timing for sending packets every 'n' frames      *
@@ -1467,9 +1421,7 @@ static int Process_Send_Period(ConnManClass *net)	//, int init)
 
 	return (1);
 
-
 }	// end of Process_Send_Period
-
 
 /***************************************************************************
  * Send_Packets -- sends out events from the OutList                       *
@@ -1604,7 +1556,6 @@ static int Send_Packets(ConnManClass *net, char *multi_packet_buf,
 
 }	// end of Send_Packets
 
-
 /***************************************************************************
  * Send_FrameSync -- Sends a FRAMESYNC packet                              *
  *                                                                         *
@@ -1659,7 +1610,6 @@ static void Send_FrameSync(ConnManClass *net, int cmd_count)
 	return;
 
 }	// end of Send_FrameSync
-
 
 /***************************************************************************
  * Process_Receive_Packet -- processes an incoming packet                  *
@@ -1812,7 +1762,6 @@ static RetcodeType Process_Receive_Packet(ConnManClass *net,
 
 }	// end of Process_Receive_Packet
 
-
 /***************************************************************************
  * Can_Advance -- determines if it's OK to advance to the next frame       *
  *                                                                         *
@@ -1894,7 +1843,6 @@ static int Can_Advance(ConnManClass *net, int max_ahead, int32_t *their_frame,
 
 }	// end of Can_Advance
 
-
 /***************************************************************************
  * Process_Reconnect_Dialog -- processes the reconnection dialog           *
  *                                                                         *
@@ -1964,7 +1912,6 @@ static int Process_Reconnect_Dialog(CDTimerClass<SystemTimerClass> *timeout_time
 
 }	// end of Process_Reconnect_Dialog
 
-
 /***************************************************************************
  * Handle_Timeout -- handles a timeout in the wait-for-players loop			*
  *                                                                         *
@@ -2006,8 +1953,7 @@ static int Handle_Timeout(ConnManClass *net, int32_t *their_frame,
 	//------------------------------------------------------------------------
 	//	For network, destroy the oldest connection
 	//------------------------------------------------------------------------
-	if (Session.Type == GAME_UDP || Session.Type == GAME_INTERNET ||
-		Session.Type == GAME_TEN || Session.Type == GAME_MPATH) {
+	if (Session.Type == GAME_UDP || Session.Type == GAME_INTERNET) {
 		j = 0x7fffffff;
 		oldest_index = 0;
 		for (i = 0; i < net->Num_Connections(); i++) {
@@ -2038,23 +1984,12 @@ static int Handle_Timeout(ConnManClass *net, int32_t *their_frame,
 			if (Session.Type == GAME_UDP || Session.Type == GAME_INTERNET) {
 				Destroy_Connection(id,1);
 			}
-#if(TEN)
-			else if (Session.Type == GAME_TEN) {
-				Destroy_TEN_Connection(id,1);
-			}
-#endif
-#if(MPATH)
-			else if (Session.Type == GAME_MPATH) {
-				Destroy_MPATH_Connection(id,1);
-			}
-#endif
 		}
 	}
 
 	return (1);
 
 }	// end of Handle_Timeout
-
 
 /***************************************************************************
  * Stop_Game -- stops the game															*
@@ -2090,7 +2025,6 @@ static void Stop_Game(void)
 	return;
 
 }	// end of Stop_Game
-
 
 /***************************************************************************
  * Build_Send_Packet -- Builds a big packet from a bunch of little ones.	*
@@ -2201,7 +2135,6 @@ static int Build_Send_Packet(void *buf, int bufsize, int frame_delay,
 
 }	/* end of Build_Send_Packet */
 
-
 /***************************************************************************
  * Add_Uncompressed_Events -- adds uncompressed events to a packet         *
  *                                                                         *
@@ -2296,7 +2229,6 @@ static int Add_Uncompressed_Events(void *buf, int bufsize, int frame_delay,
 	return (size);
 
 }	// end of Add_Uncompressed_Events
-
 
 /***************************************************************************
  * Add_Compressed_Events -- adds an compressed events to a packet          *
@@ -2612,7 +2544,6 @@ static int Add_Compressed_Events(void *buf, int bufsize, int frame_delay,
 
 }	// end of Add_Compressed_Events
 
-
 /***************************************************************************
  * Breakup_Receive_Packet -- Splits a big packet into little ones.			*
  *                                                                         *
@@ -2651,7 +2582,6 @@ static int Breakup_Receive_Packet(void *buf, int bufsize )
 	return (count);
 
 }	/* end of Breakup_Receive_Packet */
-
 
 /***************************************************************************
  * Extract_Uncompressed_Events -- extracts events from a packet            *
@@ -2731,7 +2661,6 @@ static int Extract_Uncompressed_Events(void *buf, int bufsize)
 	return (count);
 
 }	// end of Extract_Uncompressed_Events
-
 
 /***************************************************************************
  * Extract_Compressed_Events -- extracts events from a packet   				*
@@ -2938,7 +2867,6 @@ static int Extract_Compressed_Events(void *buf, int bufsize)
 
 }	// end of Extract_Compressed_Events
 
-
 /***************************************************************************
  * Execute_DoList -- Executes commands from the DoList                     *
  *                                                                         *
@@ -3057,14 +2985,6 @@ static int Execute_DoList(int max_houses, HousesType base_house,
 					EventClass::FRAMEINFO && Session.Type != GAME_NORMAL &&
 					Session.Type != GAME_SKIRMISH) {
 
-#if(TEN)
-					Send_TEN_Packet_Too_Late();
-#endif	// TEN
-
-#if(MPATH)
-					//Send_MPATH_Packet_Too_Late();
-#endif	// MPATH
-
 					Dump_Packet_Too_Late_Stuff(&DoList[j], net, their_frame,
 						their_sent, their_recv);
 					WWMessageBox().Process (TXT_PACKET_TOO_LATE);
@@ -3126,9 +3046,7 @@ static int Execute_DoList(int max_houses, HousesType base_house,
 					// connection ID.
 					//............................................................
 						if ((Session.Type == GAME_UDP ||
-							Session.Type == GAME_INTERNET ||
-							Session.Type == GAME_TEN ||
-							Session.Type == GAME_MPATH) && net) {
+							Session.Type == GAME_INTERNET) && net) {
 							index = net->Connection_Index (house);
 							if (index != -1) {
 								for (k = index; k < net->Num_Connections() - 1; k++) {
@@ -3140,16 +3058,6 @@ static int Execute_DoList(int max_houses, HousesType base_house,
 									Session.Type == GAME_INTERNET) {
 									Destroy_Connection(house,0);
 								}
-#if(TEN)
-								else if (Session.Type == GAME_TEN) {
-									Destroy_TEN_Connection(house,0);
-								}
-#endif	// TEN
-#if(MPATH)
-								else if (Session.Type == GAME_MPATH) {
-									Destroy_MPATH_Connection(house,0);
-								}
-#endif	// MPATH
 							}
 						}
 						//
@@ -3190,14 +3098,6 @@ static int Execute_DoList(int max_houses, HousesType base_house,
 						if (CRC[index] != DoList[j].Data.FrameInfo.CRC) {
 							Print_CRCs(&DoList[j]);
 
-#if(TEN)
-							Send_TEN_Out_Of_Sync();
-#endif	// TEN
-
-#if(MPATH)
-							//Send_MPATH_Out_Of_Sync();
-#endif	// MPATH
-
 							if (WWMessageBox().Process (TXT_OUT_OF_SYNC,
 								TXT_CONTINUE, TXT_STOP) == 0) {
 								if ((Session.Type == GAME_UDP ||
@@ -3207,20 +3107,6 @@ static int Execute_DoList(int max_houses, HousesType base_house,
 										Destroy_Connection (net->Connection_ID(0), -1);
 									}
 								}
-#if(TEN)
-								else if (Session.Type == GAME_TEN && net) {
-									while (net->Num_Connections()) {
-										Destroy_TEN_Connection (net->Connection_ID(0), -1);
-									}
-								}
-#endif
-#if(MPATH)
-								else if (Session.Type == GAME_MPATH && net) {
-									while (net->Num_Connections()) {
-										Destroy_MPATH_Connection (net->Connection_ID(0), -1);
-									}
-								}
-#endif
 								Map.Flag_To_Redraw(true);
 							}
 							else {
@@ -3251,7 +3137,6 @@ static int Execute_DoList(int max_houses, HousesType base_house,
 	return (1);
 
 }	// end of Execute_DoList
-
 
 /***************************************************************************
  * Clean_DoList -- Cleans out old events from the DoList                   *
@@ -3301,7 +3186,6 @@ static void Clean_DoList(ConnManClass *net)
 
 }	// end of Clean_DoList
 
-
 /***************************************************************************
  * Queue_Record -- Records the DoList to disk                              *
  *                                                                         *
@@ -3347,7 +3231,6 @@ static void Queue_Record(void)
 	}
 
 }	/* end of Queue_Record */
-
 
 /***************************************************************************
  * Queue_Playback -- plays back queue entries from a record file           *
@@ -3472,7 +3355,6 @@ static void Queue_Playback(void)
 		return;
 	}
 
-
 	//------------------------------------------------------------------------
 	// Execute the DoList; if an error occurs, bail out.
 	//------------------------------------------------------------------------
@@ -3495,7 +3377,6 @@ static void Queue_Playback(void)
 	Clean_DoList(NULL);
 
 }	/* end of Queue_Playback */
-
 
 /***************************************************************************
  * Compute_Game_CRC -- Computes a CRC value of the entire game.				*
@@ -3596,7 +3477,6 @@ static void Compute_Game_CRC(void)
 	Add_CRC(&GameCRC, Scen.RandomNumber);
 
 }	/* end of Compute_Game_CRC */
-
 
 /***************************************************************************
  * Add_CRC -- Adds a value to a CRC                                        *
@@ -3942,7 +3822,6 @@ static void Print_CRCs(EventClass *ev)
 
 }	/* end of Print_CRCs */
 
-
 /***************************************************************************
  * Init_Queue_Mono -- inits mono display                                   *
  *                                                                         *
@@ -4024,7 +3903,6 @@ static void Init_Queue_Mono(ConnManClass *net)
 #endif
 }	// end of Init_Queue_Mono
 
-
 /***************************************************************************
  * Update_Queue_Mono -- updates mono display                               *
  *                                                                         *
@@ -4070,7 +3948,6 @@ static void Update_Queue_Mono(ConnManClass *net, int flow_index)
 #endif
 
 }	// end of Update_Queue_Mono
-
 
 /***************************************************************************
  * Print_Framesync_Values -- displays frame-sync variables                 *
@@ -4128,7 +4005,6 @@ static void Print_Framesync_Values(int32_t curframe, uint32_t max_ahead,
 	my_sent = my_sent;
 #endif
 }	// end of Print_Framesync_Values
-
 
 /***************************************************************************
  * Dump_Packet_Too_Late_Stuff -- Dumps a debug file to disk                *
@@ -4272,6 +4148,5 @@ void Check_Mirror(void)
 
 #endif
 }	// end of Check_Mirror
-
 
 /*************************** end of queue.cpp ******************************/

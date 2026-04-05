@@ -26,8 +26,6 @@ extern "C"
 #endif
 const char* __asan_default_options() { return "detect_leaks=0"; }
 
-
-
 extern "C" void WWDraw_Flush_Present(void);
 
 /***********************************************************************************************
@@ -80,7 +78,6 @@ extern "C" void WWDraw_Flush_Present(void);
  *   Is_Aftermath_Installed -- Function to determine the availability of the AM expansion.
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-
 #ifdef TESTCODE
 class A {
 	public:
@@ -95,8 +92,6 @@ class B {
 
 B<A> test;
 #endif
-
-
 
 #include	"FUNCTION.H"
 #include	"SDLINPUT.H"
@@ -210,18 +205,9 @@ char TeamEvent = 0;			// 0 = no event, 1,2,3 = team event type
 char TeamNumber = 0;			// which team was selected? (1-9)
 char FormationEvent = 0;	// 0 = no event, 1 = formation was toggled
 
-
 	/* -----------------10/14/96 7:29PM------------------
 
 	 --------------------------------------------------*/
-
-#if(TEN)
-void TEN_Call_Back(void);
-#endif	// TEN
-
-#if(MPATH)
-void MPATH_Call_Back(void);
-#endif	// MPATH
 
 /***********************************************************************************************
  * Main_Game -- Main game startup routine.                                                     *
@@ -444,7 +430,6 @@ void Main_Game(int argc, char * argv[])
 		}
 #endif
 
-
 		/*
 		** Send the game stats if we haven't already done so.
 		*/
@@ -478,23 +463,6 @@ void Main_Game(int argc, char * argv[])
 			}
 		}
 
-#if(TEN)
-
-		if (Session.Type == GAME_TEN) {
-			Shutdown_TEN();
-			//Prog_End();
-			Emergency_Exit(0);
-		}
-#endif	// TEN
-
-#if(MPATH)
-		if (Session.Type == GAME_MPATH) {
-			Shutdown_MPATH();
-			//Prog_End();
-			Emergency_Exit(0);
-		}
-#endif	// MPATH
-
 		/*
 		**	If we're playing back, the mouse will be hidden; show it.
 		** Also, set all variables back to normal, to return to the main menu.
@@ -511,7 +479,6 @@ void Main_Game(int argc, char * argv[])
 	*/
 	Session.Free_Scenario_Descriptions();
 }
-
 
 /***********************************************************************************************
  * Keyboard_Process -- Processes the tactical map input codes.                                 *
@@ -553,8 +520,6 @@ void Keyboard_Process(KeyNumType & input)
 
 	KeyNumType plain = KeyNumType(input & ~(WWKEY_SHIFT_BIT|WWKEY_ALT_BIT|WWKEY_CTRL_BIT|WWKEY_VK_BIT));
 	KeyNumType key = KeyNumType(input & ~WWKEY_VK_BIT);
-
-
 
 #ifdef CHEAT_KEYS
 
@@ -647,7 +612,6 @@ void Keyboard_Process(KeyNumType & input)
 		}
 		input = KN_NONE;
 	}
-
 
 	/*
 	**	All selected units will go into idle mode.
@@ -938,7 +902,6 @@ void Keyboard_Process(KeyNumType & input)
 #endif
 }
 
-
 void Toggle_Formation(void) {
 	int team = -1;
 	int32_t minx = 0x7FFFFFFFL, miny = 0x7FFFFFFFL;
@@ -1111,7 +1074,6 @@ void Toggle_Formation(void) {
 	}
 }
 
-
 /***********************************************************************************************
  * Message_Input -- allows inter-player message input processing                               *
  *                                                                                             *
@@ -1220,66 +1182,6 @@ static void Message_Input(KeyNumType &input)
 			}
 #endif
 		}
-#if(TEN)
-		/*
-		**	For a TEN game:
-		**	F1-F7 = "To <name> (house):" (only allowed if we're not in ObiWan mode)
-		**	F8 = "To All:"
-		*/
-		else if (Session.Type == GAME_TEN && !Session.Messages.Is_Edit()) {
-			if (input==(KN_F1 + Session.MaxPlayers - 1)) {
-
-				Session.TenMessageAddress = -1;		// set to broadcast
-				strcpy(txt,Text_String(TXT_TO_ALL));	// "To All:"
-
-				Session.Messages.Add_Edit(Session.ColorIdx,
-					TPF_6PT_GRAD | TPF_USE_GRAD_PAL | TPF_FULLSHADOW, txt, 0, 232 * RESFACTOR);
-
-				Map.Flag_To_Redraw(false);
-
-			}  else if ((input - KN_F1) < Ten->Num_Connections() && !Session.ObiWan) {
-
-				id = Ten->Connection_ID(input - KN_F1);
-				Session.TenMessageAddress = Ten->Connection_Address(id);
-				sprintf(txt,Text_String(TXT_TO),Ten->Connection_Name(id));
-
-				Session.Messages.Add_Edit(Session.ColorIdx,
-					TPF_6PT_GRAD | TPF_USE_GRAD_PAL | TPF_FULLSHADOW, txt, 0, 232 * RESFACTOR);
-
-				Map.Flag_To_Redraw(false);
-			}
-		}
-#endif	// TEN
-#if(MPATH)
-		/*
-		**	For a MPATH game:
-		**	F1-F7 = "To <name> (house):" (only allowed if we're not in ObiWan mode)
-		**	F8 = "To All:"
-		*/
-		else if (Session.Type == GAME_MPATH && !Session.Messages.Is_Edit()) {
-			if (input==(KN_F1 + Session.MaxPlayers - 1)) {
-
-				Session.MPathMessageAddress = 0;			// set to broadcast
-				strcpy(txt,Text_String(TXT_TO_ALL));	// "To All:"
-
-				Session.Messages.Add_Edit(Session.ColorIdx,
-					TPF_6PT_GRAD | TPF_USE_GRAD_PAL | TPF_FULLSHADOW, txt, 0, 232 * RESFACTOR);
-
-				Map.Flag_To_Redraw(false);
-
-			}  else if ((input - KN_F1) < MPath->Num_Connections() && !Session.ObiWan) {
-
-				id = MPath->Connection_ID(input - KN_F1);
-				Session.MPathMessageAddress = MPath->Connection_Address(id);
-				sprintf(txt,Text_String(TXT_TO),MPath->Connection_Name(id));
-
-				Session.Messages.Add_Edit(Session.ColorIdx,
-					TPF_6PT_GRAD | TPF_USE_GRAD_PAL | TPF_FULLSHADOW, txt, 0, 232 * RESFACTOR);
-
-				Map.Flag_To_Redraw(false);
-			}
-		}
-#endif	// MPATH
 	}
 
 	/*
@@ -1392,59 +1294,12 @@ static void Message_Input(KeyNumType &input)
 			}
 		}
 
-#if(TEN)
-		/*
-		**	TEN game: fill in a GlobalPacketType & send it.
-		*/
-		else if (Session.Type == GAME_TEN) {
-			Session.GPacket.Command = NET_MESSAGE;
-			strcpy (Session.GPacket.Name, Session.Players[0]->Name);
-			Session.GPacket.Message.Color = Session.ColorIdx;
-			Session.GPacket.Message.NameCRC = Compute_Name_CRC(Session.GameName);
-
-			if (rc==3) {
-				strcpy (Session.GPacket.Message.Buf, Session.Messages.Get_Edit_Buf());
-			} else {
-				strcpy (Session.GPacket.Message.Buf,
-					Session.Messages.Get_Overflow_Buf());
-				Session.Messages.Clear_Overflow_Buf();
-			}
-
-			Ten->Send_Global_Message(&Session.GPacket, sizeof(GlobalPacketType),
-				1, Session.TenMessageAddress);
-		}
-#endif	// TEN
-
-#if(MPATH)
-		/*
-		**	MPATH game: fill in a GlobalPacketType & send it.
-		*/
-		else if (Session.Type == GAME_MPATH) {
-			Session.GPacket.Command = NET_MESSAGE;
-			strcpy (Session.GPacket.Name, Session.Players[0]->Name);
-			Session.GPacket.Message.Color = Session.ColorIdx;
-			Session.GPacket.Message.NameCRC = Compute_Name_CRC(Session.GameName);
-
-			if (rc==3) {
-				strcpy (Session.GPacket.Message.Buf, Session.Messages.Get_Edit_Buf());
-			} else {
-				strcpy (Session.GPacket.Message.Buf,
-					Session.Messages.Get_Overflow_Buf());
-				Session.Messages.Clear_Overflow_Buf();
-			}
-
-			MPath->Send_Global_Message(&Session.GPacket, sizeof(GlobalPacketType),
-				1, Session.MPathMessageAddress);
-		}
-#endif	// MPATH
-
 		/*
 		**	Tell the map to completely update itself, since a message is now missing.
 		*/
 		Map.Flag_To_Redraw(true);
 	}
 }
-
 
 /***********************************************************************************************
  * Color_Cycle -- Handle the general palette color cycling.                                    *
@@ -1538,7 +1393,6 @@ void Color_Cycle(void)
 		}
 	}
 }
-
 
 /***********************************************************************************************
  * Call_Back -- Main game maintenance callback routine.                                        *
@@ -1636,29 +1490,12 @@ void Call_Back(void)
 	}
 #endif
 
-#if(TEN)
-	if (Session.Type == GAME_TEN) {
-		if (trace_callback) Conquer_Trace("Call_Back TEN start");
-		TEN_Call_Back();
-		if (trace_callback) Conquer_Trace("Call_Back TEN complete");
-	}
-#endif	// TEN
-
-#if(MPATH)
-	if (Session.Type == GAME_MPATH) {
-		if (trace_callback) Conquer_Trace("Call_Back MPATH start");
-		MPATH_Call_Back();
-		if (trace_callback) Conquer_Trace("Call_Back MPATH complete");
-	}
-#endif	// MPATH
-
 	if (trace_callback) {
 		Conquer_Trace("Call_Back exit");
 	}
 
 	WWDraw_Flush_Present();
 }
-
 
 void UDP_Call_Back(void)
 {
@@ -1751,127 +1588,6 @@ void UDP_Call_Back(void)
 
 }
 
-
-#if(TEN)
-void TEN_Call_Back(void)
-{
-	int id;
-
-	Ten->Service();
-
-	if (Ten->Get_Global_Message (&Session.GPacket, &Session.GPacketlen,
-		&Session.TenAddress)) {
-
-		//
-		//	If this is another player signing off, remove the connection &
-		//	mark that player's house as non-human, so the computer will take
-		//	it over.
-		//
-		if (Session.GPacket.Command == NET_SIGN_OFF) {
-			for (int i = 0; i < Ten->Num_Connections(); i++) {
-
-				id = Ten->Connection_ID(i);
-
-				if (Session.TenAddress == Ten->Connection_Address(id)) {
-					Destroy_TEN_Connection(id, 0);
-				}
-			}
-		}
-
-		//
-		//	Process a message from another user.
-		//
-		else if (Session.GPacket.Command == NET_MESSAGE) {
-			if (!Session.Messages.Concat_Message(Session.GPacket.Name,
-				Session.GPacket.Message.Color,
-				Session.GPacket.Message.Buf, Rule.MessageDelay * TICKS_PER_MINUTE)) {
-
-				Session.Messages.Add_Message (Session.GPacket.Name,
-					Session.GPacket.Message.Color,
-					Session.GPacket.Message.Buf,
-					Session.GPacket.Message.Color,
-					TPF_6PT_GRAD | TPF_USE_GRAD_PAL |
-					TPF_FULLSHADOW, Rule.MessageDelay * TICKS_PER_MINUTE);
-
-				Sound_Effect(VOC_INCOMING_MESSAGE);
-
-				/*
-				**	Tell the map to do a partial update (just to force the messages
-				**	to redraw).
-				*/
-				Map.Flag_To_Redraw(true);
-
-				/*
-				**	Save this message in our last-message buffer
-				*/
-				strcpy(Session.LastMessage, Session.GPacket.Message.Buf);
-			}
-		}
-	}
-}
-#endif	// TEN
-
-
-#if(MPATH)
-void MPATH_Call_Back(void)
-{
-	int id;
-
-	MPath->Service();
-
-	if (MPath->Get_Global_Message (&Session.GPacket, &Session.GPacketlen,
-		&Session.MPathAddress)) {
-
-		//
-		//	If this is another player signing off, remove the connection &
-		//	mark that player's house as non-human, so the computer will take
-		//	it over.
-		//
-		if (Session.GPacket.Command == NET_SIGN_OFF) {
-			for (int i = 0; i < MPath->Num_Connections(); i++) {
-
-				id = MPath->Connection_ID(i);
-
-				if (Session.MPathAddress == MPath->Connection_Address(id)) {
-					Destroy_MPATH_Connection(id, 0);
-				}
-			}
-		}
-
-		//
-		//	Process a message from another user.
-		//
-		else if (Session.GPacket.Command == NET_MESSAGE) {
-			if (!Session.Messages.Concat_Message(Session.GPacket.Name,
-				Session.GPacket.Message.Color,
-				Session.GPacket.Message.Buf, Rule.MessageDelay * TICKS_PER_MINUTE)) {
-
-				Session.Messages.Add_Message (Session.GPacket.Name,
-					Session.GPacket.Message.Color,
-					Session.GPacket.Message.Buf,
-					Session.GPacket.Message.Color,
-					TPF_6PT_GRAD | TPF_USE_GRAD_PAL |
-					TPF_FULLSHADOW, Rule.MessageDelay * TICKS_PER_MINUTE);
-
-				Sound_Effect(VOC_INCOMING_MESSAGE);
-
-				/*
-				**	Tell the map to do a partial update (just to force the messages
-				**	to redraw).
-				*/
-				Map.Flag_To_Redraw(true);
-
-				/*
-				**	Save this message in our last-message buffer
-				*/
-				strcpy(Session.LastMessage, Session.GPacket.Message.Buf);
-			}
-		}
-	}
-}
-#endif	// MPATH
-
-
 /***********************************************************************************************
  * Language_Name -- Build filename for current language.                                       *
  *                                                                                             *
@@ -1899,7 +1615,6 @@ char const * Language_Name(char const * basename)
 	sprintf(_fullname, "%s.ENG", basename);
 	return(_fullname);
 }
-
 
 /***********************************************************************************************
  * Source_From_Name -- Converts ASCII name into SourceType.                                    *
@@ -1930,7 +1645,6 @@ SourceType Source_From_Name(char const * name)
 	return(SOURCE_NONE);
 }
 
-
 /***********************************************************************************************
  * Name_From_Source -- retrieves the name for the given SourceType         						  *
  *                                                                         						  *
@@ -1953,7 +1667,6 @@ char const * Name_From_Source(SourceType source)
 	}
 	return("None");
 }
-
 
 /***********************************************************************************************
  * Theater_From_Name -- Converts ASCII name into a theater number.                             *
@@ -1983,7 +1696,6 @@ TheaterType Theater_From_Name(char const * name)
 	}
 	return(THEATER_NONE);
 }
-
 
 /***********************************************************************************************
  * KN_To_Facing -- Converts a keyboard input number into a facing value.                       *
@@ -2036,7 +1748,6 @@ FacingType KN_To_Facing(int input)
 	return(FACING_NONE);
 }
 
-
 /***********************************************************************************************
  * Sync_Delay -- Forces the game into a 15 FPS rate.                                           *
  *                                                                                             *
@@ -2088,7 +1799,6 @@ static void Sync_Delay(void)
 	Call_Back();
 }
 
-
 /***********************************************************************************************
  * Main_Loop -- This is the main game loop (as a single loop).                                 *
  *                                                                                             *
@@ -2105,7 +1815,6 @@ static void Sync_Delay(void)
  *=============================================================================================*/
 extern void Check_For_Focus_Loss(void);
 void Reallocate_Big_Shape_Buffer(void);
-
 
 bool Main_Loop()
 {
@@ -2268,7 +1977,6 @@ Mono_Set_Cursor(0,0);
 	*/
 	if (PlayerWins) {
 
-
 		if (Session.Type == GAME_INTERNET && !GameStatisticsPacketSent) {
 			Register_Game_End_Time();
 			Send_Statistics_Packet();		//	Player just won.
@@ -2341,8 +2049,6 @@ Mono_Set_Cursor(0,0);
 		}
 	}
 
-
-
 	if (Debug_MotionCapture) {
 		static void ** _array = 0;
 		static int _sequence = 0;
@@ -2400,7 +2106,6 @@ Mono_Set_Cursor(0,0);
 	return(!GameActive);
 }
 
-
 #ifdef SCENARIO_EDITOR
 /***************************************************************************
  * Map_Edit_Loop -- a mini-main loop for map edit mode only                *
@@ -2444,7 +2149,6 @@ bool Map_Edit_Loop(void)
 
 	return(!GameActive);
 }
-
 
 /***************************************************************************
  * Go_Editor -- Enables/disables the map editor										*
@@ -2520,7 +2224,6 @@ void Go_Editor(bool flag)
 }
 
 #endif
-
 
 /***********************************************************************************************
  * MixFileHandler -- Handles VQ file access.                                                   *
@@ -2644,7 +2347,6 @@ int32_t MixFileHandler(VQAHandle * vqa, int32_t action, void * buffer, int32_t n
 	return(error);
 }
 
-
 void Rebuild_Interpolated_Palette(uint8_t * interpal)
 {
 	for (int y=0; y<255; y++) {
@@ -2654,11 +2356,9 @@ void Rebuild_Interpolated_Palette(uint8_t * interpal)
 	}
 }
 
-
 uint8_t 	* InterpolatedPalettes[100];
 int32_t				PalettesRead;
 unsigned			PaletteCounter;
-
 
 /***********************************************************************************************
  * Load_Interpolated_Palettes -- Loads in any precalculated palettes for hires VQs             *
@@ -2724,7 +2424,6 @@ int Load_Interpolated_Palettes(char const * filename, int32_t add)
 	return (num_palettes);
 }
 
-
 void Free_Interpolated_Palettes(void)
 {
 	for (int i = 0; i < static_cast<int>(ARRAY_SIZE(InterpolatedPalettes)); i++) {
@@ -2734,7 +2433,6 @@ void Free_Interpolated_Palettes(void)
 		}
 	}
 }
-
 
 /***********************************************************************************************
  * Play_Movie -- Plays a VQ movie.                                                             *
@@ -2826,7 +2524,6 @@ bool Try_Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 		Keyboard->Clear();
 
 		VQAHandle * vqa = NULL;
-
 
 		#ifdef MOVIE640
 		if(IsVQ640) {
@@ -2926,12 +2623,10 @@ bool Try_Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 	return(false);
 }
 
-
 void Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 {
 	(void)Try_Play_Movie(name, theme, clrscrn);
 }
-
 
 bool Try_Play_Movie(VQType name, ThemeType theme, bool clrscrn)
 {
@@ -2947,12 +2642,10 @@ bool Try_Play_Movie(VQType name, ThemeType theme, bool clrscrn)
 	return(false);
 }
 
-
 void Play_Movie(VQType name, ThemeType theme, bool clrscrn)
 {
 	(void)Try_Play_Movie(name, theme, clrscrn);
 }
-
 
 /***********************************************************************************************
  * Unselect_All -- Causes all selected objects to become unselected.                           *
@@ -2974,7 +2667,6 @@ void Unselect_All(void)
 		CurrentObject[0]->Unselect();
 	}
 }
-
 
 /***********************************************************************************************
  * Fading_Table_Name -- Builds a theater specific fading table name.                           *
@@ -3004,7 +2696,6 @@ char const * Fading_Table_Name(char const * base, TheaterType theater)
 	WWFS_MakePath(_buffer, NULL, NULL, root, ".MRF");
 	return(_buffer);
 }
-
 
 /***********************************************************************************************
  * Get_Radar_Icon -- Builds and alloc a radar icon from a shape file                           *
@@ -3122,7 +2813,6 @@ void const * Get_Radar_Icon(void const * shapefile, int shapenum, int frames, in
 	return(retval);
 }
 
-
 /***********************************************************************************************
  * CC_Draw_Shape -- Custom draw shape handler.                                                 *
  *                                                                                             *
@@ -3164,7 +2854,6 @@ void CC_Draw_Shape(void const * shapefile, int shapenum, int x, int y, WindowNum
 	int predoffset;
 	void *	shape_pointer;
 
-
 	/*
 	** Special kludge for E3 to prevent crashes
 	*/
@@ -3204,7 +2893,6 @@ void CC_Draw_Shape(void const * shapefile, int shapenum, int x, int y, WindowNum
 		}
 #endif
 
-
 		/*
 		** In WIn95, build shape returns a pointer to the shape not its size
 		*/
@@ -3220,7 +2908,6 @@ void CC_Draw_Shape(void const * shapefile, int shapenum, int x, int y, WindowNum
 			**	The software blitter needs the raw pixel payload, not that wrapper.
 			*/
 			uint8_t * buffer = (uint8_t *)Get_Shape_Header_Data((void*)shape_pointer);
-
 
 			UseOldShapeDraw = false;
 			/*
@@ -3292,7 +2979,6 @@ void CC_Draw_Shape(void const * shapefile, int shapenum, int x, int y, WindowNum
 		}
 	}
 }
-
 
 /***********************************************************************************************
  * Shape_Dimensions -- Determine the minimum rectangle for the shape.                          *
@@ -3403,7 +3089,6 @@ Rect const Shape_Dimensions(void const * shapedata, int shapenum)
 	return(rect);
 }
 
-
 /***********************************************************************************************
  * Fetch_Techno_Type -- Convert type and ID into TechnoTypeClass pointer.                      *
  *                                                                                             *
@@ -3450,7 +3135,6 @@ TechnoTypeClass const * Fetch_Techno_Type(RTTIType type, int id)
 	}
 	return(NULL);
 }
-
 
 /***********************************************************************************************
  * VQ_Call_Back -- Maintenance callback used for VQ movies.                                    *
@@ -3565,8 +3249,6 @@ int32_t VQ_Call_Back(uint8_t *buffer, int32_t frame)
 	}
 	return(false);
 }
-
-
 
 /***********************************************************************************************
  * Handle_Team -- Processes team selection command.                                            *
@@ -3853,7 +3535,6 @@ void Handle_Team(int team, int action)
 	AllowVoice = true;
 }
 
-
 /***********************************************************************************************
  * Handle_View -- Either records or restores the tactical view.                                *
  *                                                                                             *
@@ -3889,7 +3570,6 @@ void Handle_View(int view, int action)
 	}
 }
 
-
 #ifndef ROR_NOT_READY
 #define ROR_NOT_READY 21
 #endif
@@ -3906,7 +3586,6 @@ static char const * _CD_Volume_Label[] = {
 	#endif
 };
 static int _Num_Volumes = ARRAY_SIZE(_CD_Volume_Label);
-
 
 /***********************************************************************************************
  * Get_CD_Index -- returns the volume type of the CD in the given drive                        *
@@ -3998,7 +3677,6 @@ int Get_CD_Index (int cd_drive, int timeout)
 			}	
 		}
 	}
-
 
 /***********************************************************************************************
  * Force_CD_Available -- Ensures that specified CD is available.                               *
@@ -4752,7 +4430,6 @@ bool Force_CD_Available(int cd)
 	return(true);
 	}
 
-
 #endif	//	FIXIT_VERSION_3
 
 /***************************************************************************
@@ -4776,7 +4453,6 @@ uint64_t Disk_Space_Available(void)
 	SDL_CloseStorage(storage);
 	return remaining;
 }
-
 
 /***********************************************************************************************
  * Do_Record_Playback -- handles saving/loading map pos & current object                       *
@@ -4929,7 +4605,6 @@ Session.RecordFile.Read (&FormMaxSpeed, sizeof(FormMaxSpeed));
 	}
 }
 
-
 /***********************************************************************************************
  * Hires_Load -- Allocates memory for, and loads, a resolution dependant file.                 *
  *                                                                                             *
@@ -4966,7 +4641,6 @@ void * Hires_Load(char * name)
 	}
 }
 
-
 /***********************************************************************************************
  * Crate_From_Name -- Given a crate name convert it to a crate type.                           *
  *                                                                                             *
@@ -4992,7 +4666,6 @@ CrateType Crate_From_Name(char const * name)
 	}
 	return(CRATE_MONEY);
 }
-
 
 /***********************************************************************************************
  * Owner_From_Name -- Convert an owner name into a bitfield.                                   *
@@ -5028,7 +4701,6 @@ int Owner_From_Name(char const * text)
 	}
 	return(ownable);
 }
-
 
 /***********************************************************************************************
  * Shake_The_Screen -- Dispatcher that shakes the screen.                                      *
@@ -5075,7 +4747,6 @@ void Shake_The_Screen(int shakes)
 	Show_Mouse();
 }
 
-
 /***********************************************************************************************
  * List_Copy -- Makes a copy of a cell offset list.                                            *
  *                                                                                             *
@@ -5112,8 +4783,6 @@ void List_Copy(int16_t const * source, int len, int16_t * dest)
 	*dest = REFRESH_EOL;
 }
 
-
-
 #if 0
 //
 // Boy, this function sure is crummy
@@ -5125,8 +4794,6 @@ void Crummy(int crumb1, int crumb2)
 	}
 }
 #endif
-
-
 
 /***********************************************************************************************
  * Game_Config_Section -- Returns the config section identifier for the game.
@@ -5146,7 +4813,6 @@ const char* Game_Config_Section()
 #endif
 	return szKey;
 }
-
 
 /***********************************************************************************************
  * Is_Counterstrike_Installed -- Function to determine the availability of the CS expansion    *

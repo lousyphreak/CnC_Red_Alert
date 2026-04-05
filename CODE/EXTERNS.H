@@ -58,7 +58,6 @@
 #include	"OPTIONS.H"
 #include	"INFANTRY.H"
 
-
 extern char _staging_buffer[32000];
 extern "C" {
 void _PRO(void);
@@ -98,7 +97,6 @@ extern void const *LightningShapes;
 
 extern int NewINIFormat;
 
-
 #ifdef FIXIT_ANTS
 extern bool AntsEnabled;
 #endif
@@ -135,8 +133,6 @@ extern AudioBackendBuffer *		PrimaryBufferPtr;
 extern int							ScreenWidth;
 extern int							ScreenHeight;
 extern GraphicBufferClass		ModeXBuff;
-
-
 
 /*
 **	Dynamic global variables (these change or are initialized at run time).
@@ -341,14 +337,6 @@ extern CELL 						CurrentCell;
 extern SessionClass				Session;
 extern UDPManagerClass 	 		Udp;
 
-#if(TEN)
-extern TenConnManClass			*Ten;
-#endif
-
-#if(MPATH)
-extern MPlayerManClass			*MPath;
-#endif
-
 #if(TIMING_FIX)
 extern int										NewMaxAheadFrame1;
 extern int										NewMaxAheadFrame2;
@@ -413,7 +401,6 @@ extern int RequiredCD;
 extern int CurrentCD;
 extern int MouseInstalled;
 
-
 extern int LogLevel;
 extern uint32_t LogLevelTime[ MAX_LOG_LEVEL ];
 extern uint32_t LogLastTime;
@@ -432,7 +419,6 @@ extern TheaterType LastTheater;
 void Coordinate_Remap ( GraphicViewPortClass *inbuffer, int x, int y, int width, int height, uint8_t *remap_table);
 void Do_Vortex (int x, int y, int frame);
 
-
 /************************************************************
 ** Win32 specific externs
 */
@@ -440,7 +426,6 @@ extern int ReadyToQuit;							//Are we about to exit cleanly
 extern bool InDebugger;							//Are we being run from a debugger
 void Memory_Error_Handler(void);				//Memory error handler function
 void WWDebugString (char const *string);
-
 
 /*************************************************************
 ** Internet specific externs
@@ -459,8 +444,6 @@ void	Send_Statistics_Packet(void);
 bool 	Server_Remote_Connect(void);
 bool 	Client_Remote_Connect(void);
 extern	int UnitBuildPenalty;
-
-
 
 /*
 ** From SENDFILE.CPP - externs for scenario file transfers

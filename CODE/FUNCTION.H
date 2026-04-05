@@ -132,7 +132,6 @@ Map (screen) class heirarchy.
        �
     UnitClass
 
-
                             AbstractTypeClass
                                     �
                               ObjectTypeClass
@@ -149,7 +148,6 @@ UnitTypeClass      �   BuildingTypeClass      �  VesselTypeClass
            AircraftTypeClass          InfantryTypeClass
 #endif
 
-
 #include	"WATCOM.H"
 #include "LINT.H"
 
@@ -159,9 +157,6 @@ UnitTypeClass      �   BuildingTypeClass      �  VesselTypeClass
 #define MONOC_H
 
 #define	_MAX_NAME	_MAX_FNAME
-
-
-
 
 /**********************************************************************
 **	This class is solely used as a parameter to a constructor that does
@@ -174,10 +169,8 @@ UnitTypeClass      �   BuildingTypeClass      �  VesselTypeClass
 */
 #include "NOINIT.H"
 
-
 #define FILE_H
 #define WWMEM_H
-
 
 #include	"KEY.H"
 #include <WWLIB32.H>
@@ -227,8 +220,6 @@ UnitTypeClass      �   BuildingTypeClass      �  VesselTypeClass
 using std::max;
 using std::min;
 
-
-
 /*
 **	VQ player specific includes.
 */
@@ -253,7 +244,6 @@ extern TARGET LParam;
 /*
 **	Greenleaf specific includes.
 */
-
 
 extern int32_t Frame;
 CELL Coord_Cell(COORDINATE coord);
@@ -379,14 +369,6 @@ uint16_t Get_Build_Frame_Height(void const *dataptr);
 #include "EGOS.H"
 #include	"FILEPCX.H"
 
-#if(TEN)
-#include "TENMGR.H"
-#endif
-
-#if(MPATH)
-#include "MPMGRW.H"
-#endif
-
 #include	"EXTERNS.H"
 
 // Should be part of WWLIB.H. This is used in JSHELL.CPP.
@@ -399,7 +381,6 @@ typedef struct {
 
 extern int Get_CD_Drive(void);
 extern void Fatal(char const *message, ...);
-
 
 /*
 ** Replace the assert macro so we get an error on the debugger screen
@@ -419,7 +400,6 @@ void Assert_Failure (char *expression, int line, char *file);
 #endif	//NDEBUG
 
 #endif	//__BORLANDC__
-
 
 extern void Free_Interpolated_Palettes(void);
 extern int Load_Interpolated_Palettes(char const *filename, int32_t add=FALSE);
@@ -482,15 +462,6 @@ bool Is_Counterstrike_Installed (void);
 #ifdef FIXIT_CSII	//	checked - ajw 9/28/98
 bool Is_Aftermath_Installed (void);
 #endif
-
-
-#if(TEN)
-void Ten_Call_Back(void);
-#endif	// TEN
-
-#if(MPATH)
-void MPATH_Call_Back(void);
-#endif	// MPATH
 
 void Center_About_Objects(void);
 bool Force_CD_Available(int cd);
@@ -701,38 +672,6 @@ bool Determine_If_Using_DVD();
 bool Using_DVD();
 #endif
 int Abort_Dialog(void);
-
-#if(TEN)
-int Read_TEN_Game_Options(void);
-#endif	// TEN
-
-#if(MPATH)
-int Read_MPATH_Game_Options(void);
-#endif	// MPATH
-
-#if(TEN)
-/*
-** CCTEN.CPP
-*/
-int Init_TEN(void);
-void Shutdown_TEN(void);
-void Connect_TEN(void);
-void Destroy_TEN_Connection(int id, int error);
-void Send_TEN_Win_Packet(void);
-void Send_TEN_Alliance(char *whom, int ally);
-void Send_TEN_Out_Of_Sync(void);
-void Send_TEN_Packet_Too_Late(void);
-#endif	// TEN
-
-#if(MPATH)
-/*
-** CCMPATH.CPP
-*/
-int Init_MPATH(void);
-void Shutdown_MPATH(void);
-void Connect_MPATH(void);
-void Destroy_MPATH_Connection(int id, int error);
-#endif	// MPATH
 
 /*
 ** NETDLG.CPP

@@ -193,7 +193,6 @@ static void Load_Prolog_Page(void)
 	Show_Mouse();
 }
 
-
 /***********************************************************************************************
  * Init_Game -- Main game initialization routine.                                              *
  *                                                                                             *
@@ -343,7 +342,6 @@ bool Init_Game(int , char * [])
 	*/
 	Anim_Init();
 	init_trace("Init_Game animation system initialized");
-
 
 	/*
 	**	Play the startup animation.
@@ -516,7 +514,6 @@ bool Select_Game(bool fade)
 	NewUnitsEnabled = SecretUnitsEnabled = 0;	// Assume new units disabled, unless specifically .INI enabled or multiplayer negotiations enable it.
 #endif
 
-
 	/*
 	**	[Re]set any globals that need it, in preparation for a new scenario
 	*/
@@ -612,7 +609,6 @@ bool Select_Game(bool fade)
 				Session.Play = false;
 		}
 
-
 		while (process) {
 
 			/*
@@ -646,7 +642,6 @@ bool Select_Game(bool fade)
 			**	Display menu and fetch selection from player.
 			*/
 			if (Special.IsFromInstall) selection = SEL_START_NEW_GAME;
-
 
 #ifdef WOLAPI_INTEGRATION
 			if( pWolapi )
@@ -855,8 +850,6 @@ bool Select_Game(bool fade)
 					process = false;
 					break;
 
-
-
 				/*
 				**	Load a saved game.
 				*/
@@ -1027,48 +1020,6 @@ bool Select_Game(bool fade)
 #endif	//NETWORK_UDP
 							}
 							break;
-
-#if(TEN)
-						/*
-						**	TEN: jump straight into the game
-						*/
-						case GAME_TEN:
-							if (Init_TEN()) {
-#ifdef FIXIT_VERSION_3
-								Options.ScoreVolume = Options.MultiScoreVolume;
-#else
-								Options.ScoreVolume = 0;
-#endif
-								process = false;
-								Theme.Fade_Out();
-							} else {
-								WWMessageBox().Process("Unable to initialize TEN!");
-								//Prog_End();
-								Emergency_Exit(1);
-							}
-							break;
-#endif	// TEN
-
-#if(MPATH)
-						/*
-						**	MPATH: jump straight into the game
-						*/
-						case GAME_MPATH:
-							if (Init_MPATH()) {
-#ifdef FIXIT_VERSION_3
-								Options.ScoreVolume = Options.MultiScoreVolume;
-#else
-								Options.ScoreVolume = 0;
-#endif
-								process = false;
-								Theme.Fade_Out();
-							} else {
-								WWMessageBox().Process("Unable to initialize MPATH!");
-								//Prog_End();
-								Emergency_Exit(1);
-							}
-							break;
-#endif	// MPATH
 
 						default:
 							break;
@@ -1245,19 +1196,8 @@ bool Select_Game(bool fade)
 
 	if (Session.Type != GAME_NORMAL && Session.Type != GAME_SKIRMISH &&
 		!Session.Play) {
-		if (Session.Type == GAME_TEN) {
-#if(TEN)
-			Session.Create_TEN_Connections();
-#endif	// TEN
-		} else if (Session.Type == GAME_MPATH) {
-#if(MPATH)
-			Session.Create_MPATH_Connections();
-#endif
-		} else {
-			Session.Create_Connections();
-		}
+		Session.Create_Connections();
 	}
-
 
 	/*
 	** If this isnt an internet game that set the unit build rate to its default value
@@ -1310,7 +1250,6 @@ bool Select_Game(bool fade)
 
 	return(true);
 }
-
 
 /***********************************************************************************************
  * Play_Intro -- plays the introduction & logo movies                                          *
@@ -1365,7 +1304,6 @@ static void Play_Intro(bool sequenced)
 	}
 }
 
-
 /***********************************************************************************************
  * Anim_Init -- Initialize the VQ animation control structure.                                 *
  *                                                                                             *
@@ -1386,7 +1324,6 @@ GraphicBufferClass VQ640(640, 400, (void *)NULL);
 #endif
 void Anim_Init(void)
 {
-
 
 	/* Configure player with INI file */
 	VQA_DefaultConfig(&AnimControl);
@@ -1421,7 +1358,6 @@ void Anim_Init(void)
 	}
 
 }
-
 
 /***********************************************************************************************
  * Parse_Command_Line -- Parses the command line parameters.                                   *
@@ -1469,7 +1405,6 @@ bool Parse_Command_Line(int argc, char * argv[])
 			puts(TEXT_OPTIONS);
 			return(false);
 		}
-
 
 		bool processed = true;
 		int32_t ob = Obfuscate(string);
@@ -1530,24 +1465,11 @@ bool Parse_Command_Line(int argc, char * argv[])
 //				BreakoutAllowed = false;
 				break;
 
-#if(TEN)
-			case PARM_ALLOW_SOLO:
-				Session.AllowSolo = 1;
-				break;
-#endif
-
-#if(MPATH)
-			case PARM_ALLOW_SOLO:
-				Session.AllowSolo = 1;
-				break;
-#endif
-
 			default:
 				processed = false;
 				break;
 		}
 		if (processed) continue;
-
 
 #ifdef CHEAT_KEYS
 		/*
@@ -1654,7 +1576,6 @@ bool Parse_Command_Line(int argc, char * argv[])
 			continue;
 		}
 
-
 		/*
 		** Set screen to 640x480 instead of 640x400
 		*/
@@ -1662,8 +1583,6 @@ bool Parse_Command_Line(int argc, char * argv[])
 			ScreenHeight = 480;
 			continue;
 		}
-
-
 
 #ifdef CHEAT_KEYS
 		/*
@@ -1674,80 +1593,7 @@ bool Parse_Command_Line(int argc, char * argv[])
 			continue;
 		}
 
-
 #endif
-
-
-#if(TEN)
-		/*
-		**	Enable TEN
-		*/
-		if (strstr(string, "TEN")) {
-
-#ifdef CHEAT_KEYS
-			Debug_Flag = true;
-			MonoClass::Enable();
-#endif
-
-			Session.Type = GAME_TEN;
-			Special.IsFromInstall = false;
-			//
-			// Create the Ten network manager.  This allows us to keep
-			// the packet queues clean even while we're initializing the game,
-			// so the queues don't fill up in case we're slow, or the user
-			// didn't insert a CD.
-			//
-			Ten = new TenConnManClass();
-			Ten->Init();
-			strcpy(Session.OptionsFile, "OPTIONS.INI");
-			Ten->Flush_All();
-			continue;
-		}
-
-		/*
-		**	Set the game options filename
-		*/
-		if (strstr(string, "OPTIONS:")) {
-			strcpy(Session.OptionsFile, string + 8);
-			continue;
-		}
-#endif	// TEN
-
-#if(MPATH)
-		/*
-		**	Enable MPATH
-		*/
-		if (strstr(string, "MPATH")) {
-
-#ifdef CHEAT_KEYS
-			Debug_Flag = true;
-			MonoClass::Enable();
-#endif
-
-			Session.Type = GAME_MPATH;
-			Special.IsFromInstall = false;
-			//
-			// Create the MPath network manager.  This allows us to keep
-			// the packet queues clean even while we're initializing the game,
-			// so the queues don't fill up in case we're slow, or the user
-			// didn't insert a CD.
-			//
-			MPath = new MPlayerManClass();
-			MPath->Init();
-			strcpy(Session.OptionsFile, "OPTIONS.INI");
-			MPath->Flush_All();
-			continue;
-		}
-
-		/*
-		**	Set the game options filename
-		*/
-		if (strstr(string, "OPTIONS:")) {
-			strcpy(Session.OptionsFile, string + 8);
-			continue;
-		}
-#endif	// MPATH
-
 
 #ifdef NEVER
 		/*
@@ -1840,7 +1686,6 @@ bool Parse_Command_Line(int argc, char * argv[])
 	}
 	return(true);
 }
-
 
 /***********************************************************************************************
  * Obfuscate -- Sufficiently transform parameter to thwart casual hackers.                     *
@@ -2031,7 +1876,6 @@ int32_t Obfuscate(char const * string)
 	return(code);
 }
 
-
 /***********************************************************************************************
  * Calculate_CRC -- Calculates a one-way hash from a data block.                               *
  *                                                                                             *
@@ -2055,7 +1899,6 @@ int32_t Calculate_CRC(void * buffer, int32_t len)
 	return(CRCEngine()(buffer, len));
 }
 }
-
 
 /***************************************************************************
  * Init_Random -- Initializes the random-number generator                  *
@@ -2159,7 +2002,6 @@ void Init_Random(void)
 	RandNumb = Seed;
 }
 
-
 /***********************************************************************************************
  * Load_Title_Page -- Load the background art for the title page.                              *
  *                                                                                             *
@@ -2183,7 +2025,6 @@ void Load_Title_Page(bool visible)
 		HidPage.Blit(SeenPage);
 	}
 }
-
 
 /***********************************************************************************************
  * Init_Color_Remaps -- Initialize the text remap tables.                                      *
@@ -2209,7 +2050,6 @@ static void Init_Color_Remaps(void)
 	** first row represents unity (the default color units are drawn in); rows
 	** after that are the remap colors.
 	*/
-
 
 	SysMemPage.Clear();
 	Load_Picture("PALETTE.CPS", SysMemPage, SysMemPage, NULL, BM_DEFAULT);
@@ -2305,7 +2145,6 @@ static void Init_Color_Remaps(void)
 //	GadgetClass::Set_Color_Scheme(&ColorRemaps[PCOLOR_BLUE]);
 }
 
-
 /***********************************************************************************************
  * Init_Heaps -- Initialize the game heaps and buffers.                                        *
  *                                                                                             *
@@ -2363,7 +2202,6 @@ static void Init_Heaps(void)
 	assert(TheaterBuffer != NULL);
 }
 
-
 /***********************************************************************************************
  * Init_Expansion_Files -- Fetch any override expansion mixfiles.                              *
  *                                                                                             *
@@ -2408,7 +2246,6 @@ static void Init_Expansion_Files(void)
 		}
 	}
 }
-
 
 /***********************************************************************************************
  * Init_One_Time_Systems -- Initialize internal pointers to the bulk data.                     *
@@ -2490,7 +2327,6 @@ static void Init_One_Time_Systems(void)
 	init_trace("Init_One_Time_Systems complete");
 }
 
-
 /***********************************************************************************************
  * Init_Fonts -- Initialize all the game font pointers.                                        *
  *                                                                                             *
@@ -2523,7 +2359,6 @@ static void Init_Fonts(void)
 	VCRFontPtr = MFCD::Retrieve("VCR.FNT");
 	TypeFontPtr = MFCD::Retrieve("8POINT.FNT");    //("TYPE.FNT"); //VG 10/17/96
 }
-
 
 /***********************************************************************************************
  * Init_CDROM_Access -- Initialize the CD-ROM access handler.                                  *
@@ -2633,7 +2468,6 @@ static void Init_CDROM_Access(void)
 	}
 }
 
-
 /***********************************************************************************************
  * Init_Bootstrap_Mixfiles -- Registers and caches any mixfiles needed for bootstrapping.      *
  *                                                                                             *
@@ -2712,7 +2546,6 @@ static void Init_Bootstrap_Mixfiles(void)
 
 	RequiredCD = temp;
 }
-
 
 /***********************************************************************************************
  * Init_Secondary_Mixfiles -- Register and cache secondary mixfiles.                           *
@@ -2813,7 +2646,6 @@ static void Init_Secondary_Mixfiles(void)
 	init_trace("Init_Secondary_Mixfiles ALLIES.MIX ready");
 }
 
-
 /***********************************************************************************************
  * Bootstrap -- Perform the initial bootstrap procedure.                                       *
  *                                                                                             *
@@ -2874,7 +2706,6 @@ static void Bootstrap(void)
 	*/
 	Init_Fonts();
 
-
 	/*
 	**	Setup the keyboard processor in preparation for the game.
 	*/
@@ -2929,7 +2760,6 @@ static void Bootstrap(void)
 	GadgetClass::Set_Color_Scheme(&SidebarScheme);
 }
 
-
 /***********************************************************************************************
  * Init_Mouse -- Initialize the mouse system.                                                  *
  *                                                                                             *
@@ -2975,7 +2805,6 @@ static void Init_Mouse(void)
 	Call_Back();
 	Hide_Mouse();
 }
-
 
 #ifdef OBSOLETE
 /***********************************************************************************************
@@ -3074,7 +2903,6 @@ static void Init_Authorization(void)
 }
 #endif
 
-
 /***********************************************************************************************
  * Init_Bulk_Data -- Initialize the time-consuming mixfile caching.                            *
  *                                                                                             *
@@ -3126,7 +2954,6 @@ static void Init_Bulk_Data(void)
 	Init_One_Time_Systems();
 }
 
-
 /***********************************************************************************************
  * Init_Keys -- Initialize the cryptographic keys.                                             *
  *                                                                                             *
@@ -3153,7 +2980,6 @@ static void Init_Keys(void)
 	SlowKey = ini.Get_PKey(false);
 #endif
 }
-
 
 /***************************************************************************
  * Save_Recording_Values -- Saves multiplayer-specific values              *
@@ -3192,7 +3018,6 @@ bool Save_Recording_Values(CCFileClass & file)
 
 	return (true);
 }
-
 
 /***************************************************************************
  * Load_Recording_Values -- Loads multiplayer-specific values              *
@@ -3256,7 +3081,6 @@ void Extract(char* filename, char* outname)
 		}
 	}
 #endif
-
 
 #ifdef FIXIT_VERSION_3
 

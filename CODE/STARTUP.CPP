@@ -132,8 +132,6 @@ const char* Game_Config_Section();
 #define WINDOW_NAME		"Alarmstufe Rot"
 #endif
 
-
-
 /***********************************************************************************************
  * RedAlert_Main -- Initial startup routine (preps library systems).                           *
  *                                                                                             *
@@ -170,7 +168,6 @@ int RedAlert_Main(int argc, char* argv[])
 	if (Ram_Free(MEM_NORMAL) < 7000000) {
 		printf (TEXT_NO_RAM);
 
-
 #if (0)
 
 		/*
@@ -189,12 +186,10 @@ int RedAlert_Main(int argc, char* argv[])
 		return(EXIT_FAILURE);
 	}
 
-
 	if (command_line_contains_forbidden_network_path(argc, argv)) {
 		RA_ShowMessageBox("Playing off of the network is not allowed.", "Red Alert", SDL_MESSAGEBOX_ERROR);
 		return(EXIT_FAILURE);
 	}
-
 
 	/*
 	**	Change directory to the where the executable is located. Handle the
@@ -249,30 +244,6 @@ int RedAlert_Main(int argc, char* argv[])
 
 	if (Parse_Command_Line(argc, argv)) {
 
-#if(TEN)
-	//
-	// Only allow the TEN version of the game to run if the TEN
-	// or AllowSoloPlayOptions arguments are specified.
-	//
-	if (Session.AllowSolo==0 && Session.Type != GAME_TEN) {
-		RA_ShowMessageBox("Red Alert for TEN\n (c) 1996 Westwood Studios",
-			"Red Alert");
-		return(EXIT_SUCCESS);
-	}
-#endif	// TEN
-
-#if(MPATH)
-	//
-	// Only allow the MPATH version of the game to run if the MPATH
-	// or AllowSoloPlayOptions arguments are specified.
-	//
-	if (Session.AllowSolo==0 && Session.Type != GAME_MPATH) {
-		RA_ShowMessageBox("Red Alert for MPATH\n (c) 1996 Westwood Studios",
-			"Red Alert");
-		return(EXIT_SUCCESS);
-	}
-#endif	// MPATH
-
 		WindowsTimer = new WinTimerClass(60, FALSE);
 
 		uint32_t time_test = WindowsTimer->Get_System_Tick_Count();
@@ -282,7 +253,6 @@ int RedAlert_Main(int argc, char* argv[])
 			return(EXIT_FAILURE);
 		}
 		RawFileClass cfile(CONFIG_FILE_NAME);
-
 
 #ifdef NEVER
 		Keyboard->IsLibrary = true;
@@ -321,7 +291,6 @@ int RedAlert_Main(int argc, char* argv[])
 
 			Read_Private_Config_Struct(cfile, &NewConfig);
 
-
 			/*
 			** Set the options as requested by the ccsetup program
 			*/
@@ -331,7 +300,6 @@ int RedAlert_Main(int argc, char* argv[])
 			startup_trace("Main_Window_Create complete hwnd=%p size=%dx%d", MainWindow, ScreenWidth, ScreenHeight);
 			SoundOn = Audio_Init ( MainWindow , 16 , false , 11025*2 , 0 );
 			startup_trace("Audio_Init complete SoundOn=%d", SoundOn);
-
 
 			int32_t video_success = FALSE;
 			/*
@@ -446,7 +414,6 @@ int RedAlert_Main(int argc, char* argv[])
 
 			CDFileClass::Set_CD_Drive (CDList.Get_First_CD_Drive());
 
-
 			/*
 			** See if we should run the intro
 			*/
@@ -456,10 +423,8 @@ int RedAlert_Main(int argc, char* argv[])
 			/*
 			**	Check for forced intro movie run disabling. If the conquer
 			**	configuration file says "no", then don't run the intro.
-			** Don't do this for TEN & MPath.
 			*/
-			if (!Special.IsFromInstall && Session.Type != GAME_TEN &&
-				Session.Type != GAME_MPATH) {
+			if (!Special.IsFromInstall) {
 				Special.IsFromInstall = ini.Get_Bool("Intro", "PlayIntro", true);
 			}
 			SlowPalette = ini.Get_Bool("Options", "SlowPalette", false);
@@ -542,7 +507,6 @@ void  Prog_End(void)
 	}
 }
 
-
 void Print_Error_End_Exit(char * string)
 {
 	Prog_End();
@@ -550,18 +514,11 @@ void Print_Error_End_Exit(char * string)
 	exit(1);
 }
 
-
 void Print_Error_Exit(char * string)
 {
 	printf( "%s\n", string );
 	exit(1);
 }
-
-
-
-
-
-
 
 /***********************************************************************************************
  * Emergency_Exit -- Function to call when we want to exit unexpectedly.                       *
@@ -580,7 +537,6 @@ void Print_Error_Exit(char * string)
 void Emergency_Exit ( int code )
 {
 
-
 	/*
 	** Clear out the video buffers so we dont glitch when we lose focus
 	*/
@@ -591,17 +547,6 @@ void Emergency_Exit ( int code )
 	destroy_main_window_for_shutdown(3, "emergency");
 	exit ( code );
 }
-
-
-
-
-
-
-
-
-
-
-
 
 /***********************************************************************************************
  * Read_Setup_Options -- Read stuff in from the INI file that we need to know sooner           *

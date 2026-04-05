@@ -168,7 +168,6 @@ typedef enum {
 	EV_MESSAGE,						// a message was received
 } JoinEventType;
 
-
 //---------------------------------------------------------------------------
 //	The possible reasons we're rejected from joining a game
 //---------------------------------------------------------------------------
@@ -901,7 +900,6 @@ char const *EngMisStr[] = {
 };
 #endif
 
-
 /*
 ******************************** Prototypes *********************************
 */
@@ -921,9 +919,7 @@ static int Net_New_Dialog(void);
 static JoinEventType Get_NewGame_Responses(ColorListClass *playerlist,
 	int *color_used);
 
-
 #define PCOLOR_BROWN	PCOLOR_GREY
-
 
 /***********************************************************************************************
  * Init_Network -- initializes network stuff                               						  *
@@ -969,7 +965,6 @@ bool Init_Network (void)
 	return(true);
 
 }	/* end of Init_Network */
-
 
 /***********************************************************************************************
  * Shutdown_Network -- shuts down network stuff                            						  *
@@ -1044,7 +1039,6 @@ void Shutdown_Network (void)
 	Session.GameName[0] = 0;
 
 }	/* end of Shutdown_Network */
-
 
 /***********************************************************************************************
  * Process_Global_Packet -- responds to remote queries                     						  *
@@ -1127,7 +1121,6 @@ bool Process_Global_Packet(GlobalPacketType *packet, UDPAddressClass *address)
 	return(false);
 
 }	/* end of Process_Global_Packet */
-
 
 /***********************************************************************************************
  * Destroy_Connection -- destroys the given connection													  *
@@ -1217,7 +1210,6 @@ void Destroy_Connection(int id, int error)
 	}
 
 }	/* end of Destroy_Connection */
-
 
 /***********************************************************************************************
  * Remote_Connect -- handles connecting this user to others                						  *
@@ -1315,8 +1307,6 @@ bool Remote_Connect(void)
 	}
 
 }	/* end of Remote_Connect */
-
-
 
 /***********************************************************************************************
  * Net_Join_Dialog -- lets user join an existing game or start a new one                       *
@@ -1488,7 +1478,6 @@ static int Net_Join_Dialog(void)
 		int d_send_h = 9 *RESFACTOR;
 		int d_send_x = d_message1_x;
 		int d_send_y = d_message1_y + d_message1_h;
-
 
 	//------------------------------------------------------------------------
 	//	Button Enumerations
@@ -2534,7 +2523,6 @@ static int Net_Join_Dialog(void)
 					}
 				}
 
-
 				/*
 				** If the scenario that the host wants to play doesn't exist locally then we
 				**	need to request that it is sent. If we can identify the scenario locally then
@@ -2631,7 +2619,6 @@ static int Net_Join_Dialog(void)
 				who->Player.House = Session.House;
 				who->Player.Color = Session.ColorIdx;
 				Session.Players.Add (who);
-
 
 				Send_Join_Queries (game_index, joinstate, 0, 1, 0, namebuf);
 
@@ -2876,7 +2863,6 @@ static int Net_Join_Dialog(void)
 
 	}	// end of while
 
-
 	//------------------------------------------------------------------------
 	//	Establish connections with all other players.
 	//------------------------------------------------------------------------
@@ -2953,7 +2939,6 @@ static int Net_Join_Dialog(void)
 //		Udp.Global_Response_Time() * 4);
 	Udp.Set_Timing(Udp.Global_Response_Time() + 2, static_cast<uint32_t>(-1), max<uint32_t>(120U, Udp.Global_Response_Time() * 8));
 
-
 	//------------------------------------------------------------------------
 	//	Clear all lists, but NOT the Games & Players vectors.
 	//------------------------------------------------------------------------
@@ -2996,7 +2981,6 @@ static int Net_Join_Dialog(void)
 	return(rc);
 
 }	/* end of Net_Join_Dialog */
-
 
 /***************************************************************************
  * Request_To_Join -- Sends a JOIN request packet to game owner            *
@@ -3087,7 +3071,6 @@ static int Request_To_Join (char *playername, int join_index,
 	return(true);
 
 }	/* end of Request_To_Join */
-
 
 /***************************************************************************
  * Unjoin_Game -- Cancels joining a game                                   *
@@ -3181,7 +3164,6 @@ static void Unjoin_Game(char *namebuf,JoinStateType joinstate,
 
 }	// end of Unjoin_Game
 
-
 /***********************************************************************************************
  * Send_Join_Queries -- sends queries for the Join Dialog												  *
  *                                                                         						  *
@@ -3227,7 +3209,6 @@ static void Send_Join_Queries(int curgame, JoinStateType joinstate,
 	static CDTimerClass<SystemTimerClass> game_timer;		// time between NET_QUERY_GAME's
 	static CDTimerClass<SystemTimerClass> player_timer;	// time between NET_QUERY_PLAYERS's
 	static CDTimerClass<SystemTimerClass> chat_timer;		// time between NET_CHAT_ANNOUNCE's
-
 
 	//------------------------------------------------------------------------
 	// Initialize timers
@@ -3315,7 +3296,6 @@ static void Send_Join_Queries(int curgame, JoinStateType joinstate,
 	}
 
 }	/* end of Send_Join_Queries */
-
 
 /***********************************************************************************************
  * Get_Join_Responses -- sends queries for the Join Dialog												  *
@@ -3995,7 +3975,6 @@ static JoinEventType Get_Join_Responses(JoinStateType *joinstate, ListClass *gam
 
 }	/* end of Get_Join_Responses */
 
-
 /***********************************************************************************************
  * Net_New_Dialog -- lets user start a new game                                                *
  *                                                                                             *
@@ -4435,7 +4414,6 @@ static int Net_New_Dialog(void)
 				okbtn.Zap();
 				cancelbtn.Zap();
 				loadbtn.Zap();
-
 
 				/*
 				** Hack hack, hack
@@ -5195,7 +5173,6 @@ static int Net_New_Dialog(void)
 
 }	/* end of Net_New_Dialog */
 
-
 /***************************************************************************
  * Get_NewGame_Responses -- processes packets for New Game dialog          *
  *                                                                         *
@@ -5510,7 +5487,6 @@ static JoinEventType Get_NewGame_Responses(ColorListClass *playerlist,
 
 }	/* end of Get_NewGame_Responses */
 
-
 /***************************************************************************
  * Compute_Name_CRC -- computes CRC from char string                       *
  *                                                                         *
@@ -5541,7 +5517,6 @@ uint32_t Compute_Name_CRC(char *name)
 	return (crc);
 
 }	/* end of Compute_Name_CRC */
-
 
 /***************************************************************************
  * Net_Reconnect_Dialog -- Draws/updates the network reconnect dialog      *
@@ -5603,29 +5578,6 @@ void Net_Reconnect_Dialog(int reconn, int fresh, int oldest_index,
 				}
 				break;
 
-#if(TEN)
-			case GAME_TEN:
-				if (reconn) {
-					id = Ten->Connection_ID(oldest_index);
-					sprintf(buf1,Text_String(TXT_RECONNECTING_TO),
-						Ten->Connection_Name(id));
-				}
-				else {
-					sprintf(buf1,Text_String(TXT_WAITING_FOR_CONNECTIONS));
-				}
-#endif	// TEN
-
-#if(MPATH)
-			case GAME_MPATH:
-				if (reconn) {
-					id = MPath->Connection_ID(oldest_index);
-					sprintf(buf1,Text_String(TXT_RECONNECTING_TO),
-						MPath->Connection_Name(id));
-				}
-				else {
-					sprintf(buf1,Text_String(TXT_WAITING_FOR_CONNECTIONS));
-				}
-#endif	// MPATH
 			default:
 				sprintf(buf1,Text_String(TXT_WAITING_FOR_CONNECTIONS));
 				break;
@@ -5707,8 +5659,6 @@ void Net_Reconnect_Dialog(int reconn, int fresh, int oldest_index,
 
 #define	MAX_CHAT_NAME		12
 #define	MAX_CHAT_PHRASE	45
-
-
 
 #if(0)
 /*****************************************************************************/
@@ -5795,7 +5745,6 @@ void Start_Logging(void)
 
 }	/* end of Start_Logging */
 
-
 void Log_Message(char *msg)
 {
 	SDL_IOStream *fp;
@@ -5811,16 +5760,7 @@ void Log_Message(char *msg)
 }	/* end of Log_Message */
 #endif
 
-
-
-
-
 #ifndef WOLAPI_INTEGRATION			//	Rest of file ifdeffed out.
-
-
-
-
-
 
 /***********************************************************************************************
  * Net_Fake_New_Dialog -- lets user start a new game                                           *
@@ -5902,7 +5842,6 @@ static int Net_Fake_New_Dialog(void)
 	int d_cancel_h = 9*RESFACTOR;
 	int d_cancel_x = d_dialog_cx - d_cancel_w / 2;
 	int d_cancel_y = d_dialog_y + d_dialog_h - 20*RESFACTOR;
-
 
 	//------------------------------------------------------------------------
 	//	Button Enumerations
@@ -6033,7 +5972,6 @@ static int Net_Fake_New_Dialog(void)
 #endif	//OLDWAY
 	playerlist.Add_Item(item,
 		(Session.ColorIdx == PCOLOR_DIALOG_BLUE) ? &ColorRemaps[PCOLOR_REALLY_BLUE] : &ColorRemaps[Session.ColorIdx]);
-
 
 	/*
 	** Process the message loop until we are in focus.
@@ -6347,7 +6285,6 @@ static int Net_Fake_New_Dialog(void)
 					}
 				}
 
-
 				Session.GPacket.ScenarioInfo.FileLength = file.Size();
 #ifdef WOLAPI_INTEGRATION
 				strcpy( Session.GPacket.ScenarioInfo.ShortFileName, Session.Scenarios[Session.Options.ScenarioIndex]->Get_Filename() );
@@ -6454,7 +6391,6 @@ static int Net_Fake_New_Dialog(void)
 			Udp.Service();
 			SDL_Delay(1);
 		}
-
 
 		/*
 		** Wait for the go responses from each player in case someone needs the scenario
@@ -6565,15 +6501,6 @@ static int Net_Fake_New_Dialog(void)
 	return(rc);
 
 }	/* end of Net_Fake_New_Dialog */
-
-
-
-
-
-
-
-
-
 
 /***********************************************************************************************
  * Net_Join_Dialog -- lets user join an existing game or start a new one                       *
@@ -6762,7 +6689,6 @@ static int Net_Fake_Join_Dialog(void)
 	//	Buttons
 	//------------------------------------------------------------------------
 	GadgetClass *commands;										// button list
-
 
 	ListClass gamelist(BUTTON_GAMELIST, d_gamelist_x, d_gamelist_y, d_gamelist_w, d_gamelist_h,
 		TPF_TEXT, MFCD::Retrieve("BTN-UP.SHP"), MFCD::Retrieve("BTN-DN.SHP"));
@@ -6985,7 +6911,6 @@ static int Net_Fake_Join_Dialog(void)
 				}
 				break;
 
-
 			//..................................................................
 			//	JOIN: send a join request packet & switch to waiting-for-
 			// confirmation mode.
@@ -7119,7 +7044,6 @@ static int Net_Fake_Join_Dialog(void)
 							}
 						}
 					}
-
 
 					/*
 					** If the scenario that the host wants to play doesnt exist locally then we
@@ -7263,7 +7187,6 @@ static int Net_Fake_Join_Dialog(void)
 			display = REDRAW_PARMS;
 		}
 
-
 		//.....................................................................
 		// EV_GAME_SIGNOFF:
 		//	A game before the one I've selected is gone, so we have a new index
@@ -7348,7 +7271,6 @@ static int Net_Fake_Join_Dialog(void)
 		}
 
 	}	// end of while
-
 
 	//------------------------------------------------------------------------
 	//	Establish connections with all other players.
@@ -7467,17 +7389,7 @@ static int Net_Fake_Join_Dialog(void)
 
 	return(rc);
 
-
 }	/* end of Net_Join_Dialog */
-
-
-
-
-
-
-
-
-
 
 bool Server_Remote_Connect(void)
 {
@@ -7518,12 +7430,6 @@ bool Server_Remote_Connect(void)
 	return (true);
 
 }	/* end of Server_Remote_Connect */
-
-
-
-
-
-
 
 bool Client_Remote_Connect(void)
 {
@@ -7567,8 +7473,6 @@ bool Client_Remote_Connect(void)
 	}
 
 }	/* end of Client_Remote_Connect */
-
-
 
 /*************************** end of netdlg.cpp *****************************/
 

@@ -90,7 +90,6 @@ TFixedIHeapClass<TerrainTypeClass>	TerrainTypes;
 TFixedIHeapClass<OverlayTypeClass>	OverlayTypes;
 TFixedIHeapClass<SmudgeTypeClass>	SmudgeTypes;
 
-
 /*
 **	These are the instantiate static heap pointers for the various
 **	CCPtr class objects that are allowed to exist. If the linker generates
@@ -127,14 +126,12 @@ template<> FixedIHeapClass * CCPtr<TerrainTypeClass>::Heap = &TerrainTypes;
 template<> FixedIHeapClass * CCPtr<OverlayTypeClass>::Heap = &OverlayTypes;
 template<> FixedIHeapClass * CCPtr<SmudgeTypeClass>::Heap = &SmudgeTypes;
 
-
 /* These variables are used to keep track of the slowest speed of a team */
 MPHType TeamMaxSpeed[10];
 SpeedType TeamSpeed[10];
 bool FormMove;
 SpeedType FormSpeed;
 MPHType FormMaxSpeed;
-
 
 char _staging_buffer[32000];
 
@@ -186,15 +183,12 @@ GraphicBufferClass	ModeXBuff;
 bool						InMovie = FALSE;	//Are we currently playing a VQ movie?
 int						AllDone;
 
-
 /***************************************************************************
 **	This is true if the game is the currently in focus windows app
 **
 */
 int32_t GameInFocus = FALSE;
 int32_t BootstrapFocusSeen = FALSE;
-
-
 
 /***************************************************************************
 **	Encryption keys.
@@ -218,13 +212,11 @@ int NameIDOverride[25];
 */
 MissionControlClass MissionControl[MISSION_COUNT];
 
-
 /***************************************************************************
 **	There are various tutorial messages that can appear in the game. These
 **	are called upon by number and pointed to by this array.
 */
 char const * TutorialText[225];
-
 
 /***************************************************************************
 **	This holds the rules database. The rules database won't change during the
@@ -241,19 +233,16 @@ CCINIClass AftermathINI;
 */
 Benchmark * Benches;
 
-
 /***************************************************************************
 **	General rules that control the game.
 */
 RulesClass Rule;
-
 
 /***************************************************************************
 ** All keyboard input is routed through the object pointed to by this
 **	keyboard class pointer.
 */
 KeyboardClass * Keyboard;
-
 
 /***************************************************************************
 **	Remap control array. This is used to hold the remap
@@ -273,7 +262,6 @@ RemapControlType MetalScheme;
 */
 RemapControlType GreyScheme;
 
-
 /***************************************************************************
 **	This is the source of the random numbers used in the game. This controls
 **	the game logic and thus must be in sync with any networked machines.
@@ -281,19 +269,16 @@ RemapControlType GreyScheme;
 RandomClass NonCriticalRandomNumber;
 RandomStraw CryptRandom;
 
-
 /***************************************************************************
 **	This is a list of all selected objects (for this map). The support functions
 **	are used to control access to this list. Do not modify it directly.
 */
 DynamicVectorClass<ObjectClass *> CurrentObject;
 
-
 /***************************************************************************
 **	This is the game version.
 */
 VersionClass VerNum;
-
 
 /***************************************************************************
 **	This is the VQ animation controller structure. It is filled in by reading
@@ -306,13 +291,11 @@ bool BreakoutAllowed = true;	// "true" if aborting of movies is allowed.
 bool Brokeout;						// Was the movie broken out of?
 bool SlowPalette = false;		// Slow palette flag set?
 
-
 /***************************************************************************
 **	These are the movie names to use for mission briefing, winning, and losing
 **	sequences. They are read from the INI file.
 */
 ScenarioClass Scen;
-
 
 /***************************************************************************
 **	This is the pending speech sample to play. This sample will be played
@@ -320,13 +303,11 @@ ScenarioClass Scen;
 */
 VoxType SpeakQueue = VOX_NONE;
 
-
 /***************************************************************************
 **	This records if the score (music) file is present. If not, then much of
 **	the streaming score system can be disabled.
 */
 bool ScoresPresent;
-
 
 /***************************************************************************
 **	This flag will control whether there is a response from game units.
@@ -335,14 +316,12 @@ bool ScoresPresent;
 */
 bool AllowVoice = true;
 
-
 /***************************************************************************
 **	This is the current frame number. This number is guaranteed to count
 **	upward at the rate of one per game logic process. The target rate is 15
 **	per second. This value is saved and restored with the saved game.
 */
 int32_t Frame = 0;
-
 
 /***************************************************************************
 **	These globals are constantly monitored to determine if the player
@@ -359,7 +338,6 @@ bool PlayerRestarts;
 */
 bool PlayerAborts;
 
-
 /***************************************************************************
 **	This is the pointer for the speech staging buffer. This buffer is used
 **	to hold the currently speaking voice data. Since only one speech sample
@@ -369,13 +347,11 @@ bool PlayerAborts;
 void * SpeechBuffer[2];
 VoxType SpeechRecord[2];
 
-
 /***************************************************************************
 **	The theater specific mixfiles are cached into the buffer pointed to by
 **	this global.
 */
 Buffer * TheaterBuffer;
-
 
 /***************************************************************************
 **	This is a running accumulation of the number of ticks that were unused.
@@ -388,14 +364,12 @@ int32_t CellCount;			// Number of cells redrawn.
 int32_t TargetScan;			// Number of target scans.
 int32_t SidebarRedraws;		// Number of sidebar redraws.
 
-
 /***************************************************************************
 **	This is the monochrome debug page array. The various monochrome data
 **	screens are located here.
 */
 MonoClass MonoArray[DMONO_COUNT];
 DMonoType MonoPage = DMONO_STRESS;	// The current page.
-
 
 /***************************************************************************
 **	This holds the theater specific mixfiles.
@@ -407,13 +381,11 @@ MFCD * ScoreMix = 0;
 MFCD * MainMix = 0;
 MFCD * ConquerMix = 0;
 
-
 /***************************************************************************
 **	This is the options control class. The options control such things as
 **	game speed, visual controls, and other user settings.
 */
 GameOptionsClass Options;
-
 
 /***************************************************************************
 **	Logic processing is controlled by this element. It handles both graphic
@@ -421,12 +393,10 @@ GameOptionsClass Options;
 */
 LogicClass Logic;
 
-
 /***************************************************************************
 **	This handles the background music.
 */
 ThemeClass Theme;
-
 
 /***************************************************************************
 **	This is the main control class for the map.
@@ -437,12 +407,10 @@ MapEditClass Map;
 MouseClass Map;
 #endif
 
-
 /**************************************************************************
 **	The running game score is handled by this class (and member functions).
 */
 ScoreClass Score;
-
 
 /***************************************************************************
 **	The running credit display is controlled by this class (and member
@@ -450,16 +418,13 @@ ScoreClass Score;
 */
 CreditClass CreditDisplay;
 
-
 /**************************************************************************
 ** This class records the special command override options that C&C
 **	supports.
 */
 SpecialClass Special;
 
-
 bool PassedProximity;	// used in display.cpp
-
 
 /***************************************************************************
 **	This is the scenario data for the currently loaded scenario.
@@ -469,7 +434,6 @@ HousesType Whom;							// Initial command line house choice.
 int ScenarioInit = 0;
 bool SpecialFlag = false;
 
-
 /***************************************************************************
 ** This value tells the sidebar what items it's allowed to add.  The
 ** lower the value, the simpler the sidebar will be. This value is the
@@ -478,7 +442,6 @@ bool SpecialFlag = false;
 */
 int BuildLevel = 10;				// Buildable level (1 = simplest)
 
-
 /***************************************************************************
 **	The various tutor and dialog messages are located in the data block
 **	referenced by this pointer.
@@ -486,12 +449,10 @@ int BuildLevel = 10;				// Buildable level (1 = simplest)
 char const * SystemStrings;
 char const * DebugStrings;
 
-
 /***************************************************************************
 **	The game plays as long as this var is true.
 */
 bool GameActive;
-
 
 /***************************************************************************
 **	This is a scratch variable that is used to when a reference is needed to
@@ -500,14 +461,12 @@ bool GameActive;
 */
 TARGET LParam;
 
-
 #ifdef SCENARIO_EDITOR
 /***************************************************************************
 ** The currently-selected cell for the Scenario Editor
 */
 CELL CurrentCell = 0;
 #endif
-
 
 /***************************************************************************
 **	Most of the text in the game will use the six point font. These are the
@@ -526,12 +485,10 @@ void const * VCRFontPtr;		// VCR font pointer.
 void const * ScoreFontPtr;		// font for score & map selection screens
 void const * GradFont6Ptr;		// gradient 6 point font pointer.
 
-
 /***************************************************************************
 **	This is the house that the human player is currently playing.
 */
 HouseClass * PlayerPtr;
-
 
 /***************************************************************************
 **	Special palettes for MCGA mode goes here. These palette buffers are used
@@ -546,7 +503,6 @@ PaletteClass WhitePalette(RGBClass(RGBClass::MAX_VALUE, RGBClass::MAX_VALUE, RGB
 PaletteClass OriginalPalette;
 PaletteClass ScorePalette;
 
-
 /***************************************************************************
 **	These are the event queues. One is for holding events until they are ready to be
 **	sent to the remote computer for processing. The other list is for incoming events
@@ -559,7 +515,6 @@ QueueClass<EventClass, (MAX_EVENTS * 64)> DoList;
 QueueClass<EventClass, (MAX_EVENTS * 64)> MirrorList;
 #endif
 
-
 /***************************************************************************
 **	These are arrays/lists of trigger pointers for each cell & the houses.
 */
@@ -569,12 +524,10 @@ int MapTriggerID;
 DynamicVectorClass<TriggerClass *> LogicTriggers;
 int LogicTriggerID;
 
-
 /***************************************************************************
 **	This is the list of BuildingTypes that define the AI's base.
 */
 BaseClass Base;
-
 
 /***************************************************************************
 **	This is the list of carry over objects. These objects are part of the
@@ -583,13 +536,11 @@ BaseClass Base;
 */
 CarryoverClass * Carryover;
 
-
 /***************************************************************************
 ** This value is computed every time a new scenario is loaded; it's a
 ** CRC of the INI and binary map files.
 */
 uint32_t ScenarioCRC;
-
 
 /***************************************************************************
 ** This class manages data specific to multiplayer games.
@@ -639,37 +590,11 @@ UDPManagerClass Udp (
 	VIRGIN_SOCKET, 									// Socket ID #
 	UDPGlobalConnClass::COMMAND_AND_CONQUER0);// Product ID #
 
-
-#if(TEN)
-/***************************************************************************
-** This is the connection manager for Ten.  Special Ten notes:
-** - TEN connection ID's are equal to the HousesType for that player.
-** - The TEN internal player ID is used to determine the player's color.
-** - Ten's broadcast destination address -1
-*/
-TenConnManClass *Ten = NULL;
-
-#endif
-
-
-#if(MPATH)
-/***************************************************************************
-** This is the connection manager for Ten.  Special Ten notes:
-** - MPATH connection ID's are equal to the HousesType for that player.
-** - The player's color is read from the OPTIONS.INI file
-** - MPath's broadcast destination address is 0
-*/
-MPlayerManClass *MPath = NULL;
-
-#endif
-
-
 /***************************************************************************
 **	This is the random-number seed; it's synchronized between systems for
 ** multiplayer games.
 */
 int Seed = 0;
-
 
 /***************************************************************************
 ** If this value is non-zero, use it as the random # seed instead; this should
@@ -701,19 +626,15 @@ int WindowList[][8] = {
 	{0,0,0,0,WHITE,BLACK,0,0}
 };
 
-
 /* X,Y,Item Width,Items High,Selected,Norm Color,Sel Color,zero 	*/
 int MenuList[][8]={
 		{1, 3, 12, 3, 0, WHITE, PINK, 0},
 };
 
-
 GraphicBufferClass	VisiblePage;
 GraphicBufferClass	HiddenPage;
 GraphicViewPortClass	SeenBuff(&VisiblePage, 0, 0, 640, 480);
 GraphicViewPortClass	HidPage(&HiddenPage, 0, 0, 640, 480);
-
-
 
 int 						SoundOn;
 CDTimerClass<SystemTimerClass> FrameTimer;
@@ -722,12 +643,10 @@ CDTimerClass<SystemTimerClass> CountDownTimer;
 NewConfigType NewConfig;
 TheaterType LastTheater = THEATER_NONE;	//Lets us know when theater type changes.
 
-
 /***************************************************************************
 **	This flag is for popping up dialogs that call the main loop.
 */
 SpecialDialogType SpecialDialog = SDLG_NONE;
-
 
 int RequiredCD = -1;
 int CurrentCD = -1;
@@ -741,12 +660,10 @@ uint32_t LogLevelTime[ MAX_LOG_LEVEL ] = { 0 };
 uint32_t LogLastTime = 0;
 bool LogDump_Print = false;		// true = print the Log time Stuff
 
-
 /***************************************************************************
 ** Tick Count global timer object.
 */
 TTimerClass<SystemTimerClass> TickCount = 0;
-
 
 /***************************************************************************
 **  Win32 specific globals
@@ -754,7 +671,6 @@ TTimerClass<SystemTimerClass> TickCount = 0;
 
 bool InDebugger = false;
 int ReadyToQuit = 0;
-
 
 GetCDClass		CDList;
 int UnitBuildPenalty = 100;

@@ -1,12 +1,18 @@
 # Porting Progress
 
-_Last updated: 2026-04-04_
+_Last updated: 2026-04-05_
 
 ## Goal
 
 Port the Red Alert codebase to a reproducible cross-platform build using SDL3 for platform-specific functionality, with working builds on Linux, Windows, and other supported SDL3 platforms.
 
 ## Current status
+
+- Removed the dead legacy online-service multiplayer backends and their UI/session plumbing from the active tree:
+  - deleted the unused legacy backend managers and startup helpers (`CODE/CCTEN.CPP`, `CODE/CCMPATH.CPP`, `CODE/TENMGR.*`, `CODE/MPMGRW.*`, `CODE/MPMGRD.H`) so the source tree no longer carries those dormant implementations at all;
+  - scrubbed the remaining session/game/UI references from `CODE/{SESSION,INIT,QUEUE,CONQUER,NETDLG,STARTUP,FUNCTION,EXTERNS,GLOBALS,MPLAYER,VERSION,HOUSE,DEFINES}.CPP/.H`, leaving only the still-supported skirmish, UDP, and direct-internet session types in the non-vendored codebase;
+  - rewrote `docs/NETWORKING_STATUS.md` around the surviving networking paths and removed the stale references from the porting docs so the repo no longer mentions the deleted backends outside vendor artifacts;
+  - validation for this checkpoint: `cmake --build build --target redalert -j8` and `cmake --build build-asan --target redalert -j8` both succeed after the removal, and `cd GameData && timeout -k 5s 20s env ASAN_OPTIONS=abort_on_error=1:detect_leaks=0 UBSAN_OPTIONS=print_stacktrace=1 ../build-asan/redalert "Erik Yeo"` still exits only via the external timeout/SIGKILL window (`137`) with no `AddressSanitizer` or `runtime error:` matches in the captured log.
 
 - Completed the native warning-cleanup sweep for the warning-enabled SDL/Linux build and brought the full `redalert` target down to zero warnings without intentionally changing gameplay behavior:
   - fixed the broad warning tail across gameplay, save/load, networking, UI, and support code by keeping the original logic intact while tightening exact-width types, signed/unsigned comparisons, format strings, constructor init order, dead legacy locals, and other GCC `-Wall` diagnostics;
@@ -83,7 +89,7 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
   - validation for this checkpoint: `cmake --build build --target redalert -j2` and `cmake --build build-asan --target redalert -j2` both succeed after the UDP switch and symbol cleanup.
 
 - Added a dedicated networking inventory document at `docs/NETWORKING_STATUS.md`:
-  - documented which networking layers are still active in the current SDL3/CMake build versus merely present in the tree, including the live LAN UDP path, the partially preserved direct TCP/IP path, and the dormant WOL/TEN/MPath/helper-transport code;
+  - documented which networking layers are still active in the current SDL3/CMake build versus merely present in the tree, including the live LAN UDP path, the partially preserved direct TCP/IP path, and the dormant legacy online-service/helper-transport code;
   - traced the integration points through `CODE/{MPLAYER,INIT,NETDLG,QUEUE,SESSION,SENDFILE,TCPIP,UDPMGR}.CPP`, the current build gates in `CMakeLists.txt`, and the repo-owned socket seam in `CODE/SOCKETS.H`;
   - recorded the practical re-enable scope for LAN UDP, direct internet head-to-head, and the archival online-service code, plus the lowest-risk seam for any future new backend (`ConnManClass` / `ConnectionClass` under the existing session and lockstep layers).
 
@@ -233,7 +239,7 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - Continued the repository-owned integer-width audit with a focused multiplayer/protocol pass and kept the current SDL3/Linux build green throughout:
   - converted the radio-message payload path from legacy `long` references to the already-canonical `TARGET` transport type across `CODE/{RADIO,OBJECT,FOOT,TECHNO,BUILDING,AIRCRAFT,UNIT,VESSEL}.*`, after tracing the actual callers and confirming that the payload is used for encoded `TARGET` values (`NavCom`, `As_Target(cell)`, `TARGET_NONE`) rather than raw host pointers;
   - updated the fake default radio payload storage (`LParam`) to `TARGET` as well, so the no-argument `Transmit_Message(...)` overload no longer depends on LP64 `long` size;
-  - converted the core connection/protocol state in `CODE/{CONNECT,UDPMGR,UDPGCONN,CONNMGR,TENMGR,MPMGRW,MPMGRD}.*` from Win32-style `unsigned long` to explicit `uint32_t`: packet IDs, retry/timeout parameters, response-time reporting, and related manager interfaces now carry fixed-width 32-bit values end-to-end;
+  - converted the core connection/protocol state in `CODE/{CONNECT,UDPMGR,UDPGCONN,CONNMGR}` plus the then-present alternate manager implementations from Win32-style `unsigned long` to explicit `uint32_t`: packet IDs, retry/timeout parameters, response-time reporting, and related manager interfaces now carry fixed-width 32-bit values end-to-end;
   - converted the multiplayer session/global-packet surfaces in `CODE/{SESSION,NETDLG,INTERNET,TCPIP,EXTERNS,STATS,WOL_GSUP}.CPP/.H` where the fields are true 32-bit protocol or save/load values: player/game name CRCs, version range/version fields, unique IDs, MaxAhead/FrameSendRate, per-node last-heard timestamps, PlanetWestwood start time, and the sync-bug frame markers (`TrapFrame` / `TrapPrintCRC`) now use explicit `uint32_t`/`int32_t`;
   - tightened the `ConnectionClass::Time()` implementation so it computes from 64-bit intermediate milliseconds but returns the original 32-bit 60 Hz tick domain explicitly, preserving behavior without depending on native `unsigned long` width;
   - fixed the related API seams that surfaced during rebuilds instead of papering over them: `ConnManClass` timing virtuals now match the fixed-width overrides, the network retry-forever sentinel paths were updated to explicit 32-bit values, and the `NETDLG.CPP` timing calls were adjusted so templated `max()` uses consistent `uint32_t` arguments;
@@ -399,7 +405,7 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 - Removed the remaining repo-owned direct filesystem/file-I/O calls from the SDL3 port:
   - `SDL3_COMPAT/wrappers/sdl_fs.cpp` now owns the WWFS filesystem layer: virtual current-directory state, case-insensitive path normalization, virtual-CD path resolution, and the SDL-backed helpers (`WWFS_SetCurrentDirectory()`, `WWFS_GetCurrentDirectory()`, `WWFS_OpenFile()`, `WWFS_OpenFileStorage()`, `WWFS_RemovePath()`, `WWFS_GetPathInfo()`, `WWFS_GlobDirectory()`, `WWFS_SplitPath()`, etc.), so relative path resolution no longer depends on the process calling real `chdir()`;
   - `SDL3_COMPAT/wrappers/sdl_fs.h` now provides the matching WWFS-prefixed path plus stdio/fd shims (`WWFS_NormalizePath` / `WWFS_GlobDirectory` / `WWFS_SplitPath` / `WWFS_FOpen` / `WWFS_FRead` / `WWFS_FWrite` / `WWFS_Open` / `WWFS_Read` / `WWFS_Write` / `WWFS_Seek` / `WWFS_Close` / `WWFS_ChangeDirectory` / `WWFS_GetCurrentDirectory`) for the legacy launcher/tool/archive code that still expects those call shapes;
-  - active supported code no longer uses direct filesystem APIs for startup/logging/VQA override paths: `CODE/STARTUP.CPP`, `CODE/NETDLG.CPP`, `CODE/TENMGR.CPP`, `CODE/HOUSE.CPP`, `CODE/QUEUE.CPP`, `CODE/W95TRACE.CPP`, `CODE/BMP8.CPP`, `CODE/DIBFILE.CPP`, `CODE/WINSTUB.CPP`, `CODE/LOADDLG.CPP`, `CODE/CONQUER.CPP`, `WIN32LIB/WINCOMM/WINCOMM.CPP`, and `VQ/VQA32/{DSTREAM,LOADER}.CPP` now route through SDL-backed helpers instead of `chdir`, stdio, or POSIX fd calls;
+  - active supported code no longer uses direct filesystem APIs for startup/logging/VQA override paths: `CODE/STARTUP.CPP`, `CODE/NETDLG.CPP`, `CODE/HOUSE.CPP`, `CODE/QUEUE.CPP`, `CODE/W95TRACE.CPP`, `CODE/BMP8.CPP`, `CODE/DIBFILE.CPP`, `CODE/WINSTUB.CPP`, `CODE/LOADDLG.CPP`, `CODE/CONQUER.CPP`, `WIN32LIB/WINCOMM/WINCOMM.CPP`, and `VQ/VQA32/{DSTREAM,LOADER}.CPP` now route through SDL-backed helpers instead of `chdir`, stdio, or POSIX fd calls;
   - the same helper layer now also covers the remaining repo-owned launcher/tool/archive trees (`LAUNCHER/`, `TOOLS/`, the legacy Novell transport thunk sources, `VQ/VQM32/`, `WINVQ/VQA32/`, `WINVQ/VQM32/`, `WIN32LIB/SRCDEBUG/`, `WIN32LIB/RAWFILE/RAWFILE.CPP`, `WIN32LIB/PROFILE/UTIL/PROFILE.CPP`, `WWFLAT32/FILE/`, and `WIN32LIB/KEYBOARD/TEST/TEST.CPP`);
   - active wildcard scans that historically depended on the current game directory (`SAVEGAME.*`, loose `*.PKT` / `*.MPR`, `SC*.MIX`, `SS*.MIX`) now go through `WWFS_GlobDirectory()` so they see the WWFS virtual cwd instead of the host process cwd;
   - repository-wide search now only reports helper definitions, comments, or non-filesystem uses such as container `remove()` methods and socket `close()`;
@@ -1041,7 +1047,8 @@ Converted all remaining Win32 file I/O calls in the game-layer source files to S
   - deleted `CODE/{NULLMGR,NULLCONN}.{CPP,H}`;
   - deleted `WIN32LIB/WINCOMM/{WINCOMM,MODEMREG}.{CPP,H}` and `WIN32LIB/INCLUDE/{WINCOMM,MODEMREG}.H`;
   - updated `CMakeLists.txt` so those sources are no longer part of the build graph.
-- Reworked the active gameplay/session code so supported multiplayer paths are now skirmish, UDP, Internet, TEN, and MPATH only:
+- Reworked the active gameplay/session code so supported multiplayer paths are now skirmish, UDP, and Internet only:
+  - removed the dead legacy online-service backends, their session/game branches, and their front-end hooks from the active codebase and documentation;
   - removed `GAME_MODEM` / `GAME_NULL_MODEM` from `SessionClass::GameType` while preserving the surviving enum numeric values explicitly;
   - removed the serial settings, phone book, init-string state, and related INI read/write code from `CODE/SESSION.{H,CPP}`;
   - removed the `PhoneEntryClass *` template instantiations from `CODE/{VECTOR,DYNAVEC}.CPP`.
