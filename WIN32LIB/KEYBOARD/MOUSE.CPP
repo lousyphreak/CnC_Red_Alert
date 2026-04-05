@@ -84,11 +84,6 @@ WWMouseClass::WWMouseClass(GraphicViewPortClass *scr, int32_t mouse_max_width, i
 	EraseFlags		= FALSE;
 
 	_Mouse			= this;
-
-	/*
-	** Force the windows mouse pointer to stay withing the graphic view port region
-	*/
-	Set_Cursor_Clip();
 }
 
 WWMouseClass::~WWMouseClass()

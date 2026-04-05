@@ -298,6 +298,7 @@ void Main_Game(int argc, char * argv[])
 			**	Non-scenario-editor-mode: call the game's main loop
 			*/
 			if (!Debug_Map) {
+				SDL_GameInput_SetMissionMouseCapture(!Session.Play);
 #ifdef FIXIT_CSII	//	checked - ajw 9/28/98
 				TimeQuake = PendingTimeQuake;
 				PendingTimeQuake = false;
@@ -309,6 +310,7 @@ void Main_Game(int argc, char * argv[])
 				}
 
 				if (SpecialDialog != SDLG_NONE) {
+					SDL_GameInput_PushMouseCaptureSuppression();
 					switch (SpecialDialog) {
 						case SDLG_SPECIAL:
 							Map.Help_Text(TXT_NONE);
@@ -339,8 +341,10 @@ void Main_Game(int argc, char * argv[])
 						default:
 							break;
 					}
+					SDL_GameInput_PopMouseCaptureSuppression();
 				}
 			} else {
+				SDL_GameInput_SetMissionMouseCapture(false);
 
 				/*
 				**	Scenario-editor-mode: call the editor's main loop
@@ -355,6 +359,7 @@ void Main_Game(int argc, char * argv[])
 		**	Non-editor version of main-loop processing
 		*/
 		for (;;) {
+			SDL_GameInput_SetMissionMouseCapture(!Session.Play);
 #ifdef FIXIT_CSII	//	checked - ajw 9/28/98
 			TimeQuake = PendingTimeQuake;
 			PendingTimeQuake = false;
@@ -374,6 +379,7 @@ void Main_Game(int argc, char * argv[])
 			**	Main_Loop(), allowing the game to run in the background.
 			*/
 			if (SpecialDialog != SDLG_NONE) {
+				SDL_GameInput_PushMouseCaptureSuppression();
 				switch (SpecialDialog) {
 					case SDLG_SPECIAL:
 						Map.Help_Text(TXT_NONE);
@@ -426,9 +432,11 @@ void Main_Game(int argc, char * argv[])
 					default:
 						break;
 				}
+				SDL_GameInput_PopMouseCaptureSuppression();
 			}
 		}
 #endif
+		SDL_GameInput_SetMissionMouseCapture(false);
 
 		/*
 		** Send the game stats if we haven't already done so.
@@ -2482,6 +2490,7 @@ bool Try_Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 	#endif	//CHEAT_KEYS
 
 	if (name) {
+		SDL_GameInput_PushMouseCaptureSuppression();
 		Conquer_Trace("Play_Movie begin name=%s theme=%d clrscrn=%d", name, theme, clrscrn ? 1 : 0);
 		bool played = false;
 		char fullname[_MAX_FNAME+_MAX_EXT];
@@ -2497,6 +2506,7 @@ bool Try_Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 			#ifdef CHEAT_KEYS
 			//		 Mono_Printf("fullname: %s\n", fullname);
 			#endif	//CHEAT_KEYS
+			SDL_GameInput_PopMouseCaptureSuppression();
 		 return(false);
 		}
 		/*
@@ -2618,6 +2628,7 @@ bool Try_Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 		}
 		Show_Mouse();
 		Conquer_Trace("Play_Movie end name=%s clrscrn=%d played=%d", name, clrscrn ? 1 : 0, played ? 1 : 0);
+		SDL_GameInput_PopMouseCaptureSuppression();
 		return(played);
 	}
 	return(false);

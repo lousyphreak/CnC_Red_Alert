@@ -8,6 +8,13 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Switched the SDL/Linux mouse confinement over to gameplay-only mission capture so tactical border scrolling can keep the pointer locked during live play without trapping it on menus, movies, or other front-end UI:
+  - `CODE/SDLINPUT.{H,CPP}` now tracks mission-capture intent plus temporary UI suppression state, reapplies the legacy `WWMouse` viewport clip only while mission capture is active, and pairs that viewport clip with `SDL_SetWindowRelativeMouseMode(...)` so gameplay gets both the original 640x400 tactical bounds and OS-level mouse locking;
+  - the same SDL input layer now warps the system pointer back to the current logical game-cursor position before disabling relative mode, so when gameplay capture ends the mouse reappears at the expected spot instead of jumping to an unrelated hidden SDL position;
+  - `CODE/CONQUER.CPP` now requests mission capture only around the tactical `Main_Loop()` path and temporarily suppresses it around in-mission special dialogs, while `CODE/SCENARIO.CPP` explicitly drops mission capture at the start of win/lose/draw/restart flows so score screens, map selection, replay prompts, and other post-mission UI run with a free mouse;
+  - `CODE/CONQUER.CPP::Try_Play_Movie(...)` and `CODE/MSGBOX.CPP::WWMessageBox::Process(...)` now also suspend mission capture around movies and modal dialogs, and `WIN32LIB/KEYBOARD/MOUSE.CPP::WWMouseClass` no longer enables cursor clipping at construction time, removing the old always-on trap outside gameplay;
+  - validation for this checkpoint: `cmake --build build -j4`, `ctest --test-dir build --output-on-failure`, `cmake --build build-asan --target redalert -j4`, and `cd GameData && timeout -k 5s 20s env ASAN_OPTIONS=abort_on_error=1:detect_leaks=0 UBSAN_OPTIONS=print_stacktrace=1 ../build-asan/redalert "Erik Yeo"` all succeed after the mouse-capture change; the timed ASan/UBSan smoke run still exits only via the external timeout/SIGKILL window (`137`), and the captured log contains no `AddressSanitizer` or `runtime error:` matches.
+
 - Fixed the SDL palette fading regressions while preserving the original game behavior:
   - `CODE/RGB.CPP::RGBClass::Adjust(...)` now clamps the fade ratio instead of wrapping `256` back to `0`, and `CODE/PALETTEC.CPP::PaletteClass::Set(...)` now snapshots the timer once per fade step so the end of a fade cannot jump back toward the source palette;
   - `CODE/PALETTEC.CPP::PaletteClass::Set(...)` and `WIN32LIB/PALETTE/PALETTE.CPP::Fade_Palette_To(...)` now flush queued SDL presents on no-callback fade paths so each palette step is actually shown on screen;

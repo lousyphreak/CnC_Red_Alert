@@ -63,6 +63,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include	"FUNCTION.H"
+#include	"SDLINPUT.H"
 #include "TCPIP.H"
 extern int PreserveVQAScreen;
 
@@ -790,6 +791,7 @@ void Clear_Scenario(void)
  *=============================================================================================*/
 void Do_Win(void)
 {
+	SDL_GameInput_SetMissionMouseCapture(false);
 	Map.Set_Default_Mouse(MOUSE_NORMAL);
 	Hide_Mouse();
 	Theme.Queue_Song(THEME_QUIET);
@@ -1065,6 +1067,7 @@ void Do_Win(void)
  *=============================================================================================*/
 void Do_Lose(void)
 {
+	SDL_GameInput_SetMissionMouseCapture(false);
 	Map.Set_Default_Mouse(MOUSE_NORMAL);
 	Hide_Mouse();
 
@@ -1158,6 +1161,7 @@ void Do_Lose(void)
  *=============================================================================================*/
 void Do_Draw(void)
 {
+	SDL_GameInput_SetMissionMouseCapture(false);
 	Map.Set_Default_Mouse(MOUSE_NORMAL);
 	Hide_Mouse();
 
@@ -1226,6 +1230,7 @@ void Do_Draw(void)
  *=============================================================================================*/
 void Do_Restart(void)
 {
+	SDL_GameInput_SetMissionMouseCapture(false);
 	/*
 	** Start a timer going, before we restart the scenario
 	*/

@@ -1005,6 +1005,12 @@ _Last updated: 2026-04-03_
   - SDL maps that API to Wayland pointer-confinement behavior, which prevents compositor window-management gestures like `Meta+left-drag` move and `Meta+right-drag` resize from stealing the real pointer while the game window is clipped.
   - `SDL3_COMPAT/wrappers/win32_compat.cpp::ClipCursor()` therefore must always keep the game-side `SDL_GameInput_SetCursorClip()` state, but skip SDL window confinement and the follow-up `SDL_WarpMouseInWindow()` clamp for windowed Wayland windows.
   - Non-Wayland and fullscreen paths can continue using the SDL mouse rectangle for OS-level confinement.
+- Gameplay-only mouse locking needs both the old viewport clip and SDL relative mode.
+  - `WWMouseClass` used to call `Set_Cursor_Clip()` in its constructor, which effectively made confinement permanent for the whole app lifetime; that breaks the desired SDL3 behavior because menus, movies, score screens, and other non-mission UI need the pointer free to leave the window.
+  - The safe current seam is `CODE/SDLINPUT.{H,CPP}`: `SDL_GameInput_SetMissionMouseCapture(...)` owns the long-lived gameplay request, while `SDL_GameInput_PushMouseCaptureSuppression()` / `SDL_GameInput_PopMouseCaptureSuppression()` temporarily release it for nested UI such as movies and message boxes.
+  - Relative mode alone is not enough for Red Alert's active SDL presentation path, because the visible tactical viewport is often `SeenBuff == 640x400` centered inside a `640x480` primary surface; the legacy `WWMouse->Set_Cursor_Clip()` path still matters so the software cursor and edge scrolling stay confined to the tactical area rather than the hidden top/bottom gutters.
+  - When mission capture ends, warp the SDL system cursor back to the current logical game-cursor position before disabling relative mode; otherwise the menu/movie pointer resumes from SDL's hidden relative-mode position instead of the on-screen software-cursor location the player last saw.
+  - `CODE/CONQUER.CPP::Main_Game()` now reasserts mission capture from the tactical loop, and the SDL input helper refreshes the `WWMouse` clip even when capture was already active; that keeps the viewport confinement aligned after temporary suppressions and window-size/presentation-rect changes without repeatedly toggling relative mode itself.
 
 ## General runtime correctness notes
 

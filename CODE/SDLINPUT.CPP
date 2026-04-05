@@ -2,6 +2,7 @@
 
 #include "GBUFFER.H"
 #include "KEY.H"
+#include "../WIN32LIB/INCLUDE/MOUSE.H"
 
 #include <SDL3/SDL.h>
 
@@ -24,6 +25,7 @@ extern int AllDone;
 extern int32_t GameInFocus;
 extern int32_t BootstrapFocusSeen;
 extern GraphicViewPortClass SeenBuff;
+extern WWMouseClass* WWMouse;
 
 namespace {
 
@@ -50,6 +52,9 @@ std::deque<SDL_Event> g_callback_events;
 bool g_callback_event_watch_installed = false;
 bool g_cursor_clip_active = false;
 RECT g_cursor_clip{};
+bool g_mission_mouse_capture_requested = false;
+uint32_t g_mouse_capture_suppression_count = 0;
+bool g_mission_mouse_capture_applied = false;
 
 bool valid_scancode(SDL_Scancode scancode)
 {
@@ -152,6 +157,91 @@ void update_mouse_position_locked(int x, int y)
 	clamp_mouse_position_locked(x, y);
 	g_mouse_x = x;
 	g_mouse_y = y;
+}
+
+void initialize_mouse_snapshot_locked(void);
+
+bool should_apply_mission_mouse_capture(void)
+{
+	return g_mission_mouse_capture_requested
+		&& g_mouse_capture_suppression_count == 0
+		&& MainWindow != NULL
+		&& MainWindow->sdl_window != NULL;
+}
+
+bool get_window_point_for_current_game_cursor(float& window_x, float& window_y)
+{
+	if (MainWindow == NULL || MainWindow->sdl_window == NULL) {
+		return false;
+	}
+
+	int cursor_x = 0;
+	int cursor_y = 0;
+	{
+		std::scoped_lock lock(g_input_mutex);
+		cursor_x = g_mouse_x;
+		cursor_y = g_mouse_y;
+	}
+
+	RECT viewport{};
+	if (SDL_GameInput_GetViewportRect(&viewport)) {
+		cursor_x += viewport.left;
+		cursor_y += viewport.top;
+	}
+
+	RECT cursor_rect{};
+	cursor_rect.left = cursor_x;
+	cursor_rect.top = cursor_y;
+	cursor_rect.right = cursor_x + 1;
+	cursor_rect.bottom = cursor_y + 1;
+
+	SDL_Rect window_rect{};
+	if (!RA_GameRectToWindowRect(MainWindow, &cursor_rect, &window_rect) || window_rect.w <= 0 || window_rect.h <= 0) {
+		return false;
+	}
+
+	window_x = static_cast<float>(window_rect.x) + (static_cast<float>(window_rect.w) * 0.5f);
+	window_y = static_cast<float>(window_rect.y) + (static_cast<float>(window_rect.h) * 0.5f);
+	return true;
+}
+
+void apply_mission_mouse_capture(void)
+{
+	const bool should_capture = should_apply_mission_mouse_capture();
+	if (g_mission_mouse_capture_applied == should_capture) {
+		if (should_capture && WWMouse != NULL) {
+			WWMouse->Set_Cursor_Clip();
+		}
+		return;
+	}
+
+	if (!should_capture) {
+		if (MainWindow != NULL && MainWindow->sdl_window != NULL && SDL_GetWindowRelativeMouseMode(MainWindow->sdl_window)) {
+			float window_x = 0.0f;
+			float window_y = 0.0f;
+			if (get_window_point_for_current_game_cursor(window_x, window_y)) {
+				SDL_WarpMouseInWindow(MainWindow->sdl_window, window_x, window_y);
+			}
+			SDL_SetWindowRelativeMouseMode(MainWindow->sdl_window, false);
+		}
+		if (WWMouse != NULL) {
+			WWMouse->Clear_Cursor_Clip();
+		}
+		{
+			std::scoped_lock lock(g_input_mutex);
+			initialize_mouse_snapshot_locked();
+		}
+		g_mission_mouse_capture_applied = false;
+		return;
+	}
+
+	if (WWMouse != NULL) {
+		WWMouse->Set_Cursor_Clip();
+	}
+	if (MainWindow != NULL && MainWindow->sdl_window != NULL) {
+		(void)SDL_SetWindowRelativeMouseMode(MainWindow->sdl_window, true);
+	}
+	g_mission_mouse_capture_applied = true;
 }
 
 uint16_t legacy_key_from_scancode(SDL_Scancode scancode)
@@ -801,6 +891,26 @@ void SDL_GameInput_Set_AppCallbacks_Mode(bool enabled)
 bool SDL_GameInput_Is_AppCallbacks_Mode(void)
 {
 	return (g_app_callbacks_mode.load());
+}
+
+void SDL_GameInput_SetMissionMouseCapture(bool enabled)
+{
+	g_mission_mouse_capture_requested = enabled;
+	apply_mission_mouse_capture();
+}
+
+void SDL_GameInput_PushMouseCaptureSuppression(void)
+{
+	++g_mouse_capture_suppression_count;
+	apply_mission_mouse_capture();
+}
+
+void SDL_GameInput_PopMouseCaptureSuppression(void)
+{
+	if (g_mouse_capture_suppression_count > 0) {
+		--g_mouse_capture_suppression_count;
+	}
+	apply_mission_mouse_capture();
 }
 
 void SDL_GameInput_Handle_Event(const SDL_Event& event)
