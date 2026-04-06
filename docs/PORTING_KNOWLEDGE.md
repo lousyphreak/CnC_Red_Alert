@@ -1,5 +1,14 @@
 # Porting Knowledge
 
+## Legacy compiler-specific cleanup
+
+- Keep historical Watcom/Borland/Turbo toolchain details in the porting docs, not in the active source tree.
+  - Practical rule: the live `CODE/` and `WIN32LIB/` sources should not carry `__WATCOMC__` / `__BORLANDC__` / `__TURBOC__` branches, empty shim headers, or calling-convention placeholders such as `_USERENTRY` once the SDL3/CMake port has an equivalent behavior-safe spelling.
+- When an old comment still explains a real constraint, rewrite it in terms of the actual rule instead of the old compiler quirk.
+  - Practical examples from this tree: union/shared-storage payloads still need constructor-free wrappers, old scenario data still contains 1-byte enum values sign-extended out of `Data.Value`, and dormant on-disk structs such as `MIXHeader` still need exact packed sizes even though the current code no longer cares about the original compiler that exposed those issues.
+- Prefer portable expressions of old low-level behavior over dead compiler branches.
+  - Practical examples from this tree: `WIN32LIB/INCLUDE/VQM32/MEM.H` now makes `DPMI_Lock(...)` / `DPMI_Unlock(...)` explicit no-ops for the SDL3 build, and `WIN32LIB/INCLUDE/VQM32/MIXFILE.H` now uses unconditional `#pragma pack(push, 1)` plus `static_assert`s to spell the file-format layout directly.
+
 ## Linkage modifier cleanup
 
 - The active non-vendor Red Alert tree now builds entirely as C++, with no project-side `.c` or assembly translation units left in the normal SDL3 build.

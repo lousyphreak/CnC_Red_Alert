@@ -148,7 +148,6 @@ UnitTypeClass      �   BuildingTypeClass      �  VesselTypeClass
            AircraftTypeClass          InfantryTypeClass
 #endif
 
-#include	"WATCOM.H"
 #include "LINT.H"
 
 #include "win32_compat.h"
@@ -387,7 +386,6 @@ extern void Fatal(char const *message, ...);
 **  where we can see it.
 **
 */
-#ifndef __BORLANDC__
 #ifdef assert
 #undef assert
 #endif	//assert
@@ -398,8 +396,6 @@ void Assert_Failure (char *expression, int line, char *file);
 #else
  #define assert(expr)   ((expr)?(void)0:Assert_Failure(#expr,__LINE__,__FILE__))
 #endif	//NDEBUG
-
-#endif	//__BORLANDC__
 
 extern void Free_Interpolated_Palettes(void);
 extern int Load_Interpolated_Palettes(char const *filename, int32_t add=FALSE);

@@ -127,9 +127,8 @@ struct TEventClass {
 
 	/*
 	**	If this event needs to reference a team type, then this is the pointer
-	**	to the team type object. This must be separated from the following
-	**	union because Watcom compiler won't allow a class that has a
-	**	constructor to be declared in a union.
+	**	to the team type object. This stays separate from the following union
+	**	because the union only carries plain data payloads.
 	*/
 	CCPtr<TeamTypeClass> Team;
 

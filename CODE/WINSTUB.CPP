@@ -33,7 +33,7 @@
  *                                                                                             *
  *---------------------------------------------------------------------------------------------*
  * Overview:                                                                                   *
- *   This file contains stubs for undefined externals when linked under Watcom for Win 95      *
+ *   This file contains SDL/port compatibility helpers for legacy platform externals.           *
  *                                                                                             *
  *---------------------------------------------------------------------------------------------*
  *                                                                                             *

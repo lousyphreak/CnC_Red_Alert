@@ -14,12 +14,9 @@ If you wish to rebuild the source code and tools successfully you will need to f
 - Human Machine Interface (HMI) “Sound Operating System” (SOS)
 
 
-## Compiling (Win32 Only)
+## Compiling
 
-The current state of the source code does not fully compile and will require some effort to restore it. If you wish to restore the original build environment, the following tools are required;
-
-- Watcom C/C++ (v10.6) for C/C++ source files
-- Borland Turbo Assembler (TASM v4.0) for assembly files
+The active port builds with CMake and SDL3. Use the top-level `CMakeLists.txt` together with the existing build trees (`build/`, `build-asan/`, `build-emscripten/`) or generate a fresh build directory for your target platform.
 
 To use the compiled binaries, you must own the game. The C&C Ultimate Collection is available for purchase on [EA App](https://www.ea.com/en-gb/games/command-and-conquer/command-and-conquer-the-ultimate-collection/buy/pc) or [Steam](https://store.steampowered.com/bundle/39394/Command__Conquer_The_Ultimate_Collection/).
 

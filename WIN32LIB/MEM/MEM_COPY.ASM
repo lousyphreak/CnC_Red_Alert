@@ -27,7 +27,7 @@
 ;*                   Programmer : Scott Bowen				   *
 ;*                                                                         *
 ;*                  Last Update : September 8, 1994	[IML]              *
-;*                  Ported to watcom c32 : 01/03/96     [JRJ]                                                                        *
+;*                  Ported to 32-bit C build : 01/03/96 [JRJ]                                                                        *
 ;*-------------------------------------------------------------------------*
 ;* Functions:                                                              *
 ;*   Mem_Copy -- Copies from one pointer to another.                       *

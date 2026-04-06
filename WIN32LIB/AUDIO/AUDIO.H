@@ -44,8 +44,8 @@
 #define	AUD_FLAG_16BIT		2
 
 // PWG 3-14-95: This structure used to have bit fields defined for Stereo
-//   and Bits.  These were removed because watcom packs them into a 32 bit
-//   flag entry even though they could have fit in a 8 bit entry.
+//   and Bits. These were removed because the original toolchain packed them
+//   into a 32-bit flag entry even though they could have fit in an 8-bit entry.
 #pragma pack(push, 1)
 typedef struct {
 	uint16_t	Rate;				// Playback rate (hertz).

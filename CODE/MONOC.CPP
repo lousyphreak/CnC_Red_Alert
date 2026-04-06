@@ -60,7 +60,6 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 //
-#include	"WATCOM.H"
 #include	"MONOC.H"
 #include	"FUNCTION.H"
 #include	<stdlib.h>

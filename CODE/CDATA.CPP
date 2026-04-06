@@ -2550,7 +2550,7 @@ void TemplateTypeClass::operator delete(void * ptr)
 }
 
 
-static void _Watcom_Ugh_Hack(void)
+static void Init_Remaining_Template_Types(void)
 {
 	(void)new TemplateTypeClass(Road37);			//	TEMPLATE_ROAD37
 	(void)new TemplateTypeClass(Road38);			//	TEMPLATE_ROAD38
@@ -2971,10 +2971,10 @@ void TemplateTypeClass::Init_Heap(void)
 	(void)new TemplateTypeClass(Road36);			//	TEMPLATE_ROAD36
 
 	/*
-	**	Separate out the list of new operator calls. Watcom bombs
-	**	if they are kept together.
+	**	Keep the tail of the constructor list in a helper so this initializer
+	**	doesn't become one uninterrupted block.
 	*/
-	_Watcom_Ugh_Hack();
+	Init_Remaining_Template_Types();
 }
 
 

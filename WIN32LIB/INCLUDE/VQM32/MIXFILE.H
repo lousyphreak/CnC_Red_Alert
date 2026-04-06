@@ -43,9 +43,7 @@
 ****************************************************************************/
 
 /* Disable structure alignment.*/
-#ifdef __WATCOMC__
 #pragma pack(push, 1)
-#endif
 
 /*---------------------------------------------------------------------------
  * STRUCTURE DEFINITIONS
@@ -73,8 +71,11 @@ typedef struct _MIXSubBlock {
 	int32_t Size;
 } MIXSubBlock;
 
-#ifdef __WATCOMC__
 #pragma pack(pop)
+
+#ifdef __cplusplus
+static_assert(sizeof(MIXHeader) == 6, "MIXHeader must match the 6-byte on-disk layout");
+static_assert(sizeof(MIXSubBlock) == 12, "MIXSubBlock must match the 12-byte on-disk layout");
 #endif
 
 /* MIXHandle: Mix file handle.

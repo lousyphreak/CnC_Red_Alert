@@ -55,10 +55,6 @@
 #define SEARCH_H
 
 
-#ifndef __BORLANDC__
-#define	_USERENTRY
-#endif
-
 /*
 **	This class is used to create and maintain an index. It does this by assigning a unique
 **	identifier number to the type objects that it is indexing. The regular binary sort and search
@@ -178,7 +174,7 @@ class IndexClass
 		*/
 		NodeElement const * Search_For_Node(int id) const;
 
-		static int _USERENTRY search_compfunc(void const * ptr, void const * ptr2);
+		static int search_compfunc(void const * ptr, void const * ptr2);
 };
 
 
@@ -615,7 +611,7 @@ bool IndexClass<T>::Remove_Index(int id)
  *   11/02/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
 template<class T>
-int _USERENTRY IndexClass<T>::search_compfunc(void const * ptr1, void const * ptr2)
+int IndexClass<T>::search_compfunc(void const * ptr1, void const * ptr2)
 {
 	if (*(int const *)ptr1 == *(int const *)ptr2) {
 		return(0);

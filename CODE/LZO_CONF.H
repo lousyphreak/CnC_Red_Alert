@@ -61,13 +61,6 @@
 // compiler specific defines
 ************************************************************************/
 
-/* need Borland C 4.0 or above because of huge-pointer bugs */
-#if defined(__LZO_MSDOS16) && defined(__TURBOC__)
-#  if (__TURBOC__ < 0x452)
-#    error You need a newer compiler version
-#  endif
-#endif
-
 #if defined(__LZO_MSDOS) || defined(__i386__) || defined(__386__)
 #  if !defined(__LZO_i386)
 #    define __LZO_i386

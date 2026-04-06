@@ -36,7 +36,6 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 //#include	"FUNCTION.H"
-#include	"WATCOM.H"
 #include "ROTBMP.H"
 #include "../WIN32LIB/INCLUDE/GBUFFER.H"
 

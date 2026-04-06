@@ -39,10 +39,9 @@
 
 #include	"FUNCTION.H"
 /*
-**	These member functions for the CCPtr class cannot be declared inside the
-**	class definition since they could refer to other objects that themselves
-**	contain CCPtr objects. The recursive nature of this type of declaration
-**	is not handled by Watcom, hence the body declaration is dislocated here.
+**	These member functions for the CCPtr class stay out of line because the
+**	class definition can appear inside recursive object graphs that also
+**	contain CCPtr members.
 */
 template<class T>
 CCPtr<T>::CCPtr(T * ptr) : ID(-1)

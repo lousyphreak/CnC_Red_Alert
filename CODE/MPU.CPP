@@ -40,14 +40,6 @@
 #include <time.h>
 
 
-#ifdef __BORLANDC__
-uint32_t  Get_CPU_Clock(uint32_t & high)
-{
-	__asm db 0fh,031h
-	__asm mov [high],edx
-	return(_EAX);
-}
-#else
 uint32_t  Get_CPU_Clock(uint32_t & high)
 {
 	struct timespec spec;
@@ -58,4 +50,3 @@ uint32_t  Get_CPU_Clock(uint32_t & high)
 	high = static_cast<uint32_t>((counter >> 32) & 0xFFFFFFFFu);
 	return(static_cast<uint32_t>(counter & 0xFFFFFFFFu));
 }
-#endif

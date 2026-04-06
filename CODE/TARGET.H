@@ -95,9 +95,9 @@ class CellClass;
 class TriggerTypeClass;
 
 /*
-** Must not have a constructor since Watcom cannot handle a class that has a constructor if
-** that class object is in a union. Don't use this class for normal purposes. Use the TargetClass
-**	instead. The xTargetClass is only used in one module for a special reason -- keep it that way.
+** Must not have a constructor since this class is used directly in union-backed storage.
+** Don't use this class for normal purposes. Use the TargetClass instead. The xTargetClass
+**	is only used in one module for a special reason -- keep it that way.
 */
 class xTargetClass
 {
@@ -150,8 +150,7 @@ class xTargetClass
 **	for the constructors. This is because the xTargetClass is used in a union and this target object is
 **	used as its initializer. If this class had any extra members they would not be properly copied and
 **	communicated to the other machines in a network/modem game. Combining this class with xTargetClass would
-**	be more efficient, but Watcom doesn't allow class objects that have a constructor to be part of a union [even
-**	if the class object has a default constructor!].
+**	be more efficient, but the constructor-free xTargetClass has to remain the shared storage payload.
 */
 class TargetClass : public xTargetClass
 {

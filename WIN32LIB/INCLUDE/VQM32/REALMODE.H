@@ -47,7 +47,7 @@
  * pointers. The type is a uint32_t value, were the upper 16 bits
  * are the segment number and the lower 16 bit are an offset. This type
  * and the associated macros are identical to that of the PHARLAP "pltypes.h"
- * definitions for easy of conversion to WATCOM/4GW.
+ * definitions for easy conversion to the matching 32-bit extender layout.
  */
 
 #define RP_OFF(rp) ((uint16_t)(((uint32_t)(rp)) & 0xFFFF))

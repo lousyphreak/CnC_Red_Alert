@@ -288,10 +288,6 @@ typedef struct _VQAFlipper {
 
 #if(VQAAUDIO_ON)
 
-#ifdef __WATCOMC__
-#pragma pack(push, 4)
-#endif
-
 /* VQAAudio: Data needed exclusively by audio playback.
  *           (Make sure this structure's size is always uint32_t aligned.)
  *
@@ -371,10 +367,6 @@ typedef struct _VQAAudio {
 #define HMI_UNINIT  0  /* Unitialize state. */
 #define HMI_VQAINIT 1  /* VQA initialized */
 #define HMI_APPINIT 2  /* Application initialized */
-
-#ifdef __WATCOMC__
-#pragma pack(pop)
-#endif
 
 #endif /* VQAAUDIO_ON */
 

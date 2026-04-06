@@ -92,9 +92,8 @@
 #include	"MP.H"
 
 #include <stdint.h>
-#ifndef __BORLANDC__
+#ifndef min
 #define	min(a, b)	(((a) < (b)) ? (a) : (b))
-#define	_USERENTRY
 #endif
 
 
@@ -2191,7 +2190,7 @@ void memrev(char * buffer, size_t length)
 }
 
 
-int _USERENTRY pfunc(const void * pkey, const void * base)
+int pfunc(const void * pkey, const void * base)
 {
 	if (*(uint16_t *)pkey < *(uint16_t *)base) return(-1);
 	if (*(uint16_t *)pkey > *(uint16_t *)base) return(1);

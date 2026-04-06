@@ -45,7 +45,7 @@
 
 
 #include <stdint.h>
-#if !defined(__BORLANDC__) && !defined(min)
+#ifndef min
 #define	min(a, b)		((a)<(b))?(a):(b)
 #endif
 
@@ -242,10 +242,7 @@ int SHAEngine::Result(void * result) const
 }
 
 /*
-**	This pragma to turn off the warning "Conversion may lose significant digits" is to
-**	work around a bug within the Borland compiler. It will give this warning when the
-**	_rotl() function is called but will NOT give the warning when the _lrotl() function
-**	is called even though they both have the same parameters and declaration attributes.
+**	Keep a local rotate helper with the same semantics as the legacy _rotl intrinsic.
 */
 
 template<class T>
@@ -253,10 +250,6 @@ T _rotl(T X, int n)
 {
 	return(T)( ( X << n ) | ( (unsigned)X >> ((sizeof(T)*8) - n) ) );
 }
-//unsigned long _RTLENTRY _rotl(unsigned long X, int n)
-//{
-//	return(unsigned long)( (unsigned long)( (unsigned long)( (unsigned long)X ) << (int)n ) | (unsigned long)( ((unsigned long) X ) >> ( (int)((int)(sizeof(long)*(long)8) - (long)n) ) ) );
-//}
 void memrev(char * buffer, size_t length);
 
 

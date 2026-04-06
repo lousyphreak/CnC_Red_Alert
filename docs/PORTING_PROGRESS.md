@@ -8,6 +8,12 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Removed the remaining obsolete Watcom/Borland/Turbo compiler baggage from the active tree without changing runtime behavior:
+  - deleted the empty `CODE/WATCOM.H` shim and obsolete `CODE/STD.LNT` lint config, updated `README.md` to describe the active SDL3/CMake build path, and scrubbed the last active-tree compiler branches/placeholders from `CODE/*` plus the VQA/VQM support headers (`__BORLANDC__`, `__WATCOMC__`, `__TURBOC__`, `_USERENTRY`, the dead Borland-only `Get_CPU_Clock()` path, and the redundant VQA config split);
+  - kept the surviving low-level constraints explicit in portable form instead of compiler-specific form: `WIN32LIB/INCLUDE/VQM32/MEM.H` now advertises `DPMI_Lock`/`DPMI_Unlock` as SDL3 no-ops, `WIN32LIB/INCLUDE/VQM32/MIXFILE.H` now expresses the on-disk layout with unconditional `#pragma pack(push, 1)` plus `static_assert`s, and dormant archive headers/comments now describe the real layout/storage rule without naming defunct toolchains;
+  - companion cleanup from the same sweep removed the unused `CODE/CONST.CPP` data-segment filler, dropped stale Borland/Watcom notes from `CODE/TODO.TXT`, and rewrote lingering source/header comments so the live tree no longer advertises those old compilers outside the dedicated porting docs and vendored SDL sources;
+  - validation for this checkpoint: `cmake --build build --target redalert -j2`, `ctest --test-dir build --output-on-failure`, and `cmake --build build-asan --target redalert -j2` all succeed after the cleanup; the first native build reconfigured once because deleting `CODE/WATCOM.H` changed the CMake glob inputs.
+
 - Audited and removed obsolete project-side linkage/calling-convention modifiers without changing game behavior:
   - removed non-vendor `extern "C"` wrappers/declarations from the active `CODE/`, `WIN32LIB/`, and `SDL3_COMPAT/` trees, dropped the dead `DLLCALL` movie macro, and removed the now-unused non-Windows `__cdecl=` compile-definition workaround from `CMakeLists.txt`;
   - deliberately kept `CODE/CONQUER.CPP::__asan_default_options()` under `extern "C"` because ASan finds that runtime hook by exact unmangled symbol name, so that one modifier is still required;

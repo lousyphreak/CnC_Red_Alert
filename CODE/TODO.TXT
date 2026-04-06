@@ -220,14 +220,6 @@ full name override for pop up help text as well.
 Adjust_Threat should only make an adjustment if the unit moves to a new
 cell, is unlimboed, or limboed.
 
-New to Borland 5.0!
-	namespaces
-	mutable
-	bool
-	standard template library
-
-
-
 kevin_aguilar
 
 TOFIX -- fix for Red Alert
@@ -352,17 +344,6 @@ just damage the target (maybe APDS as well).
 Add some function to the facing class that automatically convert the
 return value to 1/32 or 1/8 values.
 
-Misc. strange Watcom errors/quirks
-> Internal compiler error 57
-> Abnormal program termination: Array bounds exception CS:EIP = 2BCDh:000009A6h
-> Created a 100 meg precompiled header file.
-> read error on work file: error code = 1
-> "const" bitfields show up as 32bit numbers in debugger.
-> couldn't add a specifier (foobar::) to a friend class declaration
-> Inline assembly can generate wrong code for parameter setup.
-> casting doesn't follow precidence rules.
-> CTRL-C to break out of compile sometimes crashes. Here is an error.
- Invalid date ""
  run-time error R6000
  - stack overflow
 > Unable to find carve memory block.

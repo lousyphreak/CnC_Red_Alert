@@ -39,14 +39,9 @@
 *
 ****************************************************************************/
 
-#ifdef __BORLANDC__
-
-
 int16_t inp(uint16_t portid);
 void outp(uint16_t portid, int16_t value);
 
-
-#endif /* __BORLANDC__ */
 
 #endif /* VQMPORTIO_H */
 

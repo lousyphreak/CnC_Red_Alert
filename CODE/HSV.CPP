@@ -39,7 +39,6 @@
  *   HSVClass::operator RGBClass -- Conversion operator for RGBClass object.                   *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"WATCOM.H"
 #include	"HSV.H"
 #include	"RGB.H"
 #include <stdint.h>

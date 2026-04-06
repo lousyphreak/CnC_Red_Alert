@@ -30,7 +30,7 @@
 ;*
 ;* PROGRAMMER
 ;*     Nick Skrepetos
-;*     Denzil E. Long, Jr. (Fixed bugs, rewrote for watcom)
+;*     Denzil E. Long, Jr. (Fixed bugs, rewrote for 32-bit build)
 ;*	   Bill Petro		   (Added stereo support)
 ;* DATE
 ;*     Febuary 15, 1995

@@ -70,8 +70,8 @@
 //lint -esym(1509,AbstractTypeClass)
 
 /*
-** The "unusual cast" warning is the result of derived casting. This is
-** because there is no "dynamic_cast<>" implemented in Watcom (version 10.5).
+** The "unusual cast" warning is the result of the legacy downcast patterns
+** used in this code.
 */
 //lint -e740 -e571
 

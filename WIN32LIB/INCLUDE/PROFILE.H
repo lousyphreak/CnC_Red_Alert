@@ -51,12 +51,12 @@
  *  Old System                                                                                 *
  * ~~~~~~~~~~~                                                                                 *
  *                                                                                             *
- *  The profiler works by using the function prologue and epilogue hooks available in Watcom   *
- *  to register the current functions address in a global variable and then sampling the       *
+ *  The profiler works by using compiler prologue and epilogue hooks to register the current   *
+ *  function address in a global variable and then sampling the contents of the variable using *
  *  contents of the variable using a windows timer which runs at up to 1000 samples per second.*
  *                                                                                             *
- *  Compile the code to be sampled with the -ep and -ee flags to enable the prologue (__PRO)   *
- *  and epilogue (__EPI) calls to be generated.                                                *
+ *  Compile the code to be sampled with the matching prologue/epilogue hook flags so the       *
+ *  instrumentation callbacks are emitted.                                                     *
  *  At the beginning of the section to be profiled (just before main loop normally) call the   *
  *  Start_Profiler function to start sampling. At the end of the section, call Stop_Profiler   *
  *  which will stop the timer and write the profile data to disk in the PROFILE.BIN file.      *

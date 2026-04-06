@@ -40,18 +40,8 @@
 *
 ****************************************************************************/
 
-/* Definitions */
-#define DPMI_INT    0x0031
-#define DPMI_LOCK   0x0600
-#define DPMI_UNLOCK 0x0601
-
-/* Prototypes */
-#ifdef __WATCOMC__
-void DPMI_Lock(void const *ptr, int32_t const size);
-void DPMI_Unlock(void const *ptr, int32_t const size);
-#else
-#define DPMI_Lock(a,b)
-#define DPMI_Unlock(a,b)
-#endif
+/* The SDL3 port does not use DPMI page locking, so keep these as no-ops. */
+#define DPMI_Lock(a,b) ((void)0)
+#define DPMI_Unlock(a,b) ((void)0)
 
 #endif /* VQAMEM_H */
