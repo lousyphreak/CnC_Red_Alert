@@ -66,17 +66,11 @@ typedef struct _FontInfo {
 	uint8_t MaxWidth;
 } FontInfo;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 extern void const *FontPtr;
 extern int FontXSpacing;
 extern int FontYSpacing;
 
-#ifdef __cplusplus
-}
-#endif
 
 extern char FontWidth;
 extern char FontHeight;

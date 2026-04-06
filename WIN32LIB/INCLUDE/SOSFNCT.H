@@ -109,9 +109,6 @@ uint16_t  sosAllocVDSPage            ( char * *, uint16_t *, uint16_t * );
 void  sosFreeVDSPage             ( uint16_t, uint16_t, int32_t );
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #ifdef PHARLAP
 extern   int32_t    sosRealFree          ( int32_t );
@@ -175,9 +172,6 @@ extern   void   sosDIGITimer_Start( void );
 extern   void   sosDIGITimer_End( void );
 extern   void   sosDIGIDrv_Start( void );
 extern   void   sosDIGIDrv_End( void );
-#ifdef __cplusplus
-}
-#endif
 
 // external functions for handling system initialization and
 // uninitialization

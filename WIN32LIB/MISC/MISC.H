@@ -56,9 +56,7 @@ uint32_t 	Get_Total_Video_Memory(void);
 void 		Wait_Blit(void);
 uint32_t 	Get_Video_Hardware_Capabilities(void);
 
-extern "C" void Wait_Vert_Blank(void);
-extern "C" void Set_Video_Palette (void *palette);
-
+void Wait_Vert_Blank(void);void Set_Video_Palette (void *palette);
 /*
 ** Pointer to function to call if we detect a focus loss
 */
@@ -178,9 +176,6 @@ int32_t IRandom(int32_t minval, int32_t maxval);
 
 /*========================= Assembly Routines ==============================*/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /*=========================================================================*/
 /* The following prototypes are for the file: RANDOM.ASM							*/
@@ -256,9 +251,6 @@ extern int32_t  Confine_Rect ( int32_t * x , int32_t * y , int32_t dw , int32_t 
 
 extern int16_t OperationgSystem;
 
-#ifdef __cplusplus
-}
-#endif
 
 /*=========================================================================*/
 

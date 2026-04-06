@@ -48,8 +48,7 @@
 #include "FUNCTION.H"
 #include "PALETTEC.H"
 
-extern "C" void WWDraw_Flush_Present(void);
-
+void WWDraw_Flush_Present(void);
 PaletteClass const & PaletteClass::CurrentPalette = *reinterpret_cast<PaletteClass const *>(&::CurrentPalette[0]);
 
 

@@ -19,8 +19,7 @@
 #include "RGB.H"
 
 #include <stdint.h>
-extern "C" void Set_Palette_Register(int number, int red, int green, int blue);
-
+void Set_Palette_Register(int number, int red, int green, int blue);
 static int CurrentPaletteRegister = 0;
 
 

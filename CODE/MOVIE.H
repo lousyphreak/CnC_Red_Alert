@@ -37,8 +37,6 @@
 #include "win32_compat.h"
 #include "sdl_draw.h"
 
-#define DLLCALL
-
 typedef enum
 	{
 	MPGCMD_ERROR = -1,
@@ -57,13 +55,10 @@ typedef enum
 
 typedef MPG_RESPONSE (  *LPMPGCALLBACK)(MPG_CMD cmd, void * data, void * user);
 
-extern "C"
-	{
-	DLLCALL void  MpgPlay(const char* name, WWDraw* dd,
-		WWSurface* surface, RECT* dstRect);
-	DLLCALL void  MpgPause(void);
-	DLLCALL void  MpgResume(void);
-	DLLCALL void  MpgSetCallback(LPMPGCALLBACK callback, void * user);
-	}
+void  MpgPlay(const char* name, WWDraw* dd,
+	WWSurface* surface, RECT* dstRect);
+void  MpgPause(void);
+void  MpgResume(void);
+void  MpgSetCallback(LPMPGCALLBACK callback, void * user);
 
 #endif // _MPGMOVIE_H_

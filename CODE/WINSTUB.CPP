@@ -442,8 +442,7 @@ ColourList	ColourLookup[9]={
 int	DebugColour=1;
 
 
-extern "C" void Set_Palette_Register(int number, int red, int green, int blue);
-
+void Set_Palette_Register(int number, int red, int green, int blue);
 void Colour_Debug (int call_number)
 {
 	//#if 0
@@ -552,9 +551,7 @@ uint32_t	VQSlowpal;
 bool				VQPaletteChange = false;
 
 
-extern "C"{
-	void  SetPalette(uint8_t *palette, int32_t numbytes, uint32_t slowpal);
-}
+void  SetPalette(uint8_t *palette, int32_t numbytes, uint32_t slowpal);
 
 void Create_Palette_Interpolation_Table(void);
 

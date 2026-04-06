@@ -457,8 +457,7 @@ int WWDraw::Width() const { return width_; }
 int WWDraw::Height() const { return height_; }
 RAWindow* WWDraw::Window() const { return window_; }
 
-extern "C" HRESULT WWDraw_Create(WWDraw** direct_draw)
-{
+HRESULT WWDraw_Create(WWDraw** direct_draw){
     if (!direct_draw) {
         return WWDRAW_ERROR_INVALIDPARAMS;
     }
@@ -466,13 +465,11 @@ extern "C" HRESULT WWDraw_Create(WWDraw** direct_draw)
     return WWDRAW_OK;
 }
 
-extern "C" void WWDraw_Begin_Present_Batch(void)
-{
+void WWDraw_Begin_Present_Batch(void){
     ++g_present_batch_depth;
 }
 
-extern "C" void WWDraw_End_Present_Batch(void)
-{
+void WWDraw_End_Present_Batch(void){
     if (g_present_batch_depth <= 0) {
         return;
     }
@@ -481,7 +478,6 @@ extern "C" void WWDraw_End_Present_Batch(void)
     flush_pending_present();
 }
 
-extern "C" void WWDraw_Flush_Present(void)
-{
+void WWDraw_Flush_Present(void){
     flush_pending_present();
 }

@@ -52,8 +52,7 @@ destination[index] = PaletteInterpolationTable[source2[index]][source1[index]];
 }
 
 
-extern "C" void ModeX_Blit(GraphicBufferClass *source)
-{
+void ModeX_Blit(GraphicBufferClass *source){
 	if (!source) {
 		return;
 	}
@@ -62,13 +61,11 @@ extern "C" void ModeX_Blit(GraphicBufferClass *source)
 }
 
 
-extern "C" void  Stop_Execution(void)
-{
+void  Stop_Execution(void){
 }
 
 
-extern "C" void  Asm_Interpolate(uint8_t *src_ptr,
-	uint8_t *dest_ptr,
+void  Asm_Interpolate(uint8_t *src_ptr,	uint8_t *dest_ptr,
 	int lines,
 	int source_width,
 	int dest_width)
@@ -84,8 +81,7 @@ memcpy(dest_row + row_bytes, LineBuffer, source_width * 2);
 }
 
 
-extern "C" void  Asm_Interpolate_Line_Double(uint8_t *src_ptr,
-uint8_t *dest_ptr,
+void  Asm_Interpolate_Line_Double(uint8_t *src_ptr,uint8_t *dest_ptr,
 int lines,
 int source_width,
 int dest_width)
@@ -101,8 +97,7 @@ memcpy(dest_row + row_bytes, LineBuffer, source_width * 2);
 }
 
 
-extern "C" void  Asm_Interpolate_Line_Interpolate(uint8_t *src_ptr,
-uint8_t *dest_ptr,
+void  Asm_Interpolate_Line_Interpolate(uint8_t *src_ptr,uint8_t *dest_ptr,
 int source_lines,
 int source_width,
 int dest_width)

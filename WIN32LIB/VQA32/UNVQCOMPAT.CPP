@@ -20,8 +20,7 @@
 #include <string.h>
 #include "UNVQ.H"
 
-extern "C" void  UnVQ_4x2(uint8_t *codebook, uint8_t *pointers,
-		uint8_t *buffer, uint32_t blocksperrow,
+void  UnVQ_4x2(uint8_t *codebook, uint8_t *pointers,		uint8_t *buffer, uint32_t blocksperrow,
 		uint32_t numrows, uint32_t bufwidth)
 {
 	const uint32_t entry_count = blocksperrow * numrows;
@@ -58,8 +57,7 @@ extern "C" void  UnVQ_4x2(uint8_t *codebook, uint8_t *pointers,
 	}
 }
 
-extern "C" void  UnVQ_4x4(uint8_t *codebook, uint8_t *pointers,
-		uint8_t *buffer, uint32_t blocksperrow,
+void  UnVQ_4x4(uint8_t *codebook, uint8_t *pointers,		uint8_t *buffer, uint32_t blocksperrow,
 		uint32_t numrows, uint32_t bufwidth)
 {
 	static const uint16_t SKIP_PTR = 0x8000u;
@@ -105,8 +103,7 @@ extern "C" void  UnVQ_4x4(uint8_t *codebook, uint8_t *pointers,
 	}
 }
 
-extern "C" void  UnVQ_4x4_V2(uint8_t *codebook, uint8_t *pointers,
-		uint8_t *buffer, uint32_t blocksperrow,
+void  UnVQ_4x4_V2(uint8_t *codebook, uint8_t *pointers,		uint8_t *buffer, uint32_t blocksperrow,
 		uint32_t numrows, uint32_t bufwidth)
 {
 	const uint32_t entry_count = blocksperrow * numrows;

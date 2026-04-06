@@ -112,14 +112,7 @@ extern void Register_Icon_Set (void *icon_data , int32_t pre_cache);
 //
 // Prototypes for assembly language procedures in STMPCACH.ASM
 //
-extern "C" void Clear_Icon_Pointers (void);
-extern "C" void Cache_Copy_Icon (void const *icon_ptr ,void * , int32_t);
-extern "C" int32_t Is_Icon_Cached (void const *icon_data , int32_t icon);
-extern "C" int32_t Get_Icon_Index (void *icon_ptr);
-extern "C" int32_t Get_Free_Index (void);
-extern "C" int32_t Cache_New_Icon (int32_t icon_index, void *icon_ptr);
-extern "C" int32_t Get_Free_Cache_Slot(void);
-
+void Clear_Icon_Pointers (void);void Cache_Copy_Icon (void const *icon_ptr ,void * , int32_t);int32_t Is_Icon_Cached (void const *icon_data , int32_t icon);int32_t Get_Icon_Index (void *icon_ptr);int32_t Get_Free_Index (void);int32_t Cache_New_Icon (int32_t icon_index, void *icon_ptr);int32_t Get_Free_Cache_Slot(void);
 
 extern	int32_t	CachedIconsDrawn;
 extern	int32_t	UnCachedIconsDrawn;

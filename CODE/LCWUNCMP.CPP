@@ -36,7 +36,6 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include <stdint.h>
-extern "C" {
 
 /***************************************************************************
  * LCW_UNCOMPRESS -- Decompress an LCW encoded data block.                 *
@@ -71,7 +70,7 @@ extern "C" {
  * HISTORY:                                                                *
  *    03/20/1995 IML : Created.                                            *
  *=========================================================================*/
-uint32_t  LCW_Uncompress (void * source, void * dest, uint32_t )
+uint32_t  LCW_Uncompress (void const * source, void * dest, uint32_t )
 //unsigned long LCW_Uncompress (void * source, void * dest, unsigned long length)
 {
 	uint8_t * source_ptr, * dest_ptr, * copy_ptr, op_code, data;
@@ -162,6 +161,4 @@ uint32_t  LCW_Uncompress (void * source, void * dest, uint32_t )
 			}
 		}
 	}
-}
-
 }

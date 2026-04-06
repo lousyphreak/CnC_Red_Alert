@@ -25,9 +25,7 @@
 #include <stdint.h>
 #include <string.h>
 
-extern "C" {
 uint8_t ColorXlat[256];
-}
 
 static int32_t FontPaletteInitialized = 0;
 
@@ -133,13 +131,11 @@ static int32_t Resolve_Icon(IControl_Type const *control, int32_t icon) {
   return (icon);
 }
 
-extern "C" int32_t Buffer_Size_Of_Region(void *thisptr, int32_t w, int32_t h) {
-  (void)thisptr;
+int32_t Buffer_Size_Of_Region(void *thisptr, int32_t w, int32_t h) {  (void)thisptr;
   return ((int32_t)w * (int32_t)h);
 }
 
-extern "C" void Set_Font_Palette_Range(void const *palette, int32_t start_idx,
-                                       int32_t end_idx) {
+void Set_Font_Palette_Range(void const *palette, int32_t start_idx,                                       int32_t end_idx) {
   uint8_t const *colors;
   int32_t start;
   int32_t end;
@@ -163,13 +159,11 @@ extern "C" void Set_Font_Palette_Range(void const *palette, int32_t start_idx,
   }
 }
 
-extern "C" void *Get_Font_Palette_Ptr(void) {
-  Ensure_Font_Palette();
+void *Get_Font_Palette_Ptr(void) {  Ensure_Font_Palette();
   return (ColorXlat);
 }
 
-extern "C" void Buffer_Put_Pixel(void *thisptr, int32_t x, int32_t y,
-                                 uint8_t color) {
+void Buffer_Put_Pixel(void *thisptr, int32_t x, int32_t y,                                 uint8_t color) {
   GraphicViewPortClass *view = (GraphicViewPortClass *)thisptr;
 
   if (!view || x < 0 || y < 0 || x >= view->Get_Width() ||
@@ -180,8 +174,7 @@ extern "C" void Buffer_Put_Pixel(void *thisptr, int32_t x, int32_t y,
   View_Data(view)[y * View_Row_Bytes(view) + x] = color;
 }
 
-extern "C" int32_t Buffer_Get_Pixel(void *thisptr, int32_t x, int32_t y) {
-  GraphicViewPortClass *view = (GraphicViewPortClass *)thisptr;
+int32_t Buffer_Get_Pixel(void *thisptr, int32_t x, int32_t y) {  GraphicViewPortClass *view = (GraphicViewPortClass *)thisptr;
 
   if (!view || x < 0 || y < 0 || x >= view->Get_Width() ||
       y >= view->Get_Height()) {
@@ -191,8 +184,7 @@ extern "C" int32_t Buffer_Get_Pixel(void *thisptr, int32_t x, int32_t y) {
   return (View_Data(view)[y * View_Row_Bytes(view) + x]);
 }
 
-extern "C" void Buffer_Clear(void *thisptr, uint8_t color) {
-  GraphicViewPortClass *view = (GraphicViewPortClass *)thisptr;
+void Buffer_Clear(void *thisptr, uint8_t color) {  GraphicViewPortClass *view = (GraphicViewPortClass *)thisptr;
   uint8_t *dest;
   int32_t row_bytes;
 
@@ -208,8 +200,7 @@ extern "C" void Buffer_Clear(void *thisptr, uint8_t color) {
   }
 }
 
-extern "C" void Buffer_Fill_Rect(void *thisptr, int32_t sx, int32_t sy,
-                                 int32_t dx, int32_t dy, uint8_t color) {
+void Buffer_Fill_Rect(void *thisptr, int32_t sx, int32_t sy,                                 int32_t dx, int32_t dy, uint8_t color) {
   GraphicViewPortClass *view = (GraphicViewPortClass *)thisptr;
   uint8_t *dest;
   int32_t x0;
@@ -250,8 +241,7 @@ extern "C" void Buffer_Fill_Rect(void *thisptr, int32_t sx, int32_t sy,
   }
 }
 
-extern "C" void Buffer_Remap(void *thisptr, int32_t sx, int32_t sy,
-                             int32_t width, int32_t height, void *remap) {
+void Buffer_Remap(void *thisptr, int32_t sx, int32_t sy,                             int32_t width, int32_t height, void *remap) {
   GraphicViewPortClass *view = (GraphicViewPortClass *)thisptr;
   uint8_t *dest;
   uint8_t const *table = (uint8_t const *)remap;
@@ -292,8 +282,7 @@ extern "C" void Buffer_Remap(void *thisptr, int32_t sx, int32_t sy,
   }
 }
 
-extern "C" int32_t Buffer_To_Buffer(void *thisptr, int32_t x, int32_t y,
-                                    int32_t w, int32_t h, void *buff,
+int32_t Buffer_To_Buffer(void *thisptr, int32_t x, int32_t y,                                    int32_t w, int32_t h, void *buff,
                                     int32_t size) {
   GraphicViewPortClass *view = (GraphicViewPortClass *)thisptr;
   uint8_t const *src;
@@ -346,8 +335,7 @@ extern "C" int32_t Buffer_To_Buffer(void *thisptr, int32_t x, int32_t y,
   return ((int32_t)w * (int32_t)h);
 }
 
-extern "C" int32_t Buffer_To_Page(int32_t x, int32_t y, int32_t w, int32_t h,
-                                  void *Buffer, void *viewptr) {
+int32_t Buffer_To_Page(int32_t x, int32_t y, int32_t w, int32_t h,                                  void *Buffer, void *viewptr) {
   GraphicViewPortClass *view = (GraphicViewPortClass *)viewptr;
   uint8_t const *src;
   uint8_t *dest;
@@ -394,8 +382,7 @@ extern "C" int32_t Buffer_To_Page(int32_t x, int32_t y, int32_t w, int32_t h,
   return ((int32_t)w * (int32_t)h);
 }
 
-extern "C" int32_t Linear_Blit_To_Linear(void *thisptr, void *destptr,
-                                         int32_t x_pixel, int32_t y_pixel,
+int32_t Linear_Blit_To_Linear(void *thisptr, void *destptr,                                         int32_t x_pixel, int32_t y_pixel,
                                          int32_t dx_pixel, int32_t dy_pixel,
                                          int32_t pixel_width,
                                          int32_t pixel_height, int32_t trans) {
@@ -465,8 +452,7 @@ extern "C" int32_t Linear_Blit_To_Linear(void *thisptr, void *destptr,
   return (TRUE);
 }
 
-extern "C" int32_t Linear_Scale_To_Linear(void *thisptr, void *destptr,
-                                          int32_t src_x, int32_t src_y,
+int32_t Linear_Scale_To_Linear(void *thisptr, void *destptr,                                          int32_t src_x, int32_t src_y,
                                           int32_t dst_x, int32_t dst_y,
                                           int32_t src_width, int32_t src_height,
                                           int32_t dst_width, int32_t dst_height,
@@ -616,8 +602,7 @@ extern "C" int32_t Linear_Scale_To_Linear(void *thisptr, void *destptr,
   return (TRUE);
 }
 
-extern "C" int32_t Buffer_Print(void *thisptr, const char *str, int32_t x,
-                                int32_t y, int32_t fcolor, int32_t bcolor) {
+int32_t Buffer_Print(void *thisptr, const char *str, int32_t x,                                int32_t y, int32_t fcolor, int32_t bcolor) {
   GraphicViewPortClass *view = (GraphicViewPortClass *)thisptr;
   uint8_t const *font;
   uint8_t const *info_block;
@@ -750,8 +735,7 @@ extern "C" int32_t Buffer_Print(void *thisptr, const char *str, int32_t x,
   return ((int32_t)(current_draw - buffer));
 }
 
-extern "C" void Buffer_Draw_Stamp(void const *thisptr, void const *icondata,
-                                  int32_t icon, int32_t x_pixel,
+void Buffer_Draw_Stamp(void const *thisptr, void const *icondata,                                  int32_t icon, int32_t x_pixel,
                                   int32_t y_pixel, void const *remap) {
   GraphicViewPortClass *view = (GraphicViewPortClass *)thisptr;
 
@@ -763,8 +747,7 @@ extern "C" void Buffer_Draw_Stamp(void const *thisptr, void const *icondata,
                          view->Get_Width(), view->Get_Height());
 }
 
-extern "C" void Buffer_Draw_Stamp_Clip(void const *thisptr,
-                                       void const *icondata, int32_t icon,
+void Buffer_Draw_Stamp_Clip(void const *thisptr,                                       void const *icondata, int32_t icon,
                                        int32_t x_pixel, int32_t y_pixel,
                                        void const *remap, int32_t min_x,
                                        int32_t min_y, int32_t max_x,
@@ -889,8 +872,7 @@ extern "C" void Buffer_Draw_Stamp_Clip(void const *thisptr,
   }
 }
 
-extern "C" void Buffer_Draw_Line(void *thisptr, int32_t sx, int32_t sy,
-                                 int32_t dx, int32_t dy, uint8_t color) {
+void Buffer_Draw_Line(void *thisptr, int32_t sx, int32_t sy,                                 int32_t dx, int32_t dy, uint8_t color) {
   GraphicViewPortClass *view = (GraphicViewPortClass *)thisptr;
   int32_t delta_x;
   int32_t delta_y;
@@ -931,14 +913,12 @@ extern "C" void Buffer_Draw_Line(void *thisptr, int32_t sx, int32_t sy,
   }
 }
 
-extern "C" int32_t Is_Icon_Cached(void const *icon_data, int32_t icon) {
-  (void)icon_data;
+int32_t Is_Icon_Cached(void const *icon_data, int32_t icon) {  (void)icon_data;
   (void)icon;
   return (-1);
 }
 
-extern "C" void Cache_Copy_Icon(void const *icon_ptr, void *surface,
-                                int32_t pitch) {
+void Cache_Copy_Icon(void const *icon_ptr, void *surface,                                int32_t pitch) {
   uint8_t const *source = (uint8_t const *)icon_ptr;
   uint8_t *dest = (uint8_t *)surface;
 

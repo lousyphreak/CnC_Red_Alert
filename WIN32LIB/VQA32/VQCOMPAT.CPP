@@ -26,8 +26,7 @@
 #include "INI.H"
 #include "PALETTE.H"
 
-extern "C" uint8_t ColorXlat[256];
-
+extern uint8_t ColorXlat[256];
 static uint16_t Read_Font_Word(uint8_t const *ptr)
 {
 	return (uint16_t)(ptr[0] | ((uint16_t)ptr[1] << 8));
@@ -217,8 +216,7 @@ int32_t  GetINIString(char const *section, char const *entry,
 }
 
 
-extern "C" int32_t  Text_Print(char *string, int32_t x, int32_t y, int32_t fcol, int32_t bcol)
-{
+int32_t  Text_Print(char *string, int32_t x, int32_t y, int32_t fcol, int32_t bcol){
 	uint8_t const *font;
 	uint8_t const *info_block;
 	uint8_t const *width_block;
@@ -298,8 +296,7 @@ extern "C" int32_t  Text_Print(char *string, int32_t x, int32_t y, int32_t fcol,
 }
 
 
-extern "C" void  Draw_Char(int32_t character, int32_t x, int32_t y)
-{
+void  Draw_Char(int32_t character, int32_t x, int32_t y){
 	if (LogicPage == NULL) {
 		return;
 	}
@@ -314,8 +311,7 @@ extern "C" void  Draw_Char(int32_t character, int32_t x, int32_t y)
 }
 
 
-extern "C" void  Fill_Rect(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t color)
-{
+void  Fill_Rect(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t color){
 	if (LogicPage != NULL) {
 		LogicPage->Fill_Rect((int)x1, (int)y1, (int)x2, (int)y2,
 				(uint8_t)color);
@@ -323,8 +319,7 @@ extern "C" void  Fill_Rect(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32
 }
 
 
-extern "C" void  SetDAC(int32_t color, int32_t red, int32_t green, int32_t blue)
-{
+void  SetDAC(int32_t color, int32_t red, int32_t green, int32_t blue){
 	uint8_t palette[PALETTE_BYTES];
 	uint8_t *entry;
 
@@ -353,13 +348,11 @@ int32_t GetVBIBit(void)
 }
 
 
-extern "C" void  WaitNoVB(int16_t vbibit)
-{
+void  WaitNoVB(int16_t vbibit){
 	(void)vbibit;
 }
 
 
-extern "C" void  WaitVB(int16_t vbibit)
-{
+void  WaitVB(int16_t vbibit){
 	(void)vbibit;
 }

@@ -19,11 +19,9 @@
 #include "FUNCTION.H"
 #include <stdint.h>
 
-extern "C" {
 #include "SOSCOMP.H"
 #include "ITABLE.CPP"
 #include "DTABLE.CPP"
-}
 
 namespace {
 
@@ -57,7 +55,6 @@ static inline int32_t Clamp_Signed_16(int32_t value)
 	}
 	return value;
 }
-
 static inline uint8_t To_Unsigned_8(int32_t value)
 {
 	return (uint8_t)((((uint32_t)value) >> 8) ^ 0x80U);
@@ -95,7 +92,6 @@ static inline int32_t Decode_ADPCM_Nibble(uint8_t code, int16_t& index, int16_t&
 
 }
 
-extern "C" {
 
 void sosCODECInitStream(_SOS_COMPRESS_INFO* info)
 {
@@ -216,6 +212,4 @@ uint32_t General_sosCODECDecompressData(_SOS_COMPRESS_INFO* info, uint32_t numby
 	info->wStep2 = right_step;
 	info->wIndex2 = right_index;
 	return numbytes;
-}
-
 }

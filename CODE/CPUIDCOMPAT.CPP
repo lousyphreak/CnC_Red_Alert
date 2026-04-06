@@ -16,7 +16,6 @@
 **	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-extern "C" {
 #if defined(__x86_64__) || defined(_M_X64)
 char CPUType = 6;
 #elif defined(__i386__) || defined(_M_IX86)
@@ -34,5 +33,4 @@ bool  Detect_MMX_Availability(void)
 #else
 	return(false);
 #endif
-}
 }

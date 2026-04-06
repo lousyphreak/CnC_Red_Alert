@@ -58,9 +58,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "FUNCTION.H"
-extern "C" void WWDraw_Begin_Present_Batch(void);
-extern "C" void WWDraw_End_Present_Batch(void);
-
+void WWDraw_Begin_Present_Batch(void);void WWDraw_End_Present_Batch(void);
 
 /*
 **	This records the current gadget the the gadget system is "stuck on". Such a

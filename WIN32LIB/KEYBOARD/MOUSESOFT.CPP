@@ -65,8 +65,7 @@ static uint8_t const *Prepare_Cursor_Data(void const *cursor, uint8_t **storage)
 }
 
 
-extern "C" void  Mouse_Shadow_Buffer(void *thisptr, GraphicViewPortClass *srcdst, void *buffer, int32_t x, int32_t y, int32_t hotx, int32_t hoty, int32_t store)
-{
+void  Mouse_Shadow_Buffer(void *thisptr, GraphicViewPortClass *srcdst, void *buffer, int32_t x, int32_t y, int32_t hotx, int32_t hoty, int32_t store){
 	WWMouseClass *mouse = (WWMouseClass *)thisptr;
 	uint8_t *view_ptr;
 	uint8_t *buffer_ptr;
@@ -123,8 +122,7 @@ extern "C" void  Mouse_Shadow_Buffer(void *thisptr, GraphicViewPortClass *srcdst
 }
 
 
-extern "C" void  Draw_Mouse(void *thisptr, GraphicViewPortClass *srcdst, int32_t x, int32_t y)
-{
+void  Draw_Mouse(void *thisptr, GraphicViewPortClass *srcdst, int32_t x, int32_t y){
 	WWMouseClass *mouse = (WWMouseClass *)thisptr;
 	uint8_t const *cursor_ptr;
 	uint8_t *view_ptr;
@@ -182,8 +180,7 @@ extern "C" void  Draw_Mouse(void *thisptr, GraphicViewPortClass *srcdst, int32_t
 }
 
 
-extern "C" void *  ASM_Set_Mouse_Cursor(void *thisptr, int32_t hotspotx, int32_t hotspoty, void *cursor)
-{
+void *  ASM_Set_Mouse_Cursor(void *thisptr, int32_t hotspotx, int32_t hotspoty, void *cursor){
 	WWMouseClass *mouse = (WWMouseClass *)thisptr;
 	char *previous;
 	uint8_t *storage;

@@ -41,19 +41,13 @@
 
 /* Prototypes */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 uint32_t LCW_Compress(char const *source, char *dest,
 		uint32_t length);
-uint32_t LCW_Uncompress(char const *source, char *dest,
+uint32_t LCW_Uncompress(void const *source, void *dest,
 		uint32_t length);
 int32_t AudioZap(void *source, void *dest, int32_t size);
 int32_t AudioUnzap(void *source, void *dest, int32_t);
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* VQMCOMP_H */

@@ -61,8 +61,7 @@
 
 ////////////////////////////////////////////////////////////////////////////
 
-extern "C" void  Mem_Copy(void const *source, void *dest, uint32_t bytes_to_copy)
-{
+void  Mem_Copy(void const *source, void *dest, uint32_t bytes_to_copy){
 	memmove(dest, source, bytes_to_copy);
 }
 

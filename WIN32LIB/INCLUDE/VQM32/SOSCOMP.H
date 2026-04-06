@@ -75,16 +75,10 @@ typedef struct _tagCOMPRESS_HEADER {
 
 /* Prototypes */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 void sosCODECInitStream(_SOS_COMPRESS_INFO *);
 uint32_t sosCODECCompressData(_SOS_COMPRESS_INFO *,uint32_t);
 uint32_t sosCODECDecompressData(_SOS_COMPRESS_INFO *,uint32_t);
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif

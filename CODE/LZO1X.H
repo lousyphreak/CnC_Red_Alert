@@ -48,11 +48,6 @@
 
 #include "LZOCONF.H"
 
-//#ifdef __cplusplus
-//extern "C" {
-//#endif
-
-
 /***********************************************************************
 //
 ************************************************************************/
@@ -99,10 +94,6 @@ lzo1x_999_compress      ( const lzo_byte *src, lzo_uint  src_len,
                                 lzo_byte *dst, lzo_uint *dst_len,
                                 lzo_voidp wrkmem );
 
-
-//#ifdef __cplusplus
-//} /* extern "C" */
-//#endif
 
 #endif /* already included */
 

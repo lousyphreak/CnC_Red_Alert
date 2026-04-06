@@ -41,16 +41,10 @@
 
 /* Prototypes */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 int32_t Text_Print(char *string, int32_t x, int32_t y, int32_t fcol, int32_t bcol);
 void Draw_Char(int32_t character, int32_t x, int32_t y);
-void Set_Font_Palette_Range(void *palette, int32_t start, int32_t end);
+void Set_Font_Palette_Range(void const *palette, int32_t start, int32_t end);
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* VQMTEXT_H */

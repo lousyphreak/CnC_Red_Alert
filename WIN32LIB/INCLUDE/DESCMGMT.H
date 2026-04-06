@@ -44,13 +44,7 @@
 
 //=====================================================================
 // C type include files
-#ifdef __cplusplus
-extern "C" {
-#endif
 
-#ifdef __cplusplus
-}
-#endif
 
 // ====================================================================
 
@@ -63,27 +57,25 @@ extern "C" {
 // ===================================================
 extern uint32_t Map_Segment_To_Address(uint32_t address, uint32_t length);
 
-extern "C" {
-	// Assemble functions
-	extern uint16_t FixSelector(uint16_t sel);
-	extern uint16_t GetDs(void);
-	extern uint16_t GetCs(void);
-	extern void  GetDefaultSelectors(void);
-	extern uint16_t Get_Standard_Selector(void);
+// Assemble functions
+extern uint16_t FixSelector(uint16_t sel);
+extern uint16_t GetDs(void);
+extern uint16_t GetCs(void);
+extern void  GetDefaultSelectors(void);
+extern uint16_t Get_Standard_Selector(void);
 
-	
-	// Assembly data variables
-	extern uint16_t CodeSelector;
-	extern uint16_t DataSelector;
-	extern uint16_t ScreenSelector;
-	extern uint16_t GraphicsSelector;
-	extern uint16_t PspSelector;
-	extern uint16_t EnvSelector;
-	extern uint16_t DosMemSelector;
-	extern uint16_t Fp1167Selector;
-	extern uint16_t FpWeitekSelector;
-	extern uint16_t FpCyrixSelector;
-}
+
+// Assembly data variables
+extern uint16_t CodeSelector;
+extern uint16_t DataSelector;
+extern uint16_t ScreenSelector;
+extern uint16_t GraphicsSelector;
+extern uint16_t PspSelector;
+extern uint16_t EnvSelector;
+extern uint16_t DosMemSelector;
+extern uint16_t Fp1167Selector;
+extern uint16_t FpWeitekSelector;
+extern uint16_t FpCyrixSelector;
 
 #endif  // DESCMGMT_H
 

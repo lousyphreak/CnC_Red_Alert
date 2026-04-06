@@ -131,8 +131,7 @@ typedef enum {
 	NUMBER_OF_ERRORS				/* MAKE SURE THIS IS THE LAST ENTRY */
 } FileErrorType;
 
-// This is here tempararaly until library is put together.
-//extern WORD __cdecl ( __cdecl IO_Error)(FileErrorType error, BYTE const *filename);
+// This is here temporarily until library is put together.
 extern int16_t (*Open_Error)(FileErrorType, char const *);
 
 /*=========================================================================*/
@@ -155,15 +154,7 @@ typedef struct {
 /* FIle IO system globals.																	*/
 /*=========================================================================*/
 
-// These are cpp errors in funtions declarations	JULIO JEREZ
-
-// extern FileDataType __cdecl FileData[];
-// extern BYTE __cdecl ExecPath[XMAXPATH + 1];
-// extern BYTE __cdecl DataPath[XMAXPATH + 1];
-// extern BYTE __cdecl StartPath[XMAXPATH + 1];
-// extern BOOL __cdecl UseCD;
-
-// The correct syntax is  NO TYPE MODIFIER APPLY TO DATA DECLARATIONS
+// These are C++ declarations, so data declarations do not need legacy type modifiers.
 extern FileDataType FileData[];
 extern char ExecPath[XMAXPATH + 1];
 extern char DataPath[XMAXPATH + 1];

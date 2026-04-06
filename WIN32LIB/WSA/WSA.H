@@ -152,10 +152,8 @@ inline void *  Open_Animation(char *file_name, BufferClass& buffer, WSAOpenType 
 /*=========================================================================*/
 
 
-extern "C" {
 uint32_t  Apply_XOR_Delta(char *source_ptr, char *delta_ptr);
 void   Apply_XOR_Delta_To_Page_Or_Viewport(void *target, void *delta, int32_t width, int32_t nextrow, int32_t copy);
-}
 
 
 

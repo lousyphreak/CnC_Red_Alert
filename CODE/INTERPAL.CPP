@@ -44,7 +44,6 @@
 
 #include "FUNCTION.H"
 int32_t	InterpolationPaletteChanged = FALSE;
-extern "C" {
 extern void  Asm_Interpolate (uint8_t* src_ptr ,
 						 						uint8_t* dest_ptr ,
 												int				lines ,
@@ -63,13 +62,10 @@ extern void  Asm_Interpolate_Line_Interpolate (uint8_t* src_ptr ,
 												int				src_width ,
 												int				dest_width);
 
-}
 
 #define SIZE_OF_PALETTE	256
-extern "C"{
-	uint8_t PaletteInterpolationTable[SIZE_OF_PALETTE][SIZE_OF_PALETTE];
-	uint8_t * InterpolationPalette;
-}
+uint8_t PaletteInterpolationTable[SIZE_OF_PALETTE][SIZE_OF_PALETTE];
+uint8_t * InterpolationPalette;
 
 
 

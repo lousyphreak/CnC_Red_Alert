@@ -126,7 +126,6 @@ bool RA_GetRenderSourceRect(RAWindow* window, SDL_FRect* rect);
 bool RA_WindowToGamePoint(RAWindow* window, float window_x, float window_y, int* game_x, int* game_y);
 bool RA_GameRectToWindowRect(RAWindow* window, const RECT* game_rect, SDL_Rect* window_rect);
 
-extern "C" {
 
 DWORD GetLastError(void);
 UINT SetErrorMode(UINT mode);
@@ -143,5 +142,3 @@ DWORD SetFilePointer(HANDLE handle, LONG distance_to_move, LONG* distance_to_mov
 UINT GetDriveType(LPCSTR root_path_name);
 BOOL GetVolumeInformation(LPCSTR root_path_name, LPSTR volume_name_buffer, DWORD volume_name_size, DWORD* volume_serial_number,
     DWORD* maximum_component_length, DWORD* file_system_flags, LPSTR file_system_name_buffer, DWORD file_system_name_size);
-
-}

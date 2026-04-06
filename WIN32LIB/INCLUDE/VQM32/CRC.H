@@ -39,14 +39,8 @@
 *
 ****************************************************************************/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 int32_t Calculate_CRC(void const *buffer, int32_t length);
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* VQMCRC_H */

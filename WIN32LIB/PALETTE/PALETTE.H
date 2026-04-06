@@ -67,18 +67,11 @@ void  Morph_Palette (void *src_palette, void *dst_palette, uint32_t delay,
 /*
 ---------------------------------- pal.asm ----------------------------------
 */
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 extern void  Set_Palette_Range(void *palette);
 extern int32_t  Bump_Color(void *palette, int32_t changable, int32_t target);
 
-#ifdef __cplusplus
-}
-#endif
-extern "C" extern uint8_t  CurrentPalette[];		/* in pal.asm */
-
+extern uint8_t  CurrentPalette[];		/* in pal.asm */
 
 #endif // PALETTE_H
 

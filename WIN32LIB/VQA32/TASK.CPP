@@ -70,16 +70,10 @@
  *-------------------------------------------------------------------------*/
 
 /* Externals */
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 extern int  Check_Key(void);
 extern int  Get_Key(void);
 
-#ifdef __cplusplus
-}
-#endif
 
 
 /****************************************************************************

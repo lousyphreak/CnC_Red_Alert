@@ -84,17 +84,11 @@ void *  Load_Font(char  const *name);
 /* The following prototypes are for the file: TEXTPRNT.ASM	  					*/
 /*=========================================================================*/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 
 void  Set_Font_Palette_Range(void const *palette, int32_t start_idx, int32_t end_idx);
 
 
-#ifdef __cplusplus
-}
-#endif
 
 /*=========================================================================*/
 
@@ -103,15 +97,14 @@ void  Set_Font_Palette_Range(void const *palette, int32_t start_idx, int32_t end
 
 
 //////////////////////////////////////// External varables ///////////////////////////////////////
-extern "C" int32_t FontXSpacing;
-extern "C" int32_t FontYSpacing;
-extern char FontWidth ;
+extern int32_t FontXSpacing;
+extern int32_t FontYSpacing;
+extern char FontWidth;
 extern char FontHeight;
 extern char *FontWidthBlockPtr;
 
 
-extern "C" void const *FontPtr;
-
+extern void const *FontPtr;
 
 
 

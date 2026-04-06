@@ -40,15 +40,9 @@
 ****************************************************************************/
 /* Prototypes */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 void Eor_Region(int32_t sx, int32_t sy, int32_t dx, int32_t dy, int32_t color);
 void Fill_Rect(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t color);
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* VQMGRAPHICS_H */

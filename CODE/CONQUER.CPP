@@ -26,8 +26,7 @@ extern "C"
 #endif
 const char* __asan_default_options() { return "detect_leaks=0"; }
 
-extern "C" void WWDraw_Flush_Present(void);
-
+void WWDraw_Flush_Present(void);
 /***********************************************************************************************
  ***              C O N F I D E N T I A L  ---  W E S T W O O D  S T U D I O S               ***
  ***********************************************************************************************
@@ -182,9 +181,7 @@ static void Message_Input(KeyNumType &input);
 static void Color_Cycle(void);
 bool Map_Edit_Loop(void);
 
-extern "C" {
-	bool UseOldShapeDraw = false;
-}
+bool UseOldShapeDraw = false;
 
 #ifdef CHEAT_KEYS
 void Dump_Heap_Pointers( void );
@@ -194,9 +191,7 @@ static void Do_Record_Playback(void);
 
 void Toggle_Formation(void);
 
-extern "C" {
-	extern char * __nheapbeg;
-}
+extern char * __nheapbeg;
 
 //
 // Special module globals for recording and playback

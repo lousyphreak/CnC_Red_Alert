@@ -176,7 +176,6 @@ extern uint32_t	 VesaFunc;
 #endif //NOT_FOR_WIN95
 
 
-extern "C" {
 extern	int32_t	GraphicMode;
 extern	int32_t	XRes;
 extern	int32_t	YRes;
@@ -184,14 +183,12 @@ extern	int32_t	YRes;
 extern int32_t		 BankTable [];
 extern uint32_t RMVesaVector ;
 extern uint32_t RMVesaRegs ;
-}
 
 /*=========================================================================*/
 /* The following prototypes are for the file: VIDEO.CPP							*/
 /*=========================================================================*/
 
-extern "C" int32_t Set_Video_Mode(int32_t mode);
-int32_t Get_Video_Mode(void);
+int32_t Set_Video_Mode(int32_t mode);int32_t Get_Video_Mode(void);
 void Update_Video_Mode (void) ;
 void Vesa_Info(void);
 void Vesa_Set_Window(int32_t grain_num);
@@ -209,10 +206,8 @@ extern int32_t VertBlank;
 /* The following prototypes are for the file: VERTBLNK.ASM	  					*/
 /*=========================================================================*/
 
-extern "C" {
-	extern int16_t Get_Vert_Blank(void);
-	extern void Wait_Vert_Blank(int32_t blank);
-}
+extern int16_t Get_Vert_Blank(void);
+extern void Wait_Vert_Blank(int32_t blank);
 
 /*=========================================================================*/
 

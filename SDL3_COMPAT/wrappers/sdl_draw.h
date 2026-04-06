@@ -96,9 +96,8 @@ private:
     int ref_count_;
 };
 
-extern "C" HRESULT WWDraw_Create(WWDraw** direct_draw);
-extern "C" void WWDraw_Begin_Present_Batch(void);
-extern "C" void WWDraw_End_Present_Batch(void);
-extern "C" void WWDraw_Flush_Present(void);
-
+HRESULT WWDraw_Create(WWDraw** direct_draw);
+void WWDraw_Begin_Present_Batch(void);
+void WWDraw_End_Present_Batch(void);
+void WWDraw_Flush_Present(void);
 #endif

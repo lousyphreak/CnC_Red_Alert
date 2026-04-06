@@ -91,9 +91,6 @@ uint8_t *GetXHidPage(void);
 uint8_t *GetXSeenPage(void);
 void DisplayXPage(int32_t page);
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 void WaitNoVB(int16_t vbibit);
 void WaitVB(int16_t vbibit);
@@ -107,8 +104,5 @@ void MCGA_BufferCopy(uint8_t *buffer, uint8_t *dummy);
 void MCGA_Blit(uint8_t *buffer, uint8_t *screen,
         int32_t imgwidth, int32_t imgheight);
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* VQMVIDEO_H */

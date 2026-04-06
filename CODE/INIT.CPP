@@ -144,9 +144,7 @@ static void Init_Keys(void);
 
 extern int UnitBuildPenalty;
 
-extern "C" {
 extern uint32_t RandNumb;
-}
 
 //extern int SimRandIndex;
 void Init_Random(void);
@@ -1893,11 +1891,9 @@ int32_t Obfuscate(char const * string)
  * HISTORY:                                                                                    *
  *   03/02/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-extern "C"  {
 int32_t Calculate_CRC(void * buffer, int32_t len)
 {
 	return(CRCEngine()(buffer, len));
-}
 }
 
 /***************************************************************************
@@ -3048,10 +3044,8 @@ bool Load_Recording_Values(CCFileClass & file)
 	return (true);
 }
 
-extern "C" {
 void __PRO(void) {
 //	printf("_pro\n");
-}
 }
 
 #ifdef DENZIL_MIXEXTRACT

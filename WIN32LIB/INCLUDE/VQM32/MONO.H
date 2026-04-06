@@ -41,9 +41,6 @@
 
 /* Prototypes */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 void Mono_Enable(void);
 void Mono_Disable(void);
@@ -60,8 +57,5 @@ int16_t Mono_View_Page(int32_t page);
 int16_t Mono_X(void);
 int16_t Mono_Y(void);
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* VQMMONO_H */

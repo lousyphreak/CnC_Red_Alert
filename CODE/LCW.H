@@ -42,8 +42,6 @@
 
 int LCW_Uncomp(void const * source, void * dest, uint32_t length=0);
 
-extern "C" {
 int  LCW_Comp(void const * source, void * dest, int length);
-}
 
 #endif

@@ -36,11 +36,9 @@
 #define WW_MOUSE_H
 
 #include <GBUFFER.H>
-extern "C" {
-	 void  Mouse_Shadow_Buffer(void *thisptr, GraphicViewPortClass *srcdst, void *buffer, int32_t x, int32_t y, int32_t hotx, int32_t hoty, int32_t store);
-	 void  Draw_Mouse(void *thisptr, GraphicViewPortClass *srcdst, int32_t x, int32_t y);
-	 void *  ASM_Set_Mouse_Cursor(void * thisptr, int32_t hotspotx, int32_t hotspoty, void *cursor);
-}
+void  Mouse_Shadow_Buffer(void *thisptr, GraphicViewPortClass *srcdst, void *buffer, int32_t x, int32_t y, int32_t hotx, int32_t hoty, int32_t store);
+void  Draw_Mouse(void *thisptr, GraphicViewPortClass *srcdst, int32_t x, int32_t y);
+void *  ASM_Set_Mouse_Cursor(void * thisptr, int32_t hotspotx, int32_t hotspoty, void *cursor);
 
 class WWMouseClass {
 	public:

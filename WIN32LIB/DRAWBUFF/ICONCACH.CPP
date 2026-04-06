@@ -61,10 +61,8 @@ static	WWLockData	IconLockData;
 
 IconCacheClass	CachedIcons[MAX_CACHED_ICONS];
 
-extern "C"{
 IconSetType		IconSetList[MAX_ICON_SETS];
 int16_t				IconCacheLookup[MAX_LOOKUP_ENTRIES];
-}
 
 int32_t		CachedIconsDrawn=0;		//Counter of number of cache hits
 int32_t		UnCachedIconsDrawn=0;	//Counter of number of cache misses

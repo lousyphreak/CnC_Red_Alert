@@ -86,12 +86,10 @@ static void Store_KeyFrame_Header_XY(void const* dataptr, uint16_t x, uint16_t y
 
 unsigned	BigShapeBufferLength = INITIAL_BIG_SHAPE_BUFFER_SIZE;
 unsigned	TheaterShapeBufferLength = THEATER_BIG_SHAPE_BUFFER_SIZE;
-extern "C"{
-	char		*BigShapeBufferStart = NULL;
-	char		*TheaterShapeBufferStart = NULL;
-	int32_t		UseBigShapeBuffer = FALSE;
-	bool		IsTheaterShape = false;
-}
+char		*BigShapeBufferStart = NULL;
+char		*TheaterShapeBufferStart = NULL;
+int32_t		UseBigShapeBuffer = FALSE;
+bool		IsTheaterShape = false;
 #ifdef FIXIT_SCORE_CRASH
 /*
 ** Global required to fix the score screen crash bug by allowing disabling of uncompressed shapes.

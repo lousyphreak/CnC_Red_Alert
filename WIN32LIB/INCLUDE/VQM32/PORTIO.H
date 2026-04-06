@@ -41,16 +41,10 @@
 
 #ifdef __BORLANDC__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 int16_t inp(uint16_t portid);
 void outp(uint16_t portid, int16_t value);
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* __BORLANDC__ */
 

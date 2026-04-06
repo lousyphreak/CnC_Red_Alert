@@ -177,14 +177,12 @@ extern CountDownTimerClass		CountDown;
 //////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////// Prototypes //////////////////////////////////////////
 
-extern "C" {
-	int32_t  Get_System_Tick_Count(void);
-	int32_t  Get_User_Tick_Count(void);
-	void   Timer_Interrupt_Func(void);
+int32_t  Get_System_Tick_Count(void);
+int32_t  Get_User_Tick_Count(void);
+void   Timer_Interrupt_Func(void);
 //	long Get_Num_Interrupts(unsigned int realmode);
-	void  Disable_Timer_Interrupt(void);
-	void  Enable_Timer_Interrupt(void);
-}
+void  Disable_Timer_Interrupt(void);
+void  Enable_Timer_Interrupt(void);
 
 /*=========================================================================*/
 /* The following prototypes are for the file: TIMER.CPP							*/

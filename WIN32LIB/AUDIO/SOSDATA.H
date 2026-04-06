@@ -104,9 +104,6 @@ extern   uint16_t  _wSOSTimerEntered;
 extern   uint16_t  _wSOSDriverSize[];
 extern   uint16_t  _wSOSTimerSize[];
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 extern   uint16_t  _sosDIGIData1_Start;
 extern   uint16_t  _sosDIGIData1_End;
 extern   uint16_t  _sosDIGIData2_Start;
@@ -117,9 +114,6 @@ extern   uint16_t  wDetectPort;
 extern   uint16_t  wDetectIRQ;
 extern   uint16_t  wDetectDMA;
 extern   uint16_t  wDetectParam;
-#ifdef __cplusplus
-}
-#endif
 
 #endif
 

@@ -49,9 +49,6 @@
  * FUNCTION PROTOTYPES
  *-------------------------------------------------------------------------*/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* unvqbuff.asm */
 #ifndef PHARLAP_TNT
@@ -125,8 +122,5 @@ void  UnVQ_4x2_XmodeCB(uint8_t *cbdummy, uint8_t *pointers,
 void  Upload_4x2CB(uint8_t *codebook, uint32_t numentries);
 void  XlatePointers(uint8_t *pointers, uint32_t numpointers);
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* VQAUNVQ_H */

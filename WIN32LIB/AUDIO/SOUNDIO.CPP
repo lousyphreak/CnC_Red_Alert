@@ -146,7 +146,6 @@ void (*Audio_Focus_Loss_Function)(void) = NULL;
 static int32_t File_Callback(int16_t id, int16_t *odd, void **buffer, int32_t *size);
 static int32_t  Stream_Sample_Vol(void *buffer, int32_t size, int32_t (*callback)(int16_t id, int16_t *odd, void **buffer, int32_t *size), int32_t volume, int32_t handle);
 static void Pump_Sound_Service(void);
-//static int __cdecl Stream_Sample(void *buffer, long size, BOOL (*callback)(short id, short *odd, void **buffer, long *size));
 volatile int32_t AudioDone = FALSE;
 /*= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =*/
 

@@ -57,11 +57,6 @@
 #  error invalid CHAR_BIT
 #endif
 
-//#ifdef __cplusplus
-//extern "C" {
-//#endif
-
-
 /***********************************************************************
 // defines
 ************************************************************************/
@@ -129,11 +124,7 @@ typedef uintptr_t           lzo_ptr_t;
 // function types
 ************************************************************************/
 
-//#ifdef __cplusplus
-//#  define LZO_EXTERN_C          extern "C"
-//#else
 #  define LZO_EXTERN_C          extern
-//#endif
 
 
 #if !defined(__LZO_ENTRY)       /* calling convention */
@@ -206,11 +197,6 @@ lzo_adler32(lzo_uint _adler, const lzo_byte *_buf, lzo_uint _len);
 /* misc. */
 LZO_EXTERN(int) lzo_assert(int _expr);
 LZO_EXTERN(int) _lzo_config_check(void);
-
-
-//#ifdef __cplusplus
-//} /* extern "C" */
-//#endif
 
 #endif /* already included */
 

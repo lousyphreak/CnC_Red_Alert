@@ -59,9 +59,7 @@
 #include	"INFANTRY.H"
 
 extern char _staging_buffer[32000];
-extern "C" {
 void _PRO(void);
-}
 
 /*
 **	Convenient alias for MixFileClass<CDFileClass> object. This allows
@@ -410,9 +408,7 @@ extern class DynamicVectorClass<ActionChoiceClass> test3;
 
 extern bool LogDump_Print;
 
-extern "C"{
-	extern bool IsTheaterShape;
-}
+extern bool IsTheaterShape;
 
 extern void Reset_Theater_Shapes(void);
 extern TheaterType LastTheater;

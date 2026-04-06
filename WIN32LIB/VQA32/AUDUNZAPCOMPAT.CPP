@@ -44,8 +44,7 @@ static uint8_t Saturating_Add(uint8_t sample, int delta)
 
 } /* namespace */
 
-extern "C" int32_t  AudioUnzap(void *source, void *dest, int32_t count)
-{
+int32_t  AudioUnzap(void *source, void *dest, int32_t count){
 	uint8_t *src;
 	uint8_t *dst;
 	uint8_t previous;

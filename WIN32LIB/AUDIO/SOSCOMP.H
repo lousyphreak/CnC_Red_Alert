@@ -75,11 +75,9 @@ typedef struct _tagCOMPRESS_HEADER {
 	} _SOS_COMPRESS_HEADER;
 
 /* Prototypes */
-extern "C" {
-	void sosCODECInitStream(_SOS_COMPRESS_INFO *);
-	uint32_t sosCODECCompressData(_SOS_COMPRESS_INFO *,	uint32_t);
-	uint32_t sosCODECDecompressData(_SOS_COMPRESS_INFO *, uint32_t);
-	uint32_t General_sosCODECDecompressData(_SOS_COMPRESS_INFO *, uint32_t);
-}
+void sosCODECInitStream(_SOS_COMPRESS_INFO *);
+uint32_t sosCODECCompressData(_SOS_COMPRESS_INFO *,	uint32_t);
+uint32_t sosCODECDecompressData(_SOS_COMPRESS_INFO *, uint32_t);
+uint32_t General_sosCODECDecompressData(_SOS_COMPRESS_INFO *, uint32_t);
 
 #endif

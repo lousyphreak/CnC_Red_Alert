@@ -118,12 +118,10 @@ static_assert(offsetof(ShapeBlock_Type, Offsets) == 2, "ShapeBlock_Type offsets 
 -------------------------------- prioinit.c ---------------------------------
 */
 
-extern "C" {
 extern void  *MaskPage;
 extern void  *BackGroundPage;
 extern int32_t  _ShapeBufferSize;
 extern char  *_ShapeBuffer;
-}
 
 
 void  Init_Priority_System (GraphicBufferClass *mask,
@@ -134,9 +132,7 @@ void  Init_Priority_System (GraphicBufferClass *mask,
 -------------------------------- drawshp.asm --------------------------------
 */
 
-extern "C" {
 int32_t Draw_Shape(GraphicViewPortClass *gvp, void const *shape, int32_t x, int32_t y, int32_t flags, ...);
-}
 
 /*
 ---------------------------------- shape.c ----------------------------------
@@ -147,20 +143,16 @@ void *  Extract_Shape(void const *buffer, int32_t shape);
 int32_t  Restore_Shape_Height(void *shape);
 int32_t  Set_Shape_Height(void const *shape, int32_t newheight);
 
-extern "C" {
 int32_t  Get_Shape_Width(void const *shape);
 int32_t  Get_Shape_Height(void const *shape);
 int32_t  Get_Shape_Original_Height(void const *shape);
 int32_t  Get_Shape_Uncomp_Size(void const *shape);
-}
 
 
 /*
 ------------------------------- setshape.asm --------------------------------
 */
-extern "C" {
 void  Set_Shape_Buffer(void const *buffer, int32_t size);
-}
 /*
 ------------------------------- shapeinf.asm --------------------------------
 */

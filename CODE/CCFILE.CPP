@@ -554,7 +554,6 @@ bool CCFileClass::Set_Date_Time(uint32_t datetime)
 /***********************************************************************************
 ** Backward compatibility section.
 */
-//extern "C" {
 
 
 static CCFileClass Handles[10];
@@ -675,12 +674,10 @@ int Find_Disk_Number(char const *)
 //	return(CCFileClass(file).Load_Uncompress(uncomp_buff, dest_buff, reserved_data));
 //}
 
-extern "C" {
 int MaxDevice;
 int DefaultDrive;
 char CallingDOSInt;
 
-}
 
 
 void Unfragment_File_Cache(void)

@@ -190,8 +190,7 @@ static inline void Copy_Byte(uint8_t* target, uint8_t value)
 
 }
 
-extern "C" uint32_t  Apply_XOR_Delta(char *source_ptr, char *delta_ptr)
-{
+uint32_t  Apply_XOR_Delta(char *source_ptr, char *delta_ptr){
 	if (source_ptr == 0 || delta_ptr == 0) {
 		return 0;
 	}
@@ -200,8 +199,7 @@ extern "C" uint32_t  Apply_XOR_Delta(char *source_ptr, char *delta_ptr)
 	return 0;
 }
 
-extern "C" void  Apply_XOR_Delta_To_Page_Or_Viewport(void *target, void *delta, int32_t width, int32_t nextrow, int32_t copy)
-{
+void  Apply_XOR_Delta_To_Page_Or_Viewport(void *target, void *delta, int32_t width, int32_t nextrow, int32_t copy){
 	if (target == 0 || delta == 0) {
 		return;
 	}

@@ -15,7 +15,6 @@ bool config_reports_expansion_installed(const char* mix_name)
 {
     return mix_name && WWFS_GetPathInfo(mix_name, nullptr);
 }
-
 std::string make_config_value_id(const char* section_name, const char* value_name)
 {
     const char* safe_section_name = section_name ? section_name : "";
@@ -83,7 +82,6 @@ bool lookup_config_uint32_value(const char*, const char* value_name, uint32_t* v
 
 } // namespace
 
-extern "C" {
 
 bool RA_ReadConfigString(const char* section_name, const char* value_name, char* buffer, uint32_t* buffer_size)
 {
@@ -134,5 +132,3 @@ bool RA_DeleteConfigValue(const char* section_name, const char* value_name)
     g_deleted_config_values.insert(make_config_value_id(section_name, value_name));
     return true;
 }
-
-} // extern "C"

@@ -48,8 +48,7 @@
 #endif
 
 
-extern "C" uint32_t Largest_Mem_Block ( void ) ;
-
+uint32_t Largest_Mem_Block ( void ) ;
 /*=========================================================================*/
 /* The following PRIVATE functions are in this file:                       */
 /*=========================================================================*/
@@ -69,9 +68,7 @@ void (*Memory_Error_Exit)(char *string)=NULL;
 //#define MEM_CHECK
 
 #ifdef MEM_CHECK
-extern "C"{
-	extern void  Int3(void);
-}
+extern void  Int3(void);
 #endif	//MEM_CHECK
 
 #include"MONO.H"

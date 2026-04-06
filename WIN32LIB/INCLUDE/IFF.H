@@ -142,9 +142,6 @@ PUBLIC int32_t Write_LBM_File(int32_t lbmhandle, BufferClass& buff, int32_t bitp
 
 /*========================= Assembly Functions ============================*/
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /*=========================================================================*/
 /* The following prototypes are for the file: PACK2PLN.ASM						*/
@@ -162,11 +159,8 @@ extern uint32_t  LCW_Compress(void *source, void *dest, uint32_t length);
 /* The following prototypes are for the file: LCWUNCMP.ASM						*/
 /*=========================================================================*/
 
-extern uint32_t  LCW_Uncompress(void *source, void *dest, uint32_t length);
+extern uint32_t  LCW_Uncompress(void const *source, void *dest, uint32_t length);
 
-#ifdef __cplusplus
-}
-#endif
 /*=========================================================================*/
 
 

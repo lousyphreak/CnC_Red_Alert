@@ -264,8 +264,7 @@ changed = 1;
 }
 
 
-extern "C" void  Force_VM_Page_In(void *buffer, int32_t length)
-{
+void  Force_VM_Page_In(void *buffer, int32_t length){
 	volatile uint8_t sink = 0;
 	volatile uint8_t const *bytes;
 

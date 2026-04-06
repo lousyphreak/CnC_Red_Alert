@@ -154,8 +154,7 @@ enum {
 extern uint32_t 	PlanetWestwoodGameID;
 extern uint32_t 	PlanetWestwoodStartTime;
 
-extern "C" char	CPUType;
-
+extern char CPUType;
 
 bool			GameTimerInUse = false;
 TimerClass	GameTimer;

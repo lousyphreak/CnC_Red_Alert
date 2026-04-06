@@ -54,9 +54,7 @@ typedef enum {
 /*
 ** Prototypes for VMPAGEIN.ASM
 */
-extern "C"{
-	void  Force_VM_Page_In (void *buffer, int32_t length);
-}
+void  Force_VM_Page_In (void *buffer, int32_t length);
 
 /*=========================================================================*/
 /* The following prototypes are for the file: ALLOC.CPP							*/
@@ -86,9 +84,7 @@ inline void * operator new[] (size_t size, MemoryFlagType flag)
 /* The following prototypes are for the file: MEM_COPY.ASM						*/
 /*=========================================================================*/
 
-extern "C" {
-	void  Mem_Copy(void const *source, void *dest, uint32_t bytes_to_copy);
-}
+void  Mem_Copy(void const *source, void *dest, uint32_t bytes_to_copy);
 
 
 inline void *Add_Long_To_Pointer(void const *ptr, intptr_t size)

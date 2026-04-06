@@ -1,12 +1,19 @@
 # Porting Progress
 
-_Last updated: 2026-04-05_
+_Last updated: 2026-04-06_
 
 ## Goal
 
 Port the Red Alert codebase to a reproducible cross-platform build using SDL3 for platform-specific functionality, with working builds on Linux, Windows, and other supported SDL3 platforms.
 
 ## Current status
+
+- Audited and removed obsolete project-side linkage/calling-convention modifiers without changing game behavior:
+  - removed non-vendor `extern "C"` wrappers/declarations from the active `CODE/`, `WIN32LIB/`, and `SDL3_COMPAT/` trees, dropped the dead `DLLCALL` movie macro, and removed the now-unused non-Windows `__cdecl=` compile-definition workaround from `CMakeLists.txt`;
+  - deliberately kept `CODE/CONQUER.CPP::__asan_default_options()` under `extern "C"` because ASan finds that runtime hook by exact unmangled symbol name, so that one modifier is still required;
+  - follow-up compatibility work from the same sweep normalized a few old cross-module signatures that C linkage had been masking (`LCW_Uncompress(...)`, `Set_Font_Palette_Range(...)`) and restored plain `extern` storage declarations where old `extern "C" TYPE name;` variable declarations had to stay declarations rather than turning into duplicate definitions;
+  - related dead comment-only modifier remnants were also removed from the old LZO/file/audio headers so the active source tree no longer advertises stale `extern "C"` / `__cdecl` baggage outside the ASan hook;
+  - validation for this checkpoint: `cmake --build build --target redalert -j4`, `ctest --test-dir build --output-on-failure`, and `cmake --build build-asan --target redalert -j4` all succeed after the modifier cleanup.
 
 - Fixed the reported mission-select audio leak so map-select-owned sounds no longer bleed into later screens:
   - `CODE/MAPSEL.CPP::Map_Selection()` now stops every sample it starts (`MAPWIPE2.AUD`, `BLEEP11.AUD`, `MAPWIPE5.AUD`, `TONEY7.AUD`, `BLEEP17.AUD`, `TONEY4.AUD`, `TONEY10.AUD`) with `Stop_Sample_Playing(...)` before returning, which keeps a stuck/looping mission-select effect from surviving into the next front-end or mission-start screen;

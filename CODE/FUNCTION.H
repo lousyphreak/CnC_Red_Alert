@@ -599,17 +599,14 @@ void Parse_INI_File(void);
 ** INTERPAL.CPP
 */
 #define SIZE_OF_PALETTE 256
-extern	"C" uint8_t *InterpolationPalette;
+extern	uint8_t *InterpolationPalette;
 extern	int32_t	InterpolationPaletteChanged;
 extern	void 	Interpolate_2X_Scale( GraphicBufferClass *source, GraphicViewPortClass *dest ,char const *palette_file_name);
 void Read_Interpolation_Palette (char const *palette_file_name);
 void Write_Interpolation_Palette (char const *palette_file_name);
 void Increase_Palette_Luminance(uint8_t *InterpolationPalette ,	int RedPercentage ,int GreenPercentage ,int BluePercentage ,int cap);
-extern "C"{
-	extern uint8_t PaletteInterpolationTable[SIZE_OF_PALETTE][SIZE_OF_PALETTE];
-	extern uint8_t *InterpolationPalette;
-	void  Asm_Create_Palette_Interpolation_Table(void);
-}
+extern uint8_t PaletteInterpolationTable[SIZE_OF_PALETTE][SIZE_OF_PALETTE];
+void  Asm_Create_Palette_Interpolation_Table(void);
 
 /*
 ** JSHELL.CPP
@@ -628,9 +625,7 @@ void * Make_Fading_Table(PaletteClass const & palette, void * dest, int color, i
 /*
 **	KEYFBUFF.ASM
 */
-extern "C" {
-	int32_t  Buffer_Frame_To_Page(int x, int y, int w, int h, void *Buffer, GraphicViewPortClass &view, int flags, ...);
-}
+int32_t  Buffer_Frame_To_Page(int x, int y, int w, int h, void *Buffer, GraphicViewPortClass &view, int flags, ...);
 
 /*
 **	KEYFRAME.CPP

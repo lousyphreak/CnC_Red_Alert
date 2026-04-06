@@ -316,9 +316,7 @@ void WWKeyboardClass::Split(int32_t &key, int32_t &shift, int32_t &ctrl, int32_t
 }
 
 
-extern "C" {
-	void  Stop_Execution (void);
-}
+void  Stop_Execution (void);
 
 
 

@@ -45,8 +45,7 @@ static inline uint8_t Clamp_Unsigned_Byte(int32_t value)
 
 }
 
-extern "C" int32_t  Decompress_Frame(void *source, void *dest, int32_t size)
-{
+int32_t  Decompress_Frame(void *source, void *dest, int32_t size){
 	if (source == 0 || dest == 0 || size <= 0) {
 		return 0;
 	}
@@ -127,22 +126,18 @@ extern "C" int32_t  Decompress_Frame(void *source, void *dest, int32_t size)
 	return incount;
 }
 
-extern "C" int32_t  Decompress_Frame_Lock(void)
-{
+int32_t  Decompress_Frame_Lock(void){
 	return 1;
 }
 
-extern "C" int32_t  Decompress_Frame_Unlock(void)
-{
+int32_t  Decompress_Frame_Unlock(void){
 	return 1;
 }
 
-extern "C" int32_t  sosCODEC_Lock(void)
-{
+int32_t  sosCODEC_Lock(void){
 	return 1;
 }
 
-extern "C" int32_t  sosCODEC_Unlock(void)
-{
+int32_t  sosCODEC_Unlock(void){
 	return 1;
 }

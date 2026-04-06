@@ -49,7 +49,6 @@
 /* Defines and such that must go into wwstd.h										*/
 /*=========================================================================*/
 // Look at FileErrorType below for the IO_Error function.
-//extern WORD __cdecl ( __cdecl IO_Error)(FileErrorType error, BYTE const *filename);
 void  Prog_End(void);
 extern int16_t Hard_Error_Occured;
 
@@ -58,4 +57,3 @@ extern int16_t Hard_Error_Occured;
 //////////////////////// END OF DON'T BELONG //////////////////////////////////
 
 #endif //FILETEMP_H
-

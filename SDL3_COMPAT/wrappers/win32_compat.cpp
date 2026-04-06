@@ -43,7 +43,6 @@ HANDLE invalid_handle_value()
 {
     return reinterpret_cast<HANDLE>(static_cast<intptr_t>(-1));
 }
-
 enum class HandleKind {
     None,
     File,
@@ -251,7 +250,6 @@ bool RA_GameRectToWindowRect(RAWindow* window, const RECT* game_rect, SDL_Rect* 
     return true;
 }
 
-extern "C" {
 
 DWORD GetLastError(void)
 {
@@ -459,5 +457,3 @@ BOOL GetVolumeInformation(LPCSTR root_path_name, LPSTR volume_name_buffer, DWORD
 
     return 1;
 }
-
-} // extern "C"

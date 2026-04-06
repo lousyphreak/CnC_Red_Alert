@@ -1,5 +1,17 @@
 # Porting Knowledge
 
+## Linkage modifier cleanup
+
+- The active non-vendor Red Alert tree now builds entirely as C++, with no project-side `.c` or assembly translation units left in the normal SDL3 build.
+  - Practical rule: do not keep broad `extern "C"` wrappers or blank calling-convention compatibility macros just because the original code had them; in this tree they only preserve old symbol names unless some outside runtime really needs an exact unmangled hook.
+  - One current exception is `CODE/CONQUER.CPP::__asan_default_options()`: ASan discovers that hook by symbol name, so its `extern "C"` must stay.
+- Removing old C linkage can expose prototype drift that C linkage used to hide.
+  - Practical example from this tree: once the project-side `extern "C"` wrappers were removed, `LCW_Uncompress(...)` still had mismatched declarations between the VQA/IFF headers and `CODE/LCWUNCMP.CPP`, and `Set_Font_Palette_Range(...)` still differed between the font and VQA headers.
+  - Practical rule: when deleting legacy linkage wrappers, normalize every remaining declaration/definition to one exact C++ signature instead of re-adding broad `extern "C"` as a band-aid.
+- Old `extern "C" TYPE name;` variable declarations need an explicit `extern` after the linkage wrapper is gone.
+  - Practical example from this tree: the font spacing/font pointer declarations and a few cross-module globals briefly turned into definitions when the `extern "C"` prefix was removed mechanically.
+  - Practical rule: after an `extern "C"` cleanup, audit inline variable declarations separately from functions; functions stay fine as plain declarations, but variables need `extern` restored if they are not the owning definition.
+
 ## Score-screen music looping
 
 - The single-player score screen is supposed to restart `THEME_SCORE` after the track finishes; that behavior is not an SDL-port regression.

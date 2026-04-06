@@ -68,7 +68,6 @@ void Write_Unaligned(void* data, T value)
 
 }
 
-extern "C" {
 char * _ShapeBuffer = 0;
 int32_t _ShapeBufferSize = 0;
 
@@ -76,7 +75,6 @@ void  Set_Shape_Buffer(void const *buffer, int32_t size)
 {
 	_ShapeBuffer = (char *)buffer;
 	_ShapeBufferSize = size;
-}
 }
 
 

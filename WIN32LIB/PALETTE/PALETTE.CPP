@@ -55,13 +55,11 @@
 /*
 ********************************** Globals **********************************
 */
-extern "C" {
 uint8_t CurrentPalette[768];
-}
 
-extern "C" void Set_Video_Palette(void *palette);
-extern "C" void WWDraw_Flush_Present(void);
-extern "C" uint8_t *InterpolationPalette;
+void Set_Video_Palette(void *palette);
+void WWDraw_Flush_Present(void);
+extern uint8_t *InterpolationPalette;
 extern int32_t InterpolationPaletteChanged;
 
 
@@ -397,8 +395,7 @@ PRIVATE int32_t  Bump_Palette(void *palette1, uint32_t step)
 void (*cb_ptr)(void);	// callback function pointer
 
 /**************************** End of palette.cpp ***************************/
-extern "C" void  Set_Palette_Range(void *palette)
-{
+void  Set_Palette_Range(void *palette){
 	if (!palette) {
 		return;
 	}
@@ -409,8 +406,7 @@ extern "C" void  Set_Palette_Range(void *palette)
 }
 
 
-extern "C" void Set_Palette_Register(int32_t number, int32_t red, int32_t green, int32_t blue)
-{
+void Set_Palette_Register(int32_t number, int32_t red, int32_t green, int32_t blue){
 	uint8_t *entry;
 
 	if (number < 0 || number >= 256) {
