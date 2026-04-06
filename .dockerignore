@@ -1,0 +1,12 @@
+.git
+.github
+.copilot
+build
+build-asan
+build-emscripten
+*.log
+GameData/redalert
+GameData/redalert-asan
+dbuild.sh
+k8s
+

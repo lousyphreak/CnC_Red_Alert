@@ -1,3 +1,5 @@
 GameData/
 build/
 build*/
+k8s/
+dbuild.sh
