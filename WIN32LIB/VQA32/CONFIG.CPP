@@ -79,8 +79,8 @@ static VQAConfig _defaultconfig = {
 	 */
 	0,
 
-	/* Vmode: Video mode to use. */
-	MCGA,
+	/* Vmode: Legacy direct-video mode slot; ignored by the SDL buffer path. */
+	0,
 
 	/* VBIBit: Vertical blank bit polarity. */
 	-1,
@@ -192,65 +192,6 @@ static VQAConfig _defaultconfig = {
 	NULL,
 };
 
-/* Supported video modes. */
-#if(VQAVIDEO_ON)
-enum VMTAGS {
-	VMTAG_NONE = 0,
-
-	#if(VQAMCGA_ON)
-	VMTAG_MCGA,
-	VMTAG_MCGA_BUF,
-	#endif
-
-	#if(VQAXMODE_ON)
-	VMTAG_XMODE320X200,
-	VMTAG_XMODE320X200_BUF,
-	VMTAG_XMODE320X200_VRAM,
-	VMTAG_XMODE320X240,
-	VMTAG_XMODE320X240_BUF,
-	VMTAG_XMODE320X240_VRAM,
-	#endif
-
-	#if(VQAVESA_ON)
-	VMTAG_VESA640X480_BUF,
-	VMTAG_VESA640X480_X2,
-	VMTAG_VESA320X200,
-	VMTAG_VESA320X200_BUF,
-	#endif
-};
-
-typedef struct _VideoModeTag {
-	char const *token;
-	int32_t       id;
-} VideoModeTag;
-
-VideoModeTag VideoModeTags[] = {
-	{"NONE",VMTAG_NONE},
-
-	#if(VQAMCGA_ON)
-	{"MCGA",    VMTAG_MCGA},
-	{"MCGA_BUF",VMTAG_MCGA_BUF},
-	#endif /* VQAMCGA_ON */
-
-	#if(VQAXMODE_ON)
-	{"XMODE_320X200",     VMTAG_XMODE320X200},
-	{"XMODE_320X200_BUF", VMTAG_XMODE320X200_BUF},
-	{"XMODE_320X200_VRAM",VMTAG_XMODE320X200_VRAM},
-	{"XMODE_320X240",     VMTAG_XMODE320X240},
-	{"XMODE_320X240_BUF", VMTAG_XMODE320X240_BUF},
-	{"XMODE_320X240_VRAM",VMTAG_XMODE320X240_VRAM},
-	#endif /* VQAXMODE_ON */
-
-	#if(VQAVESA_ON)
-	{"VESA_640X480_BUF",VMTAG_VESA640X480_BUF},
-	{"VESA_640X480_X2", VMTAG_VESA640X480_X2},
-	{"VESA_320X200",    VMTAG_VESA320X200},
-	{"VESA_320X200_BUF",VMTAG_VESA320X200_BUF},
-	#endif /* VQAVESA_ON */
-
-	{NULL, 0}
-};
-#endif /* VQAVIDEO_ON */
 
 
 /****************************************************************************
@@ -278,9 +219,6 @@ void VQA_INIConfig(VQAConfig *config)
 {
 	char const * ininame;
 	char buf[80];
-#if(VQAVIDEO_ON)
-	int32_t i;
-#endif
 
 	/* Set all Config entries to 0. */
 	memset(config, 0, sizeof(VQAConfig));
@@ -292,107 +230,6 @@ void VQA_INIConfig(VQAConfig *config)
 		ininame = "PLAYER.INI";
 	}
 
-	/*-------------------------------------------------------------------------
-	 * VIDEO MODE AND DRAW FLAGS
-	 *-----------------------------------------------------------------------*/
-	#if(VQAVIDEO_ON)
-	/* Get video mode from INI */
-	GetINIString("Player", "PlayerMode", "MCGA", buf, 80, ininame);
-
-	/* Search supported modes for a match. */
-	i = 0;
-
-	while (VideoModeTags[i].token != NULL) {
-		if (SDL_strcasecmp(buf, VideoModeTags[i].token) == 0) {
-			break;
-		}
-		i++;
-	}
-
-	/* Setup for requested mode */
-	switch (VideoModeTags[i].id) {
-
-		/* MCGA direct */
-		#if(VQAMONO_ON)
-		case VMTAG_MCGA:
-			config->Vmode = MCGA;
-			break;
-
-		/* MCGA buffered */
-		case VMTAG_MCGA_BUF:
-			config->Vmode = MCGA;
-			config->DrawFlags |= VQACFGF_BUFFER;
-			break;
-		#endif /* VQAMCGA_ON */
-
-		/* XMODE direct (320x200) */
-		#if(VQAXMODE_ON)
-		case VMTAG_XMODE320X200:
-			config->Vmode = XMODE_320X200;
-			break;
-
-		/* XMODE buffered (320x200) */
-		case VMTAG_XMODE320X200_BUF:
-			config->Vmode = XMODE_320X200;
-			config->DrawFlags |= VQACFGF_BUFFER;
-			break;
-
-		/* XMODE VRAM codebook (320x200) */
-		case VMTAG_XMODE320X200_VRAM:
-			config->Vmode = XMODE_320X200;
-			config->DrawFlags |= VQACFGF_VRAMCB;
-			break;
-
-		/* XMODE direct (320x240) */
-		case VMTAG_XMODE320X240:
-			config->Vmode = XMODE_320X240;
-			break;
-
-		/* XMODE buffered (320x240) */
-		case VMTAG_XMODE320X240_BUF:
-			config->Vmode = XMODE_320X240;
-			config->DrawFlags |= VQACFGF_BUFFER;
-			break;
-
-		/* XMODE VRAM codebook (320x240) */
-		case VMTAG_XMODE320X240_VRAM:
-			config->Vmode = XMODE_320X240;
-			config->DrawFlags |= VQACFGF_VRAMCB;
-			break;
-		#endif /* VQAXMODE_ON */
-
-		/* VESA buffered (640x480_256) */
-		#if(VQAVESA_ON)
-		case VMTAG_VESA640X480_BUF:
-			config->Vmode = VESA_640X480_256;
-			config->DrawFlags |= VQACFGF_BUFFER;
-			break;
-
-		/* VESA buffered scaled (640x480_256) */
-		case VMTAG_VESA640X480_X2:
-			config->Vmode = VESA_640X480_256;
-			config->DrawFlags |= (VQACFGF_BUFFER|VQACFGF_SCALEX2);
-			break;
-
-		/* VESA direct (320x200_32k) */
-		case VMTAG_VESA320X200:
-			config->Vmode = VESA_320X200_32K_1;
-			break;
-
-		/* VESA buffered (320x200_32k) */
-		case VMTAG_VESA320X200_BUF:
-			config->Vmode = VESA_320X200_32K_1;
-			config->DrawFlags |= VQACFGF_BUFFER;
-			break;
-		#endif /* VQAVESA_ON */
-
-		/* Default to MCGA direct */
-		VMTAG_NONE:
-		default:
-			config->Vmode = MCGA;
-			break;
-	}
-	#endif /* VQAVIDEO_ON */
 
 	/* Get framerate and drawrate. */
 	GetINIString("Player", "FrameRate", "-1", buf, 80, ininame);

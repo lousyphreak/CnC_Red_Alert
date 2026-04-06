@@ -30,7 +30,7 @@
  *                                                                         *
  *                  Last Update : January 10, 1995   [PWG]                 *
  *                                                                         *
- * This module holds the global fixup tables for the MCGA buffer class.    *
+ * This module holds the global fixup tables for the 8-bit buffer class.   *
  *-------------------------------------------------------------------------*
  * Functions:                                                              *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */

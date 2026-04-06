@@ -1,5 +1,18 @@
 # Porting Knowledge
 
+## Legacy graphics/backend cleanup
+
+- Do not reintroduce fake VGA DAC port emulation for palette writes.
+  - Practical example from this tree: `CODE/RGB.{H,CPP}` now calls `Set_Palette_Register(...)` directly, and the old `CODE/PORTIOCOMPAT.CPP` shim is gone.
+  - Practical rule: if gameplay/UI code needs to change one palette entry, route it through the existing palette subsystem (`Set_Palette_Register(...)` / `Set_Video_Palette(...)`) instead of recreating `outportb(0x03C8/0x03C9, ...)` semantics in the SDL port.
+- The active VQA/movie path is buffered-only; the old direct-video backends are no longer part of the project source.
+  - Practical example from this tree: the dead MCGA/XMode/VESA branches were removed from `WIN32LIB/VQA32/{CONFIG,DRAWER,LOADER,UNVQ}.CPP/.H`, and the deleted `WIN32LIB/INCLUDE/VQM32/VIDEO.H` header is no longer needed to compile movie playback.
+  - Practical rule: keep VQA centered on `DrawFrame_Buffer(...)` plus the existing SDL presentation/palette path. If movie playback ever needs new behavior, extend the buffered SDL route instead of reviving direct-VRAM, VESA windowing, or real-mode/VGA helper code.
+  - Follow-on cleanup note: the old `ModeXBuff` global, `ModeX_Blit(...)` wrapper, and unused VQA VRAM/ScaleX2 flag definitions were just naming leftovers once the buffered SDL path became the only supported route; they were removed rather than renamed so the active tree stops implying a hidden VGA-era backend.
+- Repository-side assembler sources are now intentionally absent from the non-vendor tree.
+  - Practical example from this tree: the old `WIN32LIB/*.ASM`, `*.INC`, and `*.I` files were deleted once the CMake build and active C++ replacements were confirmed to be the only supported path.
+  - Practical rule: when you find comments or APIs that still imply a separate assembler backend, treat them as stale documentation to be updated or removed; do not add new project-side assembler as a shortcut for SDL/platform work.
+
 ## Legacy compiler-specific cleanup
 
 - Keep historical Watcom/Borland/Turbo toolchain details in the porting docs, not in the active source tree.

@@ -2765,7 +2765,7 @@ typedef enum BenchType {
 
 
 /**********************************************************************
-**	Working MCGA colors that give a pleasing effect for beveled edges and
+**	Working UI colors that give a pleasing effect for beveled edges and
 **	other purposes.
 */
 #define	MAGIC_COL_COUNT	13		// Translucent color count.

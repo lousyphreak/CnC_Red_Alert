@@ -44,7 +44,6 @@
 
 #include <stdint.h>
 
-#include <VQM32/VIDEO.H>
 #include <VQM32/SOSCOMP.H>
 #include <VQM32/CAPTOKEN.H>
 #include <VQA32/VQAFILE.H>
@@ -54,6 +53,10 @@
 #if(VQAAUDIO_ON)
 #include <SOS.H>
 #endif
+
+int32_t TestVBIBit(void);
+void WaitNoVB(int16_t vbibit);
+void WaitVB(int16_t vbibit);
 
 /*---------------------------------------------------------------------------
  * GENERAL CONSTANT DEFINITIONS
@@ -117,10 +120,7 @@ typedef struct _ZAPHeader {
  *
  * Buffer   - Pointer to Codebook data.
  * Next     - Pointer to next VQACBNode in the codebook list.
- * Flags    - Used by the drawer to tell if certain operations have been
- *            performed on this codebook, such as downloading to VRAM,
- *            or pre-scaling it. This field is cleared by the Loader when a
- *            new codebook is loaded.
+ * Flags    - State bits for the codebook buffer.
  * CBOffset - Offset into the buffer of the compressed data.
  */
 typedef struct _VQACBNode {
@@ -131,9 +131,7 @@ typedef struct _VQACBNode {
 } VQACBNode;
 
 /* VQACBNode flags */
-#define	VQACBB_DOWNLOADED 0 /* Download codebook to VRAM (XMODE VRAM) */
 #define VQACBB_CBCOMP     1 /* Codebook is compressed */
-#define	VQACBF_DOWNLOADED (1<<VQACBB_DOWNLOADED)
 #define	VQACBF_CBCOMP     (1<<VQACBB_CBCOMP)
 
 
@@ -218,7 +216,7 @@ typedef struct _VQALoader {
  *
  * CurFrame       - Pointer to the current frame to draw.
  * Flags          - Flags for the draw routines (IE: VQADRWF_SETPAL)
- * Display        - Pointer to DisplayInfo structure for active video mode.
+ * Display        - Unused legacy direct-display slot retained for layout compatibility.
  * ImageBuf       - Buffer to un-vq into, must be uint32_t aligned.
  * ImageWidth     - Width of Image buffer (in pixels).
  * ImageHeight    - Height of Image buffer (in pixels).
@@ -244,7 +242,7 @@ typedef struct _VQALoader {
 typedef struct _VQADrawer {
 	VQAFrameNode  *CurFrame;
 	uint32_t     Flags;
-	DisplayInfo   *Display;
+	void          *Display;
 	uint8_t *ImageBuf;
 	int32_t       ImageWidth;
 	int32_t       ImageHeight;

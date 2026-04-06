@@ -40,16 +40,14 @@
  *																									*
  *		1) C++ name mangling is not a big deal since the function pointers	*
  *		   point to functions in standard C format.									*
- *		2) The function pointers can be changed when we set a different		*
- *       graphic mode.  This allows us to have both supervga and mcga		*
- *			routines present in memory at once.											*
+ *		2) The function pointers can be changed when the active backend		*
+ *       changes.  This keeps the higher-level buffer API independent		*
+ *			of the underlying SDL/software implementation details.				*
  *																									*
  * In the basic library, these functions point to stub routines which just	*
  * return.  This makes a product that just uses a graphic buffer take the	*
- * minimum amount of code space.  For programs that require MCGA or VESA	*
- * support, all that is necessary to do is link either the MCGA or VESA		*
- * specific libraries in, previous to WWLIB32.  The linker will then 		*
- * overide the the necessary stub functions automatically.						*
+ * minimum amount of code space.  Backend-specific implementations can		*
+ * override the necessary stubs without changing the GraphicBuffer API.	*
  *																									*
  * In addition, there are helpful inline function calls for parameter		*
  * ellimination.  This header file gives the defintion for all					*

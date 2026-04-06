@@ -70,8 +70,8 @@ void *  Get_Icon_Set_Map(void const *iconset);
 **	The terrain is rendered by using icons.  These are the buffers that hold
 **	the icon data, remap tables, and remap index arrays.
 */
-//PRIVATE char *IconPalette = NULL;		// MCGA only.
-//PRIVATE char *IconRemap = NULL;			// MCGA only.
+//PRIVATE char *IconPalette = NULL;		// Legacy 8-bit icon path only.
+//PRIVATE char *IconRemap = NULL;			// Legacy 8-bit icon path only.
 
 #define	FORM_RPAL	MAKE_ID('R','P','A','L')
 #define	FORM_RTBL	MAKE_ID('R','T','B','L')

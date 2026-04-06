@@ -222,7 +222,7 @@ bool ToolTipClass::bOverDifferentLine() const
 //***********************************************************************************************
 bool SaveSurfaceRect( int xRect, int yRect, int wRect, int hRect, char* pBits, WindowNumberType window )
 {
-	//	Saves a rect of the LogicPage DirectDraw surface to pBits.
+	//	Saves a rect of the LogicPage display surface to pBits.
 //	if( wRect * hRect > iBufferSize )
 //	{
 //		debugprint( "SaveSurfaceRect failed.\n" );

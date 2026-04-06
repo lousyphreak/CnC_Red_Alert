@@ -245,8 +245,6 @@ RGBClass::operator HSVClass (void) const
  *=============================================================================================*/
 void RGBClass::Set(int color) const
 {
-	Raw_Color_Prep(color);
-	Raw_Set();
-
+	Set_Palette_Register(color, Red, Green, Blue);
 	((RGBClass &)PaletteClass::CurrentPalette[color]) = *this;
 }

@@ -130,7 +130,6 @@ extern AudioBackendDevice *				SoundObject;
 extern AudioBackendBuffer *		PrimaryBufferPtr;
 extern int							ScreenWidth;
 extern int							ScreenHeight;
-extern GraphicBufferClass		ModeXBuff;
 
 /*
 **	Dynamic global variables (these change or are initialized at run time).

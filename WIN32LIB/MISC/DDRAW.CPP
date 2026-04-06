@@ -48,10 +48,10 @@
 #include <GBUFFER.H>
 #include <PALETTE.H>
 
-WWDraw*		VideoDrawObject=NULL;	// Pointer to the direct draw object
+WWDraw*		VideoDrawObject=NULL;	// Pointer to the active video backend
 RAWindow*		MainWindow;					// Handle to programs main window
 												// this is passed to SetCooperativeLevel
-												// so DirectDraw knows which window is ours
+												// so the video backend knows which window is ours
 
 
 PALETTEENTRY				PaletteEntries[256];		// 256 windows palette entries
@@ -416,7 +416,7 @@ void Set_Video_Palette ( void *palette )
 
 
 /***********************************************************************************************
- * Wait_Blit -- waits for the DirectDraw blitter to become idle                                *
+ * Wait_Blit -- waits for the active blitter path to become idle                               *
  *                                                                                             *
  *                                                                                             *
  *                                                                                             *

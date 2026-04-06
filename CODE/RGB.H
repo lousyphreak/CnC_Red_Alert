@@ -42,8 +42,7 @@
 class PaletteClass;
 class HSVClass;
 
-extern void outrgb(uint8_t red, uint8_t green, uint8_t blue);
-extern void outportb(int port, uint8_t data);
+extern void Set_Palette_Register(int number, int red, int green, int blue);
 
 /*
 **	Each color entry is represented by this class. It holds the values for the color
@@ -87,16 +86,6 @@ class RGBClass
 
 		friend class PaletteClass;
 
-		void Raw_Set(void) const {
-			outrgb(Red, Green, Blue);
-//			outportb(0x03C9, Red);
-//			outportb(0x03C9, Green);
-//			outportb(0x03C9, Blue);
-		};
-
-		static void Raw_Color_Prep(uint8_t color) {
-			outportb(0x03C8, color);
-		};
 
 		/*
 		**	These hold the actual color gun values in machine dependant scale. This

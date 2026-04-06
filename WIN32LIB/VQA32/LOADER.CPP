@@ -445,17 +445,8 @@ int32_t VQA_Open(VQAHandle *vqa, char const *filename, VQAConfig *config)
 	}
 
 	/*-------------------------------------------------------------------------
-	 * INITIALIZE THE VIDEO SYSTEM IF WE ARE REQUIRED TO HANDLE THAT.
+	 * INITIALIZE THE BUFFERED SDL MOVIE STATE.
 	 *-----------------------------------------------------------------------*/
-	#if(VQAVIDEO_ON)
-	if ((vqap->VQABuf->Drawer.Display = SetVideoMode(config->Vmode)) == 0) {
-		VQA_Close(vqa);
-		return (VQAERR_VIDEO);
-	}
-
-	/* Set the VBIBit polarity. */
-	vqap->VQABuf->VBIBit = GetVBIBit();
-	#else
 	if (config->VBIBit == -1) {
 		config->VBIBit = TestVBIBit();
 	}
@@ -469,7 +460,6 @@ int32_t VQA_Open(VQAHandle *vqa, char const *filename, VQAConfig *config)
 		SetDAC(254,255,255,255);
 		SetDAC(255,255,000,255); /* Cycle */
 	}
-	#endif /* VQAVIDEO_ON */
 
 	/*-------------------------------------------------------------------------
 	 * AUDIO TRACK OVERRIDE FROM EXTERNAL FILE (.VOC)
@@ -537,8 +527,8 @@ int32_t VQA_Open(VQAHandle *vqa, char const *filename, VQAConfig *config)
 		config->OptionFlags &= ~VQAOPTF_AUDIO;
 	}
 
-	/* Setup the timer interrupt if the client requests it for the timing
-	 * source.
+	/* Setup fallback timer servicing when audio is unavailable or when the
+	 * caller explicitly selects the non-audio timing path.
 	 */
 	if (!(config->OptionFlags & VQAOPTF_AUDIO)
 			|| (config->TimerMethod == VQA_TMETHOD_INT)) {
@@ -587,11 +577,6 @@ int32_t VQA_Open(VQAHandle *vqa, char const *filename, VQAConfig *config)
 void VQA_Close(VQAHandle *vqa)
 {
 	int32_t (*iohandler)(VQAHandle *, int32_t, void *, int32_t);
-
-	/* Restore video mode to text. */
-	#if(VQAVIDEO_ON)
-	SetVideoMode(TEXT);
-	#endif /* VQAVIDEO_ON */
 
 	/* Shutdown audio/timing system. */
 	#if(VQAAUDIO_ON)
@@ -2060,7 +2045,6 @@ static int32_t Load_CBF0(VQAHandleP *vqap, uint32_t iffsize)
 
 	/* Clock pointers to next CB Buffer. */
 	loader->FullCB = curcb;
-	loader->FullCB->Flags &= (~VQACBF_DOWNLOADED);
 	loader->CurCB = curcb->Next;
 
 	return (0);
@@ -2118,7 +2102,6 @@ static int32_t Load_CBFZ(VQAHandleP *vqap, uint32_t iffsize)
 
 	/* Clock pointers to next CB Buffer */
 	loader->FullCB = curcb;
-	loader->FullCB->Flags &= (~VQACBF_DOWNLOADED);
 	loader->CurCB = curcb->Next;
 
 	return (0);
@@ -2190,7 +2173,6 @@ static int32_t Load_CBP0(VQAHandleP *vqap, uint32_t iffsize)
 
 		/* Go to the next codebook buffer */
 		loader->FullCB = curcb;
-		loader->FullCB->Flags &= (~VQACBF_DOWNLOADED);
 		loader->CurCB = curcb->Next;
 
 	}
@@ -2272,7 +2254,6 @@ static int32_t Load_CBPZ(VQAHandleP *vqap, uint32_t iffsize)
 
 		/* Go to the next codebook buffer */
 		loader->FullCB = curcb;
-		loader->FullCB->Flags &= (~VQACBF_DOWNLOADED);
 		loader->CurCB = curcb->Next;
 	}
 

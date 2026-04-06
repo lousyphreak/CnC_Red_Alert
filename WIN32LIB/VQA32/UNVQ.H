@@ -76,11 +76,6 @@ void  UnVQ_4x2_Woofer(uint8_t *codebook, uint8_t *pointers,
 		uint8_t *buffer, uint32_t blocksperrow,
 		uint32_t numrows, uint32_t bufwidth);
 
-/* unvqvesa.asm */
-void  UnVQ_4x2_VESA320_32K(uint8_t *codebook,
-		uint8_t *pointers, uint8_t *palette,
-		uint32_t grains_per_win,uint32_t dummy1,uint32_t dummy2);
-
 #else /* PHARLAP_TNT */
 
 void  UnVQ_2x2(uint8_t *codebook, uint8_t *pointers,
@@ -103,24 +98,6 @@ void  UnVQ_4x4_V2(uint8_t *codebook, uint8_t *pointers,
 		char * buffer, uint32_t blocksperrow, uint32_t numrows,
 		uint32_t bufwidth);
 
-/* unvqvesa.asm */
-void  UnVQ_4x2_VESA320_32K(uint8_t *codebook,
-		uint8_t *pointers, char * palette, uint32_t grains_per_win,
-		uint32_t dummy1, uint32_t dummy2);
-
 #endif /* PHARLAP_TNT */
-
-/* unvqxmde.asm */
-void  UnVQ_4x2_Xmode(uint8_t *codebook, uint8_t *pointers,
-		uint8_t *buffer, uint32_t blocksperrow,
-		uint32_t numrows, uint32_t dummy);
-
-void  UnVQ_4x2_XmodeCB(uint8_t *cbdummy, uint8_t *pointers,
-		uint8_t *buffer, uint32_t blocksperrow,
-		uint32_t numrows, uint32_t dummy);
-
-void  Upload_4x2CB(uint8_t *codebook, uint32_t numentries);
-void  XlatePointers(uint8_t *pointers, uint32_t numpointers);
-
 
 #endif /* VQAUNVQ_H */

@@ -448,8 +448,6 @@ void GScreenClass::Render(void)
  *   02/14/1994 JLB : Created.                                                                 *
  *   05/01/1994 JLB : Converted to member function.                                            *
  *=============================================================================================*/
-void ModeX_Blit (GraphicBufferClass * source);
-
 void GScreenClass::Blit_Display(void)
 {
 	BStart(BENCH_BLIT_DISPLAY);
@@ -458,9 +456,8 @@ void GScreenClass::Blit_Display(void)
 			HidPage.Blit(SeenBuff , 0 , 0 , 0 , 0 , HidPage.Get_Width() , HidPage.Get_Height() , (int32_t) FALSE );
 			WWMouse->Erase_Mouse(&HidPage, FALSE);
 		} else {
-			ModeX_Blit(&HiddenPage);
+			HiddenPage.Blit(SeenBuff, 0, 0, 0, 0, HiddenPage.Get_Width(), HiddenPage.Get_Height(), (int32_t)FALSE);
 		}
 	BEnd(BENCH_BLIT_DISPLAY);
 }
-
 

@@ -52,10 +52,6 @@
 #define VQAVOC_ON     0  /* Enable VOC file override */
 #define	VQAMONO_ON    0  /* Mono display output enable/disable */
 #define VQAAUDIO_ON   1  /* Audio playback enable/disable */
-#define VQAVIDEO_ON   0  /* Video manager enable/disable */
-#define VQAMCGA_ON    0  /* MCGA enable/disable */
-#define VQAXMODE_ON   0  /* Xmode enable/disable */
-#define VQAVESA_ON    0  /* VESA enable/disable */
 #define	VQABLOCK_2X2  0  /* 2x2 block decode enable/disable */
 #define	VQABLOCK_2X3  0  /* 2x2 block decode enable/disable */
 #define	VQABLOCK_4X2  1  /* 4x2 block decode enable/disable */
@@ -117,7 +113,7 @@ class AudioBackendBuffer;
  * DrawerCallback - User routine for Drawer to call each frame (NULL = none)
  * EventHandler   - User routine for notification to client of events.
  * NotifyFlags    - User specified events to be notified about.
- * Vmode          - Requested Video mode (May be promoted).
+ * Vmode          - Legacy direct-video mode slot; ignored by the SDL buffer path.
  * VBIBit         - Vertical blank bit polarity.
  * ImageBuf       - Pointer to caller's buffer for the Drawer to use as its
  *                  ImageBuf; NULL = player will allocate its own, if
@@ -191,20 +187,16 @@ typedef struct _VQAConfig {
 #define	VQACFGB_BUFFER   0 /* Buffer UnVQ enable */
 #define	VQACFGB_NODRAW   1 /* Drawing disable */
 #define VQACFGB_NOSKIP   2 /* Disable frame skipping. */
-#define	VQACFGB_VRAMCB   3 /* XMode VRAM copy enable */
 #define VQACFGB_ORIGIN   4 /* 0,0 origin position */
-#define	VQACFGB_SCALEX2  6 /* Scale X2 enable (VESA 320x200 to 640x400) */
 #define VQACFGB_WOOFER   7
 #define	VQACFGF_BUFFER   (1<<VQACFGB_BUFFER)
 #define	VQACFGF_NODRAW   (1<<VQACFGB_NODRAW)
 #define	VQACFGF_NOSKIP   (1<<VQACFGB_NOSKIP)
-#define	VQACFGF_VRAMCB   (1<<VQACFGB_VRAMCB)
 #define	VQACFGF_ORIGIN   (3<<VQACFGB_ORIGIN)
 #define	VQACFGF_TOPLEFT  (0<<VQACFGB_ORIGIN)
 #define	VQACFGF_TOPRIGHT (1<<VQACFGB_ORIGIN)
 #define	VQACFGF_BOTRIGHT (2<<VQACFGB_ORIGIN)
 #define	VQACFGF_BOTLEFT  (3<<VQACFGB_ORIGIN)
-#define	VQACFGF_SCALEX2  (1<<VQACFGB_SCALEX2)
 #define VQACFGF_WOOFER   (1<<VQACFGB_WOOFER)
 
 /* Options Configuration (OptionFlags) */

@@ -52,15 +52,6 @@ destination[index] = PaletteInterpolationTable[source2[index]][source1[index]];
 }
 
 
-void ModeX_Blit(GraphicBufferClass *source){
-	if (!source) {
-		return;
-	}
-
-	source->Blit(SeenBuff, 0, 0, 0, 0, source->Get_Width(), source->Get_Height(), (int32_t)FALSE);
-}
-
-
 void  Stop_Execution(void){
 }
 

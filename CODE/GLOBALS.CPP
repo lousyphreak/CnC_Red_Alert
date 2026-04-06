@@ -179,7 +179,6 @@ GraphicBufferClass	SysMemPage(DEFAULT_SCREEN_WIDTH, 200, (void*)NULL, DEFAULT_SC
 WinTimerClass *		WindowsTimer=NULL;
 int						ScreenWidth=640;
 int						ScreenHeight=400;
-GraphicBufferClass	ModeXBuff;
 bool						InMovie = FALSE;	//Are we currently playing a VQ movie?
 int						AllDone;
 
@@ -491,7 +490,7 @@ void const * GradFont6Ptr;		// gradient 6 point font pointer.
 HouseClass * PlayerPtr;
 
 /***************************************************************************
-**	Special palettes for MCGA mode goes here. These palette buffers are used
+**	Special 8-bit palettes go here. These palette buffers are used
 **	for pictures that do not use the game palette or are used for fading to
 **	black.
 */

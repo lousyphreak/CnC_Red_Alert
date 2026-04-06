@@ -24,7 +24,7 @@
 *     MpgMovie.h
 *
 * DESCRIPTION
-*     Movie playback using DirectShow Multimedia streaming and DirectDraw
+ *     Movie playback using the SDL-backed movie presentation layer
 *
 * PROGRAMMER
 *     Denzil E. Long, Jr.
