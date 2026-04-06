@@ -400,7 +400,12 @@ uint32_t WWDraw::GetTotalVideoMemory() const
 
 HRESULT WWDraw::WaitForVerticalBlank()
 {
-    SDL_Delay(16);
+    /*
+    ** The SDL renderer already owns display synchronization when vsync is
+    ** enabled, and the actual wait happens at SDL_RenderPresent().
+    ** Keep this legacy DirectDraw seam as a compatibility no-op instead of
+    ** adding an extra fixed 16 ms sleep on top of SDL's presentation path.
+    */
     return WWDRAW_OK;
 }
 

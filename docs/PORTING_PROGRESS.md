@@ -8,6 +8,12 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Audited project-side `SDL_Delay` / sleep usage and removed the only live manual display-sync wait that was duplicating SDL renderer vsync:
+  - `SDL3_COMPAT/wrappers/sdl_draw.cpp::WWDraw::WaitForVerticalBlank()` no longer sleeps for 16 ms; the active SDL renderer already enables vsync with `SDL_SetRenderVSync(...)`, and the real presentation wait happens inside `SDL_RenderPresent(...)`, so the old DirectDraw compatibility seam now returns immediately instead of emulating a fixed 60 Hz vblank;
+  - the remaining non-vendor `SDL_Delay(1)` / `SDL_Delay(16)` / `SDL_Delay(50)` / `SDL_Delay(1000)` calls were audited in context and intentionally left in place where they are serving non-render purposes such as modal dialog yielding, audio/speech completion waits, palette fade timing, UDP/WOL polling, or the existing WOL DLL teardown workaround rather than frame presentation;
+  - active `Wait_Vert_Blank(...)` usage in the supported tree is now effectively a no-op compatibility seam, so render pacing stays owned by SDL present-vsync instead of an extra project-side sleep;
+  - validation for this checkpoint: incremental `cmake --build build --target redalert -j4`, `ctest --test-dir build --output-on-failure`, incremental `cmake --build build-asan --target redalert -j4`, and the timed ASan/UBSan startup smoke run `cd GameData && timeout -k 5s 20s env ASAN_OPTIONS=abort_on_error=1:detect_leaks=0 UBSAN_OPTIONS=print_stacktrace=1 ../build-asan/redalert "Erik Yeo"` all succeed after the delay/vblank audit change; the timed smoke run still exits only via the external timeout/SIGKILL window (`137`), and the captured log contains no `AddressSanitizer` or `runtime error:` matches.
+
 - Removed the last runtime opt-out from SDL audio so the port now only runs with the SDL backend active:
   - `CODE/STARTUP.CPP` now treats `Audio_Init(...)` failure as fatal, tears down the SDL window, and exits instead of storing a `SoundOn` flag and continuing in a "no audio" mode;
   - removed the remaining gameplay/UI branches that treated missing audio as supported behavior by deleting `SoundOn`, `SoundType`, `SampleType`, and `Get_Digi_Handle()` usage from `CODE/{AUDIO,CONQUER,GAMEDLG,INIT,INTRO,SCORE,THEME}.CPP`, so theme maintenance, sample servicing, speech, and VQA audio flags all assume the single SDL path while still honoring mute/volume controls such as `Debug_Quiet` and the existing options sliders;

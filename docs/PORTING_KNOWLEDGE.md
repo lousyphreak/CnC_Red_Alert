@@ -1,5 +1,17 @@
 # Porting Knowledge
 
+## Delay / vblank audit
+
+- The SDL renderer already owns display pacing in the active port.
+  - Practical example from this tree: `SDL3_COMPAT/wrappers/sdl_draw.cpp` enables vsync with `SDL_SetRenderVSync(g_renderer, 1)`, and the real synchronization point is `SDL_RenderPresent(g_renderer)` inside `present_surface(...)`.
+  - Practical rule: do not emulate monitor refresh with a project-side `SDL_Delay(16)` when the intent is "wait for vsync". If a path is part of presentation timing, let SDL block at `SDL_RenderPresent(...)` instead.
+- Legacy `Wait_Vert_Blank(...)` / `WWDraw::WaitForVerticalBlank()` is now only a compatibility seam on SDL.
+  - Practical example from this tree: the old DirectDraw wrapper used to sleep for 16 ms in `WWDraw::WaitForVerticalBlank()`, but that duplicated the renderer's own vsync wait and assumed a fixed 60 Hz display.
+  - Practical rule: keep DirectDraw-style vertical-blank hooks as no-ops on the SDL path unless there is a real non-present synchronization requirement. Do not reintroduce a manual sleep there just to mimic old vblank timing.
+- Most remaining project-side `SDL_Delay(...)` calls are not display synchronization.
+  - Practical examples from this tree: many `CODE/*.CPP` modal dialog loops use `SDL_Delay(16)` or `SDL_GameInput_Delay(16)` only to yield between input polls, `SCENARIO.CPP` / `LOADDLG.CPP` / `SCORE.CPP` use `SDL_Delay(1)` or `SDL_GameInput_Delay(1)` while waiting for speech/timers/score animation maintenance, and `NETDLG.CPP` uses short waits to avoid hot-spinning while servicing UDP/WOL traffic.
+  - Practical rule: audit delay sites by purpose before changing them. Keep short sleeps that are serving blocking UI/audio/network/palette maintenance loops, but do not treat them as substitutes for presentation vsync.
+
 ## Legacy graphics/backend cleanup
 
 - The supported SDL drawing path no longer keeps a raw-buffer hidden-page fallback or profiler shim around the edges.
