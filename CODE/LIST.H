@@ -520,14 +520,6 @@ void TListClass<T>::Step(int up)
 	}
 }
 
-#ifdef NEVER
-template<class T>
-T TListClass<T>::Get_Item(int index) const
-{
-	index = min(index, List.Count());
-	return(List[index]);
-}
-#endif
 
 template<class T>
 T TListClass<T>::Current_Item(void) const
@@ -655,29 +647,6 @@ void TListClass<T>::Set_Tabs(int const * tabs)
 	Tabs = tabs;
 }
 
-#ifdef NEVER
-template<class T>
-void TListClass<T>::Draw_Entry(int index, int x, int y, int width, int selected)
-{
-	if (TextFlags & TPF_6PT_GRAD) {
-		TextPrintType flags = TextFlags;
-
-		if (selected) {
-			flags = flags | TPF_BRIGHT_COLOR;
-			LogicPage->Fill_Rect(x, y, x + width - 1, y + LineHeight - 1, CC_GREEN_SHADOW);
-		} else {
-			if (!(flags & TPF_USE_GRAD_PAL)) {
-				flags = flags | TPF_MEDIUM_COLOR;
-			}
-		}
-
-		Conquer_Clip_Text_Print(List[index], x, y, CC_GREEN, TBLACK, flags, width, Tabs);
-
-	} else {
-		Conquer_Clip_Text_Print(List[index], x, y, (selected ? BLUE : WHITE), TBLACK, TextFlags, width, Tabs);
-	}
-}
-#endif
 
 template<class T>
 LinkClass & TListClass<T>::Add(LinkClass & list)

@@ -406,26 +406,6 @@ void BulletClass::AI(void)
 				Payback->House->IsGPSActive = true;
 				Payback->House->IsVisionary = true;
 			}
-#ifdef OBSOLETE
-			/*
-			** Hack: If it's the artificial nukes, don't let the bullets come down (as
-			** they're the only ones that blow up).  We know it's artificial if you're
-			** at tech level 10 or below, because you can't build the nuclear silo until
-			** tech level 15 or so.
-			*/
-			if (Payback != NULL && Class->Type == BULLET_NUKE_UP && Payback->House->Control.TechLevel <= 10) {
-				BulletClass * bullet = new BulletClass(BULLET_NUKE_DOWN, ::As_Target(Payback->House->NukeDest), Payback, 200, WARHEAD_NUKE, MPH_VERY_FAST);
-				if (bullet) {
-					int celly = Cell_Y(Payback->House->NukeDest);
-					celly -= 15;
-					if (celly < 1) celly = 1;
-					COORDINATE start = Cell_Coord(XY_Cell(Cell_X(Payback->House->NukeDest), celly));
-					if (!bullet->Unlimbo(start, DIR_S)) {
-						delete bullet;
-					}
-				}
-			}
-#endif
 			delete this;
 			break;
 

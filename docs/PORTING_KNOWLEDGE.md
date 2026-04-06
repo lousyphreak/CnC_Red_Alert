@@ -1,5 +1,17 @@
 # Porting Knowledge
 
+## Dead guard cleanup
+
+- `OBSOLETE`, `NEVER`, `OLDWAY`, and `OLD` are archival dead-code guards in this tree, not supported feature toggles for the SDL3 port.
+  - Practical example from this tree: `CODE/NETDLG.CPP` carried an `OLDWAY` multiplayer-house selector path beside the active dropdown implementation, `CODE/CELL.CPP::Concrete_Calc()` carried an entire `OBSOLETE` body before the follow-up sweep removed the resulting no-op function and its lone caller, and many `NEVER` blocks in `CODE/{CDFILE,CCFILE,LZW,MPLAYER,VERSION}.CPP` were just never-compiled DOS/debug/helper leftovers.
+  - Practical rule: when these guard names appear in active project code, preserve the behavior of the current undefined-macro build and delete the dead branch rather than porting, modernizing, or keeping the dormant alternative around.
+- The same rule applies to nearby `#if 0` blocks when they are clearly the same kind of parked legacy code.
+  - Practical example from this tree: `CODE/LZO_CONF.H` had a disabled architecture-problematic `LZO_CHECK_MPOS_DET(...)` macro under `#if 0`, while `CODE/WOLDEBUG.H`, `CODE/CDFILE.CPP`, `CODE/NETDLG.CPP`, and `CODE/CONQUER.CPP` also carried obviously disabled snippets that were never part of the active SDL path.
+  - Practical rule: collapse those one-off `#if 0` blocks to the currently active branch or remove them entirely, but do not treat them as missing porting work unless there is evidence that the live build still needs the disabled code.
+- After removing guarded code, do a second pass up the call tree for any now-empty local helpers.
+  - Practical example from this tree: once the dead guard body was deleted, `CODE/CELL.CPP::Concrete_Calc()` had no behavior left and only one map-editor caller in `CODE/MAPEDPLC.CPP`, so the follow-up sweep removed the function, declaration, and caller together; similarly, `CODE/CONQUER.CPP::Enable_Secret_Units()` became an empty helper and the associated `"SECRET UNITS ON "` / `"XECRET UNITS ON "` multiplayer chat trigger plumbing was deleted with it.
+  - Practical rule: if a guard cleanup leaves a private or locally-called helper as a no-op, trace its declarations and direct callers immediately and remove the whole dead chain instead of institutionalizing the no-op as part of the active source.
+
 ## Delay / vblank audit
 
 - The SDL renderer already owns display pacing in the active port.

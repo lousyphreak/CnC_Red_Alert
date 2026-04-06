@@ -721,48 +721,6 @@ uint32_t VersionClass::Max_Version(void)
 
 char const * Version_Name(void)
 {
-#ifdef NEVER
-	static char buffer[32];
-
-	/*
-	**	Fetch the day and month components from the current
-	**	build date.
-	*/
-	static char * date = __DATE__;		// format: Mmm dd yyyy
-	SDL_strupr(date);
-	char const * tok = strtok(date, " ");
-	static char const * months = "JANFEBMARAPRMAYJUNJULAUGSEPOCTNOVDEC";
-	char const * ptr = strstr(months, tok);
-	int monthnum = 0;
-	if (ptr != NULL) {
-		monthnum = (((ptr - months) / 3) + 1);
-	}
-
-	tok = strtok(NULL, " ");
-	int daynum = 0;
-	if (tok != NULL) {
-		daynum = atoi(tok);
-	}
-
-	/*
-	**	Fetch the time components from the current build time.
-	*/
-	static char * time = __TIME__;		// format: hh:mm:ss
-	tok = strtok(time, ": ");
-	int hournum = 0;
-	if (tok != NULL) {
-		hournum = atoi(tok);
-	}
-
-	tok = strtok(NULL, ": ");
-	int minnum = 0;
-	if (tok != NULL) {
-		minnum = atoi(tok);
-	}
-
-	sprintf(buffer, "%02d%02d%02d", monthnum, daynum, (hournum*4) + (minnum / 15));
-	return(buffer);
-#else
 
 	static char buffer[128];
 
@@ -830,5 +788,4 @@ char const * Version_Name(void)
 		file.Read(&buffer[strlen(buffer)], 25);
 	}
 	return(buffer);
-#endif
 }

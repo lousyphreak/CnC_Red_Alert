@@ -678,16 +678,7 @@ void InfantryClass::Per_Cell_Process(PCPType why)
 									** storage facility.
 									*/
 									if (IsOwnedByPlayer || bldg->IsOwnedByPlayer) Speak(VOX_MONEY_STOLEN);
-#ifdef OBSOLETE
-									int32_t capacity = bldg->Class->Capacity * 256;
-									capacity /= (bldg->House->Tiberium+1);
-									int bldgcap = bldg->Class->Capacity;
-
-									int32_t cash = (bldgcap * 256) / (capacity+1);
-									if (cash > (bldgcap / 2)) cash = bldgcap / 2;
-#else
 									int32_t cash = bldg->House->Available_Money() / 2;
-#endif
 									bldg->House->Spend_Money(cash);
 									House->Refund_Money(cash);
 								}
@@ -701,112 +692,12 @@ void InfantryClass::Per_Cell_Process(PCPType why)
 
 			} else {
 
-	#ifdef OBSOLETE
-				// are we trying to repair a bridge?
-				if (Is_Target_Cell(TarCom) ) {
-					CELL cell = Coord_Cell(Coord);
-					if (cell == ::As_Cell(NavCom)) {
-						TemplateType tt = cellptr->TType;
-						int icon = cellptr->TIcon;
-						int w = TemplateTypeClass::As_Reference(cellptr->TType).Width;
-						int h = TemplateTypeClass::As_Reference(cellptr->TType).Height;
-
-						cell -= icon % w;
-						cell -= MAP_CELL_W * (icon / w);
-						if (tt == TEMPLATE_BRIDGE1D || tt == TEMPLATE_BRIDGE2D) {
-							new TemplateClass(TemplateType(cellptr->TType-1), cell);
-							Map.Zone_Reset(MZONEF_ALL);
-							delete this;
-							return;
-						} else {
-
-							// Trying to repair multi-segment bridge.  Look for the
-							// start tile, then fix it, and determine the direction to
-							// go in and repair it all that way.
-							TemplateType newtt = TEMPLATE_BRIDGE_1A;
-							int xmov = -1;	// coords to move to for next template
-							int ymov = 2;
-							bool valid = false;
-							switch (tt) {
-								case TEMPLATE_BRIDGE_1B:
-								case TEMPLATE_BRIDGE_1C:
-									valid = true;
-									break;
-								case TEMPLATE_BRIDGE_2B:
-								case TEMPLATE_BRIDGE_2C:
-									newtt = TEMPLATE_BRIDGE_2A;
-									xmov = 2;
-									ymov = -1;
-									valid = true;
-									break;
-								case TEMPLATE_BRIDGE_3C:
-								case TEMPLATE_BRIDGE_3D:
-									newtt = TEMPLATE_BRIDGE_3A;
-									valid = true;
-									break;
-								case TEMPLATE_BRIDGE_3E:
-									newtt = TEMPLATE_BRIDGE_3A;
-									xmov = 2;
-									ymov = -1;
-									valid = true;
-									break;
-							}
-
-							// Did we find a valid repairable bridge piece?
-							if (valid) {
-								bool doing = true;
-								while (doing) {
-									new TemplateClass(TemplateType(newtt), cell);
-									cell += (MAP_CELL_W * ymov) + xmov;
-									if (xmov < 0) {
-										xmov = -1;
-										ymov = 1;
-									} else {
-										xmov = 1;
-										ymov = -1;
-									}
-									cellptr = &Map[cell];
-									tt = cellptr->TType;
-									if ((tt >= TEMPLATE_BRIDGE_3B && tt <= TEMPLATE_BRIDGE_3F) ||
-										  tt == TEMPLATE_BRIDGE_1B || tt == TEMPLATE_BRIDGE_1C ||
-										  tt == TEMPLATE_BRIDGE_2B || tt == TEMPLATE_BRIDGE_2C ) {
-
-										if (tt >= TEMPLATE_BRIDGE_3B) {
-											newtt = TEMPLATE_BRIDGE_3A;
-										} else {
-											if (tt < TEMPLATE_BRIDGE_2A) {
-												newtt = TEMPLATE_BRIDGE_1A;
-											} else {
-												newtt = TEMPLATE_BRIDGE_2A;
-											}
-										}
-										icon = cellptr->TIcon;
-										w = TemplateTypeClass::As_Reference(cellptr->TType).Width;
-										h = TemplateTypeClass::As_Reference(cellptr->TType).Height;
-
-										cell -= icon % w;
-										cell -= MAP_CELL_W * (icon / w);
-									} else {
-										doing = false;
-									}
-								}
-								Map.Zone_Reset(MZONEF_ALL);
-								delete this;
-								return;
-							}
-						}
-					}
-				} else {
-	#endif
 					if (!Target_Legal(NavCom)) {
 						Enter_Idle_Mode();
 						if (Map[Coord].Cell_Building()) {
 							Scatter(0, true);
 						}
 					}
-	#ifdef OBSOLETE
-				}
-	#endif
 			}
 		}
 
@@ -1421,18 +1312,7 @@ MoveType InfantryClass::Can_Enter_Cell(CELL cell, FacingType ) const
 						*/
 						switch (obj->What_Am_I()) {
 							case RTTI_TERRAIN:
-#ifdef OBSOLETE
-								if (((TerrainClass *)obj)->Class->Armor == ARMOR_WOOD &&
-										Class->PrimaryWeapon->WarheadPtr->IsWoodDestroyer) {
-
-									if (retval < MOVE_DESTROYABLE) retval = MOVE_DESTROYABLE;
-								} else {
-									return(MOVE_NO);
-								}
-								break;
-#else
 								return(MOVE_NO);
-#endif
 							case RTTI_INFANTRY:
 								if ( *(InfantryClass *)obj == INFANTRY_SPY && !Class->IsDog) {
 									retval = MOVE_TEMP;
@@ -1461,17 +1341,6 @@ MoveType InfantryClass::Can_Enter_Cell(CELL cell, FacingType ) const
 	*/
 	if (retval == MOVE_OK && !IsTethered && Ground[cellptr->Land_Type()].Cost[SPEED_FOOT] == 0) {
 
-#ifdef OBSOLETE
-		/*
-		** Special case - if it's an engineer, and the cell under consideration
-		** is his NavCom, and his mission is mission_capture, then he's most
-		** likely moving to his final destination to repair a bridge, so we
-		** should let him.
-		*/
-		if (*this == INFANTRY_RENOVATOR && Is_Target_Cell(TarCom) && (cell == ::As_Cell(NavCom)) && (cellptr->TType == TEMPLATE_BRIDGE1D || cellptr->TType == TEMPLATE_BRIDGE2D || (cellptr->TType >= TEMPLATE_BRIDGE_1C && cellptr->TType <= TEMPLATE_BRIDGE_3E) ) ) {
-			return(MOVE_OK);
-		}
-#endif
 		return(MOVE_NO);
 	}
 
@@ -2807,16 +2676,6 @@ ActionType InfantryClass::What_Action(ObjectClass const * object) const
 		}
 	}
 
-#ifdef OBSOLETE
-	/*
-	** See if it's a thief attacking an enemy vehicle, let him CAPTURE it.
-	*/
-	if (*this == INFANTRY_THIEF && object->What_Am_I() == RTTI_UNIT) {
-		if (((UnitClass *)object)->House != House) {
-			return(ACTION_CAPTURE);
-		}
-	}
-#endif
 
 	/*
 	** Dogs can only attack infantrymen
@@ -3192,53 +3051,6 @@ ActionType InfantryClass::What_Action(CELL cell) const
 		}
 	}
 
-#ifdef OBSOLETE
-	/*
-	** Engineers may repair a destroyed bridge.
-	*/
-	if (*this == INFANTRY_RENOVATOR && action == ACTION_NOMOVE) {
-		/*
-		** If they're pointing on the wrong side of the bridge, ignore it
-		** 'cause we can't get there.
-		*/
-		TemplateType tt = Map[cell].TType;
-		if (tt == TEMPLATE_BRIDGE1D || tt == TEMPLATE_BRIDGE2D ||
-			tt == TEMPLATE_BRIDGE_1C || tt == TEMPLATE_BRIDGE_2C ||
-			(tt >= TEMPLATE_BRIDGE_3C && tt <= TEMPLATE_BRIDGE_3E) ) {
-			/*
-			** We know they're pointing at a destroyed bridge cell.  If the cell
-			** they're pointing at is surrounded by impassables, return this
-			** cell as impassable.  But, if any cell surrounding this cell is
-			** passable, return that this is a capturable cell.
-			*/
-			if (Map[cell].Land_Type() == LAND_ROCK) {
-				if (tt == TEMPLATE_BRIDGE_3C) return(ACTION_CAPTURE);
-
-				if (tt == TEMPLATE_BRIDGE_3C) return(ACTION_CAPTURE);
-				int y = Cell_Y(cell);
-				if (y) {
-					LandType above = Map[(CELL)(cell-(MAP_CELL_W-1))].Land_Type();
-					if (above == LAND_CLEAR || above == LAND_ROAD) {
-						if (Map[(CELL)(cell-(MAP_CELL_W-1))].Zone == Map[As_Cell(As_Target())].Zone) {
-							return(ACTION_CAPTURE);
-						}
-						return(ACTION_NOMOVE);
-					}
-				}
-				if (y < MAP_CELL_H) {
-					LandType below = Map[(CELL)(cell + MAP_CELL_W-1)].Land_Type();
-					if (below == LAND_CLEAR || below == LAND_ROAD) {
-						if (Map[(CELL)(cell+MAP_CELL_W-1)].Zone == Map[As_Cell(As_Target())].Zone) {
-							return(ACTION_CAPTURE);
-						}
-						return(ACTION_NOMOVE);
-					}
-				}
-			}
-			return(ACTION_NOMOVE);
-		}
-	}
-#endif
 	return(action);
 }
 

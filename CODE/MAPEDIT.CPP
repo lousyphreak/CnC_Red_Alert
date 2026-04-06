@@ -909,42 +909,6 @@ void MapEditClass::AI(KeyNumType & input, int x, int y)
 			input = KN_NONE;
 			break;
 
-#ifdef OBSOLETE
-		/*
-		**	ALT-1-4: Designate a cell as a capture-the-flag cell.
-		*/
-		case ((int)KN_1 | (int)KN_ALT_BIT):
-		case ((int)KN_2 | (int)KN_ALT_BIT):
-		case ((int)KN_3 | (int)KN_ALT_BIT):
-		case ((int)KN_4 | (int)KN_ALT_BIT):
-
-			/*
-			**	If there's a current cell, place the flag & waypoint there.
-			*/
-			if (CurrentCell != 0) {
-				waypt_idx = (Keyboard->To_ASCII((KeyNumType)(input & 0xff)) - KA_1);
-//				waypt_idx = (KN_To_KA(input & 0xff) - KA_1);
-				house = (HousesType)(HOUSE_MULTI1 + waypt_idx);
-				if (HouseClass::As_Pointer(house)) {
-					HouseClass::As_Pointer(house)->Flag_Attach(CurrentCell, true);
-				}
-			} else {
-
-				/*
-				**	If there's a current object, attach the flag to it and clear the
-				**	waypoint.
-				*/
-				if (CurrentObject[0] != 0) {
-					waypt_idx = (Keyboard->To_ASCII((KeyNumType)(input & 0xff)) - KA_1);
-					house = (HousesType)(HOUSE_MULTI1 + waypt_idx);
-					if (HouseClass::As_Pointer(house) && CurrentObject[0]->What_Am_I() == RTTI_UNIT) {
-						HouseClass::As_Pointer(house)->Flag_Attach((UnitClass *)CurrentObject[0], true);
-					}
-				}
-			}
-			input = KN_NONE;
-			break;
-#endif
 
 		/*
 		**	ALT-Space: Remove a waypoint designation
@@ -1902,12 +1866,6 @@ bool MapEditClass::Scroll_Map(DirType facing, int & distance, bool really)
 }
 
 
-#ifdef OBSOLETE
-void MapEditClass::Flag_To_Redraw(bool complete)
-{
-	MouseClass::Flag_To_Redraw(complete);
-}
-#endif
 
 
 void MapEditClass::Detach(ObjectClass * object)

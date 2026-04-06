@@ -1076,31 +1076,6 @@ typedef enum ResultType {
 } ResultType;
 
 
-#ifdef OBSOLETE
-/**********************************************************************
-**	These are the special concrete control defines. They enumerate the
-**	sequence order of the concrete icons in the concrete art file.
-*/
-// DEBUG === convert this to be zero based so that a nulled cell is the
-//			 	 default cell.
-enum ConcreteEnum {
-	C_NONE=-1,
-	C_LEFT=0,
-	C_RIGHT=1,
-	C_RIGHT_UPDOWN=2,
-	C_LEFT_UPDOWN=3,
-	C_UP_RIGHT=4,
-	C_UP_LEFT=5,
-	C_DOWN_RIGHT=6,
-	C_DOWN_LEFT=7,
-	C_RIGHT_DOWN=8,
-	C_LEFT_DOWN=9,
-	C_RIGHT_UP=10,
-	C_LEFT_UP=11,
-	C_UPDOWN_RIGHT=12,
-	C_UPDOWN_LEFT=13
-};
-#endif
 
 
 /**********************************************************************
@@ -3135,30 +3110,6 @@ inline FacingType operator++(FacingType & value, int)
 }
 
 
-#ifdef NEVER
-typedef enum DirType {
-	DIR_MIN=0,
-	DIR_N=0,
-	DIR_NE=1<<5,
-	DIR_E=2<<5,
-	DIR_SE=3<<5,
-	DIR_S=4<<5,
-	DIR_SW=5<<5,
-	DIR_SW_X1=(5<<5)-8,		// Direction of harvester while unloading.
-	DIR_SW_X2=(5<<5)-16,		// Direction of harvester while unloading.
-	DIR_W=6<<5,
-	DIR_NW=7<<5,
-	DIR_MAX=255
-} DirType;
-inline DirType operator + (DirType f1, DirType f2)
-{
-	return (DirType)(((int)f1 + (int)f2) & 0x00FF);
-}
-inline DirType operator + (DirType f1, int f2)
-{
-	return (DirType)(((int)f1 + (int)f2) & 0x00FF);
-}
-#endif
 /****************************************************************************
 **	Timer constants. These are used when setting the countdown timer.
 **	Note that this is based upon a timer that ticks every 60th of a second.

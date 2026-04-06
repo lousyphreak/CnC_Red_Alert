@@ -1963,15 +1963,6 @@ bool Read_Scenario_INI(char * fname, bool )
 	ScenarioInit++;
 
 	Clear_Scenario();
-#ifdef OBSOLETE
-	/*
-	** If we are not dealing with scenario 1, or a multi player scenario
-	** then make sure the correct disk is in the drive.
-	*/
-	if (RequiredCD != -2) {
-		RequiredCD = -1;
-	}
-#endif
 
 	/*
 	** Only force a CD check if this is a single player game or if its

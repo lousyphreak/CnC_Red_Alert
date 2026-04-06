@@ -365,13 +365,6 @@ int16_t const * Coord_Spillage_List(COORDINATE coord, Rect const & rect, bool no
  *=============================================================================================*/
 COORDINATE Coord_Move(COORDINATE start, DirType dir, uint16_t distance)
 {
-#ifdef NEVER
-	int16_t x = Coord_X(start);
-	int16_t y = Coord_Y(start);
-
-	Move_Point(x, y, dir, distance);
-	return(XY_Coord(x,y));
-#endif
 
 	int16_t x = (int16_t)Coord_X(start);
 	int16_t y = (int16_t)Coord_Y(start);
@@ -512,39 +505,10 @@ void Move_Point(int16_t &x, int16_t &y, DirType dir, uint16_t distance)
 	};
 	distance = distance;		// Keep LINT quiet.
 
-#ifdef OBSOLETE
-	/*
-	**	Calculate and add in the X component of the move.
-	*/
-	_AX = CosTable[dir];
-	asm imul word ptr distance
-	asm shl ax,1
-	asm rcl dx,1
-	asm mov al,ah
-	asm mov ah,dl
-	_DX = _AX;
-	x += _DX;
-#else
 	x += calcx((int8_t)CosTable[index], distance);
-#endif
 //	asm add [word ptr start],ax
 
-#ifdef OBSOLETE
-	/*
-	**	Calculate and add in the Y component of the move.
-	*/
-	_AX = SinTable[dir];
-	asm imul word ptr distance
-	asm shl ax,1
-	asm rcl dx,1
-	asm mov al,ah
-	asm mov ah,dl
-	asm neg ax				// Subtraction needed because of inverted sine table.
-	_DX = _AX;
-	y += _DX;
-#else
 	y += calcy((int8_t)SinTable[index], distance);
-#endif
 //	asm add [word ptr start+2],ax
 
 }

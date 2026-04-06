@@ -624,41 +624,6 @@ void SessionClass::Read_MultiPlayer_Settings (void)
  *=========================================================================*/
 void SessionClass::Write_MultiPlayer_Settings (void)
 {
-#ifdef NEVER
-	char * buffer;					// INI staging buffer pointer.
-	CCFileClass file;
-	int i;
-	char entrytext[4];
-	char buf[128];					// buffer for parsing INI entry
-
-	//------------------------------------------------------------------------
-	//	Get a working pointer to the INI staging buffer. Make sure that the
-	// buffer starts cleared out of any data.
-	//------------------------------------------------------------------------
-	buffer = (char *)_ShapeBuffer;
-	memset(buffer, '\0', _ShapeBufferSize);
-
-	file.Set_Name(CONFIG_FILE_NAME);
-	if (file.Is_Available()) {
-		file.Open(READ);
-		file.Read(buffer, _ShapeBufferSize-1);
-		file.Close();
-	}
-
-	//------------------------------------------------------------------------
-	//	Save the player's last-used Handle & Color
-	//------------------------------------------------------------------------
-	WWWritePrivateProfileInt ("MultiPlayer", "Color", (int)PrefColor, buffer);
-	WWWritePrivateProfileInt ("MultiPlayer", "Side", House, buffer);
-	WWWritePrivateProfileString("MultiPlayer", "Handle", Handle, buffer);
-
-	//------------------------------------------------------------------------
-	//	Write the INI data out to a file.
-	//------------------------------------------------------------------------
-	file.Open(WRITE);
-	file.Write(buffer,strlen(buffer));
-	file.Close();
-#endif
 
 	INIClass ini;
 	RawFileClass file(CONFIG_FILE_NAME);

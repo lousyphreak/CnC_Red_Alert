@@ -98,32 +98,6 @@ void Debug_Key(unsigned input)
 				Debug_MotionCapture = true;
 				break;
 
-#ifdef OBSOLETE
-			case KN_K:
-				/*
-				** time to create a screen shot using the PCX code (if it works)
-				*/
-				if (!Debug_MotionCapture) {
-					GraphicBufferClass temp_page(	SeenBuff.Get_Width(),
-															SeenBuff.Get_Height(),
-															NULL,
-															SeenBuff.Get_Width() * SeenBuff.Get_Height());
-					CDFileClass file;
-					char filename[30];
-
-					SeenBuff.Blit(temp_page);
-					for (int lp = 0; lp < 99; lp ++) {
-						sprintf(filename, "scrsht%02d.pcx", lp);
-						file.Set_Name(filename);
-						if (!file.Is_Available()) break;
-					}
-
-					file.Cache(200000);
-					Write_PCX_File(file, temp_page, & GamePalette);
-					Sound_Effect(VOC_BEEP);
-				}
-				break;
-#endif
 
 			case KN_P:
 				{
@@ -518,19 +492,6 @@ void Self_Regulate(void)
 					break;
 
 				case DMONO_STRESS:
-#ifdef OBSOLETE
-					mono->Set_Cursor(0, 20);
-					mono->Printf(
-						"Heap size:%10ld \r"
-						"Largest:  %10ld \r"
-						"Ttl Free: %10ld \r"
-						"Frag:     %10ld \r",
-						Heap_Size(MEM_NORMAL),
-						Ram_Free(MEM_NORMAL),
-						Total_Ram_Free(MEM_NORMAL),
-						Total_Ram_Free(MEM_NORMAL)-Ram_Free(MEM_NORMAL)
-					);
-#endif
 					break;
 
 				case DMONO_HOUSE:

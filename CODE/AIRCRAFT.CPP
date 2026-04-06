@@ -4156,15 +4156,6 @@ bool AircraftClass::Edge_Of_World_AI(void)
 
 				if (obj->Team.Is_Valid()) obj->Team->IsLeaveMap = true;
 
-#ifdef OLD
-				/*
-				**	Transport planes that leave can only be because they carry purchased
-				**	equipment and must be have their cost refunded.
-				*/
-				if (*this == AIRCRAFT_CARGO) {
-					House->Refund_Money(obj->Class_Of().Cost_Of());
-				}
-#endif
 				delete obj;
 			}
 			if (Team.Is_Valid()) {

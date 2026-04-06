@@ -294,15 +294,6 @@ int WWMessageBox::Process(const char * msg, const char * b1txt, const char * b2t
 					selection = realval[numbuttons-1];
 					pressed = true;
 
-#ifdef NEVER
-					if (numbuttons > 2) {
-						selection = realval[1];
-						pressed = true;
-					} else {
-						selection = realval[2];
-						pressed = true;
-					}
-#endif
 					break;
 
 				case (BUTTON_1|BUTTON_FLAG):

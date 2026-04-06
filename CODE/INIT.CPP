@@ -1593,14 +1593,6 @@ bool Parse_Command_Line(int argc, char * argv[])
 
 #endif
 
-#ifdef NEVER
-		/*
-		**	Handle the prog init differently in this case.
-		*/
-		if (strstr(string, "-V")) {
-			continue;
-		}
-#endif
 
 		/*
 		** look for passed-in video mode to default to
@@ -2802,102 +2794,6 @@ static void Init_Mouse(void)
 	Hide_Mouse();
 }
 
-#ifdef OBSOLETE
-/***********************************************************************************************
- * Init_Authorization -- Verifies that the player is authorized to play the game.              *
- *                                                                                             *
- *    This is a development routine that restricts access to the game by way of passwords.     *
- *                                                                                             *
- * INPUT:   none                                                                               *
- *                                                                                             *
- * OUTPUT:  none                                                                               *
- *                                                                                             *
- * WARNINGS:   none                                                                            *
- *                                                                                             *
- * HISTORY:                                                                                    *
- *   06/03/1996 JLB : Created.                                                                 *
- *=============================================================================================*/
-static void Init_Authorization(void)
-{
-	if (Special.IsFromInstall) return;
-
-	Load_Title_Page();
-	Wait_Vert_Blank();
-
-	CCPalette.Set();
-//		Set_Palette(Palette);
-	HidPage.Blit(SeenPage);
-	Show_Mouse();
-
-	/*
-	**	Fetch the type of game to be played. This will be either
-	**	C&C:Red Alert or C&C:Plus.
-	*/
-//tryagain:
-
-	bool ok = Debug_Flag;
-	int counter = 3;
-
-	if (Debug_Flag) ok = true;
-
-	/*
-	**	C&C:Red Alert requires a password for legal entry. Try (three times) to get a correct
-	**	password. If not found, then try again.
-	*/
-	bool skipper = false;
-#ifdef NEVER
-	while (!ok && counter) {
-		SmartPtr<char const> str = Fetch_Password(TXT_PASSWORD_CAPTION, TXT_PASSWORD_MESSAGE, TXT_OK);
-		SmartPtr<int32_t const> lptr = &CheatCodes[0];
-		while (*lptr) {
-			if (Obfuscate(str) == *lptr++) {
-				ok = true;
-				break;
-			}
-		}
-		lptr = &EditorCodes[0];
-		while (*lptr) {
-			if (Obfuscate(str) == *lptr++) {
-				ok = true;
-				break;
-			}
-		}
-		lptr = &PlayCodes[0];
-		while (*lptr) {
-			if (Obfuscate(str) == *lptr++) {
-				ok = true;
-				skipper = true;
-				break;
-			}
-		}
-
-		if (ok) break;
-
-		Hide_Mouse();
-		Load_Title_Page();
-		HidPage.Blit(SeenPage);
-		Show_Mouse();
-		Delay(TIMER_SECOND*(4-counter)*1);
-		if (WWMessageBox().Process(TXT_PASSWORD_ERROR, TXT_TRY_AGAIN, TXT_CANCEL)) {
-			goto tryagain;
-		}
-
-		counter--;
-		if (counter == 0) goto tryagain;
-	}
-#endif
-
-	if (!skipper) {
-		CCPalette.Set();
-	}
-
-	Hide_Mouse();
-	Load_Title_Page();
-	HidPage.Blit(SeenPage);
-	Show_Mouse();
-	Call_Back();
-}
-#endif
 
 /***********************************************************************************************
  * Init_Bulk_Data -- Initialize the time-consuming mixfile caching.                            *

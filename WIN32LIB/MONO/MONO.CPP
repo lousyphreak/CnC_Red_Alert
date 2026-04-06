@@ -378,28 +378,6 @@ void MonoClass::Printf(char const *text, ...)
 }
 
 
-#ifdef NEVER
-void MonoClass::Printf(int32_t text, ...)
-{
-	va_list	va;
-	/*
-	**	The buffer object is placed at the end of the local variable list
-	**	so that if the sprintf happens to spill past the end, it isn't likely
-	**	to trash anything (important). The buffer is then manually truncated
-	**	to maximum allowed size before being printed.
-	*/
-	char buffer[256];
-
-	if (!Enabled) return;
-
-	va_start(va, text);
-	vsprintf(buffer, Text_String(text), va);
-	buffer[sizeof(buffer)-1] = '\0';
-
-	Print(buffer);
-	va_end(va);
-}
-#endif
 
 
 /***********************************************************************************************
@@ -520,28 +498,6 @@ void MonoClass::Text_Print(char const *text, int32_t x, int32_t y, char attrib)
 	Set_Cursor(oldx, oldy);
 }
 
-#ifdef NEVER
-void MonoClass::Text_Print(int32_t text, int32_t x, int32_t y, char attrib)
-{
-	char	oldx = X;
-	char	oldy = Y;
-	char	oldattrib = Attrib;
-
-	if (text != TXT_NONE) {
-		X = (char)x;
-		Y = (char)y;
-		Attrib = attrib;
-		Print(Text_String(text));
-		Attrib = oldattrib;
-		Set_Cursor(oldx, oldy);
-	}
-}
-
-void MonoClass::Print(int32_t text)
-{
-	Print(Text_String(text));
-}
-#endif
 
 
 /***********************************************************************************************
@@ -755,27 +711,3 @@ void Mono_View_Page(int32_t )
 }
 
 
-#ifdef NEVER
-int32_t Mono_Printf(int32_t string, ...)
-{
-	va_list	va;
-	char buffer[256];
-
-	buffer[0] = '\0';
-	if (MonoClass::Is_Enabled()) {
-		MonoClass *mono = MonoClass::Get_Current();
-		if (!mono) {
-			mono = new MonoClass();
-			mono->View();
-		}
-
-		va_start(va, string);
-		vsprintf(buffer, Text_String(string), va);
-
-		mono->Print(buffer);
-
-		va_end(va);
-	}
-	return((int16_t)strlen(buffer));
-}
-#endif

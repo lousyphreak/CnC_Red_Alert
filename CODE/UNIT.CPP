@@ -4400,19 +4400,6 @@ void UnitClass::Overrun_Square(CELL cell, bool threaten)
 			while (object != NULL) {
 				if (object->Class_Of().IsCrushable && !House->Is_Ally(object) && Distance(object->Center_Coord()) < CELL_LEPTON_W/2) {
 
-#ifdef OBSOLETE
-					/*
-					** If we're running over infantry, let's see if the infantry we're
-					** squashing is a thief trying to capture us.  If so, let him succeed.
-					*/
-					if (object->What_Am_I() == RTTI_INFANTRY && *((InfantryClass *)object) == INFANTRY_THIEF && ((InfantryClass *)object)->NavCom == As_Target()) {
-						ObjectClass * next = object->Next;
-						IsOwnedByPlayer = ((InfantryClass *)object)->IsOwnedByPlayer;
-						House = ((InfantryClass *)object)->House;
-						delete object;
-						object = next;
-					} else {
-#endif
 						ObjectClass * next = object->Next;
 						crushed = true;
 
@@ -4430,9 +4417,6 @@ void UnitClass::Overrun_Square(CELL cell, bool threaten)
 						//new OverlayClass(OVERLAY_SQUISH, Coord_Cell(Coord));
 
 						object = next;
-#ifdef OBSOLETE
-					}
-#endif
 				} else {
 					object = object->Next;
 				}
@@ -4620,11 +4604,6 @@ TARGET UnitClass::Greatest_Threat(ThreatType threat) const
 		threat = threat | Class->SecondaryWeapon->Allowed_Threats();
 	}
 
-#ifdef OBSOLETE
-	if (House->IsHuman) {
-		threat = threat & ~THREAT_BUILDINGS;
-	}
-#endif
 
 	return(FootClass::Greatest_Threat(threat));
 }

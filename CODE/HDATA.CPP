@@ -245,30 +245,6 @@ static HouseTypeClass const HouseMulti8(
 	'M'							// VOICE:		Voice prefix character.
 );
 
-#ifdef OBSOLETE
-HouseTypeClass const * const HouseTypeClass::Pointers[HOUSE_COUNT] = {
-	&HouseSpain,
-	&HouseGreece,
-	&HouseUSSR,
-	&HouseEngland,
-	&HouseUkraine,
-	&HouseGermany,
-	&HouseFrance,
-	&HouseTurkey,
-	&HouseGood,
-	&HouseBad,
-	&HouseCivilian,
-	&HouseJP,
-	&HouseMulti1,
-	&HouseMulti2,
-	&HouseMulti3,
-	&HouseMulti4,
-	&HouseMulti5,
-	&HouseMulti6,
-	&HouseMulti7,
-	&HouseMulti8,
-};
-#endif
 
 
 /***********************************************************************************************

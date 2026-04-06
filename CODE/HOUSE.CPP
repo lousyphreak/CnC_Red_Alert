@@ -3340,52 +3340,6 @@ bool HouseClass::Flag_Attach(CELL cell, bool set_home)
 				rc = Map[newcell].Flag_Place(Class->House);
 			}
 
-#ifdef OBSOLETE
-			/*
-			**	Loop for increasing distance from the desired cell.
-			**	For each distance, randomly pick a starting direction.  Between
-			**	this and the clockwise/counterclockwise random value, the flag
-			**	should appear to be placed fairly randomly.
-			*/
-			for (int dist = 1; dist < 32; dist++) {
-				FacingType fcounter;
-				FacingType rot;
-
-				/*
-				**	Clockwise search.
-				*/
-				if (clockwise) {
-					rot = Random_Pick(FACING_N, FACING_NW);
-					for (fcounter = FACING_N; fcounter <= FACING_NW; fcounter++) {
-						newcell = Coord_Cell(Coord_Move(Cell_Coord(cell), Facing_Dir(rot), dist*256));
-						if (Map.In_Radar(newcell) && Map[newcell].Flag_Place(Class->House)) {
-							dist = 32;
-							rc = true;
-							break;
-						}
-						rot++;
-						if (rot > FACING_NW) rot = FACING_N;
-					}
-				} else {
-
-					/*
-					**	Counter-clockwise search
-					*/
-					rot = Random_Pick(FACING_N, FACING_NW);
-					for (fcounter = FACING_NW; fcounter >= FACING_N; fcounter--) {
-						newcell = Coord_Cell(Coord_Move(Cell_Coord(cell), Facing_Dir(rot), dist*256));
-						if (Map.In_Radar(newcell) && Map[newcell].Flag_Place(Class->House)) {
-							dist = 32;
-							rc = true;
-							break;
-						}
-						rot--;
-						if (rot < FACING_N)
-							rot = FACING_NW;
-					}
-				}
-			}
-#endif
 		}
 
 		/*
@@ -4359,19 +4313,6 @@ void HouseClass::Recalc_Center(void)
 			x /= count;
 			y /= count;
 
-#ifdef NEVER
-			/*
-			**	Bias the center of the base away from the edges of the map.
-			*/
-			LEPTON left = Cell_To_Lepton(Map.MapCellX + 10);
-			LEPTON top = Cell_To_Lepton(Map.MapCellY + 10);
-			LEPTON right = Cell_To_Lepton(Map.MapCellX + Map.MapCellWidth - 10);
-			LEPTON bottom = Cell_To_Lepton(Map.MapCellY + Map.MapCellHeight - 10);
-			if (x < left) x = left;
-			if (x > right) x = right;
-			if (y < top) y = top;
-			if (y > bottom) y = bottom;
-#endif
 
 			Center = XY_Coord(x, y);
 		}
@@ -4522,14 +4463,6 @@ int HouseClass::Expert_AI(void)
 					value += 100;
 				}
 
-#ifdef OBSOLETE
-				/*
-				**	Human players are a given preference as the target.
-				*/
-				if (h->IsHuman) {
-					value *= 2;
-				}
-#endif
 
 				/*
 				**	Compare the calculated value for this candidate house and if it is
@@ -5149,94 +5082,6 @@ bool HouseClass::AI_Raise_Money(UrgencyType urgency) const
 	return(false);
 }
 
-#ifdef NEVER
-
-/***********************************************************************************************
- * HouseClass::AI_Base_Defense -- Handles maintaining a strong base defense.                   *
- *                                                                                             *
- *    This logic is used to maintain a base defense.                                           *
- *                                                                                             *
- * INPUT:   none                                                                               *
- *                                                                                             *
- * OUTPUT:  Returns with the number of game frames to delay before calling this routine again. *
- *                                                                                             *
- * WARNINGS:   none                                                                            *
- *                                                                                             *
- * HISTORY:                                                                                    *
- *   09/29/1995 JLB : Created.                                                                 *
- *=============================================================================================*/
-int HouseClass::AI_Base_Defense(void)
-{
-	assert(Houses.ID(this) == ID);
-
-	/*
-	**	Check to find if any zone of the base is over defended. Such zones should have
-	**	some of their defenses sold off to make better use of the money.
-	*/
-
-	/*
-	**	Make sure that the core defense is only about 1/2 of the perimeter defense average.
-	*/
-	int average = 0;
-	for (ZoneType z = ZONE_NORTH; z < ZONE_COUNT; z++) {
-		average += ZoneInfo[z].AirDefense;
-		average += ZoneInfo[z].ArmorDefense;
-		average += ZoneInfo[z].InfantryDefense;
-	}
-	average /= (ZONE_COUNT-ZONE_NORTH);
-
-	/*
-	**	If the core value is greater than the average, then sell off some of the
-	**	inner defensive structures.
-	*/
-	int core = ZoneInfo[ZONE_CORE].AirDefense + ZoneInfo[ZONE_CORE].ArmorDefense + ZoneInfo[ZONE_CORE].InfantryDefense;
-	if (core >= average) {
-		static StructType _stype[] = {
-			STRUCT_GTOWER,
-			STRUCT_TURRET,
-			STRUCT_ATOWER,
-			STRUCT_OBELISK,
-			STRUCT_TESLA,
-			STRUCT_SAM
-		};
-		BuildingClass * b;
-
-		for (int index = 0; index < sizeof(_stype)/sizeof(_stype[0]); index++) {
-			b = Find_Building(_stype[index], ZONE_CORE);
-			if (b) {
-				b->Sell_Back(1);
-				break;
-			}
-		}
-	}
-
-	/*
-	**	If the enemy doesn't have any offensive air capability, then sell off any
-	**	SAM sites. Only do this when money is moderately low.
-	*/
-	if (Available_Money() < 1000 && (ActiveBScan & STRUCTF_SAM)) {
-
-		/*
-		**	Scan to find if ANY human opponents have aircraft or a helipad. If one
-		** is found then consider that opponent to have a valid air threat potential.
-		**	Don't sell off SAM sites in that case.
-		*/
-		bool nothreat = true;
-		for (HousesType h = HOUSE_FIRST; h < HOUSE_COUNT; h++) {
-			HouseClass * house = HouseClass::As_Pointer(h);
-
-			if (house && house->IsActive && house->IsHuman && !Is_Ally(house)) {
-				if ((house->ActiveAScan & (AIRCRAFTF_ORCA|AIRCRAFTF_TRANSPORT|AIRCRAFTF_HELICOPTER)) || (house->ActiveBScan & STRUCTF_HELIPAD)) {
-					nothreat = false;
-					break;
-				}
-			}
-		}
-	}
-
-	return(TICKS_PER_SECOND*5);
-}
-#endif
 
 /***********************************************************************************************
  * HouseClass::AI_Building -- Determines what building to build.                               *
@@ -5555,21 +5400,6 @@ int HouseClass::AI_Building(void)
 			}
 		}
 
-#ifdef OLD
-		/*
-		**	Build a repair bay if there isn't one already available.
-		*/
-		current = BQuantity[STRUCT_REPAIR];
-		if (current == 0) {
-			b = &BuildingTypeClass::As_Reference(STRUCT_REPAIR);
-			if (Can_Build(b, ActLike) && b->Cost_Of() < money) {
-				choiceptr = BuildChoice.Alloc();
-				if (choiceptr) {
-					*choiceptr = BuildChoiceClass(URGENCY_MEDIUM, b->Type);
-				}
-			}
-		}
-#endif
 
 		/*
 		**	Pick the choice that is the most urgent.

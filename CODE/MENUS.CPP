@@ -128,35 +128,6 @@ PRIVATE int Coordinates_In_Region(int x, int y, int inx1, int iny1, int inx2, in
 	return((x>=inx1)&&(x<=inx2)&&(y>=iny1)&&(y<=iny2));
 }
 
-#ifdef NEVER
-/*=========================================================================*/
-/*	FIND_MENU_ITEMS:																			*/
-/*																									*/
-/*		This routine finds the real total items in a menu when certain items	*/
-/*	may be disabled by bit fields and the like. This is done by looping		*/
-/*	through the fields, starting at the position passed in index and 			*/
-/*	counting the number of bits that are set.											*/
-/*																									*/
-/*	INPUTS:	int the maximum number of items possible on the menu, long 		*/
-/*				the bit field of enabled and disabled items, char the index		*/
-/*				point to start at within the list.										*/
-/*	RETURNS:	int the total number of items in the menu							*/
-/*=========================================================================*/
- int Find_Menu_Items(int maxitems, uint32_t field, char index)
- {
-	int loop,ctr;
-
-	if (field==0xFFFFFFFFL) 										/* if all bits are set	*/
-		return(maxitems);										/* then maxitems set		*/
-
-	for (loop=ctr=0;loop<maxitems;loop++) {			/* loop through items	*/
-		if (field & (1L<<(loop+index))) {				/* if the bit is set		*/
-			ctr++;												/*		count the item		*/
-		}
-	}
-	return(ctr);
-}
-#endif
 
 
 /*=========================================================================*/

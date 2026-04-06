@@ -66,24 +66,24 @@
  * placement mode.                                                         *
  *   This routine does not modify PendingObject or PendingHouse.           *
  *                                                                         *
- *  здддддддддддддддддддддддддддддддддддддддддддддддддд©                   *
- *  Ё   [GDI]  [NOD]  [Neutral]                        Ё                   *
- *  Ё                                                  Ё                   *
- *  Ё   зддддддддддддддддддддддддддддддд©              Ё                   *
- *  Ё   Ё                               Ё [Template]   Ё                   *
- *  Ё   Ё                               Ё [Overlay ]   Ё                   *
- *  Ё   Ё                               Ё [Smudge  ]   Ё                   *
- *  Ё   Ё                               Ё [Terrain ]   Ё                   *
- *  Ё   Ё      (Object picture)         Ё [Unit    ]   Ё                   *
- *  Ё   Ё                               Ё [Infantry]   Ё                   *
- *  Ё   Ё                               Ё [Aircraft]   Ё                   *
- *  Ё   Ё                               Ё [Building]   Ё                   *
- *  Ё   Ё                               Ё              Ё                   *
- *  Ё   юддддддддддддддддддддддддддддддды     здддддд© Ё                   *
- *  Ё             [<-]  [->]                  Ё(Grid)Ё Ё                   *
- *  Ё                                         Ё      Ё Ё                   *
- *  Ё         [OK]        [Cancel]            юдддддды Ё                   *
- *  юдддддддддддддддддддддддддддддддддддддддддддддддддды                   *
+ *  О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫д©                   *
+ *  О©╫   [GDI]  [NOD]  [Neutral]                        О©╫                   *
+ *  О©╫                                                  О©╫                   *
+ *  О©╫   О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫д©              О©╫                   *
+ *  О©╫   О©╫                               О©╫ [Template]   О©╫                   *
+ *  О©╫   О©╫                               О©╫ [Overlay ]   О©╫                   *
+ *  О©╫   О©╫                               О©╫ [Smudge  ]   О©╫                   *
+ *  О©╫   О©╫                               О©╫ [Terrain ]   О©╫                   *
+ *  О©╫   О©╫      (Object picture)         О©╫ [Unit    ]   О©╫                   *
+ *  О©╫   О©╫                               О©╫ [Infantry]   О©╫                   *
+ *  О©╫   О©╫                               О©╫ [Aircraft]   О©╫                   *
+ *  О©╫   О©╫                               О©╫ [Building]   О©╫                   *
+ *  О©╫   О©╫                               О©╫              О©╫                   *
+ *  О©╫   О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫     О©╫О©╫О©╫О©╫О©╫О©╫д© О©╫                   *
+ *  О©╫             [<-]  [->]                  О©╫(Grid)О©╫ О©╫                   *
+ *  О©╫                                         О©╫      О©╫ О©╫                   *
+ *  О©╫         [OK]        [Cancel]            О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫ О©╫                   *
+ *  О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫О©╫                   *
  *                                                                         *
  * INPUT:                                                                  *
  *      none.                                                              *
@@ -879,7 +879,6 @@ int MapEditClass::Place_Object(void)
 					*/
 					(*this)[template_cell].Recalc_Attributes();
 					(*this)[template_cell].Wall_Update();
-					(*this)[template_cell].Concrete_Calc();
 
 					occupy++;
 				}
@@ -1532,35 +1531,6 @@ void MapEditClass::Set_House_Buttons(HousesType house, GadgetClass *, int )
 {
 	HouseList->Set_Selected_Index(house);
 
-#ifdef NEVER
-	HousesType h;
-	int id;
-	TextButtonClass * btn;
-
-	/*
-	**	Loop through all houses, searching the button list for each one.
-	*/
-	for (h = HOUSE_FIRST; h < HOUSE_COUNT; h++) {
-
-		/*
-		**	Compute the desired button ID; get a pointer to the button
-		*/
-		id = (int)h + base_id;
-		btn = (TextButtonClass *)btnlist->Extract_Gadget(id);
-		if (btn) {
-
-			/*
-			**	If this house value is the desired one, turn the button on;
-			**	otherwise, turn it off.
-			*/
-			if (h == house) {
-				btn->Turn_On();
-			} else {
-				btn->Turn_Off();
-			}
-		}
-	}
-#endif
 }
 
 

@@ -118,7 +118,6 @@
 #include "WOLDEBUG.H"
 
 #define SHOW_MONO		0
-//#define OLDWAY			1
 
 #ifdef FRENCH
 #define TXT_HACKHACK  "Connexion En Cours..."
@@ -994,44 +993,6 @@ void Shutdown_Network (void)
 // the computer possibly at different times.
 // BRR, 10/29/96
 //
-#if 0
-	//------------------------------------------------------------------------
-	// If the Players vector contains at least one name, send a sign-off
-	// packet.  If 'Players' is empty, I have no name, so there's no point
-	// in sending a sign-off.
-	//------------------------------------------------------------------------
-	if (Session.Players.Count()) {
-		//.....................................................................
-		// Build a sign-off packet & send it
-		//.....................................................................
-		memset (&Session.GPacket, 0, sizeof(GlobalPacketType));
-		Session.GPacket.Command = NET_SIGN_OFF;
-		strcpy (Session.GPacket.Name, Session.Players[0]->Name);
-
-		Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
-			0, NULL);
-		Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
-			0, NULL);
-
-		if (Session.IsBridge	&& !Winsock.Get_Connected()) {
-			Udp.Send_Global_Message (&Session.GPacket, sizeof(GlobalPacketType), 0,
-				&Session.BridgeNet);
-			Udp.Send_Global_Message (&Session.GPacket, sizeof(GlobalPacketType), 0,
-				&Session.BridgeNet);
-		}
-
-		//.....................................................................
-		//	Wait for the packets to finish going out (or the Global Channel
-		// times out)
-		//.....................................................................
-		for (;;) {
-			if (Udp.Global_Num_Send()==0) {
-				break;
-			}
-			Udp.Service();
-		}
-	}
-#endif
 
 	//------------------------------------------------------------------------
 	//	If I was in a game, I'm not now, so clear the game name
@@ -1381,22 +1342,10 @@ static int Net_Join_Dialog(void)
 		int d_name_x = d_dialog_x + (d_dialog_w / 4) - (d_name_w / 2);
 		int d_name_y = d_dialog_y + d_margin2 + d_txt6_h + (2*RESFACTOR);
 
-#ifdef OLDWAY
-		int d_gdi_w = 40 *RESFACTOR;
-		int d_gdi_h = 9 *RESFACTOR;
-		int d_gdi_x = d_dialog_cx - d_gdi_w;
-		int d_gdi_y = d_name_y;
-
-		int d_nod_w = 40 *RESFACTOR;
-		int d_nod_h = 9 *RESFACTOR;
-		int d_nod_x = d_dialog_cx;
-		int d_nod_y = d_name_y;
-#else
 		int d_house_w = 60 *RESFACTOR;
 		int d_house_h = (8 * 5 *RESFACTOR);
 		int d_house_x = d_dialog_cx - (d_house_w / 2);
 		int d_house_y = d_name_y;
-#endif
 
 		int d_color_w = 10 *RESFACTOR;
 		int d_color_h = 9 *RESFACTOR;
@@ -1484,12 +1433,7 @@ static int Net_Join_Dialog(void)
 	//------------------------------------------------------------------------
 	enum {
 		BUTTON_NAME = 100,
-#ifdef OLDWAY
-		BUTTON_GDI,
-		BUTTON_NOD,
-#else
 		BUTTON_HOUSE,
-#endif
 		BUTTON_GAMELIST,
 		BUTTON_PLAYERLIST,
 		BUTTON_JOIN,
@@ -1569,17 +1513,12 @@ static int Net_Join_Dialog(void)
 	EditClass name_edt(BUTTON_NAME, namebuf, MPLAYER_NAME_MAX, TPF_TEXT,
 		d_name_x, d_name_y, d_name_w, d_name_h, EditClass::ALPHANUMERIC);
 
-#ifdef OLDWAY
-	TextButtonClass gdibtn(BUTTON_GDI, TXT_ALLIES, TPF_BUTTON, d_gdi_x, d_gdi_y, d_gdi_w);
-	TextButtonClass nodbtn(BUTTON_NOD, TXT_SOVIET, TPF_BUTTON, d_nod_x, d_nod_y, d_nod_w);
-#else
 	Fancy_Text_Print("", 0, 0, 0, 0, TPF_TEXT);
 	DropListClass housebtn(BUTTON_HOUSE, housetext, sizeof(housetext),
 		TPF_TEXT,
 		d_house_x, d_house_y, d_house_w, d_house_h,
 		MFCD::Retrieve("BTN-UP.SHP"),
 		MFCD::Retrieve("BTN-DN.SHP"));
-#endif
 
 	ListClass gamelist(BUTTON_GAMELIST, d_gamelist_x, d_gamelist_y, d_gamelist_w, d_gamelist_h, TPF_TEXT, MFCD::Retrieve("BTN-UP.SHP"), MFCD::Retrieve("BTN-DN.SHP"));
 	ColorListClass playerlist(BUTTON_PLAYERLIST, d_playerlist_x, d_playerlist_y, d_playerlist_w, d_playerlist_h, TPF_TEXT, MFCD::Retrieve("BTN-UP.SHP"), MFCD::Retrieve("BTN-DN.SHP"));
@@ -1636,20 +1575,12 @@ static int Net_Join_Dialog(void)
 	//........................................................................
 	// House buttons
 	//........................................................................
-#ifdef OLDWAY
-	if (Session.House==HOUSE_GOOD) {
-		gdibtn.Turn_On();
-	} else {
-		nodbtn.Turn_On();
-	}
-#else
 	for (HousesType house = HOUSE_USSR; house <= HOUSE_FRANCE; house++) {
 //	for (HousesType house = HOUSE_FIRST; house <= HOUSE_TURKEY; house++) {
 		housebtn.Add_Item(Text_String(HouseTypeClass::As_Reference(house).Full_Name()));
 	}
 	housebtn.Set_Selected_Index(Session.House - HOUSE_USSR);
 	housebtn.Set_Read_Only (true);
-#endif
 
 	//........................................................................
 	// Option gauges
@@ -1791,19 +1722,11 @@ static int Net_Join_Dialog(void)
 				if (joinstate < JOIN_CONFIRMED) {
 					Fancy_Text_Print(TXT_YOUR_NAME, d_name_x + (d_name_w / 2), d_name_y - d_txt6_h, scheme, TBLACK, TPF_CENTER | TPF_TEXT);
 
-#ifdef OLDWAY
-					Fancy_Text_Print(TXT_SIDE_COLON,
-						d_gdi_x + d_gdi_w,
-						d_gdi_y - d_txt6_h,
-						scheme, TBLACK,
-						TPF_CENTER | TPF_TEXT);
-#else
 					Fancy_Text_Print(TXT_SIDE_COLON,
 						d_house_x + (d_house_w / 2),
 						d_house_y - d_txt6_h,
 						scheme, TBLACK,
 						TPF_CENTER | TPF_TEXT);
-#endif
 
 					Fancy_Text_Print(TXT_COLOR_COLON,
 						d_dialog_x + ((d_dialog_w / 4) * 3),
@@ -1814,15 +1737,7 @@ static int Net_Join_Dialog(void)
 					//...............................................................
 					// If we're joined to a game, just print the player's name & side.
 					//...............................................................
-#ifdef OLDWAY
-					if (Session.House==HOUSE_GOOD) {
-						sprintf(txt,Text_String(TXT_S_PLAYING_S),namebuf, Text_String(TXT_ALLIES));
-					} else {
-						sprintf(txt,Text_String(TXT_S_PLAYING_S),namebuf, Text_String(TXT_SOVIET));
-					}
-#else	//OLDWAY
 					sprintf (txt, Text_String(TXT_S_PLAYING_S), namebuf, Text_String(HouseTypeClass::As_Reference(Session.House).Full_Name()));
-#endif	//OLDWAY
 					Fancy_Text_Print(txt,d_dialog_cx, d_dialog_y + d_margin2 + (1*RESFACTOR),
 						(Session.ColorIdx == PCOLOR_DIALOG_BLUE) ? &ColorRemaps[PCOLOR_REALLY_BLUE] : &ColorRemaps[Session.ColorIdx],
 						TBLACK, TPF_CENTER | TPF_TEXT);
@@ -1834,12 +1749,7 @@ static int Net_Join_Dialog(void)
 				cancelbtn.Zap();
 				gamelist.Zap();
 				playerlist.Zap();
-#ifdef OLDWAY
-				gdibtn.Zap();
-				nodbtn.Zap();
-#else
 				housebtn.Zap();
-#endif
 				name_edt.Zap();
 				joinbtn.Zap();
 				newbtn.Zap();
@@ -1861,12 +1771,7 @@ static int Net_Join_Dialog(void)
 				//	we're doing nothing, or we've just been rejected.
 				//...............................................................
 				if (joinstate < JOIN_CONFIRMED) {
-#ifdef OLDWAY
-					gdibtn.Add_Tail(*commands);
-					nodbtn.Add_Tail(*commands);
-#else
 					housebtn.Add_Tail(*commands);
-#endif
 					name_edt.Add_Tail(*commands);
 					joinbtn.Add_Tail(*commands);
 					newbtn.Add_Tail(*commands);
@@ -2112,9 +2017,7 @@ static int Net_Join_Dialog(void)
 						name_edt.Clear_Focus();
 						name_edt.Flag_To_Redraw();
 						strcpy (Session.Handle,namebuf);
-#ifndef OLDWAY
 						Session.House = (HousesType)(housebtn.Current_Index()+HOUSE_USSR);
-#endif
 						join_index = gamelist.Current_Index();
 						parms_received = 0;
 						if (Request_To_Join (namebuf, join_index, Session.House,
@@ -2171,23 +2074,6 @@ static int Net_Join_Dialog(void)
 				}
 				break;
 
-#ifdef OLDWAY
-			//..................................................................
-			//	House Buttons: set the player's desired House
-			//..................................................................
-			case (BUTTON_GDI | KN_BUTTON):
-				Session.House = HOUSE_GOOD;
-				gdibtn.Turn_On();
-				nodbtn.Turn_Off();
-				break;
-
-			case (BUTTON_NOD | KN_BUTTON):
-				Session.House = HOUSE_BAD;
-				gdibtn.Turn_Off();
-				nodbtn.Turn_On();
-				break;
-#else
-#endif
 
 			//..................................................................
 			//	JOIN: send a join request packet & switch to waiting-for-
@@ -2197,9 +2083,7 @@ static int Net_Join_Dialog(void)
 				name_edt.Clear_Focus();
 				name_edt.Flag_To_Redraw();
 				strcpy (Session.Handle,namebuf);
-#ifndef OLDWAY
 				Session.House = (HousesType)(housebtn.Current_Index()+HOUSE_USSR);
-#endif
 				join_index = gamelist.Current_Index();
 				parms_received = 0;
 				if (Request_To_Join (namebuf, join_index, Session.House,
@@ -2302,9 +2186,7 @@ static int Net_Join_Dialog(void)
 				//...............................................................
 				strcpy(Session.Handle,namebuf);
 				strcpy(Session.GameName,namebuf);
-#ifndef OLDWAY
 				Session.House = (HousesType)(housebtn.Current_Index()+HOUSE_USSR);
-#endif
 
 				name_edt.Clear_Focus();
 				name_edt.Flag_To_Redraw();
@@ -2410,16 +2292,6 @@ static int Net_Join_Dialog(void)
 					display = REDRAW_MESSAGE;
 				}
 
-#ifdef OBSOLETE
-				//
-				// This is for the old drop-down list of houses, not used any more.
-				//
-				if (housebtn.IsDropped) {
-					isdropped = 1;
-				} else if (isdropped) {
-					display = REDRAW_ALL;
-				}
-#endif
 
 				break;
 		}
@@ -2602,15 +2474,7 @@ static int Net_Join_Dialog(void)
 				Clear_Vector (&Session.Players);
 
 				item = new char [MPLAYER_NAME_MAX + 64];
-#ifdef OLDWAY
-				if (Session.House==HOUSE_GOOD) {
-					sprintf(item,"%s\t%s",namebuf, Text_String(TXT_ALLIES));
-				} else {
-					sprintf(item,"%s\t%s",namebuf, Text_String(TXT_SOVIET));
-				}
-#else	//OLDWAY
 				sprintf (item, "%s\t%s", namebuf, Text_String(HouseTypeClass::As_Reference(Session.House).Full_Name()));
-#endif	//OLDWAY
 				playerlist.Add_Item(item,
 					(Session.ColorIdx == PCOLOR_DIALOG_BLUE) ? &ColorRemaps[PCOLOR_REALLY_BLUE] : &ColorRemaps[Session.ColorIdx]);
 
@@ -3553,15 +3417,7 @@ static JoinEventType Get_Join_Responses(JoinStateType *joinstate, ListClass *gam
 			//	Create & add a string to the list box
 			//..................................................................
 			item = new char [MPLAYER_NAME_MAX + 64];
-#ifdef OLDWAY
-			if (Session.GPacket.PlayerInfo.House==HOUSE_GOOD) {
-				sprintf(item,"%s\t%s",Session.GPacket.Name, Text_String(TXT_ALLIES));
-			} else {
-				sprintf(item,"%s\t%s",Session.GPacket.Name, Text_String(TXT_SOVIET));
-			}
-#else	//OLDWAY
 			sprintf (item, "%s\t%s", Session.GPacket.Name, Text_String(HouseTypeClass::As_Reference(Session.GPacket.PlayerInfo.House).Full_Name()));
-#endif	//OLDWAY
 			playerlist->Add_Item(item,
 				(who->Player.Color == PCOLOR_DIALOG_BLUE) ? &ColorRemaps[PCOLOR_REALLY_BLUE] : &ColorRemaps[who->Player.Color]);
 
@@ -4326,15 +4182,7 @@ static int Net_New_Dialog(void)
 	//	Add myself to the list, and to the Players vector.
 	//------------------------------------------------------------------------
 	item = new char [MPLAYER_NAME_MAX + 64];
-#ifdef OLDWAY
-	if (Session.House==HOUSE_GOOD) {
-		sprintf(item,"%s\t%s",Session.Handle, Text_String(TXT_ALLIES));
-	} else {
-		sprintf(item,"%s\t%s",Session.Handle, Text_String(TXT_SOVIET));
-	}
-#else	//OLDWAY
 		sprintf (item, "%s\t%s", Session.Handle, Text_String(HouseTypeClass::As_Reference(Session.House).Full_Name()));
-#endif	//OLDWAY
 	playerlist.Add_Item(item,
 		(Session.ColorIdx == PCOLOR_DIALOG_BLUE) ? &ColorRemaps[PCOLOR_REALLY_BLUE] : &ColorRemaps[Session.ColorIdx]);
 
@@ -5386,17 +5234,8 @@ static JoinEventType Get_NewGame_Responses(ColorListClass *playerlist,
 			//	Add player name to the list box
 			//..................................................................
 			item = new char [MPLAYER_NAME_MAX + 64];
-#ifdef OLDWAY
-			if (Session.GPacket.PlayerInfo.House==HOUSE_GOOD) {
-				sprintf(item,"%s\t%s",Session.GPacket.Name, Text_String(TXT_ALLIES));
-			}
-			else {
-				sprintf(item,"%s\t%s",Session.GPacket.Name, Text_String(TXT_SOVIET));
-			}
-#else	//OLDWAY
 			sprintf (item, "%s\t%s", Session.GPacket.Name,
 						Text_String(HouseTypeClass::As_Reference(Session.GPacket.PlayerInfo.House).Full_Name()));
-#endif	//OLDWAY
 			playerlist->Add_Item(item,
 				(who->Player.Color == PCOLOR_DIALOG_BLUE) ? &ColorRemaps[PCOLOR_REALLY_BLUE] : &ColorRemaps[who->Player.Color]);
 
@@ -5960,16 +5799,7 @@ static int Net_Fake_New_Dialog(void)
 	//	Add myself to the list, and to the Players vector.
 	//------------------------------------------------------------------------
 	item = new char [MPLAYER_NAME_MAX + 64];
-#ifdef OLDWAY
-	if (Session.House==HOUSE_GOOD) {
-		sprintf(item,"%s\t%s",Session.Handle, Text_String(TXT_ALLIES));
-	}
-	else {
-		sprintf(item,"%s\t%s",Session.Handle, Text_String(TXT_SOVIET));
-	}
-#else	//OLDWAY
 	sprintf (item, "%s\t%s", Session.Handle, Text_String(HouseTypeClass::As_Reference(Session.House).Full_Name()));
-#endif	//OLDWAY
 	playerlist.Add_Item(item,
 		(Session.ColorIdx == PCOLOR_DIALOG_BLUE) ? &ColorRemaps[PCOLOR_REALLY_BLUE] : &ColorRemaps[Session.ColorIdx]);
 
@@ -7133,15 +6963,7 @@ static int Net_Fake_Join_Dialog(void)
 				Clear_Vector (&Session.Players);
 
 				item = new char [MPLAYER_NAME_MAX + 12];
-#ifdef OLDWAY
-				if (Session.House==HOUSE_GOOD) {
-					sprintf(item,"%s\t%s",namebuf, Text_String(TXT_ALLIES));
-				} else {
-					sprintf(item,"%s\t%s",namebuf, Text_String(TXT_SOVIET));
-				}
-#else	//OLDWAY
 				sprintf (item, "%s\t%s", namebuf, Text_String(HouseTypeClass::As_Reference(Session.House).Full_Name()));
-#endif	//OLDWAY
 				playerlist.Add_Item(item,
 					(Session.ColorIdx == PCOLOR_DIALOG_BLUE) ? &ColorRemaps[PCOLOR_REALLY_BLUE] : &ColorRemaps[Session.ColorIdx]);
 

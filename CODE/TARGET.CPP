@@ -415,35 +415,6 @@ BuildingClass * As_Building(TARGET target)
 }
 
 
-#ifdef NEVER
-/***********************************************************************************************
- * Target_Legal -- Determines if the specified target is legal.                                *
- *                                                                                             *
- *    This routine is used to check for the legality of the target value specified. It is      *
- *    necessary to call this routine if there is doubt about the the legality of the target.   *
- *    It is possible for the unit that a target value represents to be eliminated and thus     *
- *    rendering the target value invalid.                                                      *
- *                                                                                             *
- * INPUT:   target   -- The target value to check.                                             *
- *                                                                                             *
- * OUTPUT:  bool; Is the target value legal?                                                   *
- *                                                                                             *
- * WARNINGS:   none                                                                            *
- *                                                                                             *
- * HISTORY:                                                                                    *
- *   05/27/1994 JLB : Created.                                                                 *
- *=============================================================================================*/
-bool Target_Legal(TARGET target)
-{
-	if (!Target_Legal(target)) return(false);
-
-	ObjectClass * obj = As_Object(target);
-	if (obj) {
-		return(obj->Get_Strength() > 0 && obj->IsActive && !obj->IsInLimbo && obj->Class_Of().IsLegalTarget);
-	}
-	return(true);
-}
-#endif
 
 
 /***********************************************************************************************

@@ -282,7 +282,6 @@ class CellClass
 		bool Spread_Tiberium(bool forced=false);
 		int32_t Tiberium_Adjust(bool pregame=false);
 		void Wall_Update(void);
-		void Concrete_Calc(void);
 		void Recalc_Attributes(void);
 		int  Reduce_Tiberium(int levels);
 		int  Reduce_Wall(int damage);
@@ -298,4 +297,3 @@ class CellClass
 };
 
 #endif
-

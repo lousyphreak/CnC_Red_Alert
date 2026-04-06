@@ -354,54 +354,6 @@ VesselTypeClass & VesselTypeClass::As_Reference(VesselType type)
 }
 
 
-#ifdef NEVER
-/***********************************************************************************************
- * VesselTypeClass::Who_Can_Build_Me -- Fetches pointer to available factory for this vessel.  *
- *                                                                                             *
- *    Use this routine to fetch a pointer to the vessel factory that can build this vessel     *
- *    type.                                                                                    *
- *                                                                                             *
- * INPUT:   intheory -- If true, then this indicates that if the factory is currently          *
- *                      busy doing other things, this won't make in ineligible for searching. *
- *                      Typical use of this is by the sidebar logic which needs only to know   *
- *                      if theoretical production is allowed.                                  *
- *                                                                                             *
- *          legal    -- If true, then the buildings are checked for specific legality when     *
- *                      being scanned. For building placement, this is usually false, for      *
- *                      sidebar button adding, this is usually true.                           *
- *                                                                                             *
- *          house    -- The owner of the unit to be produced. This has an effect of legality.  *
- *                                                                                             *
- * OUTPUT:  Returns with a pointer to the factory (building) that can produce this vessel type.*
- *                                                                                             *
- * WARNINGS:   none                                                                            *
- *                                                                                             *
- * HISTORY:                                                                                    *
- *   03/20/1996 JLB : Created.                                                                 *
- *=============================================================================================*/
-BuildingClass * VesselTypeClass::Who_Can_Build_Me(bool intheory, bool legal, HousesType house) const
-{
-	BuildingClass * anybuilding = NULL;
-
-	for (int index = 0; index < Buildings.Count(); index++) {
-		BuildingClass * building = Buildings.Ptr(index);
-		assert(building != NULL);
-
-		if (	!building->IsInLimbo &&
-				building->House->Class->House == house &&
-				building->Class->ToBuild == RTTI_VESSELTYPE &&
-				building->Mission != MISSION_DECONSTRUCTION &&
-				((1L << building->ActLike) & Ownable) &&
-				(!legal || building->House->Can_Build(Type, building->ActLike)) &&
-				(intheory || !building->In_Radio_Contact())) {
-
-			if (building->IsLeader) return(building);
-			anybuilding = building;
-		}
-	}
-	return(anybuilding);
-}
-#endif
 
 
 /***********************************************************************************************

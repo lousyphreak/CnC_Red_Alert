@@ -4203,39 +4203,9 @@ int BuildingClass::Mission_Missile(void)
 			** over the target.
 			*/
 			case LAUNCH_DOWN:
-				{
-					Begin_Mode(BSTATE_AUX2);	// start the door closing
-
-#ifdef OBSOLETE
-					/*
-					** Hack: If it's the artificial nukes, don't let the bullets come down (as
-					** they're the only ones that blow up).  We know it's artificial if you're
-					** at tech level 10 or below, because you can't build the nuclear silo until
-					** tech level 15 or so.
-					*/
-					if (House->Control.TechLevel <= 10) {
-						Status = DONE_LAUNCH;
-						return(6);
-					}
-					BulletClass * bullet = new BulletClass(BULLET_NUKE_DOWN, ::As_Target(House->NukeDest), this, 200, WARHEAD_NUKE, MPH_VERY_FAST);
-					if (bullet) {
-						int celly = Cell_Y(House->NukeDest);
-						celly -= 15;
-						if (celly < 1) celly = 1;
-						COORDINATE start = Cell_Coord(XY_Cell(Cell_X(House->NukeDest), celly));
-						if (!bullet->Unlimbo(start, DIR_S)) {
-							delete bullet;
-						}
-					}
-					if (bullet) {
-#endif
-						Status = DONE_LAUNCH;
-						return(6);
-					}
-#ifdef OBSOLETE
-				}
-				return(1);
-#endif
+				Begin_Mode(BSTATE_AUX2);	// start the door closing
+				Status = DONE_LAUNCH;
+				return(6);
 
 			/*
 			** Once the missile is done launching this handles allowing

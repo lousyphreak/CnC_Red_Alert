@@ -49,64 +49,6 @@
 #include "win32_compat.h"
 //#include	<algo.h>
 #include	"WWFILE.H"
-#ifdef NEVER
-	/*
-	**	This is a duplicate of the error numbers. The error handler for the RawFileClass handles
-	**	these errors. If the error routine is overridden and additional errors are defined, then
-	**	use numbers starting with 100. Note that these errors here are listed in numerical order.
-	**	These errors are defined in the standard header file "ERRNO.H".
-	*/
-	EZERO,				// Non-error.
-	EINVFNC,				// Invalid function number.
-	ENOFILE,				// File not found.
-	ENOENT=ENOFILE,	// No such file or directory.
-	ENOPATH,				// Path not found.
-	EMFILE,				// Too many open files.
-	EACCES,				// Permission denied.
-	EBADF,				// Bad file number.
-	ECONTR,				// Memory blocks destroyed.
-	ENOMEM,				// Not enough core memory.
-	EINVMEM,				// Invalid memory block address.
-	EINVENV,				// Invalid environment.
-	EINVFMT,				// Invalid format.
-	EINVACC,				// Invalid access code.
-	EINVDAT,				// Invalid data.
-	EFAULT,				// Unknown error.
-	EINVDRV,				// Invalid drive specified.
-	ENODEV=EINVDRV,	// No such device.
-	ECURDIR,				// Attempt to remove CurDir.
-	ENOTSAM,				// Not same device.
-	ENMFILE,				// No more files.
-	EINVAL,				// Invalid argument.
-	E2BIG,				// Argument list too long.
-	ENOEXEC,				// exec format error.
-	EXDEV,				// Cross-device link.
-	ENFILE,				// Too many open files.
-	ECHILD,				// No child process.
-	ENOTTY,				// not used
-	ETXTBSY,				// not used
-	EFBIG,				// not used
-	ENOSPC,				// No space left on device.
-	ESPIPE,				// Illegal seek.
-	EROFS,				// Read-only file system.
-	EMLINK,				// not used
-	EPIPE,				// Broken pipe.
-	EDOM,					// Math argument.
-	ERANGE,				// Result too large.
-	EEXIST,				// File already exists.
-	EDEADLOCK,			// Locking violation.
-	EPERM,				// Operation not permitted.
-	ESRCH,				// not used
-	EINTR,				// Interrupted function call.
-	EIO,					// Input/output error.
-	ENXIO,				// No such device or address.
-	EAGAIN,				// Resource temporarily unavailable.
-	ENOTBLK,				// not used
-	EBUSY,				// Resource busy.
-	ENOTDIR,				// not used
-	EISDIR,				// not used
-	EUCLEAN,				// not used
-#endif
 
 /*
 **	This is the definition of the raw file class. It is derived from the abstract base FileClass

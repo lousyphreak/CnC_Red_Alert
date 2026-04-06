@@ -525,65 +525,7 @@ void MapClass::Jam_From(CELL cell, int jamrange, HouseClass * house)
 		Map.Constrained_Look(Cell_Coord(cell), Rule.GapShroudRadius * CELL_LEPTON_W);
 	}
 
-#ifdef OBSOLETE
-	/*
-	**	The objects on the map need to perform a manual look operation if they happen
-	**	to have their sight range overlap the gap radius.
-	*/
-	if (!house->IsPlayerControl) {
-//	if (house != PlayerPtr) {
 
-		for (int index = 0; index < Map.Layer[LAYER_GROUND].Count(); index++) {
-			ObjectClass * object = Map.Layer[LAYER_GROUND][index];
-			if (object && object->Is_Techno()) {
-				TechnoClass * tech = ((TechnoClass *)object);
-
-				if (tech->IsDiscoveredByPlayer &&
-					(tech->Distance(As_Target(cell)) / CELL_LEPTON_W) <= tech->Techno_Type_Class()->SightRange + Rule.GapShroudRadius &&
-					(tech->House->IsPlayerControl ||
-					(tech->What_Am_I() == RTTI_BUILDING && Rule.IsAllyReveal && tech->House->Is_Ally(PlayerPtr)))) {
-
-					object->Look();
-				}
-			}
-		}
-	}
-#endif
-
-#ifdef OBSOLETE
-		/*
-		** Here all the player's vehicles will perform a look if they're within
-		** the shadow.
-		*/
-		for (int index = 0; index < Units.Count(); index++) {
-			UnitClass * unit = Units.Ptr(index);
-			if (unit && !unit->IsInLimbo && unit->House == PlayerPtr) {
-				int dist = (unit->Distance(As_Target(cell))) / CELL_LEPTON_W;
-				if (dist <= unit->Class->SightRange + Rule.GapShroudRadius /*gap generator sightrange*/) {
-					unit->Look();
-				}
-			}
-		}
-		for (index = 0; index < Infantry.Count(); index++) {
-			InfantryClass * unit = Infantry.Ptr(index);
-			if (unit && !unit->IsInLimbo && unit->House == PlayerPtr) {
-				int dist = (unit->Distance(As_Target(cell))) / CELL_LEPTON_W;
-				if (dist <= unit->Class->SightRange + Rule.GapShroudRadius /*gap generator sightrange*/) {
-					unit->Look();
-				}
-			}
-		}
-		for (index = 0; index < Vessels.Count(); index++) {
-			VesselClass * unit = Vessels.Ptr(index);
-			if (unit && !unit->IsInLimbo && unit->House == PlayerPtr) {
-				int dist = (unit->Distance(As_Target(cell))) / CELL_LEPTON_W;
-				if (dist <= unit->Class->SightRange + Rule.GapShroudRadius /*gap generator sightrange*/) {
-					unit->Look();
-				}
-			}
-		}
-	}
-#endif
 
 }
 

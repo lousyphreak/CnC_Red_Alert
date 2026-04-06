@@ -17,12 +17,6 @@
 */
 
 
-#if 0
-
-#define debugprogress
-#define _ASSERTE( x )
-
-#else
 
 #define debugprint			OutputDebugString
 
@@ -32,4 +26,3 @@
 #define debugprogress debugprint( "...%s: %i\n", __FILE__, __LINE__ )
 #define _ASSERTE( x )		if( !(x) )	debugprint( "ASSERT FALSE!\n" );
 
-#endif

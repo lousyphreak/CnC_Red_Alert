@@ -157,10 +157,6 @@ static int32_t Movie_Playback_Volume(void)
 
 void * Get_Shape_Header_Data(void * ptr);
 
-#ifdef FIXIT_CSII	//	checked - ajw 9/28/98
-void Enable_Secret_Units(void);
-#endif
-
 extern bool Is_Mission_Aftermath (char *file_name);
 extern bool Is_Mission_Counterstrike (char *file_name);
 
@@ -1263,13 +1259,6 @@ static void Message_Input(KeyNumType &input)
 				**	the message to every player we have a connection with.
 				*/
 				if (Session.MessageAddress.Is_Broadcast()) {
-	#ifdef FIXIT_CSII	//	checked - ajw 9/28/98
-		char *ptr = &Session.GPacket.Message.Buf[0];
-		if (!strncmp(ptr,"SECRET UNITS ON ",15) && NewUnitsEnabled) {
-			*ptr = 'X';		// force it to an odd hack so we know it was broadcast.
-			Enable_Secret_Units();
-		}
-	#endif
 					for (i = 0; i < Udp.Num_Connections(); i++) {
 						Udp.Send_Global_Message(&Session.GPacket,
 							sizeof(GlobalPacketType), 1,
@@ -1552,12 +1541,6 @@ void UDP_Call_Back(void)
 							if (!Session.Messages.Concat_Message(Session.GPacket.Name,
 								Session.GPacket.Message.Color,
 								Session.GPacket.Message.Buf, Rule.MessageDelay * TICKS_PER_MINUTE)) {
-#ifdef FIXIT_CSII	//	checked - ajw 9/28/98
-	if (NewUnitsEnabled && !strncmp(Session.GPacket.Message.Buf,"XECRET UNITS ON ",15)) {
-		Session.GPacket.Message.Buf[0]='S';
-		Enable_Secret_Units();
-	}
-#endif
 								Session.Messages.Add_Message (Session.GPacket.Name,
 									Session.GPacket.Message.Color,
 									Session.GPacket.Message.Buf,
@@ -2879,23 +2862,6 @@ void CC_Draw_Shape(void const * shapefile, int shapenum, int x, int y, WindowNum
 		int width = Get_Build_Frame_Width(shapefile);
 		int height = Get_Build_Frame_Height(shapefile);
 
-#ifdef NEVER
-		/*
-		**	Perform a quick clip check against the destination rectangle.
-		*/
-		if (flags & SHAPE_CENTER) {
-			if (x-width/2 >= WindowList[window][WINDOWWIDTH]) return;
-			if (y-width/2 >= WindowList[window][WINDOWHEIGHT]) return;
-			if (x+width/2 < 0) return;
-			if (y+height/2 < 0) return;
-
-		} else {
-			if (x >= WindowList[window][WINDOWWIDTH]) return;
-			if (y >= WindowList[window][WINDOWHEIGHT]) return;
-			if (x+width < 0) return;
-			if (y+height < 0) return;
-		}
-#endif
 
 		/*
 		** In WIn95, build shape returns a pointer to the shape not its size
@@ -4787,17 +4753,6 @@ void List_Copy(int16_t const * source, int len, int16_t * dest)
 	*dest = REFRESH_EOL;
 }
 
-#if 0
-//
-// Boy, this function sure is crummy
-//
-void Crummy(int crumb1, int crumb2)
-{
-	if (Debug_Check_Map && Debug_Heap_Dump) {
-		Mono_Printf("Hi, I'm Crummy.  And so are these: %d, %d\n",crumb1,crumb2);
-	}
-}
-#endif
 
 /***********************************************************************************************
  * Game_Config_Section -- Returns the config section identifier for the game.
@@ -4869,20 +4824,6 @@ bool Is_Aftermath_Installed (void)
 
 //	RawFileClass file("EXPAND2.MIX");
 //	return(file.Is_Available());
-}
-#endif
-
-#ifdef FIXIT_CSII	//	checked - ajw 9/28/98
-void Enable_Secret_Units(void)
-{
-#if 0
-	SecretUnitsEnabled=true;
-	UnitTypeClass::As_Reference(UNIT_PHASE).Level=10;
-	VesselTypeClass::As_Reference(VESSEL_CARRIER).Level=10;
-	for (int index = 0; index < Buildings.Count(); index++) {
-		Buildings.Ptr(index)->Update_Buildables();
-	}
-#endif
 }
 #endif
 

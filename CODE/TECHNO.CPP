@@ -1609,9 +1609,6 @@ bool TechnoClass::Evaluate_Object(ThreatType method, int mask, int range, Techno
 	if ((!Is_Foot() || !((FootClass *)this)->Team.Is_Valid()) &&
 			(House->IsHuman || (House->IsPlayerControl && Session.Type == GAME_NORMAL)) &&
 			otype == RTTI_BUILDING && tclass->PrimaryWeapon == NULL) {
-#ifdef OBSOLETE
-	if ((!Is_Foot() || ((FootClass *)this)->Team.Is_Valid()) && House->IsHuman && otype == RTTI_BUILDING && tclass->PrimaryWeapon == NULL) {
-#endif
 		BEnd(BENCH_EVAL_OBJECT);
 		return(false);
 	}

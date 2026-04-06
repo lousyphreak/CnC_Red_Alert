@@ -252,12 +252,6 @@ int RedAlert_Main(int argc, char* argv[])
 		}
 		RawFileClass cfile(CONFIG_FILE_NAME);
 
-#ifdef NEVER
-		Keyboard->IsLibrary = true;
-		if (Debug_Flag) {
-			Keyboard_Attributes_On(DEBUGINT);
-		}
-#endif
 
 		Keyboard = new KeyboardClass();
 		SDL_GameInput_Set_Main_Thread();

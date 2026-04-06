@@ -411,43 +411,6 @@ bool FootClass::Basic_Path(void)
 				if (PathThreshhold > maxtype) break;
 			}
 
-#ifdef NEVER
-			/*
-			**	Determine if ANY path could be calculated by first examining the most
-			**	aggressive case. If this fails, then no path will succeed. Further
-			**	scanning is unnecessary.
-			*/
-			path = Find_Path(cell, &workpath1[0], sizeof(workpath1), maxtype);
-			if (path && path->Cost) {
-				memcpy(&path1, path, sizeof(path1));
-				found1 = true;
-
-				/*
-				**	Scan for the best path possible. If this succeeds, then do a simple
-				**	comparison with the most aggressive path. If they are very close, then
-				**	go with the best (easiest) path method.
-				*/
-				path = Find_Path(cell, &workpath2[0], sizeof(workpath2), MOVE_CLOAK);
-				if (path && path->Cost && path->Cost < max((path1.Cost + (path1.Cost/2)), 3)) {
-					memcpy(&path1, path, sizeof(path1));
-					memcpy(workpath1, workpath2, sizeof(workpath1));
-				} else {
-
-					/*
-					**	The easiest path method didn't result in a satisfactory path. Scan through
-					**	the rest of the path options, looking for the best one.
-					*/
-					for (MoveType move = (MoveType)(MOVE_CLOAK+1); move < (MoveType)(maxtype-1); move++) {
-//					for (MoveType move = MOVE_MOVING_BLOCK; move < maxtype-1; move++) {
-						path = Find_Path(cell, &workpath2[0], sizeof(workpath2), move);
-						if (path && path->Cost && path->Cost < max((path1.Cost + (path1.Cost/2)), 3)) {
-							memcpy(&path1, path, sizeof(path1));
-							memcpy(workpath1, workpath2, sizeof(workpath1));
-						}
-					}
-				}
-			}
-#endif
 
 			/*
 			**	If a good path was found, then record it in the object's path
@@ -890,13 +853,6 @@ void FootClass::Approach_Target(void)
 			** in the room.
 			*/
 			maxrange -= 0x00B7;
-#ifdef OBSOLETE
-			if (What_Am_I() == RTTI_INFANTRY) {
-				maxrange -= 0x0111;
-			} else {
-				maxrange -= 0x00B7;
-			}
-#endif
 			maxrange = max(maxrange, 0);
 
 			COORDINATE tcoord = ::As_Coord(TarCom);
@@ -1307,9 +1263,6 @@ void FootClass::Active_Click_With(ActionType action, CELL cell)
 					} else {
 						cell = Map.Nearby_Location(cell, Techno_Type_Class()->Speed);
 					}
-#ifdef OBSOLETE
-					cell = Map.Nearby_Location(cell, Techno_Type_Class()->Speed, cellptr->Zones[Techno_Type_Class()->MZone], Techno_Type_Class()->MZone);
-#endif
 				}
 
 				Player_Assign_Mission(MISSION_MOVE, TARGET_NONE, ::As_Target(cell));
@@ -1465,21 +1418,6 @@ void FootClass::Per_Cell_Process(PCPType why)
 			if (!IsActive) return;
 		}
 
-#ifdef OBSOLETE
-		/*
-		** Flag any gap generators to re-draw
-		*/
-		for (int index = 0; index <Buildings.Count(); index++) {
-			BuildingClass * obj = Buildings.Ptr(index);
-			if (obj && *obj == STRUCT_GAP && !obj->IsInLimbo && (HouseClass *)obj->House != PlayerPtr) {
-				int dist = Distance(obj) / CELL_LEPTON_W;
-				if (dist < (6 + Rule.GapShroudRadius) ) {
-	//			if (dist < (6 + obj->Class->SightRange) ) {
-					obj->IsJamming = false;	// lie so it'll re-jam now
-				}
-			}
-		}
-#endif
 
 	}
 
@@ -2448,13 +2386,6 @@ void FootClass::AI(void)
 	TechnoClass::AI();
 
 // FootClass::Per_Cell_Process does this function already.
-#ifdef OBSOLETE
-	if (IsActive) {
-		if (!IsScattering && !IsTethered && !IsInLimbo && What_Am_I() != RTTI_AIRCRAFT && Target_Legal(TarCom) && In_Range(TarCom)) {
-			Assign_Destination(TARGET_NONE);
-		}
-	}
-#endif
 }
 
 
