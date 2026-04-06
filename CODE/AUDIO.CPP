@@ -331,7 +331,7 @@ void Sound_Effect(VocType voc, COORDINATE coord, int variation, HousesType house
 	CELL cell_pos = 0;
 	int pan_value;
 
-	if (Debug_Quiet || Options.Volume == 0 || voc == VOC_NONE || !SoundOn || SampleType == SAMPLE_NONE) {
+	if (Debug_Quiet || Options.Volume == 0 || voc == VOC_NONE) {
 		return;
 	}
 	if (coord) {
@@ -393,7 +393,7 @@ int Sound_Effect(VocType voc, fixed volume, int variation, int16_t pan_value, Ho
 {
 	char name[_MAX_FNAME+_MAX_EXT];				// Working filename of sound effect.
 
-	if (Debug_Quiet || Options.Volume == 0 || voc == VOC_NONE || !SoundOn || SampleType == SAMPLE_NONE) {
+	if (Debug_Quiet || Options.Volume == 0 || voc == VOC_NONE) {
 		return(-1);
 	}
 
@@ -662,7 +662,7 @@ char const * Speech_Name(VoxType speech)
  *=============================================================================================*/
 void Speak(VoxType voice)
 {
-	if (!Debug_Quiet && Options.Volume != 0 && SampleType != 0 && voice != VOX_NONE && voice != SpeakQueue && voice != CurrentVoice && SpeakQueue == VOX_NONE) {
+	if (!Debug_Quiet && Options.Volume != 0 && voice != VOX_NONE && voice != SpeakQueue && voice != CurrentVoice && SpeakQueue == VOX_NONE) {
 		SpeakQueue = voice;
 		Speak_AI();
 	}
@@ -689,7 +689,7 @@ void Speak(VoxType voice)
 void Speak_AI(void)
 {
 	static int _index = 0;
-	if (Debug_Quiet || SampleType == 0) return;
+	if (Debug_Quiet) return;
 
 	if (!Is_Sample_Playing(SpeechBuffer[_index])) {
 		CurrentVoice = VOX_NONE;
@@ -777,7 +777,7 @@ void Stop_Speaking(void)
 bool Is_Speaking(void)
 {
 	Speak_AI();
-	if (!Debug_Quiet && SampleType != 0 && (SpeakQueue != VOX_NONE || Is_Any_Speech_Buffer_Playing())) {
+	if (!Debug_Quiet && (SpeakQueue != VOX_NONE || Is_Any_Speech_Buffer_Playing())) {
 		return(true);
 	}
 	return(false);

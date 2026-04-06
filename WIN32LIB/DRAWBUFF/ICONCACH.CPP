@@ -422,19 +422,11 @@ int32_t IconCacheClass::Cache_It (void *icon_ptr)
 	** Set up the description of the surface we want to create
 	*/
 	if (!CacheSurface){
-		if (WWDRAW_OK!=VideoDrawObject->CreateSurface(ICON_WIDTH, ICON_HEIGHT, false, &CacheSurface)){
+		if (WWDRAW_OK!=VideoDrawObject->CreateSurface(ICON_WIDTH, ICON_HEIGHT, &CacheSurface)){
 			CacheMemoryExhausted = TRUE;
 			return(FALSE);
 		}
 
-	}
-
-	/*
-	** Make sure the surface we created isnt really in system memory
-	*/
-	if (CacheSurface->IsSystemMemory()){
-		CacheSurface->Release();
-		return(FALSE);
 	}
 
 	return_value=FALSE;

@@ -116,7 +116,6 @@ void destroy_main_window_for_shutdown(int ready_to_quit, const char* reason)
 extern void Main_Window_Create(void);
 void Check_Use_Compressed_Shapes (void);
 void Read_Setup_Options(RawFileClass *config_file);
-bool VideoBackBufferAllowed = true;
 
 const char* Game_Config_Section();
 
@@ -152,7 +151,6 @@ const char* Game_Config_Section();
 int RedAlert_Main(int argc, char* argv[])
 
 {
-	bool surface_in_system_memory = false;
 	char path_to_exe[132];
 	char* fallback_argv[1];
 
@@ -298,8 +296,15 @@ int RedAlert_Main(int argc, char* argv[])
 
 			Main_Window_Create();
 			startup_trace("Main_Window_Create complete hwnd=%p size=%dx%d", MainWindow, ScreenWidth, ScreenHeight);
-			SoundOn = Audio_Init ( MainWindow , 16 , false , 11025*2 , 0 );
-			startup_trace("Audio_Init complete SoundOn=%d", SoundOn);
+			if (!Audio_Init(MainWindow, 16, false, 11025 * 2, 0)) {
+				startup_trace("Audio_Init failed");
+				if (MainWindow != NULL) {
+					RA_DestroyWindow(MainWindow);
+					MainWindow = NULL;
+				}
+				return (EXIT_FAILURE);
+			}
+			startup_trace("Audio_Init complete");
 
 			int32_t video_success = FALSE;
 			/*
@@ -332,58 +337,8 @@ int RedAlert_Main(int argc, char* argv[])
 				VisiblePage.Init( ScreenWidth , ScreenHeight , NULL , 0 , (GBC_Enum)0);
 			} else {
 				VisiblePage.Init( ScreenWidth , ScreenHeight , NULL , 0 , (GBC_Enum)(GBC_VISIBLE | GBC_VIDEOMEM));
-
-				/*
-				** Check that we really got a video memory page. Failure is fatal.
-				*/
-				surface_in_system_memory = VisiblePage.Get_Video_Surface()->IsSystemMemory();
-				if (surface_in_system_memory) {
-					/*
-					** Aaaarrgghh!
-					*/
-					WWDebugString(TEXT_DDRAW_ERROR);WWDebugString("\n");
-					RA_ShowMessageBox(TEXT_DDRAW_ERROR, TEXT_SHORT_TITLE, SDL_MESSAGEBOX_WARNING);
-					if (WindowsTimer) delete WindowsTimer;
-					return (EXIT_FAILURE);
-				}
-
-				/*
-				** If we have enough left then put the hidpage in video memory unless...
-				**
-				** If there is no blitter then we will get better performance with a system
-				** memory hidpage
-				**
-				** Use a system memory page if the user has specified it via the ccsetup program.
-				*/
-				unsigned video_memory = Get_Free_Video_Memory();
-				unsigned video_capabilities = Get_Video_Hardware_Capabilities();
-				if (video_memory < static_cast<unsigned>(ScreenWidth * ScreenHeight) ||
-						(! (video_capabilities & VIDEO_BLITTER)) ||
-						(video_capabilities & VIDEO_NO_HARDWARE_ASSIST) ||
-						!VideoBackBufferAllowed) {
-					HiddenPage.Init (ScreenWidth , ScreenHeight , NULL , 0 , (GBC_Enum)0);
-				} else {
-					//HiddenPage.Init (ScreenWidth , ScreenHeight , NULL , 0 , (GBC_Enum)0);
-					HiddenPage.Init (ScreenWidth , ScreenHeight , NULL , 0 , (GBC_Enum)GBC_VIDEOMEM);
-
-					/*
-					** Make sure we really got a video memory hid page. If we didnt then things
-					** will run very slowly.
-					*/
-					surface_in_system_memory = HiddenPage.Get_Video_Surface()->IsSystemMemory();
-					if (surface_in_system_memory) {
-
-						/*
-						** Oh dear, big trub. This must be an IBM crAptiva or something similarly cruddy.
-						** We must redo the Hidden Page as system memory.
-						*/
-						AllSurfaces.Remove_Surface(HiddenPage.Get_Video_Surface());  // Remove the old surface from the AllSurfaces list
-						HiddenPage.Get_Video_Surface()->Release();
-						HiddenPage.Init (ScreenWidth , ScreenHeight , NULL , 0 , (GBC_Enum)0);
-					} else {
-						VisiblePage.Attach_Surface(&HiddenPage);
-					}
-				}
+				HiddenPage.Init (ScreenWidth , ScreenHeight , NULL , 0 , (GBC_Enum)GBC_VIDEOMEM);
+				VisiblePage.Attach_Surface(&HiddenPage);
 			}
 
 			ScreenHeight = 400;
@@ -573,8 +528,6 @@ void Read_Setup_Options( RawFileClass *config_file )
 		/*
 		** Read in the boolean options
 		*/
-		VideoBackBufferAllowed = ini.Get_Bool("Options", "VideoBackBuffer", true);
-		AllowHardwareBlitFills = ini.Get_Bool("Options", "HardwareFills", true);
 		ScreenHeight = ini.Get_Bool("Options", "Resolution", false) ? 480 : 400;
 
 		/*

@@ -125,8 +125,6 @@ static int32_t				StartingFileStream = FALSE;
 int32_t						StreamLowImpact = FALSE;
 MemoryFlagType			StreamBufferFlag = MEM_NORMAL;
 int32_t							Misc;
-SFX_Type					SoundType;
-Sample_Type				SampleType;
 int32_t							ReverseChannels = FALSE;
 AudioBackendDevice *			SoundObject = NULL;
 AudioBackendBuffer *	PrimaryBufferPtr = NULL;
@@ -938,7 +936,7 @@ int32_t Set_Primary_Buffer_Format(void)
 
 void Print_Sound_Error(char const * sound_error, RAWindow* window)
 {
-	RA_ShowMessageBox(sound_error, "Command & Conquer", SDL_MESSAGEBOX_WARNING);
+	RA_ShowMessageBox(sound_error, "Command & Conquer", SDL_MESSAGEBOX_ERROR);
 }
 
 
@@ -966,7 +964,6 @@ void Print_Sound_Error(char const * sound_error, RAWindow* window)
 int32_t Audio_Init( RAWindow* window , int32_t bits_per_sample, int32_t stereo , int32_t rate , int32_t reverse_channels)
 {
 	int32_t	index;
-	int32_t	sample=1;
 	int16_t old_bits_per_sample;
 	int16_t old_block_align;
 	int32_t	old_bytes_per_sec;
@@ -982,7 +979,7 @@ int32_t Audio_Init( RAWindow* window , int32_t bits_per_sample, int32_t stereo ,
 		**	Create the SDL audio backend object.
 		*/
 		if (CreateAudioBackendDevice(&SoundObject) != RAAUDIO_OK) {
-			Print_Sound_Error("Warning - Unable to create SDL audio backend", window);
+			Print_Sound_Error("Unable to create SDL audio backend", window);
 			return (FALSE);
 		}
 
@@ -990,7 +987,7 @@ int32_t Audio_Init( RAWindow* window , int32_t bits_per_sample, int32_t stereo ,
 		**	Give the backend the owning window for focus-related behavior.
 		*/
 		if (SoundObject->SetWindow(window) != RAAUDIO_OK) {
-			Print_Sound_Error("Warning - Unable to configure SDL audio backend", window);
+			Print_Sound_Error("Unable to configure SDL audio backend", window);
 			SoundObject->Release();
 			SoundObject = NULL;
 			return (FALSE);
@@ -1015,7 +1012,7 @@ int32_t Audio_Init( RAWindow* window , int32_t bits_per_sample, int32_t stereo ,
 		**	Create the primary buffer object
 		*/
 		if (SoundObject->CreateBuffer(4096, NULL, TRUE, &PrimaryBufferPtr) != RAAUDIO_OK) {
-			Print_Sound_Error("Warning - Unable to create SDL primary audio buffer", window);
+			Print_Sound_Error("Unable to create SDL primary audio buffer", window);
 			SoundObject->Release();
 			SoundObject = NULL;
 			return (FALSE);
@@ -1058,7 +1055,7 @@ int32_t Audio_Init( RAWindow* window , int32_t bits_per_sample, int32_t stereo ,
 				SoundObject->Release();
 				SoundObject = NULL;
 
-				Print_Sound_Error("Warning - Your sound card does not meet the products audio requirements",window);
+				Print_Sound_Error("Unable to configure a compatible SDL audio format", window);
 
 				return (FALSE);
 			}else{
@@ -1113,7 +1110,7 @@ int32_t Audio_Init( RAWindow* window , int32_t bits_per_sample, int32_t stereo ,
 
 			if (SoundObject->CreateBuffer(SECONDARY_BUFFER_SIZE, &DsBuffFormat, FALSE, &LockedData.SampleTracker[index].PlayBuffer) != RAAUDIO_OK) {
 				Sound_End();
-				Print_Sound_Error("Warning - Unable to create SDL sample buffer", window);
+				Print_Sound_Error("Unable to create SDL sample buffer", window);
 				return (FALSE);
 			}
 
@@ -1125,8 +1122,6 @@ int32_t Audio_Init( RAWindow* window , int32_t bits_per_sample, int32_t stereo ,
 
 		}
 
-		SoundType = (SFX_Type)sample;
-		SampleType = (Sample_Type)sample;
 		ReverseChannels = reverse_channels;
 
 	}
@@ -1960,15 +1955,6 @@ void Fade_Sample(int32_t handle, int32_t ticks)
 			}
 	}
 }
-
-
-
-int32_t Get_Digi_Handle(void)
-{
-        return(LockedData.DigiHandle);
-}
-
-
 
 /***************************************************************************
  * SAMPLE_LENGTH -- returns length of a sample in ticks                    *

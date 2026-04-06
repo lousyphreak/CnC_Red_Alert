@@ -1417,7 +1417,7 @@ void Call_Back(void)
 {
 	const bool trace_callback = Conquer_Callback_Trace_Enabled();
 	if (trace_callback) {
-		Conquer_Trace("Call_Back entry SampleType=%d SessionType=%d", SampleType, Session.Type);
+		Conquer_Trace("Call_Back entry SessionType=%d", Session.Type);
 	}
 
 	SDL_GameInput_Pump();
@@ -1432,17 +1432,15 @@ void Call_Back(void)
 	/*
 	**	Music and speech maintenance
 	*/
-	if (SampleType) {
-		if (trace_callback) Conquer_Trace("Call_Back Sound_Callback start");
-		Sound_Callback();
-		if (trace_callback) Conquer_Trace("Call_Back Sound_Callback complete");
-		if (trace_callback) Conquer_Trace("Call_Back Theme.AI start");
-		Theme.AI();
-		if (trace_callback) Conquer_Trace("Call_Back Theme.AI complete");
-		if (trace_callback) Conquer_Trace("Call_Back Speak_AI start");
-		Speak_AI();
-		if (trace_callback) Conquer_Trace("Call_Back Speak_AI complete");
-	}
+	if (trace_callback) Conquer_Trace("Call_Back Sound_Callback start");
+	Sound_Callback();
+	if (trace_callback) Conquer_Trace("Call_Back Sound_Callback complete");
+	if (trace_callback) Conquer_Trace("Call_Back Theme.AI start");
+	Theme.AI();
+	if (trace_callback) Conquer_Trace("Call_Back Theme.AI complete");
+	if (trace_callback) Conquer_Trace("Call_Back Speak_AI start");
+	Speak_AI();
+	if (trace_callback) Conquer_Trace("Call_Back Speak_AI complete");
 
 	/*
 	**	Network maintenance.
@@ -1872,7 +1870,7 @@ Mono_Set_Cursor(0,0);
 	**	If there is no theme playing, but it looks like one is required, then start one
 	**	playing. This is usually the symptom of there being no transition score.
 	*/
-	if (SampleType && Theme.What_Is_Playing() == THEME_NONE) {
+	if (Theme.What_Is_Playing() == THEME_NONE) {
 		Theme.Queue_Song(THEME_PICK_ANOTHER);
 	}
 
@@ -2542,7 +2540,7 @@ bool Try_Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 		}
 		#endif
 
-		if (!Debug_Quiet && Get_Digi_Handle() != -1) {
+		if (!Debug_Quiet) {
 			AnimControl.OptionFlags |= VQAOPTF_AUDIO;
 		} else {
 			AnimControl.OptionFlags &= ~VQAOPTF_AUDIO;

@@ -1546,7 +1546,7 @@ void Call_Back_Delay(int time)
 			Call_Back();
 			callbackcd = TIMER_SECOND/4;
 			soundcd = sound_interval;
-		} else if (soundcd == 0 && SampleType) {
+		} else if (soundcd == 0) {
 			/*
 			** The original score-screen delay loop relied on separate audio servicing
 			** while full Call_Back() work stayed throttled. Keep streamed music fed on

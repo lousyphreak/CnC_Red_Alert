@@ -40,7 +40,7 @@
 VQAHandle * Open_Movie(char * name);
 VQAHandle * Open_Movie(char * name)
 {
-	if (!Debug_Quiet && Get_Digi_Handle() != -1) {
+	if (!Debug_Quiet) {
 		AnimControl.OptionFlags |= VQAOPTF_AUDIO;
 	} else {
 		AnimControl.OptionFlags &= ~VQAOPTF_AUDIO;

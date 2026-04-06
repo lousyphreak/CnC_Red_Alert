@@ -357,7 +357,6 @@
 #define TXT_CD_DIALOG_1          	337	// Placez un CD d'Alerte Rouge
 #define TXT_CD_DIALOG_2          	338	// Placez le CD %d (%s) dans
 #define TXT_CD_ERROR1            	339	// Alerte Rouge n'a pas
-#define TXT_NO_SOUND_CARD        	340	// Pas de carte sonore
 #define TXT_UNKNOWN              	341	// INCONNU
 #define TXT_OLD_GAME             	342	// (ancien)
 #define TXT_NO_SPACE             	343	// Espace disque insuffisant

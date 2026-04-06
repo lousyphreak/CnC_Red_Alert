@@ -269,7 +269,6 @@ void Main_Window_Destroy(void)
 	HiddenPage.Un_Init();
 	AllSurfaces.Release();
 	if (!InDebugger) Reset_Video_Mode();
-	Stop_Profiler();
 
 	if (MainWindow != NULL) {
 		RA_DestroyWindow(MainWindow);

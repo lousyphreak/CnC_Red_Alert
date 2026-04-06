@@ -51,7 +51,6 @@
 #include "MISC.H"
 #endif
 int32_t		TotalLocks;
-int32_t 	AllowHardwareBlitFills = TRUE;
 
 
 //int	CacheAllowed;
@@ -244,7 +243,7 @@ void GraphicBufferClass::Video_Init(GBC_Enum flags)
 	if (flags & GBC_VISIBLE) {
 		VideoDrawObject->CreatePrimarySurface(&VideoSurfacePtr);
 	} else {
-		VideoDrawObject->CreateSurface(Width, Height, false, &VideoSurfacePtr);
+		VideoDrawObject->CreateSurface(Width, Height, &VideoSurfacePtr);
 	}
 	AllSurfaces.Add_Surface (VideoSurfacePtr);
 

@@ -475,17 +475,10 @@ void GameControlsClass::Process(void)
 					break;
 
 				case (BUTTON_SOUND):
-					if (!SoundType) {
-						WWMessageBox().Process(Text_String(TXT_NO_SOUND_CARD));
-						process = true;
-						display = true;
-						refresh = true;
-					} else {
-						SoundControlsClass().Process();
-						process = true;
-						display = true;
-						refresh = true;
-					}
+					SoundControlsClass().Process();
+					process = true;
+					display = true;
+					refresh = true;
 					break;
 
 #ifdef WOLAPI_INTEGRATION

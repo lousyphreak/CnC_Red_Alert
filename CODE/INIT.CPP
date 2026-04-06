@@ -2920,7 +2920,7 @@ static void Init_Bulk_Data(void)
 	**	Cache the main game data. This operation can take a very long time.
 	*/
 	MFCD::Cache("CONQUER.MIX");
-	if (SampleType != 0 && !Debug_Quiet) {
+	if (!Debug_Quiet) {
 		MFCD::Cache("SOUNDS.MIX");
 		MFCD::Cache("RUSSIAN.MIX");
 		MFCD::Cache("ALLIES.MIX");

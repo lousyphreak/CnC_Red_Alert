@@ -61,5 +61,4 @@ void  Buffer_Draw_Stamp_Clip(void const *thisptr, void const *icondata, int32_t 
 void *  Get_Font_Palette_Ptr ( void );
 
 extern GraphicViewPortClass *LogicPage;
-extern int32_t AllowHardwareBlitFills;
 #endif

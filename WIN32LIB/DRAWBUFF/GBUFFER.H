@@ -1142,8 +1142,7 @@ inline void GraphicViewPortClass::Draw_Line(int32_t sx, int32_t sy, int32_t dx, 
  *=========================================================================*/
 inline void GraphicViewPortClass::Fill_Rect(int32_t sx, int32_t sy, int32_t dx, int32_t dy, uint8_t color)
 {
-	if (  AllowHardwareBlitFills
-			&& IsVideoSurface
+	if (  IsVideoSurface
 			&& ( (dx-sx) * (dy-sy) >= (32*32) )
 			&& GraphicBuff->Get_Video_Surface()->CanBlit()){
 		RECT	dest_rectangle;

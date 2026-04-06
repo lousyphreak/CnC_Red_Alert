@@ -2,6 +2,9 @@
 
 ## Legacy graphics/backend cleanup
 
+- The supported SDL drawing path no longer keeps a raw-buffer hidden-page fallback or profiler shim around the edges.
+  - Practical example from this tree: `CODE/STARTUP.CPP` now always creates `HiddenPage` as the SDL video-surface path, the old `VideoBackBuffer` / `HardwareFills` INI knobs are gone, `WIN32LIB/MISC/DDRAW.CPP` no longer reports fake DirectDraw hardware-capability flags just to choose between fallback branches, and the no-op `WIN32LIB/INCLUDE/PROFILE.H` / `profile_compat.cpp` profiler seam was removed entirely.
+  - Practical rule: do not reintroduce raw-buffer-vs-video-surface policy switches, fake `Get_Video_Hardware_Capabilities()` style probes, or shutdown-only profiler shims in the active SDL tree. If the SDL renderer needs a behavior change, change the one supported path rather than preserving parallel selection logic.
 - Do not reintroduce fake VGA DAC port emulation for palette writes.
   - Practical example from this tree: `CODE/RGB.{H,CPP}` now calls `Set_Palette_Register(...)` directly, and the old `CODE/PORTIOCOMPAT.CPP` shim is gone.
   - Practical rule: if gameplay/UI code needs to change one palette entry, route it through the existing palette subsystem (`Set_Palette_Register(...)` / `Set_Video_Palette(...)`) instead of recreating `outportb(0x03C8/0x03C9, ...)` semantics in the SDL port.
@@ -12,6 +15,9 @@
 - Repository-side assembler sources are now intentionally absent from the non-vendor tree.
   - Practical example from this tree: the old `WIN32LIB/*.ASM`, `*.INC`, and `*.I` files were deleted once the CMake build and active C++ replacements were confirmed to be the only supported path.
   - Practical rule: when you find comments or APIs that still imply a separate assembler backend, treat them as stale documentation to be updated or removed; do not add new project-side assembler as a shortcut for SDL/platform work.
+- SDL audio is now mandatory in the active tree; there is no supported runtime "no audio" fallback anymore.
+  - Practical example from this tree: `CODE/STARTUP.CPP` now exits if `Audio_Init(...)` fails instead of continuing with a `SoundOn` flag, `CODE/{AUDIO,CONQUER,GAMEDLG,INIT,INTRO,SCORE,THEME}.CPP` no longer branch on `SoundOn` / `SoundType` / `SampleType` / `Get_Digi_Handle()`, and `WIN32LIB/{AUDIO,INCLUDE}/AUDIO.H` plus `WIN32LIB/AUDIO/SOUNDIO.CPP` no longer carry those temporary SDL-vs-none declarations.
+  - Practical rule: do not reintroduce "continue without audio" behavior, missing-sound-card UI branches, or legacy driver enums/init signatures in active code. Keep mute/volume controls such as `Debug_Quiet`, `Options.Volume`, and `Options.ScoreVolume`, but backend init failure should stay fatal and SDL should remain the single supported audio path.
 
 ## Legacy compiler-specific cleanup
 

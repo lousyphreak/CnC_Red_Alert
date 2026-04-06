@@ -32,7 +32,7 @@ private:
 
 class WWSurface {
 public:
-    WWSurface(int width, int height, bool primary, bool system_memory, RAWindow* window);
+    WWSurface(int width, int height, bool primary, RAWindow* window);
     HRESULT Lock(RECT* rect, WWLockData* lock_data);
     HRESULT Unlock(LPVOID data);
     HRESULT Blit(RECT* dest_rect, WWSurface* src_surface, RECT* src_rect, bool use_source_key);
@@ -50,7 +50,6 @@ public:
     uint8_t* Pixels();
     const PALETTEENTRY* PaletteEntries() const;
     bool IsPrimary() const;
-    bool IsSystemMemory() const;
     bool UsesPalette(const WWPalette* palette) const;
     RAWindow* Window() const;
     void Present();
@@ -58,7 +57,6 @@ private:
     int width_;
     int height_;
     bool primary_;
-    bool system_memory_;
     RAWindow* window_;
     int ref_count_;
     WWPalette* palette_;
@@ -72,15 +70,8 @@ public:
     HRESULT SetDisplayMode(int width, int height, int bits_per_pixel);
     HRESULT CreatePalette(PALETTEENTRY* entries, WWPalette** palette);
     HRESULT CreatePrimarySurface(WWSurface** surface);
-    HRESULT CreateSurface(int width, int height, bool system_memory, WWSurface** surface);
+    HRESULT CreateSurface(int width, int height, WWSurface** surface);
     uint32_t GetTotalVideoMemory() const;
-    uint32_t GetFreeVideoMemory() const;
-    bool HasBlitter() const;
-    bool HasAsyncBlitter() const;
-    bool SupportsPaletteVSync() const;
-    bool IsBankSwitched() const;
-    bool SupportsColorFill() const;
-    bool HasHardwareAssist() const;
     HRESULT WaitForVerticalBlank();
     HRESULT RestoreDisplayMode();
     HRESULT Release();

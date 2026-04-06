@@ -61,9 +61,6 @@ WWSurface*	PaletteSurface=NULL;
 SurfaceMonitorClass	AllSurfaces;				//List of all direct draw surfaces
 int32_t						CanVblankSync = TRUE;
 
-int32_t						SystemToVideoBlits =FALSE;	// Does hardware support system mem to video mem blits?
-int32_t						VideoToSystemBlits =FALSE;	// Does hardware support video mem to system mem blits?
-int32_t						SystemToSystemBlits = FALSE; 	// Does hardware support system mem to system mem blits?
 int32_t						OverlappedVideoBlits = TRUE;	// Can video driver blit overlapped regions?
 
 /*
@@ -240,92 +237,6 @@ void Reset_Video_Mode(void)
 
 		VideoDrawObject = NULL;
 	}
-}
-
-
-
-
-/***********************************************************************************************
- * Get_Free_Video_Memory -- returns amount of free video memory                                *
- *                                                                                             *
- *                                                                                             *
- *                                                                                             *
- * INPUT:    Nothing                                                                           *
- *                                                                                             *
- * OUTPUT:   bytes of available video RAM                                                      *
- *                                                                                             *
- * WARNINGS: None                                                                              *
- *                                                                                             *
- * HISTORY:                                                                                    *
- *    11/29/95 12:52PM ST : Created                                                            *
- *=============================================================================================*/
-uint32_t Get_Free_Video_Memory(void)
-{
-	if (VideoDrawObject){
-		return VideoDrawObject->GetFreeVideoMemory();
-	}
-	return (0);
-}
-
-uint32_t Get_Total_Video_Memory(void)
-{
-	if (VideoDrawObject){
-		return VideoDrawObject->GetTotalVideoMemory();
-	}
-	return 0;
-}
-
-
-
-
-/***********************************************************************************************
- * Get_Video_Hardware_Caps -- returns bitmask of direct draw video hardware support            *
- *                                                                                             *
- *                                                                                             *
- *                                                                                             *
- * INPUT:    Nothing                                                                           *
- *                                                                                             *
- * OUTPUT:   hardware flags                                                                    *
- *                                                                                             *
- * WARNINGS: Must call Set_Video_Mode 1st to create the direct draw object                     *
- *                                                                                             *
- * HISTORY:                                                                                    *
- *    1/12/96 9:14AM ST : Created                                                              *
- *=============================================================================================*/
-uint32_t Get_Video_Hardware_Capabilities(void)
-{
-	uint32_t	video;
-
-	/*
-	** Fail if the direct draw object has not been initialised
-	*/
-	if (!VideoDrawObject) return (0);
-
-	/*
-	** Get the capabilities of the direct draw object
-	*/
-	video = 0;
-
-	/* Hardware blits supported? */
-	if (VideoDrawObject->HasBlitter()) 				video |= VIDEO_BLITTER;
-
-	/* Hardware blits asyncronous? */
-	if (VideoDrawObject->HasAsyncBlitter()) 		video |= VIDEO_BLITTER_ASYNC;
-
-	/* Can palette changes be synced to vertical refresh? */
-	if (VideoDrawObject->SupportsPaletteVSync()) 	video |= VIDEO_SYNC_PALETTE;
-
-	/* Is the video cards memory bank switched? */
-	if (VideoDrawObject->IsBankSwitched()) 	video |= VIDEO_BANK_SWITCHED;
-
-	/* Can the blitter do filled rectangles? */
-	if (VideoDrawObject->SupportsColorFill())	video |= VIDEO_COLOR_FILL;
-
-	/* Is there no hardware assistance avaailable at all? */
-	if (!VideoDrawObject->HasHardwareAssist()) 	video |= VIDEO_NO_HARDWARE_ASSIST;
-
-	//MessageBox(MainWindow, "In Get_Video_Hardware_Capabilities. About to return success.","Note", MB_ICONEXCLAMATION|MB_OK);
-	return (video);
 }
 
 

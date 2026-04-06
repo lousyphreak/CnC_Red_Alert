@@ -58,7 +58,6 @@
 #include <TIMER.H>
 #include <WW_WIN.H>
 #include <WSA.H>
-#include <PROFILE.H>
 
 
 #endif // WWLIB32_H

@@ -190,8 +190,8 @@ const PALETTEENTRY* WWPalette::Entries() const
     return entries_;
 }
 
-WWSurface::WWSurface(int width, int height, bool primary, bool system_memory, RAWindow* window)
-    : width_(width), height_(height), primary_(primary), system_memory_(system_memory), window_(window), ref_count_(1), palette_(nullptr), pixels_(static_cast<size_t>(width) * static_cast<size_t>(height), 0)
+WWSurface::WWSurface(int width, int height, bool primary, RAWindow* window)
+    : width_(width), height_(height), primary_(primary), window_(window), ref_count_(1), palette_(nullptr), pixels_(static_cast<size_t>(width) * static_cast<size_t>(height), 0)
 {
     if (primary_) {
         g_primary_surface = this;
@@ -327,7 +327,6 @@ int WWSurface::Height() const { return height_; }
 uint8_t* WWSurface::Pixels() { return pixels_.data(); }
 const PALETTEENTRY* WWSurface::PaletteEntries() const { return palette_ ? palette_->Entries() : nullptr; }
 bool WWSurface::IsPrimary() const { return primary_; }
-bool WWSurface::IsSystemMemory() const { return system_memory_; }
 bool WWSurface::UsesPalette(const WWPalette* palette) const { return palette_ == palette; }
 RAWindow* WWSurface::Window() const { return window_; }
 void WWSurface::Present()
@@ -379,59 +378,24 @@ HRESULT WWDraw::CreatePrimarySurface(WWSurface** surface)
     if (!surface) {
         return WWDRAW_ERROR_INVALIDPARAMS;
     }
-    *surface = new WWSurface(width_, height_, true, false, window_);
+    *surface = new WWSurface(width_, height_, true, window_);
     queue_present(*surface, window_);
     flush_pending_present();
     return WWDRAW_OK;
 }
 
-HRESULT WWDraw::CreateSurface(int width, int height, bool system_memory, WWSurface** surface)
+HRESULT WWDraw::CreateSurface(int width, int height, WWSurface** surface)
 {
     if (!surface) {
         return WWDRAW_ERROR_INVALIDPARAMS;
     }
-    *surface = new WWSurface(width > 0 ? width : width_, height > 0 ? height : height_, false, system_memory, window_);
+    *surface = new WWSurface(width > 0 ? width : width_, height > 0 ? height : height_, false, window_);
     return WWDRAW_OK;
 }
 
 uint32_t WWDraw::GetTotalVideoMemory() const
 {
     return 32U * 1024U * 1024U;
-}
-
-uint32_t WWDraw::GetFreeVideoMemory() const
-{
-    return 32U * 1024U * 1024U;
-}
-
-bool WWDraw::HasBlitter() const
-{
-    return true;
-}
-
-bool WWDraw::HasAsyncBlitter() const
-{
-    return false;
-}
-
-bool WWDraw::SupportsPaletteVSync() const
-{
-    return false;
-}
-
-bool WWDraw::IsBankSwitched() const
-{
-    return false;
-}
-
-bool WWDraw::SupportsColorFill() const
-{
-    return true;
-}
-
-bool WWDraw::HasHardwareAssist() const
-{
-    return true;
 }
 
 HRESULT WWDraw::WaitForVerticalBlank()

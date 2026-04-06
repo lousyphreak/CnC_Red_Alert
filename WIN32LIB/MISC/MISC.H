@@ -51,10 +51,7 @@ extern	WWSurface*	PaletteSurface;
 void 		Process_Draw_Result(HRESULT result, int32_t display_ok_msg);
 int32_t 		Set_Video_Mode(RAWindow* window, int32_t w, int32_t h, int32_t bits_per_pixel);
 void 		Reset_Video_Mode(void);
-uint32_t 	Get_Free_Video_Memory(void);
-uint32_t 	Get_Total_Video_Memory(void);
 void 		Wait_Blit(void);
-uint32_t 	Get_Video_Hardware_Capabilities(void);
 
 void Wait_Vert_Blank(void);void Set_Video_Palette (void *palette);
 /*
@@ -65,29 +62,6 @@ extern	void (*Misc_Focus_Loss_Function)(void);
 ** Pointer to function to call if we detect a surface restore
 */
 extern	void (*Misc_Focus_Restore_Function)(void);
-
-
-/*
- *  Flags returned by Get_Video_Hardware_Capabilities
- */
-/* Hardware blits supported? */
-#define	VIDEO_BLITTER					1
-
-/* Hardware blits asyncronous? */
-#define	VIDEO_BLITTER_ASYNC  		2
-
-/* Can palette changes be synced to vertical refresh? */
-#define	VIDEO_SYNC_PALETTE			4
-
-/* Is the video cards memory bank switched? */
-#define	VIDEO_BANK_SWITCHED			8
-
-/* Can the blitter do filled rectangles? */
-#define	VIDEO_COLOR_FILL				16
-
-/* Is there no hardware assistance avaailable at all? */
-#define	VIDEO_NO_HARDWARE_ASSIST	32
-
 
 
 /*
@@ -129,9 +103,6 @@ extern	SurfaceMonitorClass	AllSurfaces;				//List of all direct draw surfaces
 /*=========================================================================*/
 extern	WWDraw*	VideoDrawObject;
 extern	RAWindow*			MainWindow;
-extern int32_t 				SystemToVideoBlits;
-extern int32_t				VideoToSystemBlits;
-extern int32_t				SystemToSystemBlits;
 extern int32_t				OverlappedVideoBlits;	// Can video driver blit overlapped regions?
 
 /*=========================================================================*/

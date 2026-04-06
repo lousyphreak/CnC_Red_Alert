@@ -221,7 +221,7 @@ char const * ThemeClass::Full_Name(ThemeType theme) const
  *=============================================================================================*/
 void ThemeClass::AI(void)
 {
-	if (SampleType && !Debug_Quiet) {
+	if (!Debug_Quiet) {
 		if (ScoresPresent && Options.ScoreVolume != 0 && !Still_Playing() && Pending != THEME_NONE) {
 
 			/*
@@ -316,10 +316,9 @@ void ThemeClass::Queue_Song(ThemeType theme)
 	if (!ScoresPresent) return;
 
 	/*
-	**	If there is no sound driver or sounds have been specifically
-	**	turned off, then abort.
+	**	If sounds have been specifically turned off for quiet mode, then abort.
 	*/
-	if (SampleType == 0 || Debug_Quiet) return;
+	if (Debug_Quiet) return;
 
 	/*
 	**	If the current score volumne is set to silent, then there is no need to play the
@@ -358,16 +357,15 @@ void ThemeClass::Queue_Song(ThemeType theme)
  *=============================================================================================*/
 int ThemeClass::Play_Song(ThemeType theme)
 {
-	Theme_Trace("Play_Song request theme=%d current=%d score=%d pending=%d scores=%d sample=%d quiet=%d scorevol=%d",
+	Theme_Trace("Play_Song request theme=%d current=%d score=%d pending=%d scores=%d quiet=%d scorevol=%d",
 		theme,
 		Current,
 		Score,
 		Pending,
 		ScoresPresent ? 1 : 0,
-		SampleType ? 1 : 0,
 		Debug_Quiet ? 1 : 0,
 		(int)Options.ScoreVolume);
-	if (ScoresPresent && SampleType && !Debug_Quiet && Options.ScoreVolume != 0) {
+	if (ScoresPresent && !Debug_Quiet && Options.ScoreVolume != 0) {
 		Stop();
 		Score = theme;
 		if (theme != THEME_NONE && theme != THEME_QUIET) {
@@ -455,7 +453,7 @@ int ThemeClass::Track_Length(ThemeType theme) const
  *=============================================================================================*/
 void ThemeClass::Stop(void)
 {
-	if (ScoresPresent && SampleType && !Debug_Quiet && Current != -1) {
+	if (ScoresPresent && !Debug_Quiet && Current != -1) {
 		Stop_Sample(Current);
 		Current = -1;
 		Score = THEME_NONE;
@@ -466,7 +464,7 @@ void ThemeClass::Stop(void)
 
 void ThemeClass::Suspend(void)
 {
-	if (ScoresPresent && SampleType && !Debug_Quiet && Current != -1) {
+	if (ScoresPresent && !Debug_Quiet && Current != -1) {
 		Stop_Sample(Current);
 		Current = -1;
 		Pending = Score;
@@ -491,7 +489,7 @@ void ThemeClass::Suspend(void)
  *=============================================================================================*/
 int ThemeClass::Still_Playing(void) const
 {
-	if (ScoresPresent && SampleType && Current != -1 && !Debug_Quiet) {
+	if (ScoresPresent && Current != -1 && !Debug_Quiet) {
 		return(Sample_Status(Current));
 	}
 	return(false);

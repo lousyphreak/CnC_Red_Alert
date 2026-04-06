@@ -64,64 +64,6 @@ static_assert(sizeof(AUDHeaderType) == 12, "AUDHeaderType must match the 12-byte
 
 
 /*=========================================================================*/
-/*	There can be a different sound driver for sound effects, digitized		*/
-/*	samples, and musical scores.  Each one must be of these specified			*/
-/*	types.																						*/
-/*=========================================================================*/
-typedef enum {
-	SAMPLE_NONE,		// No digitized sounds will be played.
-	SAMPLE_SB,			// Sound Blaster digitized driver.
-	SAMPLE_SBPRO,		// Sound Blaster Pro digitized driver.
-	SAMPLE_PAS,			// Pro-Audio Spectrum digitized driver.
-	SAMPLE_ADLIBG,		// Adlib-Gold digitized driver.
-	SAMPLE_TANDY,		// Tandy 'compatible' driver.
-	SAMPLE_PCSPKR,		// PC speaker digitized driver (The Audio Solution driver).
-	SAMPLE_ADLIB,		// Adlib digitized driver (The Audio Solution driver).
-	SAMPLE_TEMP=0x1000,
-	SAMPLE_LAST
-} Sample_Type;
-
-typedef enum {
-	SCORE_NONE,			// No scores will be played.
-	SCORE_ALFX,			// Westwood's ALFX adlib compatable driver.
-	SCORE_WWPCSPKR,	// Westwood's PC-speaker driver (obsolete).
-	SCORE_WWTANDY,		// Westwood's PC-speaker driver with Tandy mod (obsolete).
-	SCORE_PCSPKR,		// PC speaker XMIDI driver.
-	SCORE_TANDY,		// Tandy XMIDI driver.
-	SCORE_MT32,			// MT-32 / LAPC-1 Roland XMIDI driver.
-	SCORE_CANVAS,		// Sound Canvas SC-55.
-	SCORE_ADLIB,		// Adlib XMIDI driver.
-	SCORE_ADLIBG,		// Adlib Gold XMIDI driver.
-	SCORE_PASFM,		// Pro Audio Spectrum XMIDI driver.
-	SCORE_SBFM,			// Sound Blaster XMIDI driver.
-	SCORE_SBP1FM,		// Sound Blaster Pro (YM3812) XMIDI driver.
-	SCORE_SBP2FM,		// Sound Blaster Pro (OPL3) XMIDI driver (Can't use with SFX_ALFX).
-	SCORE_TEMP=0x1000,
-	SCORE_LAST
-} Score_Type;
-
-typedef enum {
-	SFX_NONE,			// No sound effects will be played.
-	SFX_ALFX,			// Westwood's ALFX adlib compatable driver.
-	SFX_WWPCSPKR,		// Westwood's PC-speaker driver.
-	SFX_WWTANDY,		// Westwood's PC-speaker driver with Tandy mod.
-	SFX_PCSPKR,			// PC speaker XMIDI driver.
-	SFX_TANDY,			// Tandy XMIDI driver.
-	SFX_MT32,			// MT-32 / LAPC-1 Roland XMIDI driver.
-	SFX_CANVAS,			// Sound Canvas SC-55.
-	SFX_ADLIB,			// Adlib XMIDI driver.
-	SFX_ADLIBG,			// Adlib Gold XMIDI driver.
-	SFX_PASFM,			// Pro Audio Spectrum XMIDI driver.
-	SFX_SBFM,			// Sound Blaster XMIDI driver.
-	SFX_SBP1FM,			// Sound Blaster Pro (YM3812) XMIDI driver.
-	SFX_SBP2FM,			// Sound Blaster Pro (OPL3) XMIDI driver.
-	SFX_TEMP=0x1000,
-	SFX_LAST
-} SFX_Type;
-
-
-
-/*=========================================================================*/
 /* The following prototypes are for the file: SOUNDIO.CPP						*/
 /*=========================================================================*/
 int32_t File_Stream_Sample(char const *filename, int32_t real_time_start = FALSE);
@@ -144,7 +86,6 @@ int32_t Set_Sound_Vol(int32_t volume);
 int32_t Set_Score_Vol(int32_t volume);
 void Fade_Sample(int32_t handle, int32_t ticks);
 int32_t Get_Free_Sample_Handle(int32_t priority);
-int32_t Get_Digi_Handle(void);
 int32_t Sample_Length(void const *sample);
 void Restore_Sound_Buffers (void);
 int32_t Set_Primary_Buffer_Format(void);
@@ -158,7 +99,5 @@ extern	void (*Audio_Focus_Loss_Function)(void);
 
 
 extern int32_t Misc;
-extern SFX_Type SoundType;
-extern Sample_Type SampleType;
 
 extern int32_t StreamLowImpact;

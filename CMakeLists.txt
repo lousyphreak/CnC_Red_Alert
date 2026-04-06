@@ -206,7 +206,6 @@ add_library(sdl3_compat STATIC
     SDL3_COMPAT/wrappers/sdl_config.cpp
     SDL3_COMPAT/wrappers/sdl_fs.cpp
     SDL3_COMPAT/wrappers/sdl_draw.cpp
-    SDL3_COMPAT/wrappers/profile_compat.cpp
 )
 
 target_include_directories(sdl3_compat

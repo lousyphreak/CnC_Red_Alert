@@ -385,8 +385,6 @@ extern uint8_t const					RemapCiv9[];
 extern uint8_t const					RemapCiv10[];
 extern uint8_t const					RemapEmber[];
 
-extern int SoundOn;
-
 extern GraphicViewPortClass	HidPage;
 extern int 						MenuList[][8];
 extern CDTimerClass<SystemTimerClass> FrameTimer;
