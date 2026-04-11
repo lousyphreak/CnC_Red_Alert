@@ -56,7 +56,6 @@
 #include	<cstdlib>
 #include	<errno.h>
 #include	"MIXFILE.H"
-#include	"CDFILE.H"
 extern MFCD temp;
 
 namespace
@@ -123,6 +122,33 @@ bool MixFileClass<T>::Free(char const * filename)
 		return(true);
 	}
 	return(false);
+}
+
+
+/***********************************************************************************************
+ * MixFileClass::Promote -- Moves this mixfile to the front of lookup priority.                 *
+ *                                                                                             *
+ *    Use this routine when a newly registered mixfile should shadow older registrations with   *
+ *    the same logical filenames without destroying those older registrations.                  *
+ *                                                                                             *
+ * INPUT:   none                                                                               *
+ *                                                                                             *
+ * OUTPUT:  none                                                                               *
+ *                                                                                             *
+ * WARNINGS:   none                                                                            *
+ *                                                                                             *
+ * HISTORY:                                                                                    *
+ *   04/11/2026 GPT : Created.                                                                 *
+ *=============================================================================================*/
+template<class T>
+void MixFileClass<T>::Promote(void)
+{
+	if (!this->Is_Valid()) {
+		return;
+	}
+
+	this->Unlink();
+	MixList.Add_Head(this);
 }
 
 
@@ -203,11 +229,6 @@ MixFileClass<T>::MixFileClass(char const * filename, PKey const * key) :
 	**	Check to see if the file is available. If it isn't, then
 	**	no further processing is needed or possible.
 	*/
-	if (!Force_CD_Available(RequiredCD)) {
-		//Prog_End();
-		Emergency_Exit(EXIT_FAILURE);
-	}
-
 	T file(filename);		// Working file object.
 	Filename = strdup(file.File_Name());
 	FileStraw fstraw(file);
@@ -615,4 +636,3 @@ assert(1);//BG
 }
 
 template class MixFileClass<CCFileClass>;
-template class MixFileClass<CDFileClass>;

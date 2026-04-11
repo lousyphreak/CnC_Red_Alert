@@ -306,42 +306,11 @@ bool Start_Scenario(char * name, bool briefing)
 //BG	Theme.Queue_Song(THEME_QUIET);
 Theme.Stop();
 	IsTanyaDead = SaveTanya;
+	Configure_Scenario_Main_Mix(name);
 	if (!Read_Scenario(name)) {
 		return(false);
 	}
 
-	/*
-	**	Play the winning movie and then start the next scenario.
-	*/
-	RequiredCD = -1;
-//	if (RequiredCD != -2 && Session.Type == GAME_NORMAL) {
-//		if (Scen.Scenario == 1)
-//			RequiredCD = -1;
-//		else {
-//			 if((Scen.Scenario >= 20 && Scen.ScenarioName[2] == 'G' || Scen.ScenarioName[2] == 'U') || Scen.ScenarioName[2] == 'A'
-//				|| (Scen.ScenarioName[2] == 'M' && Scen.Scenario >= 25))
-//		       	    RequiredCD = 2;
-//			 else if(Scen.ScenarioName[2] == 'U')
-//			    RequiredCD = 1;
-//			 else if(Scen.ScenarioName[2] == 'G')
-//			    RequiredCD = 0;
-//			}
-//
-//#ifdef FIXIT_FORCE_CD
-// Forces the CD to be inserted according to the scenario being loaded.
-//Hide_Mouse();
-//VisiblePage.Clear();
-//Show_Mouse();
-//GamePalette.Set();
-//if (!Force_CD_Available(RequiredCD)) {
-//       	Prog_End();
-//       	exit(EXIT_FAILURE);
-//}
-//#endif
-
-
-
-//   	}
 	Theme.Stop();
 
 	if (briefing) {
@@ -444,21 +413,6 @@ bool Read_Scenario(char * name)
 				break;
 		}
 		if(readini) {
-			/*
-			** Find out if the CD in the current drive is the Aftermath disc.
-		  	*/
-#ifdef FIXIT_VERSION_3
-			int cd_index = Get_CD_Index(CCFileClass::Get_CD_Drive(), 1*60);
-			if( !( Using_DVD() && cd_index == 5 ) && cd_index != 3 ) {
-#else
-			if(Get_CD_Index(CCFileClass::Get_CD_Drive(), 1*60) != 3) {
-#endif
-				GamePalette.Set(FADE_PALETTE_FAST, Call_Back);
-				RequiredCD = 3;
-				if (!Force_CD_Available(RequiredCD)) {	// force Aftermath CD in drive.
-					Emergency_Exit(EXIT_FAILURE);
-		     	}
-			}
 			CCINIClass ini;
 			CCFileClass mplayerini("MPLAYER.INI");
 			if (ini.Load(mplayerini, false)) {
@@ -858,6 +812,7 @@ void Do_Win(void)
 	VisiblePage.Clear();
 	Show_Mouse();
 	Play_Movie(Scen.WinMovie);
+	Configure_Score_Presentation_Main_Mix();
 
 	Keyboard->Clear();
 
@@ -1122,6 +1077,7 @@ void Do_Lose(void)
 //	Mono_Printf("Trying to play lose movie\n");
 #endif //CHEAT_KEYS
 	Play_Movie(Scen.LoseMovie);
+	Configure_Default_Main_Mix();
 
 	/*
 	** Start same scenario again
@@ -1971,101 +1927,6 @@ bool Read_Scenario_INI(char * fname, bool )
 	if (Session.Type == GAME_NORMAL || Session.ScenarioIsOfficial){
 #endif
 
-		/*
-		** If this is scenario 1 then it should be on all CDs unless its an ant scenario
-		*/
-		if (Scen.Scenario == 1 && Scen.ScenarioName[2] != 'A') {
-	   	RequiredCD = -1;
-		} else {
-//			Mono_Printf("Read_SCen_INI scenario is: %s\n", Scen.ScenarioName);
-			/*
-			** If this is a multiplayer scenario we need to find out if its a counterstrike
-			** scenario. If so then we need CD 2. The original multiplayer scenarios are on
-			** all CDs.
-			*/
-			if (Session.Type != GAME_NORMAL) {
-#ifdef FIXIT_CSII	//	checked - ajw 9/28/98
-				RequiredCD = -1;	// default that any CD will do.
-// If it's a counterstrike mission, require the counterstrike CD, unless the
-// Aftermath CD is already in the drive, in which case, leave it there.
-// Note, this works because this section only tests for multiplayer scenarios.
-				if (Is_Mission_Counterstrike(Scen.ScenarioName)) {
-					RequiredCD = 2;
-					if( Is_Aftermath_Installed() || Get_CD_Index(CCFileClass::Get_CD_Drive(), 1*60) == 3 )
-					{
-						RequiredCD = 3;
-					}
-				}
-				if(Is_Mission_Aftermath(Scen.ScenarioName)) {
-					RequiredCD = 3;
-				}
-#else
-				if (Scen.Scenario > 24) {
-					RequiredCD = 2;
-				} else {
-					RequiredCD = -1;
-				}
-#endif
-			} else {
-
-				/*
-				** This is a solo game. If the scenario number is >= 20 or its an ant mission
-				** then we need the counterstrike CD (2)
-				*/
-     			if (Scen.Scenario >= 20 || Scen.ScenarioName[2] == 'A') {
-					RequiredCD = 2;
-#ifdef FIXIT_CSII	//	checked - ajw 9/28/98
-     				if (Scen.Scenario >= 36 && Scen.ScenarioName[2] != 'A') {
-						RequiredCD = 3;
-#ifdef BOGUSCD
-	RequiredCD = -1;
-#endif
-					}
-#endif
-				} else {
-
-					/*
-					** This is a solo mission from the original Red Alert. Choose the Soviet or
-					** allied CD depending on the scenario name.
-					*/
-					if (Scen.ScenarioName[2] == 'U') {
-						RequiredCD = 1;
-					} else {
-						if (Scen.ScenarioName[2] == 'G') {
-//							Mono_Printf("We are setting REquiredCD to 0");
-							RequiredCD = 0;
-
-						}
-					}
-     			}
-			}
-		}
-#ifdef FIXIT_CSII	//	checked - ajw 9/28/98
-// If we're asking for a CD swap, check to see if we need to set the palette
-// to avoid a black screen.  If this is a normal RA game, and the CD being
-// requested is an RA CD, then don't set the palette, leave the map screen up.
-
-#ifdef FIXIT_VERSION_3
-		int cd_index = Get_CD_Index(CCFileClass::Get_CD_Drive(), 1*60);
-		if( !( Using_DVD() && cd_index == 5 ) && cd_index != RequiredCD ) {
-#else
-		if (Get_CD_Index(CCFileClass::Get_CD_Drive(), 1*60) != RequiredCD) {
-#endif
-			if ((RequiredCD == 0 || RequiredCD == 1) && Session.Type == GAME_NORMAL) {
-				SeenPage.Clear();
-			}
-			GamePalette.Set(FADE_PALETTE_FAST, Call_Back);
-		}
-#endif
-		if (!Force_CD_Available(RequiredCD)) {
-      		//Prog_End();
-			Emergency_Exit(EXIT_FAILURE);
-     	}
-	} else {
-		/*
-		** This is a user scenario so any old CD will do.
-		*/
-		RequiredCD = -1;
 	}
 
 

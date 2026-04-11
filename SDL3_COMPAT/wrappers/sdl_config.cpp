@@ -57,8 +57,7 @@ bool lookup_config_uint32_value(const char*, const char* value_name, uint32_t* v
         return false;
     }
 
-    if (std::strcmp(value_name, "DVD") == 0 ||
-        std::strcmp(value_name, "WolapiInstallComplete") == 0 ||
+    if (std::strcmp(value_name, "WolapiInstallComplete") == 0 ||
         std::strcmp(value_name, "WOLAPI Find Enabled") == 0 ||
         std::strcmp(value_name, "WOLAPI Page Enabled") == 0 ||
         std::strcmp(value_name, "WOLAPI Lang Filter") == 0 ||

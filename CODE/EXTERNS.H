@@ -62,7 +62,7 @@ extern char _staging_buffer[32000];
 void _PRO(void);
 
 /*
-**	Convenient alias for MixFileClass<CDFileClass> object. This allows
+**	Convenient alias for MixFileClass<CCFileClass> object. This allows
 **	easier entry into the code and less clutter.
 */
 typedef MixFileClass<CCFileClass>	MFCD;
@@ -137,7 +137,6 @@ extern int							ScreenHeight;
 extern MissionControlClass		MissionControl[MISSION_COUNT];
 extern char const *				TutorialText[225];
 extern Buffer *					TheaterBuffer;
-extern GetCDClass					CDList;
 extern CCINIClass					RuleINI;
 #ifdef FIXIT_CSII	//	checked - ajw 9/28/98
 extern CCINIClass					AftermathINI;
@@ -186,7 +185,6 @@ extern MFCD *						TheaterData;
 extern MFCD *						MoviesMix;
 extern MFCD *						GeneralMix;
 extern MFCD *						ScoreMix;
-extern MFCD *						MainMix;
 extern MFCD *						ConquerMix;
 extern ThemeClass 				Theme;
 extern SpecialClass 				Special;
@@ -391,8 +389,6 @@ extern CDTimerClass<SystemTimerClass> CountDownTimer;
 
 extern SpecialDialogType	SpecialDialog;
 
-extern int RequiredCD;
-extern int CurrentCD;
 extern int MouseInstalled;
 
 extern int LogLevel;

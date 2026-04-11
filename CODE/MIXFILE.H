@@ -39,6 +39,7 @@ class MixFileClass : public Node<MixFileClass<T>>
 		~MixFileClass(void);
 
 		static bool Free(char const *filename);
+		void Promote(void);
 		void Free(void);
 		bool Cache(Buffer const * buffer = NULL);
 		static bool Cache(char const *filename, Buffer const * buffer=NULL);

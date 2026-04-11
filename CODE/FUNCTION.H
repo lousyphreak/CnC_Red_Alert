@@ -305,7 +305,6 @@ typedef struct {
 	uint8_t	reserved;
 } TLucentType;
 
-extern int Get_CD_Drive(void);
 extern void Fatal(char const *message, ...);
 
 /*
@@ -376,7 +375,6 @@ void Wide_Area_Damage(COORDINATE coord, LEPTON radius, int damage, TechnoClass *
 **	CONQUER.CPP
 */
 void List_Copy(int16_t const * source, int len, int16_t * dest);
-int Get_CD_Index (int cd_drive, int timeout);
 int Owner_From_Name(char const * text);
 CrateType Crate_From_Name(char const * name);
 Rect const Shape_Dimensions(void const * shapedata, int shapenum);
@@ -387,7 +385,6 @@ bool Is_Aftermath_Installed (void);
 #endif
 
 void Center_About_Objects(void);
-bool Force_CD_Available(int cd);
 void Handle_View(int view, int action=0);
 void Handle_Team(int team, int action=0);
 TechnoTypeClass const * Fetch_Techno_Type(RTTIType type, int id);
@@ -586,8 +583,6 @@ void Computer_Message(void);
 int Surrender_Dialog(int text);
 #ifdef FIXIT_VERSION_3		//	Stalemate games.
 int Surrender_Dialog(const char* text);
-bool Determine_If_Using_DVD();
-bool Using_DVD();
 #endif
 int Abort_Dialog(void);
 
@@ -698,6 +693,11 @@ void Post_Load_Game(int load_net);
 bool End_Game(void);
 bool Read_Scenario(char *root);
 bool Start_Scenario(char *root, bool briefing=true);
+void Configure_Default_Main_Mix(void);
+void Configure_Scenario_Main_Mix(char const *scenario_name);
+void Configure_Score_Presentation_Main_Mix(void);
+bool Is_Mission_Counterstrike(char *file_name);
+bool Is_Mission_Aftermath(char *file_name);
 HousesType Select_House(void);
 void Clear_Scenario(void);
 void Do_Briefing(char const * text);

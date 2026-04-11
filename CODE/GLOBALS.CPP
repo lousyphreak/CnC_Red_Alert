@@ -377,7 +377,6 @@ MFCD * TheaterData = 0;
 MFCD * MoviesMix = 0;
 MFCD * GeneralMix = 0;
 MFCD * ScoreMix = 0;
-MFCD * MainMix = 0;
 MFCD * ConquerMix = 0;
 
 /***************************************************************************
@@ -645,8 +644,6 @@ TheaterType LastTheater = THEATER_NONE;	//Lets us know when theater type changes
 */
 SpecialDialogType SpecialDialog = SDLG_NONE;
 
-int RequiredCD = -1;
-int CurrentCD = -1;
 int MouseInstalled;
 
 //
@@ -669,7 +666,6 @@ TTimerClass<SystemTimerClass> TickCount = 0;
 bool InDebugger = false;
 int ReadyToQuit = 0;
 
-GetCDClass		CDList;
 int UnitBuildPenalty = 100;
 
 #ifdef FIXIT_VERSION_3			//	For endgame auto-sonar pulse.

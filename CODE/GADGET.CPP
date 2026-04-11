@@ -512,7 +512,7 @@ KeyNumType GadgetClass::Input(void)
 													SeenBuff.Get_Height(),
 													NULL,
 													SeenBuff.Get_Width() * SeenBuff.Get_Height());
-			CDFileClass file;
+			CCFileClass file;
 			char filename[30];
 
 //			Hide_Mouse();

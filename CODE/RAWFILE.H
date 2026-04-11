@@ -61,7 +61,7 @@
 **	This is the definition of the raw file class. It is derived from the abstract base FileClass
 **	and handles the interface to the low level DOS routines. This is the first class in the
 **	chain of derived file classes that actually performs a useful function. With this class,
-**	I/O is possible. More sophisticated features, such as packed files, CD-ROM support,
+**	I/O is possible. More sophisticated features, such as packed files, higher-level media access,
 **	file caching, and XMS/EMS memory support, are handled by derived classes.
 **
 **	Of particular importance is the need to override the error routine if more sophisticated

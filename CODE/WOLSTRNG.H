@@ -174,7 +174,7 @@ extern const char TXT_WOL_WOLAPIREINIT[];
 extern const char TXT_WOL_NOTPAGED[];
 extern const char TXT_WOL_SCENARIONAMEWAIT[];
 extern const char TXT_WOL_BACK[];
-extern const char TXT_WOL_AMDISCNEEDED[];
+extern const char TXT_WOL_AMDATAREQUIRED[];
 extern const char TXT_WOL_CONFIRMLOGOUT[];
 extern const char TXT_WOL_PROPOSE_DRAW[];
 extern const char TXT_WOL_RETRACT_DRAW[];
@@ -209,4 +209,3 @@ extern const char TXT_WOL_CANCELMEANSFORFEIT[];
 extern const char TXT_WOL_DLLERROR_GETIE3[];
 extern const char TXT_WOL_DLLERROR_CALLUS[];
 extern const char TXT_WOL_PRIVATE[];
-

@@ -2345,53 +2345,7 @@ static int Net_Join_Dialog(void)
 
 					CCFileClass check_file ( Session.ScenarioFileName );
 					if ( !check_file.Is_Available() ) {
-
-						int current_drive = CCFileClass::Get_CD_Drive();
-#ifdef FIXIT_CSII	//	checked - ajw 9/28/98
-						int index = Get_CD_Index(current_drive, 1*60);
-						bool needcd = false;
-						if (Is_Mission_Counterstrike(Session.ScenarioFileName)) {
-							if (index != 2 && index != 3) {
-								RequiredCD = 2;
-								needcd = true;
-							}
-						}
-						if (Is_Mission_Aftermath(Session.ScenarioFileName)) {
-							if (index != 3) {
-								RequiredCD = 3;
-								needcd = true;
-							}
-						}
-						if (needcd) {
-#else
-						if ( Get_CD_Index(current_drive, 1*60) != 2 ){
-							RequiredCD = 2;
-#endif
-
-							/*
-							** We should have the scenario but the wrong disk is in.
-							** Tell the host that I am ready to go anyway.
-							*/
-							memset ((void*)&(Session.GPacket), 0, sizeof (Session.GPacket));
-							Session.GPacket.Command = NET_READY_TO_GO;
-							Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
-								1, &Session.HostAddress);
-							while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
-								SDL_Delay(1);
-							}
-							ready_packet_was_sent = true;
-
-							if (!Force_CD_Available (RequiredCD)){
-								Emergency_Exit(EXIT_FAILURE);
-							}
-
-							/*
-							** Update the internal list of scenarios to include the counterstrike
-							** list.
-							*/
-							Session.Read_Scenario_Descriptions();
-
-						}
+						Session.Read_Scenario_Descriptions();
 					}
 				}
 
@@ -6030,40 +5984,8 @@ static int Net_Fake_New_Dialog(void)
 #ifdef FIXIT_CSII	//	checked - ajw 9/28/98
 					if ( Expansion_CS_Present() || Expansion_AM_Present() ) {
 						if ( toupper (Session.ScenarioFileName [2]) == 'M' ){
-
-							int current_drive = CCFileClass::Get_CD_Drive();
-							int index = Get_CD_Index(current_drive, 1*60);
-							bool needcd = false;
-							if (Is_Mission_Counterstrike(Session.ScenarioFileName) && index!=2 && index!=3) {
-								needcd = true;
-								RequiredCD = 2;
-							}
-							if (Is_Mission_Aftermath(Session.ScenarioFileName) && index!=3) {
-								needcd = true;
-								RequiredCD = 3;
-							}
-							if (needcd) {
-#else
-					if ( Expansion_CS_Present() ) {
-						if ( toupper (Session.ScenarioFileName [2]) == 'M' ){
-							int scen_num;
-							sscanf ( Session.ScenarioFileName, "SCM%02d", &scen_num );
-
-							int current_drive = CCFileClass::Get_CD_Drive();
-							if ( scen_num>24 && Get_CD_Index(current_drive, 1*60) != 2){
-								RequiredCD = 2;
 #endif
-								if (!Force_CD_Available (RequiredCD)){
-									Emergency_Exit(EXIT_FAILURE);
-								}
-
-								/*
-								** Update the internal list of scenarios to include the counterstrike
-								** list.
-								*/
-								Session.Read_Scenario_Descriptions();
-
-							}
+							Session.Read_Scenario_Descriptions();
 						}
 					}
 
@@ -6813,63 +6735,16 @@ static int Net_Fake_Join_Dialog(void)
 
 						CCFileClass check_file ( Session.ScenarioFileName );
 						if ( !check_file.Is_Available() ) {
+							Session.Read_Scenario_Descriptions();
 
-							int current_drive = CCFileClass::Get_CD_Drive();
-#ifdef FIXIT_CSII	//	checked - ajw 9/28/98
-							int index = Get_CD_Index(current_drive, 1*60);
-							bool needcd = false;
-							if (Is_Mission_Counterstrike(Session.ScenarioFileName)) {
-								if (index != 2 && index != 3) {
-									RequiredCD = 2;
-									needcd = true;
-								}
-							}
-							if (Is_Mission_Aftermath(Session.ScenarioFileName)) {
-								if (index != 3) {
-									RequiredCD = 3;
-									needcd = true;
-								}
-							}
-							if (needcd) {
-#else
-							if ( Get_CD_Index(current_drive, 1*60) != 2 ){
-								RequiredCD = 2;
-#endif
-
-								/*
-								** We should have the scenario but the wrong disk is in.
-								** Tell the host that I am ready to go anyway.
-								*/
-								memset ((void*)&(Session.GPacket), 0, sizeof (Session.GPacket));
-								Session.GPacket.Command = NET_READY_TO_GO;
-								Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
-									1, &Session.HostAddress);
-								while (Udp.Global_Num_Send() > 0 && Udp.Service() != 0) {
-									SDL_Delay(1);
-								}
-								ready_packet_was_sent = true;
-
-								if (!Force_CD_Available (RequiredCD)){
-									Emergency_Exit(EXIT_FAILURE);
-								}
-
-								CCFileClass testfile ( Session.ScenarioFileName );
-
-								/*
-								** Update the internal list of scenarios to include the counterstrike
-								** list.
-								*/
-								Session.Read_Scenario_Descriptions();
-
-								/*
-								** See if that scenario is available now. Its pretty fatal if it isnt.
-								*/
-								Session.Options.ScenarioIndex = -1;
-								for (i = 0; i < Session.Scenarios.Count(); i++) {
-									if (!strcmp (Session.Scenarios[i]->Description(), Session.Options.ScenarioDescription) ){
-										Session.Options.ScenarioIndex = i;
-										break;
-									}
+							/*
+							** See if that scenario is available now. Its pretty fatal if it isnt.
+							*/
+							Session.Options.ScenarioIndex = -1;
+							for (i = 0; i < Session.Scenarios.Count(); i++) {
+								if (!strcmp (Session.Scenarios[i]->Description(), Session.Options.ScenarioDescription) ){
+									Session.Options.ScenarioIndex = i;
+									break;
 								}
 							}
 						}

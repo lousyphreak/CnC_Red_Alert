@@ -108,9 +108,9 @@
 //	bug fixes that should never be rolled back, b) change the nature of the game, at least in multi-player. This meant
 //	that the "Red Alert" executable ( == Counterstrike executable ) could no longer be built. Apparently, at the time,
 //	this was justified, as it was believed that no further patches to the RA executable would ever be necessary.
-//	Given that Denzil's DVD changes and my WOLAPI integration are essentially a patch, we've got a problem.
-//	We've decided to level the field and make sure every who gets or patches to the new version of Red Alert, CS, AM, (and
-//	their DVD equivalent(s)) will have the same executable. So we're assuming that all of the FIXIT_CSII changes are 
+//	Given later release updates and the WOLAPI integration, we've got a problem.
+//	We've decided to level the field and make sure everyone who gets or patches to the new version of Red Alert, CS, and AM
+//	will have the same executable. So we're assuming that all of the FIXIT_CSII changes are
 //	permanent (as, in fact, all prior FIXIT_'s are - makes me wonder why the old non-compiling code has to hang around
 //	forever), and fixing the code so that the assumption "this is an Aftermath game" is no longer hard-coded, but can 
 //	change at runtime. (Which is what should have been done when Aftermath was created.)
@@ -141,12 +141,6 @@
 
 //	Denotes changes made for version 3 - reunification of all existing versions and undoing of Aftermath divergence. - ajw
 #define FIXIT_VERSION_3
-#define DVD
-
-// Define DVD to turn on RADVD additions/changes - Denzil
-#ifdef DVD
-//#define INTERNET_OFF
-#endif
 
 // Test to see if partial object drawing is any faster.
 #define	PARTIAL

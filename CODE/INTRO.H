@@ -38,6 +38,6 @@
 #ifndef INTRO_H
 #define INTRO_H
 
-void Choose_Side(void);
+bool Choose_Side(void);
 
 #endif

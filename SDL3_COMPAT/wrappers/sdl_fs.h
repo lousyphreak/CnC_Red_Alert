@@ -18,9 +18,9 @@
 std::string WWFS_NormalizePath(const char* windows_path);
 void WWFS_SetBaseDirectory(const char* path);
 std::string WWFS_GetBaseDirectoryPath();
+void WWFS_SetMainMixOverride(int index);
+int WWFS_GetMainMixOverride();
 void WWFS_SplitPath(const char* path, char* drive, char* dir, char* fname, char* ext);
-int WWFS_GetVirtualCDIndexForDriveLetter(char drive_letter);
-bool WWFS_ResolveVirtualCDPath(const char* windows_path, std::string& resolved_path, int* cd_index = nullptr);
 bool WWFS_InitializeEmscriptenAssetCache();
 bool WWFS_SetCurrentDirectory(const char* path);
 char* WWFS_GetCurrentDirectory(char* buffer, int max_length);

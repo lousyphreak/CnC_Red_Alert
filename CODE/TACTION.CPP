@@ -103,7 +103,8 @@ static int32_t Normalize_Legacy_Action_Value(TActionType action, int32_t value)
 	**	the actual enum value -- upper bytes retained 0xFF garbage from the
 	**	union's constructor initialization (Data.Value = -1). The original
 	**	scenario data in the MIX files contains these values (e.g. -255 meaning
-	**	house 1). Sign-extend from byte to recover the correct enum value.
+	**	house 1). Recover the low byte using the signedness that matches the
+	**	legacy enum's stored range.
 	*/
 	switch (Action_Needs(action)) {
 		case NEED_HOUSE:
@@ -112,6 +113,15 @@ static int32_t Normalize_Legacy_Action_Value(TActionType action, int32_t value)
 		case NEED_QUARRY:
 		case NEED_MOVIE:
 			return (int32_t)(int8_t)(value & 0xFF);
+
+		case NEED_SOUND:
+			if (value < VOC_NONE) {
+				int32_t legacy_sound = value & 0x00FF;
+				if (legacy_sound >= VOC_FIRST && legacy_sound < VOC_COUNT) {
+					return(legacy_sound);
+				}
+			}
+			return(value);
 
 		case NEED_SPEECH:
 			if (value < VOX_NONE) {

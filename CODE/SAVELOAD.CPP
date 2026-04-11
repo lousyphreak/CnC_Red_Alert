@@ -586,6 +586,7 @@ bool Load_Game(int id)
 	**	Load the scenario global information.
 	*/
 	straw.Get(&Scen, sizeof(Scen));
+	Configure_Scenario_Main_Mix(Scen.ScenarioName);
 
 	/*
 	**	Fixup the Sessionclass scenario info so we can work out which
@@ -595,43 +596,7 @@ bool Load_Game(int id)
 
 		CCFileClass scenario_file (Scen.ScenarioName);
 		if ( !scenario_file.Is_Available() ){
-
-			int cd = -1;
-			if (Is_Mission_Counterstrike (Scen.ScenarioName)) {
-				cd = 2;
-#ifdef FIXIT_CSII	//	checked - ajw 9/28/98
-				if (Expansion_AM_Present()) {
-					int current_drive = CCFileClass::Get_CD_Drive();
-					int index = Get_CD_Index(current_drive, 1*60);
-					if (index == 3) cd = 3;
-				}
-#endif
-			}
-#ifdef FIXIT_CSII	//	checked - ajw 9/28/98
-			if (Is_Mission_Aftermath (Scen.ScenarioName)) {
-				cd = 3;
-#ifdef BOGUSCD
-	cd = -1;
-#endif
-			}
-#endif
-			RequiredCD = cd;
-			if (!Force_CD_Available (RequiredCD)) {
-				Emergency_Exit(EXIT_FAILURE);
-			}
-
-			/*
-			** Update the internal list of scenarios to include the counterstrike
-			** list.
-			*/
 			Session.Read_Scenario_Descriptions();
-		} else {
-			/*
-			** The scenario is available so set RequiredCD to whatever is currently
-			** in the drive.
-			*/
-			int current_drive = CCFileClass::Get_CD_Drive();
-			RequiredCD = Get_CD_Index(current_drive, 1*60);
 		}
 	}
 
@@ -777,13 +742,8 @@ bool Load_Game(int id)
 
 	Call_Back();
 
-	/*
-	**	Set the required CD to be in the drive according to the scenario
-	**	loaded.
-	*/
-	if (RequiredCD != -2 && !load_net) {
-
 #ifdef FIXIT_ANTS
+	if (!load_net) {
 		/*
 		**	Determines if this an ant mission. Since the ant mission looks no different from
 		**	a regular mission, examining of the scenario name is the only way to tell.
@@ -799,65 +759,31 @@ bool Load_Game(int id)
 		} else{
 			AntsEnabled = false;
 		}
-#endif
-
-		if (Scen.Scenario == 1) {
-			RequiredCD = -1;
-		} else {
-#ifdef FIXIT_ANTS
-			if (Scen.Scenario > 19 || AntsEnabled) {
-			   RequiredCD = 2;
-#ifdef FIXIT_CSII	//	checked - ajw 9/28/98
-				if(Scen.Scenario >= 36) {
-					RequiredCD = 3;
-#ifdef BOGUSCD
-	RequiredCD = -1;
-#endif
-				}
-#endif
-			} else {
-#endif	//FIXIT_ANTS
-				if (PlayerPtr->Class->House != HOUSE_USSR  && PlayerPtr->Class->House != HOUSE_UKRAINE) {
-					RequiredCD = 0;
-				} else {
-					RequiredCD = 1;
-				}
-#ifdef FIXIT_ANTS
-			}
-#endif	//FIXIT_ANTS
-		}
-
-	}else{
-
-		if ( load_net ){
-
-			CCFileClass scenario_file (Scen.ScenarioName);
-
-			/*
-			** Fix up the session class variables
-			*/
-			for ( int s=0 ; s<Session.Scenarios.Count() ; s++ ) {
-				if (Session.Scenarios[s]->Description() == Scen.Description){
-
-					memcpy (Session.Options.ScenarioDescription, Scen.Description,
-								sizeof (Session.Options.ScenarioDescription));
-					memcpy (Session.ScenarioFileName, Scen.ScenarioName,
-								sizeof (Session.ScenarioFileName));
-					Session.ScenarioFileLength = scenario_file.Size();
-					memcpy (Session.ScenarioDigest, Session.Scenarios[s]->Get_Digest(),
-								sizeof (Session.ScenarioDigest));
-					Session.ScenarioIsOfficial = Session.Scenarios[s]->Get_Official();
-					Scen.Scenario = s;
-					Session.Options.ScenarioIndex = s;
-					break;
-				}
-			}
-		}
 	}
+#endif
+	if ( load_net ){
 
-	if (!Force_CD_Available(RequiredCD)) {
-		//Prog_End();
-		Emergency_Exit(EXIT_FAILURE);
+		CCFileClass scenario_file (Scen.ScenarioName);
+
+		/*
+		** Fix up the session class variables
+		*/
+		for ( int s=0 ; s<Session.Scenarios.Count() ; s++ ) {
+			if (Session.Scenarios[s]->Description() == Scen.Description){
+
+				memcpy (Session.Options.ScenarioDescription, Scen.Description,
+							sizeof (Session.Options.ScenarioDescription));
+				memcpy (Session.ScenarioFileName, Scen.ScenarioName,
+							sizeof (Session.ScenarioFileName));
+				Session.ScenarioFileLength = scenario_file.Size();
+				memcpy (Session.ScenarioDigest, Session.Scenarios[s]->Get_Digest(),
+							sizeof (Session.ScenarioDigest));
+				Session.ScenarioIsOfficial = Session.Scenarios[s]->Get_Official();
+				Scen.Scenario = s;
+				Session.Options.ScenarioIndex = s;
+				break;
+			}
+		}
 	}
 
 	ScenarioInit = 0;
@@ -938,16 +864,6 @@ bool Load_Game(int id)
 				break;
 		}
 		if(readini) {
-			/*
-			** Find out if the CD in the current drive is the Aftermath disc.
-		  	*/
-			if(Get_CD_Index(CCFileClass::Get_CD_Drive(), 1*60) != 3) {
-				GamePalette.Set(FADE_PALETTE_FAST, Call_Back);
-				if (!Force_CD_Available(3)) {	// force Aftermath CD in drive.
-   	   		//Prog_End();
-					Emergency_Exit(EXIT_FAILURE);
-		     	}
-			}
 			CCINIClass mpini;
 			CCFileClass mplayerini("MPLAYER.INI");
 			if (mpini.Load(mplayerini, false)) {

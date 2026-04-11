@@ -42,6 +42,7 @@
 #include	<cstdarg>
 #include	<cstdio>
 #include	<cstdlib>
+#include	<string>
 
 #include <SDL3/SDL_filesystem.h>
 
@@ -101,6 +102,59 @@ void copy_base_path(char* buffer, size_t buffer_size)
 
 	const char* base_path = SDL_GetBasePath();
 	std::snprintf(buffer, buffer_size, "%s", (base_path != NULL) ? base_path : "./");
+}
+
+std::string normalize_directory_path(const char* path)
+{
+	std::string normalized = WWFS_NormalizePath(path);
+	while (normalized.size() > 1 && (normalized.back() == '/' || normalized.back() == '\\')) {
+		normalized.pop_back();
+	}
+	return normalized.empty() ? std::string(".") : normalized;
+}
+
+std::string parent_directory_path(const std::string& path)
+{
+	const size_t separator = path.find_last_of("/\\");
+	if (separator == std::string::npos) {
+		return std::string(".");
+	}
+	if (separator == 0) {
+		return path.substr(0, 1);
+	}
+	return path.substr(0, separator);
+}
+
+bool directory_contains_game_data(const std::string& directory)
+{
+	SDL_PathInfo info;
+	if (!WWFS_GetPathInfo(directory.c_str(), &info) || info.type != SDL_PATHTYPE_DIRECTORY) {
+		return false;
+	}
+
+	const std::string redalert_mix = directory + "/REDALERT.MIX";
+	const std::string main1_mix = directory + "/MAIN1.MIX";
+	return WWFS_GetPathInfo(redalert_mix.c_str(), nullptr) && WWFS_GetPathInfo(main1_mix.c_str(), nullptr);
+}
+
+std::string resolve_game_data_directory(const char* executable_directory)
+{
+	const std::string normalized_executable_directory = normalize_directory_path(executable_directory);
+	const std::string sibling_game_data_directory = normalized_executable_directory + "/GameData";
+	const std::string parent_game_data_directory = parent_directory_path(normalized_executable_directory) + "/GameData";
+	const std::string candidates[] = {
+		normalized_executable_directory,
+		sibling_game_data_directory,
+		parent_game_data_directory
+	};
+
+	for (size_t index = 0; index < ARRAY_SIZE(candidates); ++index) {
+		if (directory_contains_game_data(candidates[index])) {
+			return candidates[index];
+		}
+	}
+
+	return normalized_executable_directory;
 }
 
 void destroy_main_window_for_shutdown(int ready_to_quit, const char* reason)
@@ -207,7 +261,16 @@ int RedAlert_Main(int argc, char* argv[])
 		strcat(working_directory, drive);
 	}
 	strcat(working_directory, path);
-	WWFS_SetCurrentDirectory(working_directory);
+	const std::string launch_directory = normalize_directory_path(working_directory);
+	const std::string game_data_directory = resolve_game_data_directory(working_directory);
+	if (SDL_strcasecmp(launch_directory.c_str(), game_data_directory.c_str()) != 0) {
+		CCFileClass::Set_Local_Search_Root(launch_directory.c_str());
+		startup_trace("Using secondary local asset root \"%s\"", launch_directory.c_str());
+	} else {
+		CCFileClass::Set_Local_Search_Root(NULL);
+	}
+	startup_trace("Using asset root \"%s\"", game_data_directory.c_str());
+	WWFS_SetCurrentDirectory(game_data_directory.c_str());
 
 #ifdef WOLAPI_INTEGRATION
 	//	Look for special wolapi install program, used after the patch to version 3, to install "Shared Internet Components".
@@ -358,8 +421,6 @@ int RedAlert_Main(int argc, char* argv[])
 
 			WWMouse = new WWMouseClass(&SeenBuff, 48, 48);
 			MouseInstalled = TRUE;
-
-			CDFileClass::Set_CD_Drive (CDList.Get_First_CD_Drive());
 
 			/*
 			** See if we should run the intro

@@ -578,13 +578,6 @@ int Main_Menu(uint32_t )
 		d_exit_x, starty, d_exit_w, d_exit_h);
 	starty += ystep;
 
-	/*
-	**	Initialize
-	*/
-	if (RequiredCD != -2) {
-		RequiredCD = -1;
-		Force_CD_Available(RequiredCD);
-	}
 	Set_Logic_Page(SeenBuff);
 	Keyboard->Clear();
 

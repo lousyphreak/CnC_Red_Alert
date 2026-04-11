@@ -418,11 +418,9 @@ void WOL_GameSetupDialog::Initialize()
 	if( pWO->GameInfoCurrent.GameKind == CREATEGAMEINFO::AMGAME )
 	{
 		bAftermathUnits = true;
-		int current_drive = CCFileClass::Get_CD_Drive();
-		int cd_index = Get_CD_Index(current_drive, 1*60);
-		if( cd_index != 3 && cd_index != 5 )
+		if( !Expansion_AM_Present() )
 		{
-			WOL_PrintMessage( *pILDisc, TXT_WOL_AMDISCNEEDED, WOLCOLORREMAP_LOCALMACHINEMESS );
+			WOL_PrintMessage( *pILDisc, TXT_WOL_AMDATAREQUIRED, WOLCOLORREMAP_LOCALMACHINEMESS );
 		}
 	}
 	else

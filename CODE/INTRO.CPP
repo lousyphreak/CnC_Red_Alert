@@ -71,43 +71,31 @@ VQAHandle * Open_Movie(char * name)
  * HISTORY:                                                                                    *
  *   5/08/1995 BWG : Created.                                                                  *
  *=============================================================================================*/
-void Choose_Side(void)		//	ajw - In RA, all this did was play a movie. Denzil is using it in its original sense.
+bool Choose_Side(void)
 {
-
 	Whom = HOUSE_GOOD;
+	bool allied_campaign = true;
 
 	if (Special.IsFromInstall) {
-		#ifdef DVD // Denzil
-		if( Using_DVD() )
-		{
-			Hide_Mouse();
-			Load_Title_Page();
-			GamePalette = CCPalette;
-			HidPage.Blit(SeenPage);
-			CCPalette.Set();
-			Set_Logic_Page(SeenBuff);
-			Show_Mouse();
-			
-			switch (WWMessageBox().Process(TXT_CHOOSE, TXT_ALLIES, TXT_SOVIET))
-				{
-				case 0:
-					CurrentCD = 0;
-				break;
+#if RA_ENABLE_DVD_MOVIES
+		Hide_Mouse();
+		Load_Title_Page();
+		GamePalette = CCPalette;
+		HidPage.Blit(SeenPage);
+		CCPalette.Set();
+		Set_Logic_Page(SeenBuff);
+		Show_Mouse();
 
-				case 1:
-					CurrentCD = 1;
-				break;
-				}
-
-			Hide_Mouse();
-			BlackPalette.Set(FADE_PALETTE_SLOW);
-			SeenPage.Clear();
+		if (WWMessageBox().Process(TXT_CHOOSE, TXT_ALLIES, TXT_SOVIET) == 1) {
+			allied_campaign = false;
+			Whom = HOUSE_BAD;
 		}
-		#endif
-		
+
+		Hide_Mouse();
+		BlackPalette.Set(FADE_PALETTE_SLOW);
+		SeenPage.Clear();
+#endif
 		Play_Movie(VQ_INTRO_MOVIE, THEME_NONE, false);
 	}
-
-//	Scen.ScenPlayer = SCEN_PLAYER_GREECE;
-
+	return(allied_campaign);
 }

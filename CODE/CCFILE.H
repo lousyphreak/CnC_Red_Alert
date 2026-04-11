@@ -43,7 +43,7 @@
 #include	<stdint.h>
 #include	<cstdint>
 #include	"MIXFILE.H"
-#include	"CDFILE.H"
+#include	"BFIOFILE.H"
 #include	"BUFF.H"
 
 /*
@@ -51,12 +51,15 @@
 **	a file that is embedded within a mixfile. This is true if the mixfile is cached or resides on
 **	disk. It is functionally similar to pakfiles, except much faster and less RAM intensive.
 */
-class CCFileClass : public CDFileClass
+class CCFileClass : public BufferIOFileClass
 {
 	public:
 		CCFileClass(char const * filename);
 		CCFileClass(void);
 		virtual ~CCFileClass(void) {Position = 0;};
+
+		static void Set_Local_Search_Root(char const* path);
+		static char const* Get_Local_Search_Root(void);
 
 		// Delete should be overloaded here as well. Don't allow deletes of mixfiles.
 

@@ -37,7 +37,7 @@
  *   Init_Authorization -- Verifies that the player is authorized to play the game.            *
  *   Init_Bootstrap_Mixfiles -- Registers and caches any mixfiles needed for bootstrapping.    *
  *   Init_Bulk_Data -- Initialize the time-consuming mixfile caching.                          *
- *   Init_CDROM_Access -- Initialize the CD-ROM access handler.                                *
+ *   Init_Game_Data_Access -- Validate the fixed GameData asset layout.                        *
  *   Init_Color_Remaps -- Initialize the text remap tables.                                    *
  *   Init_Expansion_Files -- Fetch any override expansion mixfiles.                            *
  *   Init_Fonts -- Initialize all the game font pointers.                                      *
@@ -63,9 +63,11 @@
 #include	"LOADDLG.H"
 #include "SDLINPUT.H"
 #include <SDL3/SDL_time.h>
+#include <cctype>
 #include	<cstdarg>
 #include	<cstdio>
 #include	<cstdlib>
+#include	<string>
 #include	<stdint.h>
 #ifdef NETWORK_UDP
 #include	"WSPROTO.H"
@@ -106,14 +108,486 @@ void init_trace(const char* format, ...)
 	va_end(arguments);
 }
 
-static bool Has_Local_Game_Data(void)
+const char* const kGameDataBaseMixfiles[] = {
+	"MAIN1.MIX",
+	"MAIN2.MIX",
+	"MAIN3.MIX",
+	"MAIN4.MIX"
+};
+
+const char* const kExpansionCampaignScenarioNames[] = {
+	"SCG20EA",
+	"SCG21EA",
+	"SCG22EA",
+	"SCG23EA",
+	"SCG24EA",
+	"SCG26EA",
+	"SCG27EA",
+	"SCG28EA",
+	"SCU31EA",
+	"SCU32EA",
+	"SCU33EA",
+	"SCU34EA",
+	"SCU35EA",
+	"SCU36EA",
+	"SCU37EA",
+	"SCU38EA",
+#ifdef FIXIT_CSII
+	"SCG43EA",
+	"SCG41EA",
+	"SCG40EA",
+	"SCG42EA",
+	"SCG47EA",
+	"SCG45EA",
+	"SCG44EA",
+	"SCG48EA",
+	"SCG46EA",
+	"SCU43EA",
+	"SCU40EA",
+	"SCU42EA",
+	"SCU41EA",
+	"SCU45EA",
+	"SCU44EA",
+	"SCU46EA",
+	"SCU47EA",
+	"SCU48EA",
+#endif
+	NULL
+};
+
+bool g_game_data_base_mixfiles_registered = false;
+bool g_game_data_main_mix_registered = false;
+std::string g_game_data_main_mix_filename;
+MFCD* g_active_main_mix = NULL;
+MFCD* g_bootstrap_conquer_mix = NULL;
+
+static void Register_GameData_Main_Mixfile(void);
+static void Configure_Main_Mix_View(int requested_main_mix);
+static void Configure_Default_Main_Mix_Internal(void);
+static void Configure_Scenario_Main_Mix_Internal(char const* scenario_name);
+static void Configure_Score_Presentation_Main_Mix_Internal(void);
+static void Refresh_Frontend_Main_Mix_View(void);
+static void Load_Movie_Mixfiles(void);
+void Configure_Expansion_Main_Mix(bool counterstrike);
+static void Register_Shadow_Main_Mix_View_Families(void);
+static void Register_Expansion_Campaign_Scenario_Mixes(void);
+
+static void Replace_Registered_Mix(MFCD*& mix, char const* filename)
 {
-	const bool main_mix = CCFileClass("MAIN.MIX").Is_Available();
+	if (mix != NULL) {
+		delete mix;
+		mix = NULL;
+	}
+
+	if (!CCFileClass(filename).Is_Available()) {
+		return;
+	}
+
+	mix = new MFCD(filename, &FastKey);
+	assert(mix != NULL);
+	mix->Promote();
+}
+
+enum
+{
+	kMainMixAllied = 1,
+	kMainMixSoviet = 2,
+	kMainMixCounterstrike = 3,
+	kMainMixAftermath = 4
+};
+
+static int Base_Main_Mix_For_House(HousesType house)
+{
+	if (house == HOUSE_USSR || house == HOUSE_UKRAINE || house == HOUSE_BAD) {
+		return kMainMixSoviet;
+	}
+
+	return kMainMixAllied;
+}
+
+static void Normalize_Scenario_Name(char* normalized_name, size_t normalized_name_size, char const* scenario_name)
+{
+	if (normalized_name_size == 0) {
+		return;
+	}
+
+	normalized_name[0] = '\0';
+	if (scenario_name == NULL || scenario_name[0] == '\0') {
+		return;
+	}
+
+	std::snprintf(normalized_name, normalized_name_size, "%s", scenario_name);
+	char* extension = std::strrchr(normalized_name, '.');
+	if (extension != NULL) {
+		*extension = '\0';
+	}
+
+	for (size_t index = 0; normalized_name[index] != '\0'; ++index) {
+		normalized_name[index] = static_cast<char>(std::toupper(static_cast<unsigned char>(normalized_name[index])));
+	}
+}
+
+static int Main_Mix_View_For_Scenario(char const* scenario_name)
+{
+	char normalized_name[32];
+	Normalize_Scenario_Name(normalized_name, sizeof(normalized_name), scenario_name);
+	const size_t normalized_name_length = std::strlen(normalized_name);
+	if (normalized_name[0] == '\0') {
+		return kMainMixAllied;
+	}
+
+	if (normalized_name_length >= 3 &&
+		normalized_name[0] == 'S' &&
+		normalized_name[1] == 'C' &&
+		normalized_name[2] == 'M') {
+		if (Is_Mission_Aftermath(normalized_name)) {
+			return kMainMixAftermath;
+		}
+		if (Is_Mission_Counterstrike(normalized_name)) {
+			return kMainMixCounterstrike;
+		}
+		return kMainMixAllied;
+	}
+
+	if (normalized_name_length >= 3 &&
+		normalized_name[0] == 'S' &&
+		normalized_name[1] == 'C' &&
+		normalized_name[2] == 'A') {
+		return kMainMixCounterstrike;
+	}
+
+	if (normalized_name_length >= 7 &&
+		normalized_name[0] == 'S' &&
+		normalized_name[1] == 'C' &&
+		(normalized_name[2] == 'G' || normalized_name[2] == 'U') &&
+		std::isdigit(static_cast<unsigned char>(normalized_name[3])) &&
+		std::isdigit(static_cast<unsigned char>(normalized_name[4])) &&
+		normalized_name[5] == 'E' &&
+		normalized_name[6] == 'A') {
+		const int scenario_number = ((normalized_name[3] - '0') * 10) + (normalized_name[4] - '0');
+		if (scenario_number >= 40) {
+			return kMainMixAftermath;
+		}
+		if (scenario_number >= 20) {
+			return kMainMixCounterstrike;
+		}
+		return (normalized_name[2] == 'U') ? kMainMixSoviet : kMainMixAllied;
+	}
+
+	return kMainMixAllied;
+}
+
+static bool Is_Local_GameData_File_Available(const char* filename)
+{
+	return RawFileClass(filename).Is_Available();
+}
+
+static void Register_GameData_Base_Mixfiles(void)
+{
+	if (g_game_data_base_mixfiles_registered) {
+		return;
+	}
+
+	Register_GameData_Main_Mixfile();
+	g_game_data_base_mixfiles_registered = true;
+}
+
+static void Register_GameData_Main_Mixfile(void)
+{
+	if (g_game_data_main_mix_registered || !CCFileClass("MAIN.MIX").Is_Available()) {
+		return;
+	}
+
+	CCFileClass main_mix_file("MAIN.MIX");
+	MFCD* main_mix = new MFCD("MAIN.MIX", &FastKey);
+	assert(main_mix != NULL);
+	g_active_main_mix = main_mix;
+	if (main_mix_file.File_Name() != NULL) {
+		char name[_MAX_FNAME];
+		char ext[_MAX_EXT];
+		char basename[_MAX_FNAME + _MAX_EXT];
+		WWFS_SplitPath(main_mix_file.File_Name(), NULL, NULL, name, ext);
+		WWFS_MakePath(basename, NULL, NULL, name, ext);
+		g_game_data_main_mix_filename = basename;
+	} else {
+		g_game_data_main_mix_filename.clear();
+	}
+	g_game_data_main_mix_registered = true;
+}
+
+static void Refresh_Frontend_Main_Mix_View(void)
+{
+	if (g_active_main_mix != NULL) {
+		g_active_main_mix->Promote();
+	} else {
+		Replace_Registered_Mix(g_active_main_mix, "MAIN.MIX");
+	}
+
+	Load_Movie_Mixfiles();
+	Replace_Registered_Mix(GeneralMix, "GENERAL.MIX");
+	Replace_Registered_Mix(ScoreMix, "SCORES.MIX");
+	if (ScoreMix != NULL) {
+		ThemeClass::Scan();
+	}
+}
+
+static void Register_Shadow_Main_Mix_View_Families(void)
+{
+	if (CCFileClass("CONQUER.MIX").Is_Available()) {
+		ConquerMix = new MFCD("CONQUER.MIX", &FastKey);
+		if (ConquerMix != NULL) {
+			ConquerMix->Promote();
+		}
+	}
+	if (CCFileClass("SOUNDS.MIX").Is_Available()) {
+		MFCD* sounds_mix = new MFCD("SOUNDS.MIX", &FastKey);
+		if (sounds_mix != NULL) {
+			sounds_mix->Promote();
+		}
+	}
+	if (CCFileClass("SPEECH.MIX").Is_Available()) {
+		MFCD* speech_mix = new MFCD("SPEECH.MIX", &FastKey);
+		if (speech_mix != NULL) {
+			speech_mix->Promote();
+		}
+	}
+	if (CCFileClass("RUSSIAN.MIX").Is_Available()) {
+		MFCD* russian_mix = new MFCD("RUSSIAN.MIX", &FastKey);
+		if (russian_mix != NULL) {
+			russian_mix->Promote();
+		}
+	}
+	if (CCFileClass("ALLIES.MIX").Is_Available()) {
+		MFCD* allies_mix = new MFCD("ALLIES.MIX", &FastKey);
+		if (allies_mix != NULL) {
+			allies_mix->Promote();
+		}
+	}
+}
+
+static void Configure_Main_Mix_View(int requested_main_mix)
+{
+	if (requested_main_mix < kMainMixAllied || requested_main_mix > kMainMixAftermath) {
+		requested_main_mix = kMainMixAllied;
+	}
+
+	if (WWFS_GetMainMixOverride() != requested_main_mix) {
+		WWFS_SetMainMixOverride(requested_main_mix);
+		Replace_Registered_Mix(g_active_main_mix, "MAIN.MIX");
+		Register_Shadow_Main_Mix_View_Families();
+		Register_Expansion_Campaign_Scenario_Mixes();
+	}
+
+	Refresh_Frontend_Main_Mix_View();
+}
+
+static void Configure_Default_Main_Mix_Internal(void)
+{
+	Configure_Main_Mix_View(kMainMixAllied);
+}
+
+static void Configure_Scenario_Main_Mix_Internal(char const* scenario_name)
+{
+	Configure_Main_Mix_View(Main_Mix_View_For_Scenario(scenario_name));
+}
+
+static void Configure_Score_Presentation_Main_Mix_Internal(void)
+{
+	if (Scen.ScenarioName[0] != '\0') {
+		Configure_Scenario_Main_Mix_Internal(Scen.ScenarioName);
+		if (g_bootstrap_conquer_mix != NULL) {
+			g_bootstrap_conquer_mix->Promote();
+		}
+		return;
+	}
+
+	HousesType house = HOUSE_GOOD;
+
+	if (PlayerPtr != NULL && PlayerPtr->Class.Is_Valid()) {
+		house = PlayerPtr->Class->House;
+	}
+
+	Configure_Main_Mix_View(Base_Main_Mix_For_House(house));
+	if (g_bootstrap_conquer_mix != NULL) {
+		g_bootstrap_conquer_mix->Promote();
+	}
+}
+
+void Configure_Expansion_Main_Mix(bool counterstrike)
+{
+	Configure_Main_Mix_View(counterstrike ? kMainMixCounterstrike : kMainMixAftermath);
+}
+
+static bool Has_Required_Game_Data(void)
+{
+	const bool redalert_mix = Is_Local_GameData_File_Available("REDALERT.MIX");
+	bool base_mixfiles_present = true;
+
+	for (size_t index = 0; index < ARRAY_SIZE(kGameDataBaseMixfiles); ++index) {
+		const bool present = Is_Local_GameData_File_Available(kGameDataBaseMixfiles[index]);
+		init_trace("Has_Required_Game_Data %s=%d", kGameDataBaseMixfiles[index], present);
+		if (!present) {
+			base_mixfiles_present = false;
+		}
+	}
+
+	if (!redalert_mix || !base_mixfiles_present) {
+		init_trace("Has_Required_Game_Data REDALERT=%d base_mixfiles_present=%d", redalert_mix, base_mixfiles_present);
+		return false;
+	}
+
+	Register_GameData_Base_Mixfiles();
+
 	const bool conquer_mix = CCFileClass("CONQUER.MIX").Is_Available();
 	const bool general_mix = CCFileClass("GENERAL.MIX").Is_Available();
-	init_trace("Has_Local_Game_Data MAIN=%d CONQUER=%d GENERAL=%d", main_mix, conquer_mix, general_mix);
-	return main_mix && conquer_mix && general_mix;
+	init_trace("Has_Required_Game_Data REDALERT=%d CONQUER=%d GENERAL=%d", redalert_mix, conquer_mix, general_mix);
+	return conquer_mix && general_mix;
 }
+
+#if RA_ENABLE_DVD_MOVIES
+MFCD* g_movie_mix_extra = NULL;
+#endif
+
+static bool Is_Movie_Mix_Available(const char* filename)
+{
+	return CCFileClass(filename).Is_Available();
+}
+
+static void Register_Expansion_Mixfiles_From_Directory(const char* directory, const char* pattern, bool cache_mix)
+{
+	if (directory == NULL || directory[0] == '\0') {
+		return;
+	}
+
+	int mix_count = 0;
+	char **mix_files = WWFS_GlobDirectory(directory, pattern, SDL_GLOB_CASEINSENSITIVE, &mix_count);
+	if (mix_files == NULL) {
+		return;
+	}
+
+	for (int index = 0; index < mix_count; ++index) {
+		char name[_MAX_FNAME];
+		char ext[_MAX_EXT];
+		char basename[_MAX_FNAME + _MAX_EXT];
+		WWFS_SplitPath(mix_files[index], NULL, NULL, name, ext);
+		WWFS_MakePath(basename, NULL, NULL, name, ext);
+
+		if (SDL_strcasecmp(directory, ".") != 0 && RawFileClass(basename).Is_Available()) {
+			continue;
+		}
+
+		char * ptr = strdup(mix_files[index]);
+		new MFCD(ptr, &FastKey);
+		if (cache_mix) {
+			MFCD::Cache(ptr);
+		}
+	}
+
+	SDL_free(mix_files);
+}
+
+static void Register_Expansion_Scenario_Mix(const char* scenario_name, bool cache_mix)
+{
+	char scenario_ini[32];
+	char scenario_mix[32];
+
+	std::snprintf(scenario_ini, sizeof(scenario_ini), "%s.INI", scenario_name);
+	if (CCFileClass(scenario_ini).Is_Available()) {
+		return;
+	}
+
+	std::snprintf(scenario_mix, sizeof(scenario_mix), "%s.MIX", scenario_name);
+	if (!CCFileClass(scenario_mix).Is_Available()) {
+		return;
+	}
+
+	MFCD* scenario_mix_file = new MFCD(scenario_mix, &FastKey);
+	if (scenario_mix_file != NULL) {
+		scenario_mix_file->Promote();
+	}
+	if (cache_mix) {
+		bool ok = MFCD::Cache(scenario_mix);
+		assert(ok);
+		(void)ok;
+	}
+
+}
+
+static void Register_Expansion_Campaign_Scenario_Mixes(void)
+{
+	for (size_t index = 0; kExpansionCampaignScenarioNames[index] != NULL; ++index) {
+		Register_Expansion_Scenario_Mix(kExpansionCampaignScenarioNames[index], true);
+	}
+}
+
+static void Register_Expansion_Scenario_Mixes_From_Packet(const char* packet_name)
+{
+	CCFileClass file(packet_name);
+	if (!file.Is_Available()) {
+		return;
+	}
+
+	INIClass ini;
+	if (!ini.Load(file)) {
+		return;
+	}
+
+	const int count = ini.Entry_Count("Missions");
+	for (int index = 0; index < count; ++index) {
+		const char* mission_name = ini.Get_Entry("Missions", index);
+		if (mission_name == NULL || mission_name[0] == '\0') {
+			continue;
+		}
+
+		char scenario_name[_MAX_FNAME];
+		std::snprintf(scenario_name, sizeof(scenario_name), "%s", mission_name);
+		char* extension = std::strrchr(scenario_name, '.');
+		if (extension != NULL) {
+			*extension = '\0';
+		}
+		Register_Expansion_Scenario_Mix(scenario_name, true);
+	}
+}
+
+static void Load_Movie_Mixfiles(void)
+{
+	const bool has_movies1 = Is_Movie_Mix_Available("MOVIES1.MIX");
+	if (MoviesMix != NULL) {
+		delete MoviesMix;
+		MoviesMix = NULL;
+	}
+	MoviesMix = new MFCD(has_movies1 ? "MOVIES1.MIX" : "MOVIES2.MIX", &FastKey);
+	assert(MoviesMix != NULL);
+
+#if RA_ENABLE_DVD_MOVIES
+	if (g_movie_mix_extra != NULL) {
+		delete g_movie_mix_extra;
+		g_movie_mix_extra = NULL;
+	}
+	const bool has_movies2 = Is_Movie_Mix_Available("MOVIES2.MIX");
+	if (has_movies1 && has_movies2) {
+		g_movie_mix_extra = new MFCD("MOVIES2.MIX", &FastKey);
+		assert(g_movie_mix_extra != NULL);
+	}
+#endif
+
+	MoviesMix->Promote();
+}
+}
+
+void Configure_Default_Main_Mix(void)
+{
+	Configure_Default_Main_Mix_Internal();
+}
+
+void Configure_Scenario_Main_Mix(char const* scenario_name)
+{
+	Configure_Scenario_Main_Mix_Internal(scenario_name);
+}
+
+void Configure_Score_Presentation_Main_Mix(void)
+{
+	Configure_Score_Presentation_Main_Mix_Internal();
 }
 
 RemapControlType SidebarScheme;
@@ -133,7 +607,7 @@ static void Init_Heaps(void);
 static void Init_Expansion_Files(void);
 static void Init_One_Time_Systems(void);
 static void Init_Fonts(void);
-static void Init_CDROM_Access(void);
+static void Init_Game_Data_Access(void);
 static void Init_Bootstrap_Mixfiles(void);
 static void Init_Secondary_Mixfiles(void);
 static void Init_Mouse(void);
@@ -242,11 +716,10 @@ bool Init_Game(int , char * [])
 	init_trace("Init_Game mouse init complete");
 
 	/*
-	**	Initialize access to the CD-ROM and ensure that the CD is inserted. This can, and
-	**	most likely will, result in a visible prompt.
+	**	Initialize access to the required game data.
 	*/
-	Init_CDROM_Access();
-	init_trace("Init_Game media init complete RequiredCD=%d search_drives=%d using_dvd=%d", RequiredCD, CCFileClass::Is_There_Search_Drives(), Using_DVD());
+	Init_Game_Data_Access();
+	init_trace("Init_Game media init complete data_ready=%d", Has_Required_Game_Data());
 
 	if (Special.IsFromInstall) {
 		Load_Prolog_Page();
@@ -500,12 +973,6 @@ bool Select_Game(bool fade)
 	(void)cs;
 #endif
 
-//	#ifndef DVD // Denzil - We want the menu screen			ajw No we don't
-//	if (Special.IsFromInstall) {
-//		display = false;
-//	}
-//	#endif
-
 	Show_Mouse();
 
 #ifdef FIXIT_CSII	//	checked - ajw 9/28/98
@@ -588,6 +1055,7 @@ bool Select_Game(bool fade)
 	**	Main menu processing; only do this if we're not in editor mode.
 	*/
 	if (!Debug_Map) {
+		Configure_Default_Main_Mix_Internal();
 
 		/*
 		**	Menu selection processing loop
@@ -672,10 +1140,7 @@ bool Select_Game(bool fade)
 #ifdef FIXIT_VERSION_3
 					if( selection == SEL_NEW_SCENARIO_CS )
 					{
-						if(!Force_CD_Available(2)) {
-						   selection = SEL_NONE;
-						   break;
-						}
+						Configure_Expansion_Main_Mix(true);
 						if(!Expansion_Dialog( true )){
 						   selection = SEL_NONE;
 						   break;
@@ -683,10 +1148,7 @@ bool Select_Game(bool fade)
 					}
 					else
 					{
-						if(!Force_CD_Available(3)) {
-						   selection = SEL_NONE;
-						   break;
-						}
+						Configure_Expansion_Main_Mix(false);
 						if(!Expansion_Dialog( false )){
 						   selection = SEL_NONE;
 						   break;
@@ -704,13 +1166,7 @@ bool Select_Game(bool fade)
 							cdcheck = 4;	// special case: means check for 3 or 4
 						}
 					}
-					if(!Force_CD_Available(cdcheck)) {
-					   return(false);
-					}
 	#else
-					if(!Force_CD_Available(2)) {
-					   return(false);
-					}
 	#endif
 					if(!Expansion_Dialog()){
 					   selection = SEL_NONE;
@@ -830,18 +1286,9 @@ bool Select_Game(bool fade)
 						Load_Title_Page();
 					} else {
 						Theme.Fade_Out();
-#ifdef DVD // Denzil			ajw Presumably a bug fix.
-						Choose_Side();
+						const bool allied_campaign = Choose_Side();
 						Hide_Mouse();
-#else
-						Hide_Mouse();
-						Choose_Side();
-#endif
-						if (CurrentCD == 0) {
-							Scen.Set_Scenario_Name("SCG01EA.INI");
-						} else {
-							Scen.Set_Scenario_Name("SCU01EA.INI");
-						}
+						Scen.Set_Scenario_Name(allied_campaign ? "SCG01EA.INI" : "SCU01EA.INI");
 					}
 
 					Session.Type = GAME_NORMAL;
@@ -1479,14 +1926,6 @@ bool Parse_Command_Line(int argc, char * argv[])
 		}
 
 #endif
-
-		/*
-		**	File search path override.
-		*/
-		if (strstr(string, "-CD")) {
-			CCFileClass::Set_Search_Drives(&string[3]);
-			continue;
-		}
 
 #if (0)
 		/*
@@ -2206,33 +2645,28 @@ static void Init_Heaps(void)
  *=============================================================================================*/
 static void Init_Expansion_Files(void)
 {
+	Register_GameData_Base_Mixfiles();
+	Register_GameData_Main_Mixfile();
+	if (GeneralMix == NULL && CCFileClass("GENERAL.MIX").Is_Available()) {
+		GeneralMix = new MFCD("GENERAL.MIX", &FastKey);
+		assert(GeneralMix != NULL);
+	}
+
+	Register_Expansion_Campaign_Scenario_Mixes();
+	Register_Expansion_Scenario_Mixes_From_Packet("CSTRIKE.PKT");
+#ifdef FIXIT_CSII
+	Register_Expansion_Scenario_Mixes_From_Packet("AFTMATH.PKT");
+#endif
 
 	/*
 	**	Before all else, cache any additional mixfiles.
 	*/
-	{
-		int mix_count = 0;
-		char **mix_files = WWFS_GlobDirectory(".", "SC*.MIX", SDL_GLOB_CASEINSENSITIVE, &mix_count);
-		if (mix_files) {
-			for (int i = 0; i < mix_count; i++) {
-				char * ptr = strdup(mix_files[i]);
-				new MFCD(ptr, &FastKey);
-				MFCD::Cache(ptr);
-			}
-			SDL_free(mix_files);
-		}
-	}
-	{
-		int mix_count = 0;
-		char **mix_files = WWFS_GlobDirectory(".", "SS*.MIX", SDL_GLOB_CASEINSENSITIVE, &mix_count);
-		if (mix_files) {
-			for (int i = 0; i < mix_count; i++) {
-				char * ptr = strdup(mix_files[i]);
-				new MFCD(ptr, &FastKey);
-			}
-			SDL_free(mix_files);
-		}
-	}
+	Register_Expansion_Mixfiles_From_Directory(".", "SC*.MIX", true);
+	Register_Expansion_Mixfiles_From_Directory(".", "SS*.MIX", false);
+
+	const char* local_search_root = CCFileClass::Get_Local_Search_Root();
+	Register_Expansion_Mixfiles_From_Directory(local_search_root, "SC*.MIX", true);
+	Register_Expansion_Mixfiles_From_Directory(local_search_root, "SS*.MIX", false);
 }
 
 /***********************************************************************************************
@@ -2349,111 +2783,38 @@ static void Init_Fonts(void)
 }
 
 /***********************************************************************************************
- * Init_CDROM_Access -- Initialize the CD-ROM access handler.                                  *
+ * Init_Game_Data_Access -- Validate the fixed GameData asset layout.                          *
  *                                                                                             *
- *    This routine is called to setup the CD-ROM access or emulation handler. It will ensure   *
- *    that the appropriate CD-ROM is present (dependant on the RequiredCD global).             *
+ *    This routine is called during startup to ensure the local GameData directory contains    *
+ *    the core archives required to continue bootstrapping the game.                           *
  *                                                                                             *
  * INPUT:   none                                                                               *
  *                                                                                             *
  * OUTPUT:  none                                                                               *
  *                                                                                             *
  * WARNINGS:   The fonts, palettes, and other bootstrap systems must have been initialized     *
- *             prior to calling this routine since this routine will quite likely display      *
- *             a dialog box requesting the appropriate CD be inserted.                         *
+ *             prior to calling this routine because this routine may display a fatal          *
+ *             startup error if required data is missing.                                      *
  *                                                                                             *
  * HISTORY:                                                                                    *
  *   06/03/1996 JLB : Created.                                                                 *
  *=============================================================================================*/
-static void Init_CDROM_Access(void)
+static void Init_Game_Data_Access(void)
 {
+	const bool data_ready = Has_Required_Game_Data();
 	VisiblePage.Clear();
 	HidPage.Clear();
-	init_trace("Init_CDROM_Access start search_drives=%d RequiredCD=%d local_data=%d", CCFileClass::Is_There_Search_Drives(), RequiredCD, Has_Local_Game_Data());
+	init_trace("Init_Game_Data_Access start data_ready=%d", data_ready);
 
-	if (!CCFileClass::Is_There_Search_Drives() && Has_Local_Game_Data()) {
-		char local_path[] = ".";
-		const int error = CCFileClass::Set_Search_Drives(local_path);
-		init_trace("Init_CDROM_Access local search path added error=%d", error);
-	}
-
-	if (CCFileClass::Is_There_Search_Drives()) {
-		RequiredCD = -2;
-		init_trace("Init_CDROM_Access using local search drives");
+	if (data_ready) {
 		return;
 	}
 
-#ifdef FIXIT_VERSION_3
-	//	Determine if we're going to be running from a DVD.
-	//	The entire session will either require a DVD, or the regular CDs. Never both.
-	//	Call Using_DVD() to determine which case it is.
-	//	Here we set the value that Using_DVD() returns.
-	Determine_If_Using_DVD();
-	//	Force_CD_Available() is modified when Using_DVD() is true so that all requests become requests for the DVD.
-#endif
-
-	/*
-	**	Always try to look at the CD-ROM for data files.
-	*/
-	if (!CCFileClass::Is_There_Search_Drives()) {
-
-		/*
-		**	This call is needed because of a side effect of this function. It will examine the
-		**	CD-ROMs attached to this computer and set the appropriate status values. Without this
-		**	call, the "?:\\" could not be filled in correctly.
-		*/
-		Force_CD_Available(-1);
-
-		/*
-		** If there are no search drives specified then we must be playing
-		** off cd, so read files from there.
-		*/
-		int error;
-
-		do {
-			char cd_search_path[] = "?:\\";
-			error = CCFileClass::Set_Search_Drives(cd_search_path);
-			switch (error) {
-				case 1:
-					VisiblePage.Clear();
-					GamePalette.Set();
-					Show_Mouse();
-					WWMessageBox().Process(TXT_CD_ERROR1, TXT_OK);
-					//Prog_End();
-					Emergency_Exit(EXIT_FAILURE);
-
-				case 2:
-					VisiblePage.Clear();
-					GamePalette.Set();
-					Show_Mouse();
-					if (WWMessageBox().Process(TXT_CD_DIALOG_1, TXT_OK, TXT_CANCEL) == 1) {
-						//Prog_End();
-						Emergency_Exit(EXIT_FAILURE);
-					}
-					Hide_Mouse();
-					break;
-
-				default:
-					VisiblePage.Clear();
-					Show_Mouse();
-					if (!Force_CD_Available(RequiredCD)) {
-						//Prog_End();
-						Emergency_Exit(EXIT_FAILURE);
-					}
-					Hide_Mouse();
-					break;
-			}
-		} while (error);
-
-		RequiredCD = -1;
-	} else {
-
-		/*
-		** If there are search drives specified then all files are to be
-		** considered local.
-		*/
-		RequiredCD = -2;
-	}
+	VisiblePage.Clear();
+	GamePalette.Set();
+	Show_Mouse();
+	WWMessageBox().Process("Required game data was not found in GameData.", TXT_OK);
+	Emergency_Exit(EXIT_FAILURE);
 }
 
 /***********************************************************************************************
@@ -2474,9 +2835,6 @@ static void Init_CDROM_Access(void)
  *=============================================================================================*/
 static void Init_Bootstrap_Mixfiles(void)
 {
-	int temp = RequiredCD;
-	RequiredCD = -2;
-
 #ifdef WOLAPI_INTEGRATION
 	CCFileClass fileWolapiMix( "WOLAPI.MIX" );
 	if( fileWolapiMix.Is_Available() )
@@ -2531,8 +2889,6 @@ static void Init_Bootstrap_Mixfiles(void)
 	(void)ok;
 
 	new MFCD("NCHIRES.MIX", &FastKey);		//Non-cached hires stuff incl VQ palettes
-
-	RequiredCD = temp;
 }
 
 /***********************************************************************************************
@@ -2557,8 +2913,7 @@ void Extract(char* filename, char* outfile);
  
 static void Init_Secondary_Mixfiles(void)
 {
-	MainMix = new MFCD("MAIN.MIX", &FastKey);
-	assert(MainMix != NULL);
+	Register_GameData_Main_Mixfile();
 	init_trace("Init_Secondary_Mixfiles MAIN.MIX ready");
 
 	//Denzil extract mixfile
@@ -2596,18 +2951,14 @@ static void Init_Secondary_Mixfiles(void)
 	**	Inform the file system of the various MIX files.
 	*/
 	ConquerMix = new MFCD("CONQUER.MIX", &FastKey);			// Cached.
+	g_bootstrap_conquer_mix = ConquerMix;
 	init_trace("Init_Secondary_Mixfiles CONQUER.MIX ready");
 //	new MFCD("TRANSIT.MIX", &FastKey);
 
 	if (GeneralMix == NULL) GeneralMix = new MFCD("GENERAL.MIX", &FastKey);			// Never cached.
 	init_trace("Init_Secondary_Mixfiles GENERAL.MIX ready");
 
-	if (CCFileClass("MOVIES1.MIX").Is_Available()) {
-		MoviesMix = new MFCD("MOVIES1.MIX", &FastKey);			// Never cached.
-	} else {
-		MoviesMix = new MFCD("MOVIES2.MIX", &FastKey);			// Never cached.
-	}
-	assert(MoviesMix != NULL);
+	Load_Movie_Mixfiles();
 	init_trace("Init_Secondary_Mixfiles movies mix ready");
 
 	/*
@@ -2653,14 +3004,6 @@ static void Init_Secondary_Mixfiles(void)
 static void Bootstrap(void)
 {
 	BlackPalette.Set();
-
-	/*
-	**	Be sure to short circuit the CD-ROM check if there is a CD-ROM override
-	**	path.
-	*/
-	if (CCFileClass::Is_There_Search_Drives()) {
-		RequiredCD = -2;
-	}
 
 	/*
 	** Process the message loop until we are in focus. We need to be in focus to read pixels from
@@ -2970,53 +3313,4 @@ void Extract(char* filename, char* outname)
 		free(buffer);
 		}
 	}
-#endif
-
-#ifdef FIXIT_VERSION_3
-
-bool bUsingDVD = false;
-
-const char* Game_Config_Section();
-
-//***********************************************************************************************
-bool Is_DVD_Installed()
-{
-	uint32_t dwValue = 0;
-	return RA_ReadConfigUint32( Game_Config_Section(), "DVD", &dwValue ) && (bool)dwValue;
-}
-
-//***********************************************************************************************
-bool Determine_If_Using_DVD()
-{
-	//	Determines if the user has a DVD currently available. If they do, we'll use it throughout the
-	//	session. Else we won't check for it again and will always ask for CDs.
-	const bool dvd_installed = Is_DVD_Installed();
-	init_trace("Determine_If_Using_DVD installed=%d", dvd_installed);
-	if( dvd_installed )
-	{
-		if( Force_CD_Available( 5 ) )
-		{
-			bUsingDVD = true;
-		}
-		else
-		{
-			//	User hit cancel. Allow things to progress normally. They will be prompted for
-			//	a Red Alert disk as usual.
-			bUsingDVD = false;
-		}
-	}
-	else
-		bUsingDVD = false;
-
-	init_trace("Determine_If_Using_DVD using_dvd=%d", bUsingDVD);
-	
-	return bUsingDVD;
-}
-
-//***********************************************************************************************
-bool Using_DVD()
-{
-	return bUsingDVD;
-}
-
 #endif

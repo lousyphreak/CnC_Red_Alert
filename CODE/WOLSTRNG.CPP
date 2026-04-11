@@ -350,7 +350,7 @@ extern const char TXT_WOL_SCENARIONAMEWAIT[]		= "waiting for scenario...";
 //	Text of button on chat screen that takes user out of a chat channel, or up one WW Online level.
 extern const char TXT_WOL_BACK[]					= "Back";
 
-extern const char TXT_WOL_AMDISCNEEDED[]			= "The Aftermath disk will be required for this game; please insert it now.";
+extern const char TXT_WOL_AMDATAREQUIRED[]			= "The Aftermath game data is required for this game.";
 
 extern const char TXT_WOL_CONFIRMLOGOUT[]			= "Are you sure you want to leave Westwood Online?";
 //	"Propose a stalemate" button.
@@ -582,7 +582,7 @@ extern const char TXT_WOL_WOLAPIREINIT[]			= "Verbindung zu Westwood Online verl
 extern const char TXT_WOL_NOTPAGED[]				= "Kann keine Antwort senden, niemand hat Ihnen geschrieben.";
 extern const char TXT_WOL_SCENARIONAMEWAIT[]		= "Warte auf Szenario ...";
 extern const char TXT_WOL_BACK[]					= "Zur�ck";
-extern const char TXT_WOL_AMDISCNEEDED[]			= "Die CD 'Vergeltungsschlag' wird f�r dieses Spiel ben�tigt, bitte legen Sie sie jetzt ein.";
+extern const char TXT_WOL_AMDATAREQUIRED[]			= "Die Vergeltungsschlag-Spieldaten werden f�r dieses Spiel ben�tigt.";
 extern const char TXT_WOL_CONFIRMLOGOUT[]			= "Sind Sie sicher, da\251 Sie Westwood Online verlassen m�chten?";
 extern const char TXT_WOL_PROPOSE_DRAW[]			= "Unentschieden vorschlagen";
 extern const char TXT_WOL_RETRACT_DRAW[]			= "Unentschieden-Vorschlag zur�ckziehen";
@@ -777,7 +777,7 @@ extern const char TXT_WOL_WOLAPIREINIT[]			= "Perte de connexion avec Westwood O
 extern const char TXT_WOL_NOTPAGED[]				= "Impossible de r�pondre au message ; personne ne vous en a envoy�.";
 extern const char TXT_WOL_SCENARIONAMEWAIT[]		= "En attente du sc�nario...";
 extern const char TXT_WOL_BACK[]					= "Retour";
-extern const char TXT_WOL_AMDISCNEEDED[]			= "Le CD de Missions M.A.D. est n�cessaire pour cette partie ; ins�rez-le maintenant.";
+extern const char TXT_WOL_AMDATAREQUIRED[]			= "Les donn�es de Missions M.A.D. sont n�cessaires pour cette partie.";
 extern const char TXT_WOL_CONFIRMLOGOUT[]			= "Voulez-vous vraiment quitter Westwood Online ?";
 extern const char TXT_WOL_PROPOSE_DRAW[]			= "Proposer une fin avec �galit�";
 extern const char TXT_WOL_RETRACT_DRAW[]			= "Annuler la proposition de fin avec �galit�";

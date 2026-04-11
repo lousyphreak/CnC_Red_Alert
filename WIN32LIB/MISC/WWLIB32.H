@@ -53,7 +53,6 @@
 #include <AUDIO.H>
 #include <DIPTHONG.H>
 #include <PALETTE.H>
-#include <PLAYCD.H>
 #include <SHAPE.H>
 #include <TIMER.H>
 #include <WW_WIN.H>

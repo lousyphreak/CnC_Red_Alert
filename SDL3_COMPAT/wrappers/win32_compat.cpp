@@ -378,17 +378,9 @@ UINT GetDriveType(LPCSTR root_path_name)
         return kDriveNoRootDir;
     }
 
-    if (WWFS_GetVirtualCDIndexForDriveLetter(root_path_name[0]) >= 0) {
-        return kDriveCdrom;
-    }
-
     const std::string normalized_path = WWFS_NormalizePath(root_path_name);
     if (!WWFS_GetPathInfo(normalized_path.c_str(), nullptr)) {
         return kDriveNoRootDir;
-    }
-
-    if (normalized_path.find("cdrom") != std::string::npos || normalized_path.find("CDROM") != std::string::npos) {
-        return kDriveCdrom;
     }
 
     return kDriveFixed;
@@ -401,28 +393,7 @@ BOOL GetVolumeInformation(LPCSTR root_path_name, LPSTR volume_name_buffer, DWORD
         return 0;
     }
 
-    int virtual_cd_index = -1;
-    std::string virtual_path;
     std::string normalized_path = WWFS_NormalizePath(root_path_name);
-    if (WWFS_ResolveVirtualCDPath(root_path_name, virtual_path, &virtual_cd_index) && virtual_cd_index >= 0) {
-        if (volume_name_buffer && volume_name_size > 0) {
-            std::snprintf(volume_name_buffer, volume_name_size, "CD%d", virtual_cd_index + 1);
-        }
-        if (volume_serial_number) {
-            *volume_serial_number = 0;
-        }
-        if (maximum_component_length) {
-            *maximum_component_length = 255;
-        }
-        if (file_system_flags) {
-            *file_system_flags = 0;
-        }
-        if (file_system_name_buffer && file_system_name_size > 0) {
-            std::snprintf(file_system_name_buffer, file_system_name_size, "%s", "SDLFS");
-        }
-        return 1;
-    }
-
     if (!WWFS_GetPathInfo(normalized_path.c_str(), nullptr)) {
         return 0;
     }

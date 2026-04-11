@@ -30,6 +30,12 @@ std::string& WWFS_BaseDirectoryOverride()
     return path;
 }
 
+int& WWFS_MainMixOverride()
+{
+    static int index = 0;
+    return index;
+}
+
 std::string WWFS_DefaultBaseDirectory()
 {
     static const std::string path = []() {
@@ -137,6 +143,48 @@ std::string WWFS_AppendPathComponent(const std::string& base, const std::string&
     }
 
     return base + "/" + component;
+}
+
+std::string WWFS_ResolveMainMixAlias(const std::string& normalized_path)
+{
+    std::string folded_path = normalized_path;
+    std::replace(folded_path.begin(), folded_path.end(), '\\', '/');
+    std::transform(folded_path.begin(), folded_path.end(), folded_path.begin(), [](unsigned char ch) {
+        return static_cast<char>(std::tolower(ch));
+    });
+    if (folded_path.size() < 8 || folded_path.compare(folded_path.size() - 8, 8, "main.mix") != 0) {
+        return {};
+    }
+
+    if (WWFS_LocalPathExists(normalized_path.c_str())) {
+        return {};
+    }
+
+    size_t separator = normalized_path.find_last_of("/\\");
+    const std::string directory = (separator == std::string::npos) ? std::string() : normalized_path.substr(0, separator);
+    const int override_index = WWFS_MainMixOverride();
+    const char* const default_candidates[] = {
+        "MAIN1.MIX",
+        "MAIN2.MIX",
+        "MAIN3.MIX",
+        "MAIN4.MIX"
+    };
+
+    if (override_index >= 1 && override_index <= 4) {
+        const std::string candidate_path = WWFS_AppendPathComponent(directory, std::string("MAIN") + std::to_string(override_index) + ".MIX");
+        if (WWFS_LocalPathExists(candidate_path.c_str())) {
+            return candidate_path;
+        }
+    }
+
+    for (size_t index = 0; index < SDL_arraysize(default_candidates); ++index) {
+        const std::string candidate_path = WWFS_AppendPathComponent(directory, default_candidates[index]);
+        if (WWFS_LocalPathExists(candidate_path.c_str())) {
+            return candidate_path;
+        }
+    }
+
+    return {};
 }
 
 #if defined(__EMSCRIPTEN__) && RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA
@@ -1602,62 +1650,6 @@ std::string resolve_existing_case_insensitive_path(const std::string& path)
     return current.empty() ? path : current;
 }
 
-int virtual_cd_index_for_drive_letter(char drive_letter)
-{
-    const int index = std::tolower(static_cast<unsigned char>(drive_letter)) - 'c';
-    if (index < 0 || index >= 4) {
-        return -1;
-    }
-
-    const std::string mix_name = "MAIN" + std::to_string(index + 1) + ".MIX";
-
-    std::string mix_path = WWFS_BaseDirectory();
-    if (!mix_path.empty() && mix_path.back() != '/' && mix_path.back() != '\\') {
-        mix_path.push_back('/');
-    }
-    mix_path += mix_name;
-
-    if (!WWFS_PathExists(mix_path.c_str())) {
-        return -1;
-    }
-
-    return index;
-}
-
-bool resolve_virtual_cd_path(const char* windows_path, std::string& resolved_path, int* cd_index = nullptr)
-{
-    if (!windows_path || std::strlen(windows_path) < 2 || windows_path[1] != ':') {
-        return false;
-    }
-
-    const int index = virtual_cd_index_for_drive_letter(windows_path[0]);
-    if (index < 0) {
-        return false;
-    }
-
-    std::string relative = windows_path + 2;
-    std::replace(relative.begin(), relative.end(), '\\', '/');
-    while (!relative.empty() && relative.front() == '/') {
-        relative.erase(relative.begin());
-    }
-
-    const std::string base_path = WWFS_BaseDirectory();
-    if (relative.empty()) {
-        resolved_path = base_path;
-    } else if (SDL_strcasecmp(relative.c_str(), "main.mix") == 0) {
-        const std::string mix_name = "MAIN" + std::to_string(index + 1) + ".MIX";
-        resolved_path = base_path + "/" + mix_name;
-    } else {
-        resolved_path = base_path + "/" + relative;
-    }
-
-    if (cd_index) {
-        *cd_index = index;
-    }
-    return true;
-}
-
-
 } // end anonymous namespace
 
 void WWFS_SetBaseDirectory(const char* path)
@@ -1675,6 +1667,16 @@ void WWFS_SetBaseDirectory(const char* path)
     if (base_directory_override.empty()) {
         base_directory_override = "/";
     }
+}
+
+void WWFS_SetMainMixOverride(int index)
+{
+    WWFS_MainMixOverride() = index;
+}
+
+int WWFS_GetMainMixOverride()
+{
+    return WWFS_MainMixOverride();
 }
 
 std::string WWFS_GetBaseDirectoryPath()
@@ -1705,16 +1707,6 @@ bool WWFS_InitializeEmscriptenAssetCache()
     cache_initialized = true;
 #endif
     return true;
-}
-
-int WWFS_GetVirtualCDIndexForDriveLetter(char drive_letter)
-{
-    return virtual_cd_index_for_drive_letter(drive_letter);
-}
-
-bool WWFS_ResolveVirtualCDPath(const char* windows_path, std::string& resolved_path, int* cd_index)
-{
-    return resolve_virtual_cd_path(windows_path, resolved_path, cd_index);
 }
 
 unsigned WWFS_GetCurrentDriveNumber()
@@ -1828,11 +1820,6 @@ void WWFS_MakePath(char* path, const char* drive, const char* dir, const char* f
 
 std::string WWFS_NormalizePath(const char* windows_path)
 {
-    std::string resolved_path;
-    if (WWFS_ResolveVirtualCDPath(windows_path, resolved_path)) {
-        return resolved_path;
-    }
-
     std::string normalized = windows_path ? windows_path : "";
     std::replace(normalized.begin(), normalized.end(), '\\', '/');
 
@@ -1842,6 +1829,11 @@ std::string WWFS_NormalizePath(const char* windows_path)
 
     if (!WWFS_IsAbsolutePath(normalized)) {
         normalized = WWFS_AppendPathComponent(WWFS_CurrentDirectoryPath(), normalized);
+    }
+
+    const std::string main_mix_alias = WWFS_ResolveMainMixAlias(normalized);
+    if (!main_mix_alias.empty()) {
+        return main_mix_alias;
     }
 
     const std::string resolved_existing = resolve_existing_case_insensitive_path(normalized);
