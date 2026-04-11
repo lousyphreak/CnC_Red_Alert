@@ -1,8 +1,8 @@
 ---
 name: Explore
-description: Fast read-only codebase exploration and Q&A subagent. Prefer over manually chaining multiple search and file-reading operations to avoid cluttering the main conversation. Safe to call in parallel. Specify thoroughness: quick, medium, or thorough.
-argument-hint: Describe WHAT you're looking for and desired thoroughness (quick/medium/thorough)
-model: ['GPT-5.4 mini (copilot)', 'GPT-5.4 (copilot)', 'Auto (copilot)']
+description: 'Fast read-only codebase exploration and Q&A subagent. Prefer over manually chaining multiple search and file-reading operations to avoid cluttering the main conversation. Safe to call in parallel. Specify thoroughness: quick, medium, or thorough.'
+argument-hint: 'Describe WHAT you are looking for and desired thoroughness (quick/medium/thorough)'
+model: gpt-5.4
 user-invocable: false
 tools: ['search', 'read', 'web', 'vscode/memory', 'execute/getTerminalOutput', 'execute/testFailure']
 agents: []

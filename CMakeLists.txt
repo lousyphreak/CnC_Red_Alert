@@ -66,54 +66,6 @@ set(RA_COMMON_INCLUDE_DIRS
     ${CMAKE_SOURCE_DIR}/WIN32LIB/INCLUDE
 )
 
-set(RA_CASEFIX_SOURCE_DIRS
-    ${CMAKE_SOURCE_DIR}/CODE
-    ${CMAKE_SOURCE_DIR}/WIN32LIB/INCLUDE
-    ${CMAKE_SOURCE_DIR}/WIN32LIB/AUDIO
-    ${CMAKE_SOURCE_DIR}/WIN32LIB/DIPTHONG
-    ${CMAKE_SOURCE_DIR}/WIN32LIB/DRAWBUFF
-    ${CMAKE_SOURCE_DIR}/WIN32LIB/FONT
-    ${CMAKE_SOURCE_DIR}/WIN32LIB/IFF
-    ${CMAKE_SOURCE_DIR}/WIN32LIB/KEYBOARD
-    ${CMAKE_SOURCE_DIR}/WIN32LIB/MEM
-    ${CMAKE_SOURCE_DIR}/WIN32LIB/MISC
-    ${CMAKE_SOURCE_DIR}/WIN32LIB/MONO
-    ${CMAKE_SOURCE_DIR}/WIN32LIB/PALETTE
-    ${CMAKE_SOURCE_DIR}/WIN32LIB/PLAYCD
-    ${CMAKE_SOURCE_DIR}/WIN32LIB/PROFILE
-    ${CMAKE_SOURCE_DIR}/WIN32LIB/RAWFILE
-    ${CMAKE_SOURCE_DIR}/WIN32LIB/SHAPE
-    ${CMAKE_SOURCE_DIR}/WIN32LIB/TILE
-    ${CMAKE_SOURCE_DIR}/WIN32LIB/TIMER
-    ${CMAKE_SOURCE_DIR}/WIN32LIB/VQA32
-    ${CMAKE_SOURCE_DIR}/WIN32LIB/WSA
-    ${CMAKE_SOURCE_DIR}/WIN32LIB/WW_WIN
-    ${CMAKE_SOURCE_DIR}/WIN32LIB/WINCOMM
-)
-
-set(RA_CASEFIX_INCLUDE_DIRS "")
-foreach(ra_casefix_dir IN LISTS RA_CASEFIX_SOURCE_DIRS)
-    file(RELATIVE_PATH ra_casefix_rel ${CMAKE_SOURCE_DIR} ${ra_casefix_dir})
-    string(REPLACE "/" "__" ra_casefix_rel_sanitized ${ra_casefix_rel})
-    set(ra_casefix_out_dir "${CMAKE_BINARY_DIR}/generated/casefix/${ra_casefix_rel_sanitized}")
-    file(MAKE_DIRECTORY "${ra_casefix_out_dir}")
-    file(GLOB ra_casefix_headers CONFIGURE_DEPENDS "${ra_casefix_dir}/*.H")
-    foreach(ra_casefix_header IN LISTS ra_casefix_headers)
-        get_filename_component(ra_casefix_name "${ra_casefix_header}" NAME)
-        get_filename_component(ra_casefix_stem "${ra_casefix_header}" NAME_WE)
-        get_filename_component(ra_casefix_ext "${ra_casefix_header}" EXT)
-        string(TOLOWER "${ra_casefix_name}" ra_casefix_lower)
-        string(TOLOWER "${ra_casefix_stem}" ra_casefix_stem_lower)
-        string(TOLOWER "${ra_casefix_ext}" ra_casefix_ext_lower)
-        file(WRITE "${ra_casefix_out_dir}/${ra_casefix_lower}" "#include \"${ra_casefix_header}\"\n")
-        file(WRITE "${ra_casefix_out_dir}/${ra_casefix_stem}${ra_casefix_ext_lower}" "#include \"${ra_casefix_header}\"\n")
-        file(WRITE "${ra_casefix_out_dir}/${ra_casefix_stem_lower}${ra_casefix_ext}" "#include \"${ra_casefix_header}\"\n")
-    endforeach()
-    list(APPEND RA_CASEFIX_INCLUDE_DIRS "${ra_casefix_out_dir}" "${ra_casefix_dir}")
-endforeach()
-
-list(APPEND RA_COMMON_INCLUDE_DIRS ${RA_CASEFIX_INCLUDE_DIRS})
-
 set(RA_GAME_INCLUDE_DIRS
     ${RA_COMMON_INCLUDE_DIRS}
 )
