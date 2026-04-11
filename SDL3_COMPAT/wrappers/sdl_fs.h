@@ -11,7 +11,6 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
-#include <fcntl.h>
 #include <mutex>
 #include <string>
 #include <unordered_map>
@@ -52,6 +51,15 @@ void WWFS_MakePath(char* path, const char* drive, const char* dir, const char* f
 #ifndef _MAX_EXT
 #define _MAX_EXT 256
 #endif
+
+constexpr int WWFS_OPEN_ACCESS_MASK = 0x0003;
+constexpr int WWFS_OPEN_READ_ONLY = 0x0000;
+constexpr int WWFS_OPEN_WRITE_ONLY = 0x0001;
+constexpr int WWFS_OPEN_READ_WRITE = 0x0002;
+constexpr int WWFS_OPEN_APPEND = 0x0008;
+constexpr int WWFS_OPEN_CREATE = 0x0100;
+constexpr int WWFS_OPEN_TRUNCATE = 0x0200;
+constexpr int WWFS_OPEN_BINARY = 0x8000;
 
 inline bool WWFS_GetSeekWhence(int whence, SDL_IOWhence* sdl_whence)
 {
@@ -125,22 +133,22 @@ inline SDL_IOStream* WWFS_TakeFD(int fd)
 
 inline const char* WWFS_ModeFromOpenFlags(int flags, bool create_fallback)
 {
-    const int access = flags & O_ACCMODE;
-    const bool append = (flags & O_APPEND) != 0;
-    const bool trunc = (flags & O_TRUNC) != 0;
-    const bool create = (flags & O_CREAT) != 0;
+    const int access = flags & WWFS_OPEN_ACCESS_MASK;
+    const bool append = (flags & WWFS_OPEN_APPEND) != 0;
+    const bool trunc = (flags & WWFS_OPEN_TRUNCATE) != 0;
+    const bool create = (flags & WWFS_OPEN_CREATE) != 0;
 
     switch (access) {
-    case O_RDONLY:
+    case WWFS_OPEN_READ_ONLY:
         return "rb";
 
-    case O_WRONLY:
+    case WWFS_OPEN_WRITE_ONLY:
         if (append) {
             return "ab";
         }
         return "wb";
 
-    case O_RDWR:
+    case WWFS_OPEN_READ_WRITE:
         if (append) {
             return "a+b";
         }
@@ -171,7 +179,8 @@ inline SDL_IOStream* WWFS_OpenWithFlags(const char* path, int flags)
             return stream;
         }
 
-        const bool can_retry_create = ((flags & O_ACCMODE) == O_RDWR) && (flags & O_CREAT) && !(flags & O_TRUNC);
+        const bool can_retry_create = ((flags & WWFS_OPEN_ACCESS_MASK) == WWFS_OPEN_READ_WRITE)
+            && (flags & WWFS_OPEN_CREATE) && !(flags & WWFS_OPEN_TRUNCATE);
         if (!can_retry_create) {
             break;
         }

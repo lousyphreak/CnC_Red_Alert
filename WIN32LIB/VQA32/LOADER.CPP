@@ -70,23 +70,14 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <fcntl.h>
 #include <malloc.h>
 #include <string.h>
-#if defined(_MSC_VER)
-#else
-#include <unistd.h>
-#endif
 #include <VQ.H>
 #include <VQM32/MEM.H>
 #include <VQM32/PALETTE.H>
 #include "VQAPLAYP.H"
 #include "sdl_fs.h"
 #include <VQM32/COMPRESS.H>
-
-#ifndef O_BINARY
-#define O_BINARY 0
-#endif
 
 /*---------------------------------------------------------------------------
  * PRIVATE DECLARATIONS
@@ -468,7 +459,7 @@ int32_t VQA_Open(VQAHandle *vqa, char const *filename, VQAConfig *config)
 	/* Open VOC file if one is requested. */
 	#if(VQAVOC_ON && VQAAUDIO_ON)
 	if (config->VocFile != NULL) {
-		vqap->vocfh = WWFS_Open(config->VocFile, (O_RDONLY|O_BINARY));
+		vqap->vocfh = WWFS_Open(config->VocFile, (WWFS_OPEN_READ_ONLY | WWFS_OPEN_BINARY));
 	} else {
 		vqap->vocfh = -1;
 	}

@@ -42,7 +42,6 @@
 #include	<cstdarg>
 #include	<cstdio>
 #include	<cstdlib>
-#include <fcntl.h>
 
 #include <SDL3/SDL_filesystem.h>
 

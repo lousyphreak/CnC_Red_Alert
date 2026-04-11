@@ -41,9 +41,6 @@
 #include <WWMEM.H>
 #include <WWSTD.H>
 #if(IBM)
-#include <fcntl.h>
-#include <unistd.h>
-
 #include <errno.h>
 #include <stdint.h>
 

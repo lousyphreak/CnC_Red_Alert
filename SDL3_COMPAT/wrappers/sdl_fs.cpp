@@ -3,10 +3,8 @@
 #include <algorithm>
 #include <cctype>
 #include <cerrno>
-#include <climits>
 #include <cstdio>
 #include <cstring>
-#include <fcntl.h>
 #include <memory>
 #include <mutex>
 #include <new>
@@ -1721,10 +1719,10 @@ bool WWFS_ResolveVirtualCDPath(const char* windows_path, std::string& resolved_p
 
 unsigned WWFS_GetCurrentDriveNumber()
 {
-    char cwd[PATH_MAX];
-    if (WWFS_GetCurrentDirectory(cwd, sizeof(cwd)) != nullptr) {
-        const unsigned char drive = static_cast<unsigned char>(cwd[0]);
-        if (std::isalpha(drive) && cwd[1] == ':') {
+    const std::string current_directory = WWFS_CurrentDirectoryPath();
+    if (current_directory.size() >= 2) {
+        const unsigned char drive = static_cast<unsigned char>(current_directory[0]);
+        if (std::isalpha(drive) && current_directory[1] == ':') {
             return static_cast<unsigned>(std::toupper(drive) - 'A' + 1);
         }
     }

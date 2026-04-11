@@ -1,12 +1,21 @@
 # Porting Progress
 
-_Last updated: 2026-04-06_
+_Last updated: 2026-04-11_
 
 ## Goal
 
 Port the Red Alert codebase to a reproducible cross-platform build using SDL3 for platform-specific functionality, with working builds on Linux, Windows, and other supported SDL3 platforms.
 
 ## Current status
+
+- Audited the repo-owned active source/build tree for Linux/Unix-only portability blockers and cleaned the last findings in the WWFS filesystem layer to prepare for a Windows build:
+  - repository-wide searches across `CODE/`, `SDL3_COMPAT/`, `WIN32LIB/`, `VQ/`, `tests/`, `CMakeLists.txt`, and `cmake/` now no longer report unguarded repo-owned `fcntl.h`, `strings.h`, `PATH_MAX`, or other Unix-only header use in active project code; the only remaining Unix-specific headers in the active tree are the intentional non-Windows networking branches in `CODE/SOCKETS.H` and `CODE/UDPCONN.CPP`, while other platform-specific headers live only in excluded vendor/generated trees such as `extern/` and existing build directories;
+  - `SDL3_COMPAT/wrappers/sdl_fs.h` no longer depends on `<fcntl.h>` or host `O_*` macros for its legacy fd-compat helper path; the WWFS layer now owns the small flag set it actually supports (`WWFS_OPEN_*`) and still maps those modes to the same SDL IO open behavior as before;
+  - `SDL3_COMPAT/wrappers/sdl_fs.cpp::WWFS_GetCurrentDriveNumber()` no longer allocates a `PATH_MAX` buffer just to inspect the virtual cwd, so drive detection no longer depends on a Unix path-size macro that is not guaranteed on Windows/MSVC builds;
+  - follow-up uppercase-source audit removed stale POSIX include baggage from `CODE/{CONQUER,MIXFILE,STARTUP,LOADDLG,UDPCONN}.CPP`, `WIN32LIB/FONT/{FONT,LOADFONT}.CPP`, and `WIN32LIB/VQA32/{CONFIG,LOADER}.CPP`; the one live VQA file-open call now uses `WWFS_OPEN_READ_ONLY | WWFS_OPEN_BINARY` instead of host `O_*` macros, and `CODE/CDFILE.CPP` now builds search-drive strings with `std::string` instead of a `PATH_MAX` scratch buffer;
+  - `CMakeLists.txt` now links `ws2_32` on Windows and links `m` only on non-Windows hosts, removing two link-line assumptions that would otherwise block a Windows build even after the source cleanup;
+  - this pass was intentionally behavior-preserving: it only removed host-header/path-size assumptions from the filesystem compatibility layer and did not change gameplay or higher-level file/path logic.
+  - validation for this checkpoint: `cmake --build build --target redalert -j$(nproc)`, `ctest --test-dir build --output-on-failure`, and `cmake --build build-asan --target redalert -j$(nproc)` all succeed after the full portability sweep.
 
 - Followed the dead-guard purge with a call-tree cleanup so the tree no longer keeps local no-op wrappers that only survived because their guarded bodies were deleted:
   - removed `CODE/CELL.CPP::CellClass::Concrete_Calc()`, its declaration in `CODE/CELL.H`, and the lone map-editor placement caller in `CODE/MAPEDPLC.CPP`; after the guard purge the function had become a true empty stub, so deleting the one remaining local call preserved behavior while removing dead concrete-fixup plumbing from the scenario editor path;

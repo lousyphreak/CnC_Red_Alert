@@ -108,8 +108,6 @@ B<A> test;
 #include	<stdio.h>
 #include	<string.h>
 #include "sdl_fs.h"
-#include	<fcntl.h>
-#include <unistd.h>
 #include	"VORTEX.H"
 
 #ifdef WOLAPI_INTEGRATION

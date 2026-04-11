@@ -47,6 +47,7 @@
 #include "sdl_fs.h"
 #include	<stdio.h>
 #include	<string.h>
+#include <string>
 
 
 #include <stdint.h>
@@ -223,7 +224,7 @@ int CDFileClass::Set_Search_Drives(char * pathlist)
 	while (ptr != NULL) {
 		if (strlen(ptr) > 0) {
 
-			char path[PATH_MAX];						// Working path buffer.
+			std::string path(ptr);						// Working path buffer.
 
 			/*
 			**	Fixup the path to be legal. Legal is defined as all that is necessary to
@@ -231,14 +232,13 @@ int CDFileClass::Set_Search_Drives(char * pathlist)
 			**	file system. This means that it must have either a trailing ':' or '\'
 			**	character.
 			*/
-			strcpy(path, ptr);
-			switch (path[strlen(path)-1]) {
+			switch (path[path.size() - 1]) {
 				case ':':
 				case '\\':
 					break;
 
 				default:
-					strcat(path, "\\");
+					path += "\\";
 					break;
 			}
 
@@ -249,7 +249,7 @@ int CDFileClass::Set_Search_Drives(char * pathlist)
 			** Adds an extra entry for each CD drive in the system that has a C&C disc inserted.
 			** 																						ST - 5/21/96 4:40PM
 			*/
-			if (strncmp(path, "?:", 2) == 0) {
+			if (path.compare(0, 2, "?:") == 0) {
 				if (CurrentCDDrive) {
 					found = true;
 
@@ -258,7 +258,7 @@ int CDFileClass::Set_Search_Drives(char * pathlist)
 					*/
 					if (Get_CD_Index(CurrentCDDrive, 2*60) >= 0) {
 						path[0] = (char)(CurrentCDDrive + 'A');
-						Add_Search_Drive(path);
+						Add_Search_Drive(path.c_str());
 					}
 				}
 
@@ -270,7 +270,7 @@ int CDFileClass::Set_Search_Drives(char * pathlist)
 			}
 
 			found	= true;
-			Add_Search_Drive(path);
+			Add_Search_Drive(path.c_str());
 		}
 
 		/*
@@ -298,7 +298,7 @@ int CDFileClass::Set_Search_Drives(char * pathlist)
  * HISTORY:                                                                                    *
  *    5/22/96 10:12AM ST : Created                                                             *
  *=============================================================================================*/
-void CDFileClass::Add_Search_Drive(char *path)
+void CDFileClass::Add_Search_Drive(char const *path)
 {
 	SearchDriveType *srch;					// Working pointer to path object.
 	/*

@@ -54,8 +54,6 @@
 #include	<cstring>
 #include	<cstdio>
 #include	<cstdlib>
-#include	<fcntl.h>
-#include <unistd.h>
 #include	<errno.h>
 #include	"MIXFILE.H"
 #include	"CDFILE.H"

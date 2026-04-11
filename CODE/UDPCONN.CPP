@@ -50,7 +50,9 @@
 #include "UDPCONN.H"
 #include "TCPIP.H"
 
+#ifndef _WIN32
 #include <fcntl.h>
+#endif
 #include <stdio.h>
 #include <string.h>
 

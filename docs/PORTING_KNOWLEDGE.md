@@ -738,6 +738,12 @@ _Last updated: 2026-04-03_
 ## SDL filesystem helper layer
 
 - SDL3 intentionally does **not** provide a real `SetCurrentDirectory` API. Do not sneak raw `chdir()` back into the port to compensate.
+- The WWFS fd/open compatibility surface should stay repo-owned and self-contained:
+  - `SDL3_COMPAT/wrappers/sdl_fs.h` now owns the small open-flag set that its `WWFS_Open(...)` helper actually supports (`WWFS_OPEN_*`) instead of depending on host `<fcntl.h>` macros;
+  - keep any future flag expansion inside WWFS as well, rather than reintroducing direct Unix/MSVC `O_*` header dependencies into the active source tree.
+- Avoid fixed host path-size macros in the filesystem seam:
+  - `SDL3_COMPAT/wrappers/sdl_fs.cpp::WWFS_GetCurrentDriveNumber()` should inspect the virtual cwd string directly, not round-trip through a `PATH_MAX`-sized temporary buffer;
+  - this keeps the drive shim aligned with the WWFS virtual-cwd model and avoids Unix-only path-limit assumptions that do not carry cleanly to Windows toolchains.
 - The durable seam is now:
   - `SDL3_COMPAT/wrappers/sdl_fs.cpp` owns the WWFS filesystem implementation: virtual current-directory state, relative/case-insensitive path resolution, virtual-CD path mapping, and the SDL-backed path/storage helpers (`WWFS_SetCurrentDirectory()`, `WWFS_GetCurrentDirectory()`, `WWFS_OpenFile()`, `WWFS_OpenFileStorage()`, `WWFS_GetPathInfo()`, `WWFS_RemovePath()`, `WWFS_CreateDirectory()`, `WWFS_NormalizePath()`, `WWFS_GlobDirectory()`, `WWFS_SplitPath()`, and the virtual-CD helpers used by Win32 drive shims);
   - `SDL3_COMPAT/wrappers/sdl_fs.h` provides the public WWFS-prefixed path plus stdio/fd compatibility surface (`WWFS_NormalizePath`, `WWFS_GlobDirectory`, `WWFS_SplitPath`, `WWFS_MakePath`, `WWFS_FOpen`, `WWFS_FRead`, `WWFS_FWrite`, `WWFS_FSeek`, `WWFS_FTell`, `WWFS_Open`, `WWFS_Read`, `WWFS_Write`, `WWFS_Seek`, `WWFS_Close`, `WWFS_ChangeDirectory`, `WWFS_GetCurrentDirectory`, `WWFS_MakeDirectory`, `WWFS_GetCurrentDriveNumber`, `WWFS_GetDriveCount`, `WWFS_ChangeToDrive`, and the `_MAX_*` constants) for legacy code that still expects those APIs;
@@ -754,6 +760,16 @@ _Last updated: 2026-04-03_
   - container/member-function `remove(...)` calls,
   - socket `close(...)` in `winsock.h`.
   Treat those as non-file-I/O false positives, not as reasons to reintroduce POSIX/stdio access.
+
+## Windows-build portability audit guardrails
+
+- When auditing this tree for portability issues, include uppercase source/header extensions (`*.CPP`, `*.H`) as well as lowercase ones. A lowercase-only search misses much of the active Red Alert codebase.
+- The remaining Unix networking headers are intentional: `CODE/SOCKETS.H` keeps the non-`_WIN32` socket declarations, and `CODE/UDPCONN.CPP` keeps a non-`_WIN32` `<fcntl.h>` include for `F_GETFL` / `F_SETFL` / `O_NONBLOCK`. Do not remove those unless the socket abstraction itself changes.
+- Keep Windows link requirements explicit in CMake:
+  - `redalert` needs `ws2_32` on Windows for the active socket code;
+  - the Unix math library `m` should stay non-Windows-only rather than being linked unconditionally.
+- Several old POSIX includes in active code had become stale baggage rather than true dependencies (`CODE/{CONQUER,MIXFILE,STARTUP,LOADDLG,UDPCONN}.CPP`, `WIN32LIB/FONT/{FONT,LOADFONT}.CPP`, `WIN32LIB/VQA32/{CONFIG,LOADER}.CPP`). Prefer proving usage before preserving old headers just because they existed historically.
+- `CODE/CDFILE.CPP` search-drive parsing no longer needs a host path-limit macro. Keep path normalization there dynamic (`std::string`/WWFS-level logic), not tied to `PATH_MAX` or another platform-sized scratch buffer.
 
 ## SDL drawing helper layer
 

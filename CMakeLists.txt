@@ -252,8 +252,13 @@ target_link_libraries(redalert
         sdl3_compat
         ${RA_SDL_TARGET}
         Threads::Threads
-        m
 )
+
+if(WIN32)
+    target_link_libraries(redalert PRIVATE ws2_32)
+else()
+    target_link_libraries(redalert PRIVATE m)
+endif()
 
 if(EMSCRIPTEN)
     set_target_properties(redalert PROPERTIES SUFFIX ".html")
