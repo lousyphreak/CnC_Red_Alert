@@ -1544,7 +1544,7 @@ void Call_Back_Delay(int time)
 	do {
 		if (callbackcd == 0) {
 			Call_Back();
-			callbackcd = TIMER_SECOND/4;
+			callbackcd = 1;
 			soundcd = sound_interval;
 		} else if (soundcd == 0) {
 			/*
