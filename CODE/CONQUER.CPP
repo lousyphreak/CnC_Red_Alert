@@ -27,6 +27,8 @@ extern "C"
 const char* __asan_default_options() { return "detect_leaks=0"; }
 
 void WWDraw_Flush_Present(void);
+bool WWDraw_Has_Pending_Present(void);
+void WWDraw_Request_Present(void);
 /***********************************************************************************************
  ***              C O N F I D E N T I A L  ---  W E S T W O O D  S T U D I O S               ***
  ***********************************************************************************************
@@ -59,6 +61,8 @@ void WWDraw_Flush_Present(void);
  *   List_Copy -- Makes a copy of a cell offset list.                                          *
  *   Main_Game -- Main game startup routine.                                                   *
  *   Main_Loop -- This is the main game loop (as a single loop).                               *
+ *   Main_Loop_Frame_Interval -- Returns the target interval between gameplay frames.          *
+ *   Main_Loop_Frame_Ready -- Determines whether the next gameplay frame should run.           *
  *   Map_Edit_Loop -- a mini-main loop for map edit mode only                                  *
  *   Message_Input -- allows inter-player message input processing                             *
  *   MixFileHandler -- Handles VQ file access.                                                 *
@@ -68,8 +72,9 @@ void WWDraw_Flush_Present(void);
  *   Shake_The_Screen -- Dispatcher that shakes the screen.                                    *
  *   Shape_Dimensions -- Determine the minimum rectangle for the shape.                        *
  *   Source_From_Name -- Converts ASCII name into SourceType.                                  *
- *   Sync_Delay -- Forces the game into a 15 FPS rate.                                         *
  *   Theater_From_Name -- Converts ASCII name into a theater number.                           *
+ *   Reset_Main_Loop_Frame_State -- Resets main-loop frame scheduling state.                   *
+ *   Run_Game_Frame -- Runs one gameplay simulation frame.                                     *
  *   Unselect_All -- Causes all selected objects to become unselected.                         *
  *   VQ_Call_Back -- Maintenance callback used for VQ movies.                                  *
  *   Game_Config_Section -- Returns pointer to string containing the game config section.
@@ -175,6 +180,7 @@ bool Main_Loop(void);
 void Keyboard_Process(KeyNumType & input);
 static void Message_Input(KeyNumType &input);
 static void Color_Cycle(void);
+static void Reset_Main_Loop_Frame_State(void);
 bool Map_Edit_Loop(void);
 
 bool UseOldShapeDraw = false;
@@ -195,6 +201,10 @@ extern char * __nheapbeg;
 char TeamEvent = 0;			// 0 = no event, 1,2,3 = team event type
 char TeamNumber = 0;			// which team was selected? (1-9)
 char FormationEvent = 0;	// 0 = no event, 1 = formation was toggled
+
+static uint32_t MainLoopNextFrameTick = 0;
+static uint32_t MainLoopLastServiceTick = 0;
+static bool MainLoopFrameStateInitialized = false;
 
 	/* -----------------10/14/96 7:29PM------------------
 
@@ -272,6 +282,8 @@ void Main_Game(int argc, char * argv[])
 		} else {
 			Show_Mouse();
 		}
+
+		Reset_Main_Loop_Frame_State();
 
 		if (Session.Type == GAME_INTERNET) {
 			Register_Game_Start_Time();
@@ -1487,6 +1499,26 @@ void Call_Back(void)
 	WWDraw_Flush_Present();
 }
 
+void Call_Back_Wait(int time)
+{
+	if (time < 0) {
+		time = 0;
+	}
+	if (time > 60) {
+		time = 60;
+	}
+
+	CDTimerClass<SystemTimerClass> timer = static_cast<uint32_t>(time);
+
+	do {
+		const bool had_pending_present = WWDraw_Has_Pending_Present();
+		Call_Back();
+		if (!had_pending_present && timer) {
+			WWDraw_Request_Present();
+		}
+	} while (timer);
+}
+
 void UDP_Call_Back(void)
 {
 	Udp.Service();
@@ -1732,173 +1764,80 @@ FacingType KN_To_Facing(int input)
 	return(FACING_NONE);
 }
 
-/***********************************************************************************************
- * Sync_Delay -- Forces the game into a 15 FPS rate.                                           *
- *                                                                                             *
- *    This routine will wait until the timer for the current frame has expired before          *
- *    returning. It is called at the end of every game loop in order to force the game loop    *
- *    to run at a fixed rate.                                                                  *
- *                                                                                             *
- * INPUT:   none                                                                               *
- *                                                                                             *
- * OUTPUT:  none                                                                               *
- *                                                                                             *
- * WARNINGS:   This routine will delay an amount of time according to the game speed setting.  *
- *                                                                                             *
- * HISTORY:                                                                                    *
- *   01/04/1995 JLB : Created.                                                                 *
- *   03/06/1995 JLB : Fixed.                                                                   *
- *=============================================================================================*/
-static void Sync_Delay(void)
+static void Reset_Main_Loop_Frame_State(void)
 {
-	/*
-	**	Accumulate the number of 'spare' ticks that are frittered away here.
-	*/
-	SpareTicks += FrameTimer;
-
-	/*
-	**	Delay until the frame timer expires. This forces the game loop to be regulated to a
-	**	speed controlled by the game options slider.
-	*/
-	while (FrameTimer) {
-		Color_Cycle();
-		Call_Back();
-
-		if (SpecialDialog == SDLG_NONE) {
-			WWMouse->Erase_Mouse(&HidPage, TRUE);
-			KeyNumType input = KN_NONE;
-			int x, y;
-			Map.Input(input, x, y);
-			if (input) {
-				Keyboard_Process(input);
-			}
-			Map.Render();
-		}
-
-		if (FrameTimer) {
-			SDL_GameInput_Delay(1);
-		}
-	}
-	Color_Cycle();
-	Call_Back();
+	MainLoopNextFrameTick = 0;
+	MainLoopLastServiceTick = 0;
+	MainLoopFrameStateInitialized = false;
 }
 
-/***********************************************************************************************
- * Main_Loop -- This is the main game loop (as a single loop).                                 *
- *                                                                                             *
- *    This function will perform one game loop.                                                *
- *                                                                                             *
- * INPUT:   none                                                                               *
- *                                                                                             *
- * OUTPUT:  bool; Should the game end?                                                         *
- *                                                                                             *
- * WARNINGS:   none                                                                            *
- *                                                                                             *
- * HISTORY:                                                                                    *
- *   10/01/1994 JLB : Created.                                                                 *
- *=============================================================================================*/
-extern void Check_For_Focus_Loss(void);
-void Reallocate_Big_Shape_Buffer(void);
-
-bool Main_Loop()
+static int Main_Loop_Frame_Interval(void)
 {
-	KeyNumType	input;					// Player input.
-	int x;
-	int y;
 	int framedelay;
 
-Mono_Set_Cursor(0,0);
-
-	if (!GameActive) return(!GameActive);
-
-	/*
-	** Call the focus loss handler
-	*/
-	Check_For_Focus_Loss();
-
-	/*
-	** Allocate extra memory for uncompressed shapes as needed
-	*/
-	Reallocate_Big_Shape_Buffer();
-
-	/*
-	** Sync-bug trapping code
-	*/
-	if (Frame >= Session.TrapFrame) {
-		Session.Trap_Object();
-	}
-
-	//
-	// Initialize our AI processing timer
-	//
-	Session.ProcessTimer = TickCount;
-
-#if 1
-	if (Session.TrapCheckHeap) {
-		Debug_Trap_Check_Heap = true;
-	}
-#endif
-
-#ifdef CHEAT_KEYS
-
-	/*
-	**	Update the running status debug display.
-	*/
-	Self_Regulate();
-#endif
-
-	BStart(BENCH_GAME_FRAME);
-
-	/*
-	**	If there is no theme playing, but it looks like one is required, then start one
-	**	playing. This is usually the symptom of there being no transition score.
-	*/
-	if (Theme.What_Is_Playing() == THEME_NONE) {
-		Theme.Queue_Song(THEME_PICK_ANOTHER);
-	}
-
-	/*
-	**	Setup the timer so that the Main_Loop function processes at the correct rate.
-	*/
 	if (Session.Type != GAME_NORMAL && Session.Type != GAME_SKIRMISH &&
 		Session.CommProtocol == COMM_PROTOCOL_MULTI_E_COMP) {
 
-		//
-		// In playback mode, run as fast as possible.
-		//
 		if (Session.Play) {
-			FrameTimer = 0;
-		} else {
-#ifdef FIXIT_VERSION_3
-			if( !Session.DesiredFrameRate )
-				Session.DesiredFrameRate = 60;		//	A division by zero was happening (very rare).
-#endif
-			framedelay = TIMER_SECOND / Session.DesiredFrameRate;
-			FrameTimer = framedelay;
+			return(0);
 		}
+#ifdef FIXIT_VERSION_3
+		if (!Session.DesiredFrameRate) {
+			Session.DesiredFrameRate = 60;
+		}
+#endif
+		framedelay = TIMER_SECOND / Session.DesiredFrameRate;
 	} else {
 		if (Options.GameSpeed != 0) {
-			FrameTimer = Options.GameSpeed +
+			framedelay = Options.GameSpeed +
 				(PlayerPtr->Difficulty == DIFF_EASY ? 1 : 0) -
 				(PlayerPtr->Difficulty == DIFF_HARD ? 1 : 0);
 		} else {
-			FrameTimer = Options.GameSpeed + (PlayerPtr->Difficulty == DIFF_EASY ? 1 : 0);
+			framedelay = Options.GameSpeed + (PlayerPtr->Difficulty == DIFF_EASY ? 1 : 0);
 		}
 	}
 
-	/*
-	**	Update the display, unless we're inside a dialog.
-	*/
-	if (!Session.Play) {
-		if (SpecialDialog == SDLG_NONE && GameInFocus) {
-			WWMouse->Erase_Mouse(&HidPage, TRUE);
-			Map.Input(input, x, y);
-			if (input) {
-				Keyboard_Process(input);
-			}
-			Map.Render();
-		}
+	return(MAX(framedelay, 0));
+}
+
+static bool Main_Loop_Frame_Ready(int frameinterval)
+{
+	const uint32_t now = TickCount;
+
+	if (frameinterval <= 0) {
+		MainLoopNextFrameTick = now;
+		MainLoopLastServiceTick = now;
+		MainLoopFrameStateInitialized = true;
+		return(true);
 	}
+
+	if (!MainLoopFrameStateInitialized || now < MainLoopLastServiceTick || now < MainLoopNextFrameTick) {
+		MainLoopNextFrameTick = now + static_cast<uint32_t>(frameinterval);
+		MainLoopLastServiceTick = now;
+		MainLoopFrameStateInitialized = true;
+		return(true);
+	}
+
+	if ((now - MainLoopLastServiceTick) > TIMER_SECOND) {
+		MainLoopNextFrameTick = now + static_cast<uint32_t>(frameinterval);
+		MainLoopLastServiceTick = now;
+		return(true);
+	}
+
+	if (now < MainLoopNextFrameTick) {
+		SpareTicks += now - MainLoopLastServiceTick;
+		MainLoopLastServiceTick = now;
+		return(false);
+	}
+
+	MainLoopNextFrameTick = now + static_cast<uint32_t>(frameinterval);
+	MainLoopLastServiceTick = now;
+	return(true);
+}
+
+static bool Run_Game_Frame(void)
+{
+	Session.ProcessTimer = TickCount;
 
 	/*
 	** Save map's position & selected objects, if we're recording the game.
@@ -1972,7 +1911,7 @@ Mono_Set_Cursor(0,0);
 		PlayerRestarts = false;
 		Map.Help_Text(TXT_NONE);
 		Do_Win();
-		return(!GameActive);
+		return(true);
 	}
 	if (PlayerLoses) {
 
@@ -1987,7 +1926,7 @@ Mono_Set_Cursor(0,0);
 		PlayerRestarts = false;
 		Map.Help_Text(TXT_NONE);
 		Do_Lose();
-		return(!GameActive);
+		return(true);
 	}
 	if (PlayerRestarts) {
 		WWMouse->Erase_Mouse(&HidPage, TRUE);
@@ -1996,7 +1935,7 @@ Mono_Set_Cursor(0,0);
 		PlayerRestarts = false;
 		Map.Help_Text(TXT_NONE);
 		Do_Restart();
-		return(!GameActive);
+		return(true);
 	}
 
 #ifdef FIXIT_VERSION_3		//	Stalemate games.
@@ -2011,7 +1950,7 @@ Mono_Set_Cursor(0,0);
 		WWMouse->Erase_Mouse(&HidPage, TRUE);
 		Map.Help_Text(TXT_NONE);
 		Do_Draw();
-		return(!GameActive);
+		return(true);
 	}
 #endif
 
@@ -2084,9 +2023,118 @@ Mono_Set_Cursor(0,0);
 		}
 	}
 
-	BEnd(BENCH_GAME_FRAME);
+	return(!GameActive);
+}
 
-	Sync_Delay();
+/***********************************************************************************************
+ * Main_Loop -- This is the main game loop (as a single loop).                                 *
+ *                                                                                             *
+ *    This function will perform one game loop.                                                *
+ *                                                                                             *
+ * INPUT:   none                                                                               *
+ *                                                                                             *
+ * OUTPUT:  bool; Should the game end?                                                         *
+ *                                                                                             *
+ * WARNINGS:   none                                                                            *
+ *                                                                                             *
+ * HISTORY:                                                                                    *
+ *   10/01/1994 JLB : Created.                                                                 *
+ *=============================================================================================*/
+extern void Check_For_Focus_Loss(void);
+void Reallocate_Big_Shape_Buffer(void);
+
+bool Main_Loop()
+{
+	KeyNumType	input;					// Player input.
+	int x;
+	int y;
+
+Mono_Set_Cursor(0,0);
+
+	if (!GameActive) return(!GameActive);
+
+	/*
+	** Call the focus loss handler
+	*/
+	Check_For_Focus_Loss();
+
+	/*
+	** Allocate extra memory for uncompressed shapes as needed
+	*/
+	Reallocate_Big_Shape_Buffer();
+
+	/*
+	** Sync-bug trapping code
+	*/
+	if (Frame >= Session.TrapFrame) {
+		Session.Trap_Object();
+	}
+
+	//
+	// Initialize our AI processing timer
+	//
+	Session.ProcessTimer = TickCount;
+
+#if 1
+	if (Session.TrapCheckHeap) {
+		Debug_Trap_Check_Heap = true;
+	}
+#endif
+
+#ifdef CHEAT_KEYS
+
+	/*
+	**	Update the running status debug display.
+	*/
+	Self_Regulate();
+#endif
+
+	BStart(BENCH_GAME_FRAME);
+
+	/*
+	**	If there is no theme playing, but it looks like one is required, then start one
+	**	playing. This is usually the symptom of there being no transition score.
+	*/
+	if (Theme.What_Is_Playing() == THEME_NONE) {
+		Theme.Queue_Song(THEME_PICK_ANOTHER);
+	}
+
+	/*
+	**	Update the display, unless we're inside a dialog.
+	*/
+	const bool frame_ready = Main_Loop_Frame_Ready(Main_Loop_Frame_Interval());
+	const bool update_map = (SpecialDialog == SDLG_NONE && GameInFocus);
+
+	if (update_map) {
+		WWMouse->Erase_Mouse(&HidPage, TRUE);
+		if (!Session.Play) {
+			Map.Input(input, x, y);
+			if (input) {
+				Keyboard_Process(input);
+			}
+		}
+	}
+
+	if (frame_ready) {
+		if (Run_Game_Frame()) {
+			BEnd(BENCH_GAME_FRAME);
+			return(!GameActive);
+		}
+	}
+
+	Color_Cycle();
+
+	if (update_map) {
+		Map.Render();
+	}
+
+	if (frame_ready) {
+		WWDraw_Flush_Present();
+	} else {
+		Call_Back();
+	}
+
+	BEnd(BENCH_GAME_FRAME);
 	return(!GameActive);
 }
 

@@ -450,3 +450,18 @@ void WWDraw_End_Present_Batch(void){
 void WWDraw_Flush_Present(void){
     flush_pending_present();
 }
+
+bool WWDraw_Has_Pending_Present(void)
+{
+    return g_present_pending;
+}
+
+void WWDraw_Request_Present(void)
+{
+    if (g_present_batch_depth != 0 || !g_primary_surface) {
+        return;
+    }
+
+    queue_present(g_primary_surface, g_primary_surface->Window());
+    flush_pending_present();
+}

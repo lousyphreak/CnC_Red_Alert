@@ -829,13 +829,11 @@ void Do_Win(void)
 		Fancy_Text_Print(TXT_SCENARIO_WON, x, 90*RESFACTOR, &ColorRemaps[PCOLOR_RED], TBLACK, TPF_CENTER|TPF_VCR|TPF_USE_GRAD_PAL|TPF_DROPSHADOW);
 		CountDownTimer = TIMER_SECOND * 3;
 		while (Is_Speaking()) {
-			Call_Back();
-			SDL_Delay(1);
+			Call_Back_Wait(1);
 		}
 		Speak(VOX_ACCOMPLISHED);
 		while (CountDownTimer || Is_Speaking()) {
-			Call_Back();
-			SDL_Delay(1);
+			Call_Back_Wait(1);
 		}
 	}
 
@@ -1093,13 +1091,11 @@ void Do_Lose(void)
 	Fancy_Text_Print(TXT_SCENARIO_LOST, x, 90*RESFACTOR, &ColorRemaps[PCOLOR_RED], TBLACK, TPF_CENTER|TPF_VCR|TPF_USE_GRAD_PAL|TPF_DROPSHADOW);
 	CountDownTimer = TIMER_SECOND * 3;
 	while (Is_Speaking()) {
-		Call_Back();
-		SDL_Delay(1);
+		Call_Back_Wait(1);
 	}
 	Speak(VOX_FAIL);
 	while (CountDownTimer || Is_Speaking()) {
-		Call_Back();
-		SDL_Delay(1);
+		Call_Back_Wait(1);
 	}
 
 	/*
@@ -1187,13 +1183,11 @@ void Do_Draw(void)
 	Fancy_Text_Print(TXT_WOL_DRAW, x, 90*RESFACTOR, &ColorRemaps[PCOLOR_RED], TBLACK, TPF_CENTER|TPF_VCR|TPF_USE_GRAD_PAL|TPF_DROPSHADOW);
 	CountDownTimer = TIMER_SECOND * 3;
 	while (Is_Speaking()) {
-		Call_Back();
-		SDL_Delay(1);
+		Call_Back_Wait(1);
 	}
 	Speak(VOX_CONTROL_EXIT);
 	while (CountDownTimer || Is_Speaking()) {
-		Call_Back();
-		SDL_Delay(1);
+		Call_Back_Wait(1);
 	}
 
 	/*
@@ -1256,8 +1250,7 @@ void Do_Restart(void)
 	** Make sure the message stays displayed for at least 1 second
 	*/
 	while (timer > 0) {
-		Call_Back();
-		SDL_Delay(1);
+		Call_Back_Wait(1);
 	}
 	Keyboard->Clear();
 
@@ -1555,9 +1548,10 @@ int BGMessageBox(char const * msg, int btn1, int btn2)
 			CDTimerClass<SystemTimerClass> cd;
 			cd = 5;
 			do {
-				Call_Back();
 				if (!Keyboard->Check() && cd) {
-					SDL_Delay(1);
+					Call_Back_Wait(1);
+				} else {
+					Call_Back();
 				}
 			} while(!Keyboard->Check() && cd);
 		}

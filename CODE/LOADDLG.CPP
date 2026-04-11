@@ -406,8 +406,7 @@ int LoadOptionsClass::Process(void)
 					** Make sure the message says on the screen at least 1 second
 					*/
 					while (timer > 0) {
-						Call_Back();
-						SDL_Delay(1);
+						Call_Back_Wait(1);
 					}
 					Keyboard->Clear();
 
@@ -416,8 +415,7 @@ int LoadOptionsClass::Process(void)
 					} else {
 						Speak(VOX_LOAD1);
 						while (Is_Speaking()) {
-							Call_Back();
-							SDL_Delay(1);
+							Call_Back_Wait(1);
 						}
 						Hide_Mouse();
 						SeenPage.Clear();
@@ -457,8 +455,7 @@ int LoadOptionsClass::Process(void)
 				} else {
 					Speak(VOX_SAVE1);
 					while (Is_Speaking()) {
-						Call_Back();
-						SDL_Delay(1);
+						Call_Back_Wait(1);
 					}
 					CDTimerClass<SystemTimerClass> timer;
 //					timer.Start();
@@ -470,8 +467,7 @@ int LoadOptionsClass::Process(void)
 					**	Delay to let the user read the message
 					*/
 					while (timer > 0) {
-						Call_Back();
-						SDL_Delay(1);
+						Call_Back_Wait(1);
 					}
 					Keyboard->Clear();
 				}

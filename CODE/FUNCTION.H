@@ -713,6 +713,7 @@ int BGMessageBox(char const *text, int button1, int button2);
 */
 char const * Map_Selection(void);
 void Bit_It_In(int x, int y, int w, int h, GraphicBufferClass *src, GraphicBufferClass *dest, int delay=0, int dagger=0);
+void Call_Back_Wait(int time);
 void Call_Back_Delay(int time);
 int Alloc_Object(ScoreAnimClass *obj);
 

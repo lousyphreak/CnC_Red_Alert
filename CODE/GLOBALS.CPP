@@ -635,7 +635,6 @@ GraphicBufferClass	HiddenPage;
 GraphicViewPortClass	SeenBuff(&VisiblePage, 0, 0, 640, 480);
 GraphicViewPortClass	HidPage(&HiddenPage, 0, 0, 640, 480);
 
-CDTimerClass<SystemTimerClass> FrameTimer;
 CDTimerClass<SystemTimerClass> CountDownTimer;
 
 NewConfigType NewConfig;

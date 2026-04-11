@@ -20,9 +20,15 @@
 - Legacy `Wait_Vert_Blank(...)` / `WWDraw::WaitForVerticalBlank()` is now only a compatibility seam on SDL.
   - Practical example from this tree: the old DirectDraw wrapper used to sleep for 16 ms in `WWDraw::WaitForVerticalBlank()`, but that duplicated the renderer's own vsync wait and assumed a fixed 60 Hz display.
   - Practical rule: keep DirectDraw-style vertical-blank hooks as no-ops on the SDL path unless there is a real non-present synchronization requirement. Do not reintroduce a manual sleep there just to mimic old vblank timing.
+- Gameplay frame scheduling no longer belongs inside a blocking wait loop.
+  - Practical example from this tree: `CODE/CONQUER.CPP` deleted `Sync_Delay()` and now decides each `Main_Loop()` call with `Main_Loop_Frame_Interval()` / `Main_Loop_Frame_Ready()` whether to run exactly one gameplay frame while still letting outer-loop callback/render work continue every iteration.
+  - Practical rule: if the original engine is frame-count driven, keep that one-frame-at-a-time structure and use a frame-ready check to decide when gameplay advances; do not stockpile multiple gameplay steps inside one main-loop call just because real time has advanced.
+- Callback-driven front-end waits should stay on the callback/present path, not on `SDL_Delay(1)`.
+  - Practical example from this tree: `CODE/CONQUER.CPP::Call_Back_Wait(1)` now stays on `Call_Back()` only and, when no frame is already queued, asks `SDL3_COMPAT/wrappers/sdl_draw.cpp::WWDraw_Request_Present()` to present the current primary surface so the wait can ride the same SDL vsync seam as normal rendering.
+  - Practical rule: for speech/countdown/score/palette waits that already depend on the main callback path, replace one-millisecond sleeps with callback work plus present-based pacing instead of introducing another timer/sleep path.
 - Most remaining project-side `SDL_Delay(...)` calls are not display synchronization.
-  - Practical examples from this tree: many `CODE/*.CPP` modal dialog loops use `SDL_Delay(16)` or `SDL_GameInput_Delay(16)` only to yield between input polls, `SCENARIO.CPP` / `LOADDLG.CPP` / `SCORE.CPP` use `SDL_Delay(1)` or `SDL_GameInput_Delay(1)` while waiting for speech/timers/score animation maintenance, and `NETDLG.CPP` uses short waits to avoid hot-spinning while servicing UDP/WOL traffic.
-  - Practical rule: audit delay sites by purpose before changing them. Keep short sleeps that are serving blocking UI/audio/network/palette maintenance loops, but do not treat them as substitutes for presentation vsync.
+  - Practical examples from this tree: many `CODE/*.CPP` modal dialog loops still use `SDL_Delay(16)` or `SDL_GameInput_Delay(16)` only to yield between input polls, while `NETDLG.CPP` keeps short waits to avoid hot-spinning while servicing UDP/WOL traffic.
+  - Practical rule: audit delay sites by purpose before changing them. Keep short sleeps that are serving blocking UI/audio/network maintenance loops, but do not treat them as substitutes for presentation vsync.
 
 ## Legacy graphics/backend cleanup
 
@@ -70,10 +76,10 @@
   - Practical example from this tree and from `git tag original`: `CODE/SCORE.CPP::ScoreClass::Presentation()` queues `Theme.Queue_Song(THEME_SCORE)`, and `CODE/THEME.CPP` defines `THEME_SCORE` with `Repeat = true`.
   - `ThemeClass::AI()` only asks `Next_Song(...)` for a replacement after `Still_Playing()` becomes false, and `ThemeClass::Next_Song(THEME_SCORE)` deliberately returns `THEME_SCORE` unchanged when the theme's `Repeat` flag is set.
   - Practical rule: do not "fix" the score screen by disabling that repeat flag unless there is separate evidence of a false early-stop in the music system; otherwise the port would diverge from original game behavior.
-- Score-screen delay loops on the SDL port still need explicit stream maintenance even when full front-end callbacks stay throttled.
-  - Practical example from this tree: `CODE/SCORE.CPP::Call_Back_Delay(...)` only runs full `Call_Back()` work every `TIMER_SECOND/4`, matching the original front-end pacing, but the SDL port's streamed-score path depends on `Sound_Callback()` calls to keep the file stream alive.
-  - Important original-vs-port difference: the original engine had separate background audio servicing, so the throttled score-screen loop did not starve the music stream. In the SDL port, if no equivalent explicit servicing happens during long score-screen waits, the stream can fall inactive mid-song and `Theme.AI()` will restart the track from the beginning the next time it notices playback stopped.
-  - Practical rule: in score/menu loops that intentionally throttle full `Call_Back()` work, preserve the old pacing but keep streamed audio maintenance running on its own sufficiently frequent cadence.
+- Score-screen delay loops on the SDL port should use the normal callback/present cadence.
+  - Practical example from this tree: `CODE/SCORE.CPP::Call_Back_Delay(...)` now advances score objects and then waits through `Call_Back_Wait(1)` instead of combining a private audio-only timer with `SDL_GameInput_Delay(1)`.
+  - Important original-vs-port difference: the original engine could rely on separate background audio servicing, but the SDL port is simplest and safest when score waits keep using the same `Call_Back()` path that already maintains sound, theme, speech, input, and presentation.
+  - Practical rule: if a score/menu wait exists only to hold an animation or message on screen, keep it on the ordinary callback flow and avoid inventing a second throttling cadence just for audio maintenance.
 
 ## Mission-select audio containment
 
@@ -576,13 +582,13 @@ _Last updated: 2026-04-03_
 
 - The mission-end score presentation has its own pacing path in `CODE/SCORE.CPP` and needs separate treatment from menus and movies.
   - `Call_Back_Delay()` is the central helper used by score animations, graph step delays, and the final continue loop.
-  - Before the fix it used countdown timers but still busy-polled: it repeatedly called `Animate_Score_Objs()` until the countdown expired with no `Sleep()`, so the score screen could burn CPU during every decorative delay.
+  - Before the current fix it either busy-polled outright or depended on one-millisecond sleeps; now it routes each timed step through `Call_Back_Wait(1)` so score waits stay on the normal callback/present path.
 - The hall-of-fame name-entry path also had an idle polling loop.
-  - `ScoreClass::Input_Name()` repeatedly called `Call_Back()`, `Animate_Score_Objs()`, `Animate_Cursor()`, and keyboard checks while waiting for the next key, again with no yield.
+  - `ScoreClass::Input_Name()` repeatedly called `Call_Back()`, `Animate_Score_Objs()`, `Animate_Cursor()`, and keyboard checks while waiting for the next key; it now idles through `Call_Back_Wait(1)` instead of a raw `SDL_Delay(1)`.
 - Safe fix for this path:
-  - add a tiny `Sleep(1)` while the score countdown is still active in `Call_Back_Delay()`;
-  - add a matching idle `Sleep(1)` in `ScoreClass::Input_Name()` while waiting for Enter/next keystroke.
-  - This preserves the original score timing and animation order while preventing end-screen hot-spin.
+  - keep score animation/state updates where they already live;
+  - route the idle portion of each wait through the shared callback/present helper rather than a separate sleep.
+  - This preserves the original score timing and animation order while keeping the wait aligned with the SDL presentation path.
 
 ## Remaining front-end/UI CPU findings
 

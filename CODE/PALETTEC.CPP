@@ -49,6 +49,7 @@
 #include "PALETTEC.H"
 
 void WWDraw_Flush_Present(void);
+void WWDraw_Request_Present(void);
 PaletteClass const & PaletteClass::CurrentPalette = *reinterpret_cast<PaletteClass const *>(&::CurrentPalette[0]);
 
 
@@ -319,9 +320,8 @@ void PaletteClass::Set(int time, void (* callback)(void)) const
 		while (timer == holdtime && holdtime != 0U) {
 			if (callback) {
 				callback();
-			}
-			if (timer == holdtime) {
-				SDL_Delay(1);
+			} else if (timer == holdtime) {
+				WWDraw_Request_Present();
 			}
 		}
 	}

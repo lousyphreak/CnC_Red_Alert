@@ -1303,7 +1303,7 @@ void ScoreClass::Input_Name(char str[], int xpos, int ypos, uint8_t const pal[])
 			}
 		}
 		if (key != KA_RETURN) {
-			SDL_Delay(1);
+			Call_Back_Wait(1);
 		}
 	} while (key != KA_RETURN);					//	} while(key != KN_RETURN && key!=KN_KEYPAD_RETURN);
 }
@@ -1523,13 +1523,6 @@ void Call_Back_Delay(int time)
 	if (time < 0 ) time = 0;
 	if (time > 60) time = 60;
 	CDTimerClass<SystemTimerClass> cd;
-	CDTimerClass<SystemTimerClass> callbackcd = 0;
-	CDTimerClass<SystemTimerClass> soundcd = 0;
-	int sound_interval = TIMER_SECOND / 12;
-
-	if (sound_interval < 1) {
-		sound_interval = 1;
-	}
 
 	if (!ControlQ) {
 		if (Keyboard->Down(KN_LCTRL) && Keyboard->Down(KN_Q)) {
@@ -1542,22 +1535,11 @@ void Call_Back_Delay(int time)
 	cd = time;
 	StreamLowImpact = true;
 	do {
-		if (callbackcd == 0) {
-			Call_Back();
-			callbackcd = 1;
-			soundcd = sound_interval;
-		} else if (soundcd == 0) {
-			/*
-			** The original score-screen delay loop relied on separate audio servicing
-			** while full Call_Back() work stayed throttled. Keep streamed music fed on
-			** SDL so it does not fall inactive and restart from the beginning.
-			*/
-			Sound_Callback();
-			soundcd = sound_interval;
-		}
 		Animate_Score_Objs();
 		if (cd) {
-			SDL_GameInput_Delay(1);
+			Call_Back_Wait(1);
+		} else {
+			Call_Back();
 		}
 	} while (cd);
 	StreamLowImpact = false;

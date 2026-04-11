@@ -837,8 +837,7 @@ void EventClass::Execute(void)
 			Stop_Speaking();
 			Speak(VOX_CONTROL_EXIT);
 			while (Is_Speaking()) {
-				Call_Back();
-				SDL_GameInput_Delay(1);
+				Call_Back_Wait(1);
 			}
 			GameActive = false;
 			break;
@@ -884,8 +883,7 @@ void EventClass::Execute(void)
 				Save_Game (-1, (char *)Text_String(TXT_MULTIPLAYER_GAME));
 
 				while (timer > 0) {
-					Call_Back();
-					SDL_GameInput_Delay(1);
+					Call_Back_Wait(1);
 				}
 
 				HidPage.Clear();
