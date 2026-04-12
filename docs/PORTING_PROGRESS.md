@@ -8,6 +8,12 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Restored the original game-speed authority after the recent pacing refactor without bringing back the old in-frame slowdown loop:
+  - root cause: the performance/pacing pass that removed `Sync_Delay()` also removed the original global `FrameTimer` countdown and replaced it with a new absolute-`TickCount` scheduler state in `CODE/CONQUER.CPP`;
+  - regression effect: gameplay still advanced one frame at a time, but the options slider / multiplayer desired-frame-rate path was no longer driven by the exact same timer object and lifecycle as the original code, so the game-speed control no longer matched the original pacing behavior;
+  - `CODE/{EXTERNS.H,GLOBALS.CPP,CONQUER.CPP}` now restore `FrameTimer` as the authoritative `CDTimerClass<SystemTimerClass>` pacing source and use it in the non-blocking `Main_Loop_Frame_Ready()` path, preserving the modern one-frame-per-call structure while putting the actual frame-release timing back on the same countdown semantics as the original engine;
+  - practical pacing result: the SDL3 port keeps the smoother non-blocking outer loop from the recent performance work, but the game-speed slider and multiplayer frame-rate control again track the original timer-based pacing instead of a newly invented absolute schedule.
+
 - Fixed the browser startup regression that surfaced after the GameData-only lookup cleanup:
   - root cause in the Emscripten WWFS layer: the `MAIN.MIX` logical-alias resolver in `SDL3_COMPAT/wrappers/sdl_fs.cpp` only probed the already-materialized local IDBFS cache when deciding whether `MAIN.MIX` should resolve to `MAIN1.MIX`..`MAIN4.MIX`;
   - practical browser failure: startup presence checks could still see synthetic manifest-backed top-level files such as `REDALERT.MIX` and the four `MAIN*.MIX` roots, so the page got far enough to create the window, but the later `CCFileClass("MAIN.MIX").Is_Available()` probe did **not** consult the manifest-backed synthetic view and therefore failed before `CONQUER.MIX` / `GENERAL.MIX` bootstrap validation, producing the in-game `Required game data was not found in GameData.` dialog even though the docker/web deployment contained the right files;

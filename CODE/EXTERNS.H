@@ -386,6 +386,7 @@ extern uint8_t const					RemapEmber[];
 extern GraphicViewPortClass	HidPage;
 extern int 						MenuList[][8];
 extern CDTimerClass<SystemTimerClass> CountDownTimer;
+extern CDTimerClass<SystemTimerClass> FrameTimer;
 
 extern SpecialDialogType	SpecialDialog;
 

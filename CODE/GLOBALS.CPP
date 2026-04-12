@@ -635,6 +635,7 @@ GraphicViewPortClass	SeenBuff(&VisiblePage, 0, 0, 640, 480);
 GraphicViewPortClass	HidPage(&HiddenPage, 0, 0, 640, 480);
 
 CDTimerClass<SystemTimerClass> CountDownTimer;
+CDTimerClass<SystemTimerClass> FrameTimer;
 
 NewConfigType NewConfig;
 TheaterType LastTheater = THEATER_NONE;	//Lets us know when theater type changes.

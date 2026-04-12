@@ -199,9 +199,7 @@ char TeamEvent = 0;			// 0 = no event, 1,2,3 = team event type
 char TeamNumber = 0;			// which team was selected? (1-9)
 char FormationEvent = 0;	// 0 = no event, 1 = formation was toggled
 
-static uint32_t MainLoopNextFrameTick = 0;
 static uint32_t MainLoopLastServiceTick = 0;
-static bool MainLoopFrameStateInitialized = false;
 
 	/* -----------------10/14/96 7:29PM------------------
 
@@ -1763,9 +1761,8 @@ FacingType KN_To_Facing(int input)
 
 static void Reset_Main_Loop_Frame_State(void)
 {
-	MainLoopNextFrameTick = 0;
+	FrameTimer = 0;
 	MainLoopLastServiceTick = 0;
-	MainLoopFrameStateInitialized = false;
 }
 
 static int Main_Loop_Frame_Interval(void)
@@ -1800,36 +1797,25 @@ static int Main_Loop_Frame_Interval(void)
 static bool Main_Loop_Frame_Ready(int frameinterval)
 {
 	const uint32_t now = TickCount;
+	const uint32_t interval = static_cast<uint32_t>(MAX(frameinterval, 0));
 
-	if (frameinterval <= 0) {
-		MainLoopNextFrameTick = now;
-		MainLoopLastServiceTick = now;
-		MainLoopFrameStateInitialized = true;
-		return(true);
-	}
-
-	if (!MainLoopFrameStateInitialized || now < MainLoopLastServiceTick || now < MainLoopNextFrameTick) {
-		MainLoopNextFrameTick = now + static_cast<uint32_t>(frameinterval);
-		MainLoopLastServiceTick = now;
-		MainLoopFrameStateInitialized = true;
-		return(true);
-	}
-
-	if ((now - MainLoopLastServiceTick) > TIMER_SECOND) {
-		MainLoopNextFrameTick = now + static_cast<uint32_t>(frameinterval);
-		MainLoopLastServiceTick = now;
-		return(true);
-	}
-
-	if (now < MainLoopNextFrameTick) {
+	if (MainLoopLastServiceTick != 0 && now >= MainLoopLastServiceTick && FrameTimer) {
 		SpareTicks += now - MainLoopLastServiceTick;
+	}
+
+	if (!FrameTimer) {
+		FrameTimer = interval;
+		MainLoopLastServiceTick = now;
+		return(true);
+	}
+
+	if (now < MainLoopLastServiceTick) {
 		MainLoopLastServiceTick = now;
 		return(false);
 	}
 
-	MainLoopNextFrameTick = now + static_cast<uint32_t>(frameinterval);
 	MainLoopLastServiceTick = now;
-	return(true);
+	return(false);
 }
 
 static bool Run_Game_Frame(void)
