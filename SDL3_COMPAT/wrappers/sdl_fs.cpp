@@ -156,7 +156,7 @@ std::string WWFS_ResolveMainMixAlias(const std::string& normalized_path)
         return {};
     }
 
-    if (WWFS_LocalPathExists(normalized_path.c_str())) {
+    if (WWFS_PathExists(normalized_path.c_str())) {
         return {};
     }
 
@@ -172,14 +172,14 @@ std::string WWFS_ResolveMainMixAlias(const std::string& normalized_path)
 
     if (override_index >= 1 && override_index <= 4) {
         const std::string candidate_path = WWFS_AppendPathComponent(directory, std::string("MAIN") + std::to_string(override_index) + ".MIX");
-        if (WWFS_LocalPathExists(candidate_path.c_str())) {
+        if (WWFS_PathExists(candidate_path.c_str())) {
             return candidate_path;
         }
     }
 
     for (size_t index = 0; index < SDL_arraysize(default_candidates); ++index) {
         const std::string candidate_path = WWFS_AppendPathComponent(directory, default_candidates[index]);
-        if (WWFS_LocalPathExists(candidate_path.c_str())) {
+        if (WWFS_PathExists(candidate_path.c_str())) {
             return candidate_path;
         }
     }

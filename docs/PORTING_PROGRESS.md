@@ -1,12 +1,18 @@
 # Porting Progress
 
-_Last updated: 2026-04-11_
+_Last updated: 2026-04-12_
 
 ## Goal
 
 Port the Red Alert codebase to a reproducible cross-platform build using SDL3 for platform-specific functionality, with working builds on Linux, Windows, and other supported SDL3 platforms.
 
 ## Current status
+
+- Fixed the browser startup regression that surfaced after the GameData-only lookup cleanup:
+  - root cause in the Emscripten WWFS layer: the `MAIN.MIX` logical-alias resolver in `SDL3_COMPAT/wrappers/sdl_fs.cpp` only probed the already-materialized local IDBFS cache when deciding whether `MAIN.MIX` should resolve to `MAIN1.MIX`..`MAIN4.MIX`;
+  - practical browser failure: startup presence checks could still see synthetic manifest-backed top-level files such as `REDALERT.MIX` and the four `MAIN*.MIX` roots, so the page got far enough to create the window, but the later `CCFileClass("MAIN.MIX").Is_Available()` probe did **not** consult the manifest-backed synthetic view and therefore failed before `CONQUER.MIX` / `GENERAL.MIX` bootstrap validation, producing the in-game `Required game data was not found in GameData.` dialog even though the docker/web deployment contained the right files;
+  - `WWFS_ResolveMainMixAlias(...)` now uses the same absolute path-existence helper as the rest of the Emscripten synthetic filesystem path, so logical `MAIN.MIX` resolution succeeds whether the selected `MAIN*.MIX` already exists in local IDBFS or is still only represented by the embedded `ra-assets-manifest.txt`;
+  - validation for this checkpoint: `cmake --build build-emscripten --target redalert -- -j4`, `cmake --build build --target redalert -- -j4`, and `cmake --build build-asan --target redalert -- -j4` succeed after the alias fix.
 
 - Audit follow-up on the staged CD-removal / local-install branch fixed one remaining secondary-root edge case:
   - `CODE/SESSION.CPP` now skips the loose `*.PKT` / `*.MPR` secondary-root glob when `CCFileClass::Get_Local_Search_Root()` is null, which is the expected setup when the binary is launched directly from `GameData/` and there is no separate install-root fallback to scan;
