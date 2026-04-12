@@ -58,9 +58,6 @@ class CCFileClass : public BufferIOFileClass
 		CCFileClass(void);
 		virtual ~CCFileClass(void) {Position = 0;};
 
-		static void Set_Local_Search_Root(char const* path);
-		static char const* Get_Local_Search_Root(void);
-
 		// Delete should be overloaded here as well. Don't allow deletes of mixfiles.
 
 		bool Is_Resident(void) const {return(Data.Get_Buffer() != NULL);}

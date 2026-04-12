@@ -49,23 +49,7 @@
 
 #include	"FUNCTION.H"
 #include	<errno.h>
-#include	<string>
 #include	"CCFILE.H"
-
-namespace
-{
-std::string g_local_search_root;
-
-bool build_local_search_path(char const* filename, char* buffer, size_t buffer_size)
-{
-	if (filename == NULL || filename[0] == '\0' || buffer == NULL || buffer_size == 0 || g_local_search_root.empty()) {
-		return false;
-	}
-
-	std::snprintf(buffer, buffer_size, "%s/%s", g_local_search_root.c_str(), filename);
-	return true;
-}
-}
 
 /***********************************************************************************************
  * CCFileClass::CCFileClass -- Filename based constructor for C&C file.                        *
@@ -108,30 +92,6 @@ CCFileClass::CCFileClass(void) :
 	Position(0)
 {
 }
-
-void CCFileClass::Set_Local_Search_Root(char const* path)
-{
-	g_local_search_root.clear();
-
-	if (path == NULL || path[0] == '\0') {
-		return;
-	}
-
-	g_local_search_root = WWFS_NormalizePath(path);
-	while (g_local_search_root.size() > 1 && (g_local_search_root.back() == '/' || g_local_search_root.back() == '\\')) {
-		g_local_search_root.pop_back();
-	}
-
-	if (g_local_search_root == ".") {
-		g_local_search_root.clear();
-	}
-}
-
-char const* CCFileClass::Get_Local_Search_Root(void)
-{
-	return g_local_search_root.empty() ? NULL : g_local_search_root.c_str();
-}
-
 
 /***********************************************************************************************
  * CCFileClass::Error -- Handles displaying a file error message.                              *
@@ -339,11 +299,6 @@ int32_t CCFileClass::Size(void)
 		if (MFCD::Offset(File_Name(), NULL, NULL, NULL, &length)) {
 			return(static_cast<int32_t>(length));
 		}
-
-		char local_path[512];
-		if (build_local_search_path(File_Name(), local_path, sizeof(local_path)) && RawFileClass(local_path).Is_Available()) {
-			return RawFileClass(local_path).Size();
-		}
 	}
 
 	return(BufferIOFileClass::Size());
@@ -383,11 +338,6 @@ int CCFileClass::Is_Available(int )
 	**	Otherwise a manual check of the file system is required to
 	**	determine if the file is actually available.
 	*/
-	char local_path[512];
-	if (build_local_search_path(File_Name(), local_path, sizeof(local_path)) && RawFileClass(local_path).Is_Available()) {
-		return(true);
-	}
-
 	return(BufferIOFileClass::Is_Available());
 }
 
@@ -477,15 +427,6 @@ int CCFileClass::Open(int rights)
 		return(BufferIOFileClass::Open(rights));
 	}
 
-	char local_path[512];
-	if (!(rights & WRITE) && build_local_search_path(File_Name(), local_path, sizeof(local_path)) && RawFileClass(local_path).Is_Available()) {
-		char * dupfile = strdup(File_Name());
-		int result = BufferIOFileClass::Open(local_path, rights);
-		Set_Name(dupfile);
-		free(dupfile);
-		return(result);
-	}
-
 	/*
 	**	Check to see if file is part of a mixfile and that mixfile is currently loaded
 	**	into RAM.
@@ -557,11 +498,6 @@ uint32_t CCFileClass::Get_Date_Time(void)
 	datetime = BufferIOFileClass::Get_Date_Time();
 
 	if ( !datetime ) {
-		char local_path[512];
-		if (build_local_search_path(File_Name(), local_path, sizeof(local_path)) && RawFileClass(local_path).Is_Available()) {
-			return RawFileClass(local_path).Get_Date_Time();
-		}
-
 		if (MFCD::Offset(File_Name(), NULL, &mixfile, NULL, NULL)) {
 			//
 			// check for nested MIX files
@@ -597,11 +533,6 @@ bool CCFileClass::Set_Date_Time(uint32_t datetime)
 	status = BufferIOFileClass::Set_Date_Time( datetime );
 
 	if ( !status ) {
-		char local_path[512];
-		if (build_local_search_path(File_Name(), local_path, sizeof(local_path)) && RawFileClass(local_path).Is_Available()) {
-			return RawFileClass(local_path).Set_Date_Time(datetime);
-		}
-
 		if (MFCD::Offset(File_Name(), NULL, &mixfile, NULL, NULL)) {
 			//
 			// check for nested MIX files

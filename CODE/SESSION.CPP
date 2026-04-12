@@ -806,55 +806,6 @@ void SessionClass::Read_Scenario_Descriptions (void)
 			SDL_free(pkt_files);
 		}
 	}
-	{
-		const char* local_search_root = CCFileClass::Get_Local_Search_Root();
-		if (local_search_root != NULL) {
-			int pkt_count = 0;
-			char **pkt_files = WWFS_GlobDirectory(local_search_root, "*.PKT", SDL_GLOB_CASEINSENSITIVE, &pkt_count);
-			if (pkt_files) {
-				for (int fi = 0; fi < pkt_count; fi++) {
-					char name[_MAX_FNAME];
-					char ext[_MAX_EXT];
-					char basename[_MAX_FNAME + _MAX_EXT];
-					WWFS_SplitPath(pkt_files[fi], NULL, NULL, name, ext);
-					WWFS_MakePath(basename, NULL, NULL, name, ext);
-					if (RawFileClass(basename).Is_Available()) {
-						continue;
-					}
-
-					CCFileClass file(pkt_files[fi]);
-					INIClass ini;
-					ini.Load(file);
-
-					int count = ini.Entry_Count("Missions");
-					for (int index = 0; index < count; index++) {
-						char const * fname = ini.Get_Entry("Missions", index);
-						char buffer[128];
-						ini.Get_String("Missions", fname, "", buffer, sizeof(buffer));
-
-#ifdef FIXIT_VERSION_3
-					Scenarios.Add(new MultiMission(fname, buffer, NULL, true,
-											Is_Mission_Counterstrike ((char*)fname)));
-#else	//	FIXIT_VERSION_3
-#ifdef FIXIT_CSII	//	checked - ajw
-						bool official = Is_Mission_126x126( (char *)fname);
-						if (!official) {
-							official = !Is_Mission_Aftermath((char *)fname);
-						}
-						Scenarios.Add(new MultiMission(fname, buffer, NULL, official,
-											Is_Mission_Counterstrike ((char*)fname)));
-#else
-						Scenarios.Add(new MultiMission(fname, buffer, NULL, true,
-											Is_Mission_Counterstrike ((char*)fname)));
-#endif
-#endif	//	FIXIT_VERSION_3
-					}
-				}
-				SDL_free(pkt_files);
-			}
-		}
-	}
-
   #ifdef FIXIT_CSII		//	checked - ajw
 	/*
 	**	Fetch the Counterstrike multiplayer scenario packet data.
@@ -950,35 +901,6 @@ void SessionClass::Read_Scenario_Descriptions (void)
 			SDL_free(mpr_files);
 		}
 	}
-	{
-		const char* local_search_root = CCFileClass::Get_Local_Search_Root();
-		if (local_search_root != NULL) {
-			int mpr_count = 0;
-			char **mpr_files = WWFS_GlobDirectory(local_search_root, "*.MPR", SDL_GLOB_CASEINSENSITIVE, &mpr_count);
-			if (mpr_files) {
-				for (int fi = 0; fi < mpr_count; fi++) {
-					char name[_MAX_FNAME];
-					char ext[_MAX_EXT];
-					char basename[_MAX_FNAME + _MAX_EXT];
-					WWFS_SplitPath(mpr_files[fi], NULL, NULL, name, ext);
-					WWFS_MakePath(basename, NULL, NULL, name, ext);
-					if (RawFileClass(basename).Is_Available()) {
-						continue;
-					}
-
-					CCFileClass file(mpr_files[fi]);
-					INIClass ini;
-					ini.Load(file);
-
-					ini.Get_String ("Basic", "Name", "No Name", name_buffer, sizeof (name_buffer) );
-					ini.Get_String ("Digest", "1", "No Digest", digest_buffer, sizeof (digest_buffer) );
-					Scenarios.Add (new MultiMission (basename, name_buffer, digest_buffer,ini.Get_Bool("Basic", "Official", false), false ));
-				}
-				SDL_free(mpr_files);
-			}
-		}
-	}
-
 }
 
 /***************************************************************************

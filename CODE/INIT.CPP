@@ -1837,6 +1837,13 @@ bool Parse_Command_Line(int argc, char * argv[])
 	for (int index = 1; index < argc; index++) {
 		char * string;		// Pointer to argument.
 
+		if (argv[index] != NULL && SDL_strcasecmp(argv[index], "-gamedata") == 0) {
+			if (index + 1 < argc) {
+				++index;
+			}
+			continue;
+		}
+
 		string = SDL_strupr(argv[index]);
 
 		/*
@@ -2663,10 +2670,6 @@ static void Init_Expansion_Files(void)
 	*/
 	Register_Expansion_Mixfiles_From_Directory(".", "SC*.MIX", true);
 	Register_Expansion_Mixfiles_From_Directory(".", "SS*.MIX", false);
-
-	const char* local_search_root = CCFileClass::Get_Local_Search_Root();
-	Register_Expansion_Mixfiles_From_Directory(local_search_root, "SC*.MIX", true);
-	Register_Expansion_Mixfiles_From_Directory(local_search_root, "SS*.MIX", false);
 }
 
 /***********************************************************************************************
@@ -2785,7 +2788,7 @@ static void Init_Fonts(void)
 /***********************************************************************************************
  * Init_Game_Data_Access -- Validate the fixed GameData asset layout.                          *
  *                                                                                             *
- *    This routine is called during startup to ensure the local GameData directory contains    *
+ *    This routine is called during startup to ensure the selected asset directory contains    *
  *    the core archives required to continue bootstrapping the game.                           *
  *                                                                                             *
  * INPUT:   none                                                                               *
@@ -2813,7 +2816,7 @@ static void Init_Game_Data_Access(void)
 	VisiblePage.Clear();
 	GamePalette.Set();
 	Show_Mouse();
-	WWMessageBox().Process("Required game data was not found in GameData.", TXT_OK);
+	WWMessageBox().Process("Required game data was not found.", TXT_OK);
 	Emergency_Exit(EXIT_FAILURE);
 }
 

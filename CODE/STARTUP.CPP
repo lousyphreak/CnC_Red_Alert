@@ -40,6 +40,7 @@
 #include	"SDLINPUT.H"
 #include "ra_messagebox.h"
 #include	<cstdarg>
+#include	<cstring>
 #include	<cstdio>
 #include	<cstdlib>
 #include	<string>
@@ -56,6 +57,13 @@ void Print_Error_Exit(char * string);
 
 namespace
 {
+const char* const kStartupGameDataBaseMixfiles[] = {
+	"MAIN1.MIX",
+	"MAIN2.MIX",
+	"MAIN3.MIX",
+	"MAIN4.MIX"
+};
+
 bool startup_trace_enabled()
 {
 	static const bool enabled = std::getenv("RA_TRACE_STARTUP") != NULL;
@@ -100,8 +108,17 @@ void copy_base_path(char* buffer, size_t buffer_size)
 		return;
 	}
 
+	std::string base_path_string;
+#if defined(__EMSCRIPTEN__) && RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA
+	base_path_string = WWFS_GetBaseDirectoryPath();
+#else
 	const char* base_path = SDL_GetBasePath();
-	std::snprintf(buffer, buffer_size, "%s", (base_path != NULL) ? base_path : "./");
+	base_path_string = (base_path != NULL) ? base_path : "./";
+#endif
+	if (!base_path_string.empty() && base_path_string.back() != '/' && base_path_string.back() != '\\') {
+		base_path_string.push_back('/');
+	}
+	std::snprintf(buffer, buffer_size, "%s", base_path_string.c_str());
 }
 
 std::string normalize_directory_path(const char* path)
@@ -113,19 +130,66 @@ std::string normalize_directory_path(const char* path)
 	return normalized.empty() ? std::string(".") : normalized;
 }
 
-std::string parent_directory_path(const std::string& path)
+std::string current_working_directory_path()
 {
-	const size_t separator = path.find_last_of("/\\");
-	if (separator == std::string::npos) {
-		return std::string(".");
+	char* current_directory = SDL_GetCurrentDirectory();
+	if (current_directory == NULL || current_directory[0] == '\0') {
+		if (current_directory != NULL) {
+			SDL_free(current_directory);
+		}
+		return std::string();
 	}
-	if (separator == 0) {
-		return path.substr(0, 1);
-	}
-	return path.substr(0, separator);
+
+	std::string normalized = normalize_directory_path(current_directory);
+	SDL_free(current_directory);
+	return normalized;
 }
 
-bool directory_contains_game_data(const std::string& directory)
+std::string startup_base_directory_path()
+{
+#if defined(__EMSCRIPTEN__) && RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA
+	const std::string base_directory = WWFS_GetBaseDirectoryPath();
+	if (!base_directory.empty()) {
+		return normalize_directory_path(base_directory.c_str());
+	}
+#else
+	const char* base_path = SDL_GetBasePath();
+	if (base_path != NULL && base_path[0] != '\0') {
+		return normalize_directory_path(base_path);
+	}
+#endif
+
+	return std::string();
+}
+
+std::string executable_directory_path(const char* executable_path)
+{
+	const std::string base_directory = startup_base_directory_path();
+	if (!base_directory.empty()) {
+		return base_directory;
+	}
+
+	char drive[_MAX_DRIVE];
+	char path[260];
+	char working_directory[260];
+
+	WWFS_SplitPath(executable_path, drive, path, NULL, NULL);
+	if (!path[0]) {
+		std::strcpy(path, ".");
+	}
+	size_t path_length = std::strlen(path);
+	if (path_length > 0 && (path[path_length - 1] == '\\' || path[path_length - 1] == '/')) {
+		path[path_length - 1] = '\0';
+	}
+	working_directory[0] = '\0';
+	if (drive[0]) {
+		std::strcat(working_directory, drive);
+	}
+	std::strcat(working_directory, path);
+	return normalize_directory_path(working_directory);
+}
+
+bool directory_contains_local_game_data(const std::string& directory)
 {
 	SDL_PathInfo info;
 	if (!WWFS_GetPathInfo(directory.c_str(), &info) || info.type != SDL_PATHTYPE_DIRECTORY) {
@@ -133,28 +197,106 @@ bool directory_contains_game_data(const std::string& directory)
 	}
 
 	const std::string redalert_mix = directory + "/REDALERT.MIX";
-	const std::string main1_mix = directory + "/MAIN1.MIX";
-	return WWFS_GetPathInfo(redalert_mix.c_str(), nullptr) && WWFS_GetPathInfo(main1_mix.c_str(), nullptr);
-}
+	if (!WWFS_GetPathInfo(redalert_mix.c_str(), nullptr)) {
+		return false;
+	}
 
-std::string resolve_game_data_directory(const char* executable_directory)
-{
-	const std::string normalized_executable_directory = normalize_directory_path(executable_directory);
-	const std::string sibling_game_data_directory = normalized_executable_directory + "/GameData";
-	const std::string parent_game_data_directory = parent_directory_path(normalized_executable_directory) + "/GameData";
-	const std::string candidates[] = {
-		normalized_executable_directory,
-		sibling_game_data_directory,
-		parent_game_data_directory
-	};
-
-	for (size_t index = 0; index < ARRAY_SIZE(candidates); ++index) {
-		if (directory_contains_game_data(candidates[index])) {
-			return candidates[index];
+	for (size_t index = 0; index < ARRAY_SIZE(kStartupGameDataBaseMixfiles); ++index) {
+		const std::string mixfile = directory + "/" + kStartupGameDataBaseMixfiles[index];
+		if (!WWFS_GetPathInfo(mixfile.c_str(), nullptr)) {
+			return false;
 		}
 	}
 
-	return normalized_executable_directory;
+	return true;
+}
+
+bool directory_contains_game_data(const std::string& directory)
+{
+	if (directory_contains_local_game_data(directory)) {
+		return true;
+	}
+
+#if defined(__EMSCRIPTEN__) && RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA
+	const std::string emscripten_asset_root = normalize_directory_path(WWFS_GetBaseDirectoryPath().c_str());
+	if (SDL_strcasecmp(directory.c_str(), emscripten_asset_root.c_str()) == 0) {
+		return true;
+	}
+#endif
+
+	return false;
+}
+
+bool try_get_command_line_gamedata_directory(int argc, char* argv[], std::string* directory)
+{
+	if (directory == NULL) {
+		return false;
+	}
+
+	for (int index = 1; index < argc; ++index) {
+		const char* argument = argv[index];
+		if (argument == NULL || SDL_strcasecmp(argument, "-gamedata") != 0) {
+			continue;
+		}
+		if (index + 1 >= argc || argv[index + 1] == NULL || argv[index + 1][0] == '\0') {
+			return false;
+		}
+
+		*directory = normalize_directory_path(argv[index + 1]);
+		return true;
+	}
+
+	return false;
+}
+
+std::string resolve_game_data_directory(int argc, char* argv[], const char* executable_path)
+{
+	std::string command_line_directory;
+	if (try_get_command_line_gamedata_directory(argc, argv, &command_line_directory)) {
+		startup_trace("Checking -gamedata directory \"%s\"", command_line_directory.c_str());
+		if (directory_contains_game_data(command_line_directory)) {
+			return command_line_directory;
+		}
+	}
+
+	const std::string current_working_directory = current_working_directory_path();
+	if (!current_working_directory.empty()) {
+		startup_trace("Checking current working directory \"%s\"", current_working_directory.c_str());
+		if (directory_contains_game_data(current_working_directory)) {
+			return current_working_directory;
+		}
+	}
+
+	const std::string executable_directory = executable_directory_path(executable_path);
+	startup_trace("Checking executable directory \"%s\"", executable_directory.c_str());
+	if (directory_contains_game_data(executable_directory)) {
+		return executable_directory;
+	}
+
+	return std::string();
+}
+
+void print_missing_game_data_error(int argc, char* argv[], const char* executable_path)
+{
+	std::string command_line_directory;
+	const bool has_command_line_directory = try_get_command_line_gamedata_directory(argc, argv, &command_line_directory);
+	const std::string current_working_directory = current_working_directory_path();
+	const std::string executable_directory = executable_directory_path(executable_path);
+
+	fprintf(stderr, "Required game data was not found.\n");
+	fprintf(stderr, "Checked for REDALERT.MIX and MAIN1.MIX..MAIN4.MIX in this order:\n");
+	if (has_command_line_directory) {
+		fprintf(stderr, "  1. -gamedata %s\n", command_line_directory.c_str());
+	} else {
+		fprintf(stderr, "  1. -gamedata <dir> (not provided)\n");
+	}
+	fprintf(stderr,
+		"  2. current working directory: %s\n",
+		current_working_directory.empty() ? "(unavailable)" : current_working_directory.c_str());
+	fprintf(stderr,
+		"  3. executable directory: %s\n",
+		executable_directory.empty() ? "(unavailable)" : executable_directory.c_str());
+	fprintf(stderr, "Use -gamedata <dir> or launch the game from a directory that contains those files.\n");
 }
 
 void destroy_main_window_for_shutdown(int ready_to_quit, const char* reason)
@@ -243,34 +385,22 @@ int RedAlert_Main(int argc, char* argv[])
 	}
 
 	/*
-	**	Change directory to the where the executable is located. Handle the
-	**	case where there is no path attached to argv[0].
+	**	Select the asset directory in this exact order:
+	**	1) -gamedata <dir>
+	**	2) current working directory
+	**	3) executable directory
 	*/
-	char drive[_MAX_DRIVE];
-	char path[260];
-	char working_directory[260];
-	WWFS_SplitPath(argv[0], drive, path, NULL, NULL);
-	if (!path[0]) {
-		strcpy(path, ".");
-	}
-	if (path[strlen(path)-1] == '\\') {
-		path[strlen(path)-1] = '\0';
-	}
-	working_directory[0] = '\0';
-	if (drive[0]) {
-		strcat(working_directory, drive);
-	}
-	strcat(working_directory, path);
-	const std::string launch_directory = normalize_directory_path(working_directory);
-	const std::string game_data_directory = resolve_game_data_directory(working_directory);
-	if (SDL_strcasecmp(launch_directory.c_str(), game_data_directory.c_str()) != 0) {
-		CCFileClass::Set_Local_Search_Root(launch_directory.c_str());
-		startup_trace("Using secondary local asset root \"%s\"", launch_directory.c_str());
-	} else {
-		CCFileClass::Set_Local_Search_Root(NULL);
+	const std::string game_data_directory = resolve_game_data_directory(argc, argv, argv[0]);
+	if (game_data_directory.empty()) {
+		startup_trace("No GameData directory found");
+		print_missing_game_data_error(argc, argv, argv[0]);
+		return(EXIT_FAILURE);
 	}
 	startup_trace("Using asset root \"%s\"", game_data_directory.c_str());
-	WWFS_SetCurrentDirectory(game_data_directory.c_str());
+	if (!WWFS_SetCurrentDirectory(game_data_directory.c_str())) {
+		fprintf(stderr, "Failed to use game data directory: %s\n", game_data_directory.c_str());
+		return(EXIT_FAILURE);
+	}
 
 #ifdef WOLAPI_INTEGRATION
 	//	Look for special wolapi install program, used after the patch to version 3, to install "Shared Internet Components".
@@ -313,6 +443,7 @@ int RedAlert_Main(int argc, char* argv[])
 			return(EXIT_FAILURE);
 		}
 		RawFileClass cfile(CONFIG_FILE_NAME);
+		const bool config_available = cfile.Is_Available();
 
 
 		Keyboard = new KeyboardClass();
@@ -341,144 +472,140 @@ int RedAlert_Main(int argc, char* argv[])
 			}
 		}
 
-		if (cfile.Is_Available()) {
-
+		if (config_available) {
 			Read_Private_Config_Struct(cfile, &NewConfig);
 
 			/*
 			** Set the options as requested by the ccsetup program
 			*/
 			Read_Setup_Options( &cfile );
+		}
 
-			Main_Window_Create();
-			startup_trace("Main_Window_Create complete hwnd=%p size=%dx%d", MainWindow, ScreenWidth, ScreenHeight);
-			if (!Audio_Init(MainWindow, 16, false, 11025 * 2, 0)) {
-				startup_trace("Audio_Init failed");
-				if (MainWindow != NULL) {
-					RA_DestroyWindow(MainWindow);
-					MainWindow = NULL;
-				}
-				return (EXIT_FAILURE);
+		Main_Window_Create();
+		startup_trace("Main_Window_Create complete hwnd=%p size=%dx%d", MainWindow, ScreenWidth, ScreenHeight);
+		if (!Audio_Init(MainWindow, 16, false, 11025 * 2, 0)) {
+			startup_trace("Audio_Init failed");
+			if (MainWindow != NULL) {
+				RA_DestroyWindow(MainWindow);
+				MainWindow = NULL;
 			}
-			startup_trace("Audio_Init complete");
+			return (EXIT_FAILURE);
+		}
+		startup_trace("Audio_Init complete");
 
-			int32_t video_success = FALSE;
-			/*
-			** Set 640x400 video mode. If its not available then try for 640x480
-			*/
-			if (ScreenHeight == 400) {
-				if (Set_Video_Mode (MainWindow, ScreenWidth, ScreenHeight, 8)) {
+		int32_t video_success = FALSE;
+		/*
+		** Set 640x400 video mode. If its not available then try for 640x480
+		*/
+		if (ScreenHeight == 400) {
+			if (Set_Video_Mode (MainWindow, ScreenWidth, ScreenHeight, 8)) {
+				video_success = TRUE;
+			} else {
+				if (Set_Video_Mode (MainWindow, ScreenWidth, 480, 8)) {
 					video_success = TRUE;
-				} else {
-					if (Set_Video_Mode (MainWindow, ScreenWidth, 480, 8)) {
-						video_success = TRUE;
-						ScreenHeight = 480;
-					}
-				}
-			} else {
-				if (Set_Video_Mode (MainWindow, ScreenWidth, ScreenHeight, 8)) {
-					video_success = TRUE;
+					ScreenHeight = 480;
 				}
 			}
-
-			if (!video_success) {
-				RA_ShowMessageBox(TEXT_VIDEO_ERROR, TEXT_SHORT_TITLE, SDL_MESSAGEBOX_WARNING);
-				if (WindowsTimer) delete WindowsTimer;
-				//if (Palette) delete Palette;
-				return (EXIT_FAILURE);
+		} else {
+			if (Set_Video_Mode (MainWindow, ScreenWidth, ScreenHeight, 8)) {
+				video_success = TRUE;
 			}
-			startup_trace("Set_Video_Mode complete screen_height=%d", ScreenHeight);
+		}
 
-			if (ScreenWidth==320) {
-				VisiblePage.Init( ScreenWidth , ScreenHeight , NULL , 0 , (GBC_Enum)0);
-			} else {
-				VisiblePage.Init( ScreenWidth , ScreenHeight , NULL , 0 , (GBC_Enum)(GBC_VISIBLE | GBC_VIDEOMEM));
-				HiddenPage.Init (ScreenWidth , ScreenHeight , NULL , 0 , (GBC_Enum)GBC_VIDEOMEM);
-				VisiblePage.Attach_Surface(&HiddenPage);
-			}
+		if (!video_success) {
+			RA_ShowMessageBox(TEXT_VIDEO_ERROR, TEXT_SHORT_TITLE, SDL_MESSAGEBOX_WARNING);
+			if (WindowsTimer) delete WindowsTimer;
+			//if (Palette) delete Palette;
+			return (EXIT_FAILURE);
+		}
+		startup_trace("Set_Video_Mode complete screen_height=%d", ScreenHeight);
 
-			ScreenHeight = 400;
+		if (ScreenWidth==320) {
+			VisiblePage.Init( ScreenWidth , ScreenHeight , NULL , 0 , (GBC_Enum)0);
+		} else {
+			VisiblePage.Init( ScreenWidth , ScreenHeight , NULL , 0 , (GBC_Enum)(GBC_VISIBLE | GBC_VIDEOMEM));
+			HiddenPage.Init (ScreenWidth , ScreenHeight , NULL , 0 , (GBC_Enum)GBC_VIDEOMEM);
+			VisiblePage.Attach_Surface(&HiddenPage);
+		}
 
-			if (VisiblePage.Get_Height() == 480) {
-				SeenBuff.Attach(&VisiblePage, 0, 40, 640, 400);
-				HidPage.Attach(&HiddenPage, 0, 40, 640, 400);
-			} else {
-				SeenBuff.Attach(&VisiblePage, 0, 0, 640, 400);
-				HidPage.Attach(&HiddenPage, 0, 0, 640, 400);
-			}
+		ScreenHeight = 400;
 
-			Options.Adjust_Variables_For_Resolution();
+		if (VisiblePage.Get_Height() == 480) {
+			SeenBuff.Attach(&VisiblePage, 0, 40, 640, 400);
+			HidPage.Attach(&HiddenPage, 0, 40, 640, 400);
+		} else {
+			SeenBuff.Attach(&VisiblePage, 0, 0, 640, 400);
+			HidPage.Attach(&HiddenPage, 0, 0, 640, 400);
+		}
 
-			/*
-			** Install the memory error handler
-			*/
-			Memory_Error = &Memory_Error_Handler;
+		Options.Adjust_Variables_For_Resolution();
 
-			WindowList[0][WINDOWWIDTH] 	= SeenBuff.Get_Width();
-			WindowList[0][WINDOWHEIGHT]	= SeenBuff.Get_Height();
-			WindowList[WINDOW_EDITOR][WINDOWWIDTH] = SeenBuff.Get_Width();
-			WindowList[WINDOW_EDITOR][WINDOWHEIGHT]= SeenBuff.Get_Height();
+		/*
+		** Install the memory error handler
+		*/
+		Memory_Error = &Memory_Error_Handler;
 
-			WWMouse = new WWMouseClass(&SeenBuff, 48, 48);
-			MouseInstalled = TRUE;
+		WindowList[0][WINDOWWIDTH] 	= SeenBuff.Get_Width();
+		WindowList[0][WINDOWHEIGHT]	= SeenBuff.Get_Height();
+		WindowList[WINDOW_EDITOR][WINDOWWIDTH] = SeenBuff.Get_Width();
+		WindowList[WINDOW_EDITOR][WINDOWHEIGHT]= SeenBuff.Get_Height();
 
-			/*
-			** See if we should run the intro
-			*/
-			INIClass ini;
+		WWMouse = new WWMouseClass(&SeenBuff, 48, 48);
+		MouseInstalled = TRUE;
+
+		/*
+		** See if we should run the intro
+		*/
+		INIClass ini;
+		if (config_available) {
 			ini.Load(cfile);
+		}
 
-			/*
-			**	Check for forced intro movie run disabling. If the conquer
-			**	configuration file says "no", then don't run the intro.
-			*/
-			if (!Special.IsFromInstall) {
-				Special.IsFromInstall = ini.Get_Bool("Intro", "PlayIntro", true);
-			}
+		/*
+		**	Check for forced intro movie run disabling. If the conquer
+		**	configuration file says "no", then don't run the intro.
+		*/
+		if (config_available && !Special.IsFromInstall) {
+			Special.IsFromInstall = ini.Get_Bool("Intro", "PlayIntro", true);
+		}
+		if (config_available) {
 			SlowPalette = ini.Get_Bool("Options", "SlowPalette", false);
+		}
 
-			/*
-			** Regardless of whether we should run it or not, here we're
-			** gonna change it to say "no" in the future.
-			*/
-			if (Special.IsFromInstall) {
-				BreakoutAllowed = true;
-//				BreakoutAllowed = false;
+		/*
+		** Regardless of whether we should run it or not, here we're
+		** gonna change it to say "no" in the future.
+		*/
+		if (Special.IsFromInstall) {
+			BreakoutAllowed = true;
+//			BreakoutAllowed = false;
+			if (config_available) {
 				ini.Put_Bool("Intro", "PlayIntro", false);
 				ini.Save(cfile);
 			}
-
-			/*
-			**	If the intro is being run for the first time, then don't
-			**	allow breaking out of it with the <ESC> key.
-			*/
-			if (Special.IsFromInstall) {
-				BreakoutAllowed = true;
-//				BreakoutAllowed = false;
-			}
-
-			Memory_Error_Exit = Print_Error_End_Exit;
-
-			startup_trace("Entering Main_Game argc=%d", argc);
-			Main_Game(argc, argv);
-			startup_trace("Main_Game returned ReadyToQuit=%d", ReadyToQuit);
-
-			VisiblePage.Clear();
-			HiddenPage.Clear();
-			Memory_Error_Exit = Print_Error_Exit;
-			destroy_main_window_for_shutdown(1, "clean");
-
-			return (EXIT_SUCCESS);
-
-		} else {
-			puts(TEXT_SETUP_FIRST);
-			Keyboard->Get();
 		}
 
-		if (WindowsTimer) {
-		 	delete WindowsTimer;
-		 	WindowsTimer = NULL;
+		/*
+		**	If the intro is being run for the first time, then don't
+		**	allow breaking out of it with the <ESC> key.
+		*/
+		if (Special.IsFromInstall) {
+			BreakoutAllowed = true;
+//			BreakoutAllowed = false;
 		}
+
+		Memory_Error_Exit = Print_Error_End_Exit;
+
+		startup_trace("Entering Main_Game argc=%d", argc);
+		Main_Game(argc, argv);
+		startup_trace("Main_Game returned ReadyToQuit=%d", ReadyToQuit);
+
+		VisiblePage.Clear();
+		HiddenPage.Clear();
+		Memory_Error_Exit = Print_Error_Exit;
+		destroy_main_window_for_shutdown(1, "clean");
+
+		return (EXIT_SUCCESS);
 
 	}
 	/*
