@@ -108,13 +108,15 @@
 
 #include "FUNCTION.H"
 #include "sdl_fs.h"
+#include "INTERNET.H"
+#include "TCPIP.H"
 #ifdef NETWORK_UDP
 #include	"WSPROTO.H"
-#else	//NETWORK_UDP
-#include "TCPIP.H"
 #endif	//NETWORK_UDP
 
 #include <time.h>
+#include <stdlib.h>
+#include <stdarg.h>
 #include "WOLDEBUG.H"
 
 #define SHOW_MONO		0
@@ -179,6 +181,134 @@ typedef enum {
 	REJECT_DISBANDED,				// game was disbanded
 	REJECT_MISMATCH,				// "rules.ini" file mismatch.
 } RejectType;
+
+static char const *Join_Reject_Message(RejectType why)
+{
+	switch (why) {
+		case REJECT_DUPLICATE_NAME:
+			return Text_String(TXT_NAME_MUSTBE_UNIQUE);
+
+		case REJECT_GAME_FULL:
+			return Text_String(TXT_GAME_FULL);
+
+		case REJECT_VERSION_TOO_OLD:
+			return Text_String(TXT_YOURGAME_OUTDATED);
+
+		case REJECT_VERSION_TOO_NEW:
+			return Text_String(TXT_DESTGAME_OUTDATED);
+
+		case REJECT_MISMATCH:
+			return Text_String(TXT_MISMATCH);
+
+		case REJECT_DISBANDED:
+			return Text_String(TXT_GAME_CANCELLED);
+
+		default:
+			return Text_String(TXT_REQUEST_DENIED);
+	}
+}
+
+static bool Internet_Using_Direct_Guest_Lobby(void)
+{
+	return(Session.Type == GAME_INTERNET &&
+		!PlanetWestwoodIsHost &&
+		!Internet_Has_Command_Line_Connect());
+}
+
+static bool Network_Trace_Enabled(void)
+{
+	static int enabled = -1;
+	if (enabled == -1) {
+		enabled = (getenv("RA_TRACE_NETWORK") != NULL) ? 1 : 0;
+	}
+	return(enabled != 0);
+}
+
+static void Network_Trace(char const* format, ...)
+{
+	va_list arguments;
+
+	if (!Network_Trace_Enabled()) {
+		return;
+	}
+
+	va_start(arguments, format);
+	fprintf(stderr, "[net] ");
+	vfprintf(stderr, format, arguments);
+	fprintf(stderr, "\n");
+	fflush(stderr);
+	va_end(arguments);
+}
+
+static char const* Join_State_Name(JoinStateType state)
+{
+	switch (state) {
+		case JOIN_REJECTED:
+			return("JOIN_REJECTED");
+
+		case JOIN_NOTHING:
+			return("JOIN_NOTHING");
+
+		case JOIN_WAIT_CONFIRM:
+			return("JOIN_WAIT_CONFIRM");
+
+		case JOIN_CONFIRMED:
+			return("JOIN_CONFIRMED");
+
+		case JOIN_GAME_START:
+			return("JOIN_GAME_START");
+
+		case JOIN_GAME_START_LOAD:
+			return("JOIN_GAME_START_LOAD");
+
+		default:
+			return("JOIN_UNKNOWN");
+	}
+}
+
+static char const* Network_Command_Name(int command)
+{
+	switch (command) {
+		case NET_QUERY_GAME:
+			return("NET_QUERY_GAME");
+
+		case NET_ANSWER_GAME:
+			return("NET_ANSWER_GAME");
+
+		case NET_QUERY_PLAYER:
+			return("NET_QUERY_PLAYER");
+
+		case NET_ANSWER_PLAYER:
+			return("NET_ANSWER_PLAYER");
+
+		case NET_QUERY_JOIN:
+			return("NET_QUERY_JOIN");
+
+		case NET_CONFIRM_JOIN:
+			return("NET_CONFIRM_JOIN");
+
+		case NET_REJECT_JOIN:
+			return("NET_REJECT_JOIN");
+
+		case NET_GAME_OPTIONS:
+			return("NET_GAME_OPTIONS");
+
+		case NET_READY_TO_GO:
+			return("NET_READY_TO_GO");
+
+		case NET_GO:
+			return("NET_GO");
+
+		case NET_LOADGAME:
+			return("NET_LOADGAME");
+
+		case NET_SIGN_OFF:
+			return("NET_SIGN_OFF");
+
+		default:
+			return("NET_OTHER");
+	}
+}
 
 #ifdef ENGLISH
 char const *EngMisStr[] = {
@@ -1026,6 +1156,9 @@ bool Process_Global_Packet(GlobalPacketType *packet, UDPAddressClass *address)
 {
 	GlobalPacketType mypacket;
 
+	Network_Trace("Process_Global_Packet cmd=%s packet_name=%s game_name=%s net_open=%d players=%d",
+		Network_Command_Name(packet->Command), packet->Name, Session.GameName, Session.NetOpen, Session.Players.Count());
+
 	//------------------------------------------------------------------------
 	// If our Players vector is empty, just return.
 	//------------------------------------------------------------------------
@@ -1053,6 +1186,7 @@ bool Process_Global_Packet(GlobalPacketType *packet, UDPAddressClass *address)
 			mypacket.Command = NET_ANSWER_GAME;
 			strcpy(mypacket.Name, Session.GameName);
 			mypacket.GameInfo.IsOpen = Session.NetOpen;
+			Network_Trace("Sending NET_ANSWER_GAME game=%s open=%d", Session.GameName, Session.NetOpen);
 
 			Udp.Send_Global_Message (&mypacket, sizeof(GlobalPacketType), 1,
 				address);
@@ -1074,6 +1208,7 @@ bool Process_Global_Packet(GlobalPacketType *packet, UDPAddressClass *address)
 		mypacket.PlayerInfo.House = Session.House;
 		mypacket.PlayerInfo.Color = Session.ColorIdx;
 		mypacket.PlayerInfo.NameCRC = Compute_Name_CRC(Session.GameName);
+		Network_Trace("Sending NET_ANSWER_PLAYER player=%s game=%s", Session.Players[0]->Name, Session.GameName);
 
 		Udp.Send_Global_Message (&mypacket, sizeof(GlobalPacketType), 1, address);
 		return(true);
@@ -1504,6 +1639,7 @@ static int Net_Join_Dialog(void)
 	int load_game = 0;						// 1 = load saved game
 	int goto_lobby;
 	bool messages_have_focus = true;		// Gadget focus starts on the message system
+	bool const direct_guest = Internet_Using_Direct_Guest_Lobby();
 
 	//------------------------------------------------------------------------
 	//	Buttons
@@ -1646,9 +1782,102 @@ static int Net_Join_Dialog(void)
 	//------------------------------------------------------------------------
 	//	Send game-name query & chat announcement; also, initialize timers.
 	//------------------------------------------------------------------------
-	Send_Join_Queries (game_index, joinstate, 1, 0, 1, namebuf, 1);
+	Send_Join_Queries (game_index, joinstate, 1, 0, direct_guest ? 0 : 1, namebuf, 1);
 	Load_Title_Page(true);
 	CCPalette.Set();	//GamePalette.Set();
+
+	if (direct_guest) {
+		CDTimerClass<SystemTimerClass> direct_join_timer;
+		direct_join_timer = 600;
+
+		while (direct_join_timer && joinstate != JOIN_CONFIRMED) {
+			Send_Join_Queries(game_index, joinstate, 0, 0, 0, namebuf);
+			event = Get_Join_Responses(&joinstate, &gamelist, &playerlist,
+				join_index, namebuf, &why);
+
+			if (joinstate == JOIN_NOTHING) {
+				for (i = 1; i < Session.Games.Count(); i++) {
+					if (Session.Games[i]->Game.IsOpen) {
+						gamelist.Set_Selected_Index(i);
+						game_index = i;
+						join_index = i;
+						strcpy(Session.Handle, namebuf);
+						if (Request_To_Join(namebuf, join_index, Session.House,
+							Session.ColorIdx)) {
+							joinstate = JOIN_WAIT_CONFIRM;
+						}
+						break;
+					}
+				}
+			}
+
+			if (event == EV_STATE_CHANGE) {
+				if (joinstate == JOIN_CONFIRMED) {
+					Clear_Listbox(&playerlist);
+					Clear_Vector (&Session.Players);
+
+					item = new char [MPLAYER_NAME_MAX + 64];
+					sprintf(item, "%s\t%s", namebuf,
+						Text_String(HouseTypeClass::As_Reference(Session.House).Full_Name()));
+					playerlist.Add_Item(item,
+						(Session.ColorIdx == PCOLOR_DIALOG_BLUE) ?
+							&ColorRemaps[PCOLOR_REALLY_BLUE] : &ColorRemaps[Session.ColorIdx]);
+
+					who = new NodeNameType;
+					strcpy(who->Name, namebuf);
+					who->Player.House = Session.House;
+					who->Player.Color = Session.ColorIdx;
+					Session.Players.Add(who);
+
+					Send_Join_Queries(game_index, joinstate, 0, 1, 0, namebuf);
+
+					Session.Messages.Init(d_message2_x + 1 *RESFACTOR,
+						d_message2_y + 1 *RESFACTOR, 8, MAX_MESSAGE_LENGTH, d_txt6_h,
+						d_send_x + 1 *RESFACTOR, d_send_y + 1 *RESFACTOR, 1, 20,
+						MAX_MESSAGE_LENGTH - 5, d_message2_w);
+					Session.Messages.Add_Edit((Session.ColorIdx == PCOLOR_DIALOG_BLUE) ?
+						PCOLOR_REALLY_BLUE : Session.ColorIdx,
+						TPF_TEXT, NULL, '_', d_message2_w);
+					break;
+				}
+
+				if (joinstate == JOIN_REJECTED) {
+					WWMessageBox().Process(Join_Reject_Message(why));
+					return(-1);
+				}
+			} else if (event == EV_GAME_OPTIONS) {
+				parms_received = 1;
+			}
+
+			Udp.Service();
+			Call_Back();
+			SDL_Delay(1);
+		}
+
+		if (joinstate != JOIN_CONFIRMED) {
+			return(-1);
+		}
+
+		countgauge.Set_Maximum(
+			SessionClass::CountMax[Session.Options.Bases] -
+			SessionClass::CountMin[Session.Options.Bases]);
+		countgauge.Set_Value(Session.Options.UnitCount -
+			SessionClass::CountMin[Session.Options.Bases]);
+		levelgauge.Set_Value(BuildLevel - 1);
+		creditsgauge.Set_Value(Session.Options.Credits);
+		if (Session.Options.AIPlayers > Rule.MaxPlayers-Session.Players.Count()) {
+			aiplayersgauge.Set_Value(Rule.MaxPlayers-Session.Players.Count());
+		} else {
+			aiplayersgauge.Set_Value(Session.Options.AIPlayers);
+		}
+		optionlist.Check_Item(0, Session.Options.Bases);
+		optionlist.Check_Item(1, Session.Options.Tiberium);
+		optionlist.Check_Item(2, Session.Options.Goodies);
+		optionlist.Check_Item(3, Special.IsCaptureTheFlag);
+		optionlist.Check_Item(4, Special.IsShadowGrow);
+		optionlist.Flag_To_Redraw();
+		display = REDRAW_ALL;
+	}
 
 	//------------------------------------------------------------------------
 	//	Init Mono Output
@@ -2109,11 +2338,17 @@ static int Net_Join_Dialog(void)
 				//	packet.  Don't send this to myself (index 0).
 				//...............................................................
 				if (joinstate == JOIN_CONFIRMED) {
+					goto_lobby = direct_guest ? 0 : 1;
 					Unjoin_Game(namebuf, joinstate, &gamelist, &playerlist,
-						game_index, 1, d_message1_x, d_message1_y, d_txt6_h, d_send_x,
-						d_send_y, MAX_MESSAGE_LENGTH);
+						game_index, goto_lobby, d_message1_x, d_message1_y, d_txt6_h,
+						d_send_x, d_send_y, MAX_MESSAGE_LENGTH);
 					joinstate = JOIN_NOTHING;
-					display = REDRAW_ALL;
+					if (direct_guest) {
+						process = false;
+						rc = -1;
+					} else {
+						display = REDRAW_ALL;
+					}
 				} else {
 				//...............................................................
 				// If I'm not joined to a game, send a SIGN_OFF to all players
@@ -2299,7 +2534,9 @@ static int Net_Join_Dialog(void)
 		//.....................................................................
 		//	Resend our query packets
 		//.....................................................................
-		Send_Join_Queries(game_index, joinstate, 0, 0, 0, namebuf);
+		if (!(direct_guest && joinstate == JOIN_CONFIRMED)) {
+			Send_Join_Queries(game_index, joinstate, 0, 0, 0, namebuf);
+		}
 
 		//.....................................................................
 		//	Process incoming packets
@@ -2455,6 +2692,11 @@ static int Net_Join_Dialog(void)
 			// typing, add a message stating why we were rejected, and send a
 			// chat announcement.
 			//..................................................................
+				if (direct_guest) {
+					WWMessageBox().Process(Join_Reject_Message(why));
+					return(-1);
+				}
+
 				Session.Messages.Init (d_message1_x + 1 *RESFACTOR, d_message1_y + 1 *RESFACTOR, 14,
 					MAX_MESSAGE_LENGTH, d_txt6_h, d_send_x + 1 *RESFACTOR, d_send_y + 1 *RESFACTOR, 1,
 					20, MAX_MESSAGE_LENGTH - 5, d_message2_w);
@@ -2488,7 +2730,9 @@ static int Net_Join_Dialog(void)
 					Session.Messages.Add_Message(NULL, 0, item, PCOLOR_BROWN, TPF_TEXT, 1200);
 				}
 
-				Send_Join_Queries (game_index, joinstate, 0, 0, 1, namebuf);
+				if (!direct_guest) {
+					Send_Join_Queries (game_index, joinstate, 0, 0, 1, namebuf);
+				}
 				display = REDRAW_ALL;
 
 			}
@@ -3027,6 +3271,7 @@ static void Send_Join_Queries(int curgame, JoinStateType joinstate,
 	static CDTimerClass<SystemTimerClass> game_timer;		// time between NET_QUERY_GAME's
 	static CDTimerClass<SystemTimerClass> player_timer;	// time between NET_QUERY_PLAYERS's
 	static CDTimerClass<SystemTimerClass> chat_timer;		// time between NET_CHAT_ANNOUNCE's
+	bool const direct_guest = Internet_Using_Direct_Guest_Lobby();
 
 	//------------------------------------------------------------------------
 	// Initialize timers
@@ -3041,13 +3286,15 @@ static void Send_Join_Queries(int curgame, JoinStateType joinstate,
 	//	Send the game-name query if the time has expired, or we're told to do
 	//	it right now
 	//------------------------------------------------------------------------
-	if (!game_timer || gamenow) {
+	if ((!game_timer || gamenow) &&
+		(!direct_guest || joinstate == JOIN_NOTHING)) {
 
 		game_timer = GAME_QUERY_TIME;
 
 		memset (&Session.GPacket, 0, sizeof(GlobalPacketType));
 
 		Session.GPacket.Command = NET_QUERY_GAME;
+		Network_Trace("Join send cmd=%s state=%s", Network_Command_Name(Session.GPacket.Command), Join_State_Name(joinstate));
 
 		Udp.Send_Global_Message (&Session.GPacket,
 			sizeof(GlobalPacketType), 0, NULL);
@@ -3067,8 +3314,9 @@ static void Send_Join_Queries(int curgame, JoinStateType joinstate,
 	//	expired and there is a currently-selected game, or we're told to do it
 	//	right now
 	//------------------------------------------------------------------------
-	if ( ((curgame > 0) && (curgame < Session.Games.Count()) &&
-		!player_timer) || playernow) {
+	if ((((curgame > 0) && (curgame < Session.Games.Count()) &&
+		!player_timer) && (!direct_guest || joinstate < JOIN_CONFIRMED)) ||
+		playernow) {
 
 		player_timer = PLAYER_QUERY_TIME;
 
@@ -3076,6 +3324,8 @@ static void Send_Join_Queries(int curgame, JoinStateType joinstate,
 
 		Session.GPacket.Command = NET_QUERY_PLAYER;
 		strcpy (Session.GPacket.Name, Session.Games[curgame]->Name);
+		Network_Trace("Join send cmd=%s game=%s state=%s", Network_Command_Name(Session.GPacket.Command),
+			Session.GPacket.Name, Join_State_Name(joinstate));
 
 		Udp.Send_Global_Message (&Session.GPacket,
 			sizeof(GlobalPacketType), 0, NULL);
@@ -3093,7 +3343,7 @@ static void Send_Join_Queries(int curgame, JoinStateType joinstate,
 	//------------------------------------------------------------------------
 	// Send the chat announcement
 	//------------------------------------------------------------------------
-	if ((!chat_timer && joinstate!=JOIN_CONFIRMED) || chatnow) {
+	if (!direct_guest && (((!chat_timer && joinstate!=JOIN_CONFIRMED) || chatnow))) {
 
 		chat_timer = CHAT_ANNOUNCE_TIME;
 
@@ -3103,6 +3353,8 @@ static void Send_Join_Queries(int curgame, JoinStateType joinstate,
 		strcpy (Session.GPacket.Name, myname);
 		Session.GPacket.Chat.ID = Session.UniqueID;
 		Session.GPacket.Chat.Color = Session.ColorIdx;
+		Network_Trace("Join send cmd=%s name=%s state=%s", Network_Command_Name(Session.GPacket.Command),
+			Session.GPacket.Name, Join_State_Name(joinstate));
 
 		Udp.Send_Global_Message (&Session.GPacket,
 			sizeof(GlobalPacketType), 0, NULL);
@@ -3172,6 +3424,9 @@ static JoinEventType Get_Join_Responses(JoinStateType *joinstate, ListClass *gam
 		&Session.GAddress, &Session.GProductID);
 	if (!rc || Session.GProductID != UDPGlobalConnClass::COMMAND_AND_CONQUER0)
 		return(EV_NONE);
+
+	Network_Trace("Join recv state=%s cmd=%s name=%s", Join_State_Name(*joinstate),
+		Network_Command_Name(Session.GPacket.Command), Session.GPacket.Name);
 
 	//------------------------------------------------------------------------
 	//	If we're joined in a game, handle the packet in a standard way; otherwise,
@@ -3408,6 +3663,8 @@ static JoinEventType Get_Join_Responses(JoinStateType *joinstate, ListClass *gam
 			Session.ColorIdx = Session.GPacket.PlayerInfo.Color;
 
 			(*joinstate) = JOIN_CONFIRMED;
+			Network_Trace("Join state -> %s game=%s house=%d color=%d", Join_State_Name(*joinstate),
+				Session.GameName, Session.House, Session.ColorIdx);
 			retcode = EV_STATE_CHANGE;
 		}
 	}
@@ -3468,6 +3725,7 @@ static JoinEventType Get_Join_Responses(JoinStateType *joinstate, ListClass *gam
 		else if ((*joinstate) == JOIN_WAIT_CONFIRM) {
 			(*why) = (RejectType)Session.GPacket.Reject.Why;
 			(*joinstate) = JOIN_REJECTED;
+			Network_Trace("Join state -> %s why=%d", Join_State_Name(*joinstate), *why);
 			retcode = EV_STATE_CHANGE;
 		}
 	}
@@ -3486,6 +3744,8 @@ static JoinEventType Get_Join_Responses(JoinStateType *joinstate, ListClass *gam
 			Session.Options.AIPlayers = Session.GPacket.ScenarioInfo.AIPlayers;
 			BuildLevel = Session.GPacket.ScenarioInfo.BuildLevel;
 			Session.Options.UnitCount = Session.GPacket.ScenarioInfo.UnitCount;
+			Network_Trace("Join received NET_GAME_OPTIONS scenario=%d bases=%d credits=%d", Session.Options.ScenarioIndex,
+				Session.Options.Bases, Session.Options.Credits);
 			Seed = Session.GPacket.ScenarioInfo.Seed;
 			Special = Session.GPacket.ScenarioInfo.Special;
 			Options.GameSpeed = Session.GPacket.ScenarioInfo.GameSpeed;
@@ -3651,6 +3911,7 @@ static JoinEventType Get_Join_Responses(JoinStateType *joinstate, ListClass *gam
 		if ( (*joinstate)==JOIN_CONFIRMED) {
 			Session.MaxAhead = Session.GPacket.ResponseTime.OneWay;
 			(*joinstate) = JOIN_GAME_START;
+			Network_Trace("Join state -> %s maxahead=%d", Join_State_Name(*joinstate), Session.MaxAhead);
 			retcode = EV_STATE_CHANGE;
 			Session.HostAddress = Session.GAddress;
 		}
@@ -3663,7 +3924,9 @@ static JoinEventType Get_Join_Responses(JoinStateType *joinstate, ListClass *gam
 		if ( (*joinstate)==JOIN_CONFIRMED) {
 			Session.MaxAhead = Session.GPacket.ResponseTime.OneWay;
 			(*joinstate) = JOIN_GAME_START_LOAD;
+			Network_Trace("Join state -> %s maxahead=%d", Join_State_Name(*joinstate), Session.MaxAhead);
 			retcode = EV_STATE_CHANGE;
+			Session.HostAddress = Session.GAddress;
 		}
 	}
 
@@ -5018,6 +5281,9 @@ static JoinEventType Get_NewGame_Responses(ColorListClass *playerlist,
 		return(EV_NONE);
 	}
 
+	Network_Trace("Host recv cmd=%s name=%s players=%d net_open=%d", Network_Command_Name(Session.GPacket.Command),
+		Session.GPacket.Name, Session.Players.Count(), Session.NetOpen);
+
 	//------------------------------------------------------------------------
 	//	Try to handle the packet in a standard way
 	//------------------------------------------------------------------------
@@ -5059,6 +5325,7 @@ static JoinEventType Get_NewGame_Responses(ColorListClass *playerlist,
 		//	Reject if name is a duplicate
 		//.....................................................................
 		if (found) {
+			Network_Trace("Host rejecting duplicate name=%s", Session.GPacket.Name);
 			memset (&Session.GPacket, 0, sizeof(GlobalPacketType));
 			Session.GPacket.Command = NET_REJECT_JOIN;
 			Session.GPacket.Reject.Why = (int)REJECT_DUPLICATE_NAME;
@@ -5071,6 +5338,7 @@ static JoinEventType Get_NewGame_Responses(ColorListClass *playerlist,
 		//	Reject if there are too many players
 		//.....................................................................
 		else if ( (Session.Players.Count() >= Session.MaxPlayers) && !resend) {
+			Network_Trace("Host rejecting full game name=%s", Session.GPacket.Name);
 			memset (&Session.GPacket, 0, sizeof(GlobalPacketType));
 			Session.GPacket.Command = NET_REJECT_JOIN;
 			Session.GPacket.Reject.Why = (int)REJECT_GAME_FULL;
@@ -5083,6 +5351,7 @@ static JoinEventType Get_NewGame_Responses(ColorListClass *playerlist,
 		**	Don't allow joining if the rules.ini file doesn't appear to match.
 		*/
 		else if (Session.GPacket.PlayerInfo.CheatCheck != RuleINI.Get_Unique_ID() && !resend) {
+			Network_Trace("Host rejecting rules mismatch name=%s", Session.GPacket.Name);
 			memset (&Session.GPacket, 0, sizeof(GlobalPacketType));
 			Session.GPacket.Command = NET_REJECT_JOIN;
 			Session.GPacket.Reject.Why = (int)REJECT_MISMATCH;
@@ -5130,6 +5399,7 @@ static JoinEventType Get_NewGame_Responses(ColorListClass *playerlist,
 			// Reject player if his version is too old
 			//..................................................................
 			if (version == 0) {
+				Network_Trace("Host rejecting old version name=%s", Session.GPacket.Name);
 				memset (&Session.GPacket, 0, sizeof(GlobalPacketType));
 				Session.GPacket.Command = NET_REJECT_JOIN;
 				Session.GPacket.Reject.Why = (int)REJECT_VERSION_TOO_OLD;
@@ -5142,6 +5412,7 @@ static JoinEventType Get_NewGame_Responses(ColorListClass *playerlist,
 			// Reject player if his version is too new
 			//..................................................................
 			else if (version == 0xffffffff) {
+				Network_Trace("Host rejecting new version name=%s", Session.GPacket.Name);
 				memset (&Session.GPacket, 0, sizeof(GlobalPacketType));
 				Session.GPacket.Command = NET_REJECT_JOIN;
 				Session.GPacket.Reject.Why = (int)REJECT_VERSION_TOO_NEW;
@@ -5202,6 +5473,8 @@ static JoinEventType Get_NewGame_Responses(ColorListClass *playerlist,
 			strcpy(Session.GPacket.Name,Session.Handle);
 			Session.GPacket.PlayerInfo.House = who->Player.House;
 			Session.GPacket.PlayerInfo.Color = who->Player.Color;
+			Network_Trace("Host confirming join guest=%s host=%s house=%d color=%d", who->Name, Session.Handle,
+				Session.GPacket.PlayerInfo.House, Session.GPacket.PlayerInfo.Color);
 
 			Udp.Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
 				1, &Session.GAddress);
@@ -6867,8 +7140,9 @@ static int Net_Fake_Join_Dialog(void)
 			//..................................................................
 			else if (joinstate==JOIN_REJECTED) {
 				Sound_Effect(VOC_SYS_ERROR);
-				Send_Join_Queries (game_index, joinstate, 0, 0, 1, namebuf);
-
+				WWMessageBox().Process(Join_Reject_Message(why));
+				rc = -1;
+				process = false;
 			}
 		}	// end of state change
 
@@ -7088,9 +7362,288 @@ static int Net_Fake_Join_Dialog(void)
 
 }	/* end of Net_Join_Dialog */
 
+bool Server_Remote_Connect(void);
+bool Client_Remote_Connect(void);
+
+#if RA_ENABLE_TCP
+static bool Internet_Wait_For_TCP_Connection(bool hosting);
+
+static bool Internet_Start_Remote_Connect(bool hosting, char const* address, uint16_t port)
+{
+	Network_Trace("TCP launch hosting=%d handle=%s address=%s port=%u", hosting ? 1 : 0, Session.Handle,
+		(hosting || address == NULL) ? "" : address, (unsigned int)port);
+
+	Winsock.Close();
+	Winsock.Set_Protocol_TCP(TRUE);
+	Winsock.Set_Port_Number(port);
+	Winsock.Set_Host_Address(hosting ? "" : address);
+	if (hosting) {
+		Winsock.Start_Server();
+	} else {
+		Winsock.Start_Client();
+	}
+
+	if (!Internet_Wait_For_TCP_Connection(hosting)) {
+		Network_Trace("TCP connect failed hosting=%d", hosting ? 1 : 0);
+		Winsock.Close();
+		return(false);
+	}
+
+	Network_Trace("TCP connected hosting=%d", hosting ? 1 : 0);
+
+	if (!Init_Network()) {
+		Network_Trace("Init_Network failed after TCP connect");
+		Winsock.Close();
+		return(false);
+	}
+
+	bool rc = hosting ? Server_Remote_Connect() : Client_Remote_Connect();
+	Network_Trace("TCP remote connect result hosting=%d rc=%d", hosting ? 1 : 0, rc ? 1 : 0);
+	if (!rc) {
+		Winsock.Close();
+	}
+	return(rc);
+}
+
+static bool Internet_Wait_For_TCP_Connection(bool hosting)
+{
+	int const d_margin = 7 * RESFACTOR;
+	int const d_txt6_h = 7 * RESFACTOR;
+	int const d_dialog_w = 180 * RESFACTOR;
+	int const d_dialog_h = 52 * RESFACTOR;
+	int const d_dialog_x = (320 * RESFACTOR - d_dialog_w) / 2;
+	int const d_dialog_y = (200 * RESFACTOR - d_dialog_h) / 2;
+	int const d_cancel_w = 60 * RESFACTOR;
+	int const d_cancel_h = 9 * RESFACTOR;
+	int const d_cancel_x = d_dialog_x + (d_dialog_w - d_cancel_w) / 2;
+	int const d_cancel_y = d_dialog_y + d_dialog_h - d_cancel_h - d_margin;
+
+	enum {
+		BUTTON_CANCEL = 100,
+	};
+
+	GadgetClass *commands;
+	TextButtonClass cancelbtn(BUTTON_CANCEL, TXT_CANCEL, TPF_BUTTON,
+		d_cancel_x, d_cancel_y, d_cancel_w, d_cancel_h);
+	RemapControlType *scheme = GadgetClass::Get_Color_Scheme();
+	bool display = true;
+
+	commands = &cancelbtn;
+
+	while (true) {
+		TcpipManagerClass::ConnectStatusEnum status;
+		int input;
+
+		Winsock.Service();
+		status = Winsock.Get_Connection_Status();
+		if (Winsock.Get_Connected() && status == TcpipManagerClass::CONNECTED_OK) {
+			return(true);
+		}
+
+		if (status != TcpipManagerClass::CONNECTING &&
+			status != TcpipManagerClass::CONTACTING_SERVER &&
+			status != TcpipManagerClass::CONNECTED_OK) {
+			WWMessageBox().Process(hosting ? TXT_UNABLE_TO_OPEN_PORT : TXT_INVALID_PORT_ADDRESS);
+			return(false);
+		}
+
+		if (display) {
+			Hide_Mouse();
+			Load_Title_Page(true);
+			Set_Logic_Page(SeenBuff);
+			Dialog_Box(d_dialog_x, d_dialog_y, d_dialog_w, d_dialog_h);
+			Fancy_Text_Print(
+				hosting ? Text_String(TXT_WAITING_FOR_CONNECTIONS) : Text_String(TXT_WAITING_CONNECT),
+				d_dialog_x + d_dialog_w / 2,
+				d_dialog_y + d_margin + d_txt6_h,
+				scheme,
+				TBLACK,
+				TPF_CENTER | TPF_TEXT);
+			commands->Draw_All();
+			Show_Mouse();
+			display = false;
+		}
+
+		input = commands->Input();
+		switch (input) {
+			case KN_ESC:
+			case (BUTTON_CANCEL | KN_BUTTON):
+				Winsock.Close();
+				return(false);
+
+			default:
+				break;
+		}
+
+		Call_Back();
+	}
+}
+
+
+bool Internet_Remote_Connect(void)
+{
+	int const d_margin = 7 * RESFACTOR;
+	int const d_txt6_h = 7 * RESFACTOR;
+	int const d_dialog_w = 220 * RESFACTOR;
+	int const d_dialog_h = 96 * RESFACTOR;
+	int const d_dialog_x = (320 * RESFACTOR - d_dialog_w) / 2;
+	int const d_dialog_y = (200 * RESFACTOR - d_dialog_h) / 2;
+	int const d_dialog_cx = d_dialog_x + d_dialog_w / 2;
+	int const d_name_w = 138 * RESFACTOR;
+	int const d_name_h = 8 * RESFACTOR;
+	int const d_name_x = d_dialog_x + 54 * RESFACTOR;
+	int const d_name_y = d_dialog_y + 18 * RESFACTOR;
+	int const d_address_w = 138 * RESFACTOR;
+	int const d_address_h = 8 * RESFACTOR;
+	int const d_address_x = d_dialog_x + 54 * RESFACTOR;
+	int const d_address_y = d_name_y + 14 * RESFACTOR;
+	int const d_port_w = 44 * RESFACTOR;
+	int const d_port_h = 8 * RESFACTOR;
+	int const d_port_x = d_dialog_x + 54 * RESFACTOR;
+	int const d_port_y = d_address_y + 14 * RESFACTOR;
+	int const d_button_w = 58 * RESFACTOR;
+	int const d_button_h = 9 * RESFACTOR;
+	int const d_host_x = d_dialog_x + 12 * RESFACTOR;
+	int const d_connect_x = d_dialog_cx - d_button_w / 2;
+	int const d_cancel_x = d_dialog_x + d_dialog_w - d_button_w - 12 * RESFACTOR;
+	int const d_buttons_y = d_dialog_y + d_dialog_h - d_button_h - d_margin;
+	char namebuf[MPLAYER_NAME_MAX];
+	char addressbuf[IP_ADDRESS_MAX];
+	char portbuf[8];
+	bool display = true;
+
+	enum {
+		BUTTON_NAME = 100,
+		BUTTON_ADDRESS,
+		BUTTON_PORT,
+		BUTTON_HOST,
+		BUTTON_CONNECT,
+		BUTTON_CANCEL,
+	};
+
+	SDL_strlcpy(namebuf, Session.Handle, sizeof(namebuf));
+	SDL_strlcpy(addressbuf, PlanetWestwoodIPAddress, sizeof(addressbuf));
+	SDL_snprintf(portbuf, sizeof(portbuf), "%u", (unsigned int)PlanetWestwoodPortNumber);
+
+	if (Internet_Has_Command_Line_Connect()) {
+		bool hosting = Internet_Command_Line_Is_Host();
+		uint16_t port = PlanetWestwoodPortNumber;
+		char direct_address[IP_ADDRESS_MAX];
+		bool result;
+
+		SDL_strlcpy(direct_address, PlanetWestwoodIPAddress, sizeof(direct_address));
+
+		if (Session.Handle[0] == '\0') {
+			WWMessageBox().Process(TXT_NAME_ERROR);
+			return(false);
+		}
+
+		result = Internet_Start_Remote_Connect(hosting, direct_address, port);
+		Internet_Clear_Command_Line_Connect();
+		return(result);
+	}
+
+	GadgetClass *commands;
+	EditClass name_edt(BUTTON_NAME, namebuf, sizeof(namebuf), TPF_TEXT,
+		d_name_x, d_name_y, d_name_w, d_name_h, EditClass::ALPHANUMERIC);
+	EditClass address_edt(BUTTON_ADDRESS, addressbuf, sizeof(addressbuf), TPF_TEXT,
+		d_address_x, d_address_y, d_address_w, d_address_h, EditClass::ALPHANUMERIC);
+	EditClass port_edt(BUTTON_PORT, portbuf, sizeof(portbuf), TPF_TEXT,
+		d_port_x, d_port_y, d_port_w, d_port_h, EditClass::NUMERIC);
+	StaticButtonClass title(0, Text_String(TXT_INTERNET), TPF_CENTER | TPF_TEXT,
+		d_dialog_x + d_margin, d_dialog_y + d_margin, d_dialog_w - d_margin * 2, d_txt6_h + 1);
+	StaticButtonClass name_label(0, Text_String(TXT_YOUR_NAME), TPF_TEXT,
+		d_dialog_x + 14 * RESFACTOR, d_name_y, 40 * RESFACTOR, d_txt6_h + 1);
+	StaticButtonClass address_label(0, "IP:", TPF_TEXT,
+		d_dialog_x + 14 * RESFACTOR, d_address_y, 32 * RESFACTOR, d_txt6_h + 1);
+	StaticButtonClass port_label(0, Text_String(TXT_PORT_COLON), TPF_TEXT,
+		d_dialog_x + 14 * RESFACTOR, d_port_y, 32 * RESFACTOR, d_txt6_h + 1);
+	TextButtonClass hostbtn(BUTTON_HOST, "Host", TPF_BUTTON,
+		d_host_x, d_buttons_y, d_button_w, d_button_h);
+	TextButtonClass connectbtn(BUTTON_CONNECT, "Connect", TPF_BUTTON,
+		d_connect_x, d_buttons_y, d_button_w, d_button_h);
+	TextButtonClass cancelbtn(BUTTON_CANCEL, TXT_CANCEL, TPF_BUTTON,
+		d_cancel_x, d_buttons_y, d_button_w, d_button_h);
+
+	commands = &name_edt;
+	address_edt.Add_Tail(*commands);
+	port_edt.Add_Tail(*commands);
+	hostbtn.Add_Tail(*commands);
+	connectbtn.Add_Tail(*commands);
+	cancelbtn.Add_Tail(*commands);
+
+	name_edt.Set_Text(namebuf, sizeof(namebuf));
+	address_edt.Set_Text(addressbuf, sizeof(addressbuf));
+	port_edt.Set_Text(portbuf, sizeof(portbuf));
+
+	while (true) {
+		int input;
+
+		if (display) {
+			Hide_Mouse();
+			Load_Title_Page(true);
+			Set_Logic_Page(SeenBuff);
+			Dialog_Box(d_dialog_x, d_dialog_y, d_dialog_w, d_dialog_h);
+			title.Draw_Me(false);
+			name_label.Draw_Me(false);
+			address_label.Draw_Me(false);
+			port_label.Draw_Me(false);
+			commands->Draw_All();
+			Show_Mouse();
+			display = false;
+		}
+
+		input = commands->Input();
+		switch (input) {
+			case KN_ESC:
+			case (BUTTON_CANCEL | KN_BUTTON):
+				return(false);
+
+			case (BUTTON_HOST | KN_BUTTON):
+			case (BUTTON_CONNECT | KN_BUTTON):
+			{
+				bool hosting = (input == (BUTTON_HOST | KN_BUTTON));
+				uint16_t port = 0;
+
+				if (namebuf[0] == '\0') {
+					WWMessageBox().Process(TXT_NAME_ERROR);
+					display = true;
+					break;
+				}
+
+				if (!Internet_Parse_Port(portbuf, &port) ||
+					(!hosting && addressbuf[0] == '\0')) {
+					WWMessageBox().Process(TXT_INVALID_PORT_ADDRESS);
+					display = true;
+					break;
+				}
+
+				SDL_strlcpy(Session.Handle, namebuf, sizeof(Session.Handle));
+				if (!Internet_Start_Remote_Connect(hosting, addressbuf, port)) {
+					display = true;
+					break;
+				}
+				return(true);
+			}
+
+			default:
+				break;
+		}
+
+		Call_Back();
+	}
+}
+#else
+bool Internet_Remote_Connect(void)
+{
+	return(false);
+}
+#endif
+
 bool Server_Remote_Connect(void)
 {
 	int stealth;				// original state of Session.NetStealth flag
+	bool const command_line_launch = Internet_Has_Command_Line_Connect();
 
 	//------------------------------------------------------------------------
 	//	Init network timing parameters; these values should work for both a
@@ -7108,6 +7661,13 @@ bool Server_Remote_Connect(void)
 	Session.NetStealth = 0;
 
 	//------------------------------------------------------------------------
+	//	The direct-IP host path bypasses the outer Join/New selection loop, so
+	//	stamp the game's advertised name before entering the real host lobby.
+	//------------------------------------------------------------------------
+	SDL_strlcpy(Session.GameName, Session.Handle, sizeof(Session.GameName));
+	Network_Trace("Server_Remote_Connect handle=%s game=%s", Session.Handle, Session.GameName);
+
+	//------------------------------------------------------------------------
 	//	The game is now "open" for joining.  Close it as soon as we exit this
 	//	routine.
 	//------------------------------------------------------------------------
@@ -7116,7 +7676,24 @@ bool Server_Remote_Connect(void)
 	//------------------------------------------------------------------------
 	//	Read in last multiplayer game settings from the .INI file
 	//------------------------------------------------------------------------
-	if (!Net_Fake_New_Dialog()) {
+	if (command_line_launch) {
+		Special.IsCaptureTheFlag = Rule.IsMPCaptureTheFlag;
+		Special.IsShadowGrow = Rule.IsMPShadowGrow;
+		Session.Options.Credits = Rule.MPDefaultMoney;
+		Session.Options.Bases = Rule.IsMPBasesOn;
+		Session.Options.Tiberium = Rule.IsMPTiberiumGrow;
+		Session.Options.Goodies = Rule.IsMPCrates;
+		Session.Options.AIPlayers = 0;
+		Session.Options.UnitCount =
+			(SessionClass::CountMax[Session.Options.Bases] +
+			SessionClass::CountMin[Session.Options.Bases]) / 2;
+	}
+
+	if (!(command_line_launch ? Net_Fake_New_Dialog() : Net_New_Dialog())) {
+		Network_Trace("Server_Remote_Connect %s dialog cancelled",
+			command_line_launch ? "fake new" : "new");
+		Session.NetOpen = 0;
+		Session.NetStealth = stealth;
 		Session.Write_MultiPlayer_Settings ();
 		return (false);
 	}
@@ -7124,6 +7701,7 @@ bool Server_Remote_Connect(void)
 	Session.NetOpen = 0;
 	Session.NetStealth = stealth;
 	Session.Write_MultiPlayer_Settings ();
+	Network_Trace("Server_Remote_Connect complete players=%d", Session.Players.Count());
 	return (true);
 
 }	/* end of Server_Remote_Connect */
@@ -7132,6 +7710,7 @@ bool Client_Remote_Connect(void)
 {
 	int rc;
 	int stealth;				// original state of Session.NetStealth flag
+	bool const command_line_launch = Internet_Has_Command_Line_Connect();
 
 	//------------------------------------------------------------------------
 	//	Init network timing parameters; these values should work for both a
@@ -7149,6 +7728,13 @@ bool Client_Remote_Connect(void)
 	Session.NetStealth = 0;
 
 	//------------------------------------------------------------------------
+	//	Match the normal join flow: the client is not part of any advertised
+	//	game yet, so clear any stale game name before entering the join dialog.
+	//------------------------------------------------------------------------
+	Session.GameName[0] = 0;
+	Network_Trace("Client_Remote_Connect handle=%s", Session.Handle);
+
+	//------------------------------------------------------------------------
 	//	The game is now "open" for joining.  Close it as soon as we exit this
 	//	routine.
 	//------------------------------------------------------------------------
@@ -7157,7 +7743,9 @@ bool Client_Remote_Connect(void)
 	//------------------------------------------------------------------------
 	//	Read in last multiplayer game settings from the .INI file
 	//------------------------------------------------------------------------
-	rc = Net_Fake_Join_Dialog();
+	rc = command_line_launch ? Net_Fake_Join_Dialog() : Net_Join_Dialog();
+	Network_Trace("Client_Remote_Connect %s rc=%d game=%s players=%d",
+		command_line_launch ? "fake join" : "join", rc, Session.GameName, Session.Players.Count());
 	Session.Write_MultiPlayer_Settings ();
 
 	Session.NetStealth = stealth;

@@ -42,6 +42,9 @@
 #define TEXT_OPTIONS                    "Red Alert (c) 1996, Westwood Studios\r\n" \
 										"Parameters:\r\n" \
 										"  -GAMEDATA = Use the specified game-data directory\r\n" \
+										"  -HOST [PORT] = Host a TCP internet game\r\n" \
+										"  -CONNECT IP PORT = Connect to a TCP internet game\r\n" \
+										"  -NAME NAME = Set multiplayer player name\r\n" \
 										"  -DESTNET  = Specify Network Number of destination system\r\n" \
 										"              (Syntax: DESTNETxx.xx.xx.xx)\r\n" \
 										"  -SOCKET   = Network Socket ID (0 - 16383)\n" \
@@ -76,6 +79,9 @@
 #define TEXT_OPTIONS                    "C&C: Alarmstufe Rot (c) 1996, Westwood Studios\r\n" \
 				 									 "Parameter:\r\n" \
 													 "  -GAMEDATA = Angegebenes Gamedaten-Verzeichnis verwenden\r\n" \
+													 "  -HOST [PORT] = Host a TCP internet game\r\n" \
+													 "  -CONNECT IP PORT = Connect to a TCP internet game\r\n" \
+													 "  -NAME NAME = Set multiplayer player name\r\n" \
 													 "  -DESTNET  = Netzwerkkennung des Zielrechners festlegen\r\n" \
 													 "              (Syntax: DESTNETxx.xx.xx.xx)\r\n" \
 													 "  -SOCKET   = Kennung des Netzwerk-Sockets (0 - 16383)\n" \
@@ -110,6 +116,9 @@
 #define TEXT_OPTIONS                    "Alerte Rouge (c) 1996, Westwood Studios\r\n" \
 										"Param�tres:\r\n" \
 										"  -GAMEDATA = Utiliser le repertoire de donnees du jeu indique\r\n" \
+										"  -HOST [PORT] = Host a TCP internet game\r\n" \
+										"  -CONNECT IP PORT = Connect to a TCP internet game\r\n" \
+										"  -NAME NAME = Set multiplayer player name\r\n" \
 										"  -DESTNET  = Sp�cifier le num�ro de r�seau du syst�me de destination\r\n" \
 										"              (Syntaxe: DESTNETxx.xx.xx.xx)\r\n" \
 										"  -SOCKET   = ID Socket r�seau (0  16383)\r\n" \

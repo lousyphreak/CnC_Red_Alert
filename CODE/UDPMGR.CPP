@@ -667,6 +667,9 @@ int UDPManagerClass::Send_Global_Message(void *buf, int buflen,
 	int ack_req, UDPAddressClass *address)
 {
 	int rc;
+	if (Winsock.Uses_Reliable_Transport()) {
+		ack_req = 0;
+	}
 
 	//------------------------------------------------------------------------
 	//	Error if UDP not installed or not Listening
@@ -737,6 +740,9 @@ int UDPManagerClass::Send_Private_Message(void *buf, int buflen, int ack_req,
 {
 	int i;						// loop counter
 	int connect_idx;			// index of channel to send to, if specified
+	if (Winsock.Uses_Reliable_Transport()) {
+		ack_req = 0;
+	}
 
 	//------------------------------------------------------------------------
 	//	Error if UDP not installed or not Listening
@@ -896,6 +902,14 @@ int UDPManagerClass::Service(void)
 	uint8_t temp_receive_buffer[1024];
 	int	recv_length;
 
+	if (Winsock.Using_TCP()) {
+		Winsock.Service();
+		if (Winsock.Get_Connection_Status() == TcpipManagerClass::CONNECTION_LOST) {
+			BadConnection = (NumConnections > 0) ? Connection[0]->ID : CONNECTION_NONE;
+			return(0);
+		}
+	}
+
 	if (Winsock.Get_Connected()) {
 
 		if (!Winsock.Get_Connected()) return (0);
@@ -916,7 +930,7 @@ int UDPManagerClass::Service(void)
 			/*.....................................................................
 			Extract the sender's address from the UDP header
 			.....................................................................*/
-			address.Set_Address (CurHeaderBuf);
+			Winsock.Get_Remote_Address(&address);
 
 			/*.....................................................................
 			Examine the Magic Number of the received packet to determine if this

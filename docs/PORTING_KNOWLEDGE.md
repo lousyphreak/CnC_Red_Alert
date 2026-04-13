@@ -1,5 +1,56 @@
 # Porting Knowledge
 
+## Multiplayer networking
+
+- The active SDL3 multiplayer stack can support direct-IP TCP cleanly, but only if it reuses the existing packet/lobby flow rather than introducing a second gameplay network path.
+  - Practical example from this tree: `CODE/TCPIP.{H,CPP}` now provides a non-blocking framed TCP transport, while `CODE/UDPMGR.CPP`, `CODE/QUEUE.CPP`, and the existing fake host/join dialogs continue to handle the higher-level game packets and lobby flow.
+  - Practical rule: if future lobby work (for example, a WOL-style service) needs another connection front-end, feed that front-end into the same `GAME_INTERNET` / `Winsock` / `Udp` packet flow instead of cloning the gameplay transport layer.
+- Packed multiplayer packet buffers must not be reinterpreted as in-place `EventClass` objects on the 64-bit port.
+  - Practical example from this tree: `CODE/QUEUE.CPP` originally cast `Session.MetaPacket` and compressed packet subranges directly to `EventClass*`, but `EventClass` now needs 8-byte alignment because its union contains a pointer-sized member. That produced repeated UBSan misaligned-member reports such as `CODE/QUEUE.CPP:1667` during live multiplayer startup.
+  - Practical rule: when reading or writing event packets, keep the on-the-wire bytes unchanged but use aligned local temporaries and `memcpy` for `EventType` / `FRAMEINFO` / payload extraction instead of typed casts into packed `char` buffers.
+- For the standalone TCP path, the transport connection must be established **before** `Init_Network()` initializes the packet manager.
+  - Practical example from this tree: `CODE/NETDLG.CPP::Internet_Remote_Connect()` now starts and waits for the TCP host/client connection first, then calls `Init_Network()`, and only after that enters `Server_Remote_Connect()` / `Client_Remote_Connect()`.
+  - Practical rule: keep that ordering. `Udp.Init()` can reuse the connected `Winsock` path and avoid opening a separate UDP socket only when the direct-IP TCP socket is already connected.
+- The current direct-IP TCP client path still straddles a modernized `TcpipManagerClass` API and legacy global address storage.
+  - Practical example from this tree: `CODE/TCPIP.CPP::Start_Client()` still resolves `PlanetWestwoodIPAddress`, so `TcpipManagerClass::Set_Host_Address(...)` must also update that global instead of only storing the new address in the class member.
+  - Practical rule: until the entire direct-IP resolver path is cleaned up end-to-end, keep the class setter and the legacy globals synchronized or guest connects can fail before any socket connection attempt is made.
+- Reliable TCP must not keep the UDP manager's ACK/retry behavior enabled on top of it.
+  - Practical example from this tree: `CODE/UDPMGR.CPP::{Send_Global_Message,Send_Private_Message}` now clear `ack_req` when `Winsock.Uses_Reliable_Transport()` is true.
+  - Practical rule: when the underlying transport already guarantees delivery and ordering, let the higher packet layer keep its framing/dispatch behavior but disable the UDP-specific resend semantics.
+- The direct-IP TCP transport should stay packet-shaped even though the underlying socket is a byte stream.
+  - Practical example from this tree: `CODE/TCPIP.CPP` now prefixes each outgoing payload with a 32-bit length, buffers partial sends/receives, and only exposes complete packets to the old packet manager path.
+  - Practical rule: any future transport plugged into this code needs to preserve whole-packet boundaries at the `Winsock` seam because the existing multiplayer code expects discrete packets, not arbitrary byte-stream chunks.
+- The TCP transport's receive and transmit rings each need to stay sized against their own wrap masks, even if the current constants happen to match.
+  - Practical example from this tree: `CODE/TCPIP.CPP` wraps receive indices with `WS_NUM_RX_BUFFERS` and transmit indices with `WS_NUM_TX_BUFFERS`, so `CODE/TCPIP.H` must declare `ReceiveBuffers[WS_NUM_RX_BUFFERS]` and `TransmitBuffers[WS_NUM_TX_BUFFERS]`.
+  - Practical rule: if those queue depths are tuned later, update the declarations and masks together; do not rely on both counts staying equal by accident.
+- The fake direct-IP TCP host flow still depends on the old menu code's `Session.GameName` setup contract.
+  - Practical example from this tree: `CODE/NETDLG.CPP::Process_Global_Packet(...)` only answers `NET_QUERY_GAME` / `NET_QUERY_PLAYER` when `Session.GameName` is populated, and the direct-IP `Server_Remote_Connect()` path now has to set `Session.GameName` from `Session.Handle` before entering `Net_Fake_New_Dialog()` because it bypasses the normal Join/New dialog step that used to do that.
+  - Practical rule: if a standalone direct-IP entry path skips the normal multiplayer join/new dialog, explicitly preserve its required session-state side effects (`Session.GameName` for hosts, cleared pre-join game state for guests) or the lobby packet flow can look healthy at the transport layer while still deadlocking in the UI state machine.
+- Standalone direct-IP TCP also depends on exposing and updating the multiplayer handle, not just the host/port pair.
+  - Practical example from this tree: the fake join path still sends `Session.Handle` as the player's identity, the host still rejects duplicate names with `REJECT_DUPLICATE_NAME`, and local `127.0.0.1` tests commonly launch two instances from the same install/config. `CODE/NETDLG.CPP::Internet_Remote_Connect()` now lets the player edit that name before host/connect and copies it back into `Session.Handle` so same-machine direct-IP tests do not silently reuse the same identity.
+  - Practical rule: any future standalone direct-IP or lobby front-end must collect the player handle together with connection details and feed it into the existing session state before entering the fake host/join dialogs; otherwise join failures can be caused by duplicate identities even when the transport is healthy.
+- Command-line multiplayer overrides that depend on session settings must be applied **after** `Session.One_Time()`, not only during raw argv parsing.
+  - Practical example from this tree: `CODE/INIT.CPP::Parse_Command_Line(...)` now accepts `-name <name>` for direct-IP TCP, but `Session.One_Time()` still reloads the saved multiplayer handle from `REDALERT.INI`. The working fix stores the CLI name in `CODE/INTERNET.CPP` first, then reapplies it immediately after `Session.One_Time()` completes.
+  - Practical rule: if a new startup override touches `Session.Handle` or other multiplayer settings loaded from config, treat argv parsing as staging only; reapply the override after the one-time session/config load or the saved INI state will win.
+- The standalone direct-IP TCP path can be launched headlessly from startup without reopening the setup dialog, but it still must feed the exact same fake host/join state machine.
+  - Practical example from this tree: `-host [port]` and `-connect <ip> <port>` now preconfigure the `GAME_INTERNET` path, and `CODE/NETDLG.CPP::Internet_Remote_Connect()` consumes that one-shot configuration directly before calling the existing `Server_Remote_Connect()` / `Client_Remote_Connect()` wrappers.
+  - Practical rule: keep command-line TCP launch as a preloaded entry into the existing direct-IP flow, not as a separate multiplayer bootstrap path; that preserves the same packet/session/menu contracts and makes future lobby work reusable.
+- The direct-IP UI path and the command-line auto-start path need different lobby behavior.
+  - Practical example from this tree: normal direct-IP UI launches now use the real `Net_New_Dialog()` / `Net_Join_Dialog()` flow after the TCP socket is connected, which restores the expected map/options/house/color lobby. The command-line `-host` / `-connect` path still uses the fake direct-IP dialogs so scripted localhost validation can auto-start, but it now seeds the same multiplayer defaults the real host lobby would have set up first.
+  - Practical rule: keep the real lobby for interactive UI launches, but if a headless/scriptable direct-IP path is still needed, make sure it inherits the same scenario/options initialization as the real host dialog before auto-starting the game.
+- The interactive direct-IP guest flow cannot just sit in the stock browser loop after the socket is already connected to exactly one host.
+  - Practical example from this tree: reusing `Net_Join_Dialog()` unchanged made the TCP guest enter the generic chat/browser state first, keep sending periodic `NET_QUERY_PLAYER` traffic after `JOIN_CONFIRMED`, and route cancel back to the public lobby. `CODE/NETDLG.CPP` now pre-joins the single connected host before exposing the dialog, suppresses browser-only background queries in that mode, and returns direct guest cancel/reject back to the direct-IP setup screen.
+  - Practical rule: when a front-end already knows the exact host it is connected to, treat the join dialog as a joined-game lobby view instead of as a game browser; otherwise the old public-lobby assumptions leak into direct-connect UX and packet traffic.
+- The `NET_LOADGAME` start path needs the same remembered host address as `NET_GO`.
+  - Practical example from this tree: `CODE/NETDLG.CPP::Get_Join_Responses(...)` already stored `Session.HostAddress` when it received `NET_GO`, but the `NET_LOADGAME` branch originally forgot to do the same, which would break the later `NET_READY_TO_GO` reply target for load-game starts.
+  - Practical rule: whenever a join-state transition records the remote host that future replies should target, mirror that bookkeeping across both normal-start and load-game-start branches.
+- `RA_TRACE_NETWORK=1` is now the useful low-noise tracing switch for direct-IP TCP debugging.
+  - Practical example from this tree: `CODE/NETDLG.CPP` now logs the command-line TCP launch parameters, host-side `NET_QUERY_JOIN`/confirm/reject decisions, guest join-state transitions, and `NET_GO` progression only when `RA_TRACE_NETWORK` is set, without the very large startup/audio/theme trace produced by `RA_TRACE_STARTUP`.
+  - Practical rule: use `RA_TRACE_NETWORK=1` first when a TCP direct-IP run connects but stalls somewhere in the fake host/join/start flow; it is targeted enough to show which join/start packet stopped appearing.
+- The fake join dialog must treat `JOIN_REJECTED` as a real terminal error, not as another transient connect state.
+  - Practical example from this tree: the original full join dialog mapped reject reasons such as duplicate name, full game, version mismatch, and rules mismatch to explicit `WWMessageBox()` messages, but the first standalone TCP path kept resending join queries after `JOIN_REJECTED`, which looked like an endless `Connecting...` hang.
+  - Practical rule: when reusing the fake join flow outside the original menu scaffolding, surface the concrete reject reason immediately and return to the setup dialog cleanly instead of quietly remaining in the connect loop.
+
 ## Web container asset packaging
 
 - The browser deployment image should treat shipped `GameData/` as a stable cache layer and keep non-runtime extras out of that layer.

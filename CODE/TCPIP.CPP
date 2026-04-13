@@ -60,6 +60,10 @@
 #include "FUNCTION.H"
 #include "TCPIP.H"
 
+#ifndef _WIN32
+#include <fcntl.h>
+#endif
+
 namespace {
 
 #ifdef _WIN32
@@ -82,7 +86,65 @@ inline int Set_Int_Socket_Option(SOCKET socket_handle, int level, int option_nam
 #endif
 }
 
-#ifndef _WIN32
+inline bool Socket_Would_Block(int error_code)
+{
+#ifdef _WIN32
+	return error_code == WSAEWOULDBLOCK;
+#else
+	return error_code == WSAEWOULDBLOCK || error_code == EINPROGRESS || error_code == EALREADY;
+#endif
+}
+
+bool Set_Socket_NonBlocking(SOCKET socket_handle)
+{
+#ifdef _WIN32
+	u_long nonblocking = 1;
+	return ioctlsocket(socket_handle, FIONBIO, &nonblocking) == 0;
+#else
+	const int flags = fcntl(socket_handle, F_GETFL, 0);
+	if (flags < 0) {
+		return false;
+	}
+	return fcntl(socket_handle, F_SETFL, flags | O_NONBLOCK) == 0;
+#endif
+}
+
+bool Socket_Is_Ready(SOCKET socket_handle)
+{
+	if (socket_handle == INVALID_SOCKET) {
+		return false;
+	}
+
+	fd_set write_set;
+	fd_set error_set;
+	FD_ZERO(&write_set);
+	FD_ZERO(&error_set);
+	FD_SET(socket_handle, &write_set);
+	FD_SET(socket_handle, &error_set);
+
+	timeval timeout;
+	timeout.tv_sec = 0;
+	timeout.tv_usec = 0;
+
+	const int rc = select(static_cast<int>(socket_handle) + 1,
+		NULL,
+		&write_set,
+		&error_set,
+		&timeout);
+	if (rc <= 0) {
+		return false;
+	}
+
+	return FD_ISSET(socket_handle, &write_set) || FD_ISSET(socket_handle, &error_set);
+}
+
+uint32_t Decode_Frame_Length(const std::vector<uint8_t>& stream_buffer)
+{
+	uint32_t frame_length = 0;
+	memcpy(&frame_length, &stream_buffer[0], sizeof(frame_length));
+	return ntohl(frame_length);
+}
+
 void Copy_Socket_String(char* destination, size_t destination_size, const char* source)
 {
 	if (destination_size == 0) {
@@ -121,7 +183,6 @@ bool Lookup_Host_By_Name(const char* host_name, IN_ADDR* address, char* dot_addr
 	Copy_Socket_String(dot_address, dot_address_size, inet_ntoa(*address));
 	return true;
 }
-#endif
 
 }
 
@@ -154,8 +215,22 @@ TcpipManagerClass::TcpipManagerClass(void)
 	WinsockInitialised = FALSE;
 	Connected = FALSE;
 	UseUDP = TRUE;
+	ListenSocket = INVALID_SOCKET;
+	ConnectSocket = INVALID_SOCKET;
+	UDPSocket = INVALID_SOCKET;
 	SocketReceiveBuffer = 4096;
 	SocketSendBuffer = 4096;
+	ConnectInProgress = FALSE;
+	StreamSendLength = 0;
+	StreamSendOffset = 0;
+	StreamSendActive = FALSE;
+	ConnectStatus = NOT_CONNECTING;
+	Async = 0;
+	memset(&ClientIPAddress, 0, sizeof(ClientIPAddress));
+	memset(&UDPIPAddress, 0, sizeof(UDPIPAddress));
+	HostAddress[0] = '\0';
+	Server.Name[0] = '\0';
+	Server.DotAddr[0] = '\0';
 }
 
 
@@ -198,17 +273,13 @@ TcpipManagerClass::~TcpipManagerClass(void)
 void TcpipManagerClass::Close(void)
 {
 	/*
-	** If we never initialised the class in the first place then just return
-	*/
-	if (!WinsockInitialised) return;
-
-	/*
 	** Cancel any outstaning asyncronous events
 	*/
 	if (Async){
 #ifdef _WIN32
 		WSACancelAsyncRequest(Async);
 #endif
+		Async = 0;
 	}
 
 	/*
@@ -232,10 +303,22 @@ void TcpipManagerClass::Close(void)
 	/*
 	** Call the Winsock cleanup function to say we are finished using Winsock
 	*/
-	WSACleanup();
+	if (WinsockInitialised) {
+		WSACleanup();
+	}
 
 	WinsockInitialised = FALSE;
 	Connected = FALSE;
+	ConnectInProgress = FALSE;
+	StreamReceiveBuffer.clear();
+	StreamSendLength = 0;
+	StreamSendOffset = 0;
+	StreamSendActive = FALSE;
+	ConnectStatus = NOT_CONNECTING;
+	memset(&ClientIPAddress, 0, sizeof(ClientIPAddress));
+	memset(&UDPIPAddress, 0, sizeof(UDPIPAddress));
+	Server.Name[0] = '\0';
+	Server.DotAddr[0] = '\0';
 }
 
 
@@ -298,6 +381,139 @@ int32_t TcpipManagerClass::Init(void)
 }
 
 
+void TcpipManagerClass::Service(void)
+{
+	if (!WinsockInitialised || UseUDP) {
+		return;
+	}
+
+	if (!Connected) {
+		if (IsServer) {
+			if (ListenSocket != INVALID_SOCKET && Add_Client()) {
+				ConnectStatus = CONNECTED_OK;
+				Connected = TRUE;
+				ConnectInProgress = FALSE;
+			}
+		} else if (ConnectInProgress && ConnectSocket != INVALID_SOCKET && Socket_Is_Ready(ConnectSocket)) {
+			int socket_error = 0;
+			SocketLengthType socket_error_length = Socket_Length(sizeof(socket_error));
+			if (getsockopt(ConnectSocket, SOL_SOCKET, SO_ERROR, (char*)&socket_error, &socket_error_length) == 0 &&
+				socket_error == 0) {
+				ConnectStatus = CONNECTED_OK;
+				Connected = TRUE;
+				ConnectInProgress = FALSE;
+			} else if (socket_error != 0 && !Socket_Would_Block(socket_error)) {
+				ConnectStatus = UNABLE_TO_CONNECT;
+				Close_Socket(ConnectSocket);
+				ConnectSocket = INVALID_SOCKET;
+				ConnectInProgress = FALSE;
+			}
+		}
+	}
+
+	if (!Connected || ConnectSocket == INVALID_SOCKET) {
+		return;
+	}
+
+	uint8_t receive_buffer[WS_RECEIVE_BUFFER_LEN];
+	for (;;) {
+		const int rc = recv(ConnectSocket, reinterpret_cast<char*>(receive_buffer), sizeof(receive_buffer), 0);
+		if (rc > 0) {
+			StreamReceiveBuffer.insert(StreamReceiveBuffer.end(), receive_buffer, receive_buffer + rc);
+			while (StreamReceiveBuffer.size() >= sizeof(uint32_t)) {
+				const uint32_t frame_length = Decode_Frame_Length(StreamReceiveBuffer);
+				if (frame_length == 0 || frame_length > WS_INTERNET_BUFFER_LEN) {
+					ConnectStatus = CONNECTION_LOST;
+					Connected = FALSE;
+					Close_Socket(ConnectSocket);
+					ConnectSocket = INVALID_SOCKET;
+					StreamReceiveBuffer.clear();
+					return;
+				}
+				if (StreamReceiveBuffer.size() < sizeof(uint32_t) + frame_length) {
+					break;
+				}
+				Copy_To_In_Buffer(&StreamReceiveBuffer[sizeof(uint32_t)], static_cast<int>(frame_length));
+				StreamReceiveBuffer.erase(StreamReceiveBuffer.begin(),
+					StreamReceiveBuffer.begin() + sizeof(uint32_t) + frame_length);
+			}
+			continue;
+		}
+
+		if (rc == 0) {
+			ConnectStatus = CONNECTION_LOST;
+			Connected = FALSE;
+			Close_Socket(ConnectSocket);
+			ConnectSocket = INVALID_SOCKET;
+			return;
+		}
+
+		const int error_code = WSAGetLastError();
+		if (Socket_Would_Block(error_code)) {
+			break;
+		}
+
+		ConnectStatus = CONNECTION_LOST;
+		Connected = FALSE;
+		Close_Socket(ConnectSocket);
+		ConnectSocket = INVALID_SOCKET;
+		return;
+	}
+
+	while (ConnectSocket != INVALID_SOCKET) {
+		if (!StreamSendActive) {
+			if (!TransmitBuffers[TXBufferTail].InUse) {
+				break;
+			}
+
+			const uint32_t frame_length = htonl(static_cast<uint32_t>(TransmitBuffers[TXBufferTail].DataLength));
+			memcpy(StreamSendBuffer, &frame_length, sizeof(frame_length));
+			memcpy(StreamSendBuffer + sizeof(frame_length),
+				TransmitBuffers[TXBufferTail].Buffer,
+				TransmitBuffers[TXBufferTail].DataLength);
+			StreamSendLength = TransmitBuffers[TXBufferTail].DataLength + sizeof(frame_length);
+			StreamSendOffset = 0;
+			StreamSendActive = TRUE;
+		}
+
+		const int rc = send(ConnectSocket,
+			reinterpret_cast<const char*>(StreamSendBuffer) + StreamSendOffset,
+			StreamSendLength - StreamSendOffset,
+			0);
+		if (rc > 0) {
+			StreamSendOffset += rc;
+			if (StreamSendOffset >= StreamSendLength) {
+				TransmitBuffers[TXBufferTail].InUse = false;
+				TXBufferTail = (TXBufferTail + 1) & (WS_NUM_TX_BUFFERS - 1);
+				StreamSendLength = 0;
+				StreamSendOffset = 0;
+				StreamSendActive = FALSE;
+			}
+			continue;
+		}
+
+		if (rc == 0) {
+			ConnectStatus = CONNECTION_LOST;
+			Connected = FALSE;
+			Close_Socket(ConnectSocket);
+			ConnectSocket = INVALID_SOCKET;
+			return;
+		}
+
+		const int error_code = WSAGetLastError();
+		if (Socket_Would_Block(error_code)) {
+			break;
+		}
+
+		ConnectStatus = CONNECTION_LOST;
+		Connected = FALSE;
+		Close_Socket(ConnectSocket);
+		ConnectSocket = INVALID_SOCKET;
+		return;
+	}
+}
+
+
 
 
 /***********************************************************************************************
@@ -318,9 +534,12 @@ int32_t TcpipManagerClass::Init(void)
 void TcpipManagerClass::Start_Server(void)
 {
 	int i;
-	//struct sockaddr_in addr;
+	struct sockaddr_in addr;
 
-	Start_Client();
+	if (!Init()) {
+		ConnectStatus = NOT_CONNECTING;
+		return;
+	}
 
 	/*
 	** Set up the incoming and outgoing data buffers head and tail pointers
@@ -342,8 +561,51 @@ void TcpipManagerClass::Start_Server(void)
 	** Flag that we are the server side not the client
 	*/
 	IsServer = TRUE;
-	UseUDP = TRUE;
+	Connected = FALSE;
+	ConnectInProgress = FALSE;
 	ConnectStatus = CONNECTING;
+	StreamReceiveBuffer.clear();
+	StreamSendLength = 0;
+	StreamSendOffset = 0;
+	StreamSendActive = FALSE;
+
+	if (ConnectSocket != INVALID_SOCKET) {
+		Close_Socket(ConnectSocket);
+		ConnectSocket = INVALID_SOCKET;
+	}
+	if (ListenSocket != INVALID_SOCKET) {
+		Close_Socket(ListenSocket);
+		ListenSocket = INVALID_SOCKET;
+	}
+	if (UDPSocket != INVALID_SOCKET) {
+		Close_Socket(UDPSocket);
+		UDPSocket = INVALID_SOCKET;
+	}
+
+	if (UseUDP) {
+		Start_Client();
+		return;
+	}
+
+	memset(&addr, 0, sizeof(addr));
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(PlanetWestwoodPortNumber);
+	addr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+	ListenSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (ListenSocket == INVALID_SOCKET) {
+		ConnectStatus = NOT_CONNECTING;
+		return;
+	}
+
+	if (!Set_Socket_NonBlocking(ListenSocket) ||
+		Set_Int_Socket_Option(ListenSocket, SOL_SOCKET, SO_REUSEADDR, TRUE) != 0 ||
+		bind(ListenSocket, (LPSOCKADDR)&addr, sizeof(addr)) == SOCKET_ERROR ||
+		listen(ListenSocket, 1) == SOCKET_ERROR) {
+		Close_Socket(ListenSocket);
+		ListenSocket = INVALID_SOCKET;
+		ConnectStatus = NOT_CONNECTING;
+	}
 
 }
 
@@ -375,6 +637,7 @@ int TcpipManagerClass::Read(void *buffer, int buffer_len)
 	** are done via messages.
 	*/
 	Keyboard->Check();
+	Service();
 
 	/*
 	** Copy any outstanding incoming data to the buffer provided
@@ -430,7 +693,7 @@ void TcpipManagerClass::Write(void *buffer, int buffer_len)
 	if (UseUDP){
 		Handle_Async_Event(TCPIP_EVENT_UDP_SOCKET, (int32_t)FD_WRITE);
 	}else{
-		Handle_Async_Event(TCPIP_EVENT_SOCKET, (int32_t)FD_WRITE);
+		Service();
 	}
 	/*
 	** Make sure the message loop gets called because all the Winsock notifications
@@ -471,7 +734,9 @@ int32_t TcpipManagerClass::Add_Client(void)
 	addrsize = Socket_Length(sizeof(addr));
 	ConnectSocket = accept (ListenSocket, (LPSOCKADDR)&addr, &addrsize);
 	if (ConnectSocket == INVALID_SOCKET) {
-		//Show_Error("accept", WSAGetLastError());
+		if (Socket_Would_Block(WSAGetLastError())) {
+			return(FALSE);
+		}
 		return(FALSE);
 	}
 
@@ -481,6 +746,11 @@ int32_t TcpipManagerClass::Add_Client(void)
 	Set_Int_Socket_Option(ConnectSocket, IPPROTO_TCP, TCP_NODELAY, delay);
 	Set_Int_Socket_Option(ConnectSocket, SOL_SOCKET, SO_RCVBUF, SocketReceiveBuffer);
 	Set_Int_Socket_Option(ConnectSocket, SOL_SOCKET, SO_SNDBUF, SocketSendBuffer);
+	if (!Set_Socket_NonBlocking(ConnectSocket)) {
+		Close_Socket(ConnectSocket);
+		ConnectSocket = INVALID_SOCKET;
+		return(FALSE);
+	}
 
 	/*
 	** Save the clients address
@@ -514,6 +784,14 @@ int32_t TcpipManagerClass::Add_Client(void)
 		return(FALSE);
 	}
 #endif
+
+	if (!UseUDP) {
+		if (ListenSocket != INVALID_SOCKET) {
+			Close_Socket(ListenSocket);
+			ListenSocket = INVALID_SOCKET;
+		}
+		return (TRUE);
+	}
 
 	/*
 	** Create our UDP socket
@@ -580,6 +858,11 @@ int32_t TcpipManagerClass::Add_Client(void)
 
 void TcpipManagerClass::Handle_Async_Event(uint32_t event_type, int32_t lParam)
 {
+	if (!UseUDP) {
+		Service();
+		return;
+	}
+
 #ifdef _WIN32
 	struct 	hostent *hentry;
 #endif
@@ -696,7 +979,7 @@ void TcpipManagerClass::Handle_Async_Event(uint32_t event_type, int32_t lParam)
 						return;
 					}
 					memcpy(&UDPIPAddress, &addr.sin_addr.s_addr, 4);
-					Copy_To_In_Buffer(rc);
+					Copy_To_In_Buffer(ReceiveBuffer, rc);
 					return;
 
 
@@ -802,10 +1085,10 @@ void TcpipManagerClass::Handle_Async_Event(uint32_t event_type, int32_t lParam)
  * HISTORY:                                                                                    *
  *    3/20/96 3:17PM ST : Created                                                              *
  *=============================================================================================*/
-void TcpipManagerClass::Copy_To_In_Buffer(int bytes)
+void TcpipManagerClass::Copy_To_In_Buffer(const void* data, int bytes)
 {
 	if (!ReceiveBuffers[RXBufferHead].InUse){
-		memcpy (ReceiveBuffers[RXBufferHead].Buffer, ReceiveBuffer, MIN(bytes, WS_INTERNET_BUFFER_LEN));
+		memcpy (ReceiveBuffers[RXBufferHead].Buffer, data, MIN(bytes, WS_INTERNET_BUFFER_LEN));
 		ReceiveBuffers[RXBufferHead].InUse = true;
 		ReceiveBuffers[RXBufferHead++].DataLength = MIN(bytes, WS_INTERNET_BUFFER_LEN);
 		RXBufferHead &= WS_NUM_RX_BUFFERS-1;
@@ -828,9 +1111,47 @@ void TcpipManagerClass::Copy_To_In_Buffer(int bytes)
  * HISTORY:                                                                                    *
  *    3/20/96 3:19PM ST : Created                                                              *
  *=============================================================================================*/
-void TcpipManagerClass::Set_Host_Address(char *address)
+void TcpipManagerClass::Set_Host_Address(char const *address)
 {
-	strcpy(HostAddress, address);
+	char const *resolved = address != NULL ? address : "";
+	SDL_strlcpy(HostAddress, resolved, sizeof(HostAddress));
+	SDL_strlcpy(PlanetWestwoodIPAddress, resolved, sizeof(PlanetWestwoodIPAddress));
+}
+
+
+void TcpipManagerClass::Set_Port_Number(uint16_t port)
+{
+	PlanetWestwoodPortNumber = port;
+}
+
+
+void TcpipManagerClass::Get_Remote_Address(UDPAddressClass *address) const
+{
+	NetNumType net;
+	NetNodeType node;
+	memset(net, 0, sizeof(net));
+	memset(node, 0, sizeof(node));
+
+	if (address == NULL) {
+		return;
+	}
+
+	if (Connected && ConnectSocket != INVALID_SOCKET) {
+		struct sockaddr_in peer_address;
+		memset(&peer_address, 0, sizeof(peer_address));
+		SocketLengthType peer_length = Socket_Length(sizeof(peer_address));
+		if (getpeername(ConnectSocket, (LPSOCKADDR)&peer_address, &peer_length) == 0) {
+			memcpy(net, &peer_address.sin_addr.s_addr, sizeof(peer_address.sin_addr.s_addr));
+			memcpy(node, &peer_address.sin_port, sizeof(peer_address.sin_port));
+			address->Set_Address(net, node);
+			return;
+		}
+	}
+
+	uint16_t peer_port = htons(PlanetWestwoodPortNumber);
+	memcpy(net, &UDPIPAddress.s_addr, sizeof(UDPIPAddress.s_addr));
+	memcpy(node, &peer_port, sizeof(peer_port));
+	address->Set_Address(net, node);
 }
 
 
@@ -855,6 +1176,11 @@ void TcpipManagerClass::Start_Client(void)
 	struct 	sockaddr_in addr;
 	int 		i;
 
+	if (!Init()) {
+		ConnectStatus = NOT_CONNECTING;
+		return;
+	}
+
 	addr.sin_family = AF_INET;
 	addr.sin_port = 0;
 	addr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -876,11 +1202,84 @@ void TcpipManagerClass::Start_Client(void)
 	}
 
 	Connected = FALSE;
+	ConnectInProgress = FALSE;
 	/*
 	** Flag that we are the client side not the server
 	*/
 	IsServer = FALSE;
-	UseUDP = TRUE;
+	StreamReceiveBuffer.clear();
+	StreamSendLength = 0;
+	StreamSendOffset = 0;
+	StreamSendActive = FALSE;
+
+	if (ConnectSocket != INVALID_SOCKET) {
+		Close_Socket(ConnectSocket);
+		ConnectSocket = INVALID_SOCKET;
+	}
+	if (ListenSocket != INVALID_SOCKET) {
+		Close_Socket(ListenSocket);
+		ListenSocket = INVALID_SOCKET;
+	}
+	if (UDPSocket != INVALID_SOCKET) {
+		Close_Socket(UDPSocket);
+		UDPSocket = INVALID_SOCKET;
+	}
+
+	if (!UseUDP) {
+		Server.Addr.s_addr = inet_addr(PlanetWestwoodIPAddress);
+		memcpy(&UDPIPAddress, &Server.Addr.s_addr, 4);
+		if (Server.Addr.s_addr == INADDR_NONE) {
+			if (PlanetWestwoodIPAddress[0] == '\0' ||
+				!Lookup_Host_By_Name(PlanetWestwoodIPAddress, &Server.Addr, Server.DotAddr, sizeof(Server.DotAddr))) {
+				Server.Name[0] = 0;
+				strcpy(Server.DotAddr, "????");
+				ConnectStatus = SERVER_ADDRESS_LOOKUP_FAILED;
+				return;
+			}
+			memcpy(&UDPIPAddress, &Server.Addr.s_addr, sizeof(Server.Addr.s_addr));
+			strcpy(Server.Name, PlanetWestwoodIPAddress);
+		} else {
+			strcpy(Server.DotAddr, inet_ntoa(Server.Addr));
+		}
+
+		addr.sin_family = AF_INET;
+		addr.sin_port = htons(PlanetWestwoodPortNumber);
+		addr.sin_addr = Server.Addr;
+
+		ConnectSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+		if (ConnectSocket == INVALID_SOCKET) {
+			ConnectStatus = NOT_CONNECTING;
+			return;
+		}
+
+		Set_Int_Socket_Option(ConnectSocket, IPPROTO_TCP, TCP_NODELAY, TRUE);
+		Set_Int_Socket_Option(ConnectSocket, SOL_SOCKET, SO_RCVBUF, SocketReceiveBuffer);
+		Set_Int_Socket_Option(ConnectSocket, SOL_SOCKET, SO_SNDBUF, SocketSendBuffer);
+		if (!Set_Socket_NonBlocking(ConnectSocket)) {
+			Close_Socket(ConnectSocket);
+			ConnectSocket = INVALID_SOCKET;
+			ConnectStatus = NOT_CONNECTING;
+			return;
+		}
+
+		const int rc = connect(ConnectSocket, (LPSOCKADDR)&addr, sizeof(addr));
+		if (rc == 0) {
+			ConnectStatus = CONNECTED_OK;
+			Connected = TRUE;
+			ConnectInProgress = FALSE;
+		} else {
+			const int error_code = WSAGetLastError();
+			if (Socket_Would_Block(error_code)) {
+				ConnectStatus = CONTACTING_SERVER;
+				ConnectInProgress = TRUE;
+			} else {
+				ConnectStatus = UNABLE_TO_CONNECT;
+				Close_Socket(ConnectSocket);
+				ConnectSocket = INVALID_SOCKET;
+			}
+		}
+		return;
+	}
 
 	/*
 	** Create our UDP socket
@@ -993,6 +1392,12 @@ void TcpipManagerClass::Set_Protocol_UDP(int32_t state)
 }
 
 
+void TcpipManagerClass::Set_Protocol_TCP(int32_t state)
+{
+	UseUDP = !state;
+}
+
+
 
 void TcpipManagerClass::Clear_Socket_Error(SOCKET socket)
 {
@@ -1005,5 +1410,3 @@ void TcpipManagerClass::Clear_Socket_Error(SOCKET socket)
 	setsockopt (socket, SOL_SOCKET, SO_ERROR, (char*)&error_code, length);
 #endif
 }
-
-

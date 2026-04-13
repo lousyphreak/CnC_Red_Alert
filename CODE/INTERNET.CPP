@@ -46,6 +46,7 @@
 
 
 #include "FUNCTION.H"
+#include "INTERNET.H"
 #include "TCPIP.H"
 
 
@@ -58,9 +59,11 @@ extern bool Is_Mission_Counterstrike (char *file_name);
 /***************************************************************************
 ** Internet specific globals
 */
-char PlanetWestwoodIPAddress[IP_ADDRESS_MAX] = {"206.154.108.87"};	//IP of server or other player
-uint16_t PlanetWestwoodPortNumber = 1234;					//Port number to send to
+char PlanetWestwoodIPAddress[IP_ADDRESS_MAX] = {""};	//IP of server or other player
+uint16_t PlanetWestwoodPortNumber = 0x8813;				//Port number to send to
 bool PlanetWestwoodIsHost = false;						//Flag true if player has control of game options
+InternetCommandLineType PlanetWestwoodCommandLine = INTERNET_CMDLINE_NONE;
+static char PlanetWestwoodCommandLineName[MPLAYER_NAME_MAX] = {""};
 uint32_t PlanetWestwoodGameID;						//Game ID
 uint32_t PlanetWestwoodStartTime;					//Time that game was started
 bool	GameStatisticsPacketSent;							//Flag that game stats have been sent to wchat
@@ -72,3 +75,74 @@ bool	ConnectionLost;										//Flag that the connection to the other player was
 #if defined(ENGLISH) || defined(GERMAN)
 #define TXT_HACKHACK  Text_String(TXT_CONNECTING)
 #endif
+
+bool Internet_Parse_Port(char const* text, uint16_t* port)
+{
+	char* end = NULL;
+	long value;
+
+	if (text == NULL || port == NULL || text[0] == '\0') {
+		return(false);
+	}
+
+	value = strtol(text, &end, 10);
+	if (end == NULL || *end != '\0' || value <= 0 || value > 65535) {
+		return(false);
+	}
+
+	*port = (uint16_t)value;
+	return(true);
+}
+
+void Internet_Clear_Command_Line_Connect(void)
+{
+	PlanetWestwoodCommandLine = INTERNET_CMDLINE_NONE;
+}
+
+void Internet_Clear_Command_Line_Name(void)
+{
+	PlanetWestwoodCommandLineName[0] = '\0';
+}
+
+void Internet_Set_Command_Line_Host(uint16_t port)
+{
+	PlanetWestwoodCommandLine = INTERNET_CMDLINE_HOST;
+	PlanetWestwoodIsHost = true;
+	PlanetWestwoodIPAddress[0] = '\0';
+	PlanetWestwoodPortNumber = port;
+}
+
+void Internet_Set_Command_Line_Connect(char const* address, uint16_t port)
+{
+	PlanetWestwoodCommandLine = INTERNET_CMDLINE_CONNECT;
+	PlanetWestwoodIsHost = false;
+	SDL_strlcpy(PlanetWestwoodIPAddress, address != NULL ? address : "", sizeof(PlanetWestwoodIPAddress));
+	PlanetWestwoodPortNumber = port;
+}
+
+void Internet_Set_Command_Line_Name(char const* name)
+{
+	SDL_strlcpy(PlanetWestwoodCommandLineName, name != NULL ? name : "", sizeof(PlanetWestwoodCommandLineName));
+}
+
+bool Internet_Has_Command_Line_Name(void)
+{
+	return(PlanetWestwoodCommandLineName[0] != '\0');
+}
+
+void Internet_Apply_Command_Line_Name(void)
+{
+	if (PlanetWestwoodCommandLineName[0] != '\0') {
+		SDL_strlcpy(Session.Handle, PlanetWestwoodCommandLineName, sizeof(Session.Handle));
+	}
+}
+
+bool Internet_Has_Command_Line_Connect(void)
+{
+	return(PlanetWestwoodCommandLine != INTERNET_CMDLINE_NONE);
+}
+
+bool Internet_Command_Line_Is_Host(void)
+{
+	return(PlanetWestwoodCommandLine == INTERNET_CMDLINE_HOST);
+}

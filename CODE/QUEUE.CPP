@@ -95,6 +95,18 @@ static void Zero_Event_Memory(EventClass &event)
 	}
 }
 
+static EventClass::EventType Read_Event_Type(void const *buffer)
+{
+	EventClass::EventType type;
+	memcpy(&type, buffer, sizeof(type));
+	return(type);
+}
+
+static void Write_Event_Type(void *buffer, EventClass::EventType type)
+{
+	memcpy(buffer, &type, sizeof(type));
+}
+
 /********************************** Defines *********************************/
 #define SHOW_MONO	0
 
@@ -1645,15 +1657,18 @@ static RetcodeType Process_Receive_Packet(ConnManClass *net,
 	char *multi_packet_buf, int id, int packetlen, int32_t *their_frame,
 	uint16_t *their_sent, uint16_t *their_recv)
 {
-	EventClass *event;
+	EventClass event;
 	int index;
 	RetcodeType retcode = RC_NORMAL;
 	int i;
+	int const frameinfo_size = offsetof(EventClass, Data) +
+		size_of(EventClass, Data.FrameInfo);
 
 	//------------------------------------------------------------------------
 	//	Get an event ptr to the incoming message
 	//------------------------------------------------------------------------
-	event = (EventClass *)multi_packet_buf;
+	Zero_Event_Memory(event);
+	memcpy(&event, multi_packet_buf, MIN(packetlen, frameinfo_size));
 
 	//------------------------------------------------------------------------
 	//	Get the index of the sender
@@ -1664,7 +1679,7 @@ static RetcodeType Process_Receive_Packet(ConnManClass *net,
 	//	Compute the other player's frame # (at the time this packet was sent)
 	//------------------------------------------------------------------------
 	if (their_frame[index] <
-		(int)(event->Frame - event->Data.FrameInfo.Delay)) {
+		(int)(event.Frame - event.Data.FrameInfo.Delay)) {
 
 		//.....................................................................
 		// If the original frame # for this player is -1, it means we've heard
@@ -1674,50 +1689,50 @@ static RetcodeType Process_Receive_Packet(ConnManClass *net,
 			retcode = RC_PLAYER_READY;
 		}
 
-		their_frame[index] = event->Frame - event->Data.FrameInfo.Delay;
+		their_frame[index] = event.Frame - event.Data.FrameInfo.Delay;
 	}
 
 	//------------------------------------------------------------------------
 	//	Extract the other player's CommandCount.  This count will include
 	//	the commands in this packet, if there are any.
 	//------------------------------------------------------------------------
-	if (event->Data.FrameInfo.CommandCount > their_sent[index]) {
+	if (event.Data.FrameInfo.CommandCount > their_sent[index]) {
 
-		if ( abs(their_sent[index] - event->Data.FrameInfo.CommandCount) > 500) {
+		if ( abs(their_sent[index] - event.Data.FrameInfo.CommandCount) > 500) {
 			SDL_IOStream *fp;
 			fp = WWFS_FOpen("badcount.txt","wt");
 			if (fp) {
-				WWFS_FPrintf(fp,"Event Type:%s\n",EventClass::EventNames[event->Type]);
+				WWFS_FPrintf(fp,"Event Type:%s\n",EventClass::EventNames[event.Type]);
 				WWFS_FPrintf(fp,"Frame:%d  ID:%d  IsExec:%d\n",
-					event->Frame,
-					event->ID,
-					event->IsExecuted);
-				if (event->Type != EventClass::FRAMEINFO) {
+					event.Frame,
+					event.ID,
+					event.IsExecuted);
+				if (event.Type != EventClass::FRAMEINFO) {
 					WWFS_FPrintf(fp,"Wrong Event Type!\n");
 				} else {
 					WWFS_FPrintf(fp,"CRC:%x  CommandCount:%d  Delay:%d\n",
-						event->Data.FrameInfo.CRC,
-						event->Data.FrameInfo.CommandCount,
-						event->Data.FrameInfo.Delay);
+						event.Data.FrameInfo.CRC,
+						event.Data.FrameInfo.CommandCount,
+						event.Data.FrameInfo.Delay);
 				}
 			}
 		}
 
-		their_sent[index] = event->Data.FrameInfo.CommandCount;
+		their_sent[index] = event.Data.FrameInfo.CommandCount;
 	}
 
 	if (Debug_Print_Events) {
-		if (event->Type == EventClass::FRAMESYNC) {
+		if (event.Type == EventClass::FRAMESYNC) {
 			printf("(%d) Received FRAMESYNC: ", Frame);
 		} else {
 			printf("(%d) Received FRAMEINFO: ", Frame);
 		}
 		printf("EvFrame:%d ID:%d CRC:%x CmdCount:%d Delay:%d\n",
-			event->Frame,
-			event->ID,
-			event->Data.FrameInfo.CRC,
-			event->Data.FrameInfo.CommandCount,
-			event->Data.FrameInfo.Delay);
+			event.Frame,
+			event.ID,
+			event.Data.FrameInfo.CRC,
+			event.Data.FrameInfo.CommandCount,
+			event.Data.FrameInfo.Delay);
 	}
 
 	//------------------------------------------------------------------------
@@ -1726,7 +1741,7 @@ static RetcodeType Process_Receive_Packet(ConnManClass *net,
 	//	- Increment our commands-received counter by the number of non-
 	//	  FRAMEINFO packets received
 	//------------------------------------------------------------------------
-	if (event->Type != EventClass::FRAMESYNC) {
+	if (event.Type != EventClass::FRAMESYNC) {
 		//.....................................................................
 		// Break up the packet into its component events.  A returned packet
 		// count of -1 indicates a fatal queue-full error.
@@ -1739,7 +1754,7 @@ static RetcodeType Process_Receive_Packet(ConnManClass *net,
 		// Compute the actual # commands in the packet by subtracting off the
 		// FRAMEINFO event
 		//.....................................................................
-		if ( (event->Type==EventClass::FRAMEINFO) && (i > 0)) {
+		if ( (event.Type==EventClass::FRAMEINFO) && (i > 0)) {
 			i--;
 		}
 
@@ -1750,7 +1765,7 @@ static RetcodeType Process_Receive_Packet(ConnManClass *net,
 	//	If the event was a FRAMESYNC packet, there will be no commands to add,
 	//	but we must check the ScenarioCRC value.
 	//------------------------------------------------------------------------
-	else if (event->Data.FrameInfo.CRC != ScenarioCRC) {
+	else if (event.Data.FrameInfo.CRC != ScenarioCRC) {
 		return (RC_SCENARIO_MISMATCH);
 	}
 
@@ -2054,7 +2069,7 @@ static int Build_Send_Packet(void *buf, int bufsize, int frame_delay,
 	int num_cmds, int cap)
 {
 	int size = 0;
-	EventClass *finfo;
+	EventClass finfo;
 
 	//------------------------------------------------------------------------
 	// All events start with a FRAMEINFO event; fill this part in.
@@ -2062,25 +2077,25 @@ static int Build_Send_Packet(void *buf, int bufsize, int frame_delay,
 	//........................................................................
 	// Set the event type
 	//........................................................................
-	finfo = (EventClass *)buf;
-	finfo->Type = EventClass::FRAMEINFO;
+	Zero_Event_Memory(finfo);
+	finfo.Type = EventClass::FRAMEINFO;
 	//........................................................................
 	// Set the frame to execute this event on; this is protocol-specific
 	//........................................................................
 	if (Session.CommProtocol == COMM_PROTOCOL_MULTI_E_COMP) {
-		finfo->Frame = ((Frame + frame_delay + (Session.FrameSendRate - 1)) /
+		finfo.Frame = ((Frame + frame_delay + (Session.FrameSendRate - 1)) /
 			 Session.FrameSendRate) * Session.FrameSendRate;
 	}
 	else {
-		finfo->Frame = Frame + frame_delay;
+		finfo.Frame = Frame + frame_delay;
 	}
 	//........................................................................
 	// Fill in the rest of the event
 	//........................................................................
-	finfo->ID = PlayerPtr->ID;
-	finfo->Data.FrameInfo.CRC = GameCRC;
-	finfo->Data.FrameInfo.CommandCount = num_cmds;
-	finfo->Data.FrameInfo.Delay = frame_delay;
+	finfo.ID = PlayerPtr->ID;
+	finfo.Data.FrameInfo.CRC = GameCRC;
+	finfo.Data.FrameInfo.CommandCount = num_cmds;
+	finfo.Data.FrameInfo.Delay = frame_delay;
 
 	//------------------------------------------------------------------------
 	// Initialize the # of bytes processed; this is protocol-specific
@@ -2092,6 +2107,7 @@ static int Build_Send_Packet(void *buf, int bufsize, int frame_delay,
 		size += (offsetof(EventClass, Data) +
 			size_of(EventClass, Data.FrameInfo));
 	}
+	memcpy(buf, &finfo, size);
 
 	//------------------------------------------------------------------------
 	//	Transfer all events from the OutList into the DoList, building our
@@ -2441,7 +2457,7 @@ static int Add_Compressed_Events(void *buf, int bufsize, int frame_delay,
 			//..................................................................
 			case (EventClass::RESPONSE_TIME):
 
-				*(EventClass::EventType *)( ((char *)buf) + size) = eventtype;
+				Write_Event_Type(((char *)buf) + size, eventtype);
 
 				memcpy ( ((char *)buf) + size + sizeof(EventClass::EventType),
 					&OutList.First().Data.FrameInfo.Delay, datasize );
@@ -2475,7 +2491,7 @@ static int Add_Compressed_Events(void *buf, int bufsize, int frame_delay,
 				else {
 					*unitsptr = numunits;
 
-					*(EventClass::EventType *)( ((char *)buf) + size) = eventtype;
+					Write_Event_Type(((char *)buf) + size, eventtype);
 
 					memcpy ( ((char *)buf) + size +
 						sizeof(EventClass::EventType) + sizeof(numunits),
@@ -2489,7 +2505,7 @@ static int Add_Compressed_Events(void *buf, int bufsize, int frame_delay,
 			// Variable-sized packets: Copy the packet Size & the buffer
 			//..................................................................
 			case (EventClass::ADDPLAYER):
-				*(EventClass::EventType *)( ((char *)buf) + size) = eventtype;
+				Write_Event_Type(((char *)buf) + size, eventtype);
 
 				memcpy ( ((char *)buf) + size + sizeof(EventClass::EventType),
 					&OutList.First().Data.Variable.Size, datasize );
@@ -2506,7 +2522,7 @@ static int Add_Compressed_Events(void *buf, int bufsize, int frame_delay,
 			// Default case: Just copy over the data field from the union
 			//..................................................................
 			default:
-				*(EventClass::EventType *)( ((char *)buf) + size) = eventtype;
+				Write_Event_Type(((char *)buf) + size, eventtype);
 
 				memcpy ( ((char *)buf) + size + sizeof(EventClass::EventType),
 					&OutList.First().Data, datasize );
@@ -2600,7 +2616,7 @@ static int Extract_Uncompressed_Events(void *buf, int bufsize)
 	int count = 0;
 	int pos = 0;
 	int leftover = bufsize;
-	EventClass *event;
+	EventClass event;
 
 	//------------------------------------------------------------------------
 	// Loop until there are no more events in the packet
@@ -2609,36 +2625,37 @@ static int Extract_Uncompressed_Events(void *buf, int bufsize)
 
 		Keyboard->Check();
 
-		event = (EventClass *)(((char *)buf) + pos);
+		Zero_Event_Memory(event);
+		memcpy(&event, ((char *)buf) + pos, sizeof(EventClass));
 
 		//.....................................................................
 		// add event to the DoList, only if it's not a FRAMESYNC
 		// (but FRAMEINFO's do get added.)
 		//.....................................................................
-		if (event->Type != EventClass::FRAMESYNC) {
-			event->IsExecuted = 0;
+		if (event.Type != EventClass::FRAMESYNC) {
+			event.IsExecuted = 0;
 
 			//..................................................................
 			// Special processing for variable-sized events
 			//..................................................................
-			if (event->Type == EventClass::ADDPLAYER) {
-				event->Data.Variable.Pointer = new char[event->Data.Variable.Size];
-				memcpy (event->Data.Variable.Pointer,
-					((char *)buf) + sizeof(EventClass),
-					event->Data.Variable.Size);
+			if (event.Type == EventClass::ADDPLAYER) {
+				event.Data.Variable.Pointer = new char[event.Data.Variable.Size];
+				memcpy (event.Data.Variable.Pointer,
+					((char *)buf) + pos + sizeof(EventClass),
+					event.Data.Variable.Size);
 
-				pos += event->Data.Variable.Size;
-				leftover -= event->Data.Variable.Size;
+				pos += event.Data.Variable.Size;
+				leftover -= event.Data.Variable.Size;
 			}
 
-			if (!DoList.Add( *event )) {
-				if (event->Type == EventClass::ADDPLAYER) {
-					delete [] static_cast<char *>(event->Data.Variable.Pointer);
+			if (!DoList.Add(event)) {
+				if (event.Type == EventClass::ADDPLAYER) {
+					delete [] static_cast<char *>(event.Data.Variable.Pointer);
 				}
 				return (-1);
 			}
 			#ifdef MIRROR_QUEUE
-			MirrorList.Add(*event);
+			MirrorList.Add(event);
 			#endif
 
 			//..................................................................
@@ -2678,16 +2695,18 @@ static int Extract_Compressed_Events(void *buf, int bufsize)
 {
 	int pos = 0;						// current buffer parsing position
 	int leftover = bufsize;			// # bytes left to process
-	EventClass *event;				// event ptr for parsing buffer
 	int count = 0;						// # events processed
 	int datasize = 0;					// size of data to copy
 	EventClass eventdata;			// stores Frame, ID, etc
+	EventClass frameinfo;
+	EventClass::EventType eventtype;
 	uint8_t numunits = 0;	// # units stored in compressed MegaMissions
 
 	//------------------------------------------------------------------------
 	// Clear work event structure
 	//------------------------------------------------------------------------
 	Zero_Event_Memory(eventdata);
+	Zero_Event_Memory(frameinfo);
 
 	//------------------------------------------------------------------------
 	// Assume the first event is a FRAMEINFO event
@@ -2697,7 +2716,7 @@ static int Extract_Compressed_Events(void *buf, int bufsize)
 	//------------------------------------------------------------------------
 	datasize = (offsetof(EventClass, Data) +
 		size_of(EventClass, Data.FrameInfo)) - sizeof(EventClass::EventType);
-	event = (EventClass *)(((char *)buf) + pos);
+	eventtype = Read_Event_Type(((char *)buf) + pos);
 
 	while (leftover >= (datasize + static_cast<int>(sizeof(EventClass::EventType))) ) {
 
@@ -2707,14 +2726,17 @@ static int Extract_Compressed_Events(void *buf, int bufsize)
 		// add event to the DoList, only if it's not a FRAMESYNC
 		// (but FRAMEINFO's do get added.)
 		//.....................................................................
-		if (event->Type != EventClass::FRAMESYNC) {
+		if (eventtype != EventClass::FRAMESYNC) {
 			//..................................................................
 			// initialize the common data from the FRAMEINFO event
 			// keeping IsExecuted 0
 			//..................................................................
-			if (event->Type == EventClass::FRAMEINFO) {
-				eventdata.Frame = event->Frame;
-				eventdata.ID = event->ID;
+			if (eventtype == EventClass::FRAMEINFO) {
+				Zero_Event_Memory(frameinfo);
+				memcpy(&frameinfo, ((char *)buf) + pos,
+					offsetof(EventClass, Data) + size_of(EventClass, Data.FrameInfo));
+				eventdata.Frame = frameinfo.Frame;
+				eventdata.ID = frameinfo.ID;
 
 				//...............................................................
 				// Adjust position past the common data
@@ -2727,7 +2749,7 @@ static int Extract_Compressed_Events(void *buf, int bufsize)
 			//..................................................................
 			// if MEGAMISSION event get the number of units (events to generate)
 			//..................................................................
-			else if (event->Type == EventClass::MEGAMISSION) {
+			else if (eventtype == EventClass::MEGAMISSION) {
 				numunits = *(((uint8_t *)buf) + pos + sizeof(eventdata.Type));
 				pos += sizeof(numunits);
 				leftover -= sizeof(numunits);
@@ -2737,7 +2759,7 @@ static int Extract_Compressed_Events(void *buf, int bufsize)
 			// clear the union data portion of the event
 			//..................................................................
 			memset (&eventdata.Data, 0, sizeof(eventdata.Data));
-			eventdata.Type = event->Type;
+			eventdata.Type = eventtype;
 			datasize = EventClass::EventLength[ eventdata.Type ];
 
 			switch (eventdata.Type) {
@@ -2833,10 +2855,10 @@ static int Extract_Compressed_Events(void *buf, int bufsize)
 			pos += (datasize + sizeof(EventClass::EventType));
 			leftover -= (datasize + sizeof(EventClass::EventType));
 
-			if (leftover) {
-				event = (EventClass *)(((char *)buf) + pos);
-				datasize = EventClass::EventLength[ event->Type ];
-				if (event->Type == EventClass::MEGAMISSION) {
+			if (leftover >= static_cast<int>(sizeof(EventClass::EventType))) {
+				eventtype = Read_Event_Type(((char *)buf) + pos);
+				datasize = EventClass::EventLength[ eventtype ];
+				if (eventtype == EventClass::MEGAMISSION) {
 					datasize += sizeof(numunits);
 				}
 			}
@@ -2848,7 +2870,9 @@ static int Extract_Compressed_Events(void *buf, int bufsize)
 		else {
 			pos += (datasize + sizeof(EventClass::EventType));
 			leftover -= (datasize + sizeof(EventClass::EventType));
-			event = (EventClass *)(((char *)buf) + pos);
+			if (leftover >= static_cast<int>(sizeof(EventClass::EventType))) {
+				eventtype = Read_Event_Type(((char *)buf) + pos);
+			}
 
 			//..................................................................
 			// size of FRAMESYNC event - EventType size

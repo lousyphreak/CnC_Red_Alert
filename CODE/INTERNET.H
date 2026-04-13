@@ -40,15 +40,32 @@
 
 #define IP_ADDRESS_MAX 40
 
+typedef enum {
+	INTERNET_CMDLINE_NONE,
+	INTERNET_CMDLINE_HOST,
+	INTERNET_CMDLINE_CONNECT,
+} InternetCommandLineType;
 
 void	Register_Game_Start_Time(void);
 void	Register_Game_End_Time(void);
 void	Send_Statistics_Packet(void);
+bool	Internet_Parse_Port(char const* text, uint16_t* port);
+void	Internet_Clear_Command_Line_Connect(void);
+void	Internet_Clear_Command_Line_Name(void);
+void	Internet_Set_Command_Line_Host(uint16_t port);
+void	Internet_Set_Command_Line_Connect(char const* address, uint16_t port);
+void	Internet_Set_Command_Line_Name(char const* name);
+bool	Internet_Has_Command_Line_Name(void);
+void	Internet_Apply_Command_Line_Name(void);
+bool	Internet_Has_Command_Line_Connect(void);
+bool	Internet_Command_Line_Is_Host(void);
+bool 	Internet_Remote_Connect(void);
 bool 	Server_Remote_Connect(void);
 bool 	Client_Remote_Connect(void);
 
 extern char PlanetWestwoodIPAddress[IP_ADDRESS_MAX];
 extern uint16_t PlanetWestwoodPortNumber;
 extern bool PlanetWestwoodIsHost;
+extern InternetCommandLineType PlanetWestwoodCommandLine;
 
 #endif

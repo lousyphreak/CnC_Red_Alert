@@ -1,12 +1,66 @@
 # Porting Progress
 
-_Last updated: 2026-04-12_
+_Last updated: 2026-04-13_
 
 ## Goal
 
 Port the Red Alert codebase to a reproducible cross-platform build using SDL3 for platform-specific functionality, with working builds on Linux, Windows, and other supported SDL3 platforms.
 
 ## Current status
+
+- Follow-up TCP direct-guest lobby fix: the interactive direct-IP guest path no longer falls back into the generic chat/browser loop after the TCP socket is already connected:
+  - root cause: `CODE/NETDLG.CPP` reused the normal `Net_Join_Dialog()` browser state machine unchanged for interactive TCP guests, so the guest entered the public lobby first, kept running the periodic `NET_QUERY_PLAYER` browse traffic even after `JOIN_CONFIRMED`, and used the normal `goto_lobby` cancel path back to the chat room instead of the direct-connect screen;
+  - `CODE/NETDLG.CPP` now detects the interactive direct guest path, performs the one-host query/join handshake before exposing the real join dialog, and opens that dialog already in the joined game state so the guest lands directly in the host's lobby instead of the generic chat browser;
+  - the same direct-guest mode now suppresses the browser-only chat announcements and periodic post-join `NET_QUERY_PLAYER` churn, while keeping the one-shot player query needed to populate the joined lobby immediately;
+  - cancel/reject/disband handling for that interactive direct guest path now exits cleanly back to the direct-IP setup screen instead of dropping into the generic chat lobby;
+  - validation for this follow-up: `cmake --build build --target redalert -- -j2`, `cmake --build build-asan --target redalert -- -j2`, and `ctest --test-dir build --output-on-failure` succeed after the direct-guest lobby flow change.
+
+- Follow-up TCP lobby/runtime fix: the direct-IP TCP path now restores the real multiplayer lobby for normal UI use, keeps the command-line path scriptable, and no longer trips the `QUEUE.CPP` misaligned-`EventClass` UBSan faults:
+  - root cause of the missing lobby and instant win/loss regression: `CODE/NETDLG.CPP` routed all direct-IP TCP launches through `Net_Fake_New_Dialog()` / `Net_Fake_Join_Dialog()`, which intentionally skip the real host/join UI and auto-start the game; unlike `Net_New_Dialog()`, the fake host dialog never seeded the multiplayer defaults (`Credits`, `Bases`, `Tiberium`, `Crates`, `UnitCount`, etc.), so a fresh command-line launch could start from zeroed session options and immediately fall into a broken match state;
+  - `CODE/NETDLG.CPP` now uses the real `Net_New_Dialog()` / `Net_Join_Dialog()` flow for the normal direct-IP UI path after the TCP socket is established, so the host gets the expected scenario/options lobby and the guest can reuse the original join-side lobby UI instead of the stripped-down fake dialog;
+  - the command-line `-host` / `-connect` path remains auto-driven for scripted validation, but it now explicitly seeds the same multiplayer defaults the real host lobby would have established before reusing the fake direct-IP host/join wrappers, so the headless auto-start path no longer boots a zero-option match;
+  - `CODE/NETDLG.CPP` also now mirrors the `NET_GO` host-address handoff in the `NET_LOADGAME` branch, so load-game startup keeps the same reply target bookkeeping as normal direct-IP start;
+  - root cause of the sanitizer spam: `CODE/QUEUE.CPP` treated packed packet bytes from `Session.MetaPacket` and other receive buffers as in-place `EventClass*` objects; on the 64-bit SDL3 port `EventClass` requires 8-byte alignment because its union includes a pointer-sized member, so direct field access through those raw packet buffers triggered repeated misaligned-member UBSan errors;
+  - `CODE/QUEUE.CPP` now reads/writes packet `EventType` and `FRAMEINFO` data through aligned local temporaries plus `memcpy` instead of typed casts into packed packet storage, and the uncompressed `ADDPLAYER` receive path now copies the variable payload from the correct per-event packet offset instead of always using the start of the meta-packet;
+  - validation for this follow-up: `cmake --build build --target redalert -- -j2`, `cmake --build build-asan --target redalert -- -j2`, and `ctest --test-dir build --output-on-failure` succeed; a fresh ASan localhost host/guest run no longer emits the earlier `CODE/QUEUE.CPP:1667` misaligned-`EventClass` runtime errors; the normal direct-IP UI path now shows the real host/join lobby again; and a command-line host/guest pair launched with `-host -name Host` and `-connect 127.0.0.1 34835 -name Guest` stays in the live in-game HUD instead of immediately dropping to the success/fail score flow.
+
+- Follow-up TCP command-line / live-validation fix: standalone direct-IP TCP can now be launched directly from the command line, and the CLI path has been validated through an actual two-instance localhost game start:
+  - `CODE/INIT.CPP` now accepts `-host [port]`, `-connect <ip> <port>`, and `-name <name>`; the host port defaults to the existing UDP/default internet port when omitted, and the startup path now treats a command-line TCP request as a preselected `GAME_INTERNET` launch instead of bouncing back through the multiplayer protocol picker;
+  - root cause of the first CLI runtime failure: command-line parsing ran before `Session.One_Time()`, so `Session.Read_MultiPlayer_Settings()` reloaded the saved multiplayer handle from `REDALERT.INI` and silently overwrote `-name`, which made the guest look like a duplicate-name join even when different names were passed on the command line;
+  - `CODE/INTERNET.CPP` now keeps the CLI player name as pending startup state, and `CODE/INIT.CPP` reapplies it immediately after `Session.One_Time()` so the live session uses the requested handle instead of the saved INI value;
+  - `CODE/NETDLG.CPP` now consumes the one-shot command-line host/connect configuration directly in `Internet_Remote_Connect()`, and the direct-IP TCP flow can be driven without touching the setup dialog;
+  - live validation for this follow-up: launching `./build/redalert -gamedata ... -host -name Host` and `./build/redalert -gamedata ... -connect 127.0.0.1 34835 -name Guest` on the same machine now reaches host join confirmation, guest `NET_GO` / `JOIN_GAME_START`, and a synchronized shared score screen listing both `HOST` and `GUEST`, which confirms the TCP session progressed into an actual network game.
+
+- Follow-up TCP localhost-join fix: the standalone direct-IP dialog still reused the saved multiplayer handle silently, which made same-machine `127.0.0.1` tests look like a transport hang after the earlier socket/lobby fixes:
+  - root cause: the new `Internet` setup dialog in `CODE/NETDLG.CPP` only collected IP/port, while the fake join flow still identified the local player through `Session.Handle`; when two local instances loaded the same saved handle, the host correctly rejected the join as `REJECT_DUPLICATE_NAME`, but the fake join dialog stayed in its generic `Connecting...` loop and never surfaced the actual rejection;
+  - practical effect: localhost tests with two instances of the same install could reach the TCP connection and the fake join packets, then appear to hang indefinitely even though the host was already denying the guest at the menu-protocol layer rather than at the socket layer;
+  - `CODE/NETDLG.CPP` now adds a player-name field to the direct-IP TCP setup dialog, seeds it from `Session.Handle`, validates it before host/connect, copies it back into `Session.Handle`, and turns fake join rejection into an explicit error message plus clean dialog exit instead of silently resending join queries;
+  - validation for this follow-up: `cmake --build build --target redalert -- -j2` and `ctest --test-dir build --output-on-failure` succeed after the direct-IP name/rejection fix.
+
+- Follow-up TCP lobby fix: the direct-IP fake host/join flow still had one host-side session-state bug after the earlier transport fixes:
+  - root cause: `CODE/NETDLG.CPP::Server_Remote_Connect()` jumped straight into `Net_Fake_New_Dialog()` without doing the normal host-flow initialization that stamps the advertised game name into `Session.GameName`;
+  - practical effect: `Process_Global_Packet(...)` only answers `NET_QUERY_GAME` when `Session.GameName` is non-empty, so the TCP host never advertised a joinable game, the guest never populated its game list, and both instances sat indefinitely on the fake `Connecting...` dialogs;
+  - `CODE/NETDLG.CPP` now initializes `Session.GameName` from `Session.Handle` before entering the fake direct-IP host dialog, and also clears stale `Session.GameName` state in `Client_Remote_Connect()` so retries match the original join-flow assumptions;
+  - validation for this follow-up: `cmake --build build --target redalert -- -j2` and `ctest --test-dir build --output-on-failure` succeed after the direct-IP lobby-state fix.
+
+- Follow-up TCP transport fix: the new non-blocking stream path had one remaining internal ring-buffer sizing bug after the larger connection-flow cleanup:
+  - root cause: `CODE/TCPIP.H` declared `ReceiveBuffers` with `WS_NUM_TX_BUFFERS` and `TransmitBuffers` with `WS_NUM_RX_BUFFERS`, while the implementation in `CODE/TCPIP.CPP` already wrapped the receive indices with `WS_NUM_RX_BUFFERS` and the transmit indices with `WS_NUM_TX_BUFFERS`;
+  - practical effect: the code only remained safe because both constants are currently `16`; if either side's queue depth changes later, the TCP path could wrap with the wrong mask and walk past the actual array bound;
+  - `CODE/TCPIP.H` now matches the declarations to the real receive/transmit usage so the queue geometry stays correct and future-safe.
+
+- Follow-up TCP direct-IP fix: the new Internet dialog now correctly hands the entered guest address to the legacy client resolver path:
+  - root cause: `CODE/NETDLG.CPP` passed the typed host/IP through `TcpipManagerClass::Set_Host_Address(...)`, but `CODE/TCPIP.CPP::Start_Client()` still resolved the legacy global `PlanetWestwoodIPAddress`, so guest connects could fail immediately with the generic invalid port/address dialog even for valid inputs such as `127.0.0.1`;
+  - `CODE/TCPIP.CPP::Set_Host_Address(...)` now keeps both the modern `HostAddress` member and the legacy global `PlanetWestwoodIPAddress` in sync, which matches the current mixed old/new direct-IP transport codepath;
+  - validation for this follow-up: `cmake --build build --target redalert -- -j2` and `ctest --test-dir build --output-on-failure` succeed after the address handoff fix.
+
+- Added a direct-IP TCP multiplayer transport that reuses the active UDP-era lobby/gameplay flow instead of creating a parallel network stack:
+  - `CMakeLists.txt` now exposes `RA_ENABLE_TCP` alongside `RA_ENABLE_UDP`, defaults it to `ON`, and disables it on Emscripten just like the UDP path;
+  - `CODE/MPLAYER.CPP` now exposes an `Internet` multiplayer choice behind `RA_ENABLE_TCP`, and `CODE/NETDLG.CPP` adds a TCP setup dialog with editable IP and port fields plus explicit `Host` and `Connect` actions before the connection attempt starts;
+  - the host/connect port defaults now come from `CODE/INTERNET.CPP` and use the same default port as UDP (`0x8813`), while the direct-IP address default is intentionally blank instead of the old WOL-era server address;
+  - `CODE/TCPIP.{H,CPP}` now implements a real non-blocking TCP path: listen/connect progress is polled without blocking the main thread, accepted/client sockets are switched to non-blocking mode, gameplay packets are length-framed over the stream, and partial reads/writes stay buffered until complete packets are ready;
+  - startup in `CODE/INIT.CPP` now routes standalone `GAME_INTERNET` through the active flow without WOL, and `CODE/NETDLG.CPP` reuses the existing fake host/join dialogs after the TCP socket is connected;
+  - `CODE/UDPMGR.CPP` now suppresses UDP ACK/retry requirements when the underlying transport is the new reliable TCP path, so the packet manager does not layer redundant resend logic on top of TCP delivery;
+  - validation for this checkpoint: `cmake --build build --target redalert -- -j2` and `ctest --test-dir build --output-on-failure` both succeed after the TCP transport/menu/startup integration.
 
 - Finalized the browser `.MIX` sparse range-cache / look-ahead path so the shipped behavior is now coherent for both upgraded and completely clean browser stores:
   - root cause: after the original look-ahead scheduling work, the browser cache path still had three separate IndexedDB-specific failure modes layered on top of it: old cache generations could alias obsolete chunk layouts onto the newer stream, some browsers could not reliably reopen large persisted chunk values even in a fresh store, and the fire-and-forget prefetch path kept reconstructing cached next-chunk payloads before checking whether the same prefetch was already in flight, which amplified cache-read failures into repeated warnings for the same chunk IDs;

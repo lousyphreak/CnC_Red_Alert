@@ -66,16 +66,32 @@ extern bool Is_Mission_Counterstrike (char *file_name);
  *=============================================================================================*/
 GameType Select_MPlayer_Game (void)
 {
+	const bool udp_enabled = Udp.Is_UDP() != 0;
+#if RA_ENABLE_TCP
+	const bool tcp_enabled = true;
+#else
+	const bool tcp_enabled = false;
+#endif
+
 	//------------------------------------------------------------------------
 	//	Dialog & button dimensions
 	//------------------------------------------------------------------------
 	int d_dialog_w = 190 *RESFACTOR;
 #ifdef WOLAPI_INTEGRATION
+#if RA_ENABLE_TCP
+	int d_dialog_h = 100 * RESFACTOR;			//	ajw
+#else
 	int d_dialog_h = 89 * RESFACTOR;			//	ajw
+#endif
 	int	d_dialog_y = (((255 * RESFACTOR) - d_dialog_h) / 2);
+#else
+#if RA_ENABLE_TCP
+	int d_dialog_h = 89 *RESFACTOR;
+	int d_dialog_y = 84 * RESFACTOR;
 #else
 	int d_dialog_h = 78 *RESFACTOR;
 	int d_dialog_y = 90 * RESFACTOR;
+#endif
 #endif
 	int d_dialog_x = (((320*RESFACTOR) - d_dialog_w) / 2);
 	int d_dialog_cx = d_dialog_x + (d_dialog_w / 2);
@@ -93,12 +109,23 @@ GameType Select_MPlayer_Game (void)
 	int d_udp_x = d_dialog_cx - d_udp_w / 2;
 	int d_udp_y = d_skirmish_y + d_skirmish_h + 2*RESFACTOR;
 
+#if RA_ENABLE_TCP
+	int d_tcp_w = 80 *RESFACTOR;
+	int d_tcp_h = 9 *RESFACTOR;
+	int d_tcp_x = d_dialog_cx - d_tcp_w / 2;
+	int d_tcp_y = d_udp_y + d_udp_h + 2*RESFACTOR;
+#endif
+
 #ifdef WOLAPI_INTEGRATION
 	//	ajw 7/2/98 - added button
 	int d_wol_w = 80 * RESFACTOR;
 	int d_wol_h = 9 * RESFACTOR;
 	int d_wol_x = d_dialog_cx - d_wol_w / 2;
+#if RA_ENABLE_TCP
+	int d_wol_y = d_tcp_y + d_tcp_h + 2*RESFACTOR;
+#else
 	int d_wol_y = d_udp_y + d_udp_h + 2*RESFACTOR;
+#endif
 #endif
 
 	int d_cancel_w = 60 *RESFACTOR;
@@ -107,7 +134,11 @@ GameType Select_MPlayer_Game (void)
 #ifdef WOLAPI_INTEGRATION
 	int d_cancel_y = d_wol_y + d_wol_h + d_margin;
 #else
+#if RA_ENABLE_TCP
+	int d_cancel_y = d_tcp_y + d_tcp_h + d_margin;
+#else
 	int d_cancel_y = d_udp_y + d_udp_h + d_margin;
+#endif
 #endif
 
 	GraphicBufferClass seen_buff_save(VisiblePage.Get_Width(), VisiblePage.Get_Height(), (void*)NULL);
@@ -118,19 +149,30 @@ GameType Select_MPlayer_Game (void)
 	enum {
 		BUTTON_SKIRMISH = 100,
 		BUTTON_UDP,
+#if RA_ENABLE_TCP
+		BUTTON_TCP,
+#endif
 #ifdef WOLAPI_INTEGRATION
 		BUTTON_WOL,				//	ajw
 #endif
 		BUTTON_CANCEL,
 
 #ifdef WOLAPI_INTEGRATION
+#if RA_ENABLE_TCP
+		NUM_OF_BUTTONS = 5,		//	ajw
+#else
 		NUM_OF_BUTTONS = 4,		//	ajw
+#endif
+#else
+#if RA_ENABLE_TCP
+		NUM_OF_BUTTONS = 4,
 #else
 		NUM_OF_BUTTONS = 3,
 #endif
+#endif
 	};
 
-	int num_of_buttons = NUM_OF_BUTTONS - (Udp.Is_UDP() ? 0 : 1);
+	int num_of_buttons = NUM_OF_BUTTONS - (udp_enabled ? 0 : 1);
 	//------------------------------------------------------------------------
 	//	Redraw values: in order from "top" to "bottom" layer of the dialog
 	//------------------------------------------------------------------------
@@ -152,6 +194,7 @@ GameType Select_MPlayer_Game (void)
 	bool pressed;
 	int curbutton;
 	TextButtonClass * buttons[NUM_OF_BUTTONS];
+	int button_ids[NUM_OF_BUTTONS];
 
 	//------------------------------------------------------------------------
 	//	Buttons
@@ -171,13 +214,29 @@ GameType Select_MPlayer_Game (void)
 	TextButtonClass udpbtn (BUTTON_UDP, TXT_NETWORK, TPF_BUTTON,
 		d_udp_x, d_udp_y, d_udp_w, d_udp_h);
 
+#if RA_ENABLE_TCP
+	if (!udp_enabled) {
+		d_tcp_y = d_udp_y;
+#ifdef WOLAPI_INTEGRATION
+		d_wol_y = d_tcp_y + d_tcp_h + 2*RESFACTOR;
+		d_cancel_y = d_wol_y + d_wol_h + d_margin;
+#else
+		d_cancel_y = d_tcp_y + d_tcp_h + d_margin;
+#endif
+		d_dialog_h -= d_udp_h + 2*RESFACTOR;
+	}
+
+	TextButtonClass tcpbtn (BUTTON_TCP, TXT_INTERNET, TPF_BUTTON,
+		d_tcp_x, d_tcp_y, d_tcp_w, d_tcp_h);
+#endif
+
 #ifdef WOLAPI_INTEGRATION
 	//	ajw
 	TextButtonClass wolbtn(BUTTON_WOL, TXT_WOL_INTERNETBUTTON, TPF_BUTTON,
 		d_wol_x, d_wol_y, d_wol_w, d_wol_h);
 #endif
 
-	if(!Udp.Is_UDP()) {
+	if(!udp_enabled && !tcp_enabled) {
 		d_cancel_y = d_udp_y;
 		d_dialog_h -= d_cancel_h;
 	}
@@ -194,9 +253,14 @@ GameType Select_MPlayer_Game (void)
 	//	Create the list
 	//------------------------------------------------------------------------
 	commands = &skirmishbtn;
-	if(Udp.Is_UDP()) {
+	if(udp_enabled) {
 		udpbtn.Add_Tail(*commands);
 	}
+#if RA_ENABLE_TCP
+	if(tcp_enabled) {
+		tcpbtn.Add_Tail(*commands);
+	}
+#endif
 #ifdef WOLAPI_INTEGRATION
 	wolbtn.Add_Tail(*commands);			//	ajw
 #endif
@@ -206,23 +270,25 @@ GameType Select_MPlayer_Game (void)
 	//	Fill array of button ptrs
 	//------------------------------------------------------------------------
 	curbutton = 0;
-	buttons[0] = &skirmishbtn;
-	if(Udp.Is_UDP()) {
-		buttons[1] = &udpbtn;
-#ifdef WOLAPI_INTEGRATION
-		buttons[2] = &wolbtn;			//	ajw
-		buttons[3] = &cancelbtn;
-#else
-		buttons[2] = &cancelbtn;
-#endif
-	} else {
-#ifdef WOLAPI_INTEGRATION
-		buttons[1] = &wolbtn;			//	ajw
-		buttons[2] = &cancelbtn;
-#else
-		buttons[1] = &cancelbtn;
-#endif
+	int button_count = 0;
+	buttons[button_count] = &skirmishbtn;
+	button_ids[button_count++] = BUTTON_SKIRMISH;
+	if(udp_enabled) {
+		buttons[button_count] = &udpbtn;
+		button_ids[button_count++] = BUTTON_UDP;
 	}
+#if RA_ENABLE_TCP
+	if(tcp_enabled) {
+		buttons[button_count] = &tcpbtn;
+		button_ids[button_count++] = BUTTON_TCP;
+	}
+#endif
+#ifdef WOLAPI_INTEGRATION
+	buttons[button_count] = &wolbtn;			//	ajw
+	button_ids[button_count++] = BUTTON_WOL;
+#endif
+	buttons[button_count] = &cancelbtn;
+	button_ids[button_count++] = BUTTON_CANCEL;
 	buttons[curbutton]->Turn_On();
 
 	Keyboard->Clear();
@@ -301,6 +367,13 @@ GameType Select_MPlayer_Game (void)
 				pressed = true;
 				break;
 
+#if RA_ENABLE_TCP
+			case (BUTTON_TCP | KN_BUTTON):
+				selection = BUTTON_TCP;
+				pressed = true;
+				break;
+#endif
+
 #ifdef WOLAPI_INTEGRATION
 			case (BUTTON_WOL | KN_BUTTON):			//	ajw
 				selection = BUTTON_WOL;
@@ -335,7 +408,7 @@ GameType Select_MPlayer_Game (void)
 				break;
 
 			case KN_RETURN:
-				selection = curbutton + BUTTON_SKIRMISH;
+				selection = button_ids[curbutton];
 				pressed = true;
 				break;
 
@@ -350,8 +423,14 @@ GameType Select_MPlayer_Game (void)
 			//..................................................................
 			buttons[curbutton]->Turn_Off();
 			buttons[curbutton]->Flag_To_Redraw();
-			curbutton = selection - BUTTON_SKIRMISH;
-			if(selection == BUTTON_CANCEL && !Udp.Is_UDP()) curbutton--;
+			for (curbutton = 0; curbutton < num_of_buttons; curbutton++) {
+				if (button_ids[curbutton] == selection) {
+					break;
+				}
+			}
+			if (curbutton >= num_of_buttons) {
+				curbutton = 0;
+			}
 			buttons[curbutton]->Turn_On();
 			buttons[curbutton]->IsPressed = true;
 			buttons[curbutton]->Draw_Me(true);
@@ -378,6 +457,13 @@ GameType Select_MPlayer_Game (void)
 					retval = GAME_UDP;
 					process = false;
 					break;
+
+#if RA_ENABLE_TCP
+				case (BUTTON_TCP):
+					retval = GAME_INTERNET;
+					process = false;
+					break;
+#endif
 
 #ifdef WOLAPI_INTEGRATION
 				case (BUTTON_WOL):				//	ajw

@@ -183,6 +183,12 @@ void UDPAddressClass::Set_Address(NetNumType net, NetNodeType node)
 void UDPAddressClass::Set_Address(UDPHeaderType *header)
 {
 #ifdef NETWORK_UDP
+	if (header == NULL) {
+		memset(NetworkNumber, 1, 4);
+		memset(NodeAddress, 1, 6);
+		return;
+	}
+
 	if (PacketTransport && PacketTransport->Get_Protocol() == PROTOCOL_UDP) {
 		uint8_t *addr = (uint8_t*) header;
 		memset (NodeAddress, 0, 6);

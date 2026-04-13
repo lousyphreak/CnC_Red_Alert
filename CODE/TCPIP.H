@@ -48,6 +48,7 @@
 #include "SOCKETS.H"
 
 #include <stdint.h>
+#include <vector>
 #ifndef WOLAPI_INTEGRATION
 extern bool Server;
 #endif
@@ -78,6 +79,8 @@ enum TcpipAsyncEventType {
 	TCPIP_EVENT_UDP_SOCKET = 5
 };
 
+class UDPAddressClass;
+
 
 class TcpipManagerClass {
 
@@ -87,20 +90,27 @@ class TcpipManagerClass {
 		~TcpipManagerClass(void);
 
 		int32_t Init(void);
+		void Service(void);
 		void Start_Server(void);
 		void Start_Client(void);
 		void Close_Socket(SOCKET s);
 	 	void Handle_Async_Event(uint32_t event_type, int32_t lParam);
-		void Copy_To_In_Buffer(int bytes);
+		void Copy_To_In_Buffer(const void* data, int bytes);
 		int  Read(void *buffer, int buffer_len);
 		void Write(void *buffer, int buffer_len);
 		int32_t Add_Client(void);
 		void Close(void);
-		void Set_Host_Address(char *address);
+		void Set_Host_Address(char const *address);
+		void Set_Port_Number(uint16_t port);
+		void Get_Remote_Address(UDPAddressClass *address) const;
 		void Set_Protocol_UDP(int32_t state);
+		void Set_Protocol_TCP(int32_t state);
 		void Clear_Socket_Error(SOCKET socket);
 
 		inline int32_t Get_Connected(void) {return (Connected);}
+		inline int32_t Using_TCP(void) const { return !UseUDP; }
+		inline int32_t Using_UDP(void) const { return UseUDP; }
+		inline int32_t Uses_Reliable_Transport(void) const { return Connected && !UseUDP; }
 
 		typedef enum ConnectStatusEnum {
 			CONNECTED_OK = 0,
@@ -160,12 +170,18 @@ class TcpipManagerClass {
 		IN_ADDR				UDPIPAddress;
 		int					SocketReceiveBuffer;
 		int					SocketSendBuffer;
-		InternetBufferType ReceiveBuffers[WS_NUM_TX_BUFFERS];
-		InternetBufferType TransmitBuffers[WS_NUM_RX_BUFFERS];
+		InternetBufferType ReceiveBuffers[WS_NUM_RX_BUFFERS];
+		InternetBufferType TransmitBuffers[WS_NUM_TX_BUFFERS];
 		int					TXBufferHead;
 		int					TXBufferTail;
 		int					RXBufferHead;
 		int					RXBufferTail;
+		int32_t					ConnectInProgress;
+		std::vector<uint8_t> StreamReceiveBuffer;
+		uint8_t				StreamSendBuffer[WS_INTERNET_BUFFER_LEN + sizeof(uint32_t)];
+		int					StreamSendLength;
+		int					StreamSendOffset;
+		int32_t					StreamSendActive;
 
 };
 

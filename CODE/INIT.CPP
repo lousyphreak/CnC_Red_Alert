@@ -76,6 +76,9 @@
 #else	//NETWORK_UDP
 #include	"TCPIP.H"
 #endif	//NETWORK_UDP
+#if RA_ENABLE_TCP && !defined(NETWORK_UDP)
+#include	"INTERNET.H"
+#endif
 
 extern int32_t BootstrapFocusSeen;
 
@@ -1318,6 +1321,11 @@ bool Select_Game(bool fade)
 					if( !pWolapi )
 					{
 #endif
+#if RA_ENABLE_TCP
+					if (Internet_Has_Command_Line_Connect()) {
+						Session.Type = GAME_INTERNET;
+					} else
+#endif
 					switch (Session.Type) {
 
 						/*
@@ -1386,8 +1394,10 @@ bool Select_Game(bool fade)
 #endif
 							break;
 
-#ifdef WOLAPI_INTEGRATION		//	implies also NETWORK_UDP
 						case GAME_INTERNET:
+#ifdef WOLAPI_INTEGRATION		//	implies also NETWORK_UDP
+							if( pWolapi )
+							{
 							if( PacketTransport )
 								delete PacketTransport;
 							PacketTransport = new UDPInterfaceClass;
@@ -1428,6 +1438,32 @@ bool Select_Game(bool fade)
 								selection = SEL_MULTIPLAYER_GAME;	//SEL_NONE;
 								delete PacketTransport;
 								PacketTransport = NULL;
+							}
+							break;
+							}
+#endif
+#if RA_ENABLE_TCP
+#ifdef NETWORK_UDP
+							if (PacketTransport ) delete PacketTransport;
+							PacketTransport = new UDPInterfaceClass;
+							assert ( PacketTransport != NULL);
+#endif	//NETWORK_UDP
+							if (Internet_Remote_Connect()) {
+#ifdef FIXIT_VERSION_3
+								Options.ScoreVolume = Options.MultiScoreVolume;
+#else
+								Options.ScoreVolume = 0;
+#endif
+								process = false;
+								Theme.Fade_Out();
+							} else {
+								Session.Type = GAME_NORMAL;
+								display = true;
+								selection = SEL_NONE;
+#ifdef NETWORK_UDP
+								delete PacketTransport;
+								PacketTransport = NULL;
+#endif	//NETWORK_UDP
 							}
 							break;
 #endif
@@ -1834,6 +1870,11 @@ bool Parse_Command_Line(int argc, char * argv[])
 	Debug_Map = false;
 	Debug_Unshroud = false;
 
+#if RA_ENABLE_TCP
+	Internet_Clear_Command_Line_Connect();
+	Internet_Clear_Command_Line_Name();
+#endif
+
 	for (int index = 1; index < argc; index++) {
 		char * string;		// Pointer to argument.
 
@@ -1843,6 +1884,61 @@ bool Parse_Command_Line(int argc, char * argv[])
 			}
 			continue;
 		}
+
+#if RA_ENABLE_TCP
+		if (argv[index] != NULL && SDL_strcasecmp(argv[index], "-host") == 0) {
+			uint16_t port = PlanetWestwoodPortNumber;
+
+			if (Internet_Has_Command_Line_Connect()) {
+				puts(TEXT_OPTIONS);
+				return(false);
+			}
+
+			if (index + 1 < argc && argv[index + 1] != NULL && argv[index + 1][0] != '\0' && argv[index + 1][0] != '-') {
+				if (!Internet_Parse_Port(argv[index + 1], &port)) {
+					puts(TEXT_OPTIONS);
+					return(false);
+				}
+				++index;
+			}
+
+			Internet_Set_Command_Line_Host(port);
+			Session.Type = GAME_INTERNET;
+			continue;
+		}
+
+		if (argv[index] != NULL && SDL_strcasecmp(argv[index], "-connect") == 0) {
+			uint16_t port = 0;
+
+			if (Internet_Has_Command_Line_Connect() ||
+				index + 2 >= argc ||
+				argv[index + 1] == NULL ||
+				argv[index + 1][0] == '\0' ||
+				argv[index + 2] == NULL ||
+				argv[index + 2][0] == '\0' ||
+				!Internet_Parse_Port(argv[index + 2], &port)) {
+				puts(TEXT_OPTIONS);
+				return(false);
+			}
+
+			Internet_Set_Command_Line_Connect(argv[index + 1], port);
+			Session.Type = GAME_INTERNET;
+			index += 2;
+			continue;
+		}
+
+		if (argv[index] != NULL && SDL_strcasecmp(argv[index], "-name") == 0) {
+			if (index + 1 >= argc || argv[index + 1] == NULL || argv[index + 1][0] == '\0' ||
+				SDL_strlen(argv[index + 1]) >= sizeof(Session.Handle)) {
+				puts(TEXT_OPTIONS);
+				return(false);
+			}
+
+			Internet_Set_Command_Line_Name(argv[index + 1]);
+			++index;
+			continue;
+		}
+#endif
 
 		string = SDL_strupr(argv[index]);
 
@@ -2705,6 +2801,9 @@ static void Init_One_Time_Systems(void)
 	Call_Back();
 	init_trace("Init_One_Time_Systems Session.One_Time");
 	Session.One_Time();
+#if RA_ENABLE_TCP
+	Internet_Apply_Command_Line_Name();
+#endif
 	Call_Back();
 
 	init_trace("Init_One_Time_Systems ObjectTypeClass::One_Time");
