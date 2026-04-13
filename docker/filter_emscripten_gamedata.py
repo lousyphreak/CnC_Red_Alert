@@ -37,6 +37,10 @@ TOP_LEVEL_EXCLUDES = {
     "wolapi.mix",
 }
 
+TOP_LEVEL_DIRECTORY_EXCLUDES = {
+    "red alert",
+}
+
 TOP_LEVEL_EXCLUDED_SUFFIXES = (
     ".386",
     ".dll",
@@ -60,6 +64,9 @@ def should_include(relative_path: str) -> bool:
 
     if top_level_name == "redalert.ini":
         return True
+
+    if top_level_name in TOP_LEVEL_DIRECTORY_EXCLUDES:
+        return False
 
     if "/" not in folded_path:
         if top_level_name in LOCAL_USER_DATA_NAMES:

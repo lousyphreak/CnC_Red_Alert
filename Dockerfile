@@ -27,22 +27,29 @@ RUN python3 docker/filter_emscripten_gamedata.py \
         --output-root /tmp/deploy-root/GameData
 
 
-FROM ${NGINX_IMAGE} AS web-runtime
+FROM ${NGINX_IMAGE} AS web-runtime-base
 
 RUN apk add --no-cache openssl
 
 COPY docker/nginx/redalert-web.conf /etc/nginx/conf.d/default.conf
 COPY docker/nginx/10-configure-basic-auth.sh /docker-entrypoint.d/10-configure-basic-auth.sh
 RUN chmod +x /docker-entrypoint.d/10-configure-basic-auth.sh
-COPY --from=emscripten-build /tmp/build-emscripten/redalert.html /usr/share/nginx/html/redalert.html
-COPY --from=emscripten-build /tmp/build-emscripten/redalert.js /usr/share/nginx/html/redalert.js
-COPY --from=emscripten-build /tmp/build-emscripten/redalert.wasm /usr/share/nginx/html/redalert.wasm
 
 EXPOSE 80
 
 HEALTHCHECK CMD wget -q -O /dev/null http://127.0.0.1/healthz || exit 1
 
 
-FROM web-runtime AS web-runtime-with-gamedata
+FROM web-runtime-base AS web-runtime
+
+COPY --from=emscripten-build /tmp/build-emscripten/redalert.html /usr/share/nginx/html/redalert.html
+COPY --from=emscripten-build /tmp/build-emscripten/redalert.js /usr/share/nginx/html/redalert.js
+COPY --from=emscripten-build /tmp/build-emscripten/redalert.wasm /usr/share/nginx/html/redalert.wasm
+
+
+FROM web-runtime-base AS web-runtime-with-gamedata
 
 COPY --from=emscripten-gamedata /tmp/deploy-root/GameData /usr/share/nginx/html/GameData
+COPY --from=emscripten-build /tmp/build-emscripten/redalert.html /usr/share/nginx/html/redalert.html
+COPY --from=emscripten-build /tmp/build-emscripten/redalert.js /usr/share/nginx/html/redalert.js
+COPY --from=emscripten-build /tmp/build-emscripten/redalert.wasm /usr/share/nginx/html/redalert.wasm

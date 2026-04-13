@@ -32,7 +32,7 @@ Build the runtime plus the filtered `GameData` layer:
 docker build --target web-runtime-with-gamedata -t redalert-web-gamedata:latest .
 ```
 
-The `web-runtime-with-gamedata` target only carries the browser-relevant `GameData` files derived from `ra-assets-manifest.txt`; browser-local files such as savegames are intentionally excluded.
+The `web-runtime-with-gamedata` target copies the filtered `GameData` layer before the HTML/JS/wasm output so Docker can reuse the asset layer across binary rebuilds. It only carries browser-relevant game assets derived from `ra-assets-manifest.txt`; the Windows desktop-theme `GameData/RED ALERT/` extras and browser-local files such as savegames are intentionally excluded.
 
 
 ## Web container basic auth
