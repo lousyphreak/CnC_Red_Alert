@@ -105,10 +105,10 @@ PacketClass::PacketClass(char *curbuf)
 	//
 	Size = *(uint16_t *)curbuf;
 	curbuf += sizeof (uint16_t);
-	Size = ntohs(Size);
+	Size = Socket_Network_To_Host16(Size);
 	ID	  = *(int16_t *)curbuf;
 	curbuf += sizeof (int16_t);
-	ID   = ntohs(ID);
+	ID   = static_cast<int16_t>(Socket_Network_To_Host16(static_cast<uint16_t>(ID)));
 	Head = NULL;
 
 	//
@@ -134,7 +134,7 @@ PacketClass::PacketClass(char *curbuf)
 		//
 		// Copy the data into the buffer
 		//
-		int size			= ntohs(field->Size);
+		int size			= Socket_Network_To_Host16(field->Size);
 		field->Data		= new char[size];
 		memcpy(field->Data, curbuf, size);
 		curbuf			+= size;
@@ -142,7 +142,7 @@ PacketClass::PacketClass(char *curbuf)
 		//
 		// Make sure we allow for the pad bytes.
 		//
-		int pad = (4 - (ntohs(field->Size) & 3)) & 3;
+		int pad = (4 - (Socket_Network_To_Host16(field->Size) & 3)) & 3;
 		curbuf += pad;
 		remaining_size   -= pad;
 
@@ -202,9 +202,9 @@ char *PacketClass::Create_Comms_Packet(int &size)
 	//
 	// write the size into the packet header
 	//
-	*(uint16_t *)curbuf = (uint16_t)htons((uint16_t)size);
+	*(uint16_t *)curbuf = Socket_Host_To_Network16((uint16_t)size);
 	curbuf += sizeof (uint16_t);
-	*(int16_t *)curbuf = htons(ID);
+	*(int16_t *)curbuf = static_cast<int16_t>(Socket_Host_To_Network16(static_cast<uint16_t>(ID)));
 	curbuf += sizeof (int16_t);
 
 	//
@@ -227,13 +227,13 @@ char *PacketClass::Create_Comms_Packet(int &size)
 		//
 		// Copy the data into the buffer and then advance the buffer
 		//
-		memcpy(curbuf, current->Data, ntohs(current->Size));
-		curbuf += ntohs(current->Size);
+		memcpy(curbuf, current->Data, Socket_Network_To_Host16(current->Size));
+		curbuf += Socket_Network_To_Host16(current->Size);
 
 		//
 		// Finally take care of any pad bytes by setting them to 0
 		//
-		int pad = (4 - (ntohs(current->Size) & 3)) & 3;
+		int pad = (4 - (Socket_Network_To_Host16(current->Size) & 3)) & 3;
 
 		//
 		//	If there is any pad left over, make sure you memset it

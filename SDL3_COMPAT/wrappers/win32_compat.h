@@ -47,11 +47,6 @@ using LPTSTR = char*;
 using LPCTSTR = const char*;
 using SHORT = int16_t;
 using USHORT = uint16_t;
-#ifdef _WIN32
-using SOCKET = uintptr_t;
-#else
-using SOCKET = int;
-#endif
 using VOID = void;
 using INT_PTR = intptr_t;
 

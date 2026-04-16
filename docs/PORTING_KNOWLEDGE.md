@@ -4,13 +4,15 @@ _Last updated: 2026-04-16_
 
 ## Windows/MSVC build notes
 
-- The repo-owned Windows compatibility layer and the real Windows SDK cannot both own the same Win32 surface in one translation unit.
-  - Practical example from this tree: including `<winsock.h>` from `CODE/SOCKETS.H` on MSVC dragged in the Windows SDK after `SDL3_COMPAT/wrappers/win32_compat.h` had already declared `LONG`, `DWORD`, `HRESULT`, `POINT`, `RECT`, `FILETIME`, `CloseHandle`, `SetFilePointer`, and related symbols, which exploded into hundreds of redefinition and intrinsics-collision errors.
-  - Practical rule: for repo-owned code, keep the socket seam repo-owned too. On Windows, `CODE/SOCKETS.H` should declare only the WinSock subset the active code really uses instead of including the SDK headers directly into gameplay/network translation units.
-- If the repo-owned socket seam defines `SOCKET`, the compat layer must use the same width.
-  - Practical example from this tree: once `CODE/SOCKETS.H` stopped including `<winsock.h>`, the next MSVC failure was a repo-local mismatch between `CODE/SOCKETS.H` and `SDL3_COMPAT/wrappers/win32_compat.h` over the `SOCKET` typedef.
-  - Practical follow-up from the same tree: some networking translation units (for example `CODE/UDPCONN.CPP`) include both `FUNCTION.H`/`win32_compat.h` and `SOCKETS.H`, so forcing the compat-layer `SOCKET` typedef to the Windows shape on every platform creates a second cross-platform failure mode on Linux/POSIX.
-  - Practical rule: keep the compat-layer `SOCKET` typedef aligned with `CODE/SOCKETS.H` **per platform** (`uintptr_t` on Windows, `int` on POSIX); otherwise the build can fail even before any real socket call is type-checked.
+- The repo-owned Windows compatibility layer and the real Windows SDK still must not both own the same Win32 surface in one translation unit.
+  - Practical example from this tree: pulling `<winsock.h>` into gameplay/network headers collided with `SDL3_COMPAT/wrappers/win32_compat.h` declarations such as `LONG`, `DWORD`, `HRESULT`, `POINT`, `RECT`, `FILETIME`, `CloseHandle`, and `SetFilePointer`, which turned the Windows build into a redefinition festival.
+  - Practical rule: keep `CODE/SOCKETS.H` platform-neutral and header-only in the abstraction sense: no platform headers, no repo-owned copies of WinSock structs/constants, just thin declarations over the socket operations the game actually uses.
+- The real platform socket API now belongs in platform `.CPP` files, not in shared gameplay headers.
+  - Practical example from this tree: `CODE/SOCKETS_WINDOWS.CPP` includes the real Windows socket surface and `CODE/SOCKETS_LINUX.CPP` includes the BSD/POSIX headers, while `CODE/{TCPIP,UDPCONN}.CPP` only see the thin `SocketHandle` / `SocketAddress` / helper function seam from `CODE/SOCKETS.H`.
+  - Practical rule: when another networking call is needed, add it as a thin wrapper to `CODE/SOCKETS.H` and implement it in the platform `.CPP` pair instead of including platform socket headers into higher layers.
+- `SDL3_COMPAT/wrappers/win32_compat.h` should not own socket typedefs anymore.
+  - Practical example from this tree: once the socket seam was moved fully behind `CODE/SOCKETS.H`, the leftover `SOCKET` typedef in `win32_compat.h` became stale baggage and was removed.
+  - Practical rule: keep socket vocabulary localized to the repo-owned networking seam; the general Win32 compat layer should not export `SOCKET` just because some old code used to see it transitively.
 - Legacy UI helpers still instantiate button widgets even on "no buttons" paths, so their geometry locals must be initialized defensively.
   - Practical example from this tree: `CODE/SCENARIO.CPP::BGMessageBox(...)` constructed `TextButtonClass` locals using `bwidth`/`bheight` before those values were guaranteed to be assigned whenever the caller supplied no visible buttons.
   - Practical rule: when porting dialog/message-box code, initialize cached geometry/state locals up front even if the original control flow only "logically" uses them in button-present branches; newer compilers and sanitizers are right to treat those constructor-time reads as undefined behavior.
@@ -396,16 +398,19 @@ _Last updated: 2026-04-16_
   - Before cleanup, the SDL port called `Get_OS_Version()`, which called the stubbed `GetVersion()`, which always made `WindowsNT` true and therefore forced that loader path to return `false`.
 - Safe cleanup rule: when a stubbed compat probe already deterministically forces one outcome, replace the call chain with that explicit outcome and delete the dead intermediate state/functions.
 
-## TCP/IP socket compatibility belongs in repo-owned networking headers, not SDL compat wrappers
+## TCP/IP socket compatibility belongs in a thin repo-owned seam, not SDL compat wrappers
 
-- `SDL3_COMPAT/wrappers/winsock.h` had turned into a mixed bag of socket type aliases, byte-order macros, and WinSock no-op stubs that the repo-owned network code was depending on directly.
-  - Practical problem: that made `CODE/TCPIP.CPP` look cross-platform while Unix was really just riding through fake `WSAAsync*` calls, and it tied unrelated repo-owned headers (`TCPIP.H`, `FIELD.H`, `WSPROTO.H`, `UTRACKER.CPP`) to an SDL compat wrapper they did not semantically need.
-- Safe rule for this tree: keep the legacy socket vocabulary in a repo-owned networking seam and split live behavior in the implementation file.
-  - Current fix pattern: `CODE/SOCKETS.H` now owns the shared `SOCKET`/`WSADATA`/macro surface for repo-owned code, while `_WIN32` includes the real system `<winsock.h>` and Unix provides the minimal POSIX-backed aliases the old code still expects.
-  - `CODE/TCPIP.CPP` then does the real behavior split: preserve the WinSock async path on Windows, but use direct Unix hostname lookup (`gethostbyname()` / `gethostbyaddr()`) and POSIX socket semantics instead of carrying WinSock no-op wrappers forward.
-- Socket-option and error handling need a small Unix-specific adjustment even when the surrounding gameplay logic stays unchanged.
-  - Passing hardcoded `4`-byte option lengths is a Windows-era assumption; use `sizeof(int)`-driven helper calls instead so the same code is correct on both targets.
-  - On Unix, reading `SO_ERROR` with `getsockopt()` is the portable way to consume the pending socket error; trying to clear it with `setsockopt(SO_ERROR, ...)` is not a portable replacement for the WinSock behavior.
+- `SDL3_COMPAT/wrappers/winsock.h` is gone, and the live networking code no longer depends on socket types leaking through the general SDL/Win32 compat layer.
+  - Practical problem with the old shape: it mixed fake WinSock vocabulary, byte-order helpers, and no-op async stubs into a wrapper that unrelated gameplay/network headers were pulling in indirectly.
+- Safe rule for this tree: keep socket compatibility in `CODE/SOCKETS.H`, but keep that header thin and platform-neutral.
+  - Current fix pattern: `CODE/SOCKETS.H` now exposes only the small `SocketHandle` / `SocketAddress` / host-lookup / byte-order wrapper surface the active code needs.
+  - `CODE/SOCKETS_WINDOWS.CPP` and `CODE/SOCKETS_LINUX.CPP` carry the real WinSock vs BSD-socket implementations.
+  - `CODE/{TCPIP,UDPCONN}.CPP` were then rewritten to use those wrappers instead of raw socket/Winsock types.
+- The active direct-IP path is now polling/non-blocking on both platforms through that seam.
+  - Practical example from this tree: `CODE/TCPIP.CPP` now uses the same repo-owned wrapper calls for connect/accept/read/write/host lookup on both Windows and Linux instead of relying on fake async compatibility behavior on one side and raw POSIX calls on the other.
+- Socket-option and error handling should stay behind that seam too.
+  - Passing hardcoded option lengths was a Windows-era assumption; wrapper implementations now use the correct platform-native sizes.
+  - The portable error-clear/read behavior also lives there (`SO_ERROR` consumption, would-block detection, nonblocking setup) instead of being open-coded repeatedly in transport files.
 
 ## The live UDP path needs a direct transport, not dormant Windows-only abstractions
 

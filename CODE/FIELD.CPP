@@ -142,12 +142,12 @@ void FieldClass::Host_To_Net(void)
 
 		case TYPE_SHORT:
 		case TYPE_UNSIGNED_SHORT:
-			*((uint16_t *)Data) = htons(*((uint16_t *)Data));
+			*((uint16_t *)Data) = Socket_Host_To_Network16(*((uint16_t *)Data));
 			break;
 
 		case TYPE_LONG:
 		case TYPE_UNSIGNED_LONG:
-			*((uint32_t *)Data) = htonl(*((uint32_t *)Data));
+			*((uint32_t *)Data) = Socket_Host_To_Network32(*((uint32_t *)Data));
 			break;
 
 		//
@@ -160,8 +160,8 @@ void FieldClass::Host_To_Net(void)
 	//
 	// Finally convert over the data type and the size of the packet.
 	//
-	DataType = htons(DataType);
-	Size 	 	= htons(Size);
+	DataType = Socket_Host_To_Network16(DataType);
+	Size 	 	= Socket_Host_To_Network16(Size);
 }
 /**************************************************************************
  * PACKETCLASS::NET_TO_HOST_FIELD -- Converts net field to host format    *
@@ -179,9 +179,9 @@ void FieldClass::Net_To_Host(void)
 	// Convert the variables to host order.  This needs to be converted so
 	// the switch statement does compares on the data that follows.
 	//
-	Size 	 	= ntohs(Size);
+	Size 	 	= Socket_Network_To_Host16(Size);
 
-	DataType = ntohs(DataType);
+	DataType = Socket_Network_To_Host16(DataType);
 
 	//
 	// Before we convert the data type, we should convert the actual data
@@ -196,12 +196,12 @@ void FieldClass::Net_To_Host(void)
 
 		case TYPE_SHORT:
 		case TYPE_UNSIGNED_SHORT:
-			*((uint16_t *)Data) = ntohs(*((uint16_t *)Data));
+			*((uint16_t *)Data) = Socket_Network_To_Host16(*((uint16_t *)Data));
 			break;
 
 		case TYPE_LONG:
 		case TYPE_UNSIGNED_LONG:
-			*((uint32_t *)Data) = ntohl(*((uint32_t *)Data));
+			*((uint32_t *)Data) = Socket_Network_To_Host32(*((uint32_t *)Data));
 			break;
 
 		//

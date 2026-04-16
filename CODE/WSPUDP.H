@@ -55,7 +55,7 @@ class UDPInterfaceClass : public WinsockInterfaceClass {
 		virtual ~UDPInterfaceClass(void);
 
 	 	virtual int32_t Handle_Protocol_Event(uint32_t event_type, uint32_t wParam, int32_t lParam);
-		virtual bool Open_Socket ( SOCKET socketnum );
+		virtual bool Open_Socket ( SocketHandle socketnum );
 		virtual void Set_Broadcast_Address ( void *address );
 		virtual void Broadcast (void *buffer, int buffer_len);
 

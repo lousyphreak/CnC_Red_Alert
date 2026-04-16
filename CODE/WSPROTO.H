@@ -98,7 +98,7 @@ class WinsockInterfaceClass {
 		virtual void Discard_Out_Buffers (void);
 		virtual bool Start_Listening (void);
 		virtual void Stop_Listening (void);
-		virtual void Clear_Socket_Error(SOCKET socket);
+		virtual void Clear_Socket_Error(SocketHandle socket);
 		virtual bool Set_Socket_Options ( void );
 		virtual void Set_Broadcast_Address ( void * ) {};
 
@@ -110,7 +110,7 @@ class WinsockInterfaceClass {
 			return (0);
 		};
 
-		virtual bool Open_Socket ( SOCKET ) {
+		virtual bool Open_Socket ( SocketHandle ) {
 			return (false);
 		};
 
@@ -162,7 +162,7 @@ class WinsockInterfaceClass {
 		/*
 		** Socket that communications will take place over.
 		*/
-		SOCKET				Socket;
+		SocketHandle		Socket;
 
 		/*
 		** Async object required for callbacks to our message handler.

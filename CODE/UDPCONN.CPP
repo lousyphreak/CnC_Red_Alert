@@ -49,50 +49,19 @@
 #include "SOCKETS.H"
 #include "UDPCONN.H"
 #include "TCPIP.H"
-
-#ifndef _WIN32
-#include <fcntl.h>
-#endif
 #include <stdio.h>
 #include <string.h>
 
 namespace
 {
-using SocketLengthType =
-#ifdef _WIN32
-	int;
-#else
-	socklen_t;
-#endif
-
-SOCKET UDPListenSocket = INVALID_SOCKET;
+SocketHandle UDPListenSocket = INVALID_SOCKET_HANDLE;
 
 void Close_UDP_Socket()
 {
-	if (UDPListenSocket != INVALID_SOCKET) {
-		closesocket(UDPListenSocket);
-		UDPListenSocket = INVALID_SOCKET;
+	if (UDPListenSocket != INVALID_SOCKET_HANDLE) {
+		Socket_Close(UDPListenSocket);
+		UDPListenSocket = INVALID_SOCKET_HANDLE;
 	}
-}
-
-bool Set_UDP_NonBlocking(SOCKET socket_handle)
-{
-#ifdef _WIN32
-	u_long nonblocking = 1;
-	return ioctlsocket(socket_handle, FIONBIO, &nonblocking) == 0;
-#else
-	const int flags = fcntl(socket_handle, F_GETFL, 0);
-	if (flags < 0) {
-		return false;
-	}
-
-	return fcntl(socket_handle, F_SETFL, flags | O_NONBLOCK) == 0;
-#endif
-}
-
-bool Set_UDP_Socket_Option(SOCKET socket_handle, int option_name, int value)
-{
-	return setsockopt(socket_handle, SOL_SOCKET, option_name, reinterpret_cast<const char*>(&value), sizeof(value)) == 0;
 }
 
 bool Is_All_Value(const uint8_t* bytes, int count, uint8_t value)
@@ -106,33 +75,32 @@ bool Is_All_Value(const uint8_t* bytes, int count, uint8_t value)
 	return true;
 }
 
-void Fill_Address_Bytes(const SOCKADDR_IN& socket_address, NetNumType net, NetNodeType node)
+void Fill_Address_Bytes(const SocketAddress& socket_address, NetNumType net, NetNodeType node)
 {
-	const uint32_t address = socket_address.sin_addr.s_addr;
-	const uint16_t port = socket_address.sin_port;
+	const uint32_t address = socket_address.Address;
+	const uint16_t port = socket_address.Port;
 
 	memcpy(net, &address, sizeof(address));
 	memcpy(node, &port, sizeof(port));
 	memset(node + sizeof(port), 0, sizeof(NetNodeType) - sizeof(port));
 }
 
-void Fill_Socket_Address(UDPAddressClass* address, uint16_t default_socket, SOCKADDR_IN& socket_address)
+void Fill_Socket_Address(UDPAddressClass* address, uint16_t default_socket, SocketAddress* socket_address)
 {
 	NetNumType net;
 	NetNodeType node;
-	uint16_t port = htons(default_socket);
+	uint16_t port = Socket_Host_To_Network16(default_socket);
 
-	memset(&socket_address, 0, sizeof(socket_address));
-	socket_address.sin_family = AF_INET;
+	memset(socket_address, 0, sizeof(*socket_address));
 
 	address->Get_Address(net, node);
-	memcpy(&socket_address.sin_addr.s_addr, net, sizeof(net));
+	memcpy(&socket_address->Address, net, sizeof(net));
 
 	if (!Is_All_Value(node, sizeof(node), 0x00) && !Is_All_Value(node, sizeof(node), 0xff)) {
 		memcpy(&port, node, sizeof(port));
 	}
 
-	socket_address.sin_port = port;
+	socket_address->Port = port;
 }
 }
 
@@ -250,21 +218,15 @@ int UDPConnClass::Stop_Listening(void)
  *=========================================================================*/
 int UDPConnClass::Receive(char *buf, int buflen, UDPAddressClass *address)
 {
-	if (Winsock.Get_Connected() || UDPListenSocket == INVALID_SOCKET) {
+	if (Winsock.Get_Connected() || UDPListenSocket == INVALID_SOCKET_HANDLE) {
 		return(0);
 	}
 
-	SOCKADDR_IN source_address;
-	SocketLengthType source_length = sizeof(source_address);
-	const int recv_length = recvfrom(UDPListenSocket,
-		buf,
-		buflen,
-		0,
-		reinterpret_cast<SOCKADDR*>(&source_address),
-		&source_length);
-	if (recv_length == SOCKET_ERROR) {
-		const int error = WSAGetLastError();
-		if (error == WSAEWOULDBLOCK || error == WSAECONNRESET) {
+	SocketAddress source_address;
+	const int recv_length = Socket_Read_From(UDPListenSocket, buf, buflen, &source_address);
+	if (recv_length < 0) {
+		const int error = Socket_Get_Last_Error();
+		if (Socket_Error_Is_Would_Block(error) || Socket_Error_Is_Connection_Reset(error)) {
 			return(0);
 		}
 		return(0);
@@ -304,33 +266,31 @@ int UDPConnClass::Open_Socket(uint16_t socket)
 		return(true);
 	}
 
-	if (SocketOpen && UDPListenSocket != INVALID_SOCKET) {
+	if (SocketOpen && UDPListenSocket != INVALID_SOCKET_HANDLE) {
 		return(true);
 	}
 
 	Close_UDP_Socket();
-	UDPListenSocket = ::socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	if (UDPListenSocket == INVALID_SOCKET) {
+	UDPListenSocket = Socket_Open(SOCKET_TYPE_DATAGRAM, SOCKET_PROTOCOL_UDP);
+	if (UDPListenSocket == INVALID_SOCKET_HANDLE) {
 		SocketOpen = 0;
 		return(false);
 	}
 
 	const int reuse = 1;
-	if (!Set_UDP_Socket_Option(UDPListenSocket, SO_REUSEADDR, reuse) ||
-		!Set_UDP_Socket_Option(UDPListenSocket, SO_BROADCAST, reuse) ||
-		!Set_UDP_NonBlocking(UDPListenSocket)) {
+	if (Socket_Set_Integer_Option(UDPListenSocket, SOCKET_OPTION_REUSE_ADDRESS, reuse) != 0 ||
+		Socket_Set_Integer_Option(UDPListenSocket, SOCKET_OPTION_BROADCAST, reuse) != 0 ||
+		Socket_Set_NonBlocking(UDPListenSocket, true) != 0) {
 		Close_UDP_Socket();
 		SocketOpen = 0;
 		return(false);
 	}
 
-	SOCKADDR_IN listen_address;
-	memset(&listen_address, 0, sizeof(listen_address));
-	listen_address.sin_family = AF_INET;
-	listen_address.sin_addr.s_addr = htonl(INADDR_ANY);
-	listen_address.sin_port = htons(socket);
+	SocketAddress listen_address;
+	listen_address.Address = SOCKET_ADDRESS_ANY;
+	listen_address.Port = Socket_Host_To_Network16(socket);
 
-	if (bind(UDPListenSocket, reinterpret_cast<const SOCKADDR*>(&listen_address), sizeof(listen_address)) == SOCKET_ERROR) {
+	if (Socket_Bind(UDPListenSocket, &listen_address) != 0) {
 		Close_UDP_Socket();
 		SocketOpen = 0;
 		return(false);
@@ -374,19 +334,14 @@ int UDPConnClass::Send_To(char *buf, int buflen, UDPAddressClass *address,
 		return(true);
 	}
 
-	if (UDPListenSocket == INVALID_SOCKET) {
+	if (UDPListenSocket == INVALID_SOCKET_HANDLE) {
 		return(false);
 	}
 
-	SOCKADDR_IN destination_address;
-	Fill_Socket_Address(address, Socket, destination_address);
+	SocketAddress destination_address;
+	Fill_Socket_Address(address, Socket, &destination_address);
 
-	if (sendto(UDPListenSocket,
-			buf,
-			buflen,
-			0,
-			reinterpret_cast<const SOCKADDR*>(&destination_address),
-			sizeof(destination_address)) == SOCKET_ERROR) {
+	if (Socket_Write_To(UDPListenSocket, buf, buflen, &destination_address) < 0) {
 		return(false);
 	}
 
@@ -404,22 +359,15 @@ int UDPConnClass::Broadcast(char *buf, int buflen)
 		return(true);
 	}
 
-	if (UDPListenSocket == INVALID_SOCKET) {
+	if (UDPListenSocket == INVALID_SOCKET_HANDLE) {
 		return(false);
 	}
 
-	SOCKADDR_IN broadcast_address;
-	memset(&broadcast_address, 0, sizeof(broadcast_address));
-	broadcast_address.sin_family = AF_INET;
-	broadcast_address.sin_addr.s_addr = htonl(INADDR_BROADCAST);
-	broadcast_address.sin_port = htons(Socket);
+	SocketAddress broadcast_address;
+	broadcast_address.Address = SOCKET_ADDRESS_BROADCAST;
+	broadcast_address.Port = Socket_Host_To_Network16(Socket);
 
-	if (sendto(UDPListenSocket,
-			buf,
-			buflen,
-			0,
-			reinterpret_cast<const SOCKADDR*>(&broadcast_address),
-			sizeof(broadcast_address)) == SOCKET_ERROR) {
+	if (Socket_Write_To(UDPListenSocket, buf, buflen, &broadcast_address) < 0) {
 		return(false);
 	}
 

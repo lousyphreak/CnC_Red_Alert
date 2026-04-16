@@ -53,10 +53,6 @@
 extern bool Server;
 #endif
 
-#define FORCE_WINSOCK				1
-
-#define WINSOCK_MINOR_VER		1
-#define WINSOCK_MAJOR_VER		1
 #define PORTNUM						0x1000
 #define UDP_PORT					0x1001
 #define WS_INTERNET_BUFFER_LEN  1024
@@ -70,14 +66,6 @@ extern bool Server;
 #define PLANET_WESTWOOD_PASSWORD_MAX 20
 #define IP_ADDRESS_MAX 40
 #define PORT_NUMBER_MAX 6
-
-enum TcpipAsyncEventType {
-	TCPIP_EVENT_ACCEPT = 1,
-	TCPIP_EVENT_HOST_BY_ADDRESS = 2,
-	TCPIP_EVENT_HOST_BY_NAME = 3,
-	TCPIP_EVENT_SOCKET = 4,
-	TCPIP_EVENT_UDP_SOCKET = 5
-};
 
 class UDPAddressClass;
 
@@ -93,8 +81,7 @@ class TcpipManagerClass {
 		void Service(void);
 		void Start_Server(void);
 		void Start_Client(void);
-		void Close_Socket(SOCKET s);
-	 	void Handle_Async_Event(uint32_t event_type, int32_t lParam);
+		void Close_Socket(SocketHandle s);
 		void Copy_To_In_Buffer(const void* data, int bytes);
 		int  Read(void *buffer, int buffer_len);
 		void Write(void *buffer, int buffer_len);
@@ -105,7 +92,7 @@ class TcpipManagerClass {
 		void Get_Remote_Address(UDPAddressClass *address) const;
 		void Set_Protocol_UDP(int32_t state);
 		void Set_Protocol_TCP(int32_t state);
-		void Clear_Socket_Error(SOCKET socket);
+		void Clear_Socket_Error(SocketHandle socket);
 
 		inline int32_t Get_Connected(void) {return (Connected);}
 		inline int32_t Using_TCP(void) const { return !UseUDP; }
@@ -133,8 +120,8 @@ class TcpipManagerClass {
 		// This structure defines all the info we need about a host
 		//...........................................................................
 		typedef struct {
-			struct in_addr Addr;					// address
-			char DotAddr[16];						// decimal-dot address string
+			uint32_t Address;						// address, network byte order
+			char DotAddr[SOCKET_MAX_DOT_ADDRESS];		// decimal-dot address string
 			char Name[255];						// character-string name
 		} HostType;
 
@@ -146,13 +133,10 @@ class TcpipManagerClass {
 
 
 		int32_t 					WinsockInitialised;
-		WSADATA				WinsockInfo;
-		SOCKET				ListenSocket;
-		SOCKET				ConnectSocket;
-		SOCKET				UDPSocket;
-		IN_ADDR				ClientIPAddress;
-		void*				Async;
-		char					HostBuff[MAXGETHOSTSTRUCT];
+		SocketHandle		ListenSocket;
+		SocketHandle		ConnectSocket;
+		SocketHandle		UDPSocket;
+		uint32_t			ClientIPAddress;
 		char					ClientName[128];
 		char					ReceiveBuffer[WS_RECEIVE_BUFFER_LEN];
 		//char					InBuffer[WS_IN_BUFFER_LEN];
@@ -167,7 +151,7 @@ class TcpipManagerClass {
 		char					HostAddress[IP_ADDRESS_MAX];
 		ConnectStatusEnum ConnectStatus;
 		int32_t					UseUDP;
-		IN_ADDR				UDPIPAddress;
+		uint32_t			UDPIPAddress;
 		int					SocketReceiveBuffer;
 		int					SocketSendBuffer;
 		InternetBufferType ReceiveBuffers[WS_NUM_RX_BUFFERS];

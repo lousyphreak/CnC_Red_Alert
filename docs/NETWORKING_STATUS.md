@@ -92,7 +92,9 @@ This is the live transport in the current Linux/SDL build:
 | `CODE/UDPGCONN.*` | `UDPGlobalConnClass` | Active | Broadcast/global channel for discovery and lobby traffic. |
 | `CODE/UDPADDR.*` | `UDPAddressClass` | Active | Compatibility address container. |
 | `CODE/UDP.H` | packet/address structs | Mixed | Still carries old Novell-era layout baggage, but the live path uses it as a compatibility container. |
-| `CODE/SOCKETS.H` | socket seam | Active | Repo-owned cross-platform socket compatibility layer. |
+| `CODE/SOCKETS.H` | thin socket seam | Active | Platform-neutral socket wrapper header used by the live transports. |
+| `CODE/SOCKETS_WINDOWS.CPP` | Windows socket backend | Active on Windows | Thin WinSock implementation for `CODE/SOCKETS.H`. |
+| `CODE/SOCKETS_LINUX.CPP` | Linux socket backend | Active on Linux | Thin BSD-socket implementation for `CODE/SOCKETS.H`. |
 
 What is live here:
 
@@ -120,8 +122,9 @@ This code still exists, but it is not fully surfaced in the supported game flow:
 What still works in code:
 
 - `Winsock` is constructed globally.
-- `TcpipManagerClass` still has `Init()`, `Start_Server()`, `Start_Client()`, `Read()`, `Write()`, `Close()`, and `Handle_Async_Event()`.
-- the Unix side was already ported away from fake async WinSock usage toward direct `gethostbyname()` / `gethostbyaddr()` and POSIX socket behavior.
+- `TcpipManagerClass` still has `Init()`, `Start_Server()`, `Start_Client()`, `Read()`, `Write()`, and `Close()`.
+- both the TCP/IP path and the LAN UDP path now sit on the same thin `CODE/SOCKETS.H` wrapper seam instead of including raw platform socket headers in gameplay/network headers.
+- the platform split now lives in `CODE/SOCKETS_WINDOWS.CPP` and `CODE/SOCKETS_LINUX.CPP`, with `TcpipManagerClass` using nonblocking/polling socket behavior through that wrapper layer on both platforms.
 - `PlanetWestwoodIPAddress`, `PlanetWestwoodPortNumber`, and `PlanetWestwoodIsHost` still exist.
 - `Server_Remote_Connect()` and `Client_Remote_Connect()` still exist in `NETDLG.CPP`.
 - `Net_Fake_New_Dialog()` and `Net_Fake_Join_Dialog()` still exist.
@@ -701,7 +704,7 @@ A new backend has to respect several historical constraints that are still real 
 Also note:
 
 - the codebase still contains many original 32-bit assumptions, so new transport code should continue using exact-width integer types deliberately
-- the active Linux path already uses `CODE/SOCKETS.H` as the repo-owned native socket seam; any new backend should either use that style of seam or introduce a comparably explicit one
+- the active Windows/Linux path now uses `CODE/SOCKETS.H` plus `CODE/SOCKETS_WINDOWS.CPP` / `CODE/SOCKETS_LINUX.CPP` as the repo-owned thin socket seam; any new backend should either use that style of seam or introduce a comparably explicit one
 - reviving `PacketTransport`, WOL-only hooks, or other dead branches is likely higher risk than building on the active `ConnManClass` path
 
 ## Effort comparison

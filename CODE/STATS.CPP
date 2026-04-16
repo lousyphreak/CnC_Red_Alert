@@ -408,26 +408,20 @@ void Send_Statistics_Packet(void)
 
 					//	Ok. It's not set. Let's try to get it ourselves...
 					char szHostName[ 512 ];
-					int iRes = gethostname( szHostName, 512 );
-					if( iRes != SOCKET_ERROR )	//	else forget about trying
+					if (Socket_Get_Host_Name(szHostName, sizeof(szHostName)))
 					{
-//						debugprint( "gethostname got me %s\n", szHostName );
-						struct hostent* pHostent = gethostbyname( szHostName );
-						if( pHostent )	//	else forget about trying
+						SocketHostEntry host_entry;
+						if (Socket_Lookup_Host_By_Name(szHostName, &host_entry))
 						{
-							int i = 0;
-							int* piAddress = (int*)pHostent->h_addr_list[ i ];
-							while( piAddress )
+							for (int i = 0; i < host_entry.AddressCount; ++i)
 							{
-								//	There is a non-null value for this h_addr_list entry.
 								char szAsciiIP[ 30 ];
-								strcpy( szAsciiIP, inet_ntoa( *( (struct in_addr*)piAddress ) ) );
-								//	We have an address in the right form.
-								//	Now, is it an address in a private network? If so we should ignore it.
-								uint8_t q1 = ( (char*)piAddress )[ 0 ];	//	First digit.
-								uint8_t q2 = ( (char*)piAddress )[ 1 ];	//	Second digit.
-//								debugprint( "ip: %s\n", szAsciiIP );
-								if( q1 == 10 || ( q1 == 172 && ( q2 >= 16 && q2 <= 31 ) ) || ( q1 == 192 && q2 == 168 ) )
+								if (!Socket_Address_To_String(host_entry.Addresses[i], szAsciiIP, sizeof(szAsciiIP)))
+								{
+									continue;
+								}
+
+								if (Socket_Address_Is_Private(host_entry.Addresses[i]))
 								{
 									//	This is a private network address - ignore it and go on to next.
 								}
@@ -436,7 +430,6 @@ void Send_Statistics_Packet(void)
 									strcpy( szIPAddress, szAsciiIP );
 									break;
 								}
-								piAddress = (int*)pHostent->h_addr_list[ ++i ];
 							}
 						}
 					}
@@ -613,8 +606,8 @@ void Send_Statistics_Packet(void)
 				**	Pack the date/time into a FILETIME-sized structure for network transmission.
 				**	The exact encoding doesn't matter as long as it's consistent across players.
 				*/
-				write_time.dwLowDateTime = htonl((uint32_t)((uint64_t)path_info.modify_time & 0xFFFFFFFF));
-				write_time.dwHighDateTime = htonl((uint32_t)((uint64_t)path_info.modify_time >> 32));
+				write_time.dwLowDateTime = Socket_Host_To_Network32((uint32_t)((uint64_t)path_info.modify_time & 0xFFFFFFFF));
+				write_time.dwHighDateTime = Socket_Host_To_Network32((uint32_t)((uint64_t)path_info.modify_time >> 32));
 				stats.Add_Field (FIELD_GAME_BUILD_DATE, (void*)&write_time, sizeof (write_time));
 			}
 		}

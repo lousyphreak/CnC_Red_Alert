@@ -8,6 +8,13 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Cleaned up the low-level socket interface and moved the live networking code onto a thin platform split:
+  - `CODE/SOCKETS.H` is now a platform-neutral header with only lightweight socket/address/lookup/byte-order wrapper declarations and no platform headers;
+  - the real implementations now live in `CODE/SOCKETS_WINDOWS.CPP` and `CODE/SOCKETS_LINUX.CPP`, and `CMakeLists.txt` selects exactly one of them per target platform;
+  - `CODE/{TCPIP,UDPCONN}.CPP` now use that thin wrapper surface instead of raw Winsock/BSD types, `CODE/TCPIP.H` no longer exposes `WSADATA` / `SOCKET` / `IN_ADDR` in its public state, and the old repo-owned socket typedef baggage was removed from `SDL3_COMPAT/wrappers/win32_compat.h`;
+  - byte-order-only call sites (`CODE/{FIELD,PACKET,UTRACKER,STATS}.CPP`) now use the same platform-neutral helper surface instead of dragging in the old socket compatibility layer indirectly;
+  - validation for this checkpoint: editor diagnostics are clean for the touched networking files, and a Windows/MSVC `Build_CMakeTools` build of the `redalert` target succeeds after the socket-seam split and transport refactor.
+
 - Staged-review follow-up on the current Windows compatibility batch:
   - the staged set was close, but not fully Linux-safe as written: `SDL3_COMPAT/wrappers/win32_compat.h` had been updated to use a pointer-sized `SOCKET` typedef unconditionally, while active networking translation units such as `CODE/UDPCONN.CPP` include both `win32_compat.h` and `CODE/SOCKETS.H`; that would reintroduce a typedef mismatch on POSIX even though the Windows side was fixed;
   - the compat layer now keeps `SOCKET` pointer-sized only on Windows and uses `int` on non-Windows builds so it matches `CODE/SOCKETS.H` on both sides of the port seam;
