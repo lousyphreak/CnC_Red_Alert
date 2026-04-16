@@ -79,7 +79,7 @@ extern char *FontWidthBlockPtr;
 /* Function prototypes. */
 void *Load_Font(char const *name);
 void *Set_Font(void const *font);
-uint16_t String_Pixel_Width(char const *string);
+uint32_t String_Pixel_Width(char const *string);
 
 int32_t Char_Pixel_Width(char chr);
 

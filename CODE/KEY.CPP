@@ -63,7 +63,7 @@
 //void Message_Loop(void);
 
 //WWKeyboardClass * _Kbd = NULL;
-extern WWKeyboardClass *Keyboard;
+extern KeyboardClass *Keyboard;
 
 
 #define	ARRAY_SIZE(x)		int(sizeof(x)/sizeof(x[0]))

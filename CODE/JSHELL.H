@@ -88,28 +88,6 @@ class SmartPtr
 **	notable being the return values are declared as "int" in the library whereas C&C
 **	expects it to be of KeyNumType.
 */
-//lint -esym(1725,KeyboardClass::MouseQX,KeyboardClass::MouseQY)
-struct KeyboardClass : public WWKeyboardClass
-{
-
-	/*
-	**	This flag is retained for legacy callers, but the supported port
-	**	always routes keyboard input through WWKeyboardClass.
-	*/
-	unsigned IsLibrary;
-
-	KeyboardClass() : IsLibrary(true) {}
-	KeyNumType Get(void) {return ((KeyNumType)WWKeyboardClass::Get());};
-	KeyNumType Check(void) {return ((KeyNumType)WWKeyboardClass::Check());};
-	KeyASCIIType To_ASCII(KeyNumType key) {return((KeyASCIIType)WWKeyboardClass::To_ASCII(key));};
-	void Clear(void) {WWKeyboardClass::Clear();};
-	int Down(KeyNumType key) {return(WWKeyboardClass::Down(key));};
-
-	int Mouse_X(void) {return(Get_Global_Mouse_X());};
-	int Mouse_Y(void) {return(Get_Global_Mouse_Y());};
-};
-
-
 /*
 **	These templates allow enumeration types to have simple bitwise
 **	arithmatic performed. The operators must be instatiated for the

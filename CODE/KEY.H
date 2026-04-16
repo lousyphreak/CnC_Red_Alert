@@ -649,6 +649,34 @@ typedef enum KeyNumType {
 } KeyNumType;
 
 
+/*
+**	Interface class to the keyboard. This insulates the game from library vagaries. Most
+**	notable being the return values are declared as enum types that the game expects.
+*/
+#ifndef RA_KEYBOARDCLASS_DEFINED
+#define RA_KEYBOARDCLASS_DEFINED
+//lint -esym(1725,KeyboardClass::MouseQX,KeyboardClass::MouseQY)
+struct KeyboardClass : public WWKeyboardClass
+{
+	/*
+	**	This flag is retained for legacy callers, but the supported port
+	**	always routes keyboard input through WWKeyboardClass.
+	*/
+	unsigned IsLibrary;
+
+	KeyboardClass() : IsLibrary(true) {}
+	KeyNumType Get(void) {return ((KeyNumType)WWKeyboardClass::Get());};
+	KeyNumType Check(void) {return ((KeyNumType)WWKeyboardClass::Check());};
+	KeyASCIIType To_ASCII(KeyNumType key) {return((KeyASCIIType)WWKeyboardClass::To_ASCII(key));};
+	void Clear(void) {WWKeyboardClass::Clear();};
+	int Down(KeyNumType key) {return(WWKeyboardClass::Down(key));};
+
+	int Mouse_X(void) {return(Get_Global_Mouse_X());};
+	int Mouse_Y(void) {return(Get_Global_Mouse_Y());};
+};
+#endif
+
+
 //extern WWKeyboardClass *_Kbd;
 
 #endif

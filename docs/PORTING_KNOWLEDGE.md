@@ -1,5 +1,32 @@
 # Porting Knowledge
 
+_Last updated: 2026-04-16_
+
+## Windows/MSVC build notes
+
+- The repo-owned Windows compatibility layer and the real Windows SDK cannot both own the same Win32 surface in one translation unit.
+  - Practical example from this tree: including `<winsock.h>` from `CODE/SOCKETS.H` on MSVC dragged in the Windows SDK after `SDL3_COMPAT/wrappers/win32_compat.h` had already declared `LONG`, `DWORD`, `HRESULT`, `POINT`, `RECT`, `FILETIME`, `CloseHandle`, `SetFilePointer`, and related symbols, which exploded into hundreds of redefinition and intrinsics-collision errors.
+  - Practical rule: for repo-owned code, keep the socket seam repo-owned too. On Windows, `CODE/SOCKETS.H` should declare only the WinSock subset the active code really uses instead of including the SDK headers directly into gameplay/network translation units.
+- If the repo-owned socket seam defines `SOCKET`, the compat layer must use the same width.
+  - Practical example from this tree: once `CODE/SOCKETS.H` stopped including `<winsock.h>`, the next MSVC failure was a repo-local mismatch between `CODE/SOCKETS.H` and `SDL3_COMPAT/wrappers/win32_compat.h` over the `SOCKET` typedef.
+  - Practical follow-up from the same tree: some networking translation units (for example `CODE/UDPCONN.CPP`) include both `FUNCTION.H`/`win32_compat.h` and `SOCKETS.H`, so forcing the compat-layer `SOCKET` typedef to the Windows shape on every platform creates a second cross-platform failure mode on Linux/POSIX.
+  - Practical rule: keep the compat-layer `SOCKET` typedef aligned with `CODE/SOCKETS.H` **per platform** (`uintptr_t` on Windows, `int` on POSIX); otherwise the build can fail even before any real socket call is type-checked.
+- Legacy UI helpers still instantiate button widgets even on "no buttons" paths, so their geometry locals must be initialized defensively.
+  - Practical example from this tree: `CODE/SCENARIO.CPP::BGMessageBox(...)` constructed `TextButtonClass` locals using `bwidth`/`bheight` before those values were guaranteed to be assigned whenever the caller supplied no visible buttons.
+  - Practical rule: when porting dialog/message-box code, initialize cached geometry/state locals up front even if the original control flow only "logically" uses them in button-present branches; newer compilers and sanitizers are right to treat those constructor-time reads as undefined behavior.
+- `Get_CPU_Clock(...)` should use SDL timing on the SDL3 port, not host-specific monotonic APIs.
+  - Practical example from this tree: `CODE/MPU.CPP` still used `clock_gettime(CLOCK_MONOTONIC, ...)`, which built on Linux but failed on MSVC.
+  - Practical rule: for monotonic tick/counter helpers in active port code, prefer `SDL_GetTicksNS()` so the same implementation works on Windows and Linux without adding a platform split.
+- Old `fixed` arithmetic that mixes integer strengths with fixed-point ratios can become overload-ambiguous on MSVC even when GCC/Clang accepted it.
+  - Practical example from this tree: expressions like `MaxStrength * fixed(strength, 256)` and `Health_Ratio() * MaxStrength` in `CODE/{VESSEL,UNIT,LOGIC,INFANTRY}.CPP` became ambiguous because `fixed` exposed only signed-int integer multiplication plus an implicit `operator unsigned()`.
+  - Practical rule: when that pattern appears with legacy `uint16_t` strength values, add the matching unsigned/`uint16_t` fixed multiplication overloads in `CODE/FIXED.H` instead of scattering cast noise through gameplay call sites.
+- The enum-returning keyboard wrapper is a real API layer, not a cosmetic alias.
+  - Practical example from this tree: startup constructs `Keyboard = new KeyboardClass();`, and that wrapper provides the `KeyNumType`/`KeyASCIIType` returns plus `Mouse_X()`/`Mouse_Y()` methods that many UI callers expect. Bypassing it in favor of bare `WWKeyboardClass*` caused the Windows build to surface both link mismatches and compile-time enum/API drift.
+  - Practical rule: keep `KeyboardClass` visible from the main keyboard header (`CODE/KEY.H`) so any translation unit that touches the global `Keyboard` pointer sees the enum-returning wrapper, not just the raw `WWKeyboardClass` base.
+- Stale duplicate declarations in side headers can hide until Windows links everything together.
+  - Practical example from this tree: `WIN32LIB/INCLUDE/VQM32/FONT.H` still declared `String_Pixel_Width(...)` as returning `uint16_t` even though the actual font implementation and the main public font headers already used `uint32_t`.
+  - Practical rule: when an MSVC link error reports only one unresolved symbol with the "wrong" mangled return type, check the side/public duplicate headers first before assuming the implementation is missing.
+
 ## Multiplayer networking
 
 - The active SDL3 multiplayer stack can support direct-IP TCP cleanly, but only if it reuses the existing packet/lobby flow rather than introducing a second gameplay network path.
@@ -540,8 +567,6 @@
 - `WIN32LIB/AUDIO/` does **not** consistently compile against only the canonical `WIN32LIB/INCLUDE/SOS*.H` headers. The active gameplay audio path still has local duplicate headers in `WIN32LIB/AUDIO/`, and at least `WIN32LIB/AUDIO/SOSCOMP.H` is part of the live build through `SOUND.H` / `SOUNDINT.H`.
 - This matters on LP64 hosts because `_SOS_COMPRESS_INFO` is shared with `CODE/ADPCM.CPP`. If the audio-local copy still uses old `long`/`unsigned long` spellings while the decoder side uses fixed-width 32-bit fields, the structure layout diverges and gameplay music/SFX decoding silently breaks even though VQA movie audio still works.
 - Practical symptom when `WIN32LIB/AUDIO/SOSCOMP.H` drifts from the canonical fixed-width form: movie audio can still work, but normal music and sound effects fail because the non-movie stream/sample path in `WIN32LIB/AUDIO/{SOUNDIO,SOUNDINT}.CPP` passes a mismatched `_SOS_COMPRESS_INFO` into the shared ADPCM decoder.
-
-_Last updated: 2026-04-03_
 
 ## Repo facts
 

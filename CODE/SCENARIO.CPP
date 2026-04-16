@@ -1280,7 +1280,7 @@ int BGMessageBox(char const * msg, int btn1, int btn2)
 	bool pressed;
 	int curbutton;
 	TextButtonClass * buttons[3];
-	int32_t display;									// display level
+	int32_t display = 0;									// display level
 	int  realval[5];
 	int  morebutton = 3;						// which button says "more": 2 or 3?
 
@@ -1345,8 +1345,8 @@ int BGMessageBox(char const * msg, int btn1, int btn2)
 	**	Examine the optional button parameters. Fetch the width and starting
 	**	characters for each.
 	*/
-	char b1char, b2char, b3char;	// 1st char of each string
-	int bwidth, bheight;				// button width and height
+	char b1char = 0, b2char = 0, b3char = 0;	// 1st char of each string
+	int bwidth = 0, bheight = 0;				// button width and height
 	int numbuttons = 0;
 	if (b1txt) {
 		b1char = toupper(b1txt[0]);

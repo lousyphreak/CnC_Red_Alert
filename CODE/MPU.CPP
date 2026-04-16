@@ -37,16 +37,12 @@
 
 #include	"MPU.H"
 #include <stdint.h>
-#include <time.h>
+#include <SDL3/SDL_timer.h>
 
 
 uint32_t  Get_CPU_Clock(uint32_t & high)
 {
-	struct timespec spec;
-	uint64_t counter;
-
-	clock_gettime(CLOCK_MONOTONIC, &spec);
-	counter = (uint64_t)spec.tv_sec * 1000000000ull + (uint64_t)spec.tv_nsec;
+	uint64_t counter = SDL_GetTicksNS();
 	high = static_cast<uint32_t>((counter >> 32) & 0xFFFFFFFFu);
 	return(static_cast<uint32_t>(counter & 0xFFFFFFFFu));
 }

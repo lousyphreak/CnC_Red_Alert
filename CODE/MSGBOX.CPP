@@ -85,8 +85,8 @@ int WWMessageBox::Process(const char * msg, const char * b1txt, const char * b2t
 	bool pressed;
 	int curbutton;
 	TextButtonClass * buttons[3];
-	void * back;
-	int32_t display;									// display level
+	void * back = NULL;
+	int32_t display = 0;									// display level
 	int  realval[5];
 
 	SDL_GameInput_PushMouseCaptureSuppression();
@@ -103,7 +103,7 @@ int WWMessageBox::Process(const char * msg, const char * b1txt, const char * b2t
 	**	Examine the optional button parameters. Fetch the width and starting
 	**	characters for each.
 	*/
-	int bwidth, bheight;				// button width and height
+	int bwidth = 0, bheight = 0;				// button width and height
 	int numbuttons = 0;
 	if (b1txt != NULL) {
 

@@ -1,12 +1,26 @@
 # Porting Progress
 
-_Last updated: 2026-04-13_
+_Last updated: 2026-04-16_
 
 ## Goal
 
 Port the Red Alert codebase to a reproducible cross-platform build using SDL3 for platform-specific functionality, with working builds on Linux, Windows, and other supported SDL3 platforms.
 
 ## Current status
+
+- Staged-review follow-up on the current Windows compatibility batch:
+  - the staged set was close, but not fully Linux-safe as written: `SDL3_COMPAT/wrappers/win32_compat.h` had been updated to use a pointer-sized `SOCKET` typedef unconditionally, while active networking translation units such as `CODE/UDPCONN.CPP` include both `win32_compat.h` and `CODE/SOCKETS.H`; that would reintroduce a typedef mismatch on POSIX even though the Windows side was fixed;
+  - the compat layer now keeps `SOCKET` pointer-sized only on Windows and uses `int` on non-Windows builds so it matches `CODE/SOCKETS.H` on both sides of the port seam;
+  - the staged initialization cleanup also missed one remaining dialog path: `CODE/SCENARIO.CPP::BGMessageBox(...)` still left button geometry/shortcut locals uninitialized before constructing its temporary `TextButtonClass` objects; those locals are now initialized defensively, and `CODE/MSGBOX.CPP` now also explicitly initializes its saved-background/display state;
+  - validation for this review pass: the touched files report no editor diagnostics, and a full Windows/MSVC `Build_CMakeTools` build of the `redalert` target still succeeds with no remaining `GetDiagnostics_CMakeTools` problems after the follow-up fixes.
+
+- Restored a clean Windows/MSVC build for the main `redalert` target after the earlier Linux-first porting work left several Windows-only portability regressions behind:
+  - root cause category 1: `CODE/MPU.CPP` still used the POSIX-only `clock_gettime(CLOCK_MONOTONIC, ...)` path, which MSVC does not provide; the helper now uses `SDL_GetTicksNS()` so the timing source stays monotonic and inside the SDL portability layer on both Linux and Windows;
+  - root cause category 2: several gameplay/UI call sites multiplied `uint16_t` strength values by `fixed` ratios (`CODE/{LOGIC,VESSEL,UNIT,INFANTRY}.CPP`), and MSVC resolved those expressions differently from GCC/Clang because `fixed` only exposed signed-int integer multiplication alongside the implicit `operator unsigned()` conversion; `CODE/FIXED.H` now also exposes the matching unsigned/`uint16_t` multiplication overloads so those legacy strength-ratio expressions keep the original intent without per-callsite rewrites;
+  - root cause category 3: the repo-owned Win32 compatibility surface and the Windows SDK were colliding hard in networking builds; `CODE/SOCKETS.H` no longer includes `<winsock.h>` on Windows and instead owns the small WinSock declaration surface the active code actually uses (socket/address structs, constants, and async-name-resolution/socket prototypes), which keeps the repo's `win32_compat` layer authoritative and avoids the earlier `LONG`/`DWORD`/`HANDLE`/`RECT`/`CloseHandle`/intrinsics redefinition storm;
+  - follow-up Windows networking note: the repo-owned socket seam now also carries the missing WinSock constants/prototypes the active transport actually needs on MSVC (`PF_INET`, `INADDR_NONE`, `SO_LINGER`, `getpeername`, `gethostname`, etc.), and `SDL3_COMPAT/wrappers/win32_compat.h` now matches that seam's pointer-sized `SOCKET` typedef so the socket types stay consistent across the active Windows build;
+  - follow-up keyboard/UI fix: the Windows build then exposed stale declaration drift around the keyboard wrapper and font-width prototype; the intended enum-returning `KeyboardClass` wrapper is now defined in `CODE/KEY.H` (instead of being buried only in `CODE/JSHELL.H`), the global `Keyboard` surface again uses that wrapper consistently, and `WIN32LIB/INCLUDE/VQM32/FONT.H` now matches the real `uint32_t String_Pixel_Width(...)` implementation;
+  - validation for this checkpoint: a full Windows/MSVC `Build_CMakeTools` build of the `redalert` target now succeeds and `GetDiagnostics_CMakeTools` reports no remaining CMake diagnostics after the Windows compatibility pass.
 
 - Follow-up TCP direct-guest lobby fix: the interactive direct-IP guest path no longer falls back into the generic chat/browser loop after the TCP socket is already connected:
   - root cause: `CODE/NETDLG.CPP` reused the normal `Net_Join_Dialog()` browser state machine unchanged for interactive TCP guests, so the guest entered the public lobby first, kept running the periodic `NET_QUERY_PLAYER` browse traffic even after `JOIN_CONFIRMED`, and used the normal `goto_lobby` cancel path back to the chat room instead of the direct-connect screen;

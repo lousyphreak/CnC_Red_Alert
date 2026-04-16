@@ -106,6 +106,8 @@ class fixed
 //		const fixed operator * (fixed const & rvalue) const {return(fixed(*this) *= rvalue);}
 		const fixed operator * (fixed const & rvalue) const {fixed temp = *this;temp.Data.Raw = (uint16_t)(((int)temp.Data.Raw * (int)rvalue.Data.Raw) / 256);return(temp);}
 		const int operator * (int rvalue) const {return ((((unsigned)Data.Raw * rvalue) + (256/2)) / 256);}
+		const int operator * (unsigned rvalue) const {return ((((unsigned)Data.Raw * rvalue) + (256/2)) / 256);}
+		const int operator * (uint16_t rvalue) const {return(*this * (unsigned)rvalue);}
 //		const fixed operator / (fixed const & rvalue) const {return(fixed(*this) /= rvalue);}
 		const fixed operator / (fixed const & rvalue) const {fixed temp = *this;if (rvalue.Data.Raw != 0 && rvalue.Data.Raw != 256) temp.Data.Raw = (uint16_t)(((int)temp.Data.Raw * 256) / rvalue.Data.Raw);return(temp);}
 		const int operator / (int rvalue) const {if (rvalue) return(((unsigned)Data.Raw+(256/2)) / ((unsigned)rvalue*256));return(*this);}
@@ -149,6 +151,8 @@ class fixed
 		**	Friend functions to handle the alternate positioning of fixed and integer parameters.
 		*/
 		friend const int operator * (int lvalue, fixed const & rvalue) {return(rvalue * lvalue);}
+		friend const int operator * (unsigned lvalue, fixed const & rvalue) {return(rvalue * lvalue);}
+		friend const int operator * (uint16_t lvalue, fixed const & rvalue) {return(rvalue * lvalue);}
 		friend const int operator / (int lvalue, fixed const & rvalue) {if (rvalue.Data.Raw == 0 || rvalue.Data.Raw == 256) return (lvalue); return(((unsigned)(lvalue * 256)+(256/2)) / rvalue.Data.Raw);}
 		friend const int operator + (int lvalue, fixed const & rvalue) {return(rvalue + lvalue);}
 		friend const int operator - (int lvalue, fixed const & rvalue) {return((((lvalue*256) - rvalue.Data.Raw) + (256/2)) / 256);}
