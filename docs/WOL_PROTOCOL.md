@@ -1,6 +1,6 @@
 # WOL replacement protocol
 
-_Last updated: 2026-04-17_
+_Last updated: 2026-04-20_
 
 Canonical reference for the wire protocol spoken between the game
 (`CODE/WSCLIENT.*`) and the Zig server (`server/`). Both sides MUST stay
@@ -14,8 +14,10 @@ in sync with this document; the source-of-truth constants live in
 - Exactly one HTTP server process also serves:
   - `/` → emscripten build output (`*.html`, `*.js`, `*.wasm`, `*.data`,
     `ra-assets-manifest.txt`);
-  - `/gamedata/...` → files under the configured `GameData/` directory,
-    with case-insensitive path resolution;
+  - `/GameData/...` → files under the configured `GameData/` directory,
+    with case-insensitive path resolution (`/gamedata/...` remains accepted
+    for compatibility);
+  - `/healthz` → plain-text health probe endpoint;
   - `/ws` → the WebSocket upgrade endpoint described here.
 
 ## Application framing

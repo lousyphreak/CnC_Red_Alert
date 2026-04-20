@@ -6,7 +6,7 @@
 **	interface:
 **
 **	- EMSCRIPTEN: uses emscripten_websocket_* from emscripten/websocket.h.
-**	  Link with -sUSE_WEBSOCKET=1.
+**	  Link with -lwebsocket.js on current Emscripten releases.
 **
 **	- NATIVE: raw TCP via CODE/SOCKETS.H with an in-process RFC 6455
 **	  implementation (SHA-1 + base64 for the handshake, XOR masking for

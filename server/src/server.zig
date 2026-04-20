@@ -13,16 +13,23 @@ const TX_SOFT_LIMIT: usize = 8 * 1024 * 1024; // 8 MiB per-connection tx cap
 
 const log = std.log.scoped(.server);
 
+pub const BasicAuthConfig = struct {
+    username: []const u8,
+    password: []const u8,
+};
+
 pub const Config = struct {
     host: []const u8 = "0.0.0.0",
     port: u16 = 8070,
     gamedata_dir: ?[]const u8 = null,
     emscripten_dir: ?[]const u8 = null,
+    basic_auth: ?BasicAuthConfig = null,
 };
 
 pub const Server = struct {
     allocator: std.mem.Allocator,
     cfg: Config,
+    basic_auth_header: ?[]u8 = null,
     listener_fd: posix.socket_t,
     /// All active connections, indexed by slot. `null` = free slot.
     conns: std.ArrayList(?*Conn) = .{},
@@ -36,14 +43,20 @@ pub const Server = struct {
 
     pub fn init(allocator: std.mem.Allocator, cfg: Config) !Server {
         const fd = try openListener(cfg.host, cfg.port);
-        return .{
+        var self = Server{
             .allocator = allocator,
             .cfg = cfg,
             .listener_fd = fd,
         };
+        errdefer posix.close(fd);
+        if (cfg.basic_auth) |auth| {
+            self.basic_auth_header = try buildBasicAuthHeader(allocator, auth.username, auth.password);
+        }
+        return self;
     }
 
     pub fn deinit(self: *Server) void {
+        if (self.basic_auth_header) |header| self.allocator.free(header);
         for (self.conns.items) |maybe_c| {
             if (maybe_c) |c| {
                 c.deinit(self.allocator);
@@ -124,7 +137,11 @@ pub const Server = struct {
                         c.wants_close = true;
                     };
                 }
-                if (closed and c.tx.items.len == 0) c.wants_close = true;
+                if (closed) {
+                    c.peer_closed = true;
+                    c.wants_close = true;
+                }
+                discardPendingTxIfClosing(c);
                 if (c.wants_close and c.tx.items.len == 0) {
                     self.removeConn(ci);
                 }
@@ -177,11 +194,13 @@ pub const Server = struct {
             const n = posix.read(c.fd, &tmp) catch |err| switch (err) {
                 error.WouldBlock => return,
                 else => {
+                    c.peer_closed = true;
                     c.wants_close = true;
                     return;
                 },
             };
             if (n == 0) {
+                c.peer_closed = true;
                 c.wants_close = true;
                 return;
             }
@@ -238,9 +257,24 @@ pub const Server = struct {
     }
 
     fn handleRequest(self: *Server, c: *Conn, req: http.Request) !void {
+        if (std.mem.eql(u8, req.path, "/healthz")) {
+            try self.writeHttpBody(c, 200, "OK", "text/plain; charset=utf-8", "ok\n", "no-store", req.keep_alive, null);
+            c.wants_close_after_flush = !req.keep_alive;
+            return;
+        }
         if (req.method == .other) {
             try self.writeHttpSimple(c, 405, "Method Not Allowed", "Method Not Allowed\n");
             c.wants_close_after_flush = true;
+            return;
+        }
+        if (!self.authorizeRequest(req)) {
+            try self.writeHttpUnauthorized(c, req.keep_alive);
+            c.wants_close_after_flush = !req.keep_alive;
+            return;
+        }
+        if (std.mem.eql(u8, req.path, "/")) {
+            try self.writeHttpRedirect(c, "/redalert.html", req.keep_alive);
+            c.wants_close_after_flush = !req.keep_alive;
             return;
         }
         if (std.mem.eql(u8, req.path, "/ws")) {
@@ -273,29 +307,31 @@ pub const Server = struct {
         // Map /gamedata/... → gamedata_dir; everything else → emscripten_dir.
         var root: ?[]const u8 = null;
         var sub_path = req.path;
-        if (std.mem.startsWith(u8, req.path, "/gamedata/")) {
+        var cache_control: []const u8 = "public, max-age=3600";
+        if (http.asciiStartsWithIgnoreCase(req.path, "/gamedata/")) {
             root = self.cfg.gamedata_dir;
             sub_path = req.path["/gamedata".len..];
+            cache_control = "public, max-age=31536000, immutable";
         } else {
             root = self.cfg.emscripten_dir;
         }
         if (root == null) {
             try self.writeHttpSimple(c, 404, "Not Found", "no root configured\n");
-            c.wants_close_after_flush = !req.keep_alive;
+            c.wants_close_after_flush = true;
             return;
         }
 
         const resolved = http.resolveUnder(self.allocator, root.?, sub_path) catch null;
         if (resolved == null) {
             try self.writeHttpSimple(c, 404, "Not Found", "not found\n");
-            c.wants_close_after_flush = !req.keep_alive;
+            c.wants_close_after_flush = true;
             return;
         }
         defer self.allocator.free(resolved.?);
 
         const file = std.fs.cwd().openFile(resolved.?, .{}) catch {
             try self.writeHttpSimple(c, 404, "Not Found", "not found\n");
-            c.wants_close_after_flush = !req.keep_alive;
+            c.wants_close_after_flush = true;
             return;
         };
         defer file.close();
@@ -304,32 +340,145 @@ pub const Server = struct {
             c.wants_close_after_flush = true;
             return;
         };
+        const total_size: u64 = @intCast(stat.size);
+        const maybe_range = if (req.range) |raw_range|
+            http.parseSingleRangeHeader(raw_range, total_size) catch |err| switch (err) {
+                error.InvalidRange, error.UnsatisfiableRange => {
+                    try self.writeHttpRangeNotSatisfiable(c, total_size, req.keep_alive);
+                    c.wants_close_after_flush = !req.keep_alive;
+                    return;
+                },
+            }
+        else
+            null;
 
-        const body = try self.allocator.alloc(u8, @intCast(stat.size));
+        const body_len: usize = @intCast(if (maybe_range) |range| range.len() else total_size);
+        const body = try self.allocator.alloc(u8, body_len);
         defer self.allocator.free(body);
-        _ = try file.readAll(body);
+        if (body.len > 0) {
+            const body_start: u64 = if (maybe_range) |range| range.start else 0;
+            const nread = try file.preadAll(body, body_start);
+            if (nread != body.len) return error.EndOfStream;
+        }
 
         const content_type = http.mimeFor(resolved.?);
-        var hdr: std.ArrayList(u8) = .{};
-        defer hdr.deinit(self.allocator);
-        try hdr.writer(self.allocator).print(
-            "HTTP/1.1 200 OK\r\nContent-Type: {s}\r\nContent-Length: {d}\r\nCache-Control: no-cache\r\nConnection: {s}\r\n\r\n",
-            .{ content_type, body.len, if (req.keep_alive) "keep-alive" else "close" },
-        );
-        try c.tx.appendSlice(self.allocator, hdr.items);
+        try self.writeStaticHeaders(c, req.keep_alive, content_type, cache_control, total_size, maybe_range);
         if (req.method == .get) try c.tx.appendSlice(self.allocator, body);
         if (!req.keep_alive) c.wants_close_after_flush = true;
     }
 
+    fn authorizeRequest(self: *Server, req: http.Request) bool {
+        const expected = self.basic_auth_header orelse return true;
+        return req.authorization != null and std.mem.eql(u8, req.authorization.?, expected);
+    }
+
+    fn writeStaticHeaders(
+        self: *Server,
+        c: *Conn,
+        keep_alive: bool,
+        content_type: []const u8,
+        cache_control: []const u8,
+        total_size: u64,
+        maybe_range: ?http.ByteRange,
+    ) !void {
+        var hdr: std.ArrayList(u8) = .{};
+        defer hdr.deinit(self.allocator);
+
+        if (maybe_range) |range| {
+            try hdr.writer(self.allocator).print(
+                "HTTP/1.1 206 Partial Content\r\nContent-Type: {s}\r\nContent-Length: {d}\r\nContent-Range: bytes {d}-{d}/{d}\r\nAccept-Ranges: bytes\r\nCache-Control: {s}\r\nConnection: {s}\r\n\r\n",
+                .{
+                    content_type,
+                    range.len(),
+                    range.start,
+                    range.end_inclusive,
+                    total_size,
+                    cache_control,
+                    if (keep_alive) "keep-alive" else "close",
+                },
+            );
+        } else {
+            try hdr.writer(self.allocator).print(
+                "HTTP/1.1 200 OK\r\nContent-Type: {s}\r\nContent-Length: {d}\r\nAccept-Ranges: bytes\r\nCache-Control: {s}\r\nConnection: {s}\r\n\r\n",
+                .{
+                    content_type,
+                    total_size,
+                    cache_control,
+                    if (keep_alive) "keep-alive" else "close",
+                },
+            );
+        }
+        try c.tx.appendSlice(self.allocator, hdr.items);
+    }
+
     fn writeHttpSimple(self: *Server, c: *Conn, code: u16, reason: []const u8, body: []const u8) !void {
+        try self.writeHttpBody(c, code, reason, "text/plain; charset=utf-8", body, "no-store", false, null);
+    }
+
+    fn writeHttpBody(
+        self: *Server,
+        c: *Conn,
+        code: u16,
+        reason: []const u8,
+        content_type: []const u8,
+        body: []const u8,
+        cache_control: []const u8,
+        keep_alive: bool,
+        extra_headers: ?[]const u8,
+    ) !void {
         var hdr: std.ArrayList(u8) = .{};
         defer hdr.deinit(self.allocator);
         try hdr.writer(self.allocator).print(
-            "HTTP/1.1 {d} {s}\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: {d}\r\nConnection: close\r\n\r\n",
-            .{ code, reason, body.len },
+            "HTTP/1.1 {d} {s}\r\nContent-Type: {s}\r\nContent-Length: {d}\r\nCache-Control: {s}\r\nConnection: {s}\r\n",
+            .{
+                code,
+                reason,
+                content_type,
+                body.len,
+                cache_control,
+                if (keep_alive) "keep-alive" else "close",
+            },
         );
+        if (extra_headers) |headers| try hdr.appendSlice(self.allocator, headers);
+        try hdr.appendSlice(self.allocator, "\r\n");
         try c.tx.appendSlice(self.allocator, hdr.items);
         try c.tx.appendSlice(self.allocator, body);
+    }
+
+    fn writeHttpRedirect(self: *Server, c: *Conn, location: []const u8, keep_alive: bool) !void {
+        var extra: std.ArrayList(u8) = .{};
+        defer extra.deinit(self.allocator);
+        try extra.writer(self.allocator).print("Location: {s}\r\n", .{location});
+        try self.writeHttpBody(c, 302, "Found", "text/plain; charset=utf-8", "", "no-store", keep_alive, extra.items);
+    }
+
+    fn writeHttpUnauthorized(self: *Server, c: *Conn, keep_alive: bool) !void {
+        try self.writeHttpBody(
+            c,
+            401,
+            "Unauthorized",
+            "text/plain; charset=utf-8",
+            "Authentication Required\n",
+            "no-store",
+            keep_alive,
+            "WWW-Authenticate: Basic realm=\"Authentication Required - Red Alert\"\r\n",
+        );
+    }
+
+    fn writeHttpRangeNotSatisfiable(self: *Server, c: *Conn, total_size: u64, keep_alive: bool) !void {
+        var extra: std.ArrayList(u8) = .{};
+        defer extra.deinit(self.allocator);
+        try extra.writer(self.allocator).print("Content-Range: bytes */{d}\r\nAccept-Ranges: bytes\r\n", .{total_size});
+        try self.writeHttpBody(
+            c,
+            416,
+            "Range Not Satisfiable",
+            "text/plain; charset=utf-8",
+            "Range Not Satisfiable\n",
+            "no-store",
+            keep_alive,
+            extra.items,
+        );
     }
 
     fn flushConn(self: *Server, c: *Conn) !void {
@@ -337,6 +486,7 @@ pub const Server = struct {
             const n = posix.write(c.fd, c.tx.items) catch |err| switch (err) {
                 error.WouldBlock => return,
                 else => {
+                    c.peer_closed = true;
                     c.wants_close = true;
                     return;
                 },
@@ -351,6 +501,13 @@ pub const Server = struct {
         }
         if (c.wants_close_after_flush) c.wants_close = true;
         _ = self;
+    }
+
+    fn discardPendingTxIfClosing(c: *Conn) void {
+        if (c.tx.items.len == 0) return;
+        if (c.peer_closed or (c.wants_close and !c.wants_close_after_flush)) {
+            c.tx.clearRetainingCapacity();
+        }
     }
 
     // ---- WebSocket / WOL hub ----
@@ -876,6 +1033,7 @@ pub const Conn = struct {
     ws_msg: std.ArrayList(u8) = .{},
     wants_close: bool = false,
     wants_close_after_flush: bool = false,
+    peer_closed: bool = false,
     // WOL state
     client_id: u32 = 0,
     nick: ?[]u8 = null,
@@ -904,4 +1062,57 @@ fn openListener(host: []const u8, port: u16) !posix.socket_t {
     try posix.listen(fd, 128);
     log.info("listening on {s}:{d}", .{ host, port });
     return fd;
+}
+
+fn buildBasicAuthHeader(allocator: std.mem.Allocator, username: []const u8, password: []const u8) ![]u8 {
+    const plain = try std.fmt.allocPrint(allocator, "{s}:{s}", .{ username, password });
+    defer allocator.free(plain);
+
+    const encoded_len = std.base64.standard.Encoder.calcSize(plain.len);
+    const header = try allocator.alloc(u8, "Basic ".len + encoded_len);
+    std.mem.copyForwards(u8, header[0.."Basic ".len], "Basic ");
+    _ = std.base64.standard.Encoder.encode(header["Basic ".len ..], plain);
+    return header;
+}
+
+test "discardPendingTxIfClosing drops queued bytes for fatal close" {
+    var conn = Conn{ .fd = 0 };
+    defer conn.deinit(std.testing.allocator);
+
+    try conn.tx.appendSlice(std.testing.allocator, "pending");
+    conn.wants_close = true;
+    Server.discardPendingTxIfClosing(&conn);
+    try std.testing.expectEqual(@as(usize, 0), conn.tx.items.len);
+}
+
+test "discardPendingTxIfClosing keeps graceful close payloads" {
+    var conn = Conn{ .fd = 0 };
+    defer conn.deinit(std.testing.allocator);
+
+    try conn.tx.appendSlice(std.testing.allocator, "pending");
+    conn.wants_close_after_flush = true;
+    Server.discardPendingTxIfClosing(&conn);
+    try std.testing.expectEqualStrings("pending", conn.tx.items);
+}
+
+test "discardPendingTxIfClosing drops queued bytes after peer hangup" {
+    var conn = Conn{ .fd = 0 };
+    defer conn.deinit(std.testing.allocator);
+
+    try conn.tx.appendSlice(std.testing.allocator, "pending");
+    conn.peer_closed = true;
+    Server.discardPendingTxIfClosing(&conn);
+    try std.testing.expectEqual(@as(usize, 0), conn.tx.items.len);
+}
+
+test "discardPendingTxIfClosing drops graceful-close payloads after peer eof" {
+    var conn = Conn{ .fd = 0 };
+    defer conn.deinit(std.testing.allocator);
+
+    try conn.tx.appendSlice(std.testing.allocator, "pending");
+    conn.wants_close = true;
+    conn.wants_close_after_flush = true;
+    conn.peer_closed = true;
+    Server.discardPendingTxIfClosing(&conn);
+    try std.testing.expectEqual(@as(usize, 0), conn.tx.items.len);
 }

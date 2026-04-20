@@ -26,6 +26,7 @@ option(RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA "Load GameData over HTTP on demand in t
 if(EMSCRIPTEN)
     set(RA_ENABLE_UDP OFF CACHE BOOL "Enable UDP multiplayer transport" FORCE)
     set(RA_ENABLE_TCP OFF CACHE BOOL "Enable TCP multiplayer transport" FORCE)
+    set(RA_ENABLE_WOL ON CACHE BOOL "Enable WebSocket (WOL replacement) multiplayer transport" FORCE)
 endif()
 
 set(SDL_SHARED OFF CACHE BOOL "" FORCE)
@@ -302,7 +303,7 @@ if(EMSCRIPTEN)
         "-sENVIRONMENT=web"
     )
     if(RA_ENABLE_WOL)
-        target_link_options(redalert PRIVATE "-sUSE_WEBSOCKET=1")
+        target_link_options(redalert PRIVATE "-lwebsocket.js")
     endif()
     if(RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA)
         target_link_options(redalert PRIVATE

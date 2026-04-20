@@ -4,13 +4,14 @@
 //! Build with: `zig build test-integration` (see build.zig).
 
 const std = @import("std");
-const net = std.net;
 const posix = std.posix;
 
 const proto = @import("proto.zig");
 const ws = @import("ws.zig");
 
-const PORT: u16 = 19191;
+const WOL_PORT: u16 = 19191;
+const HTTP_PORT: u16 = 19192;
+const AUTH_PORT: u16 = 19193;
 
 fn findServerExe(allocator: std.mem.Allocator) ![]u8 {
     // Placed at zig-out/bin/ra-wol-server by `b.installArtifact`.
@@ -70,6 +71,33 @@ const Client = struct {
         const n = try posix.read(self.sock, &tmp);
         if (n == 0) return error.Closed;
         try self.rx.appendSlice(self.allocator, tmp[0..n]);
+    }
+
+    fn readHttpResponse(self: *Client) !HttpResponse {
+        while (std.mem.indexOf(u8, self.rx.items, "\r\n\r\n") == null) {
+            try self.fillOnce();
+        }
+
+        const header_end = std.mem.indexOf(u8, self.rx.items, "\r\n\r\n").? + 4;
+        const header_block = self.rx.items[0..header_end];
+        const content_length = parseContentLength(header_block) orelse 0;
+        while (self.rx.items.len - header_end < content_length) {
+            try self.fillOnce();
+        }
+
+        const status = try parseStatusCode(header_block);
+        const body_end = header_end + content_length;
+        const headers = try self.allocator.dupe(u8, header_block);
+        errdefer self.allocator.free(headers);
+        const body = try self.allocator.dupe(u8, self.rx.items[header_end..body_end]);
+        const rem = self.rx.items.len - body_end;
+        if (rem > 0) std.mem.copyForwards(u8, self.rx.items[0..rem], self.rx.items[body_end..]);
+        self.rx.shrinkRetainingCapacity(rem);
+        return .{
+            .status = status,
+            .headers = headers,
+            .body = body,
+        };
     }
 
     fn sendMasked(self: *Client, opcode: ws.Opcode, payload: []const u8) !void {
@@ -151,6 +179,17 @@ const ServerFrame = struct {
     consumed: usize,
 };
 
+const HttpResponse = struct {
+    status: u16,
+    headers: []u8,
+    body: []u8,
+
+    fn deinit(self: *HttpResponse, allocator: std.mem.Allocator) void {
+        allocator.free(self.headers);
+        allocator.free(self.body);
+    }
+};
+
 fn parseServerFrame(buf: []const u8) !ServerFrame {
     if (buf.len < 2) return error.Incomplete;
     const b0 = buf[0];
@@ -179,17 +218,39 @@ fn parseServerFrame(buf: []const u8) !ServerFrame {
     };
 }
 
-fn spawnServer(allocator: std.mem.Allocator) !std.process.Child {
+fn spawnServer(
+    allocator: std.mem.Allocator,
+    port: u16,
+    extra_args: []const []const u8,
+    with_basic_auth: bool,
+) !std.process.Child {
     const exe = try findServerExe(allocator);
     defer allocator.free(exe);
+    const port_text = try std.fmt.allocPrint(allocator, "{d}", .{port});
+    defer allocator.free(port_text);
+
+    var argv: std.ArrayList([]const u8) = .{};
+    defer argv.deinit(allocator);
+    try argv.appendSlice(allocator, &.{ exe, "--port", port_text });
+    try argv.appendSlice(allocator, extra_args);
+
     var child = std.process.Child.init(
-        &.{ exe, "--port", std.fmt.comptimePrint("{d}", .{PORT}) },
+        argv.items,
         allocator,
     );
     child.stdin_behavior = .Ignore;
     child.stdout_behavior = .Inherit;
     child.stderr_behavior = .Inherit;
-    try child.spawn();
+    if (with_basic_auth) {
+        var env_map = try std.process.getEnvMap(allocator);
+        defer env_map.deinit();
+        try env_map.put("RA_BASIC_AUTH_USERNAME", "redalert");
+        try env_map.put("RA_BASIC_AUTH_PASSWORD", "change-me");
+        child.env_map = &env_map;
+        try child.spawn();
+    } else {
+        try child.spawn();
+    }
     // give it time to bind
     std.Thread.sleep(200 * std.time.ns_per_ms);
     return child;
@@ -206,13 +267,13 @@ fn helloPayload(allocator: std.mem.Allocator, nick: []const u8) ![]u8 {
 test "end-to-end: two clients, game relay" {
     const allocator = std.testing.allocator;
 
-    var child = try spawnServer(allocator);
+    var child = try spawnServer(allocator, WOL_PORT, &.{}, false);
     defer {
         _ = child.kill() catch {};
     }
 
     // Host connects and logs in.
-    var host = try Client.connect(allocator, PORT);
+    var host = try Client.connect(allocator, WOL_PORT);
     defer host.deinit();
     try host.handshake();
     const hello_h = try helloPayload(allocator, "HOST");
@@ -226,7 +287,7 @@ test "end-to-end: two clients, game relay" {
     _ = try r.readU32();
 
     // Guest connects and logs in.
-    var guest = try Client.connect(allocator, PORT);
+    var guest = try Client.connect(allocator, WOL_PORT);
     defer guest.deinit();
     try guest.handshake();
     const hello_g = try helloPayload(allocator, "GUEST");
@@ -337,4 +398,183 @@ test "end-to-end: two clients, game relay" {
     const gl_guest_after = try guest.recvApp();
     defer allocator.free(gl_guest_after.payload);
     try std.testing.expectEqual(@as(u16, @intFromEnum(proto.Opcode.game_list_reply)), gl_guest_after.opcode);
+}
+
+test "http static hosting supports redirect health and range" {
+    const allocator = std.testing.allocator;
+    var tmp = std.testing.tmpDir(.{});
+    defer tmp.cleanup();
+
+    try tmp.dir.makePath("web");
+    try tmp.dir.makePath("GameData");
+    try tmp.dir.writeFile(.{ .sub_path = "web/redalert.html", .data = "<html>redalert</html>\n" });
+    try tmp.dir.writeFile(.{ .sub_path = "GameData/MAIN1.MIX", .data = "0123456789" });
+
+    const tmp_root = try tmp.dir.realpathAlloc(allocator, ".");
+    defer allocator.free(tmp_root);
+    const web_root = try std.fmt.allocPrint(allocator, "{s}/web", .{tmp_root});
+    defer allocator.free(web_root);
+    const gamedata_root = try std.fmt.allocPrint(allocator, "{s}/GameData", .{tmp_root});
+    defer allocator.free(gamedata_root);
+
+    var child = try spawnServer(
+        allocator,
+        HTTP_PORT,
+        &.{ "--emscripten-dir", web_root, "--gamedata", gamedata_root },
+        false,
+    );
+    defer {
+        _ = child.kill() catch {};
+    }
+
+    var root_client = try Client.connect(allocator, HTTP_PORT);
+    defer root_client.deinit();
+    try root_client.writeAll("GET / HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n");
+    var root_resp = try root_client.readHttpResponse();
+    defer root_resp.deinit(allocator);
+    try std.testing.expectEqual(@as(u16, 302), root_resp.status);
+    try std.testing.expect(std.mem.indexOf(u8, root_resp.headers, "Location: /redalert.html\r\n") != null);
+
+    var health_client = try Client.connect(allocator, HTTP_PORT);
+    defer health_client.deinit();
+    try health_client.writeAll("GET /healthz HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n");
+    var health_resp = try health_client.readHttpResponse();
+    defer health_resp.deinit(allocator);
+    try std.testing.expectEqual(@as(u16, 200), health_resp.status);
+    try std.testing.expectEqualSlices(u8, "ok\n", health_resp.body);
+
+    var range_client = try Client.connect(allocator, HTTP_PORT);
+    defer range_client.deinit();
+    try range_client.writeAll(
+        "GET /GameData/main1.mix HTTP/1.1\r\n" ++
+            "Host: 127.0.0.1\r\n" ++
+            "Range: bytes=2-5\r\n" ++
+            "Connection: close\r\n\r\n",
+    );
+    var range_resp = try range_client.readHttpResponse();
+    defer range_resp.deinit(allocator);
+    try std.testing.expectEqual(@as(u16, 206), range_resp.status);
+    try std.testing.expect(std.mem.indexOf(u8, range_resp.headers, "Content-Range: bytes 2-5/10\r\n") != null);
+    try std.testing.expectEqualSlices(u8, "2345", range_resp.body);
+
+    var compat_client = try Client.connect(allocator, HTTP_PORT);
+    defer compat_client.deinit();
+    try compat_client.writeAll(
+        "GET /gamedata/main1.mix HTTP/1.1\r\n" ++
+            "Host: 127.0.0.1\r\n" ++
+            "Range: bytes=0-0\r\n" ++
+            "Connection: close\r\n\r\n",
+    );
+    var compat_resp = try compat_client.readHttpResponse();
+    defer compat_resp.deinit(allocator);
+    try std.testing.expectEqual(@as(u16, 206), compat_resp.status);
+    try std.testing.expectEqualSlices(u8, "0", compat_resp.body);
+}
+
+test "http basic auth protects static files and websocket upgrade" {
+    const allocator = std.testing.allocator;
+    var tmp = std.testing.tmpDir(.{});
+    defer tmp.cleanup();
+
+    try tmp.dir.makePath("web");
+    try tmp.dir.writeFile(.{ .sub_path = "web/redalert.html", .data = "<html>redalert</html>\n" });
+
+    const tmp_root = try tmp.dir.realpathAlloc(allocator, ".");
+    defer allocator.free(tmp_root);
+    const web_root = try std.fmt.allocPrint(allocator, "{s}/web", .{tmp_root});
+    defer allocator.free(web_root);
+
+    var child = try spawnServer(
+        allocator,
+        AUTH_PORT,
+        &.{ "--emscripten-dir", web_root },
+        true,
+    );
+    defer {
+        _ = child.kill() catch {};
+    }
+
+    var unauth_client = try Client.connect(allocator, AUTH_PORT);
+    defer unauth_client.deinit();
+    try unauth_client.writeAll("GET /redalert.html HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n");
+    var unauth_resp = try unauth_client.readHttpResponse();
+    defer unauth_resp.deinit(allocator);
+    try std.testing.expectEqual(@as(u16, 401), unauth_resp.status);
+    try std.testing.expect(std.mem.indexOf(u8, unauth_resp.headers, "WWW-Authenticate: Basic realm=\"Authentication Required - Red Alert\"\r\n") != null);
+
+    var health_client = try Client.connect(allocator, AUTH_PORT);
+    defer health_client.deinit();
+    try health_client.writeAll("GET /healthz HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n");
+    var health_resp = try health_client.readHttpResponse();
+    defer health_resp.deinit(allocator);
+    try std.testing.expectEqual(@as(u16, 200), health_resp.status);
+
+    const auth_header = try basicAuthHeaderValue(allocator, "redalert", "change-me");
+    defer allocator.free(auth_header);
+
+    var auth_client = try Client.connect(allocator, AUTH_PORT);
+    defer auth_client.deinit();
+    const auth_request = try std.fmt.allocPrint(
+        allocator,
+        "GET /redalert.html HTTP/1.1\r\nHost: 127.0.0.1\r\nAuthorization: {s}\r\nConnection: close\r\n\r\n",
+        .{auth_header},
+    );
+    defer allocator.free(auth_request);
+    try auth_client.writeAll(auth_request);
+    var auth_resp = try auth_client.readHttpResponse();
+    defer auth_resp.deinit(allocator);
+    try std.testing.expectEqual(@as(u16, 200), auth_resp.status);
+    try std.testing.expect(std.mem.indexOf(u8, auth_resp.body, "redalert") != null);
+
+    var ws_client = try Client.connect(allocator, AUTH_PORT);
+    defer ws_client.deinit();
+    const ws_request = try std.fmt.allocPrint(
+        allocator,
+        "GET /ws HTTP/1.1\r\n" ++
+            "Host: 127.0.0.1\r\n" ++
+            "Upgrade: websocket\r\n" ++
+            "Connection: Upgrade\r\n" ++
+            "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n" ++
+            "Sec-WebSocket-Version: 13\r\n" ++
+            "Authorization: {s}\r\n\r\n",
+        .{auth_header},
+    );
+    defer allocator.free(ws_request);
+    try ws_client.writeAll(ws_request);
+    var ws_resp = try ws_client.readHttpResponse();
+    defer ws_resp.deinit(allocator);
+    try std.testing.expectEqual(@as(u16, 101), ws_resp.status);
+}
+
+fn parseStatusCode(headers: []const u8) !u16 {
+    const line_end = std.mem.indexOf(u8, headers, "\r\n") orelse return error.BadResponse;
+    var parts = std.mem.splitScalar(u8, headers[0..line_end], ' ');
+    _ = parts.next() orelse return error.BadResponse;
+    const code = parts.next() orelse return error.BadResponse;
+    return std.fmt.parseInt(u16, code, 10);
+}
+
+fn parseContentLength(headers: []const u8) ?usize {
+    var it = std.mem.splitSequence(u8, headers, "\r\n");
+    _ = it.next();
+    while (it.next()) |line| {
+        if (line.len == 0) break;
+        const colon = std.mem.indexOfScalar(u8, line, ':') orelse continue;
+        const name = line[0..colon];
+        const value = std.mem.trim(u8, line[colon + 1 ..], " \t");
+        if (std.ascii.eqlIgnoreCase(name, "Content-Length")) {
+            return std.fmt.parseInt(usize, value, 10) catch null;
+        }
+    }
+    return null;
+}
+
+fn basicAuthHeaderValue(allocator: std.mem.Allocator, username: []const u8, password: []const u8) ![]u8 {
+    const plain = try std.fmt.allocPrint(allocator, "{s}:{s}", .{ username, password });
+    defer allocator.free(plain);
+    const encoded_len = std.base64.standard.Encoder.calcSize(plain.len);
+    const out = try allocator.alloc(u8, "Basic ".len + encoded_len);
+    std.mem.copyForwards(u8, out[0.."Basic ".len], "Basic ");
+    _ = std.base64.standard.Encoder.encode(out["Basic ".len ..], plain);
+    return out;
 }

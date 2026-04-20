@@ -78,6 +78,7 @@
  *   Check_Mirror -- Checks mirror memory                                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #include	"FUNCTION.H"
+#include "SDLINPUT.H"
 #include "sdl_fs.h"
 #ifdef RA_ENABLE_WOL
 #include "WSMGR.H"
@@ -569,7 +570,11 @@ static void Queue_AI_Multiplayer(void)
 		FRAMESYNC_TIMEOUT = (15*60),	// timeout waiting for frame sync packet
 	};
 
-	int timeout_factor = (Session.Type == GAME_INTERNET) ? 6 : 1;
+	int timeout_factor = (Session.Type == GAME_INTERNET
+#if RA_ENABLE_WOL
+		|| Session.Type == GAME_WOL
+#endif
+	) ? 6 : 1;
 
 	//........................................................................
 	// Variables for sending, receiving & parsing packets:
@@ -1054,8 +1059,11 @@ static RetcodeType Wait_For_Players(int first_time, ConnManClass *net,
 		messages_this_loop = 0;
 		message_limit = 5;
 
-		while ( (messages_this_loop++ < message_limit) &&
-			net->Get_Private_Message (multi_packet_buf, &packetlen, &id) ) {
+		while (messages_this_loop++ < message_limit) {
+			packetlen = Session.MetaSize;
+			if (!net->Get_Private_Message(multi_packet_buf, &packetlen, &id)) {
+				break;
+			}
 
 			Keyboard->Check();
 
@@ -1139,6 +1147,15 @@ static RetcodeType Wait_For_Players(int first_time, ConnManClass *net,
 				Keyboard_Process(input);
 			Map.Render();
 		}
+
+#ifdef __EMSCRIPTEN__
+		/*
+		** The browser WebSocket path only delivers callbacks after control
+		** returns to the main event loop. Without yielding here, this lockstep
+		** wait spins hot and starves both inbound packets and presents.
+		*/
+		SDL_GameInput_Delay(1);
+#endif
 
 	}	/* end of while */
 
@@ -1691,6 +1708,9 @@ static RetcodeType Process_Receive_Packet(ConnManClass *net,
 	//	Get the index of the sender
 	//------------------------------------------------------------------------
 	index = net->Connection_Index(id);
+	if (index == ConnManClass::CONNECTION_NONE || index < 0 || index >= net->Num_Connections()) {
+		return(retcode);
+	}
 
 	//------------------------------------------------------------------------
 	//	Compute the other player's frame # (at the time this packet was sent)

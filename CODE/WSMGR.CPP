@@ -30,11 +30,14 @@ WSManagerClass::WSManagerClass()
 	, ConnCount(0)
 	, PrivHead(nullptr)
 	, PrivTail(nullptr)
+	, PendingPrivHead(nullptr)
+	, PendingPrivTail(nullptr)
 	, GlobalHead(nullptr)
 	, GlobalTail(nullptr)
 	, CtrlHead(nullptr)
 	, CtrlTail(nullptr)
 	, PrivCount(0)
+	, PendingPrivCount(0)
 	, GlobalCount(0)
 	, CtrlCount(0)
 {
@@ -49,6 +52,7 @@ WSManagerClass::~WSManagerClass()
 {
 	Shutdown();
 	Clear_Queue(&PrivHead, &PrivTail);
+	Clear_Queue(&PendingPrivHead, &PendingPrivTail);
 	Clear_Queue(&GlobalHead, &GlobalTail);
 	Clear_Queue(&CtrlHead, &CtrlTail);
 }
@@ -170,6 +174,7 @@ int WSManagerClass::Create_Connection_By_Cid(int id, char const *name, uint32_t 
 			std::strncpy(Conns[i].Name, name ? name : "", CONN_NAME_MAX - 1);
 			Conns[i].Name[CONN_NAME_MAX - 1] = '\0';
 			if (i >= ConnCount) ConnCount = i + 1;
+			Move_Pending_Private_For_Cid(remote_cid, id);
 			return 1;
 		}
 	}
@@ -187,6 +192,7 @@ int WSManagerClass::Delete_Connection(int id)
 	for (int i = 0; i < MAX_CONNECTIONS; ++i) {
 		if (Conns[i].Used && Conns[i].Id == id) {
 			Purge_Private_For_Conn(id);
+			Purge_Pending_Private_For_Cid(Conns[i].RemoteCid);
 			Conns[i].Used = false;
 			Conns[i].Id = -1;
 			Conns[i].RemoteCid = 0;
@@ -277,6 +283,25 @@ void WSManagerClass::Push_Priv(int conn_id, uint8_t const *data, int len)
 	++PrivCount;
 }
 
+void WSManagerClass::Push_Pending_Priv(uint32_t source_cid, uint8_t const *data, int len)
+{
+	if (len < 0 || len > MAX_MSG_LEN) return;
+	if (PendingPrivCount >= MAX_QUEUED_MSGS) return;
+	Msg *m = static_cast<Msg *>(std::malloc(sizeof(Msg)));
+	if (!m) return;
+	m->Data = static_cast<uint8_t *>(std::malloc(len > 0 ? len : 1));
+	if (!m->Data) { std::free(m); return; }
+	if (len > 0) std::memcpy(m->Data, data, len);
+	m->Len = len;
+	m->ConnId = CONNECTION_NONE;
+	m->SourceCid = source_cid;
+	m->Opcode = OP_RELAY_FROM;
+	m->Next = nullptr;
+	if (PendingPrivTail) PendingPrivTail->Next = m; else PendingPrivHead = m;
+	PendingPrivTail = m;
+	++PendingPrivCount;
+}
+
 void WSManagerClass::Push_Global(uint32_t source_cid, uint8_t const *data, int len)
 {
 	if (len < 0 || len > MAX_MSG_LEN) return;
@@ -361,6 +386,67 @@ void WSManagerClass::Purge_Private_For_Conn(int conn_id)
 	}
 }
 
+void WSManagerClass::Purge_Pending_Private_For_Cid(uint32_t source_cid)
+{
+	Msg *prev = nullptr;
+	Msg *cur = PendingPrivHead;
+
+	while (cur) {
+		Msg *next = cur->Next;
+		if (cur->SourceCid == source_cid) {
+			if (prev) {
+				prev->Next = next;
+			} else {
+				PendingPrivHead = next;
+			}
+			if (PendingPrivTail == cur) {
+				PendingPrivTail = prev;
+			}
+			std::free(cur->Data);
+			std::free(cur);
+			--PendingPrivCount;
+		} else {
+			prev = cur;
+		}
+		cur = next;
+	}
+}
+
+void WSManagerClass::Move_Pending_Private_For_Cid(uint32_t source_cid, int conn_id)
+{
+	Msg *prev = nullptr;
+	Msg *cur = PendingPrivHead;
+
+	while (cur) {
+		Msg *next = cur->Next;
+		if (cur->SourceCid == source_cid) {
+			if (prev) {
+				prev->Next = next;
+			} else {
+				PendingPrivHead = next;
+			}
+			if (PendingPrivTail == cur) {
+				PendingPrivTail = prev;
+			}
+			--PendingPrivCount;
+
+			cur->ConnId = conn_id;
+			cur->Next = nullptr;
+			if (PrivCount < MAX_QUEUED_MSGS) {
+				if (PrivTail) PrivTail->Next = cur; else PrivHead = cur;
+				PrivTail = cur;
+				++PrivCount;
+			} else {
+				std::free(cur->Data);
+				std::free(cur);
+			}
+		} else {
+			prev = cur;
+		}
+		cur = next;
+	}
+}
+
 void WSManagerClass::Clear_Peer_State(void)
 {
 	for (int i = 0; i < MAX_CONNECTIONS; ++i) {
@@ -375,9 +461,11 @@ void WSManagerClass::Clear_Peer_State(void)
 void WSManagerClass::Clear_Message_State(void)
 {
 	Clear_Queue(&PrivHead, &PrivTail);
+	Clear_Queue(&PendingPrivHead, &PendingPrivTail);
 	Clear_Queue(&GlobalHead, &GlobalTail);
 	Clear_Queue(&CtrlHead, &CtrlTail);
 	PrivCount = 0;
+	PendingPrivCount = 0;
 	GlobalCount = 0;
 	CtrlCount = 0;
 }
@@ -560,6 +648,8 @@ int WSManagerClass::Service()
 				int conn_id = Cid_To_Conn_Id(source_cid);
 				if (conn_id != CONNECTION_NONE) {
 					Push_Priv(conn_id, p, plen);
+				} else {
+					Push_Pending_Priv(source_cid, p, plen);
 				}
 			}
 			break;
@@ -568,6 +658,7 @@ int WSManagerClass::Service()
 			if (pf.payload_len >= 4) {
 				uint8_t const *p = pf.payload;
 				uint32_t cid = Read_U32(p);
+				Purge_Pending_Private_For_Cid(cid);
 				int conn_id = Cid_To_Conn_Id(cid);
 				if (conn_id != CONNECTION_NONE) Delete_Connection(conn_id);
 			}

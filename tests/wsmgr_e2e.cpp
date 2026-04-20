@@ -142,11 +142,12 @@ int main(int argc, char **argv) {
 	buf_len = sizeof(buf);
 	if (!Wait_For_Ctrl_Op(host, OP_GAME_MEMBERS, buf, &buf_len, 2000)) { std::fprintf(stderr, "host no updated members\n"); return 1; }
 
-	// Set up peer connections in both managers.
+	// Set up the host connection only. The guest mapping is intentionally
+	// delayed to exercise the "packet arrives before Create_Connection" race
+	// that can happen while one peer is still finishing game-start setup.
 	host.Create_Connection_By_Cid(1, "GUEST", guest.My_Client_Id());
-	guest.Create_Connection_By_Cid(1, "HOST", host_cid);
-	std::printf("connections configured: host sees guest cid=%u, guest sees host cid=%u\n",
-		guest.My_Client_Id(), host_cid);
+	std::printf("host connection configured: host sees guest cid=%u\n",
+		guest.My_Client_Id());
 
 	// Host starts the game.
 	host.Send_Game_Start();
@@ -158,20 +159,30 @@ int main(int argc, char **argv) {
 	if (!Wait_For_Ctrl_Op(guest, OP_GAME_STARTED, buf, &buf_len, 2000)) { std::fprintf(stderr, "guest no GAME_STARTED\n"); return 1; }
 	std::printf("game started on both sides\n");
 
-	// Now simulate gameplay: host sends a private message to guest, guest echoes back.
+	// Simulate the startup race: host sends a gameplay packet before the guest
+	// has installed the host cid -> conn_id mapping.
 	char const *hello_msg = "HELLO-FROM-HOST";
 	if (!host.Send_Private_Message((void*)hello_msg, int(std::strlen(hello_msg)), 1, 1)) {
 		std::fprintf(stderr, "host send private fail\n"); return 1;
 	}
 
-	// Guest services and receives.
+	// Guest services first, but should not have a deliverable private message
+	// until the connection mapping is created.
 	int elapsed = 0;
 	while (elapsed < 2000 && guest.Private_Num_Receive() == 0) {
 		guest.Service();
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		elapsed += 10;
 	}
-	if (guest.Private_Num_Receive() == 0) { std::fprintf(stderr, "guest never got private msg\n"); return 1; }
+	if (guest.Private_Num_Receive() != 0) {
+		std::fprintf(stderr, "guest exposed private packet before connection mapping\n"); return 1;
+	}
+
+	guest.Create_Connection_By_Cid(1, "HOST", host_cid);
+	std::printf("guest connection configured: guest sees host cid=%u\n", host_cid);
+	if (guest.Private_Num_Receive() == 0) {
+		std::fprintf(stderr, "guest never got deferred private msg after mapping\n"); return 1;
+	}
 
 	char rbuf[256]; int rlen = sizeof(rbuf); int cid_out = -1;
 	if (!guest.Get_Private_Message(rbuf, &rlen, &cid_out)) { std::fprintf(stderr, "guest Get_Private fail\n"); return 1; }

@@ -178,6 +178,7 @@ SessionClass::SessionClass(void)
 	NetProtect = 1;
 	NetOpen = 0;
 	GameName[0] = 0;
+	GPacketlen = sizeof(GPacket);
 	GProductID = 0;
 
 	MetaSize = MAX_UDP_PACKET_SIZE;
@@ -640,23 +641,23 @@ void SessionClass::Read_MultiPlayer_Settings (void)
 	}
 
 #ifdef __EMSCRIPTEN__
-	// In the browser build, if no WOL server URL is configured we always
-	// derive one from the page origin so a single webserver can serve the
-	// game plus act as the WOL server.
-	if (WolServer[0] == '\0') {
-		char url[256];
-		int ok = EM_ASM_INT({
-			var loc = window.location;
-			var proto = loc.protocol === 'https:' ? 'wss' : 'ws';
-			var s = proto + '://' + loc.host + '/ws';
-			var bytes = lengthBytesUTF8(s) + 1;
-			if (bytes > $1) return 0;
-			stringToUTF8(s, $0, $1);
-			return 1;
-		}, (int)url, (int)sizeof(url));
-		if (ok) {
-			SDL_strlcpy(WolServer, url, sizeof(WolServer));
-		}
+	// In the browser build, always derive the WOL server URL from the current
+	// page origin so the hosted game connects back to the same host that served
+	// the page and assets. Browser config persists across sessions, so only
+	// seeding this when empty can leave a stale prior host pinned after moving
+	// the deployment to a new hostname.
+	char url[256];
+	int ok = EM_ASM_INT({
+		var loc = window.location;
+		var proto = loc.protocol === 'https:' ? 'wss' : 'ws';
+		var s = proto + '://' + loc.host + '/ws';
+		var bytes = lengthBytesUTF8(s) + 1;
+		if (bytes > $1) return 0;
+		stringToUTF8(s, $0, $1);
+		return 1;
+	}, (int)url, (int)sizeof(url));
+	if (ok) {
+		SDL_strlcpy(WolServer, url, sizeof(WolServer));
 	}
 #endif
 }
@@ -1179,6 +1180,30 @@ uint32_t SessionClass::Compute_Unique_ID(void)
 			Add_CRC(&id, static_cast<uint32_t>(path[path_index]));
 		}
 	}
+
+#ifdef __EMSCRIPTEN__
+	/*
+	** Browser tabs can share the same PATH, virtual disk size, and even the
+	** same startup second, which makes the original 1995 machine-ID heuristic
+	** collide far too often for multiplayer lobby identity. Mix in per-load
+	** browser entropy so simultaneous tabs no longer suppress each other's
+	** chat presence as "my own" announce packets.
+	*/
+	uint32_t browser_entropy = static_cast<uint32_t>(EM_ASM_INT({
+		if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+			var values = new Uint32Array(1);
+			crypto.getRandomValues(values);
+			return values[0] | 0;
+		}
+
+		var perf = (typeof performance !== 'undefined' && performance.now)
+			? Math.floor(performance.now() * 1000)
+			: 0;
+		var random = Math.floor(Math.random() * 0x100000000);
+		return ((Date.now() >>> 0) ^ (perf >>> 0) ^ (random >>> 0)) | 0;
+	}));
+	Add_CRC(&id, browser_entropy);
+#endif
 
 	return (id);
 

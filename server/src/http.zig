@@ -17,6 +17,7 @@ pub const Request = struct {
     target: []const u8, // path+query, slice into rx buffer
     path: []const u8, // just the decoded path (points into target or into owned buf)
     host: ?[]const u8 = null,
+    authorization: ?[]const u8 = null,
     upgrade_websocket: bool = false,
     ws_key: ?[]const u8 = null,
     ws_version: ?[]const u8 = null,
@@ -29,6 +30,20 @@ pub const ParseError = error{
     Incomplete,
     BadRequest,
     TooLarge,
+};
+
+pub const RangeError = error{
+    InvalidRange,
+    UnsatisfiableRange,
+};
+
+pub const ByteRange = struct {
+    start: u64,
+    end_inclusive: u64,
+
+    pub fn len(self: ByteRange) u64 {
+        return (self.end_inclusive - self.start) + 1;
+    }
 };
 
 pub fn parseRequest(buf: []const u8) ParseError!Request {
@@ -65,6 +80,8 @@ pub fn parseRequest(buf: []const u8) ParseError!Request {
         value = std.mem.trim(u8, value, " \t");
         if (asciiEqlIgnoreCase(name, "Host")) {
             req.host = value;
+        } else if (asciiEqlIgnoreCase(name, "Authorization")) {
+            req.authorization = value;
         } else if (asciiEqlIgnoreCase(name, "Upgrade")) {
             if (asciiEqlIgnoreCase(value, "websocket")) req.upgrade_websocket = true;
         } else if (asciiEqlIgnoreCase(name, "Sec-WebSocket-Key")) {
@@ -93,6 +110,11 @@ pub fn asciiEqlIgnoreCase(a: []const u8, b: []const u8) bool {
     return true;
 }
 
+pub fn asciiStartsWithIgnoreCase(haystack: []const u8, needle: []const u8) bool {
+    if (haystack.len < needle.len) return false;
+    return asciiEqlIgnoreCase(haystack[0..needle.len], needle);
+}
+
 fn asciiContainsIgnoreCase(haystack: []const u8, needle: []const u8) bool {
     if (needle.len == 0) return true;
     if (haystack.len < needle.len) return false;
@@ -101,6 +123,43 @@ fn asciiContainsIgnoreCase(haystack: []const u8, needle: []const u8) bool {
         if (asciiEqlIgnoreCase(haystack[i .. i + needle.len], needle)) return true;
     }
     return false;
+}
+
+pub fn parseSingleRangeHeader(value: []const u8, full_size: u64) RangeError!ByteRange {
+    if (full_size == 0) return error.UnsatisfiableRange;
+    if (!asciiStartsWithIgnoreCase(value, "bytes=")) return error.InvalidRange;
+
+    const spec = value["bytes=".len..];
+    if (spec.len == 0 or std.mem.indexOfScalar(u8, spec, ',') != null) return error.InvalidRange;
+
+    const dash = std.mem.indexOfScalar(u8, spec, '-') orelse return error.InvalidRange;
+    const start_text = spec[0..dash];
+    const end_text = spec[dash + 1 ..];
+
+    if (start_text.len == 0) {
+        const suffix_len = std.fmt.parseInt(u64, end_text, 10) catch return error.InvalidRange;
+        if (suffix_len == 0) return error.InvalidRange;
+        const actual_len = @min(suffix_len, full_size);
+        return .{
+            .start = full_size - actual_len,
+            .end_inclusive = full_size - 1,
+        };
+    }
+
+    const start = std.fmt.parseInt(u64, start_text, 10) catch return error.InvalidRange;
+    if (start >= full_size) return error.UnsatisfiableRange;
+
+    var end = full_size - 1;
+    if (end_text.len != 0) {
+        end = std.fmt.parseInt(u64, end_text, 10) catch return error.InvalidRange;
+        if (end < start) return error.InvalidRange;
+        if (end >= full_size) end = full_size - 1;
+    }
+
+    return .{
+        .start = start,
+        .end_inclusive = end,
+    };
 }
 
 pub fn mimeFor(path: []const u8) []const u8 {
@@ -223,4 +282,23 @@ test "parse GET with WS upgrade" {
     try std.testing.expect(r.upgrade_websocket);
     try std.testing.expectEqualSlices(u8, "dGhlIHNhbXBsZSBub25jZQ==", r.ws_key.?);
     try std.testing.expectEqualSlices(u8, "/ws", r.path);
+}
+
+test "parse single byte range" {
+    const range = try parseSingleRangeHeader("bytes=4-9", 32);
+    try std.testing.expectEqual(@as(u64, 4), range.start);
+    try std.testing.expectEqual(@as(u64, 9), range.end_inclusive);
+    try std.testing.expectEqual(@as(u64, 6), range.len());
+}
+
+test "parse open ended byte range clamps to file size" {
+    const range = try parseSingleRangeHeader("bytes=5-999", 12);
+    try std.testing.expectEqual(@as(u64, 5), range.start);
+    try std.testing.expectEqual(@as(u64, 11), range.end_inclusive);
+}
+
+test "parse suffix byte range" {
+    const range = try parseSingleRangeHeader("bytes=-4", 12);
+    try std.testing.expectEqual(@as(u64, 8), range.start);
+    try std.testing.expectEqual(@as(u64, 11), range.end_inclusive);
 }

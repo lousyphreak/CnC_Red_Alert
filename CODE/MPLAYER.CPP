@@ -284,6 +284,23 @@ GameType Select_MPlayer_Game (void)
 #endif
 	buttons[button_count] = &cancelbtn;
 	button_ids[button_count++] = BUTTON_CANCEL;
+
+#if defined(__EMSCRIPTEN__) && RA_ENABLE_WOL
+	// In the browser build the only live network backend is the WebSocket/WOL
+	// transport, so default the multiplayer chooser to that button rather than
+	// skirmish. This makes "enter/click through" land on the hosted same-port
+	// networking path by default.
+	if (!udp_enabled && !tcp_enabled) {
+		for (curbutton = 0; curbutton < button_count; ++curbutton) {
+			if (button_ids[curbutton] == BUTTON_WOL) {
+				break;
+			}
+		}
+		if (curbutton >= button_count) {
+			curbutton = 0;
+		}
+	}
+#endif
 	buttons[curbutton]->Turn_On();
 
 	Keyboard->Clear();

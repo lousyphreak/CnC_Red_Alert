@@ -1,15 +1,42 @@
 const std = @import("std");
-const Server = @import("server.zig").Server;
+const server_mod = @import("server.zig");
+const Server = server_mod.Server;
+const BasicAuthConfig = server_mod.BasicAuthConfig;
 
 const Args = struct {
     host: []const u8 = "0.0.0.0",
     port: u16 = 8070,
     gamedata: ?[]const u8 = null,
     emscripten: ?[]const u8 = null,
+    basic_auth: ?BasicAuthConfig = null,
 };
+
+fn getOptionalEnvVarOwned(allocator: std.mem.Allocator, name: []const u8) !?[]const u8 {
+    return std.process.getEnvVarOwned(allocator, name) catch |err| switch (err) {
+        error.EnvironmentVariableNotFound => null,
+        else => return err,
+    };
+}
 
 fn parseArgs(allocator: std.mem.Allocator) !Args {
     var args = Args{};
+    const basic_auth_htpasswd = try getOptionalEnvVarOwned(allocator, "RA_BASIC_AUTH_HTPASSWD");
+    if (basic_auth_htpasswd != null) {
+        std.debug.print("RA_BASIC_AUTH_HTPASSWD is no longer supported by the Zig server; use RA_BASIC_AUTH_USERNAME and RA_BASIC_AUTH_PASSWORD instead.\n", .{});
+        std.process.exit(2);
+    }
+    const basic_auth_username = try getOptionalEnvVarOwned(allocator, "RA_BASIC_AUTH_USERNAME");
+    const basic_auth_password = try getOptionalEnvVarOwned(allocator, "RA_BASIC_AUTH_PASSWORD");
+    if (basic_auth_username != null and basic_auth_password != null) {
+        args.basic_auth = .{
+            .username = basic_auth_username.?,
+            .password = basic_auth_password.?,
+        };
+    } else if (basic_auth_username != null or basic_auth_password != null) {
+        std.debug.print("RA_BASIC_AUTH_USERNAME and RA_BASIC_AUTH_PASSWORD must be set together.\n", .{});
+        std.process.exit(2);
+    }
+
     var it = try std.process.argsWithAllocator(allocator);
     defer it.deinit();
     _ = it.next(); // argv[0]
@@ -70,6 +97,7 @@ pub fn main() !void {
         .port = args.port,
         .gamedata_dir = args.gamedata,
         .emscripten_dir = args.emscripten,
+        .basic_auth = args.basic_auth,
     });
     defer srv.deinit();
     try srv.run();

@@ -147,18 +147,21 @@ private:
 	struct Msg {
 		uint8_t *Data;
 		int Len;
-		int ConnId;          // CONNECTION_NONE for global/control frames
-		uint32_t SourceCid;  // for global messages, the sender's cid
+		int ConnId;          // CONNECTION_NONE for global/control/pending-private frames
+		uint32_t SourceCid;  // for global or pending private messages, the sender's cid
 		uint16_t Opcode;     // original opcode (for control frames)
 		Msg *Next;
 	};
 
 	void Push_Priv(int conn_id, uint8_t const *data, int len);
+	void Push_Pending_Priv(uint32_t source_cid, uint8_t const *data, int len);
 	void Push_Global(uint32_t source_cid, uint8_t const *data, int len);
 	void Push_Ctrl(uint16_t opcode, uint8_t const *data, int len);
 	Msg *Pop(Msg **head, Msg **tail);
 	void Clear_Queue(Msg **head, Msg **tail);
 	void Purge_Private_For_Conn(int conn_id);
+	void Purge_Pending_Private_For_Cid(uint32_t source_cid);
+	void Move_Pending_Private_For_Cid(uint32_t source_cid, int conn_id);
 	void Clear_Peer_State(void);
 	void Clear_Message_State(void);
 	void Reset_State(void);
@@ -180,11 +183,14 @@ private:
 
 	Msg *PrivHead;
 	Msg *PrivTail;
+	Msg *PendingPrivHead;
+	Msg *PendingPrivTail;
 	Msg *GlobalHead;
 	Msg *GlobalTail;
 	Msg *CtrlHead;
 	Msg *CtrlTail;
 	int PrivCount;
+	int PendingPrivCount;
 	int GlobalCount;
 	int CtrlCount;
 };

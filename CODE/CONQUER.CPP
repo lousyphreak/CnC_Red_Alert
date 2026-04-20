@@ -1549,6 +1549,7 @@ void UDP_Call_Back(void)
 	** messages from the connection dialogs.
 	*/
 	if (!Session.NetOpen) {
+		Session.GPacketlen = sizeof(Session.GPacket);
 		if (Active_Net_Mgr()->Get_Global_Message (&Session.GPacket, &Session.GPacketlen, &Session.GAddress, &Session.GProductID)) {
 
 			if (Session.GProductID == UDPGlobalConnClass::COMMAND_AND_CONQUER0) {

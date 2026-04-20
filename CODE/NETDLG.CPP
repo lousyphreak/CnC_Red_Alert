@@ -1070,6 +1070,16 @@ static JoinEventType Get_Join_Responses(JoinStateType *joinstate,
 static int Net_New_Dialog(void);
 static JoinEventType Get_NewGame_Responses(ColorListClass *playerlist,
 	int *color_used);
+#if RA_ENABLE_WOL
+static JoinEventType Drain_Wol_Lobby_Control(ListClass *gamelist);
+static JoinEventType Wol_Reconcile_Game_List(ListClass *gamelist, uint8_t const *&p, uint8_t const *end);
+static void Wol_Reset_Game_Ids(void);
+static void Wol_Add_Game_Id(uint32_t game_id);
+static void Wol_Remove_Game_Id(int index);
+static void Wol_Set_Game_Id(int index, uint32_t game_id);
+static uint32_t Wol_Game_Id(int index);
+static bool Wol_Join_Server_Game(int game_index);
+#endif
 
 #define PCOLOR_BROWN	PCOLOR_GREY
 
@@ -1790,6 +1800,12 @@ static int Net_Join_Dialog(void)
 	Clear_Vector(&Session.Games);
 	Clear_Vector(&Session.Players);
 	Clear_Vector(&Session.Chat);
+#if RA_ENABLE_WOL
+	Wol_Reset_Game_Ids();
+	if (Session.Type == GAME_WOL) {
+		Wol.Send_Game_Leave();
+	}
+#endif
 
 	//------------------------------------------------------------------------
 	// Add myself to the Chat vector
@@ -1810,6 +1826,9 @@ static int Net_Join_Dialog(void)
 	who->Game.IsOpen = 0;
 	who->Game.LastTime = 0;
 	Session.Games.Add (who);
+#if RA_ENABLE_WOL
+	Wol_Add_Game_Id(0);
+#endif
 	item = new char [MPLAYER_NAME_MAX];
 	strcpy(item, Text_String(TXT_LOBBY));
 	gamelist.Add_Item(item);
@@ -2391,6 +2410,11 @@ static int Net_Join_Dialog(void)
 				// If I'm not joined to a game, send a SIGN_OFF to all players
 				// in my Chat vector (but not to myself, index 0)
 				//...............................................................
+#if RA_ENABLE_WOL
+					if (Session.Type == GAME_WOL && joinstate == JOIN_WAIT_CONFIRM) {
+						Wol.Send_Game_Leave();
+					}
+#endif
 					memset (&Session.GPacket, 0, sizeof(GlobalPacketType));
 					Session.GPacket.Command = NET_SIGN_OFF;
 					strcpy(Session.GPacket.Name,namebuf);
@@ -2854,6 +2878,11 @@ static int Net_Join_Dialog(void)
 			//	- Send queries for the new selected game, if there is one
 			//.....................................................................
 			for (i = 1; i < Session.Games.Count(); i++) {
+#if RA_ENABLE_WOL
+				if (Session.Type == GAME_WOL) {
+					continue;
+				}
+#endif
 				if (TickCount - Session.Games[i]->Game.LastTime > 400) {
 
 					delete Session.Games[i];
@@ -2898,6 +2927,11 @@ static int Net_Join_Dialog(void)
 			// for a chat announcement; he then has 1 second to reply.
 			//.....................................................................
 			for (i = 1; i < Session.Chat.Count(); i++) {
+#if RA_ENABLE_WOL
+				if (Session.Type == GAME_WOL) {
+					continue;
+				}
+#endif
 				if (TickCount - Session.Chat[i]->Chat.LastTime > 360) {
 					delete Session.Chat[i];
 					Session.Chat.Delete(Session.Chat[i]);
@@ -3076,6 +3110,9 @@ static int Net_Join_Dialog(void)
 		Clear_Vector(&Session.Players);
 	}
 	Clear_Vector(&Session.Chat);
+#if RA_ENABLE_WOL
+	Wol_Reset_Game_Ids();
+#endif
 
 	return(rc);
 
@@ -3135,6 +3172,14 @@ static int Request_To_Join (char *playername, int join_index,
 		Sound_Effect(VOC_SYS_ERROR);
 		return (false);
 	}
+
+#if RA_ENABLE_WOL
+	if (Session.Type == GAME_WOL && !Wol_Join_Server_Game(join_index)) {
+		Session.Messages.Add_Message(NULL, 0, (char *)Text_String(TXT_REQUEST_DENIED), PCOLOR_BROWN, TPF_TEXT, 1200);
+		Sound_Effect(VOC_SYS_ERROR);
+		return(false);
+	}
+#endif
 
 	//------------------------------------------------------------------------
 	//	Send packet to game's owner
@@ -3225,6 +3270,12 @@ static void Unjoin_Game(char *namebuf,JoinStateType joinstate,
 		NetMgr->Send_Global_Message (&Session.GPacket, sizeof(GlobalPacketType), 1,
 			&(Session.Games[game_index]->Address));
 	}
+
+#if RA_ENABLE_WOL
+	if (Session.Type == GAME_WOL) {
+		Wol.Send_Game_Leave();
+	}
+#endif
 
 	//------------------------------------------------------------------------
 	// Re-init the message system to its new larger size
@@ -3404,6 +3455,365 @@ static void Send_Join_Queries(int curgame, JoinStateType joinstate,
 
 }	/* end of Send_Join_Queries */
 
+#if RA_ENABLE_WOL
+static uint32_t *WolGameIds = NULL;
+static int WolGameIdCount = 0;
+static int WolGameIdCapacity = 0;
+
+static bool Wol_Reserve_Game_Ids(int count)
+{
+	if (count <= WolGameIdCapacity) {
+		return(true);
+	}
+
+	int new_capacity = (WolGameIdCapacity > 0) ? WolGameIdCapacity : 8;
+	while (new_capacity < count) {
+		new_capacity *= 2;
+	}
+
+	uint32_t *new_ids = static_cast<uint32_t *>(std::realloc(WolGameIds, size_t(new_capacity) * sizeof(uint32_t)));
+	if (new_ids == NULL) {
+		return(false);
+	}
+
+	if (new_capacity > WolGameIdCapacity) {
+		std::memset(new_ids + WolGameIdCapacity, 0, size_t(new_capacity - WolGameIdCapacity) * sizeof(uint32_t));
+	}
+
+	WolGameIds = new_ids;
+	WolGameIdCapacity = new_capacity;
+	return(true);
+}
+
+static void Wol_Reset_Game_Ids(void)
+{
+	std::free(WolGameIds);
+	WolGameIds = NULL;
+	WolGameIdCount = 0;
+	WolGameIdCapacity = 0;
+}
+
+static void Wol_Add_Game_Id(uint32_t game_id)
+{
+	if (!Wol_Reserve_Game_Ids(WolGameIdCount + 1)) {
+		return;
+	}
+
+	WolGameIds[WolGameIdCount++] = game_id;
+}
+
+static void Wol_Remove_Game_Id(int index)
+{
+	if (index >= 0 && index < WolGameIdCount) {
+		if (index + 1 < WolGameIdCount) {
+			std::memmove(WolGameIds + index, WolGameIds + index + 1, size_t(WolGameIdCount - index - 1) * sizeof(uint32_t));
+		}
+		WolGameIdCount--;
+	}
+}
+
+static void Wol_Set_Game_Id(int index, uint32_t game_id)
+{
+	if (!Wol_Reserve_Game_Ids(index + 1)) {
+		return;
+	}
+
+	while (WolGameIdCount <= index) {
+		WolGameIds[WolGameIdCount++] = 0;
+	}
+
+	WolGameIds[index] = game_id;
+}
+
+static uint32_t Wol_Game_Id(int index)
+{
+	if (index < 0 || index >= WolGameIdCount) {
+		return(0);
+	}
+
+	return(WolGameIds[index]);
+}
+
+static bool Wol_Join_Server_Game(int game_index)
+{
+	uint32_t game_id = Wol_Game_Id(game_index);
+	if (game_id == 0) {
+		Network_Trace("WOL join missing game id index=%d name=%s", game_index,
+			(game_index >= 0 && game_index < Session.Games.Count()) ? Session.Games[game_index]->Name : "");
+		return(false);
+	}
+
+	if (!Wol.Send_Game_Join(game_id)) {
+		Network_Trace("WOL game join failed game_id=%u index=%d", game_id, game_index);
+		return(false);
+	}
+
+	return(true);
+}
+
+static bool Wol_Read_Control_String(uint8_t const *&p, uint8_t const *end, char *out, int out_size)
+{
+	if (out == NULL || out_size <= 0 || end - p < 2) {
+		return(false);
+	}
+
+	uint16_t len = WolProto::Read_U16(p);
+	if (end - p < len) {
+		return(false);
+	}
+
+	int copy = min<int>(len, out_size - 1);
+	if (copy > 0) {
+		std::memcpy(out, p, size_t(copy));
+	}
+	out[copy] = '\0';
+	p += len;
+	return(true);
+}
+
+static bool Wol_Update_Chat_Node(uint32_t cid, char const *name)
+{
+	UDPAddressClass address;
+	WSManagerClass::Cid_To_Address(cid, &address);
+
+	if (Wol.Is_Logged_In() && cid == Wol.My_Client_Id()) {
+		if (Session.Chat.Count() > 0 && name != NULL && name[0] != '\0') {
+			SDL_strlcpy(Session.Chat[0]->Name, name, sizeof(Session.Chat[0]->Name));
+		}
+		return(false);
+	}
+
+	for (int i = 1; i < Session.Chat.Count(); i++) {
+		if (Session.Chat[i]->Address == address) {
+			if (name != NULL && name[0] != '\0') {
+				SDL_strlcpy(Session.Chat[i]->Name, name, sizeof(Session.Chat[i]->Name));
+			}
+			Session.Chat[i]->Chat.LastTime = TickCount;
+			Session.Chat[i]->Chat.LastChance = 0;
+			return(false);
+		}
+	}
+
+	NodeNameType *who = new NodeNameType();
+	if (name != NULL && name[0] != '\0') {
+		SDL_strlcpy(who->Name, name, sizeof(who->Name));
+	}
+	who->Address = address;
+	who->Chat.LastTime = TickCount;
+	who->Chat.LastChance = 0;
+	who->Chat.Color = PCOLOR_GREY;
+	Session.Chat.Add(who);
+	return(true);
+}
+
+static bool Wol_Remove_Chat_Node(uint32_t cid)
+{
+	UDPAddressClass address;
+	WSManagerClass::Cid_To_Address(cid, &address);
+
+	for (int i = 1; i < Session.Chat.Count(); i++) {
+		if (Session.Chat[i]->Address == address) {
+			delete Session.Chat[i];
+			Session.Chat.Delete(Session.Chat[i]);
+			return(true);
+		}
+	}
+
+	return(false);
+}
+
+static JoinEventType Wol_Update_Game_Node(ListClass *gamelist, char const *name, uint32_t game_id, uint32_t host_cid, bool is_open)
+{
+	if (gamelist == NULL || name == NULL || name[0] == '\0') {
+		return(EV_NONE);
+	}
+
+	UDPAddressClass address;
+	WSManagerClass::Cid_To_Address(host_cid, &address);
+
+	for (int i = 1; i < Session.Games.Count(); i++) {
+		if (Wol_Game_Id(i) == game_id || !strcmp(Session.Games[i]->Name, name)) {
+			Session.Games[i]->Address = address;
+			Session.Games[i]->Game.LastTime = TickCount;
+			Wol_Set_Game_Id(i, game_id);
+			if (Session.Games[i]->Game.IsOpen != is_open) {
+				char *item = (char *)gamelist->Get_Item(i);
+				if (is_open) {
+					sprintf(item, Text_String(TXT_THATGUYS_GAME), name);
+				} else {
+					sprintf(item, Text_String(TXT_THATGUYS_GAME_BRACKET), name);
+				}
+				Session.Games[i]->Game.IsOpen = is_open;
+				gamelist->Flag_To_Redraw();
+				return(EV_NEW_GAME);
+			}
+			return(EV_NONE);
+		}
+	}
+
+	NodeNameType *who = new NodeNameType();
+	SDL_strlcpy(who->Name, name, sizeof(who->Name));
+	who->Address = address;
+	who->Game.IsOpen = is_open ? 1 : 0;
+	who->Game.LastTime = TickCount;
+	Session.Games.Add(who);
+	Wol_Add_Game_Id(game_id);
+
+	char *item = new char[MPLAYER_NAME_MAX + 64];
+	if (is_open) {
+		sprintf(item, Text_String(TXT_THATGUYS_GAME), name);
+	} else {
+		sprintf(item, Text_String(TXT_THATGUYS_GAME_BRACKET), name);
+	}
+	gamelist->Add_Item(item);
+	gamelist->Flag_To_Redraw();
+
+	(void)Wol_Remove_Chat_Node(host_cid);
+	return(EV_NEW_GAME);
+}
+
+static JoinEventType Wol_Reconcile_Game_List(ListClass *gamelist, uint8_t const *&p, uint8_t const *end)
+{
+	if (gamelist == NULL || end - p < 2) {
+		return(EV_NONE);
+	}
+
+	uint16_t count = WolProto::Read_U16(p);
+	int existing_count = Session.Games.Count();
+	uint8_t *seen = new uint8_t[existing_count > 0 ? existing_count : 1];
+	std::memset(seen, 0, size_t(existing_count > 0 ? existing_count : 1));
+
+	JoinEventType retcode = EV_NONE;
+	for (uint16_t index = 0; index < count; index++) {
+		if (end - p < 4) {
+			break;
+		}
+
+		uint32_t game_id = WolProto::Read_U32(p);
+		char game_name[64];
+		if (!Wol_Read_Control_String(p, end, game_name, sizeof(game_name)) || end - p < 8) {
+			break;
+		}
+
+		uint32_t host_cid = WolProto::Read_U32(p);
+		(void)WolProto::Read_U8(p);
+		uint8_t started = WolProto::Read_U8(p);
+		(void)WolProto::Read_U16(p);
+
+		for (int i = 1; i < existing_count; i++) {
+			if (Wol_Game_Id(i) == game_id || !strcmp(Session.Games[i]->Name, game_name)) {
+				seen[i] = 1;
+				break;
+			}
+		}
+
+		JoinEventType event = Wol_Update_Game_Node(gamelist, game_name, game_id, host_cid, started == 0);
+		if (retcode == EV_NONE && event != EV_NONE) {
+			retcode = event;
+		}
+	}
+
+	for (int i = existing_count - 1; i >= 1; i--) {
+		if (seen[i]) {
+			continue;
+		}
+
+		delete Session.Games[i];
+		Session.Games.Delete(Session.Games[i]);
+		Wol_Remove_Game_Id(i);
+
+		char *item = (char *)gamelist->Get_Item(i);
+		gamelist->Remove_Item(item);
+		delete [] item;
+		gamelist->Flag_To_Redraw();
+
+		retcode = EV_GAME_SIGNOFF;
+	}
+
+	delete [] seen;
+	return(retcode);
+}
+
+static JoinEventType Drain_Wol_Lobby_Control(ListClass *gamelist)
+{
+	uint8_t buffer[4096];
+	JoinEventType retcode = EV_NONE;
+
+	while (true) {
+		int buffer_len = sizeof(buffer);
+		uint16_t opcode = Wol.Next_Control_Frame(buffer, &buffer_len);
+		if (opcode == 0) {
+			break;
+		}
+
+		uint8_t const *p = buffer;
+		uint8_t const *end = buffer + buffer_len;
+
+		switch (opcode) {
+		case WolProto::OP_CHANNEL_JOINED: {
+			char channel_name[64];
+			if (!Wol_Read_Control_String(p, end, channel_name, sizeof(channel_name)) || end - p < 2) {
+				break;
+			}
+			uint16_t count = WolProto::Read_U16(p);
+			for (uint16_t index = 0; index < count; index++) {
+				if (end - p < 4) {
+					break;
+				}
+				uint32_t cid = WolProto::Read_U32(p);
+				char nick[64];
+				if (!Wol_Read_Control_String(p, end, nick, sizeof(nick))) {
+					break;
+				}
+				if (Wol_Update_Chat_Node(cid, nick) && retcode == EV_NONE) {
+					retcode = EV_NEW_PLAYER;
+				}
+			}
+			break;
+		}
+
+		case WolProto::OP_CHANNEL_USER_JOIN: {
+			if (end - p < 4) {
+				break;
+			}
+			uint32_t cid = WolProto::Read_U32(p);
+			char nick[64];
+			if (!Wol_Read_Control_String(p, end, nick, sizeof(nick))) {
+				break;
+			}
+			if (Wol_Update_Chat_Node(cid, nick) && retcode == EV_NONE) {
+				retcode = EV_NEW_PLAYER;
+			}
+			break;
+		}
+
+		case WolProto::OP_CHANNEL_USER_LEAVE: {
+			if (end - p < 4) {
+				break;
+			}
+			if (Wol_Remove_Chat_Node(WolProto::Read_U32(p)) && retcode == EV_NONE) {
+				retcode = EV_PLAYER_SIGNOFF;
+			}
+			break;
+		}
+
+		case WolProto::OP_GAME_LIST_REPLY: {
+			JoinEventType event = Wol_Reconcile_Game_List(gamelist, p, end);
+			if (retcode == EV_NONE && event != EV_NONE) {
+				retcode = event;
+			}
+			break;
+		}
+
+		default:
+			break;
+		}
+	}
+
+	return(retcode);
+}
+#endif
+
 /***********************************************************************************************
  * Get_Join_Responses -- sends queries for the Join Dialog												  *
  *                                                                         						  *
@@ -3454,9 +3864,19 @@ static JoinEventType Get_Join_Responses(JoinStateType *joinstate, ListClass *gam
 	JoinEventType retcode = EV_NONE;
 	char txt[80];
 
+#if RA_ENABLE_WOL
+	if (Session.Type == GAME_WOL) {
+		JoinEventType control_event = Drain_Wol_Lobby_Control(gamelist);
+		if (control_event != EV_NONE) {
+			return(control_event);
+		}
+	}
+#endif
+
 	//------------------------------------------------------------------------
 	//	If there is no incoming packet, just return
 	//------------------------------------------------------------------------
+	Session.GPacketlen = sizeof(Session.GPacket);
 	rc = NetMgr->Get_Global_Message (&Session.GPacket, &Session.GPacketlen,
 		&Session.GAddress, &Session.GProductID);
 	if (!rc || Session.GProductID != UDPGlobalConnClass::COMMAND_AND_CONQUER0)
@@ -3552,6 +3972,11 @@ static JoinEventType Get_Join_Responses(JoinStateType *joinstate, ListClass *gam
 			who->Game.IsOpen = Session.GPacket.GameInfo.IsOpen;
 			who->Game.LastTime = TickCount;
 			Session.Games.Add (who);
+#if RA_ENABLE_WOL
+			if (Session.Type == GAME_WOL) {
+				Wol_Add_Game_Id(0);
+			}
+#endif
 
 			//..................................................................
 			//	Create a string for "xxx's Game", leaving room for brackets around
@@ -3752,6 +4177,11 @@ static JoinEventType Get_Join_Responses(JoinStateType *joinstate, ListClass *gam
 			delete Session.Players[0];
 			Session.Players.Delete(Session.Players[0]);
 
+#if RA_ENABLE_WOL
+			if (Session.Type == GAME_WOL) {
+				Wol.Send_Game_Leave();
+			}
+#endif
 			(*joinstate) = JOIN_REJECTED;
 			(*why) = REJECT_BY_OWNER;
 			retcode = EV_STATE_CHANGE;
@@ -3760,6 +4190,11 @@ static JoinEventType Get_Join_Responses(JoinStateType *joinstate, ListClass *gam
 		// If we're waiting for confirmation & got rejected, tell the user why
 		//.....................................................................
 		else if ((*joinstate) == JOIN_WAIT_CONFIRM) {
+#if RA_ENABLE_WOL
+			if (Session.Type == GAME_WOL) {
+				Wol.Send_Game_Leave();
+			}
+#endif
 			(*why) = (RejectType)Session.GPacket.Reject.Why;
 			(*joinstate) = JOIN_REJECTED;
 			Network_Trace("Join state -> %s why=%d", Join_State_Name(*joinstate), *why);
@@ -3860,6 +4295,11 @@ static JoinEventType Get_Join_Responses(JoinStateType *joinstate, ListClass *gam
 				//	ourselves as rejected
 				//...............................................................
 				if ( (*joinstate) > JOIN_NOTHING && i==join_index) {
+#if RA_ENABLE_WOL
+					if (Session.Type == GAME_WOL) {
+						Wol.Send_Game_Leave();
+					}
+#endif
 					(*joinstate) = JOIN_REJECTED;
 					retcode = EV_STATE_CHANGE;
 					(*why) = REJECT_DISBANDED;
@@ -3882,6 +4322,11 @@ static JoinEventType Get_Join_Responses(JoinStateType *joinstate, ListClass *gam
 				//...............................................................
 				delete Session.Games[i];
 				Session.Games.Delete(Session.Games[i]);
+#if RA_ENABLE_WOL
+				if (Session.Type == GAME_WOL) {
+					Wol_Remove_Game_Id(i);
+				}
+#endif
 				item = (char *)(gamelist->Get_Item (i));
 				gamelist->Remove_Item (item);
 				delete [] item;
@@ -4445,6 +4890,16 @@ static int Net_New_Dialog(void)
 	who->Player.House = Session.House;
 	who->Player.Color = Session.ColorIdx;
 	Session.Players.Add (who);
+
+#if RA_ENABLE_WOL
+	if (Session.Type == GAME_WOL) {
+		Wol.Send_Game_Leave();
+		uint8_t max_players = (Session.MaxPlayers > 255) ? 255 : (uint8_t)Session.MaxPlayers;
+		if (!Wol.Send_Game_Create(Session.GameName, max_players)) {
+			Network_Trace("WOL game registration failed game=%s", Session.GameName);
+		}
+	}
+#endif
 	Load_Title_Page(true);
 	CCPalette.Set();	//GamePalette.Set();
 
@@ -5141,6 +5596,11 @@ static int Net_New_Dialog(void)
 		//	received.
 		//.....................................................................
 		memset (&Session.GPacket, 0, sizeof(GlobalPacketType));
+#if RA_ENABLE_WOL
+		if (Session.Type == GAME_WOL) {
+			Wol.Send_Game_Start();
+		}
+#endif
 		if (load_game)
 			Session.GPacket.Command = NET_LOADGAME;
 		else
@@ -5172,6 +5632,7 @@ static int Net_New_Dialog(void)
 
 		do	{
 			NetMgr->Service();
+			Session.GPacketlen = sizeof(Session.GPacket);
 			int retcode = NetMgr->Get_Global_Message (&Session.GPacket, &Session.GPacketlen,
 				&Session.GAddress, &Session.GProductID);
 			if (retcode && Session.GProductID == UDPGlobalConnClass::COMMAND_AND_CONQUER0) {
@@ -5309,9 +5770,16 @@ static JoinEventType Get_NewGame_Responses(ColorListClass *playerlist,
 	int resend;
 	uint32_t version;			// version # to use
 
+#if RA_ENABLE_WOL
+	if (Session.Type == GAME_WOL) {
+		(void)Drain_Wol_Lobby_Control(NULL);
+	}
+#endif
+
 	//------------------------------------------------------------------------
 	//	If there is no incoming packet, just return
 	//------------------------------------------------------------------------
+	Session.GPacketlen = sizeof(Session.GPacket);
 	rc = NetMgr->Get_Global_Message (&Session.GPacket, &Session.GPacketlen,
 		&Session.GAddress, &Session.GProductID);
 	if (!rc || Session.GProductID != UDPGlobalConnClass::COMMAND_AND_CONQUER0) {
@@ -6469,6 +6937,7 @@ static int Net_Fake_New_Dialog(void)
 
 		do	{
 			NetMgr->Service();
+			Session.GPacketlen = sizeof(Session.GPacket);
 			int retcode = NetMgr->Get_Global_Message (&Session.GPacket, &Session.GPacketlen,
 				&Session.GAddress, &Session.GProductID);
 			if (retcode && Session.GProductID == UDPGlobalConnClass::COMMAND_AND_CONQUER0) {
@@ -6552,6 +7021,11 @@ static int Net_Fake_New_Dialog(void)
 	//------------------------------------------------------------------------
 	if (!rc) {
 		Clear_Vector(&Session.Players);
+#if RA_ENABLE_WOL
+		if (Session.Type == GAME_WOL) {
+			Wol.Send_Game_Leave();
+		}
+#endif
 	}
 
 //	while (optionlist.Count()>0) {
@@ -6792,6 +7266,12 @@ static int Net_Fake_Join_Dialog(void)
 	Clear_Vector(&Session.Games);
 	Clear_Vector(&Session.Players);
 	Clear_Vector(&Session.Chat);
+#if RA_ENABLE_WOL
+	Wol_Reset_Game_Ids();
+	if (Session.Type == GAME_WOL) {
+		Wol.Send_Game_Leave();
+	}
+#endif
 
 	//------------------------------------------------------------------------
 	// Add myself to the Chat vector
@@ -6812,6 +7292,9 @@ static int Net_Fake_Join_Dialog(void)
 	who->Game.IsOpen = 0;
 	who->Game.LastTime = 0;
 	Session.Games.Add (who);
+#if RA_ENABLE_WOL
+	Wol_Add_Game_Id(0);
+#endif
 	item = new char [MPLAYER_NAME_MAX];
 	strcpy(item, Text_String(TXT_LOBBY));
 	gamelist.Add_Item(item);
@@ -6940,6 +7423,11 @@ static int Net_Fake_Join_Dialog(void)
 				// in my Chat vector (but not to myself, index 0)
 				//...............................................................
 				else {
+#if RA_ENABLE_WOL
+					if (Session.Type == GAME_WOL && joinstate == JOIN_WAIT_CONFIRM) {
+						Wol.Send_Game_Leave();
+					}
+#endif
 					memset (&Session.GPacket, 0, sizeof(GlobalPacketType));
 					Session.GPacket.Command = NET_SIGN_OFF;
 					strcpy(Session.GPacket.Name,namebuf);
@@ -7232,6 +7720,11 @@ static int Net_Fake_Join_Dialog(void)
 			//	- Send queries for the new selected game, if there is one
 			//.....................................................................
 			for (i = 1; i < Session.Games.Count(); i++) {
+#if RA_ENABLE_WOL
+				if (Session.Type == GAME_WOL) {
+					continue;
+				}
+#endif
 				if (TickCount - Session.Games[i]->Game.LastTime > 400) {
 
 					delete Session.Games[i];
@@ -7394,6 +7887,9 @@ static int Net_Fake_Join_Dialog(void)
 		Clear_Vector(&Session.Players);
 	}
 	Clear_Vector(&Session.Chat);
+#if RA_ENABLE_WOL
+	Wol_Reset_Game_Ids();
+#endif
 
 	return(rc);
 
