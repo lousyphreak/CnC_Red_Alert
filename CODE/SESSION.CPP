@@ -50,12 +50,19 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "FUNCTION.H"
+#if RA_ENABLE_WOL
+#include "WSMGR.H"
+#endif
 #include <cstdint>
 #include <time.h>
 // for station ID computation
 
 //
 #include "WOLDEBUG.H"
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
 
 /***************************** Globals *************************************/
 //---------------------------------------------------------------------------
@@ -143,6 +150,7 @@ SessionClass::SessionClass(void)
 	UniqueID = 0;
 
 	Handle[0] = 0;
+	WolServer[0] = 0;
 	PrefColor = PCOLOR_FIRST;
 	ColorIdx = PCOLOR_FIRST;
 	House = HOUSE_GOOD;
@@ -275,7 +283,11 @@ int SessionClass::Create_Connections(void)
 {
 	int i;
 
-	if (Session.Type != GAME_UDP && Session.Type != GAME_INTERNET) {
+	if (Session.Type != GAME_UDP && Session.Type != GAME_INTERNET
+#if RA_ENABLE_WOL
+		&& Session.Type != GAME_WOL
+#endif
+	) {
 		return (0);
 	}
 
@@ -289,8 +301,16 @@ int SessionClass::Create_Connections(void)
 		//.....................................................................
 		if (!SDL_strcasecmp(Players[i]->Name,
 			HouseClass::As_Pointer(Players[i]->Player.ID)->IniName)) {
-			Udp.Create_Connection((int)Players[i]->Player.ID, Players[i]->Name,
-				&(Players[i]->Address) );
+#if RA_ENABLE_WOL
+			if (Session.Type == GAME_WOL) {
+				Wol.Create_Connection((int)Players[i]->Player.ID, Players[i]->Name,
+					&(Players[i]->Address));
+			} else
+#endif
+			{
+				Udp.Create_Connection((int)Players[i]->Player.ID, Players[i]->Name,
+					&(Players[i]->Address) );
+			}
 		Players[i]->Player.ProcessTime = -1;
 		}
 		else {
@@ -301,6 +321,16 @@ int SessionClass::Create_Connections(void)
 	return (1);
 
 }	// end of Create_Connections
+
+ConnManClass *Active_Net_Mgr(void)
+{
+#if RA_ENABLE_WOL
+	if (Session.Type == GAME_WOL) {
+		return &Wol;
+	}
+#endif
+	return &Udp;
+}
 
 /***************************************************************************
  * SessionClass::Am_I_Master -- tells if the local system is the "master"  *
@@ -559,6 +589,9 @@ void SessionClass::Read_MultiPlayer_Settings (void)
 		//	Get the player's last-used Handle
 		ini.Get_String("MultiPlayer", "Handle", "Noname", Handle, sizeof(Handle));
 
+		//	Get the WOL (WebSocket server) URL
+		ini.Get_String("MultiPlayer", "WolServer", "", WolServer, sizeof(WolServer));
+
 		//	Get the player's last-used Color
 		PrefColor = (PlayerColorType)ini.Get_Int("MultiPlayer", "Color", 0);
 #ifdef FIXIT_VERSION_3
@@ -605,6 +638,27 @@ void SessionClass::Read_MultiPlayer_Settings (void)
 
 		TrapPrintCRC = ini.Get_Int("SyncBug", "PrintCRC", 0x7fffffff);
 	}
+
+#ifdef __EMSCRIPTEN__
+	// In the browser build, if no WOL server URL is configured we always
+	// derive one from the page origin so a single webserver can serve the
+	// game plus act as the WOL server.
+	if (WolServer[0] == '\0') {
+		char url[256];
+		int ok = EM_ASM_INT({
+			var loc = window.location;
+			var proto = loc.protocol === 'https:' ? 'wss' : 'ws';
+			var s = proto + '://' + loc.host + '/ws';
+			var bytes = lengthBytesUTF8(s) + 1;
+			if (bytes > $1) return 0;
+			stringToUTF8(s, $0, $1);
+			return 1;
+		}, (int)url, (int)sizeof(url));
+		if (ok) {
+			SDL_strlcpy(WolServer, url, sizeof(WolServer));
+		}
+	}
+#endif
 }
 
 /***************************************************************************
@@ -633,6 +687,7 @@ void SessionClass::Write_MultiPlayer_Settings (void)
 		ini.Put_Int("MultiPlayer", "Color", (int)PrefColor);
 		ini.Put_Int("MultiPlayer", "Side", House);
 		ini.Put_String("MultiPlayer", "Handle", Handle);
+		ini.Put_String("MultiPlayer", "WolServer", WolServer);
 
 		//	Write the INI data out to a file.
 		ini.Save(file);

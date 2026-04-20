@@ -104,7 +104,7 @@ bool Get_Scenario_File_From_Host(char *return_name, int gametype)
 	*/
 	memset ((void*)&net_send_packet, 0, sizeof (net_send_packet));
 	net_send_packet.Command = NET_REQ_SCENARIO;
-	Udp.Send_Global_Message (&net_send_packet, sizeof (net_send_packet),
+	Active_Net_Mgr()->Send_Global_Message (&net_send_packet, sizeof (net_send_packet),
 		1, &(Session.HostAddress) );
 
 
@@ -121,10 +121,10 @@ bool Get_Scenario_File_From_Host(char *return_name, int gametype)
 //WWDebugString (rt);
 
 	while (response_timer) {
-		Udp.Service();
+		Active_Net_Mgr()->Service();
 
 		packet_len = sizeof(net_receive_packet);
-		if (Udp.Get_Global_Message(&net_receive_packet, &packet_len, &sender_address, &product_id)) {
+		if (Active_Net_Mgr()->Get_Global_Message(&net_receive_packet, &packet_len, &sender_address, &product_id)) {
 #ifdef NETWORK_UDP
 			if (net_receive_packet.Command == NET_FILE_INFO && sender_address == Session.HostAddress) {
 #else
@@ -353,10 +353,10 @@ bool Receive_Remote_File ( char *file_name, uint32_t file_length, int gametype)
 		}
 
 
-		Udp.Service();
+		Active_Net_Mgr()->Service();
 
 		int receive_packet_len = sizeof (receive_packet);
-		if (Udp.Get_Global_Message (&receive_packet, &receive_packet_len,
+		if (Active_Net_Mgr()->Get_Global_Message (&receive_packet, &receive_packet_len,
 			&sender_address, &product_id)){
 
 #ifdef NETWORK_UDP
@@ -580,12 +580,12 @@ bool Send_Remote_File ( char *file_name, int gametype )
 		net_file_info.ScenarioInfo.FileLength = file_length;
 
 		for (int i=0 ; i<Session.RequestCount ; i++){
-			Udp.Send_Global_Message (&net_file_info, sizeof (GlobalPacketType),
+			Active_Net_Mgr()->Send_Global_Message (&net_file_info, sizeof (GlobalPacketType),
 				1, &(Session.Players[Session.ScenarioRequests[i]]->Address) );
 		}
 
-		while (Udp.Global_Num_Send() > 0 && response_timer) {
-			Udp.Service();
+		while (Active_Net_Mgr()->Global_Num_Send() > 0 && response_timer) {
+			Active_Net_Mgr()->Service();
 		}
 
 
@@ -662,11 +662,11 @@ bool Send_Remote_File ( char *file_name, int gametype )
 		}
 
 
-		Udp.Service();
+		Active_Net_Mgr()->Service();
 
 		if (block_number < total_blocks){
 
-			if ( Udp.Global_Num_Send() == 0 ){
+			if ( Active_Net_Mgr()->Global_Num_Send() == 0 ){
 
 				send_packet.Command = NET_FILE_CHUNK;
 				send_packet.BlockNumber = block_number;
@@ -678,7 +678,7 @@ bool Send_Remote_File ( char *file_name, int gametype )
 
 				if (send_file.Read (read_ptr , send_packet.BlockLength) == send_packet.BlockLength){
 					for (int i=0 ; i<Session.RequestCount ; i++){
-						Udp.Send_Global_Message (&send_packet, sizeof (send_packet),
+						Active_Net_Mgr()->Send_Global_Message (&send_packet, sizeof (send_packet),
 							1, &(Session.Players[Session.ScenarioRequests[i]]->Address) );
 					}
 				}
@@ -694,7 +694,7 @@ bool Send_Remote_File ( char *file_name, int gametype )
 
 			}
 		}else{
-			if (Udp.Global_Num_Send() == 0){
+			if (Active_Net_Mgr()->Global_Num_Send() == 0){
 				process = false;
 				return_code = true;
 				progress_meter.Set_Value ( 100 );

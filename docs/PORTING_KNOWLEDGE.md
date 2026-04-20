@@ -1,6 +1,6 @@
 # Porting Knowledge
 
-_Last updated: 2026-04-16_
+_Last updated: 2026-04-20_
 
 ## Windows/MSVC build notes
 
@@ -30,6 +30,35 @@ _Last updated: 2026-04-16_
   - Practical rule: when an MSVC link error reports only one unresolved symbol with the "wrong" mangled return type, check the side/public duplicate headers first before assuming the implementation is missing.
 
 ## Multiplayer networking
+
+- `ConnManClass` receive APIs still use `*buflen` as an input capacity, not just an output length, and any replacement transport has to match that contract exactly.
+  - Practical example from this tree: the first `WSManagerClass` version copied queued private/global payloads into the caller's buffer with no size check and then reported the original queued length even when the control-frame copy had been truncated. That was safe only by accident while tests stayed small; a larger relay payload would have overrun `Session.MetaPacket` or made callers parse beyond the bytes actually written.
+  - Practical rule: treat `Get_Private_Message`, `Get_Global_Message`, and any similar queue-drain helper like the UDP path does — `*buflen` comes in as the destination capacity and goes out as the bytes actually copied. If the queued packet does not fit, drop/report it explicitly instead of memcpy'ing anyway.
+- Per-peer relay queues have to be purged when a peer leaves, not just when the whole manager resets.
+  - Practical example from this tree: `WSManagerClass::Delete_Connection()` originally removed the connection table entry but left already-queued private packets for that conn id sitting in the receive queue. If a peer sent a final gameplay packet and then disconnected immediately, the host could process `PEER_LEFT` and still later receive the stale gameplay payload under the now-dead connection id.
+  - Practical rule: any queued message keyed by connection id must be discarded as part of per-peer teardown, not only during full `Shutdown()` / `Return_To_Lobby()`.
+- The native WebSocket client needs a full protocol-state reset on reconnect, not just a socket close.
+  - Practical example from this tree: the native `WSClientClass` reuse path kept handshake bookkeeping like `handshake_sent` alive across `Close()`, so a later reconnect could skip the HTTP upgrade request entirely and then spin forever waiting for a `WELCOME`.
+  - Practical rule: when a transport object is intended to survive multiple lobby/game/cancel cycles, `Close()` must reset handshake/buffer/fragment state as well as the OS socket handle.
+- Lobby discovery and in-game relay can share one broadcast opcode only until the game actually starts.
+  - Practical example from this tree: the Zig relay originally broadcast `RELAY_BROADCAST` to the union of game members and channel members unconditionally so hosts could answer lobby discovery while already in a game room. Once the match started, that same rule leaked gameplay broadcast traffic to every spectator still sitting in the lobby channel.
+  - Practical rule: pre-start room discovery may need channel + game scope, but once a game is started, gameplay relay must be limited strictly to the current game members.
+- The current blocking WOL login flow on Emscripten depends on Asyncify being present.
+  - Practical example from this tree: `WSManagerClass::Init()` uses `emscripten_sleep(10)` while waiting for the browser WebSocket callbacks to deliver `WELCOME`. Without Asyncify, that blocking login loop would never yield to the browser event loop and the socket would never reach the logged-in state.
+  - Practical rule: if the SDL3/Emscripten build keeps the synchronous `Init()` contract for WOL, guard it with an explicit Asyncify check and treat Asyncify as a required part of that porting surface.
+- The WOL/WebSocket transport is a sessionful connection manager and must be explicitly reset between lobby/game sessions.
+  - Practical example from this tree: unlike `UDPManagerClass`, the initial `WSManagerClass` implementation kept its socket, peer table, and queued relay/control messages alive after a match ended because `Shutdown_Network()` only cleared `Session.GameName`. Starting a second game then reused stale connection ids and server-side game membership, producing immediate "waiting for other player" failures.
+  - Practical rule: distinguish **postgame return to lobby** from **full logout/cancel**. After a normal match end, send `GAME_LEAVE` and clear only per-game peer/queue state while keeping the logged-in lobby session alive; after user cancel/logout or transport failure, fully close the `WSClientClass` and clear login/session state too. Also cover the leave path in end-to-end tests; it is easy for the server to mishandle empty-game teardown.
+
+- The dormant Westwood Online code in this tree is mostly a control-plane layer, not a separate gameplay transport.
+  - Practical example from this tree: `CODE/WOL_MAIN.CPP`, `CODE/WOL_CHAT.CPP`, `CODE/WOL_CGAM.CPP`, and especially `CODE/WOL_GSUP.CPP` handle login, channels, game-room setup, ready/start negotiation, and service-driven metadata, but once setup reaches `GO` the code fills normal `Session` state and hands off into the existing `GAME_INTERNET` multiplayer path.
+  - Practical rule: if a WOL-like replacement is added later, keep the service/client work focused on login/chat/lobby/setup/stats first and reuse the existing gameplay startup/packet flow as long as possible instead of inventing a second in-match networking stack.
+- The real seam for a future WOL replacement is the missing `pWolapi` bridge, not the UI itself.
+  - Practical example from this tree: many files still reference `WolapiObject* pWolapi`, but the current repository no longer contains the bridge implementation/type definition, and the build does not define `WOLAPI_INTEGRATION`. The surviving code is therefore best treated as a behavioral/UI reference rather than something that can simply be turned back on.
+  - Practical rule: replace the old bridge with a new in-process service facade that preserves the same high-level concepts (login state, channels, users, room setup, stats upload) instead of trying to revive the original DLL/COM-style integration.
+- The WOL game-setup contract is host-authoritative and should be preserved even if the new backend uses a different wire protocol.
+  - Practical example from this tree: `CODE/WOL_GSUP.CPP` serializes authoritative match parameters on the host, tracks per-generation acceptance on guests, negotiates color/house ownership, and uses an explicit start/cancel/go handshake plus scenario-missing detection before entering the real match.
+  - Practical rule: keep the room/setup semantics intact in any modern replacement: one authoritative host, explicit param acceptance, explicit ready/start/go, and a pre-launch scenario verification/download step.
 
 - The active SDL3 multiplayer stack can support direct-IP TCP cleanly, but only if it reuses the existing packet/lobby flow rather than introducing a second gameplay network path.
   - Practical example from this tree: `CODE/TCPIP.{H,CPP}` now provides a non-blocking framed TCP transport, while `CODE/UDPMGR.CPP`, `CODE/QUEUE.CPP`, and the existing fake host/join dialogs continue to handle the higher-level game packets and lobby flow.

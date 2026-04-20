@@ -116,8 +116,7 @@ GameType Select_MPlayer_Game (void)
 	int d_tcp_y = d_udp_y + d_udp_h + 2*RESFACTOR;
 #endif
 
-#ifdef WOLAPI_INTEGRATION
-	//	ajw 7/2/98 - added button
+#if RA_ENABLE_WOL
 	int d_wol_w = 80 * RESFACTOR;
 	int d_wol_h = 9 * RESFACTOR;
 	int d_wol_x = d_dialog_cx - d_wol_w / 2;
@@ -126,12 +125,14 @@ GameType Select_MPlayer_Game (void)
 #else
 	int d_wol_y = d_udp_y + d_udp_h + 2*RESFACTOR;
 #endif
+	// Enlarge the dialog to accommodate the extra button.
+	d_dialog_h += d_wol_h + 2*RESFACTOR;
 #endif
 
 	int d_cancel_w = 60 *RESFACTOR;
 	int d_cancel_h = 9 *RESFACTOR;
 	int d_cancel_x = d_dialog_cx - d_cancel_w / 2;
-#ifdef WOLAPI_INTEGRATION
+#if RA_ENABLE_WOL
 	int d_cancel_y = d_wol_y + d_wol_h + d_margin;
 #else
 #if RA_ENABLE_TCP
@@ -152,24 +153,19 @@ GameType Select_MPlayer_Game (void)
 #if RA_ENABLE_TCP
 		BUTTON_TCP,
 #endif
-#ifdef WOLAPI_INTEGRATION
-		BUTTON_WOL,				//	ajw
+#if RA_ENABLE_WOL
+		BUTTON_WOL,
 #endif
 		BUTTON_CANCEL,
 
-#ifdef WOLAPI_INTEGRATION
+		NUM_OF_BUTTONS = 2
 #if RA_ENABLE_TCP
-		NUM_OF_BUTTONS = 5,		//	ajw
-#else
-		NUM_OF_BUTTONS = 4,		//	ajw
+		+ 1
 #endif
-#else
-#if RA_ENABLE_TCP
-		NUM_OF_BUTTONS = 4,
-#else
-		NUM_OF_BUTTONS = 3,
+#if RA_ENABLE_WOL
+		+ 1
 #endif
-#endif
+		+ 1,
 	};
 
 	int num_of_buttons = NUM_OF_BUTTONS - (udp_enabled ? 0 : 1);
@@ -230,9 +226,8 @@ GameType Select_MPlayer_Game (void)
 		d_tcp_x, d_tcp_y, d_tcp_w, d_tcp_h);
 #endif
 
-#ifdef WOLAPI_INTEGRATION
-	//	ajw
-	TextButtonClass wolbtn(BUTTON_WOL, TXT_WOL_INTERNETBUTTON, TPF_BUTTON,
+#if RA_ENABLE_WOL
+	TextButtonClass wolbtn(BUTTON_WOL, TXT_INTERNET, TPF_BUTTON,
 		d_wol_x, d_wol_y, d_wol_w, d_wol_h);
 #endif
 
@@ -261,8 +256,8 @@ GameType Select_MPlayer_Game (void)
 		tcpbtn.Add_Tail(*commands);
 	}
 #endif
-#ifdef WOLAPI_INTEGRATION
-	wolbtn.Add_Tail(*commands);			//	ajw
+#if RA_ENABLE_WOL
+	wolbtn.Add_Tail(*commands);
 #endif
 	cancelbtn.Add_Tail(*commands);
 
@@ -283,8 +278,8 @@ GameType Select_MPlayer_Game (void)
 		button_ids[button_count++] = BUTTON_TCP;
 	}
 #endif
-#ifdef WOLAPI_INTEGRATION
-	buttons[button_count] = &wolbtn;			//	ajw
+#if RA_ENABLE_WOL
+	buttons[button_count] = &wolbtn;
 	button_ids[button_count++] = BUTTON_WOL;
 #endif
 	buttons[button_count] = &cancelbtn;
@@ -374,8 +369,8 @@ GameType Select_MPlayer_Game (void)
 				break;
 #endif
 
-#ifdef WOLAPI_INTEGRATION
-			case (BUTTON_WOL | KN_BUTTON):			//	ajw
+#if RA_ENABLE_WOL
+			case (BUTTON_WOL | KN_BUTTON):
 				selection = BUTTON_WOL;
 				pressed = true;
 				break;
@@ -465,9 +460,9 @@ GameType Select_MPlayer_Game (void)
 					break;
 #endif
 
-#ifdef WOLAPI_INTEGRATION
-				case (BUTTON_WOL):				//	ajw
-					retval = GAME_INTERNET;
+#if RA_ENABLE_WOL
+				case (BUTTON_WOL):
+					retval = GAME_WOL;
 					process = false;
 					break;
 #endif

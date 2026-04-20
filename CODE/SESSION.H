@@ -111,7 +111,8 @@ typedef enum GameEnum {
 	GAME_NORMAL,									// not multiplayer
 	GAME_UDP = 3,									// UDP Network game
 	GAME_INTERNET = 4,							// Internet H2H
-	GAME_SKIRMISH = 5							// 1 plr vs. AI's
+	GAME_SKIRMISH = 5,							// 1 plr vs. AI's
+	GAME_WOL = 6								// WebSocket WOL-replacement backend
 } GameType;
 
 //...........................................................................
@@ -390,6 +391,7 @@ class SessionClass
 		// Player's local options
 		//.....................................................................
 		char Handle[MPLAYER_NAME_MAX];		// player name
+		char WolServer[256];						// WOL (WebSocket) server URL
 		PlayerColorType PrefColor;				// preferred color index
 		PlayerColorType ColorIdx;				// actual color index
 		HousesType House;							// GDI / NOD
@@ -510,6 +512,11 @@ class SessionClass
 
 
 };
+
+class ConnManClass;
+/// Returns the active ConnManClass for the current session (Wol for
+/// GAME_WOL, Udp otherwise).
+ConnManClass *Active_Net_Mgr(void);
 
 #endif		// SESSION_H
 

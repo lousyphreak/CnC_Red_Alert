@@ -97,6 +97,9 @@ B<A> test;
 #endif
 
 #include	"FUNCTION.H"
+#if RA_ENABLE_WOL
+#include	"WSMGR.H"
+#endif
 #include	"SDLINPUT.H"
 #ifdef NETWORK_UDP
 #include	"WSPROTO.H"
@@ -463,9 +466,20 @@ void Main_Game(int argc, char * argv[])
 			Session.RecordFile.Close();
 		}
 
-		if (Session.Type == GAME_UDP) {
+		if (Session.Type == GAME_UDP
+#if RA_ENABLE_WOL
+			|| Session.Type == GAME_WOL
+#endif
+		) {
 			if (!Session.Play) {
-				Shutdown_Network();
+				if (Session.Type == GAME_WOL) {
+#if RA_ENABLE_WOL
+					Session.GameName[0] = 0;
+					Wol.Return_To_Lobby();
+#endif
+				} else {
+					Shutdown_Network();
+				}
 			}
 		}
 
@@ -1127,7 +1141,11 @@ static void Message_Input(KeyNumType &input)
 		**	F1-F7 = "To <name> (house):" (only allowed if we're not in ObiWan mode)
 		**	F8 = "To All:"
 		*/
-		if ((Session.Type == GAME_UDP || Session.Type == GAME_INTERNET) && !Session.Messages.Is_Edit()) {
+		if ((Session.Type == GAME_UDP || Session.Type == GAME_INTERNET
+#if RA_ENABLE_WOL
+			|| Session.Type == GAME_WOL
+#endif
+		) && !Session.Messages.Is_Edit()) {
 		/*
 		**	Network game message addressing
 		*/
@@ -1142,13 +1160,13 @@ static void Message_Input(KeyNumType &input)
 				Map.Flag_To_Redraw(false);
 
 #ifdef WOLAPI_INTEGRATION
-			} else if ((input - KN_F1) < Udp.Num_Connections() && !Session.ObiWan && input != PAGE_RESPOND_KEY ) {
+			} else if ((input - KN_F1) < Active_Net_Mgr()->Num_Connections() && !Session.ObiWan && input != PAGE_RESPOND_KEY ) {
 #else
-			} else if ((input - KN_F1) < Udp.Num_Connections() && !Session.ObiWan) {
+			} else if ((input - KN_F1) < Active_Net_Mgr()->Num_Connections() && !Session.ObiWan) {
 #endif
-				id = Udp.Connection_ID(input - KN_F1);
-				Session.MessageAddress = (*(Udp.Connection_Address (id)));
-				sprintf(txt, Text_String(TXT_TO), Udp.Connection_Name(id));
+				id = Active_Net_Mgr()->Connection_ID(input - KN_F1);
+				Session.MessageAddress = (*(Active_Net_Mgr()->Connection_Address (id)));
+				sprintf(txt, Text_String(TXT_TO), Active_Net_Mgr()->Connection_Name(id));
 
 				Session.Messages.Add_Edit(Session.ColorIdx,
 					TPF_6PT_GRAD | TPF_USE_GRAD_PAL | TPF_FULLSHADOW, txt, 0, 232 * RESFACTOR);
@@ -1227,7 +1245,11 @@ static void Message_Input(KeyNumType &input)
 	**	Send a message
 	*/
 	if ((rc==3 || rc==4) && Session.Type != GAME_NORMAL && Session.Type != GAME_SKIRMISH) {
-		if (Session.Type == GAME_UDP || Session.Type == GAME_INTERNET) {
+		if (Session.Type == GAME_UDP || Session.Type == GAME_INTERNET
+#if RA_ENABLE_WOL
+			|| Session.Type == GAME_WOL
+#endif
+		) {
 #ifdef WOLAPI_INTEGRATION
 			NetNumType blip;
 			NetNodeType blop;
@@ -1266,11 +1288,11 @@ static void Message_Input(KeyNumType &input)
 				**	the message to every player we have a connection with.
 				*/
 				if (Session.MessageAddress.Is_Broadcast()) {
-					for (i = 0; i < Udp.Num_Connections(); i++) {
-						Udp.Send_Global_Message(&Session.GPacket,
+					for (i = 0; i < Active_Net_Mgr()->Num_Connections(); i++) {
+						Active_Net_Mgr()->Send_Global_Message(&Session.GPacket,
 							sizeof(GlobalPacketType), 1,
-							Udp.Connection_Address(Udp.Connection_ID(i)));
-						Udp.Service();
+							Active_Net_Mgr()->Connection_Address(Active_Net_Mgr()->Connection_ID(i)));
+						Active_Net_Mgr()->Service();
 					}
 				} else {
 
@@ -1278,10 +1300,10 @@ static void Message_Input(KeyNumType &input)
 					**	Otherwise, MessageAddress contains the exact address to send to.
 					**	Send to that address only.
 					*/
-					Udp.Send_Global_Message(&Session.GPacket,
+					Active_Net_Mgr()->Send_Global_Message(&Session.GPacket,
 						sizeof(GlobalPacketType), 1,
 						&Session.MessageAddress);
-					Udp.Service();
+					Active_Net_Mgr()->Service();
 
 				}
 
@@ -1441,7 +1463,11 @@ void Call_Back(void)
 	/*
 	**	Network maintenance.
 	*/
-	if (Session.Type == GAME_UDP || Session.Type == GAME_INTERNET) {
+	if (Session.Type == GAME_UDP || Session.Type == GAME_INTERNET
+#if RA_ENABLE_WOL
+		|| Session.Type == GAME_WOL
+#endif
+	) {
 		if (trace_callback) Conquer_Trace("Call_Back UDP start");
 		UDP_Call_Back();
 		if (trace_callback) Conquer_Trace("Call_Back UDP complete");
@@ -1516,14 +1542,14 @@ void Call_Back_Wait(int time)
 
 void UDP_Call_Back(void)
 {
-	Udp.Service();
+	Active_Net_Mgr()->Service();
 
 	/*
 	** Read packets only if the game is "closed", so we don't steal global
 	** messages from the connection dialogs.
 	*/
 	if (!Session.NetOpen) {
-		if (Udp.Get_Global_Message (&Session.GPacket, &Session.GPacketlen, &Session.GAddress, &Session.GProductID)) {
+		if (Active_Net_Mgr()->Get_Global_Message (&Session.GPacket, &Session.GPacketlen, &Session.GAddress, &Session.GProductID)) {
 
 			if (Session.GProductID == UDPGlobalConnClass::COMMAND_AND_CONQUER0) {
 
@@ -1533,11 +1559,11 @@ void UDP_Call_Back(void)
 				**	it over.
 				*/
 				if (Session.GPacket.Command == NET_SIGN_OFF) {
-					for (int i = 0; i < Udp.Num_Connections(); i++) {
+					for (int i = 0; i < Active_Net_Mgr()->Num_Connections(); i++) {
 
-						int id = Udp.Connection_ID(i);
+						int id = Active_Net_Mgr()->Connection_ID(i);
 
-						if (Session.GAddress == (*Udp.Connection_Address(id))) {
+						if (Session.GAddress == (*Active_Net_Mgr()->Connection_Address(id))) {
 							Destroy_Connection(id, 0);
 						}
 					}

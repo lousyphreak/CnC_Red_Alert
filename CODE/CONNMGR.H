@@ -70,6 +70,8 @@
 
 #include <cstdint>
 
+class UDPAddressClass;
+
 
 /*
 ***************************** Class Declaration *****************************
@@ -94,6 +96,11 @@ class ConnManClass
 		virtual ~ConnManClass () {};
 
 		/*.....................................................................
+		Transport initialization (opens sockets / server connections etc.).
+		.....................................................................*/
+		virtual int Init(void) = 0;
+
+		/*.....................................................................
 		The Service routine:
 		- Parses incoming packets, and adds them to the Receive Queue for the
 		  Connection Class(s) for this protocol
@@ -103,7 +110,7 @@ class ConnManClass
 		virtual int Service (void) = 0;
 
 		/*.....................................................................
-		Sending & receiving data
+		Sending & receiving data (private / per-peer channel, used for gameplay).
 		.....................................................................*/
 		virtual int Send_Private_Message (void *buf, int buflen,
 			int ack_req = 1, int conn_id = CONNECTION_NONE) = 0;
@@ -111,11 +118,26 @@ class ConnManClass
 			int *conn_id) = 0;
 
 		/*.....................................................................
+		Sending & receiving data (global / broadcast channel, used by the
+		pre-game lobby for game discovery and option negotiation).
+		.....................................................................*/
+		virtual int Send_Global_Message(void *buf, int buflen, int ack_req = 0,
+			UDPAddressClass *address = 0) = 0;
+		virtual int Get_Global_Message(void *buf, int *buflen,
+			UDPAddressClass *address, uint16_t *product_id) = 0;
+		virtual uint32_t Global_Response_Time(void) { return Response_Time(); }
+		virtual void Reset_Global_Response_Time(void) { Reset_Response_Time(); }
+
+		/*.....................................................................
 		Connection management
 		.....................................................................*/
+		virtual int Create_Connection(int id, char *name, UDPAddressClass *address) = 0;
+		virtual int Delete_Connection(int id) = 0;
 		virtual int Num_Connections(void) = 0;
 		virtual int Connection_ID(int index) = 0;
 		virtual int Connection_Index(int id) = 0;
+		virtual char *Connection_Name(int id) = 0;
+		virtual UDPAddressClass *Connection_Address(int id) = 0;
 
 		/*.....................................................................
 		Queue utility routines
@@ -124,6 +146,12 @@ class ConnManClass
 		virtual int Global_Num_Receive(void) = 0;
 		virtual int Private_Num_Send(int id = CONNECTION_NONE) = 0;
 		virtual int Private_Num_Receive(int id = CONNECTION_NONE) = 0;
+
+		/*.....................................................................
+		Transport shutdown hook. UDP historically didn't need explicit teardown
+		here, but stateful transports such as WebSocket do.
+		.....................................................................*/
+		virtual void Shutdown(void) {}
 
 		/*.....................................................................
 		Timing management

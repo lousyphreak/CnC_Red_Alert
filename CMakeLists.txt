@@ -18,6 +18,7 @@ option(RA_ENABLE_ASAN "Enable AddressSanitizer" OFF)
 option(RA_ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer" OFF)
 option(RA_ENABLE_UDP "Enable UDP multiplayer transport" ON)
 option(RA_ENABLE_TCP "Enable TCP multiplayer transport" ON)
+option(RA_ENABLE_WOL "Enable WebSocket (WOL replacement) multiplayer transport" ON)
 option(RA_ENABLE_DVD_MOVIES "Enable DVD-specific movie handling" OFF)
 option(RA_EMSCRIPTEN_PACKAGE_GAMEDATA "Package the GameData directory into the emscripten output" OFF)
 option(RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA "Load GameData over HTTP on demand in the emscripten build" ON)
@@ -57,6 +58,12 @@ if(RA_ENABLE_TCP)
     list(APPEND RA_COMMON_DEFINITIONS RA_ENABLE_TCP=1)
 else()
     list(APPEND RA_COMMON_DEFINITIONS RA_ENABLE_TCP=0)
+endif()
+
+if(RA_ENABLE_WOL)
+    list(APPEND RA_COMMON_DEFINITIONS RA_ENABLE_WOL=1)
+else()
+    list(APPEND RA_COMMON_DEFINITIONS RA_ENABLE_WOL=0)
 endif()
 
 if(RA_ENABLE_DVD_MOVIES)
@@ -294,6 +301,9 @@ if(EMSCRIPTEN)
         "-sMIN_WEBGL_VERSION=1"
         "-sENVIRONMENT=web"
     )
+    if(RA_ENABLE_WOL)
+        target_link_options(redalert PRIVATE "-sUSE_WEBSOCKET=1")
+    endif()
     if(RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA)
         target_link_options(redalert PRIVATE
             "-sFORCE_FILESYSTEM"

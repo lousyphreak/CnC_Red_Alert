@@ -1316,6 +1316,14 @@ void UDPManagerClass::Reset_Response_Time(void)
 }	/* end of Reset_Response_Time */
 
 
+void UDPManagerClass::Reset_Global_Response_Time(void)
+{
+	if (GlobalChannel) {
+		GlobalChannel->Queue->Reset_Response_Time();
+	}
+}
+
+
 /***************************************************************************
  * UDPManagerClass::Oldest_Send -- gets ptr to oldest send buf             *
  *                                                                         *

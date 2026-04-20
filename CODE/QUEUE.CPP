@@ -79,6 +79,9 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #include	"FUNCTION.H"
 #include "sdl_fs.h"
+#ifdef RA_ENABLE_WOL
+#include "WSMGR.H"
+#endif
 
 #ifdef WOLAPI_INTEGRATION
 //#include "WOLDEBUG.H"
@@ -373,6 +376,9 @@ void Queue_AI(void)
 
 			case GAME_UDP:
 			case GAME_INTERNET:
+#if RA_ENABLE_WOL
+			case GAME_WOL:
+#endif
 				Queue_AI_Multiplayer();
 				break;
 		}
@@ -607,6 +613,13 @@ static void Queue_AI_Multiplayer(void)
 		multi_packet_max = Session.MetaSize;
 		net = &Udp;
 	}
+#if RA_ENABLE_WOL
+	else if (Session.Type == GAME_WOL) {
+		multi_packet_buf = Session.MetaPacket;
+		multi_packet_max = Session.MetaSize;
+		net = &Wol;
+	}
+#endif
 
 	//------------------------------------------------------------------------
 	//	Debug stuff
@@ -1205,7 +1218,11 @@ static void Generate_Timing_Event(ConnManClass *net, int my_sent)
 			// response time.
 			//..................................................................
 			else {
-				if (Session.Type == GAME_UDP || Session.Type == GAME_INTERNET) {
+				if (Session.Type == GAME_UDP || Session.Type == GAME_INTERNET
+#if RA_ENABLE_WOL
+					|| Session.Type == GAME_WOL
+#endif
+				) {
 					ev.Data.FrameInfo.Delay = max(static_cast<uint32_t>(resp_time / 8),
 						 static_cast<uint32_t>(NETWORK_MIN_MAX_AHEAD));
 				}
@@ -1964,7 +1981,11 @@ static int Handle_Timeout(ConnManClass *net, int32_t *their_frame,
 	//------------------------------------------------------------------------
 	//	For network, destroy the oldest connection
 	//------------------------------------------------------------------------
-	if (Session.Type == GAME_UDP || Session.Type == GAME_INTERNET) {
+	if (Session.Type == GAME_UDP || Session.Type == GAME_INTERNET
+#if RA_ENABLE_WOL
+		|| Session.Type == GAME_WOL
+#endif
+	) {
 		j = 0x7fffffff;
 		oldest_index = 0;
 		for (i = 0; i < net->Num_Connections(); i++) {
@@ -1992,7 +2013,11 @@ static int Handle_Timeout(ConnManClass *net, int32_t *their_frame,
 				their_sent[i] = their_sent[i+1];
 				their_recv[i] = their_recv[i+1];
 			}
-			if (Session.Type == GAME_UDP || Session.Type == GAME_INTERNET) {
+			if (Session.Type == GAME_UDP || Session.Type == GAME_INTERNET
+#if RA_ENABLE_WOL
+				|| Session.Type == GAME_WOL
+#endif
+			) {
 				Destroy_Connection(id,1);
 			}
 		}
@@ -2733,7 +2758,7 @@ static int Extract_Compressed_Events(void *buf, int bufsize)
 			//..................................................................
 			if (eventtype == EventClass::FRAMEINFO) {
 				Zero_Event_Memory(frameinfo);
-				memcpy(&frameinfo, ((char *)buf) + pos,
+				memcpy(static_cast<void *>(reinterpret_cast<unsigned char *>(&frameinfo)), ((char *)buf) + pos,
 					offsetof(EventClass, Data) + size_of(EventClass, Data.FrameInfo));
 				eventdata.Frame = frameinfo.Frame;
 				eventdata.ID = frameinfo.ID;
@@ -3066,7 +3091,11 @@ static int Execute_DoList(int max_houses, HousesType base_house,
 					// connection ID.
 					//............................................................
 						if ((Session.Type == GAME_UDP ||
-							Session.Type == GAME_INTERNET) && net) {
+							Session.Type == GAME_INTERNET
+#if RA_ENABLE_WOL
+							|| Session.Type == GAME_WOL
+#endif
+						) && net) {
 							index = net->Connection_Index (house);
 							if (index != -1) {
 								for (k = index; k < net->Num_Connections() - 1; k++) {
@@ -3075,7 +3104,11 @@ static int Execute_DoList(int max_houses, HousesType base_house,
 									their_recv[k] = their_recv[k+1];
 								}
 								if (Session.Type == GAME_UDP ||
-									Session.Type == GAME_INTERNET) {
+									Session.Type == GAME_INTERNET
+#if RA_ENABLE_WOL
+									|| Session.Type == GAME_WOL
+#endif
+								) {
 									Destroy_Connection(house,0);
 								}
 							}
@@ -3121,7 +3154,11 @@ static int Execute_DoList(int max_houses, HousesType base_house,
 							if (WWMessageBox().Process (TXT_OUT_OF_SYNC,
 								TXT_CONTINUE, TXT_STOP) == 0) {
 								if ((Session.Type == GAME_UDP ||
-									Session.Type == GAME_INTERNET) && net) {
+									Session.Type == GAME_INTERNET
+#if RA_ENABLE_WOL
+									|| Session.Type == GAME_WOL
+#endif
+								) && net) {
 									while (net->Num_Connections()) {
 										Keyboard->Check();
 										Destroy_Connection (net->Connection_ID(0), -1);

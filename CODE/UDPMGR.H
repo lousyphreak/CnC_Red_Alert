@@ -158,7 +158,7 @@ class UDPManagerClass : public ConnManClass
 		/*.....................................................................
 		Initialization routines.
 		.....................................................................*/
-		int Init (void);
+		virtual int Init(void);
 		int Is_UDP(void);
 		virtual void Set_Timing (uint32_t retrydelta, uint32_t maxretries,
 			uint32_t timeout);
@@ -168,21 +168,21 @@ class UDPManagerClass : public ConnManClass
 		These routines control creation of the "Connections" (data queues) for
 		each remote system.
 		.....................................................................*/
-		int Create_Connection(int id, char *name, UDPAddressClass *address);
-		int Delete_Connection(int id);
+		virtual int Create_Connection(int id, char *name, UDPAddressClass *address);
+		virtual int Delete_Connection(int id);
 		virtual int Num_Connections(void);
 		virtual int Connection_ID(int index);
-		char *Connection_Name(int id);
-		UDPAddressClass * Connection_Address(int id);
+		virtual char *Connection_Name(int id);
+		virtual UDPAddressClass * Connection_Address(int id);
 		virtual int Connection_Index(int id);
 		void Set_Connection_Parms(int index, int id, char *name);
 
 		/*.....................................................................
 		This is how the application sends & receives messages.
 		.....................................................................*/
-		int Send_Global_Message (void *buf, int buflen, int ack_req = 0,
+		virtual int Send_Global_Message (void *buf, int buflen, int ack_req = 0,
 			UDPAddressClass *address = NULL);
-		int Get_Global_Message (void *buf, int *buflen, UDPAddressClass *address,
+		virtual int Get_Global_Message (void *buf, int *buflen, UDPAddressClass *address,
 			uint16_t *product_id);
 
 		virtual int Send_Private_Message (void *buf, int buflen,
@@ -221,8 +221,9 @@ class UDPManagerClass : public ConnManClass
 		reset the response time for all queues.
 		.....................................................................*/
 		virtual uint32_t Response_Time(void);
-		uint32_t Global_Response_Time(void);
+		virtual uint32_t Global_Response_Time(void);
 		virtual void Reset_Response_Time(void);
+		virtual void Reset_Global_Response_Time(void);
 
 		/*.....................................................................
 		This routine returns a pointer to the oldest non-ACK'd buffer I've sent.

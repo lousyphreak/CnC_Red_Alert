@@ -1502,6 +1502,29 @@ bool Select_Game(bool fade)
 							}
 							break;
 
+#if RA_ENABLE_WOL
+						/*
+						**	WOL (WebSocket server) multiplayer.
+						*/
+						case GAME_WOL:
+							WWDebugString ("RA95 - Game type is WOL.\n");
+							if (Init_Network() && Remote_Connect()) {
+#ifdef FIXIT_VERSION_3
+								Options.ScoreVolume = Options.MultiScoreVolume;
+#else
+								Options.ScoreVolume = 0;
+#endif
+								process = false;
+								Theme.Fade_Out();
+							} else {
+								Shutdown_Network();
+								Session.Type = GAME_NORMAL;
+								display = true;
+								selection = SEL_NONE;
+							}
+							break;
+#endif
+
 						default:
 							break;
 
@@ -1935,6 +1958,18 @@ bool Parse_Command_Line(int argc, char * argv[])
 			}
 
 			Internet_Set_Command_Line_Name(argv[index + 1]);
+			++index;
+			continue;
+		}
+
+		if (argv[index] != NULL && SDL_strcasecmp(argv[index], "-wol-server") == 0) {
+			if (index + 1 >= argc || argv[index + 1] == NULL || argv[index + 1][0] == '\0' ||
+				SDL_strlen(argv[index + 1]) >= sizeof(Session.WolServer)) {
+				puts(TEXT_OPTIONS);
+				return(false);
+			}
+			SDL_strlcpy(Session.WolServer, argv[index + 1], sizeof(Session.WolServer));
+			Session.Write_MultiPlayer_Settings();
 			++index;
 			continue;
 		}
