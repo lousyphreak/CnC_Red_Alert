@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Red Alert</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+        color: #ddd;
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        overscroll-behavior: none;
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      #ra-stage {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #000;
+      }
+
+      #canvas {
+        display: block;
+        background: #000;
+        outline: none;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+        max-width: 100%;
+        max-height: 100%;
+      }
+
+      #canvas:focus {
+        outline: none;
+      }
+
+      #ra-ui {
+        position: fixed;
+        top: env(safe-area-inset-top, 0);
+        right: env(safe-area-inset-right, 0);
+        padding: 8px;
+        display: flex;
+        gap: 6px;
+        z-index: 10;
+        opacity: 0.35;
+        transition: opacity 0.2s ease;
+      }
+
+      #ra-ui:hover,
+      #ra-ui:focus-within,
+      #ra-ui.visible {
+        opacity: 1.0;
+      }
+
+      .ra-btn {
+        appearance: none;
+        border: 1px solid #555;
+        background: rgba(20, 20, 20, 0.75);
+        color: #eee;
+        font: inherit;
+        font-size: 13px;
+        padding: 6px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        line-height: 1;
+      }
+
+      .ra-btn:hover {
+        background: rgba(50, 50, 50, 0.85);
+        border-color: #888;
+      }
+
+      .ra-btn:active {
+        background: rgba(80, 80, 80, 0.9);
+      }
+
+      #ra-status {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: env(safe-area-inset-bottom, 0);
+        padding: 6px 12px;
+        font-size: 13px;
+        text-align: center;
+        color: #ccc;
+        background: rgba(0, 0, 0, 0.6);
+        pointer-events: none;
+        z-index: 9;
+        transition: opacity 0.3s ease;
+      }
+
+      #ra-status.hidden {
+        opacity: 0;
+      }
+
+      /* When the canvas element is in native browser fullscreen, it takes over
+         the whole screen; make sure it fills it properly. */
+      #canvas:fullscreen,
+      #canvas:-webkit-full-screen {
+        width: 100vw !important;
+        height: 100vh !important;
+        max-width: 100vw;
+        max-height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="ra-stage">
+      <canvas
+        id="canvas"
+        oncontextmenu="event.preventDefault()"
+        tabindex="-1"
+      ></canvas>
+    </div>
+
+    <div id="ra-ui">
+      <button id="ra-fullscreen" class="ra-btn" type="button" title="Toggle fullscreen (F11)">Fullscreen</button>
+    </div>
+
+    <div id="ra-status">Downloading...</div>
+
+    <script type="text/javascript">
+      (function () {
+        var canvas = document.getElementById('canvas');
+        var stage = document.getElementById('ra-stage');
+        var statusEl = document.getElementById('ra-status');
+        var ui = document.getElementById('ra-ui');
+        var fsBtn = document.getElementById('ra-fullscreen');
+
+        // ---- Size management --------------------------------------------------
+        // Compute the renderable area in CSS pixels. We clamp to the actual
+        // visible viewport so that the canvas never exceeds the browser chrome
+        // (phone address bars, on-screen keyboards, etc.). visualViewport gives
+        // us the most accurate answer on mobile; innerWidth/innerHeight is the
+        // fallback for desktop browsers.
+        function getViewportSize() {
+          var w = window.innerWidth || document.documentElement.clientWidth;
+          var h = window.innerHeight || document.documentElement.clientHeight;
+          if (window.visualViewport) {
+            w = Math.min(w, Math.floor(window.visualViewport.width));
+            h = Math.min(h, Math.floor(window.visualViewport.height));
+          }
+          if (w < 1) w = 1;
+          if (h < 1) h = 1;
+          return { width: w, height: h };
+        }
+
+        // Apply a new size to the canvas. This sets both the CSS size (what the
+        // user sees) and the drawing-buffer size (what SDL/GL render into) so
+        // they stay in lock-step. SDL3's emscripten backend picks up CSS size
+        // changes and posts SDL_EVENT_WINDOW_RESIZED automatically.
+        function applySize(width, height) {
+          canvas.style.width = width + 'px';
+          canvas.style.height = height + 'px';
+          // Only assign the drawing-buffer size when it actually differs; some
+          // GL drivers treat every assignment as a full reallocation.
+          if (canvas.width !== width) canvas.width = width;
+          if (canvas.height !== height) canvas.height = height;
+        }
+
+        function resizeToViewport() {
+          // When the canvas is in its own fullscreen element the browser sizes
+          // it for us via CSS; leave the drawing buffer to match that.
+          if (document.fullscreenElement === canvas ||
+              document.webkitFullscreenElement === canvas) {
+            var rect = canvas.getBoundingClientRect();
+            applySize(Math.max(1, Math.floor(rect.width)),
+                      Math.max(1, Math.floor(rect.height)));
+            return;
+          }
+          var s = getViewportSize();
+          applySize(s.width, s.height);
+        }
+
+        // Pre-size the canvas before the wasm Module initializes so the game's
+        // initial SDL_CreateWindow / SDL_GetDisplayBounds call sees the right
+        // dimensions and the renderable area is correct from the first frame.
+        resizeToViewport();
+
+        // React to every way the viewport can change size on desktop or mobile.
+        window.addEventListener('resize', resizeToViewport, { passive: true });
+        window.addEventListener('orientationchange', function () {
+          // Orientation change fires before the new viewport is committed; defer.
+          setTimeout(resizeToViewport, 50);
+          setTimeout(resizeToViewport, 250);
+        }, { passive: true });
+        if (window.visualViewport) {
+          window.visualViewport.addEventListener('resize', resizeToViewport, { passive: true });
+          window.visualViewport.addEventListener('scroll', resizeToViewport, { passive: true });
+        }
+        document.addEventListener('fullscreenchange', resizeToViewport);
+        document.addEventListener('webkitfullscreenchange', resizeToViewport);
+
+        // ---- Fullscreen toggle -----------------------------------------------
+        function isFullscreen() {
+          return !!(document.fullscreenElement || document.webkitFullscreenElement);
+        }
+
+        function toggleFullscreen() {
+          if (isFullscreen()) {
+            var exit = document.exitFullscreen || document.webkitExitFullscreen;
+            if (exit) exit.call(document);
+          } else {
+            var req = canvas.requestFullscreen || canvas.webkitRequestFullscreen;
+            if (req) {
+              try {
+                req.call(canvas, { navigationUI: 'hide' });
+              } catch (e) {
+                req.call(canvas);
+              }
+            }
+          }
+          canvas.focus();
+        }
+
+        fsBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          toggleFullscreen();
+        });
+
+        // Keyboard shortcut: F11 toggles, but only when focus is on the canvas
+        // or our chrome, so we don't steal it from other iframes on a host page.
+        window.addEventListener('keydown', function (e) {
+          if (e.key === 'F11') {
+            e.preventDefault();
+            toggleFullscreen();
+          }
+        });
+
+        // Show the UI briefly whenever the pointer moves so it's discoverable
+        // without being visually intrusive during gameplay.
+        var uiHideTimer = null;
+        function flashUi() {
+          ui.classList.add('visible');
+          if (uiHideTimer) clearTimeout(uiHideTimer);
+          uiHideTimer = setTimeout(function () { ui.classList.remove('visible'); }, 1500);
+        }
+        window.addEventListener('mousemove', flashUi, { passive: true });
+        window.addEventListener('touchstart', flashUi, { passive: true });
+
+        // ---- Status readout ---------------------------------------------------
+        function setStatus(text) {
+          if (!statusEl) return;
+          if (!text) {
+            statusEl.classList.add('hidden');
+            statusEl.textContent = '';
+            return;
+          }
+          statusEl.classList.remove('hidden');
+          statusEl.textContent = text;
+        }
+
+        // ---- Emscripten Module hookup ----------------------------------------
+        var totalDeps = 0;
+        var Module = {
+          preRun: [
+            function () {
+              // One last chance to size the canvas before main() runs.
+              resizeToViewport();
+              // Focus the canvas so it receives keyboard input immediately.
+              try { canvas.focus(); } catch (e) {}
+            }
+          ],
+          postRun: [
+            function () {
+              setStatus('');
+            }
+          ],
+          arguments: [],
+          canvas: canvas,
+          print: function (text) {
+            if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
+            console.log(text);
+          },
+          printErr: function (text) {
+            if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
+            console.warn(text);
+          },
+          setStatus: function (text) {
+            setStatus(text);
+          },
+          monitorRunDependencies: function (left) {
+            totalDeps = Math.max(totalDeps, left);
+            if (left) {
+              setStatus('Preparing... (' + (totalDeps - left) + '/' + totalDeps + ')');
+            } else {
+              setStatus('');
+            }
+          },
+          onFullScreen: function (isFs) {
+            // Let SDL/emscripten's internal fullscreen path share our resize code.
+            resizeToViewport();
+          }
+        };
+
+        // Default WebGL context loss handler: pop up a friendly message.
+        canvas.addEventListener('webglcontextlost', function (e) {
+          e.preventDefault();
+          setStatus('WebGL context lost — please reload the page.');
+        }, false);
+
+        window.onerror = function (msg) {
+          setStatus('An error occurred — see the JavaScript console.');
+          Module.setStatus = function (text) {
+            if (text) console.error('[post-exception status] ' + text);
+          };
+        };
+
+        window.Module = Module;
+        setStatus('Downloading...');
+      })();
+    </script>
+    {{{ SCRIPT }}}
+  </body>
+</html>

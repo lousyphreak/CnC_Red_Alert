@@ -292,6 +292,7 @@ endif()
 
 if(EMSCRIPTEN)
     set_target_properties(redalert PROPERTIES SUFFIX ".html")
+    set(RA_EMSCRIPTEN_SHELL_FILE "${CMAKE_SOURCE_DIR}/web/shell.html")
     target_link_options(redalert PRIVATE
         "-sASYNCIFY"
         "-sASYNCIFY_STACK_SIZE=1048576"
@@ -301,7 +302,9 @@ if(EMSCRIPTEN)
         "-sMAX_WEBGL_VERSION=2"
         "-sMIN_WEBGL_VERSION=1"
         "-sENVIRONMENT=web"
+        "--shell-file" "${RA_EMSCRIPTEN_SHELL_FILE}"
     )
+    set_property(TARGET redalert APPEND PROPERTY LINK_DEPENDS "${RA_EMSCRIPTEN_SHELL_FILE}")
     if(RA_ENABLE_WOL)
         target_link_options(redalert PRIVATE "-lwebsocket.js")
     endif()
