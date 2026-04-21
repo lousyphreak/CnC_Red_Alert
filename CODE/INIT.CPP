@@ -334,19 +334,37 @@ static void Refresh_Frontend_Main_Mix_View(void)
 	}
 }
 
+static MFCD* Create_Cached_Shadow_Mix(char const* filename)
+{
+	if (!CCFileClass(filename).Is_Available()) {
+		return NULL;
+	}
+
+	MFCD* mix = new MFCD(filename, &FastKey);
+	if (mix == NULL) {
+		return NULL;
+	}
+
+	const bool cached = mix->Cache();
+	assert(cached);
+	if (!cached) {
+		delete mix;
+		return NULL;
+	}
+
+	return mix;
+}
+
 static void Register_Shadow_Main_Mix_View_Families(void)
 {
-	if (CCFileClass("CONQUER.MIX").Is_Available()) {
-		ConquerMix = new MFCD("CONQUER.MIX", &FastKey);
-		if (ConquerMix != NULL) {
-			ConquerMix->Promote();
-		}
+	MFCD* conquer_mix = Create_Cached_Shadow_Mix("CONQUER.MIX");
+	if (conquer_mix != NULL) {
+		ConquerMix = conquer_mix;
+		conquer_mix->Promote();
 	}
-	if (CCFileClass("SOUNDS.MIX").Is_Available()) {
-		MFCD* sounds_mix = new MFCD("SOUNDS.MIX", &FastKey);
-		if (sounds_mix != NULL) {
-			sounds_mix->Promote();
-		}
+	MFCD* sounds_mix = Create_Cached_Shadow_Mix("SOUNDS.MIX");
+	if (sounds_mix != NULL) {
+		sounds_mix->Promote();
 	}
 	if (CCFileClass("SPEECH.MIX").Is_Available()) {
 		MFCD* speech_mix = new MFCD("SPEECH.MIX", &FastKey);
@@ -354,17 +372,13 @@ static void Register_Shadow_Main_Mix_View_Families(void)
 			speech_mix->Promote();
 		}
 	}
-	if (CCFileClass("RUSSIAN.MIX").Is_Available()) {
-		MFCD* russian_mix = new MFCD("RUSSIAN.MIX", &FastKey);
-		if (russian_mix != NULL) {
-			russian_mix->Promote();
-		}
+	MFCD* russian_mix = Create_Cached_Shadow_Mix("RUSSIAN.MIX");
+	if (russian_mix != NULL) {
+		russian_mix->Promote();
 	}
-	if (CCFileClass("ALLIES.MIX").Is_Available()) {
-		MFCD* allies_mix = new MFCD("ALLIES.MIX", &FastKey);
-		if (allies_mix != NULL) {
-			allies_mix->Promote();
-		}
+	MFCD* allies_mix = Create_Cached_Shadow_Mix("ALLIES.MIX");
+	if (allies_mix != NULL) {
+		allies_mix->Promote();
 	}
 }
 

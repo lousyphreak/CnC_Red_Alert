@@ -8,6 +8,14 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Fixed the remaining missing in-game sound-effects regression on the SDL3 port (2026-04-21):
+  - Root cause: `CODE/INIT.CPP::Register_Shadow_Main_Mix_View_Families()` could register fresh front-of-list copies of `CONQUER.MIX`, `SOUNDS.MIX`, `RUSSIAN.MIX`, and `ALLIES.MIX` without caching them. That is harmless for file-streamed/file-read paths such as score music and EVA speech, but it breaks all live `MFCD::Retrieve(...)` callers because `MixFileClass::Offset(...)` stops at the **first** matching mix and returns a null resident pointer when that front copy has `Data == NULL`. Practical symptom: movies/music/EVA still worked, but live sound-effect lookups such as weapon reports, UI beeps, and other `Sound_Effect(...)` callers silently failed.
+  - Fix implemented:
+    - `CODE/INIT.CPP::Register_Shadow_Main_Mix_View_Families()` now performs a real runtime cache step for the **newly created shadow mix objects themselves** and only promotes them if caching succeeded, which preserves the older registered copy as the fallback when a shadow cache attempt fails;
+    - `SPEECH.MIX` remains uncached there because the active speech path reads it through `CCFileClass` buffers rather than `MFCD::Retrieve(...)`.
+  - Result: the active front-of-list shadow mixes now preserve the legacy resident-pointer contract, so gameplay `Sound_Effect(...)` lookups can resolve live `.AUD` payloads again instead of hitting an uncached shadow entry and returning `NULL`.
+  - validation for this checkpoint: `cmake --build build --target redalert -j2`, `cmake --build build-asan --target redalert -j2`, `ctest --test-dir build --output-on-failure`, and the standard timed ASan startup smoke (`cd GameData && timeout -k 5s 20s env ASAN_OPTIONS=abort_on_error=1:detect_leaks=0 UBSAN_OPTIONS=print_stacktrace=1 ../build-asan/redalert`) all succeed after the shadow-mix cache fix without new build/test failures or sanitizer/runtime-error output.
+
 - Fixed the browser WOL immediate post-start desync regression (2026-04-21):
   - Root cause: the browser join dialog was already consuming authoritative `GAME_LIST_REPLY`, but it threw away the Zig server's `game_id` and only kept the host cid/address for the legacy `NET_QUERY_JOIN` packet flow.
   - Why that broke gameplay: once the host started registering browser games with the Zig server and sending `GAME_START`, `server/src/server.zig` correctly restricted gameplay relay to actual game members. Guests were never sending `GAME_JOIN`, so the server still believed the host was the only member and host gameplay traffic stopped reaching the guest immediately after launch.

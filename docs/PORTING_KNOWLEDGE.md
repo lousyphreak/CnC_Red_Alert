@@ -1094,6 +1094,12 @@ _Last updated: 2026-04-21_
 
 - The active gameplay audio path is `CODE/AUDIO.CPP` -> `WIN32LIB/AUDIO/SOUNDIO.CPP` -> `WIN32LIB/AUDIO/SOUNDINT.CPP`.
 - The safest porting seam is below the legacy `Audio_*`, `Play_Sample`, and sample-tracker logic. Keep those APIs and refill rules stable; replace only the device/buffer backend under them.
+- `MFCD::Retrieve(...)` is only safe for mixes whose active front-of-list registration is cached.
+  - Practical example from this tree: `CODE/INIT.CPP::Register_Shadow_Main_Mix_View_Families()` can re-register `CONQUER.MIX`, `SOUNDS.MIX`, `RUSSIAN.MIX`, and `ALLIES.MIX` ahead of older cached copies when the logical `MAIN.MIX` view changes.
+  - `MixFileClass::Offset(...)` stops at the first matching mix entry and returns a null resident pointer if that front copy has `Data == NULL`, even if an older cached copy later in the list has the same file.
+  - Practical symptom: file-streamed or file-read audio such as score music and EVA speech still works, but live `Sound_Effect(...)` / `MFCD::Retrieve("*.AUD")` lookups silently fail, which sounds like "music and announcer are audible, gameplay effects are not."
+  - Practical rule: any mix family that the runtime expects to serve resident pointers must cache the **replacement object itself** before promoting that shadow registration ahead of older copies. In the current tree that specifically applies to `CONQUER.MIX`, `SOUNDS.MIX`, `RUSSIAN.MIX`, and `ALLIES.MIX`; `SPEECH.MIX` can stay uncached there because speech playback uses `CCFileClass` reads instead of `MFCD::Retrieve(...)`.
+  - Do not hide required cache side effects inside `assert(...)`. This tree defines `NDEBUG` in normal builds, so `assert(mix->Cache())` removes the cache call entirely and silently reintroduces uncached promoted shadow mixes.
 - The active gameplay backend is now `WIN32LIB/INCLUDE/SDLAUDIOBACKEND.H` plus `WIN32LIB/AUDIO/SDLAUDIOBACKEND.CPP`.
   - `AudioBackendDevice`, `AudioBackendBuffer`, and `AudioBufferFormat` replace the active DirectSound types.
   - The backend uses SDL3 audio streams/device output internally while preserving the old primary/secondary buffer contract expected by `SOUNDIO.CPP` and `SOUNDINT.CPP`.
