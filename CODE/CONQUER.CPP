@@ -1213,6 +1213,7 @@ static void Message_Input(KeyNumType &input)
 	*/
 	copy_input = input;
 	rc = Session.Messages.Input(input);
+	SDL_GameInput_SetTextInputActive(Session.Messages.Has_Edit_Focus());
 
 	/*
 	**	If a single character has been added to an edit buffer, update the display.

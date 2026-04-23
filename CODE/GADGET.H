@@ -138,6 +138,7 @@ class GadgetClass : public LinkClass
 		virtual void Peer_To_Peer(unsigned , KeyNumType & , ControlClass & ) {};
 		virtual void Set_Focus(void);
 		virtual void Clear_Focus(void);
+		virtual bool Wants_Text_Input(void) const { return false; }
 		virtual bool Has_Focus(void);
 		virtual int  Is_List_To_Redraw(void);
 		virtual bool Is_To_Redraw(void) {return (IsToRepaint);}

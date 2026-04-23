@@ -23,7 +23,6 @@
         color: #ddd;
         font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
         overscroll-behavior: none;
-        touch-action: none;
         -webkit-user-select: none;
         user-select: none;
       }
@@ -35,6 +34,7 @@
         align-items: center;
         justify-content: center;
         background: #000;
+        touch-action: none;
       }
 
       #canvas {
@@ -45,6 +45,7 @@
         image-rendering: crisp-edges;
         max-width: 100%;
         max-height: 100%;
+        touch-action: none;
       }
 
       #canvas:focus {
@@ -110,6 +111,66 @@
         opacity: 0;
       }
 
+      #ra-soft-keyboard-panel {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: env(safe-area-inset-bottom, 0);
+        z-index: 12;
+        padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0));
+        background: rgba(0, 0, 0, 0.88);
+        border-top: 1px solid rgba(255, 255, 255, 0.18);
+        transform: translateY(110%);
+        opacity: 0;
+        pointer-events: none;
+        transition: transform 0.18s ease, opacity 0.18s ease;
+      }
+
+      #ra-soft-keyboard-panel.active {
+        transform: translateY(0);
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      #ra-soft-keyboard-state {
+        min-height: 1.2em;
+        margin-bottom: 4px;
+        font-size: 12px;
+        color: #9fd18b;
+      }
+
+      #ra-soft-keyboard-debug {
+        min-height: 1.2em;
+        margin-bottom: 6px;
+        font-size: 11px;
+        color: #cfcfcf;
+      }
+
+      #ra-soft-keyboard {
+        display: block;
+        width: 100%;
+        min-height: 48px;
+        box-sizing: border-box;
+        padding: 10px 12px;
+        border: 1px solid #666;
+        border-radius: 6px;
+        background: rgba(20, 20, 20, 0.95);
+        color: #fff;
+        caret-color: #fff;
+        font: inherit;
+        font-size: 18px;
+        line-height: 1.25;
+        outline: none;
+        resize: none;
+        touch-action: auto;
+        -webkit-user-select: text;
+        user-select: text;
+      }
+
+      #ra-soft-keyboard:focus {
+        border-color: #d0d0d0;
+      }
+
       /* When the canvas element is in native browser fullscreen, it takes over
          the whole screen; make sure it fills it properly. */
       #canvas:fullscreen,
@@ -135,6 +196,23 @@
     </div>
 
     <div id="ra-status">Downloading...</div>
+    <div id="ra-soft-keyboard-panel" aria-live="polite" aria-atomic="true">
+      <div id="ra-soft-keyboard-state">Mobile keyboard idle</div>
+      <div id="ra-soft-keyboard-debug"></div>
+      <textarea
+        id="ra-soft-keyboard"
+        inputmode="text"
+        autocomplete="off"
+        autocapitalize="off"
+        autocorrect="off"
+        spellcheck="false"
+        enterkeyhint="done"
+        tabindex="0"
+        rows="1"
+        cols="1"
+        placeholder="Tap here to type into the selected game field"
+      ></textarea>
+    </div>
 
     <script type="text/javascript">
       (function () {
@@ -143,6 +221,10 @@
         var statusEl = document.getElementById('ra-status');
         var ui = document.getElementById('ra-ui');
         var fsBtn = document.getElementById('ra-fullscreen');
+        var softKeyboardPanel = document.getElementById('ra-soft-keyboard-panel');
+        var softKeyboardState = document.getElementById('ra-soft-keyboard-state');
+        var softKeyboardDebug = document.getElementById('ra-soft-keyboard-debug');
+        var softKeyboardInput = document.getElementById('ra-soft-keyboard');
 
         // ---- Size management --------------------------------------------------
         // Compute the renderable area in CSS pixels. We clamp to the actual
@@ -167,26 +249,38 @@
         // they stay in lock-step. SDL3's emscripten backend picks up CSS size
         // changes and posts SDL_EVENT_WINDOW_RESIZED automatically.
         function applySize(width, height) {
-          canvas.style.width = width + 'px';
-          canvas.style.height = height + 'px';
+          var cssWidth = width + 'px';
+          var cssHeight = height + 'px';
+          var changed = canvas.style.width !== cssWidth ||
+                        canvas.style.height !== cssHeight ||
+                        canvas.width !== width ||
+                        canvas.height !== height;
+          canvas.style.width = cssWidth;
+          canvas.style.height = cssHeight;
           // Only assign the drawing-buffer size when it actually differs; some
           // GL drivers treat every assignment as a full reallocation.
           if (canvas.width !== width) canvas.width = width;
           if (canvas.height !== height) canvas.height = height;
+          return changed;
         }
 
-        function resizeToViewport() {
+        function resizeToViewport(reason) {
+          var changed = false;
           // When the canvas is in its own fullscreen element the browser sizes
           // it for us via CSS; leave the drawing buffer to match that.
           if (document.fullscreenElement === canvas ||
               document.webkitFullscreenElement === canvas) {
             var rect = canvas.getBoundingClientRect();
-            applySize(Math.max(1, Math.floor(rect.width)),
-                      Math.max(1, Math.floor(rect.height)));
-            return;
+            changed = applySize(Math.max(1, Math.floor(rect.width)),
+                                Math.max(1, Math.floor(rect.height)));
+          } else {
+            var s = getViewportSize();
+            changed = applySize(s.width, s.height);
           }
-          var s = getViewportSize();
-          applySize(s.width, s.height);
+          if (changed && window.Module && window.Module.raSoftKeyboard &&
+              (window.Module.raSoftKeyboard.active || window.Module.raSoftKeyboard.focused)) {
+            scheduleSoftKeyboardRedraw(reason || 'viewport');
+          }
         }
 
         // Pre-size the canvas before the wasm Module initializes so the game's
@@ -195,18 +289,18 @@
         resizeToViewport();
 
         // React to every way the viewport can change size on desktop or mobile.
-        window.addEventListener('resize', resizeToViewport, { passive: true });
+        window.addEventListener('resize', function () { resizeToViewport('window-resize'); }, { passive: true });
         window.addEventListener('orientationchange', function () {
           // Orientation change fires before the new viewport is committed; defer.
-          setTimeout(resizeToViewport, 50);
-          setTimeout(resizeToViewport, 250);
+          setTimeout(function () { resizeToViewport('orientation-50'); }, 50);
+          setTimeout(function () { resizeToViewport('orientation-250'); }, 250);
         }, { passive: true });
         if (window.visualViewport) {
-          window.visualViewport.addEventListener('resize', resizeToViewport, { passive: true });
-          window.visualViewport.addEventListener('scroll', resizeToViewport, { passive: true });
+          window.visualViewport.addEventListener('resize', function () { resizeToViewport('visualViewport-resize'); }, { passive: true });
+          window.visualViewport.addEventListener('scroll', function () { resizeToViewport('visualViewport-scroll'); }, { passive: true });
         }
-        document.addEventListener('fullscreenchange', resizeToViewport);
-        document.addEventListener('webkitfullscreenchange', resizeToViewport);
+        document.addEventListener('fullscreenchange', function () { resizeToViewport('fullscreenchange'); });
+        document.addEventListener('webkitfullscreenchange', function () { resizeToViewport('webkitfullscreenchange'); });
 
         // ---- Fullscreen toggle -----------------------------------------------
         function isFullscreen() {
@@ -267,6 +361,303 @@
           statusEl.textContent = text;
         }
 
+        function callSoftKeyboardExport(name) {
+          if (!window.Module) return null;
+          var fn = window.Module[name];
+          return (typeof fn === 'function') ? fn : null;
+        }
+
+        var softKeyboardRedrawTimer = 0;
+        function requestSoftKeyboardRedraw(reason) {
+          var redraw = callSoftKeyboardExport('_SDL_GameInput_WebRequestRedraw');
+          if (!redraw) return false;
+          redraw();
+          if (window.Module && window.Module.raSoftKeyboard) {
+            window.Module.raSoftKeyboard.log('redraw', reason);
+          }
+          return true;
+        }
+
+        function scheduleSoftKeyboardRedraw(reason) {
+          requestSoftKeyboardRedraw(reason);
+          if (window.requestAnimationFrame) {
+            window.requestAnimationFrame(function () {
+              requestSoftKeyboardRedraw(reason + ':raf');
+            });
+          }
+          if (softKeyboardRedrawTimer) {
+            clearTimeout(softKeyboardRedrawTimer);
+          }
+          softKeyboardRedrawTimer = setTimeout(function () {
+            softKeyboardRedrawTimer = 0;
+            requestSoftKeyboardRedraw(reason + ':settle');
+          }, 120);
+        }
+
+        function clearSoftKeyboardValue() {
+          if (!softKeyboardInput) return;
+          if (softKeyboardInput.value) {
+            softKeyboardInput.value = '';
+          }
+        }
+
+        function commitSoftKeyboardText(text) {
+          if (!text) return false;
+          var sendChar = callSoftKeyboardExport('_SDL_GameInput_WebCommitTextChar');
+          if (!sendChar) return false;
+          for (var i = 0; i < text.length; ++i) {
+            sendChar(text.charCodeAt(i));
+          }
+          return true;
+        }
+
+        // There is no built-in SDL3/Emscripten soft-keyboard path today; the
+        // browser needs a real DOM editor to focus. Shipped WebGL mobile
+        // bridges (for example kou-yeung/WebGLInput) solve this by presenting a
+        // body-level text box on mobile and using it as the browser keyboard
+        // anchor. We follow the same pattern here so touch users see visible
+        // feedback even if the browser rejects the first programmatic focus.
+        var softKeyboardQuery = (typeof URLSearchParams !== 'undefined')
+          ? new URLSearchParams(location.search)
+          : null;
+        var forceSoftKeyboardDebug = !!(softKeyboardQuery && softKeyboardQuery.has('vkdebug'));
+        var isMobileTouchDevice = (function () {
+          var ua = '';
+          try { ua = navigator.userAgent || ''; } catch (e) {}
+          try {
+            if (navigator.userAgentData && navigator.userAgentData.mobile) return true;
+          } catch (e2) {}
+          if (/Android|iPhone|iPad|iPod|Mobile|Silk|Kindle|Opera Mini|IEMobile/i.test(ua)) {
+            return true;
+          }
+          try {
+            if ((navigator.maxTouchPoints && navigator.maxTouchPoints > 0) &&
+                window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
+              return true;
+            }
+          } catch (e3) {}
+          return false;
+        })();
+
+        function setSoftKeyboardPanelVisible(visible) {
+          if (!softKeyboardPanel) return;
+          softKeyboardPanel.classList.toggle('active', !!visible);
+        }
+
+        var raSoftKeyboard = {
+          active: false,
+          focused: false,
+          focusAttempts: 0,
+          lastEvent: 'idle',
+          lastInput: 'none',
+          debug: forceSoftKeyboardDebug,
+          log: function () {
+            if (!this.debug) return;
+            try { console.log.apply(console, ['[ra-vk]'].concat([].slice.call(arguments))); } catch (e) {}
+          },
+          renderState: function () {
+            if (softKeyboardState) {
+              if (!isMobileTouchDevice) {
+                softKeyboardState.textContent = 'Desktop keyboard path';
+              } else if (!this.active) {
+                softKeyboardState.textContent = 'Mobile keyboard idle';
+              } else if (this.focused) {
+                softKeyboardState.textContent = 'Mobile keyboard active';
+              } else {
+                softKeyboardState.textContent = 'Tap the input bar if the keyboard did not open';
+              }
+            }
+            if (softKeyboardDebug) {
+              softKeyboardDebug.textContent = this.debug
+                ? ('touch=' + (isMobileTouchDevice ? 'yes' : 'no') +
+                   ' active=' + (this.active ? 'yes' : 'no') +
+                   ' focused=' + (this.focused ? 'yes' : 'no') +
+                   ' attempts=' + this.focusAttempts +
+                   ' last=' + this.lastEvent +
+                   ' input=' + this.lastInput)
+                : '';
+            }
+            if (softKeyboardInput) {
+              softKeyboardInput.setAttribute('aria-disabled', this.active ? 'false' : 'true');
+              softKeyboardInput.placeholder = this.active
+                ? 'Tap here to type into the selected game field'
+                : 'Waiting for a game text field to take focus';
+            }
+            setSoftKeyboardPanelVisible(isMobileTouchDevice && (this.active || this.debug));
+          },
+          noteEvent: function (text) {
+            this.lastEvent = text;
+            this.renderState();
+            this.log(text);
+          },
+          noteInput: function (text) {
+            this.lastInput = text || 'none';
+            this.renderState();
+            this.log('input', this.lastInput);
+          },
+          focus: function (reason) {
+            if (!this.active || !softKeyboardInput) return false;
+            this.focusAttempts += 1;
+            this.noteEvent('focus:' + reason);
+            clearSoftKeyboardValue();
+            setSoftKeyboardPanelVisible(true);
+            try {
+              softKeyboardInput.focus({ preventScroll: true });
+            } catch (e) {
+              try { softKeyboardInput.focus(); } catch (e2) {}
+            }
+            try {
+              if (navigator.virtualKeyboard) {
+                navigator.virtualKeyboard.overlaysContent = true;
+                if (navigator.virtualKeyboard.show) {
+                  navigator.virtualKeyboard.show();
+                }
+              }
+            } catch (e3) {}
+            this.focused = (document.activeElement === softKeyboardInput);
+            this.noteEvent((this.focused ? 'focused:' : 'focus-failed:') + reason);
+            if (this.focused) {
+              scheduleSoftKeyboardRedraw('focus:' + reason);
+            }
+            return this.focused;
+          },
+          setActive: function (active) {
+            if (!isMobileTouchDevice) {
+              this.active = false;
+              this.focused = false;
+              this.noteEvent('desktop');
+              return;
+            }
+            this.active = !!active;
+            this.lastInput = 'none';
+            clearSoftKeyboardValue();
+            if (this.active) {
+              this.focused = (document.activeElement === softKeyboardInput);
+              this.noteEvent('armed');
+              scheduleSoftKeyboardRedraw('armed');
+              this.focus('setActive');
+              setTimeout(function () {
+                if (raSoftKeyboard.active && document.activeElement !== softKeyboardInput) {
+                  raSoftKeyboard.focus('delayed-retry');
+                }
+              }, 50);
+            } else {
+              this.focused = false;
+              this.noteEvent('disarmed');
+              scheduleSoftKeyboardRedraw('disarmed');
+              try { softKeyboardInput.blur(); } catch (e4) {}
+              try {
+                if (navigator.virtualKeyboard && navigator.virtualKeyboard.hide) {
+                  navigator.virtualKeyboard.hide();
+                }
+              } catch (e5) {}
+              try { canvas.focus(); } catch (e6) {}
+            }
+            this.renderState();
+          }
+        };
+        raSoftKeyboard.renderState();
+
+        if (softKeyboardInput) {
+          // Stop DOM keyboard events at the bridge element so SDL's window-level
+          // listeners never see a duplicate copy of the same key.
+          function swallowKeyboardEvent(e) { e.stopPropagation(); }
+          ['keydown', 'keyup', 'keypress'].forEach(function (type) {
+            softKeyboardInput.addEventListener(type, swallowKeyboardEvent, true);
+          });
+
+          softKeyboardInput.addEventListener('focus', function () {
+            raSoftKeyboard.focused = true;
+            raSoftKeyboard.noteEvent('dom:focus');
+            clearSoftKeyboardValue();
+            scheduleSoftKeyboardRedraw('dom:focus');
+          });
+
+          softKeyboardInput.addEventListener('blur', function () {
+            raSoftKeyboard.focused = false;
+            raSoftKeyboard.noteEvent('dom:blur');
+            clearSoftKeyboardValue();
+            scheduleSoftKeyboardRedraw('dom:blur');
+          });
+
+          softKeyboardInput.addEventListener('beforeinput', function (e) {
+            if (!raSoftKeyboard.active) return;
+
+            raSoftKeyboard.noteInput(e.inputType + (e.data ? ':' + e.data : ''));
+
+            if (e.inputType === 'deleteContentBackward') {
+              var sendBackspace = callSoftKeyboardExport('_SDL_GameInput_WebCommitBackspace');
+              if (sendBackspace) {
+                sendBackspace();
+                e.preventDefault();
+                clearSoftKeyboardValue();
+              }
+              return;
+            }
+
+            if (e.inputType === 'insertLineBreak') {
+              var sendReturn = callSoftKeyboardExport('_SDL_GameInput_WebCommitReturn');
+              if (sendReturn) {
+                sendReturn();
+                e.preventDefault();
+                clearSoftKeyboardValue();
+              }
+              return;
+            }
+
+            if ((e.inputType === 'insertText'
+                 || e.inputType === 'insertCompositionText'
+                 || e.inputType === 'insertFromPaste') && e.data) {
+              if (commitSoftKeyboardText(e.data)) {
+                e.preventDefault();
+                clearSoftKeyboardValue();
+              }
+            }
+          });
+
+          // Fallback for mobile browsers that deliver the text only through
+          // `input` (not `beforeinput`). Read the textarea, commit it, then
+          // clear it immediately so the browser keeps behaving like a soft-key
+          // event source rather than a second text model.
+          softKeyboardInput.addEventListener('input', function () {
+            if (!raSoftKeyboard.active) {
+              clearSoftKeyboardValue();
+              return;
+            }
+            if (softKeyboardInput.value) {
+              var txt = softKeyboardInput.value;
+              raSoftKeyboard.noteInput('input:' + txt);
+              clearSoftKeyboardValue();
+              commitSoftKeyboardText(txt);
+            }
+          });
+        }
+
+        // Retry focus from trusted gestures as a fallback. The visible panel is
+        // the primary manual escape hatch: if focus() fails, the user can tap
+        // the bar directly and still get the browser keyboard.
+        function handleSoftKeyboardGesture(ev) {
+          if (!raSoftKeyboard.active) return;
+          if (!softKeyboardInput) return;
+          if (document.activeElement === softKeyboardInput) return;
+          if (ev && ev.target === softKeyboardInput) return;
+          raSoftKeyboard.focus(ev && ev.type ? ev.type : 'gesture');
+        }
+
+        ['pointerdown', 'pointerup',
+         'touchstart', 'touchend',
+         'mousedown', 'mouseup',
+         'click'].forEach(function (type) {
+          window.addEventListener(type, handleSoftKeyboardGesture, true);
+        });
+
+        if (navigator.virtualKeyboard && navigator.virtualKeyboard.addEventListener) {
+          navigator.virtualKeyboard.addEventListener('geometrychange', function () {
+            resizeToViewport('virtualKeyboard-geometry');
+            scheduleSoftKeyboardRedraw('virtualKeyboard-geometry');
+          });
+        }
+
         // ---- Emscripten Module hookup ----------------------------------------
         var totalDeps = 0;
         var Module = {
@@ -309,6 +700,7 @@
             resizeToViewport();
           }
         };
+        Module.raSoftKeyboard = raSoftKeyboard;
 
         // Default WebGL context loss handler: pop up a friendly message.
         canvas.addEventListener('webglcontextlost', function (e) {

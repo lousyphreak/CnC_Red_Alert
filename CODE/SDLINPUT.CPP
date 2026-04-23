@@ -26,6 +26,8 @@ extern int32_t GameInFocus;
 extern int32_t BootstrapFocusSeen;
 extern GraphicViewPortClass SeenBuff;
 extern WWMouseClass* WWMouse;
+extern void WWDraw_Request_Present(void);
+extern void WWDraw_Flush_Present(void);
 
 namespace {
 
@@ -204,6 +206,54 @@ bool get_window_point_for_current_game_cursor(float& window_x, float& window_y)
 	window_y = static_cast<float>(window_rect.y) + (static_cast<float>(window_rect.h) * 0.5f);
 	return true;
 }
+
+#if defined(__EMSCRIPTEN__)
+// When running in the browser, SDL3's Emscripten backend does not implement
+// ShowScreenKeyboard, so SDL_StartTextInput alone never opens a mobile soft
+// keyboard. We instead rely on a repo-owned JS bridge in web/shell.html that
+// focuses a real DOM editor from a trusted user gesture and feeds committed
+// characters back into the legacy key queue. The JS side decides whether the
+// bridge should do anything on the current device, so desktop hardware-keyboard
+// users keep the native SDL keydown path unchanged.
+EM_JS(void, ra_set_web_soft_keyboard_active, (int enabled), {
+    if (typeof Module === 'undefined' || !Module.raSoftKeyboard || !Module.raSoftKeyboard.setActive) {
+        return;
+    }
+    Module.raSoftKeyboard.setActive(!!enabled);
+});
+
+static void push_web_soft_key(uint16_t legacy_key)
+{
+	Keyboard_Handle_Key_Event(legacy_key, false);
+}
+
+extern "C" EMSCRIPTEN_KEEPALIVE void SDL_GameInput_WebCommitTextChar(uint32_t codepoint)
+{
+	if (codepoint > 255u) {
+		return;
+	}
+
+	const int16_t legacy_key = SDL_GameInput_AsciiToLegacyKey(static_cast<uint8_t>(codepoint));
+	if (legacy_key != 0) {
+		push_web_soft_key(static_cast<uint16_t>(legacy_key));
+	}
+}
+
+extern "C" EMSCRIPTEN_KEEPALIVE void SDL_GameInput_WebCommitBackspace(void)
+{
+	push_web_soft_key(KN_BACKSPACE);
+}
+
+extern "C" EMSCRIPTEN_KEEPALIVE void SDL_GameInput_WebCommitReturn(void)
+{
+	push_web_soft_key(KN_RETURN);
+}
+
+extern "C" EMSCRIPTEN_KEEPALIVE void SDL_GameInput_WebRequestRedraw(void)
+{
+	SDL_GameInput_RequestRedraw();
+}
+#endif
 
 void apply_mission_mouse_capture(void)
 {
@@ -893,6 +943,32 @@ bool SDL_GameInput_Is_AppCallbacks_Mode(void)
 	return (g_app_callbacks_mode.load());
 }
 
+void SDL_GameInput_SetTextInputActive(bool enabled)
+{
+#if defined(__EMSCRIPTEN__)
+	// SDL3's Emscripten backend unconditionally registers a default
+	// keyboard (SDL_emscriptenvideo.c SDL_AddKeyboard at window creation),
+	// so SDL_HasKeyboard() is not a reliable way to detect touch-only
+	// devices in the browser. Hand the decision to the JS bridge, which
+	// uses navigator.maxTouchPoints / 'ontouchstart' to tell phones and
+	// tablets apart from desktops. The bridge is a no-op on devices with
+	// a real keyboard, so there is never any keystroke duplication.
+	ra_set_web_soft_keyboard_active(enabled ? 1 : 0);
+#else
+	(void)enabled;
+#endif
+}
+
+void SDL_GameInput_RequestRedraw(void)
+{
+	if (MainWindow == NULL || MainWindow->sdl_window == NULL) {
+		return;
+	}
+
+	WWDraw_Request_Present();
+	WWDraw_Flush_Present();
+}
+
 void SDL_GameInput_SetMissionMouseCapture(bool enabled)
 {
 	g_mission_mouse_capture_requested = enabled;
@@ -1257,5 +1333,44 @@ int16_t SDL_GameInput_AsciiToLegacyKey(uint8_t ch)
 	if (ch >= 'A' && ch <= 'Z') {
 		return static_cast<int16_t>(WWKEY_SHIFT_BIT | (KN_A + static_cast<uint16_t>(ch - 'A')));
 	}
-	return static_cast<int16_t>(ch);
+	if (ch >= '0' && ch <= '9') {
+		return static_cast<int16_t>(KN_0 + static_cast<uint16_t>(ch - '0'));
+	}
+
+	switch (ch) {
+		case ' ': return KN_SPACE;
+		case ';': return KN_SEMICOLON;
+		case ':': return static_cast<int16_t>(WWKEY_SHIFT_BIT | KN_SEMICOLON);
+		case '=': return KN_EQUAL;
+		case '+': return static_cast<int16_t>(WWKEY_SHIFT_BIT | KN_EQUAL);
+		case ',': return KN_COMMA;
+		case '<': return static_cast<int16_t>(WWKEY_SHIFT_BIT | KN_COMMA);
+		case '-': return KN_MINUS;
+		case '_': return static_cast<int16_t>(WWKEY_SHIFT_BIT | KN_MINUS);
+		case '.': return KN_PERIOD;
+		case '>': return static_cast<int16_t>(WWKEY_SHIFT_BIT | KN_PERIOD);
+		case '/': return KN_SLASH;
+		case '?': return static_cast<int16_t>(WWKEY_SHIFT_BIT | KN_SLASH);
+		case '`': return KN_GRAVE;
+		case '~': return static_cast<int16_t>(WWKEY_SHIFT_BIT | KN_GRAVE);
+		case '[': return KN_LBRACKET;
+		case '{': return static_cast<int16_t>(WWKEY_SHIFT_BIT | KN_LBRACKET);
+		case '\\': return KN_BACKSLASH;
+		case '|': return static_cast<int16_t>(WWKEY_SHIFT_BIT | KN_BACKSLASH);
+		case ']': return KN_RBRACKET;
+		case '}': return static_cast<int16_t>(WWKEY_SHIFT_BIT | KN_RBRACKET);
+		case '\'': return KN_SQUOTE;
+		case '"': return static_cast<int16_t>(WWKEY_SHIFT_BIT | KN_SQUOTE);
+		case '!': return static_cast<int16_t>(WWKEY_SHIFT_BIT | KN_1);
+		case '@': return static_cast<int16_t>(WWKEY_SHIFT_BIT | KN_2);
+		case '#': return static_cast<int16_t>(WWKEY_SHIFT_BIT | KN_3);
+		case '$': return static_cast<int16_t>(WWKEY_SHIFT_BIT | KN_4);
+		case '%': return static_cast<int16_t>(WWKEY_SHIFT_BIT | KN_5);
+		case '^': return static_cast<int16_t>(WWKEY_SHIFT_BIT | KN_6);
+		case '&': return static_cast<int16_t>(WWKEY_SHIFT_BIT | KN_7);
+		case '*': return static_cast<int16_t>(WWKEY_SHIFT_BIT | KN_8);
+		case '(': return static_cast<int16_t>(WWKEY_SHIFT_BIT | KN_9);
+		case ')': return static_cast<int16_t>(WWKEY_SHIFT_BIT | KN_0);
+		default: return static_cast<int16_t>(ch);
+	}
 }

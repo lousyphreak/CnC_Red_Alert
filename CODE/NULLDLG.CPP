@@ -37,6 +37,7 @@
  *---------------------------------------------------------------------------------------------*/
 
 #include "FUNCTION.H"
+#include "SDLINPUT.H"
 
 extern char const *EngMisStr[];
 extern bool Is_Mission_Counterstrike(char *file_name);
@@ -425,6 +426,7 @@ display = REDRAW_NONE;
 
 bool droplist_is_dropped = housebtn.IsDropped;
 input = commands->Input();
+SDL_GameInput_SetTextInputActive(name_edt.Has_Focus());
 if (droplist_is_dropped && !housebtn.IsDropped) {
 display = REDRAW_BACKGROUND;
 }

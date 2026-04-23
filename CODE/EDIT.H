@@ -53,6 +53,7 @@ class EditClass : public ControlClass
 		virtual ~EditClass(void);
 
 		virtual void Set_Focus(void);
+		virtual bool Wants_Text_Input(void) const { return true; }
 		virtual int  Draw_Me(int forced);
 		virtual void Set_Text(char * text, int max_len);
 		virtual char * Get_Text(void) {return(String);};

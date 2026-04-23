@@ -1252,6 +1252,8 @@ void ScoreClass::Input_Name(char str[], int xpos, int ypos, uint8_t const pal[])
 	*/
 	HidPage.Blit(HidPage, 0, 100*RESFACTOR, 0, 0, 100*RESFACTOR, 100*RESFACTOR);
 
+	SDL_GameInput_SetTextInputActive(true);
+
 	do {
 		Call_Back();
 		Animate_Score_Objs();
@@ -1306,6 +1308,8 @@ void ScoreClass::Input_Name(char str[], int xpos, int ypos, uint8_t const pal[])
 			Call_Back_Wait(1);
 		}
 	} while (key != KA_RETURN);					//	} while(key != KN_RETURN && key!=KN_KEYPAD_RETURN);
+
+	SDL_GameInput_SetTextInputActive(false);
 }
 
 

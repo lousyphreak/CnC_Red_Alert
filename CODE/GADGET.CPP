@@ -58,6 +58,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "FUNCTION.H"
+#include "SDLINPUT.H"
 void WWDraw_Begin_Present_Batch(void);void WWDraw_End_Present_Batch(void);
 
 /*
@@ -775,6 +776,7 @@ void GadgetClass::Set_Focus(void)
 	}
 	Flags |= KEYBOARD;
 	Focused = this;
+	SDL_GameInput_SetTextInputActive(Wants_Text_Input());
 }
 
 
@@ -797,6 +799,9 @@ void GadgetClass::Set_Focus(void)
 void GadgetClass::Clear_Focus(void)
 {
 	if (Focused == this) {
+		if (Wants_Text_Input()) {
+			SDL_GameInput_SetTextInputActive(false);
+		}
 		Flags &= ~KEYBOARD;
 		Focused = 0;
 	}

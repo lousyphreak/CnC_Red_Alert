@@ -107,6 +107,7 @@
 //	Warning - Most disgusting cpp file of all time. ajw
 
 #include "FUNCTION.H"
+#include "SDLINPUT.H"
 #include "sdl_fs.h"
 #include "INTERNET.H"
 #include "TCPIP.H"
@@ -2197,6 +2198,7 @@ static int Net_Join_Dialog(void)
 		//	Get user input
 		//.....................................................................
 		input = commands->Input();
+		SDL_GameInput_SetTextInputActive(name_edt.Has_Focus() || Session.Messages.Has_Edit_Focus());
 
 		if (input & KN_BUTTON) {
 			housebtn.Collapse();
@@ -2507,6 +2509,7 @@ static int Net_Join_Dialog(void)
 					i = Session.Messages.Input(message_input);
 					input = message_input;
 				}
+				SDL_GameInput_SetTextInputActive(name_edt.Has_Focus() || Session.Messages.Has_Edit_Focus());
 
 				//...............................................................
 				//	If 'Input' returned 1, it means refresh the message display.
@@ -5339,6 +5342,7 @@ static int Net_New_Dialog(void)
 					i = Session.Messages.Input(message_input);
 					input = message_input;
 				}
+				SDL_GameInput_SetTextInputActive(Session.Messages.Has_Edit_Focus());
 
 				//...............................................................
 				//	If 'Input' returned 1, it means refresh the message display.
@@ -8127,6 +8131,7 @@ bool Internet_Remote_Connect(void)
 		}
 
 		input = commands->Input();
+		SDL_GameInput_SetTextInputActive(name_edt.Has_Focus() || address_edt.Has_Focus() || port_edt.Has_Focus());
 		switch (input) {
 			case KN_ESC:
 			case (BUTTON_CANCEL | KN_BUTTON):

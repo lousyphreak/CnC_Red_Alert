@@ -117,6 +117,7 @@ void DropListClass::Set_Selected_Index(int index)
 
 void DropListClass::Clear_Focus(void)
 {
+	EditClass::Clear_Focus();
 	Collapse();
 }
 

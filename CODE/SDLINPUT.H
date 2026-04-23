@@ -9,6 +9,8 @@
 void SDL_GameInput_Set_Main_Thread(void);
 void SDL_GameInput_Set_AppCallbacks_Mode(bool enabled);
 bool SDL_GameInput_Is_AppCallbacks_Mode(void);
+void SDL_GameInput_SetTextInputActive(bool enabled);
+void SDL_GameInput_RequestRedraw(void);
 void SDL_GameInput_Handle_Event(const SDL_Event& event);
 void SDL_GameInput_Delay(uint32_t milliseconds);
 void SDL_GameInput_Pump(void);

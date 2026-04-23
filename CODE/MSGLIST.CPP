@@ -54,6 +54,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "FUNCTION.H"
+#include "SDLINPUT.H"
 
 /**************************** Globals **************************************/
 
@@ -188,6 +189,7 @@ void MessageListClass::Init(int x, int y, int max_msg, int maxchars,
 	//	Remove the editable message
 	//------------------------------------------------------------------------
 	if (IsEdit) {
+		SDL_GameInput_SetTextInputActive(false);
 		delete EditLabel;
 		EditLabel = 0;
 	}
@@ -286,6 +288,7 @@ void MessageListClass::Reset(void)
 	//	Remove the editable message
 	//------------------------------------------------------------------------
 	if (IsEdit) {
+		SDL_GameInput_SetTextInputActive(false);
 		delete EditLabel;
 		EditLabel = 0;
 	}
@@ -686,7 +689,10 @@ int MessageListClass::Concat_Message(char const * name, int id, char const * txt
  *=============================================================================================*/
 void MessageListClass::Set_Edit_Focus (void)
 {
-	if (IsEdit) EditLabel->Set_Focus();
+	if (IsEdit) {
+		EditLabel->Set_Focus();
+		SDL_GameInput_SetTextInputActive(true);
+	}
 }
 
 
@@ -744,6 +750,7 @@ TextLabelClass * MessageListClass::Add_Edit(PlayerColorType color,
 	//------------------------------------------------------------------------
 	if (IsEdit) {
 		EditLabel->Set_Focus();
+		SDL_GameInput_SetTextInputActive(true);
 		return(NULL);
 	}
 
@@ -787,6 +794,7 @@ TextLabelClass * MessageListClass::Add_Edit(PlayerColorType color,
 	if (EditLabel) {
 		IsEdit = 1;
 		EditLabel->Set_Focus();
+		SDL_GameInput_SetTextInputActive(true);
 	}
 	else {
 		IsEdit = 0;
@@ -828,6 +836,7 @@ void MessageListClass::Remove_Edit(void)
 	// If the edit field is active, delete it
 	//------------------------------------------------------------------------
 	if (IsEdit) {
+		SDL_GameInput_SetTextInputActive(false);
 		IsEdit = 0;
 		delete EditLabel;
 
@@ -991,10 +1000,22 @@ int MessageListClass::Input(KeyNumType &input)
 	}
 
 	//------------------------------------------------------------------------
-	//	Leave mouse events alone.
+	//	Let taps on the live edit line restore focus so touch devices can arm
+	//	the browser keyboard from the visible chat box itself. Other mouse
+	//	events remain untouched.
 	//------------------------------------------------------------------------
 	if ( (input & (~KN_RLSE_BIT))==KN_LMOUSE ||
 		(input & (~KN_RLSE_BIT))==KN_RMOUSE) {
+		if (IsEdit && (input & KN_RLSE_BIT) == 0) {
+			int mousex = Get_Mouse_X();
+			int mousey = Get_Mouse_Y();
+			if (mousex >= EditX && mousex < (EditX + Width) &&
+				mousey >= EditY && mousey < (EditY + Height)) {
+				Set_Edit_Focus();
+				EditLabel->Flag_To_Redraw();
+				return(1);
+			}
+		}
 		return(0);
 	}
 
