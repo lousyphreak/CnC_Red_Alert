@@ -500,7 +500,7 @@ test "http basic auth protects static files and websocket upgrade" {
     var unauth_resp = try unauth_client.readHttpResponse();
     defer unauth_resp.deinit(allocator);
     try std.testing.expectEqual(@as(u16, 401), unauth_resp.status);
-    try std.testing.expect(std.mem.indexOf(u8, unauth_resp.headers, "WWW-Authenticate: Basic realm=\"Authentication Required - Red Alert\"\r\n") != null);
+    try std.testing.expect(std.mem.indexOf(u8, unauth_resp.headers, "WWW-Authenticate: Basic realm=\"Red Alert\", charset=\"UTF-8\"\r\n") != null);
 
     var health_client = try Client.connect(allocator, AUTH_PORT);
     defer health_client.deinit();

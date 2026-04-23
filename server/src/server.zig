@@ -461,7 +461,7 @@ pub const Server = struct {
             "Authentication Required\n",
             "no-store",
             keep_alive,
-            "WWW-Authenticate: Basic realm=\"Authentication Required - Red Alert\"\r\n",
+            "WWW-Authenticate: Basic realm=\"Red Alert\", charset=\"UTF-8\"\r\n",
         );
     }
 
