@@ -158,6 +158,50 @@ static int32_t Movie_Playback_Volume(void)
 	return(louder * 256);
 }
 
+static void Process_Cursor_Key_Scroll(void)
+{
+	if (Session.Messages.Has_Edit_Focus()) {
+		return;
+	}
+
+	const bool left = Keyboard->Down(KN_LEFT);
+	const bool right = Keyboard->Down(KN_RIGHT);
+	const bool up = Keyboard->Down(KN_UP);
+	const bool down = Keyboard->Down(KN_DOWN);
+
+	const int horizontal = (right ? 1 : 0) - (left ? 1 : 0);
+	const int vertical = (down ? 1 : 0) - (up ? 1 : 0);
+	if (horizontal == 0 && vertical == 0) {
+		return;
+	}
+
+	DirType direction = DIR_N;
+	if (vertical < 0) {
+		if (horizontal < 0) {
+			direction = DIR_NW;
+		} else if (horizontal > 0) {
+			direction = DIR_NE;
+		} else {
+			direction = DIR_N;
+		}
+	} else if (vertical > 0) {
+		if (horizontal < 0) {
+			direction = DIR_SW;
+		} else if (horizontal > 0) {
+			direction = DIR_SE;
+		} else {
+			direction = DIR_S;
+		}
+	} else if (horizontal < 0) {
+		direction = DIR_W;
+	} else {
+		direction = DIR_E;
+	}
+
+	int distance = CELL_LEPTON_W;
+	Map.Scroll_Map(direction, distance, true);
+}
+
 #define SHAPE_TRANS		0x40
 
 void * Get_Shape_Header_Data(void * ptr);
@@ -824,6 +868,11 @@ void Keyboard_Process(KeyNumType & input)
 	if (key != 0 && (key == Options.KeyOption1 || key == Options.KeyOption2)) {
 		Map.Help_Text(TXT_NONE);			// Turns off help text.
 		Queue_Options();
+		input = KN_NONE;
+	}
+
+	if (!Session.Messages.Has_Edit_Focus()
+		&& (plain == KN_LEFT || plain == KN_RIGHT || plain == KN_UP || plain == KN_DOWN)) {
 		input = KN_NONE;
 	}
 
@@ -2123,6 +2172,7 @@ Mono_Set_Cursor(0,0);
 			if (input) {
 				Keyboard_Process(input);
 			}
+			Process_Cursor_Key_Scroll();
 		}
 	}
 
@@ -3264,7 +3314,8 @@ int32_t VQ_Call_Back(uint8_t *buffer, int32_t frame)
 	}
 	//Call_Back();
 
-	if ((BreakoutAllowed || Debug_Flag) && key == KN_ESC) {
+	const int plain_key = key & 0xFF;
+	if ((BreakoutAllowed || Debug_Flag) && (plain_key == KN_ESC || plain_key == KN_RETURN)) {
 		Keyboard->Clear();
 		Brokeout = true;
 		return(true);

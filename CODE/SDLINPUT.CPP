@@ -24,6 +24,9 @@ extern void Main_Window_Handle_Close_Request(void);
 extern int AllDone;
 extern int32_t GameInFocus;
 extern int32_t BootstrapFocusSeen;
+extern bool Debug_Map;
+extern bool GameActive;
+extern bool InMovie;
 extern GraphicViewPortClass SeenBuff;
 extern WWMouseClass* WWMouse;
 extern void WWDraw_Request_Present(void);
@@ -38,6 +41,29 @@ constexpr uint16_t LEGACY_MIDDLE_MOUSE = 0x04;
 constexpr uint16_t LEGACY_NUMPAD0 = 0x60;
 constexpr uint16_t LEGACY_NUMPAD5 = 0x65;
 constexpr uint16_t LEGACY_DECIMAL = 0x6E;
+constexpr int TOUCH_DRAG_SLOP_PIXELS = 6;
+constexpr int TOUCH_TAP_SLOP_PIXELS = 18;
+constexpr uint64_t TOUCH_DOUBLE_TAP_INTERVAL_MS = 350u;
+
+struct TouchPoint {
+	int x = 0;
+	int y = 0;
+};
+
+struct TouchFingerState {
+	bool active = false;
+	SDL_FingerID id = 0;
+	TouchPoint point{};
+	TouchPoint start_point{};
+};
+
+enum class TouchGestureMode {
+	None,
+	SinglePending,
+	SingleDrag,
+	TwoFingerTap,
+	TwoFingerScroll
+};
 
 std::mutex g_input_mutex;
 std::array<uint16_t, SDL_SCANCODE_COUNT> g_scancode_down_counts{};
@@ -57,6 +83,15 @@ RECT g_cursor_clip{};
 bool g_mission_mouse_capture_requested = false;
 uint32_t g_mouse_capture_suppression_count = 0;
 bool g_mission_mouse_capture_applied = false;
+std::array<TouchFingerState, 4> g_touch_fingers{};
+TouchGestureMode g_touch_gesture_mode = TouchGestureMode::None;
+SDL_FingerID g_touch_single_finger_id = 0;
+bool g_touch_wait_for_all_up = false;
+TouchPoint g_touch_multitouch_anchor{};
+TouchPoint g_touch_multitouch_point{};
+bool g_touch_have_last_movie_tap = false;
+uint64_t g_touch_last_movie_tap_tick = 0;
+TouchPoint g_touch_last_movie_tap_point{};
 
 bool valid_scancode(SDL_Scancode scancode)
 {
@@ -125,6 +160,91 @@ uint16_t mouse_button_to_legacy_key(int button)
 	}
 }
 
+bool touch_gameplay_gestures_enabled(void)
+{
+	return GameActive && !Debug_Map && !InMovie;
+}
+
+TouchFingerState* find_touch_finger(SDL_FingerID id)
+{
+	for (TouchFingerState& finger : g_touch_fingers) {
+		if (finger.active && finger.id == id) {
+			return &finger;
+		}
+	}
+	return nullptr;
+}
+
+TouchFingerState* assign_touch_finger(SDL_FingerID id)
+{
+	TouchFingerState* finger = find_touch_finger(id);
+	if (finger != nullptr) {
+		return finger;
+	}
+
+	for (TouchFingerState& slot : g_touch_fingers) {
+		if (!slot.active) {
+			slot = TouchFingerState{};
+			slot.active = true;
+			slot.id = id;
+			return &slot;
+		}
+	}
+	return nullptr;
+}
+
+int active_touch_count(void)
+{
+	int count = 0;
+	for (const TouchFingerState& finger : g_touch_fingers) {
+		if (finger.active) {
+			++count;
+		}
+	}
+	return count;
+}
+
+TouchPoint active_touch_centroid(void)
+{
+	TouchPoint centroid{};
+	int count = 0;
+
+	for (const TouchFingerState& finger : g_touch_fingers) {
+		if (!finger.active) {
+			continue;
+		}
+		centroid.x += finger.point.x;
+		centroid.y += finger.point.y;
+		++count;
+	}
+
+	if (count > 0) {
+		centroid.x /= count;
+		centroid.y /= count;
+	}
+	return centroid;
+}
+
+bool touch_moved_past_threshold(const TouchPoint& from, const TouchPoint& to, int threshold)
+{
+	const int dx = to.x - from.x;
+	const int dy = to.y - from.y;
+	return dx * dx + dy * dy > threshold * threshold;
+}
+
+void reset_touch_state(void)
+{
+	g_touch_fingers = {};
+	g_touch_gesture_mode = TouchGestureMode::None;
+	g_touch_single_finger_id = 0;
+	g_touch_wait_for_all_up = false;
+	g_touch_multitouch_anchor = TouchPoint{};
+	g_touch_multitouch_point = TouchPoint{};
+	g_touch_have_last_movie_tap = false;
+	g_touch_last_movie_tap_tick = 0;
+	g_touch_last_movie_tap_point = TouchPoint{};
+}
+
 void translate_window_mouse_position(int& x, int& y)
 {
 	int translated_x = x;
@@ -140,6 +260,30 @@ void translate_window_mouse_position(int& x, int& y)
 		x = translated_x;
 		y = translated_y;
 	}
+}
+
+bool translate_touch_position(const SDL_TouchFingerEvent& touch_event, TouchPoint& point)
+{
+	if (MainWindow == NULL || MainWindow->sdl_window == NULL) {
+		return false;
+	}
+
+	int window_width = 0;
+	int window_height = 0;
+	if (!SDL_GetWindowSize(MainWindow->sdl_window, &window_width, &window_height) || window_width <= 0 || window_height <= 0) {
+		return false;
+	}
+
+	const float clamped_x = std::clamp(touch_event.x, 0.0f, 1.0f);
+	const float clamped_y = std::clamp(touch_event.y, 0.0f, 1.0f);
+	int x = static_cast<int>(clamped_x * static_cast<float>(window_width));
+	int y = static_cast<int>(clamped_y * static_cast<float>(window_height));
+	x = std::clamp(x, 0, std::max(0, window_width - 1));
+	y = std::clamp(y, 0, std::max(0, window_height - 1));
+	translate_window_mouse_position(x, y);
+	point.x = x;
+	point.y = y;
+	return true;
 }
 
 void clamp_mouse_position_locked(int &x, int &y)
@@ -159,6 +303,282 @@ void update_mouse_position_locked(int x, int y)
 	clamp_mouse_position_locked(x, y);
 	g_mouse_x = x;
 	g_mouse_y = y;
+}
+
+void handle_translated_mouse_motion(int x, int y, uint32_t button_state_mask)
+{
+	int mouse_x = x;
+	int mouse_y = y;
+	{
+		std::scoped_lock lock(g_input_mutex);
+		update_mouse_position_locked(x, y);
+		g_mouse_buttons = button_state_mask;
+		mouse_x = g_mouse_x;
+		mouse_y = g_mouse_y;
+	}
+
+	Keyboard_Handle_Mouse_Motion(mouse_x, mouse_y);
+}
+
+void handle_translated_mouse_button(int button, int x, int y, bool release)
+{
+	const uint16_t legacy_key = mouse_button_to_legacy_key(button);
+	if (legacy_key == 0) {
+		return;
+	}
+
+	int mouse_x = x;
+	int mouse_y = y;
+	{
+		std::scoped_lock lock(g_input_mutex);
+		update_mouse_position_locked(x, y);
+		const uint32_t mask = mouse_button_mask(button);
+		if (!release) {
+			g_mouse_buttons |= mask;
+		} else {
+			g_mouse_buttons &= ~mask;
+		}
+		mouse_x = g_mouse_x;
+		mouse_y = g_mouse_y;
+	}
+
+	Keyboard_Handle_Mouse_Button_Event(legacy_key, mouse_x, mouse_y, release);
+}
+
+TouchPoint touch_scroll_cursor_point(const TouchPoint& actual_point)
+{
+	TouchPoint scroll_point = actual_point;
+	const int width = std::max(0, SeenBuff.Get_Width() - 1);
+	const int height = std::max(0, SeenBuff.Get_Height() - 1);
+	const int dx = g_touch_multitouch_point.x - g_touch_multitouch_anchor.x;
+	const int dy = g_touch_multitouch_point.y - g_touch_multitouch_anchor.y;
+
+	if (dx > TOUCH_DRAG_SLOP_PIXELS) {
+		scroll_point.x = width;
+	} else if (dx < -TOUCH_DRAG_SLOP_PIXELS) {
+		scroll_point.x = 0;
+	}
+
+	if (dy > TOUCH_DRAG_SLOP_PIXELS) {
+		scroll_point.y = height;
+	} else if (dy < -TOUCH_DRAG_SLOP_PIXELS) {
+		scroll_point.y = 0;
+	}
+
+	return scroll_point;
+}
+
+void begin_multitouch_gesture(void)
+{
+	if (!touch_gameplay_gestures_enabled()) {
+		return;
+	}
+
+	if (g_touch_gesture_mode == TouchGestureMode::SingleDrag) {
+		TouchFingerState* single_finger = find_touch_finger(g_touch_single_finger_id);
+		if (single_finger != nullptr) {
+			handle_translated_mouse_button(SDL_BUTTON_LEFT, single_finger->point.x, single_finger->point.y, true);
+		}
+	}
+
+	g_touch_single_finger_id = 0;
+	g_touch_wait_for_all_up = true;
+	g_touch_gesture_mode = TouchGestureMode::TwoFingerTap;
+	g_touch_multitouch_anchor = active_touch_centroid();
+	g_touch_multitouch_point = g_touch_multitouch_anchor;
+	handle_translated_mouse_motion(g_touch_multitouch_point.x, g_touch_multitouch_point.y, 0);
+}
+
+void maybe_begin_touch_drag(const TouchFingerState& finger)
+{
+	if (g_touch_gesture_mode != TouchGestureMode::SinglePending || finger.id != g_touch_single_finger_id) {
+		return;
+	}
+
+	if (!touch_moved_past_threshold(finger.start_point, finger.point, TOUCH_DRAG_SLOP_PIXELS)) {
+		handle_translated_mouse_motion(finger.point.x, finger.point.y, 0);
+		return;
+	}
+
+	g_touch_gesture_mode = TouchGestureMode::SingleDrag;
+	handle_translated_mouse_button(SDL_BUTTON_LEFT, finger.start_point.x, finger.start_point.y, false);
+	handle_translated_mouse_motion(finger.point.x, finger.point.y, MOUSE_LEFT_MASK);
+}
+
+void maybe_commit_movie_double_tap(const TouchFingerState& finger, int active_count_before_release, bool canceled)
+{
+	if (canceled || active_count_before_release != 1 || touch_moved_past_threshold(finger.start_point, finger.point, TOUCH_TAP_SLOP_PIXELS)) {
+		return;
+	}
+
+	const uint64_t now = SDL_GetTicks();
+	if (g_touch_have_last_movie_tap
+		&& now - g_touch_last_movie_tap_tick <= TOUCH_DOUBLE_TAP_INTERVAL_MS
+		&& !touch_moved_past_threshold(g_touch_last_movie_tap_point, finger.point, TOUCH_TAP_SLOP_PIXELS)) {
+		Keyboard_Handle_Key_Event(KN_ESC, false);
+		g_touch_have_last_movie_tap = false;
+		g_touch_last_movie_tap_tick = 0;
+		g_touch_last_movie_tap_point = TouchPoint{};
+		return;
+	}
+
+	g_touch_have_last_movie_tap = true;
+	g_touch_last_movie_tap_tick = now;
+	g_touch_last_movie_tap_point = finger.point;
+}
+
+void handle_touch_down(const SDL_TouchFingerEvent& touch_event)
+{
+	TouchPoint point{};
+	if (!translate_touch_position(touch_event, point)) {
+		return;
+	}
+
+	TouchFingerState* finger = assign_touch_finger(touch_event.fingerID);
+	if (finger == nullptr) {
+		return;
+	}
+	finger->point = point;
+	finger->start_point = point;
+
+	if (InMovie) {
+		return;
+	}
+
+	if (touch_gameplay_gestures_enabled() && active_touch_count() == 2) {
+		begin_multitouch_gesture();
+		return;
+	}
+
+	if (g_touch_wait_for_all_up || active_touch_count() != 1) {
+		return;
+	}
+
+	g_touch_single_finger_id = touch_event.fingerID;
+	g_touch_gesture_mode = TouchGestureMode::SinglePending;
+	handle_translated_mouse_motion(point.x, point.y, 0);
+}
+
+void handle_touch_motion(const SDL_TouchFingerEvent& touch_event)
+{
+	TouchFingerState* finger = find_touch_finger(touch_event.fingerID);
+	if (finger == nullptr) {
+		return;
+	}
+
+	TouchPoint point{};
+	if (!translate_touch_position(touch_event, point)) {
+		return;
+	}
+	finger->point = point;
+
+	if (InMovie) {
+		return;
+	}
+
+	if (g_touch_wait_for_all_up) {
+		const int active_count_now = active_touch_count();
+		if (active_count_now >= 2) {
+			g_touch_multitouch_point = active_touch_centroid();
+			if (g_touch_gesture_mode == TouchGestureMode::TwoFingerTap
+				&& touch_moved_past_threshold(g_touch_multitouch_anchor, g_touch_multitouch_point, TOUCH_DRAG_SLOP_PIXELS)) {
+				g_touch_gesture_mode = TouchGestureMode::TwoFingerScroll;
+			}
+
+			if (g_touch_gesture_mode == TouchGestureMode::TwoFingerScroll) {
+				const TouchPoint scroll_point = touch_scroll_cursor_point(g_touch_multitouch_point);
+				handle_translated_mouse_motion(scroll_point.x, scroll_point.y, 0);
+			} else {
+				handle_translated_mouse_motion(g_touch_multitouch_point.x, g_touch_multitouch_point.y, 0);
+			}
+		} else {
+			if (g_touch_gesture_mode == TouchGestureMode::TwoFingerTap) {
+				g_touch_gesture_mode = TouchGestureMode::None;
+			}
+			handle_translated_mouse_motion(point.x, point.y, 0);
+		}
+		return;
+	}
+
+	if (touch_event.fingerID != g_touch_single_finger_id) {
+		return;
+	}
+
+	if (g_touch_gesture_mode == TouchGestureMode::SinglePending) {
+		maybe_begin_touch_drag(*finger);
+		return;
+	}
+
+	if (g_touch_gesture_mode == TouchGestureMode::SingleDrag) {
+		handle_translated_mouse_motion(point.x, point.y, MOUSE_LEFT_MASK);
+	}
+}
+
+void handle_touch_up(const SDL_TouchFingerEvent& touch_event, bool canceled)
+{
+	TouchFingerState* finger = find_touch_finger(touch_event.fingerID);
+	if (finger == nullptr) {
+		return;
+	}
+
+	TouchPoint point = finger->point;
+	(void)translate_touch_position(touch_event, point);
+	finger->point = point;
+
+	const TouchFingerState released_finger = *finger;
+	const int active_count_before_release = active_touch_count();
+	*finger = TouchFingerState{};
+	const int active_count_after_release = active_touch_count();
+
+	if (InMovie) {
+		maybe_commit_movie_double_tap(released_finger, active_count_before_release, canceled);
+		if (active_count_after_release == 0) {
+			g_touch_single_finger_id = 0;
+			g_touch_gesture_mode = TouchGestureMode::None;
+			g_touch_wait_for_all_up = false;
+		}
+		return;
+	}
+
+	if (released_finger.id == g_touch_single_finger_id) {
+		if (g_touch_gesture_mode == TouchGestureMode::SinglePending) {
+			if (!canceled) {
+				handle_translated_mouse_button(SDL_BUTTON_LEFT, released_finger.point.x, released_finger.point.y, false);
+				handle_translated_mouse_button(SDL_BUTTON_LEFT, released_finger.point.x, released_finger.point.y, true);
+			}
+			g_touch_single_finger_id = 0;
+			g_touch_gesture_mode = TouchGestureMode::None;
+			return;
+		}
+
+		if (g_touch_gesture_mode == TouchGestureMode::SingleDrag) {
+			handle_translated_mouse_button(SDL_BUTTON_LEFT, released_finger.point.x, released_finger.point.y, true);
+			g_touch_single_finger_id = 0;
+			g_touch_gesture_mode = TouchGestureMode::None;
+			return;
+		}
+	}
+
+	if (!g_touch_wait_for_all_up) {
+		return;
+	}
+
+	const TouchPoint restore_point = (active_count_after_release > 0) ? active_touch_centroid() : g_touch_multitouch_point;
+	if (!canceled && g_touch_gesture_mode == TouchGestureMode::TwoFingerTap && active_count_after_release == 0) {
+		handle_translated_mouse_button(SDL_BUTTON_RIGHT, g_touch_multitouch_point.x, g_touch_multitouch_point.y, false);
+		handle_translated_mouse_button(SDL_BUTTON_RIGHT, g_touch_multitouch_point.x, g_touch_multitouch_point.y, true);
+	}
+
+	handle_translated_mouse_motion(restore_point.x, restore_point.y, 0);
+	if (g_touch_gesture_mode == TouchGestureMode::TwoFingerScroll && active_count_after_release < 2) {
+		g_touch_gesture_mode = TouchGestureMode::None;
+	}
+
+	if (active_count_after_release == 0) {
+		g_touch_wait_for_all_up = false;
+		g_touch_gesture_mode = TouchGestureMode::None;
+		g_touch_single_finger_id = 0;
+	}
 }
 
 void initialize_mouse_snapshot_locked(void);
@@ -735,6 +1155,9 @@ void handle_focus_event(bool focused)
 			clear_held_input_locked();
 		}
 	}
+	if (!focused) {
+		reset_touch_state();
+	}
 
 	const bool first_focus_gain = focused && !BootstrapFocusSeen;
 
@@ -794,6 +1217,10 @@ bool should_capture_callback_event(const SDL_Event& event)
 		case SDL_EVENT_MOUSE_MOTION:
 		case SDL_EVENT_MOUSE_BUTTON_DOWN:
 		case SDL_EVENT_MOUSE_BUTTON_UP:
+		case SDL_EVENT_FINGER_DOWN:
+		case SDL_EVENT_FINGER_UP:
+		case SDL_EVENT_FINGER_MOTION:
+		case SDL_EVENT_FINGER_CANCELED:
 			return true;
 
 		default:
@@ -841,6 +1268,10 @@ void flush_callback_events_from_sdl_queue(void)
 	SDL_FlushEvent(SDL_EVENT_MOUSE_MOTION);
 	SDL_FlushEvent(SDL_EVENT_MOUSE_BUTTON_DOWN);
 	SDL_FlushEvent(SDL_EVENT_MOUSE_BUTTON_UP);
+	SDL_FlushEvent(SDL_EVENT_FINGER_DOWN);
+	SDL_FlushEvent(SDL_EVENT_FINGER_UP);
+	SDL_FlushEvent(SDL_EVENT_FINGER_MOTION);
+	SDL_FlushEvent(SDL_EVENT_FINGER_CANCELED);
 }
 
 void set_callback_event_watch(bool enabled)
@@ -910,6 +1341,22 @@ void handle_sdl_event(const SDL_Event &event)
 				static_cast<int>(event.button.y), true);
 			break;
 
+		case SDL_EVENT_FINGER_DOWN:
+			handle_touch_down(event.tfinger);
+			break;
+
+		case SDL_EVENT_FINGER_UP:
+			handle_touch_up(event.tfinger, false);
+			break;
+
+		case SDL_EVENT_FINGER_MOTION:
+			handle_touch_motion(event.tfinger);
+			break;
+
+		case SDL_EVENT_FINGER_CANCELED:
+			handle_touch_up(event.tfinger, true);
+			break;
+
 		default:
 			break;
 	}
@@ -920,6 +1367,8 @@ void handle_sdl_event(const SDL_Event &event)
 void SDL_GameInput_Set_Main_Thread(void)
 {
 	g_main_thread_id = std::this_thread::get_id();
+	SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
+	reset_touch_state();
 
 	std::scoped_lock lock(g_input_mutex);
 	initialize_mouse_snapshot_locked();
@@ -1026,43 +1475,13 @@ void SDL_GameInput_Handle_Key(SDL_Scancode scancode, SDL_Keycode keycode, SDL_Ke
 void SDL_GameInput_Handle_Mouse_Motion(int x, int y, uint32_t button_state)
 {
 	translate_window_mouse_position(x, y);
-	int mouse_x = x;
-	int mouse_y = y;
-	{
-		std::scoped_lock lock(g_input_mutex);
-		update_mouse_position_locked(x, y);
-		g_mouse_buttons = translate_mouse_button_state(button_state);
-		mouse_x = g_mouse_x;
-		mouse_y = g_mouse_y;
-	}
-
-	Keyboard_Handle_Mouse_Motion(mouse_x, mouse_y);
+	handle_translated_mouse_motion(x, y, translate_mouse_button_state(button_state));
 }
 
 void SDL_GameInput_Handle_Mouse_Button(int button, int x, int y, bool release)
 {
-	const uint16_t legacy_key = mouse_button_to_legacy_key(button);
-	if (legacy_key == 0) {
-		return;
-	}
-
 	translate_window_mouse_position(x, y);
-	int mouse_x = x;
-	int mouse_y = y;
-	{
-		std::scoped_lock lock(g_input_mutex);
-		update_mouse_position_locked(x, y);
-		uint32_t mask = mouse_button_mask(button);
-		if (!release) {
-			g_mouse_buttons |= mask;
-		} else {
-			g_mouse_buttons &= ~mask;
-		}
-		mouse_x = g_mouse_x;
-		mouse_y = g_mouse_y;
-	}
-
-	Keyboard_Handle_Mouse_Button_Event(legacy_key, mouse_x, mouse_y, release);
+	handle_translated_mouse_button(button, x, y, release);
 }
 
 void SDL_GameInput_Pump(void)

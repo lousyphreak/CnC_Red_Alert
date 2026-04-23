@@ -85,6 +85,12 @@ _Last updated: 2026-04-23_
 - Dialogs that mix multiple input systems may need explicit per-frame bridge-state mirroring even after the shared focus manager is fixed.
   - Practical example from this tree: `CODE/NETDLG.CPP` and `CODE/NULLDLG.CPP` can run `commands->Input()` alongside message-editor or drop-list logic, and those loops are also the exact path the player-name / connect-name fields live on. Adding `SDL_GameInput_SetTextInputActive(...)` immediately after the active input poll made the browser tray follow the *current* `Has_Focus()` state of those widgets instead of depending only on earlier focus-change side effects.
   - Practical rule: for browser/mobile text input, audit the real dialog loop as well as widget focus callbacks. If a screen multiplexes several input paths in one frame, explicitly resynchronize the bridge state from the live focused controls after polling them.
+- `SDL_HINT_TOUCH_MOUSE_EVENTS` defaults to generating synthetic mouse input from touch, which clashes with any repo-owned touch gesture layer.
+  - Practical example from this tree: once `CODE/SDLINPUT.CPP` started translating one-finger drag, movie double-tap, two-finger deselect, and two-finger scroll into the legacy Westwood mouse/key path directly, leaving SDL's default touch→mouse emulation enabled would have produced a second stream of left-mouse presses/motions/releases underneath the custom gestures.
+  - Practical rule: if the port owns touch gesture translation itself, disable SDL's synthetic touch→mouse path (`SDL_HINT_TOUCH_MOUSE_EVENTS=0`) and feed the legacy input queue from one authoritative layer only.
+- When one-finger click/drag and two-finger gestures share the same legacy mouse interface, defer the synthetic left click until drag threshold or finger-up.
+  - Practical example from this tree: gameplay deselect is triggered by right-click, but if the first finger of a two-finger tap immediately emitted a real left click on touch-down, the old UI would start a normal left-click action before the second finger arrived. The maintained solution keeps a one-finger touch in a pending state until it either moves far enough to become a drag or lifts to become a tap, which leaves room for the gesture recognizer to upgrade that interaction into a two-finger gameplay gesture cleanly.
+  - Practical rule: on legacy desktop UIs being ported to touch, do not eagerly emit left-click presses on the first finger-down if a two-finger gesture might still claim the interaction.
 
 ## Multiplayer networking
 

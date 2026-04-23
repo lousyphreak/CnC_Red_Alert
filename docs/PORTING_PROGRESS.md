@@ -8,6 +8,15 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Added touch-screen movie/gameplay controls and gameplay cursor-key scrolling parity (2026-04-23):
+  - Root cause: SDL3's generic touch-to-mouse emulation only provides a basic left-mouse path, which is not enough for the browser/mobile control set this port needs (`double tap` movie cancel, two-finger deselect, two-finger drag scrolling) and would duplicate events once the port started synthesizing its own gesture-driven mouse input. Separately, movie breakout still only recognized `Esc`, and gameplay cursor keys still followed the original desktop defaults where `Up`/`Down` went to the sidebar instead of panning the tactical view.
+  - Fix implemented:
+    - `CODE/SDLINPUT.CPP` now disables SDL's synthetic touch→mouse path with `SDL_HINT_TOUCH_MOUSE_EVENTS=0` and translates touch input into the existing legacy input model itself: one finger becomes a deferred left click / drag-select path, double-tap during `InMovie` queues `KN_ESC`, two-finger gameplay taps emit a right click, and two-finger gameplay drags move the legacy cursor to screen edges/corners so the existing `ScrollClass::AI()` autoscroll behavior does the actual map movement;
+    - the callback-mode SDL event bridge now captures and flushes finger events too, so legacy movie/dialog loops that rely on `Call_Back()` see the same touch gestures as the normal pump path;
+    - `CODE/CONQUER.CPP` now lets `Return` break out of VQ playback through the same path as `Esc`, suppresses raw cursor-key events before the gameplay sidebar hotkeys can consume them, and scrolls the tactical view continuously from held cursor keys via the existing `Map.Scroll_Map(...)` path.
+  - Result: touch devices can now cancel movies, drag-select units, deselect with a two-finger tap, and pan the battlefield with a two-finger drag while preserving the original left/right mouse semantics underneath; keyboard users also get the requested `Return` movie cancel plus held-arrow tactical scrolling during gameplay.
+  - validation for this checkpoint: `cmake --build build --parallel`, `ctest --test-dir build --output-on-failure`, and `cmake --build build-emscripten --parallel` all succeed after the touch/keyboard input changes.
+
 - Clarified browser password-manager limits for the Zig server's HTTP basic auth (2026-04-23):
   - Root cause: the deployed game already challenged the top-level document and `/ws` with a valid `401` + `WWW-Authenticate: Basic ...` flow, so the missing "save password" prompt was not caused by Kubernetes ingress or by the Zig server failing to protect only subresources. The real issue is browser behavior: modern built-in password managers do not consistently offer credential saving for HTTP Basic-auth dialogs, even over HTTPS.
   - Fix implemented:
