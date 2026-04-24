@@ -307,11 +307,11 @@ pub const Server = struct {
         // Map /gamedata/... → gamedata_dir; everything else → emscripten_dir.
         var root: ?[]const u8 = null;
         var sub_path = req.path;
-        var cache_control: []const u8 = "public, max-age=3600";
+        var cache_control: []const u8 = "no-cache, no-store, must-revalidate";
         if (http.asciiStartsWithIgnoreCase(req.path, "/gamedata/")) {
             root = self.cfg.gamedata_dir;
             sub_path = req.path["/gamedata".len..];
-            cache_control = "public, max-age=31536000, immutable";
+            cache_control = "no-cache, no-store, must-revalidate";
         } else {
             root = self.cfg.emscripten_dir;
         }
@@ -1071,7 +1071,7 @@ fn buildBasicAuthHeader(allocator: std.mem.Allocator, username: []const u8, pass
     const encoded_len = std.base64.standard.Encoder.calcSize(plain.len);
     const header = try allocator.alloc(u8, "Basic ".len + encoded_len);
     std.mem.copyForwards(u8, header[0.."Basic ".len], "Basic ");
-    _ = std.base64.standard.Encoder.encode(header["Basic ".len ..], plain);
+    _ = std.base64.standard.Encoder.encode(header["Basic ".len..], plain);
     return header;
 }
 

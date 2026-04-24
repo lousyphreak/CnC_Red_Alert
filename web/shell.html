@@ -111,6 +111,85 @@
         opacity: 0;
       }
 
+      .ra-btn:disabled {
+        opacity: 0.45;
+      }
+
+      #ra-error-panel {
+        position: fixed;
+        left: 0;
+        right: 0;
+        top: env(safe-area-inset-top, 0);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 48vh;
+        padding: 10px 12px 12px;
+        box-sizing: border-box;
+        background: linear-gradient(180deg, rgba(44, 0, 0, 0.97), rgba(20, 0, 0, 0.95));
+        border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+        color: #ffd7d7;
+        z-index: 11;
+      }
+
+      #ra-error-panel.hidden {
+        display: none;
+      }
+
+      #ra-error-bar {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      #ra-error-meta {
+        min-width: 0;
+        flex: 1 1 auto;
+      }
+
+      #ra-error-title {
+        margin: 0;
+        color: #ffc0c0;
+        font: 600 12px/1.2 ui-sans-serif, system-ui, sans-serif;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      #ra-error-copy-status {
+        min-height: 1.2em;
+        margin-top: 3px;
+        color: #e7bbbb;
+        font: 11px/1.3 ui-sans-serif, system-ui, sans-serif;
+      }
+
+      #ra-error-copy-status[data-state="success"] {
+        color: #ffd9a1;
+      }
+
+      #ra-error-copy-status[data-state="error"] {
+        color: #ff9f9f;
+      }
+
+      #ra-error-copy {
+        flex: 0 0 auto;
+        padding: 6px 10px;
+        font-size: 11px;
+      }
+
+      #ra-error-log {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: auto;
+        margin: 0;
+        padding: 0 2px 0 0;
+        font: 12px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        white-space: pre-wrap;
+        word-break: break-word;
+        user-select: text;
+      }
+
       #ra-soft-keyboard-panel {
         position: fixed;
         left: 0;
@@ -171,8 +250,21 @@
         border-color: #d0d0d0;
       }
 
-      /* When the canvas element is in native browser fullscreen, it takes over
-         the whole screen; make sure it fills it properly. */
+      /* When the page or canvas is in native browser fullscreen, keep the
+         render stage pinned to the full viewport. */
+      html:fullscreen #ra-stage,
+      html:-webkit-full-screen #ra-stage,
+      #canvas:fullscreen,
+      #canvas:-webkit-full-screen {
+        inset: 0;
+        width: 100vw !important;
+        height: 100vh !important;
+        max-width: 100vw;
+        max-height: 100vh;
+      }
+
+      html:fullscreen #canvas,
+      html:-webkit-full-screen #canvas,
       #canvas:fullscreen,
       #canvas:-webkit-full-screen {
         width: 100vw !important;
@@ -196,6 +288,16 @@
     </div>
 
     <div id="ra-status">Downloading...</div>
+    <div id="ra-error-panel" class="hidden" role="log" aria-live="assertive" aria-atomic="false">
+      <div id="ra-error-bar">
+        <div id="ra-error-meta">
+          <div id="ra-error-title">Runtime error log</div>
+          <div id="ra-error-copy-status" data-state="idle"></div>
+        </div>
+        <button id="ra-error-copy" class="ra-btn" type="button" disabled>Copy</button>
+      </div>
+      <pre id="ra-error-log"></pre>
+    </div>
     <div id="ra-soft-keyboard-panel" aria-live="polite" aria-atomic="true">
       <div id="ra-soft-keyboard-state">Mobile keyboard idle</div>
       <div id="ra-soft-keyboard-debug"></div>
@@ -219,12 +321,22 @@
         var canvas = document.getElementById('canvas');
         var stage = document.getElementById('ra-stage');
         var statusEl = document.getElementById('ra-status');
+        var errorPanelEl = document.getElementById('ra-error-panel');
+        var errorLogEl = document.getElementById('ra-error-log');
+        var errorCopyBtn = document.getElementById('ra-error-copy');
+        var errorCopyStatusEl = document.getElementById('ra-error-copy-status');
         var ui = document.getElementById('ra-ui');
         var fsBtn = document.getElementById('ra-fullscreen');
         var softKeyboardPanel = document.getElementById('ra-soft-keyboard-panel');
         var softKeyboardState = document.getElementById('ra-soft-keyboard-state');
         var softKeyboardDebug = document.getElementById('ra-soft-keyboard-debug');
         var softKeyboardInput = document.getElementById('ra-soft-keyboard');
+        var fatalErrorActive = false;
+        var stderrBuffer = [];
+        var stderrSequence = 0;
+        var lastFatalStderrSeq = 0;
+        var fatalErrorCount = 0;
+        var errorCopyResetTimer = 0;
 
         // ---- Size management --------------------------------------------------
         // Compute the renderable area in CSS pixels. We clamp to the actual
@@ -266,11 +378,12 @@
 
         function resizeToViewport(reason) {
           var changed = false;
-          // When the canvas is in its own fullscreen element the browser sizes
-          // it for us via CSS; leave the drawing buffer to match that.
-          if (document.fullscreenElement === canvas ||
-              document.webkitFullscreenElement === canvas) {
-            var rect = canvas.getBoundingClientRect();
+          var fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement;
+          // In browser fullscreen, size against the active fullscreen element so
+          // document-root fullscreen and canvas-only fullscreen both work.
+          if (fullscreenElement) {
+            var rectSource = fullscreenElement === canvas ? canvas : stage;
+            var rect = rectSource.getBoundingClientRect();
             changed = applySize(Math.max(1, Math.floor(rect.width)),
                                 Math.max(1, Math.floor(rect.height)));
           } else {
@@ -307,18 +420,52 @@
           return !!(document.fullscreenElement || document.webkitFullscreenElement);
         }
 
+        function isPromiseLike(value) {
+          return !!value && typeof value.then === 'function';
+        }
+
+        function logFullscreenFailure(action, err) {
+          if (window.Module && window.Module.raSoftKeyboard) {
+            window.Module.raSoftKeyboard.log('fullscreen-' + action + '-failed', err && err.message ? err.message : err);
+          }
+          console.warn('Fullscreen ' + action + ' failed:', err);
+        }
+
+        function callFullscreenApi(fn, thisArg, args, action, fallback) {
+          if (!fn) return;
+
+          var result;
+          try {
+            result = fn.apply(thisArg, args || []);
+          } catch (err) {
+            if (fallback) {
+              fallback(err);
+              return;
+            }
+            logFullscreenFailure(action, err);
+            return;
+          }
+
+          if (isPromiseLike(result)) {
+            result.catch(function (err) {
+              if (fallback) {
+                fallback(err);
+                return;
+              }
+              logFullscreenFailure(action, err);
+            });
+          }
+        }
+
         function toggleFullscreen() {
           if (isFullscreen()) {
             var exit = document.exitFullscreen || document.webkitExitFullscreen;
-            if (exit) exit.call(document);
+            callFullscreenApi(exit, document, [], 'exit');
           } else {
-            var req = canvas.requestFullscreen || canvas.webkitRequestFullscreen;
+            var fullscreenTarget = document.documentElement || stage || canvas;
+            var req = fullscreenTarget.requestFullscreen || fullscreenTarget.webkitRequestFullscreen;
             if (req) {
-              try {
-                req.call(canvas, { navigationUI: 'hide' });
-              } catch (e) {
-                req.call(canvas);
-              }
+              callFullscreenApi(req, fullscreenTarget, [], 'enter');
             }
           }
           canvas.focus();
@@ -361,20 +508,168 @@
           statusEl.textContent = text;
         }
 
-        function callSoftKeyboardExport(name) {
-          if (!window.Module) return null;
-          var fn = window.Module[name];
-          return (typeof fn === 'function') ? fn : null;
+        function stringifyErrorValue(value) {
+          if (value == null) return '';
+          if (typeof value === 'string') return value;
+          if (value instanceof Error) {
+            return value.stack || (value.name + ': ' + value.message);
+          }
+          if (typeof value === 'object') {
+            try {
+              return JSON.stringify(value, null, 2);
+            } catch (e) {}
+          }
+          return String(value);
+        }
+
+        function pushStderrLine(text) {
+          var line = stringifyErrorValue(text);
+          if (!line) return;
+          stderrSequence += 1;
+          stderrBuffer.push({ seq: stderrSequence, text: line });
+          if (stderrBuffer.length > 80) {
+            stderrBuffer.shift();
+          }
+        }
+
+        function setErrorCopyStatus(text, state) {
+          if (!errorCopyStatusEl) return;
+          errorCopyStatusEl.textContent = text || '';
+          errorCopyStatusEl.dataset.state = state || 'idle';
+        }
+
+        function resetErrorCopyHint(delay) {
+          if (errorCopyResetTimer) {
+            clearTimeout(errorCopyResetTimer);
+            errorCopyResetTimer = 0;
+          }
+          errorCopyResetTimer = setTimeout(function () {
+            errorCopyResetTimer = 0;
+            if (errorLogEl && errorLogEl.textContent) {
+              setErrorCopyStatus('Tap Copy to copy the full error log.', 'idle');
+            } else {
+              setErrorCopyStatus('', 'idle');
+            }
+          }, delay || 1800);
+        }
+
+        function updateErrorCopyButton() {
+          if (!errorCopyBtn) return;
+          errorCopyBtn.disabled = !(errorLogEl && errorLogEl.textContent);
+        }
+
+        function collectRecentStderr(afterSeq) {
+          var lines = [];
+          for (var i = 0; i < stderrBuffer.length; ++i) {
+            if (stderrBuffer[i].seq > afterSeq) {
+              lines.push(stderrBuffer[i]);
+            }
+          }
+          return lines;
+        }
+
+        function appendErrorLog(text, block) {
+          if (!errorLogEl || !text) return;
+          if (errorPanelEl) {
+            errorPanelEl.classList.remove('hidden');
+          }
+          errorLogEl.textContent += (errorLogEl.textContent ? (block ? '\n\n' : '\n') : '') + text;
+          errorLogEl.scrollTop = errorLogEl.scrollHeight;
+          updateErrorCopyButton();
+          if (errorLogEl.textContent && (!errorCopyStatusEl || !errorCopyStatusEl.textContent)) {
+            setErrorCopyStatus('Tap Copy to copy the full error log.', 'idle');
+          }
+        }
+
+        function reportFatalError(summary, details) {
+          var blocks = [];
+          var summaryText = stringifyErrorValue(summary) || 'Unexpected runtime error';
+          var stderrLines = collectRecentStderr(lastFatalStderrSeq);
+          fatalErrorActive = true;
+          fatalErrorCount += 1;
+          setStatus(summaryText);
+          blocks.push('[' + fatalErrorCount + ' @ ' + new Date().toISOString() + '] ' + summaryText);
+          var detailText = stringifyErrorValue(details);
+          if (detailText && detailText !== summaryText) {
+            blocks.push(detailText);
+          }
+          if (stderrLines.length) {
+            blocks.push('Recent stderr:\n' + stderrLines.map(function (entry) { return entry.text; }).join('\n'));
+            lastFatalStderrSeq = stderrLines[stderrLines.length - 1].seq;
+          }
+          appendErrorLog(blocks.join('\n\n'), true);
+        }
+
+        function fallbackCopyErrorLog(text) {
+          if (!text) return false;
+          var helper = document.createElement('textarea');
+          helper.value = text;
+          helper.setAttribute('readonly', 'readonly');
+          helper.style.position = 'fixed';
+          helper.style.top = '0';
+          helper.style.left = '-9999px';
+          helper.style.opacity = '0';
+          document.body.appendChild(helper);
+          try {
+            helper.focus({ preventScroll: true });
+          } catch (e) {
+            helper.focus();
+          }
+          helper.select();
+          helper.setSelectionRange(0, helper.value.length);
+          var copied = false;
+          try {
+            copied = !!(document.execCommand && document.execCommand('copy'));
+          } catch (e2) {}
+          document.body.removeChild(helper);
+          return copied;
+        }
+
+        function copyErrorLogToClipboard() {
+          var text = errorLogEl ? errorLogEl.textContent : '';
+          if (!text) {
+            setErrorCopyStatus('Nothing to copy yet.', 'error');
+            resetErrorCopyHint(1400);
+            return;
+          }
+
+          setErrorCopyStatus('Copying full error log...', 'idle');
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(function () {
+              setErrorCopyStatus('Copied the full error log.', 'success');
+              resetErrorCopyHint();
+            }, function () {
+              if (fallbackCopyErrorLog(text)) {
+                setErrorCopyStatus('Copied the full error log.', 'success');
+              } else {
+                setErrorCopyStatus('Copy failed — long-press the log and copy manually.', 'error');
+              }
+              resetErrorCopyHint();
+            });
+            return;
+          }
+
+          if (fallbackCopyErrorLog(text)) {
+            setErrorCopyStatus('Copied the full error log.', 'success');
+          } else {
+            setErrorCopyStatus('Copy failed — long-press the log and copy manually.', 'error');
+          }
+          resetErrorCopyHint();
+        }
+
+        updateErrorCopyButton();
+        setErrorCopyStatus('', 'idle');
+        if (errorCopyBtn) {
+          errorCopyBtn.addEventListener('click', function () {
+            copyErrorLogToClipboard();
+          });
         }
 
         var softKeyboardRedrawTimer = 0;
         function requestSoftKeyboardRedraw(reason) {
-          var redraw = callSoftKeyboardExport('_SDL_GameInput_WebRequestRedraw');
-          if (!redraw) return false;
-          redraw();
-          if (window.Module && window.Module.raSoftKeyboard) {
-            window.Module.raSoftKeyboard.log('redraw', reason);
-          }
+          if (!window.Module || !window.Module.raSoftKeyboard) return false;
+          window.Module.raSoftKeyboard.pendingRedraw = true;
+          window.Module.raSoftKeyboard.log('redraw', reason);
           return true;
         }
 
@@ -403,10 +698,11 @@
 
         function commitSoftKeyboardText(text) {
           if (!text) return false;
-          var sendChar = callSoftKeyboardExport('_SDL_GameInput_WebCommitTextChar');
-          if (!sendChar) return false;
+          if (!window.Module || !window.Module.raSoftKeyboard) return false;
           for (var i = 0; i < text.length; ++i) {
-            sendChar(text.charCodeAt(i));
+            window.Module.raSoftKeyboard.pendingEvents.push(
+              ((1 << 24) | (text.charCodeAt(i) & 0x00FFFFFF)) | 0
+            );
           }
           return true;
         }
@@ -448,6 +744,8 @@
           active: false,
           focused: false,
           focusAttempts: 0,
+          pendingEvents: [],
+          pendingRedraw: false,
           lastEvent: 'idle',
           lastInput: 'none',
           debug: forceSoftKeyboardDebug,
@@ -586,9 +884,8 @@
             raSoftKeyboard.noteInput(e.inputType + (e.data ? ':' + e.data : ''));
 
             if (e.inputType === 'deleteContentBackward') {
-              var sendBackspace = callSoftKeyboardExport('_SDL_GameInput_WebCommitBackspace');
-              if (sendBackspace) {
-                sendBackspace();
+              if (window.Module && window.Module.raSoftKeyboard) {
+                window.Module.raSoftKeyboard.pendingEvents.push((2 << 24) | 0);
                 e.preventDefault();
                 clearSoftKeyboardValue();
               }
@@ -596,9 +893,8 @@
             }
 
             if (e.inputType === 'insertLineBreak') {
-              var sendReturn = callSoftKeyboardExport('_SDL_GameInput_WebCommitReturn');
-              if (sendReturn) {
-                sendReturn();
+              if (window.Module && window.Module.raSoftKeyboard) {
+                window.Module.raSoftKeyboard.pendingEvents.push((3 << 24) | 0);
                 e.preventDefault();
                 clearSoftKeyboardValue();
               }
@@ -682,7 +978,11 @@
           },
           printErr: function (text) {
             if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(' ');
+            pushStderrLine(text);
             console.warn(text);
+            if (fatalErrorActive) {
+              appendErrorLog(stringifyErrorValue(text), false);
+            }
           },
           setStatus: function (text) {
             setStatus(text);
@@ -708,14 +1008,38 @@
           setStatus('WebGL context lost — please reload the page.');
         }, false);
 
-        window.onerror = function (msg) {
-          setStatus('An error occurred — see the JavaScript console.');
+        window.onerror = function (msg, source, lineno, colno, error) {
+          var location = '';
+          if (source) {
+            location = source + (lineno ? ':' + lineno : '') + (colno ? ':' + colno : '');
+          }
+          reportFatalError(
+            'JavaScript error: ' + (stringifyErrorValue(msg) || 'Unknown error'),
+            [location, error && error.stack ? error.stack : stringifyErrorValue(error)].filter(Boolean).join('\n')
+          );
           Module.setStatus = function (text) {
-            if (text) console.error('[post-exception status] ' + text);
+            if (!text) return;
+            console.error('[post-exception status] ' + text);
+            appendErrorLog('[post-exception status] ' + text, false);
           };
+          return false;
         };
 
+        window.addEventListener('unhandledrejection', function (event) {
+          var reason = event && 'reason' in event ? event.reason : event;
+          reportFatalError(
+            'Unhandled promise rejection: ' + (stringifyErrorValue(reason) || 'Unknown rejection'),
+            reason && reason.stack ? reason.stack : ''
+          );
+        });
+
         window.Module = Module;
+        Module.onAbort = function (reason) {
+          reportFatalError(
+            'Runtime abort: ' + (stringifyErrorValue(reason) || 'Unknown abort'),
+            stringifyErrorValue(reason)
+          );
+        };
         setStatus('Downloading...');
       })();
     </script>

@@ -1,6 +1,6 @@
 # Porting Knowledge
 
-_Last updated: 2026-04-23_
+_Last updated: 2026-04-24_
 
 ## Windows/MSVC build notes
 
@@ -31,6 +31,9 @@ _Last updated: 2026-04-23_
 
 ## Browser / Emscripten input
 
+- The browser shell's visible crash area needs to behave like a transcript, not a single-slot banner.
+  - Practical example from this tree: `web/shell.html` originally called `writeErrorLog(..., true)` from `reportFatalError(...)`, so a later `window.onerror`, `unhandledrejection`, or `Module.onAbort(...)` could overwrite the first/root-cause message. The maintained shell now appends numbered/timestamped fatal blocks, keeps stderr context sequence-tagged so each fatal report only snapshots new stderr lines, and exposes a `Copy` button for the full transcript.
+  - Practical rule: when the browser shell is the only diagnostic surface on a phone/tablet, never replace earlier crash text with later follow-on failures. Preserve an append-only transcript and provide a one-tap clipboard path so testers can export the whole error history.
 - `SDL_HasKeyboard()` is **not** a touch-capability detector on SDL3's Emscripten backend.
   - Practical example from this tree: `extern/SDL3/src/video/emscripten/SDL_emscriptenvideo.c` calls `SDL_AddKeyboard(SDL_DEFAULT_KEYBOARD_ID, NULL)` unconditionally in `Emscripten_CreateWindow()`. That means `SDL_HasKeyboard()` returns true on every browser — phones, tablets, and desktops alike — so any "only arm the bridge when there is no physical keyboard" gate written in C++ never activates on mobile and the soft keyboard never opens.
   - Practical rule: on Emscripten, make the touch-vs-desktop decision in JS using `navigator.maxTouchPoints`, `'ontouchstart' in window`, and/or `matchMedia('(pointer: coarse)')`. Keep the C++ side unconditional and let the JS bridge stay dormant on desktop.
@@ -76,6 +79,24 @@ _Last updated: 2026-04-23_
 - When the mobile keyboard changes the viewport after the game has already rendered a static frame, the browser bridge may need to explicitly request one more present.
   - Practical example from this tree: once the soft keyboard started appearing, the Emscripten build could still sit on a stale pre-keyboard frame because the game redraws lazily and the browser-side viewport/focus transition happened after the last game-driven draw. Exporting a tiny `SDL_GameInput_WebRequestRedraw` hook that calls the draw backend's present path, and invoking it from `web/shell.html` on soft-keyboard focus / geometry / viewport changes, forced the current frame to be shown again without inventing fake gameplay input.
   - Practical rule: for browser-only viewport/UI transitions that happen outside the legacy game's own dirty-rect logic, prefer a narrow "present current frame now" hook over synthetic input or bogus canvas resizes.
+- `EM_JS` imports reached from asyncified browser/gameplay paths must be listed in `ASYNCIFY_IMPORTS` if they can change Asyncify state.
+  - Practical example from this tree: `CODE/SDLINPUT.CPP::ra_set_web_soft_keyboard_active(...)` is an `EM_JS` import that drives the mobile textarea focus / virtual-keyboard bridge. Once gameplay/UI code started calling it from asyncified paths, Emscripten aborted at runtime with `import ra_set_web_soft_keyboard_active was not in ASYNCIFY_IMPORTS, but changed the state` until `CMakeLists.txt` added `-sASYNCIFY_IMPORTS=ra_set_web_soft_keyboard_active`.
+  - Practical rule: whenever a repo-owned `EM_JS` bridge can touch browser APIs that may unwind/rewind under Asyncify, treat it like any other asyncify-capable import and declare it explicitly in the Emscripten link flags.
+- Some current Emscripten asyncify relinks also need `emscripten_stack_get_end` exported explicitly to satisfy their own stack-check glue.
+  - Practical example from this tree: after adding `-sASYNCIFY_IMPORTS=ra_set_web_soft_keyboard_active`, the local `/usr/lib/emscripten` toolchain hit an internal `metadata.function_exports` assertion while generating JS glue for stack overflow checks, even though the emitted runtime expected `_emscripten_stack_get_end`. Adding `-Wl,--export=emscripten_stack_get_end` made the relink deterministic again.
+  - Practical rule: if an asyncify-related Emscripten relink suddenly fails inside `update_settings_glue(...)` with a missing `emscripten_stack_get_end` export, prefer explicitly exporting that symbol over disabling stack checks wholesale.
+- On Asyncify builds, browser DOM handlers should not call repo-owned wasm exports directly while legacy code may be sleeping.
+  - Practical example from this tree: the first soft-keyboard bridge fed text and redraws back into the game through `_SDL_GameInput_WebCommit*` / `_SDL_GameInput_WebRequestRedraw` from `beforeinput`, `input`, and focus/viewport callbacks in `web/shell.html`. That looked fine in straight gameplay, but it could re-enter wasm while WOL/menu/dialog code was paused inside `emscripten_sleep(...)`, which later broke Asyncify rewind with `id ... not found in callStackIdToFunc`.
+  - Practical rule: if browser-side UI/input code can fire independently of the game's main loop, queue its work in JS and drain it from an existing main-thread pump (`Call_Back()`, `SDL_GameInput_Pump()`, etc.) instead of calling wasm exports directly from DOM/timer callbacks.
+- Browser fullscreen APIs must be handled as asynchronous promise-returning calls even when the old prefixed path exists.
+  - Practical example from this tree: `web/shell.html::toggleFullscreen()` originally only guarded `requestFullscreen()` with `try/catch`, which does not catch the common browser failure mode where fullscreen is denied through a rejected promise. That surfaced as an `Unhandled promise rejection` from the shell button/shortcut path until the helper started attaching `.catch(...)` handlers and retrying the no-options form explicitly.
+  - Practical rule: when driving fullscreen from the browser shell, always treat both enter and exit paths as promise-capable operations and consume rejections locally; use `try/catch` only for the truly synchronous compatibility failures.
+- For browser-shell fullscreen, request fullscreen on the page/root container instead of the render canvas when you want the whole hosted app to enter fullscreen reliably.
+  - Practical example from this tree: the original shell only asked `canvas.requestFullscreen(...)`, which coupled fullscreen success to the canvas element and to the optional `{ navigationUI: 'hide' }` options form. The maintained shell now requests plain fullscreen on `document.documentElement`, while the resize code treats any active fullscreen element as authoritative for sizing.
+  - Practical rule: if the hosted app has browser-managed UI chrome around the canvas (buttons, error overlay, mobile keyboard panel, status bar), make the fullscreen root the document/page container rather than the canvas itself. Reserve canvas-only fullscreen for cases where the canvas is truly the only UI that should survive the transition.
+- Direct-touch input should suppress relative mouse mode even if the gameplay state still wants cursor capture.
+  - Practical example from this tree: `CODE/SDLINPUT.CPP` originally used `SDL_SetWindowRelativeMouseMode(true)` whenever mission mouse capture was requested. That matched desktop mouse-look style behavior, but on Emscripten/mobile touch it could leave the logical cursor stranded and eventually make further touch input unusable. The maintained version now splits "capture/clip the legacy cursor" from "enable relative mouse mode", disables relative mode as soon as direct touch becomes the active pointer source, and only re-enables it after real mouse activity returns.
+  - Practical rule: on touchscreen-capable ports, treat direct touch and relative mouse mode as mutually exclusive input modes. Keep absolute/clipped cursor behavior for touch, and reserve relative mode for genuine mouse/pointer-lock style devices only.
 - Not every live text-entry surface in this tree derives from `EditClass`.
   - Practical example from this tree: most dialogs use `EditClass` or an `EditClass`-derived helper, but multiplayer chat/message composition in `CODE/MSGLIST.CPP` uses a focused `TextLabelClass` plus manual buffer editing.
   - Practical rule: when adding platform text-entry behavior, audit all active text widgets by behavior, not only by inheritance tree, or one-off inline editors will be missed.

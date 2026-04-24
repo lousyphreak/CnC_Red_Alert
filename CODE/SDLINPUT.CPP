@@ -65,6 +65,8 @@ enum class TouchGestureMode {
 	TwoFingerScroll
 };
 
+void apply_mission_mouse_capture(void);
+
 std::mutex g_input_mutex;
 std::array<uint16_t, SDL_SCANCODE_COUNT> g_scancode_down_counts{};
 SDL_Keymod g_mod_state = SDL_KMOD_NONE;
@@ -83,6 +85,9 @@ RECT g_cursor_clip{};
 bool g_mission_mouse_capture_requested = false;
 uint32_t g_mouse_capture_suppression_count = 0;
 bool g_mission_mouse_capture_applied = false;
+bool g_mission_relative_mouse_mode_applied = false;
+bool g_last_pointer_source_was_direct_touch = false;
+uint32_t g_active_direct_touch_contacts = 0;
 std::array<TouchFingerState, 4> g_touch_fingers{};
 TouchGestureMode g_touch_gesture_mode = TouchGestureMode::None;
 SDL_FingerID g_touch_single_finger_id = 0;
@@ -165,6 +170,54 @@ bool touch_gameplay_gestures_enabled(void)
 	return GameActive && !Debug_Map && !InMovie;
 }
 
+bool is_direct_touch_device(SDL_TouchID touch_id)
+{
+#if defined(__EMSCRIPTEN__)
+	(void)touch_id;
+	return true;
+#else
+	if (touch_id == 0 || touch_id == SDL_MOUSE_TOUCHID) {
+		return false;
+	}
+	return SDL_GetTouchDeviceType(touch_id) == SDL_TOUCH_DEVICE_DIRECT;
+#endif
+}
+
+void note_direct_touch_contact_begin(SDL_TouchID touch_id)
+{
+	if (!is_direct_touch_device(touch_id)) {
+		return;
+	}
+
+	++g_active_direct_touch_contacts;
+	g_last_pointer_source_was_direct_touch = true;
+	apply_mission_mouse_capture();
+}
+
+void note_direct_touch_contact_end(SDL_TouchID touch_id)
+{
+	if (!is_direct_touch_device(touch_id)) {
+		return;
+	}
+
+	if (g_active_direct_touch_contacts > 0) {
+		--g_active_direct_touch_contacts;
+	}
+	apply_mission_mouse_capture();
+}
+
+void note_mouse_pointer_activity(SDL_MouseID which)
+{
+	if (which == SDL_TOUCH_MOUSEID) {
+		return;
+	}
+
+	if (g_last_pointer_source_was_direct_touch) {
+		g_last_pointer_source_was_direct_touch = false;
+		apply_mission_mouse_capture();
+	}
+}
+
 TouchFingerState* find_touch_finger(SDL_FingerID id)
 {
 	for (TouchFingerState& finger : g_touch_fingers) {
@@ -238,11 +291,13 @@ void reset_touch_state(void)
 	g_touch_gesture_mode = TouchGestureMode::None;
 	g_touch_single_finger_id = 0;
 	g_touch_wait_for_all_up = false;
+	g_active_direct_touch_contacts = 0;
 	g_touch_multitouch_anchor = TouchPoint{};
 	g_touch_multitouch_point = TouchPoint{};
 	g_touch_have_last_movie_tap = false;
 	g_touch_last_movie_tap_tick = 0;
 	g_touch_last_movie_tap_point = TouchPoint{};
+	apply_mission_mouse_capture();
 }
 
 void translate_window_mouse_position(int& x, int& y)
@@ -429,6 +484,8 @@ void maybe_commit_movie_double_tap(const TouchFingerState& finger, int active_co
 
 void handle_touch_down(const SDL_TouchFingerEvent& touch_event)
 {
+	note_direct_touch_contact_begin(touch_event.touchID);
+
 	TouchPoint point{};
 	if (!translate_touch_position(touch_event, point)) {
 		return;
@@ -461,6 +518,10 @@ void handle_touch_down(const SDL_TouchFingerEvent& touch_event)
 
 void handle_touch_motion(const SDL_TouchFingerEvent& touch_event)
 {
+	if (is_direct_touch_device(touch_event.touchID)) {
+		g_last_pointer_source_was_direct_touch = true;
+	}
+
 	TouchFingerState* finger = find_touch_finger(touch_event.fingerID);
 	if (finger == nullptr) {
 		return;
@@ -518,6 +579,7 @@ void handle_touch_up(const SDL_TouchFingerEvent& touch_event, bool canceled)
 {
 	TouchFingerState* finger = find_touch_finger(touch_event.fingerID);
 	if (finger == nullptr) {
+		note_direct_touch_contact_end(touch_event.touchID);
 		return;
 	}
 
@@ -579,6 +641,7 @@ void handle_touch_up(const SDL_TouchFingerEvent& touch_event, bool canceled)
 		g_touch_gesture_mode = TouchGestureMode::None;
 		g_touch_single_finger_id = 0;
 	}
+	note_direct_touch_contact_end(touch_event.touchID);
 }
 
 void initialize_mouse_snapshot_locked(void);
@@ -589,6 +652,11 @@ bool should_apply_mission_mouse_capture(void)
 		&& g_mouse_capture_suppression_count == 0
 		&& MainWindow != NULL
 		&& MainWindow->sdl_window != NULL;
+}
+
+bool should_apply_relative_mouse_mode(void)
+{
+	return !g_last_pointer_source_was_direct_touch && g_active_direct_touch_contacts == 0;
 }
 
 bool get_window_point_for_current_game_cursor(float& window_x, float& window_y)
@@ -642,42 +710,101 @@ EM_JS(void, ra_set_web_soft_keyboard_active, (int enabled), {
     Module.raSoftKeyboard.setActive(!!enabled);
 });
 
+EM_JS(int32_t, ra_pop_web_soft_keyboard_event, (), {
+    if (typeof Module === 'undefined' || !Module.raSoftKeyboard || !Module.raSoftKeyboard.pendingEvents) {
+        return 0;
+    }
+    if (!Module.raSoftKeyboard.pendingEvents.length) {
+        return 0;
+    }
+    return Module.raSoftKeyboard.pendingEvents.shift() | 0;
+});
+
+EM_JS(int32_t, ra_take_web_soft_keyboard_redraw_request, (), {
+    if (typeof Module === 'undefined' || !Module.raSoftKeyboard) {
+        return 0;
+    }
+    if (!Module.raSoftKeyboard.pendingRedraw) {
+        return 0;
+    }
+    Module.raSoftKeyboard.pendingRedraw = false;
+    return 1;
+});
+
 static void push_web_soft_key(uint16_t legacy_key)
 {
 	Keyboard_Handle_Key_Event(legacy_key, false);
 }
 
-extern "C" EMSCRIPTEN_KEEPALIVE void SDL_GameInput_WebCommitTextChar(uint32_t codepoint)
+enum : uint32_t {
+	WEB_SOFT_KEY_EVENT_NONE = 0u,
+	WEB_SOFT_KEY_EVENT_TEXT = 1u,
+	WEB_SOFT_KEY_EVENT_BACKSPACE = 2u,
+	WEB_SOFT_KEY_EVENT_RETURN = 3u
+};
+
+void drain_web_soft_keyboard_bridge(void)
 {
-	if (codepoint > 255u) {
-		return;
+	while (true) {
+		const uint32_t packed = static_cast<uint32_t>(ra_pop_web_soft_keyboard_event());
+		if (packed == WEB_SOFT_KEY_EVENT_NONE) {
+			break;
+		}
+
+		const uint32_t event_type = (packed >> 24) & 0xFFu;
+		const uint32_t event_value = packed & 0x00FFFFFFu;
+
+		switch (event_type) {
+			case WEB_SOFT_KEY_EVENT_TEXT:
+				if (event_value <= 255u) {
+					const int16_t legacy_key = SDL_GameInput_AsciiToLegacyKey(static_cast<uint8_t>(event_value));
+					if (legacy_key != 0) {
+						push_web_soft_key(static_cast<uint16_t>(legacy_key));
+					}
+				}
+				break;
+
+			case WEB_SOFT_KEY_EVENT_BACKSPACE:
+				push_web_soft_key(KN_BACKSPACE);
+				break;
+
+			case WEB_SOFT_KEY_EVENT_RETURN:
+				push_web_soft_key(KN_RETURN);
+				break;
+
+			default:
+				break;
+		}
 	}
 
-	const int16_t legacy_key = SDL_GameInput_AsciiToLegacyKey(static_cast<uint8_t>(codepoint));
-	if (legacy_key != 0) {
-		push_web_soft_key(static_cast<uint16_t>(legacy_key));
+	if (ra_take_web_soft_keyboard_redraw_request() != 0) {
+		SDL_GameInput_RequestRedraw();
 	}
-}
-
-extern "C" EMSCRIPTEN_KEEPALIVE void SDL_GameInput_WebCommitBackspace(void)
-{
-	push_web_soft_key(KN_BACKSPACE);
-}
-
-extern "C" EMSCRIPTEN_KEEPALIVE void SDL_GameInput_WebCommitReturn(void)
-{
-	push_web_soft_key(KN_RETURN);
-}
-
-extern "C" EMSCRIPTEN_KEEPALIVE void SDL_GameInput_WebRequestRedraw(void)
-{
-	SDL_GameInput_RequestRedraw();
 }
 #endif
 
 void apply_mission_mouse_capture(void)
 {
 	const bool should_capture = should_apply_mission_mouse_capture();
+	const bool should_relative_mode = should_capture && should_apply_relative_mouse_mode();
+
+	if (g_mission_relative_mouse_mode_applied != should_relative_mode) {
+		if (MainWindow != NULL && MainWindow->sdl_window != NULL && SDL_GetWindowRelativeMouseMode(MainWindow->sdl_window)) {
+			if (!g_last_pointer_source_was_direct_touch) {
+				float window_x = 0.0f;
+				float window_y = 0.0f;
+				if (get_window_point_for_current_game_cursor(window_x, window_y)) {
+					SDL_WarpMouseInWindow(MainWindow->sdl_window, window_x, window_y);
+				}
+			}
+			SDL_SetWindowRelativeMouseMode(MainWindow->sdl_window, false);
+		}
+		if (should_relative_mode && MainWindow != NULL && MainWindow->sdl_window != NULL) {
+			(void)SDL_SetWindowRelativeMouseMode(MainWindow->sdl_window, true);
+		}
+		g_mission_relative_mouse_mode_applied = should_relative_mode;
+	}
+
 	if (g_mission_mouse_capture_applied == should_capture) {
 		if (should_capture && WWMouse != NULL) {
 			WWMouse->Set_Cursor_Clip();
@@ -686,20 +813,16 @@ void apply_mission_mouse_capture(void)
 	}
 
 	if (!should_capture) {
-		if (MainWindow != NULL && MainWindow->sdl_window != NULL && SDL_GetWindowRelativeMouseMode(MainWindow->sdl_window)) {
-			float window_x = 0.0f;
-			float window_y = 0.0f;
-			if (get_window_point_for_current_game_cursor(window_x, window_y)) {
-				SDL_WarpMouseInWindow(MainWindow->sdl_window, window_x, window_y);
-			}
-			SDL_SetWindowRelativeMouseMode(MainWindow->sdl_window, false);
-		}
 		if (WWMouse != NULL) {
 			WWMouse->Clear_Cursor_Clip();
 		}
 		{
 			std::scoped_lock lock(g_input_mutex);
-			initialize_mouse_snapshot_locked();
+			if (!g_last_pointer_source_was_direct_touch) {
+				initialize_mouse_snapshot_locked();
+			} else {
+				g_mouse_buttons = 0;
+			}
 		}
 		g_mission_mouse_capture_applied = false;
 		return;
@@ -707,9 +830,6 @@ void apply_mission_mouse_capture(void)
 
 	if (WWMouse != NULL) {
 		WWMouse->Set_Cursor_Clip();
-	}
-	if (MainWindow != NULL && MainWindow->sdl_window != NULL) {
-		(void)SDL_SetWindowRelativeMouseMode(MainWindow->sdl_window, true);
 	}
 	g_mission_mouse_capture_applied = true;
 }
@@ -1327,16 +1447,19 @@ void handle_sdl_event(const SDL_Event &event)
 		}
 
 		case SDL_EVENT_MOUSE_MOTION:
+			note_mouse_pointer_activity(event.motion.which);
 			SDL_GameInput_Handle_Mouse_Motion(static_cast<int>(event.motion.x), static_cast<int>(event.motion.y),
 				static_cast<uint32_t>(event.motion.state));
 			break;
 
 		case SDL_EVENT_MOUSE_BUTTON_DOWN:
+			note_mouse_pointer_activity(event.button.which);
 			SDL_GameInput_Handle_Mouse_Button(static_cast<int>(event.button.button), static_cast<int>(event.button.x),
 				static_cast<int>(event.button.y), false);
 			break;
 
 		case SDL_EVENT_MOUSE_BUTTON_UP:
+			note_mouse_pointer_activity(event.button.which);
 			SDL_GameInput_Handle_Mouse_Button(static_cast<int>(event.button.button), static_cast<int>(event.button.x),
 				static_cast<int>(event.button.y), true);
 			break;
@@ -1498,6 +1621,10 @@ void SDL_GameInput_Pump(void)
 		return;
 	}
 
+#if defined(__EMSCRIPTEN__)
+	drain_web_soft_keyboard_bridge();
+#endif
+
 	if (g_app_callbacks_mode.load()) {
 		/*
 		** Legacy menus, movies, and dialogs still call Call_Back()/Message_Loop()
@@ -1516,6 +1643,10 @@ void SDL_GameInput_Pump(void)
 	while (SDL_PollEvent(&event)) {
 		handle_sdl_event(event);
 	}
+
+#if defined(__EMSCRIPTEN__)
+	drain_web_soft_keyboard_bridge();
+#endif
 
 	g_is_pumping.store(false);
 }
@@ -1548,6 +1679,10 @@ int32_t SDL_GameInput_Wait(void)
 	while (SDL_PollEvent(&event)) {
 		handle_sdl_event(event);
 	}
+
+#if defined(__EMSCRIPTEN__)
+	drain_web_soft_keyboard_bridge();
+#endif
 
 	g_is_pumping.store(false);
 	return (TRUE);

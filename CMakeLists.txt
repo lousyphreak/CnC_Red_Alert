@@ -22,6 +22,7 @@ option(RA_ENABLE_WOL "Enable WebSocket (WOL replacement) multiplayer transport" 
 option(RA_ENABLE_DVD_MOVIES "Enable DVD-specific movie handling" OFF)
 option(RA_EMSCRIPTEN_PACKAGE_GAMEDATA "Package the GameData directory into the emscripten output" OFF)
 option(RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA "Load GameData over HTTP on demand in the emscripten build" ON)
+option(RA_EMSCRIPTEN_DIAGNOSTIC "Enable Emscripten diagnostic build (ASSERTIONS, SAFE_HEAP, stack checks, symbol names)" OFF)
 
 if(EMSCRIPTEN)
     set(RA_ENABLE_UDP OFF CACHE BOOL "Enable UDP multiplayer transport" FORCE)
@@ -295,7 +296,9 @@ if(EMSCRIPTEN)
     set(RA_EMSCRIPTEN_SHELL_FILE "${CMAKE_SOURCE_DIR}/web/shell.html")
     target_link_options(redalert PRIVATE
         "-sASYNCIFY"
+        "-sASYNCIFY_IMPORTS=ra_set_web_soft_keyboard_active"
         "-sASYNCIFY_STACK_SIZE=1048576"
+        "-Wl,--export=emscripten_stack_get_end"
         "-sALLOW_MEMORY_GROWTH=1"
         "-sINITIAL_MEMORY=268435456"
         "-sSTACK_SIZE=8388608"
@@ -304,6 +307,23 @@ if(EMSCRIPTEN)
         "-sENVIRONMENT=web"
         "--shell-file" "${RA_EMSCRIPTEN_SHELL_FILE}"
     )
+    if(RA_EMSCRIPTEN_DIAGNOSTIC)
+        message(STATUS "Emscripten diagnostic build enabled (ASSERTIONS=2, SAFE_HEAP=1, symbol names)")
+        target_compile_options(redalert PRIVATE
+            "-g"
+            "-gsource-map"
+            "-fno-omit-frame-pointer"
+        )
+        target_link_options(redalert PRIVATE
+            "-g"
+            "-gsource-map"
+            "--profiling-funcs"
+            "-sASSERTIONS=2"
+            "-sSAFE_HEAP=1"
+            "-sSTACK_OVERFLOW_CHECK=2"
+            "-sASYNCIFY_ADVISE=1"
+        )
+    endif()
     set_property(TARGET redalert APPEND PROPERTY LINK_DEPENDS "${RA_EMSCRIPTEN_SHELL_FILE}")
     if(RA_ENABLE_WOL)
         target_link_options(redalert PRIVATE "-lwebsocket.js")

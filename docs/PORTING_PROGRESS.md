@@ -1,12 +1,56 @@
 # Porting Progress
 
-_Last updated: 2026-04-23_
+_Last updated: 2026-04-24_
 
 ## Goal
 
 Port the Red Alert codebase to a reproducible cross-platform build using SDL3 for platform-specific functionality, with working builds on Linux, Windows, and other supported SDL3 platforms.
 
 ## Current status
+
+- Improved the Emscripten shell crash/error transcript and mobile copy flow (2026-04-24):
+  - Root cause: `web/shell.html` rebuilt the visible fatal-error overlay from scratch on every `reportFatalError(...)` call (`writeErrorLog(..., true)`), so back-to-back JavaScript/runtime failures overwrote the earlier/root-cause message instead of preserving the full sequence. The shell also had no built-in way to copy the captured transcript from a phone or tablet.
+  - Fix implemented:
+    - the shell now uses a dedicated error panel with a persistent log area, a small status line, and a `Copy` button sized for the existing browser chrome;
+    - fatal reports now append numbered/timestamped blocks instead of replacing the panel, and stderr tracking now keeps sequence-tagged lines so each fatal snapshot only pulls in the new stderr context since the previous fatal report;
+    - the `Copy` button uses the Clipboard API when available and falls back to a temporary textarea + `execCommand('copy')`, with explicit success/failure feedback so mobile users can still extract the full transcript easily.
+  - Result: when the browser shell throws several errors in quick succession, the first/root-cause failure stays visible instead of being hidden by later follow-on errors, and the full log can be copied directly from the overlay for sharing/debugging.
+  - validation for this checkpoint: `cmake --build build --parallel`, `ctest --test-dir build --output-on-failure`, and `cmake --build build-emscripten --parallel` succeed after the shell changes.
+
+- Fixed the Emscripten mobile soft-keyboard asyncify abort (2026-04-24):
+  - Root cause: `CODE/SDLINPUT.CPP::SDL_GameInput_SetTextInputActive(...)` now reaches the browser bridge through the `EM_JS` import `ra_set_web_soft_keyboard_active(...)`. That bridge can trigger focus/virtual-keyboard behavior from inside asyncified gameplay/UI call paths, but the Emscripten link step only enabled `-sASYNCIFY` generically and never declared this import in `ASYNCIFY_IMPORTS`.
+  - Practical symptom: the first attempt to arm the mobile keyboard raised `import ra_set_web_soft_keyboard_active was not in ASYNCIFY_IMPORTS, but changed the state`, after which Asyncify's rewind bookkeeping fell over and the browser log devolved into follow-on aborts / out-of-bounds faults.
+  - Fix implemented:
+    - `CMakeLists.txt` now adds `-sASYNCIFY_IMPORTS=ra_set_web_soft_keyboard_active` to the Emscripten link flags for `redalert`, so the existing soft-keyboard bridge is treated as an asyncify-aware import;
+    - the same link block now explicitly exports `emscripten_stack_get_end` (`-Wl,--export=emscripten_stack_get_end`) because this Emscripten toolchain otherwise trips an internal `metadata.function_exports` assertion during the asyncify relink even though the runtime stack-check JS glue expects that export to exist.
+  - Result: the browser can arm the mobile soft keyboard from the current focus paths without tripping Asyncify's import-state assertion, preventing the cascade of bogus post-abort wasm faults.
+  - validation for this checkpoint: `cmake --build build-emscripten --parallel --target redalert` succeeds after the link-flag update.
+
+- Fixed the remaining browser soft-keyboard Asyncify rewind crash (2026-04-24):
+  - Root cause: even after the soft-keyboard activation import itself was declared in `ASYNCIFY_IMPORTS`, `web/shell.html` still called wasm exports directly from DOM callbacks (`beforeinput`, `input`, focus/viewport redraw timers). That meant the browser could re-enter wasm while an `emscripten_sleep(...)` unwind was still in flight in WOL/menu/dialog code, which corrupts Asyncify's call-stack bookkeeping and later explodes at rewind time with `id ... not found in callStackIdToFunc`.
+  - Fix implemented:
+    - the browser soft-keyboard bridge no longer calls `_SDL_GameInput_WebCommit*` or `_SDL_GameInput_WebRequestRedraw` directly from DOM handlers;
+    - instead, `web/shell.html` now queues committed text/backspace/return events plus a pending redraw flag inside `Module.raSoftKeyboard`;
+    - `CODE/SDLINPUT.CPP::SDL_GameInput_Pump()` / `SDL_GameInput_Wait()` now drain that queue on the normal main-thread input path and only then feed the legacy key queue or request a redraw.
+  - Result: browser text-input and viewport/focus updates no longer nest fresh wasm entries inside Asyncify sleep/wake transitions, so the mobile keyboard path stays compatible with legacy loops that still use `emscripten_sleep(...)`.
+  - validation for this checkpoint: `cmake --build build-emscripten --parallel --target redalert` succeeds after the queued-bridge update.
+
+- Fixed the browser shell fullscreen toggle's unhandled promise rejection (2026-04-24):
+  - Root cause: `web/shell.html::toggleFullscreen()` only wrapped the fullscreen call in a synchronous `try/catch`, but modern `requestFullscreen()` / `exitFullscreen()` failures are usually reported by rejected promises instead. That left the shell emitting `Unhandled promise rejection` noise whenever the browser denied a fullscreen transition or rejected the `{ navigationUI: 'hide' }` options form.
+  - Fix implemented:
+    - the fullscreen helper now treats browser fullscreen calls as promise-capable operations, attaches rejection handlers, and logs failures explicitly instead of letting them escape as unhandled rejections;
+    - the actual fullscreen target was then corrected too: instead of requesting fullscreen on the canvas with the `{ navigationUI: 'hide' }` options form, the shell now requests plain fullscreen on `document.documentElement`, which is the broader browser-compatibility path and keeps the shell chrome/status overlays inside the fullscreen root.
+  - Result: the fullscreen button now uses a fullscreen request shape that browsers are far more likely to honor, and the shell no longer raises a top-level unhandled rejection when a browser still denies the transition.
+  - validation for this checkpoint: `cmake --build build-emscripten --parallel --target redalert` succeeds after the shell update.
+
+- Fixed touch input getting stranded by mission relative-mouse capture (2026-04-24):
+  - Root cause: `CODE/SDLINPUT.CPP` treated "mission mouse capture" and "relative mouse mode" as the same switch. On desktop that is fine, but on direct-touch paths — especially Emscripten/mobile — relative mouse mode does not make sense and can poison the cursor state after gameplay has requested capture, leaving touch interactions effectively stuck around the top-left corner.
+  - Fix implemented:
+    - mission capture now keeps its cursor-clip behavior separate from the decision to enable SDL relative mouse mode;
+    - direct touch input marks the current pointer source as touch and suppresses relative mode immediately, while real mouse motion/button events can opt back into relative mode later on hybrid devices;
+    - when leaving relative mode because touch took over, the input layer no longer re-snapshots the cursor from SDL's mouse state, which avoided reintroducing bogus `(0,0)` state on touch-only/browser paths.
+  - Result: touch gameplay keeps the legacy clipped-cursor semantics it needs without ever depending on desktop-style relative mouse mode, and hybrid platforms can still re-enable relative mode automatically once the player goes back to a real mouse.
+  - validation for this checkpoint: `cmake --build build --parallel` and `cmake --build build-emscripten --parallel --target redalert` succeed after the capture split.
 
 - Added touch-screen movie/gameplay controls and gameplay cursor-key scrolling parity (2026-04-23):
   - Root cause: SDL3's generic touch-to-mouse emulation only provides a basic left-mouse path, which is not enough for the browser/mobile control set this port needs (`double tap` movie cancel, two-finger deselect, two-finger drag scrolling) and would duplicate events once the port started synthesizing its own gesture-driven mouse input. Separately, movie breakout still only recognized `Esc`, and gameplay cursor keys still followed the original desktop defaults where `Up`/`Down` went to the sidebar instead of panning the tactical view.

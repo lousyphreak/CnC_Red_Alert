@@ -12,12 +12,16 @@ RUN python3 -m pip install --no-cache-dir "cmake>=3.24,<4" ninja
 
 COPY . .
 
+ARG RA_EMSCRIPTEN_DIAGNOSTIC=ON
+
 RUN emcmake cmake -S . -B /tmp/build-emscripten -G Ninja \
         -DCMAKE_BUILD_TYPE=Release \
         -DRA_ENABLE_UDP=OFF \
         -DRA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA=ON \
         -DRA_EMSCRIPTEN_PACKAGE_GAMEDATA=OFF \
-    && cmake --build /tmp/build-emscripten --target redalert -j"$(nproc)"
+        -DRA_EMSCRIPTEN_DIAGNOSTIC=${RA_EMSCRIPTEN_DIAGNOSTIC} \
+    && cmake --build /tmp/build-emscripten --target redalert -j"$(nproc)" \
+    && touch /tmp/build-emscripten/redalert.wasm.map
 
 
 FROM emscripten-build AS emscripten-gamedata
@@ -73,6 +77,9 @@ FROM web-runtime-base AS web-runtime
 COPY --from=emscripten-build /tmp/build-emscripten/redalert.html /srv/web/redalert.html
 COPY --from=emscripten-build /tmp/build-emscripten/redalert.js /srv/web/redalert.js
 COPY --from=emscripten-build /tmp/build-emscripten/redalert.wasm /srv/web/redalert.wasm
+# Source map (present only when RA_EMSCRIPTEN_DIAGNOSTIC=ON; an empty placeholder
+# is produced otherwise so this copy step is stable across build modes).
+COPY --from=emscripten-build /tmp/build-emscripten/redalert.wasm.map /srv/web/redalert.wasm.map
 
 
 FROM web-runtime-base AS web-runtime-with-gamedata
@@ -81,5 +88,6 @@ COPY --from=emscripten-gamedata /tmp/deploy-root/GameData /srv/GameData
 COPY --from=emscripten-build /tmp/build-emscripten/redalert.html /srv/web/redalert.html
 COPY --from=emscripten-build /tmp/build-emscripten/redalert.js /srv/web/redalert.js
 COPY --from=emscripten-build /tmp/build-emscripten/redalert.wasm /srv/web/redalert.wasm
+COPY --from=emscripten-build /tmp/build-emscripten/redalert.wasm.map /srv/web/redalert.wasm.map
 
 CMD ["--host", "0.0.0.0", "--port", "80", "--gamedata", "/srv/GameData", "--emscripten-dir", "/srv/web"]
