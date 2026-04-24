@@ -8,6 +8,10 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Documented the current touch-control set in the top-level README (2026-04-24):
+  - Added a user-facing `Touch controls` section that summarizes the implemented direct-touch gestures: single-tap/drag left-click behavior, two-finger gameplay right-click and drag scrolling, movie double-tap cancel, and the browser/mobile soft-keyboard tray for text-entry screens.
+  - Result: users no longer need to read porting notes or source-level progress logs to discover the currently supported mobile/touch interactions.
+
 - Completed the unused-suppression cleanup pass without re-hiding dead code (2026-04-24):
   - Root cause: the earlier warning cleanup had left a trail of local `[[maybe_unused]]` fields and statement-style `(void)` suppressors behind as temporary noise reducers. A repo-wide audit showed most of them were not actually required anymore: some were dead members/locals, some were side-effect-only calls that could just be written as normal statements, and some were unused parameters that only needed cleaner signatures.
   - Fix implemented:

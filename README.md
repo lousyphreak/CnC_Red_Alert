@@ -109,6 +109,17 @@ Mission packs are detected from the downloaded game data files:
 - `EXPAND.MIX` -> Counterstrike
 - `EXPAND2.MIX` -> Aftermath
 
+## Touch controls
+
+The SDL3 port includes direct touch handling on touchscreen devices instead of relying on SDL's default touch-to-mouse emulation.
+
+- **Single tap / drag:** left click and drag-select.
+- **Two-finger tap during gameplay:** right click, which also gives the usual deselect behavior.
+- **Two-finger drag during gameplay:** pans the battlefield by driving the existing edge-scroll behavior.
+- **Double tap during movies:** cancels/skips the current movie, like `Esc` or `Return`.
+
+In browser/mobile builds, text-entry screens also open a visible soft-keyboard tray when an edit field has focus.
+
 ## Direct-IP TCP multiplayer
 
 The SDL3 port keeps the original UDP path and also adds a direct-IP TCP path for internet-style multiplayer without Westwood Online.
