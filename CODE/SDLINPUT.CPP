@@ -700,6 +700,43 @@ bool get_window_point_for_current_game_cursor(float& window_x, float& window_y)
 	return true;
 }
 
+#if defined(__ANDROID__)
+bool get_window_rect_for_text_input(SDL_Rect& window_rect)
+{
+	if (MainWindow == NULL || MainWindow->sdl_window == NULL) {
+		return false;
+	}
+
+	RECT viewport_rect{};
+	if (!SDL_GameInput_GetViewportRect(&viewport_rect)) {
+		int window_width = 0;
+		int window_height = 0;
+		if (!SDL_GetWindowSize(MainWindow->sdl_window, &window_width, &window_height)
+			|| window_width <= 0
+			|| window_height <= 0) {
+			return false;
+		}
+
+		window_rect.x = 0;
+		window_rect.y = 0;
+		window_rect.w = window_width;
+		window_rect.h = window_height;
+		return true;
+	}
+
+	if (!RA_GameRectToWindowRect(MainWindow, &viewport_rect, &window_rect)
+		|| window_rect.w <= 0
+		|| window_rect.h <= 0) {
+		window_rect.x = viewport_rect.left;
+		window_rect.y = viewport_rect.top;
+		window_rect.w = std::max<int>(0, viewport_rect.right - viewport_rect.left);
+		window_rect.h = std::max<int>(0, viewport_rect.bottom - viewport_rect.top);
+	}
+
+	return window_rect.w > 0 && window_rect.h > 0;
+}
+#endif
+
 #if defined(__EMSCRIPTEN__)
 // When running in the browser, SDL3's Emscripten backend does not implement
 // ShowScreenKeyboard, so SDL_StartTextInput alone never opens a mobile soft
@@ -1524,7 +1561,7 @@ void SDL_GameInput_SetTextInputActive(
 #if defined(__EMSCRIPTEN__)
 	bool enabled
 #else
-	bool
+	bool enabled
 #endif
 )
 {
@@ -1537,6 +1574,21 @@ void SDL_GameInput_SetTextInputActive(
 	// tablets apart from desktops. The bridge is a no-op on devices with
 	// a real keyboard, so there is never any keystroke duplication.
 	ra_set_web_soft_keyboard_active(enabled ? 1 : 0);
+#elif defined(__ANDROID__)
+	if (MainWindow == NULL || MainWindow->sdl_window == NULL) {
+		return;
+	}
+
+	SDL_SetHint(SDL_HINT_ENABLE_SCREEN_KEYBOARD, "auto");
+	if (enabled) {
+		SDL_Rect text_input_rect{};
+		if (get_window_rect_for_text_input(text_input_rect)) {
+			SDL_SetTextInputArea(MainWindow->sdl_window, &text_input_rect, 0);
+		}
+		SDL_StartTextInput(MainWindow->sdl_window);
+	} else if (SDL_TextInputActive(MainWindow->sdl_window)) {
+		SDL_StopTextInput(MainWindow->sdl_window);
+	}
 #endif
 }
 

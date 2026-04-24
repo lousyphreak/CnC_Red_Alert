@@ -50,7 +50,6 @@
 #include	"FUNCTION.H"
 #include <stdio.h>
 #include <string.h>
-#include <sys/timeb.h>
 #include "CONNECT.H"
 
 #include "WOLDEBUG.H"
@@ -796,8 +795,7 @@ uint32_t ConnectionClass::Time (void)
 	/*------------------------------------------------------------------------
 	If the Westwood library isn't being used, use the DOS timer.
 	------------------------------------------------------------------------*/
-	ftime(&mytime);
-	msec = static_cast<uint64_t>(mytime.time) * 1000ULL + static_cast<uint64_t>(mytime.millitm);
+	msec = static_cast<uint64_t>(SDL_GetTicks());
 	return(static_cast<uint32_t>((msec / 100ULL) * 6ULL));
 
 #endif

@@ -55,6 +55,7 @@
 #include	<cstdio>
 #include	<cstdlib>
 #include	<errno.h>
+#include <SDL3/SDL_log.h>
 #include	"MIXFILE.H"
 extern MFCD temp;
 

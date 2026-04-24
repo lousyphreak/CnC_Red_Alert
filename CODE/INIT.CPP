@@ -3021,23 +3021,31 @@ static void Init_Bootstrap_Mixfiles(void)
 	}
 #endif
 
+	init_trace("Init_Bootstrap_Mixfiles loading REDALERT.MIX");
 	new MFCD("REDALERT.MIX", &FastKey);
+	init_trace("Init_Bootstrap_Mixfiles REDALERT.MIX ready");
 
 	/*
 	**	Bootstrap enough of the system so that the error dialog box can successfully
 	**	be displayed.
 	*/
+	init_trace("Init_Bootstrap_Mixfiles loading LOCAL.MIX");
 	new MFCD("LOCAL.MIX", &FastKey);			// Cached.
 	if (!MFCD::Cache("LOCAL.MIX")) {
 		assert(false);
 	}
+	init_trace("Init_Bootstrap_Mixfiles LOCAL.MIX cached");
 
+	init_trace("Init_Bootstrap_Mixfiles loading HIRES.MIX");
 	new MFCD("HIRES.MIX", &FastKey);
 	if (!MFCD::Cache("HIRES.MIX")) {
 		assert(false);
 	}
+	init_trace("Init_Bootstrap_Mixfiles HIRES.MIX cached");
 
+	init_trace("Init_Bootstrap_Mixfiles loading NCHIRES.MIX");
 	new MFCD("NCHIRES.MIX", &FastKey);		//Non-cached hires stuff incl VQ palettes
+	init_trace("Init_Bootstrap_Mixfiles NCHIRES.MIX ready");
 }
 
 /***********************************************************************************************

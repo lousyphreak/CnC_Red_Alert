@@ -8,7 +8,7 @@ This repository is an in-progress SDL3/CMake port of the archived Red Alert sour
   - Replaced the old platform-specific build flow with a top-level CMake build.
   - Bundled SDL3 under `extern/SDL3` and moved the active platform layer onto SDL3-backed code.
   - The main target is `redalert`, with desktop and browser build variants driven from the same top-level CMake project.
-  - Active targets now cover Linux, Windows/MSVC, and Emscripten/browser builds.
+  - Active targets now cover Linux, Windows/MSVC, Emscripten/browser, and native Android APK builds.
 - **Platform migration**
   - Replaced large parts of the Win32-facing filesystem, window, input, audio, timing, and rendering paths with SDL3-backed implementations.
   - Added a repo-owned config layer (`sdl_config`) instead of fake Windows registry plumbing for live settings lookups.
@@ -47,6 +47,9 @@ You must also own the original game data to run the executable. The C&C Ultimate
 | `RA_ENABLE_DVD_MOVIES` | `OFF` | Enable DVD-specific movie handling. |
 | `RA_EMSCRIPTEN_PACKAGE_GAMEDATA` | `OFF` | Preload the game data into the browser build output. |
 | `RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA` | `ON` | Stream game data over HTTP on demand in the browser build. |
+| `RA_ANDROID_PACKAGE_GAMEDATA` | `ON` | Build a separate Android data split APK containing the current `GameData/` directory assets. |
+| `RA_ANDROID_MIN_SDK_VERSION` | `26` | Minimum Android SDK level used when packaging the APK. |
+| `RA_ANDROID_TARGET_SDK_VERSION` | `34` | Target Android SDK level recorded in the packaged APK. |
 
 `RA_ENABLE_UDP` and `RA_ENABLE_TCP` are forced off for Emscripten builds, and `RA_ENABLE_WOL` is forced on so the browser build keeps the WebSocket multiplayer path available by default.
 
@@ -72,6 +75,48 @@ Emscripten build:
 emcmake cmake -S . -B build-emscripten -DCMAKE_BUILD_TYPE=Debug
 cmake --build build-emscripten -j
 ```
+
+Android build (Arch-style SDK/NDK layout):
+
+```sh
+source /etc/profile.d/android-ndk.sh
+export ANDROID_HOME=/opt/android-sdk
+export ANDROID_SDK_ROOT=/opt/android-sdk
+
+cmake -S . -B build-android \
+  -DCMAKE_BUILD_TYPE=Debug \
+  -DCMAKE_TOOLCHAIN_FILE=/opt/android-ndk/build/cmake/android.toolchain.cmake \
+  -DRA_ANDROID_SDK_ROOT=/opt/android-sdk \
+  -DANDROID_ABI=arm64-v8a \
+  -DANDROID_PLATFORM=android-26
+
+cmake --build build-android --target redalert-apk -j
+```
+
+The native Android build produces:
+
+- `build-android/libredalert.so`
+- `build-android/redalert-code.apk`
+- `build-android/redalert-data.apk` (when `RA_ANDROID_PACKAGE_GAMEDATA=ON`)
+
+If `adb` is installed and visible from the SDK, the Android build also exposes helper targets such as:
+
+- `install-redalert-apk` for a full first install or full reinstall (`adb install-multiple -r ...`)
+- `install-redalert-code-apk` for code-only updates without reinstalling the data split (`adb install-multiple -r -p ...`)
+- `install-redalert-data-apk` for data-only split updates
+- `start-redalert`
+
+For the common Arch-hosted "build + deploy + launch on a connected device" loop, run:
+
+```sh
+./launcha.sh
+```
+
+`RA_ANDROID_SDK_ROOT` lets you point CMake at any SDK root without modifying vendored SDL. If you need to pin a specific installed platform directory, you can also pass `-DRA_ANDROID_PLATFORM_ROOT=/path/to/sdk/platforms/android-XX[.Y]`; the build copies the required `android.jar` into a local compatibility directory when the SDK uses dotted platform names.
+
+`launcha.sh` bootstraps the Android SDK/NDK environment from the Arch package locations, configures `build-android` if needed, builds `redalert-apk`, installs to the selected device with direct `adb` commands, and starts the activity. If more than one device is connected, set `ANDROID_SERIAL` first.
+
+By default it uses `LAUNCHA_INSTALL_MODE=auto`, which records the last fully installed `redalert-data.apk` hash per device. If the same `ra_data` split is already installed and the data APK hash still matches, it does a code-only non-incremental update; otherwise it falls back to a full install. You can override that with `LAUNCHA_INSTALL_MODE=full` or `LAUNCHA_INSTALL_MODE=code`.
 
 ## Running
 
@@ -109,6 +154,8 @@ Mission packs are detected from the downloaded game data files:
 - `EXPAND.MIX` -> Counterstrike
 - `EXPAND2.MIX` -> Aftermath
 
+For the Android APK target, the build injects `-gamedata ./` from the Java activity. With `RA_ANDROID_PACKAGE_GAMEDATA=ON`, the build now emits a code APK plus a same-package `ra_data` split APK that contains the `GameData/` assets. That lets the existing startup search find the same `REDALERT.MIX` / `MAIN*.MIX` files through SDL's Android asset filesystem without adding Android-only game logic, while letting code-only updates skip reinstalling the data split. The Android packaging step now rewrites the top-level `.MIX` archives in the data split as stored (uncompressed) ZIP entries so SDL's Android asset IO can seek through them efficiently enough for the real runtime.
+
 ## Touch controls
 
 The SDL3 port includes direct touch handling on touchscreen devices instead of relying on SDL's default touch-to-mouse emulation.
@@ -118,7 +165,7 @@ The SDL3 port includes direct touch handling on touchscreen devices instead of r
 - **Two-finger drag during gameplay:** pans the battlefield by driving the existing edge-scroll behavior.
 - **Double tap during movies:** cancels/skips the current movie, like `Esc` or `Return`.
 
-In browser/mobile builds, text-entry screens also open a visible soft-keyboard tray when an edit field has focus.
+On Android, focused edit fields now open the platform IME directly. In browser/mobile builds, text-entry screens open the repo's visible soft-keyboard tray when an edit field has focus.
 
 ## Direct-IP TCP multiplayer
 

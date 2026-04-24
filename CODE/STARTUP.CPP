@@ -38,6 +38,7 @@
 
 #include	"FUNCTION.H"
 #include	"SDLINPUT.H"
+#include <SDL3/SDL.h>
 #include "ra_messagebox.h"
 #include	<cstdarg>
 #include	<cstring>
@@ -76,13 +77,16 @@ void startup_trace(const char* format, ...)
 		return;
 	}
 
+	char message[1024];
 	va_list arguments;
 	va_start(arguments, format);
+	std::vsnprintf(message, sizeof(message), format, arguments);
+	va_end(arguments);
+
 	std::fputs("[startup] ", stderr);
-	std::vfprintf(stderr, format, arguments);
+	std::fputs(message, stderr);
 	std::fputc('\n', stderr);
 	std::fflush(stderr);
-	va_end(arguments);
 }
 
 bool command_line_contains_forbidden_network_path(int argc, char* argv[])
@@ -401,6 +405,7 @@ int RedAlert_Main(int argc, char* argv[])
 		fprintf(stderr, "Failed to use game data directory: %s\n", game_data_directory.c_str());
 		return(EXIT_FAILURE);
 	}
+	startup_trace("WWFS_SetCurrentDirectory complete");
 
 #ifdef WOLAPI_INTEGRATION
 	//	Look for special wolapi install program, used after the patch to version 3, to install "Shared Internet Components".
@@ -432,27 +437,34 @@ int RedAlert_Main(int argc, char* argv[])
 
 #endif
 
+	startup_trace("Calling Parse_Command_Line");
 	if (Parse_Command_Line(argc, argv)) {
+		startup_trace("Parse_Command_Line complete");
 
 		WindowsTimer = new WinTimerClass(60, FALSE);
+		startup_trace("WinTimerClass created");
 
 		uint32_t time_test = WindowsTimer->Get_System_Tick_Count();
 		SDL_GameInput_Delay(1000);
+		startup_trace("Initial timer delay complete");
 		if (WindowsTimer->Get_System_Tick_Count() == time_test){
 			RA_ShowMessageBox(TEXT_ERROR_TIMER, TEXT_SHORT_TITLE, SDL_MESSAGEBOX_ERROR);
 			return(EXIT_FAILURE);
 		}
 		RawFileClass cfile(CONFIG_FILE_NAME);
 		const bool config_available = cfile.Is_Available();
+		startup_trace("Config availability checked available=%d", config_available ? 1 : 0);
 
 
 		Keyboard = new KeyboardClass();
 		SDL_GameInput_Set_Main_Thread();
+		startup_trace("Keyboard created and main thread registered");
 
 		/*
 		** If there is loads of memory then use uncompressed shapes
 		*/
 		Check_Use_Compressed_Shapes();
+		startup_trace("Check_Use_Compressed_Shapes complete");
 
 		/*
 		** If there is not enough disk space free, don't allow the product to run.
@@ -473,14 +485,18 @@ int RedAlert_Main(int argc, char* argv[])
 		}
 
 		if (config_available) {
+			startup_trace("Reading private config struct");
 			Read_Private_Config_Struct(cfile, &NewConfig);
 
 			/*
 			** Set the options as requested by the ccsetup program
 			*/
+			startup_trace("Reading setup options");
 			Read_Setup_Options( &cfile );
+			startup_trace("Read_Setup_Options complete");
 		}
 
+		startup_trace("Calling Main_Window_Create");
 		Main_Window_Create();
 		startup_trace("Main_Window_Create complete hwnd=%p size=%dx%d", MainWindow, ScreenWidth, ScreenHeight);
 		if (!Audio_Init(MainWindow, 16, false, 11025 * 2, 0)) {

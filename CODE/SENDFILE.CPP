@@ -66,6 +66,9 @@ extern bool Is_Mission_Aftermath (char *file_name);
 
 #ifdef WOLAPI_INTEGRATION
 extern WolapiObject* pWolapi;
+#define DOWNLOAD_TEMP_SCENARIO_NAME "DOWNLOAD.TMP"
+#else
+#define DOWNLOAD_TEMP_SCENARIO_NAME "DLOAD.TMP"
 #endif
 
 /***********************************************************************************************
@@ -265,7 +268,7 @@ static bool Receive_Remote_File(char *file_name, uint32_t file_length)
 	*/
 	CCFileClass test_file (file_name);
 	if (test_file.Is_Available()){
-		strcpy (file_name, "DOWNLOAD.TMP");
+		strcpy (file_name, DOWNLOAD_TEMP_SCENARIO_NAME);
 	}
 
 	RawFileClass save_file (file_name);
@@ -552,20 +555,21 @@ bool Send_Remote_File(char *file_name)
 	*/
 
 		net_file_info.Command = NET_FILE_INFO;
-		strcpy (&net_file_info.ScenarioInfo.ShortFileName[0], file_name);
+		strncpy(&net_file_info.ScenarioInfo.ShortFileName[0], file_name, sizeof(net_file_info.ScenarioInfo.ShortFileName) - 1);
+		net_file_info.ScenarioInfo.ShortFileName[sizeof(net_file_info.ScenarioInfo.ShortFileName) - 1] = '\0';
 //		debugprint( "Uploading '%s'\n", file_name );
 #ifdef FIXIT_VERSION_3
 		//	If we're sending an official map, always send it to 'download.tmp'.
 		if( Is_Mission_Counterstrike( file_name ) || Is_Mission_Aftermath( file_name ) ) {
-			strcpy (&net_file_info.ScenarioInfo.ShortFileName[0], "DOWNLOAD.TMP");
+			strcpy (&net_file_info.ScenarioInfo.ShortFileName[0], DOWNLOAD_TEMP_SCENARIO_NAME);
 		}
 #else
 #ifdef FIXIT_CSII	//	checked - ajw 9/28/98
 // If we're sending an Aftermath map, always send it to 'download.tmp'.
 		if (Is_Mission_Aftermath(file_name)) {
-			strcpy (&net_file_info.ScenarioInfo.ShortFileName[0], "DOWNLOAD.TMP");
+			strcpy (&net_file_info.ScenarioInfo.ShortFileName[0], DOWNLOAD_TEMP_SCENARIO_NAME);
 			//	There was a bug here: s/b net_file_info. This means that players that don't have Aftermath could have been 
-			//	accumulating Aftermath maps all this time!!! (File wasn't getting renamed to "DOWNLOAD.TMP".)
+			//	accumulating Aftermath maps all this time!!! (File wasn't getting renamed to the temp download name.)
 		}
 #endif
 #endif

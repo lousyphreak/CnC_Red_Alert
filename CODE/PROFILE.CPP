@@ -40,6 +40,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include	"FUNCTION.H"
+#include <SDL3/SDL.h>
 
 static char * WriteBinBuffer = NULL;
 static int WriteBinBufferLen = 0;

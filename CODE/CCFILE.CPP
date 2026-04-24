@@ -50,6 +50,7 @@
 #include	"FUNCTION.H"
 #include	<errno.h>
 #include	"CCFILE.H"
+#include <SDL3/SDL_log.h>
 
 /***********************************************************************************************
  * CCFileClass::CCFileClass -- Filename based constructor for C&C file.                        *
@@ -116,8 +117,19 @@ CCFileClass::CCFileClass(void) :
  * HISTORY:                                                                                    *
  *   10/17/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-void CCFileClass::Error(int , int , char const * )
+void CCFileClass::Error(int error, int canretry, char const * filename)
 {
+#ifdef __ANDROID__
+	char const* reported_name = filename;
+	if (reported_name == NULL || *reported_name == '\0') {
+		reported_name = File_Name();
+	}
+	SDL_Log("[startup] CCFileClass::Error error=%d canretry=%d file=\"%s\" current=\"%s\"",
+		error,
+		canretry,
+		reported_name ? reported_name : "",
+		File_Name() ? File_Name() : "");
+#endif
 	Emergency_Exit(EXIT_FAILURE);
 }
 
@@ -423,7 +435,8 @@ int CCFileClass::Open(int rights)
 	**	of whether it also exists in RAM. This is slower, but allows
 	**	upgrade files to work.
 	*/
-	if ((rights & WRITE) || BufferIOFileClass::Is_Available()) {
+	const bool raw_available = BufferIOFileClass::Is_Available() ? true : false;
+	if ((rights & WRITE) || raw_available) {
 		return(BufferIOFileClass::Open(rights));
 	}
 
@@ -435,7 +448,8 @@ int CCFileClass::Open(int rights)
 	void * pointer = NULL;
 	int32_t length = 0;
 	int32_t start = 0;
-	if (MFCD::Offset(File_Name(), &pointer, &mixfile, &start, &length)) {
+	const bool found_in_mix = MFCD::Offset(File_Name(), &pointer, &mixfile, &start, &length) ? true : false;
+	if (found_in_mix) {
 
 		assert(mixfile != NULL);
 

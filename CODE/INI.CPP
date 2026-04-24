@@ -70,6 +70,7 @@
 #include	<stdio.h>
 #include	<ctype.h>
 #include	"INI.H"
+#include <SDL3/SDL.h>
 #include	"READLINE.H"
 #include	"XPIPE.H"
 #include	"B64PIPE.H"
@@ -223,12 +224,14 @@ bool INIClass::Load(Straw & file)
 	/*
 	**	Process a section. The buffer is prefilled with the section name line.
 	*/
+	int section_count = 0;
 	while (!end_of_file) {
 
 		buffer[0] = ' ';
 		char * ptr = strchr(buffer, ']');
 		if (ptr) *ptr = '\0';
 		strtrim(buffer);
+		++section_count;
 		INISection * secptr = new INISection(strdup(buffer));
 		if (secptr == NULL) {
 			Clear();

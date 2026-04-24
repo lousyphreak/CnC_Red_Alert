@@ -65,6 +65,13 @@ std::string WWFS_BaseDirectory()
 
 std::string WWFS_ProcessCurrentDirectory()
 {
+#if defined(ANDROID)
+    const std::string base_directory = WWFS_BaseDirectory();
+    if (!base_directory.empty()) {
+        return base_directory;
+    }
+#endif
+
     char* current_directory = SDL_GetCurrentDirectory();
     if (current_directory && *current_directory) {
         std::string path(current_directory);
@@ -138,11 +145,79 @@ std::string WWFS_AppendPathComponent(const std::string& base, const std::string&
         return component;
     }
 
+    if (base == ".") {
+        return component;
+    }
+
     if (base == "/" || base.back() == '/' || base.back() == '\\') {
         return base + component;
     }
 
     return base + "/" + component;
+}
+
+std::string WWFS_CollapseDotSegments(const std::string& path)
+{
+    if (path.empty()) {
+        return path;
+    }
+
+    std::string prefix;
+    size_t cursor = 0;
+    bool absolute = false;
+
+    if (path.size() >= 2 && std::isalpha(static_cast<unsigned char>(path[0])) && path[1] == ':') {
+        prefix.assign(path, 0, 2);
+        cursor = 2;
+        if (cursor < path.size() && path[cursor] == '/') {
+            absolute = true;
+            ++cursor;
+        }
+    } else if (path[0] == '/') {
+        absolute = true;
+        cursor = 1;
+    }
+
+    std::vector<std::string> parts;
+    while (cursor <= path.size()) {
+        const size_t separator = path.find('/', cursor);
+        const std::string part = path.substr(cursor, separator - cursor);
+        cursor = (separator == std::string::npos) ? path.size() + 1 : separator + 1;
+
+        if (part.empty() || part == ".") {
+            continue;
+        }
+
+        if (part == "..") {
+            if (!parts.empty() && parts.back() != "..") {
+                parts.pop_back();
+                continue;
+            }
+            if (!absolute) {
+                parts.push_back(part);
+            }
+            continue;
+        }
+
+        parts.push_back(part);
+    }
+
+    std::string collapsed = prefix;
+    if (absolute) {
+        collapsed += "/";
+    }
+    for (size_t index = 0; index < parts.size(); ++index) {
+        if (!collapsed.empty() && collapsed.back() != '/') {
+            collapsed += "/";
+        }
+        collapsed += parts[index];
+    }
+
+    if (collapsed.empty()) {
+        return absolute ? std::string("/") : std::string(".");
+    }
+
+    return collapsed;
 }
 
 std::string WWFS_ResolveMainMixAlias(const std::string& normalized_path)
@@ -1673,6 +1748,50 @@ bool WWFS_GetSyntheticEmscriptenPathInfo(const std::string&, SDL_PathInfo*)
 }
 #endif
 
+struct WWFS_DirectoryProbeContext {
+    bool saw_entry;
+};
+
+SDL_EnumerationResult WWFS_ProbeDirectoryCallback(void* userdata, const char*, const char*)
+{
+    auto* context = static_cast<WWFS_DirectoryProbeContext*>(userdata);
+    if (context) {
+        context->saw_entry = true;
+    }
+    return SDL_ENUM_SUCCESS;
+}
+
+bool WWFS_GetSyntheticVirtualPathInfo(const std::string& normalized_path, SDL_PathInfo* info)
+{
+    WWFS_DirectoryProbeContext directory_probe = {};
+    if (SDL_EnumerateDirectory(normalized_path.c_str(), WWFS_ProbeDirectoryCallback, &directory_probe)
+        && directory_probe.saw_entry) {
+        if (info) {
+            info->type = SDL_PATHTYPE_DIRECTORY;
+            info->size = 0;
+            info->create_time = 0;
+            info->modify_time = 0;
+            info->access_time = 0;
+        }
+        return true;
+    }
+
+    SDL_IOStream* stream = SDL_IOFromFile(normalized_path.c_str(), "rb");
+    if (!stream) {
+        return false;
+    }
+
+    if (info) {
+        info->type = SDL_PATHTYPE_FILE;
+        info->size = SDL_GetIOSize(stream);
+        info->create_time = 0;
+        info->modify_time = 0;
+        info->access_time = 0;
+    }
+    SDL_CloseIO(stream);
+    return true;
+}
+
 bool WWFS_GetPathInfoAbsolute(const std::string& normalized_path, SDL_PathInfo* info)
 {
     if (normalized_path.empty()) {
@@ -1680,6 +1799,10 @@ bool WWFS_GetPathInfoAbsolute(const std::string& normalized_path, SDL_PathInfo* 
     }
 
     if (SDL_GetPathInfo(normalized_path.c_str(), info)) {
+        return true;
+    }
+
+    if (WWFS_GetSyntheticVirtualPathInfo(normalized_path, info)) {
         return true;
     }
 
@@ -1944,6 +2067,8 @@ std::string WWFS_NormalizePath(const char* windows_path)
         normalized = WWFS_AppendPathComponent(WWFS_CurrentDirectoryPath(), normalized);
     }
 
+    normalized = WWFS_CollapseDotSegments(normalized);
+
     const std::string main_mix_alias = WWFS_ResolveMainMixAlias(normalized);
     if (!main_mix_alias.empty()) {
         return main_mix_alias;
@@ -1972,7 +2097,7 @@ bool WWFS_SetCurrentDirectory(const char* path)
 
     const std::string normalized = WWFS_StripTrailingPathSeparators(WWFS_NormalizePath(path));
     SDL_PathInfo info;
-    if (!SDL_GetPathInfo(normalized.c_str(), &info) || info.type != SDL_PATHTYPE_DIRECTORY) {
+    if (!WWFS_GetPathInfoAbsolute(normalized, &info) || info.type != SDL_PATHTYPE_DIRECTORY) {
         return false;
     }
 
