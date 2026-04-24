@@ -248,7 +248,7 @@ printf("PACKET_DATA_NOACK received (%d)\n",packet->PacketID);
 #ifdef DEBUG_SEQ
 printf("PACKET_DATA_ACK received (%d)\n",packet->PacketID);
 #endif
-				if ((packet->PacketID == NumRecAck)) {
+				if (packet->PacketID == NumRecAck) {
 					save_packet = 1;
 				} else {
 					save_packet = 0;

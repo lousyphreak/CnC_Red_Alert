@@ -97,9 +97,8 @@ struct WSImpl {
 	WSClientClass *owner;
 };
 
-static EM_BOOL Em_On_Open(int /*eventType*/, EmscriptenWebSocketOpenEvent const *e, void *userData) {
+static EM_BOOL Em_On_Open(int /*eventType*/, EmscriptenWebSocketOpenEvent const *, void *userData) {
 	WSImpl *impl = static_cast<WSImpl *>(userData);
-	(void)e;
 	if (impl && impl->owner) {
 		// State_ is private; owner pokes it via a friend or dedicated setter.
 		// We stash state externally through Poll-like accessor — simplest: the
@@ -108,15 +107,11 @@ static EM_BOOL Em_On_Open(int /*eventType*/, EmscriptenWebSocketOpenEvent const 
 	return EM_TRUE;
 }
 
-static EM_BOOL Em_On_Close(int /*eventType*/, EmscriptenWebSocketCloseEvent const *e, void *userData) {
-	(void)e;
-	(void)userData;
+static EM_BOOL Em_On_Close(int /*eventType*/, EmscriptenWebSocketCloseEvent const *, void *) {
 	return EM_TRUE;
 }
 
-static EM_BOOL Em_On_Error(int /*eventType*/, EmscriptenWebSocketErrorEvent const *e, void *userData) {
-	(void)e;
-	(void)userData;
+static EM_BOOL Em_On_Error(int /*eventType*/, EmscriptenWebSocketErrorEvent const *, void *) {
 	return EM_TRUE;
 }
 

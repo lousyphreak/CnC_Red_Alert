@@ -2794,7 +2794,7 @@ bool HouseClass::Place_Special_Blast(SpecialWeaponType id, CELL cell)
 				*/
 #ifdef FIXIT_CSII	//	checked - ajw 9/28/98
 // Don't allow a vortex if the teleportation was due to a chrono tank.
-	if(tech && tech->IsActive && (tech->What_Am_I() != RTTI_UNIT || *(UnitClass *)tech != UNIT_CHRONOTANK))
+	if(tech && tech->IsActive && (tech->What_Am_I() != RTTI_UNIT || *(UnitClass *)tech != UNIT_CHRONOTANK)) {
 #endif
 				if (!ChronalVortex.Is_Active() && Percent_Chance(Rule.VortexChance * 100)) {
 					int x = Random_Pick(0, Map.MapCellWidth-1);
@@ -2807,6 +2807,9 @@ bool HouseClass::Place_Special_Blast(SpecialWeaponType id, CELL cell)
 //						ChronalVortex.Appear(Cell_Coord(cell));
 //					}
 				}
+#ifdef FIXIT_CSII
+			}
+#endif
 
 				break;
 			}
@@ -3247,7 +3250,7 @@ bool HouseClass::Flag_Remove(TARGET target, bool set_home)
 {
 	assert(Houses.ID(this) == ID);
 
-	int rc;
+	int rc = 0;
 
 	if (Target_Legal(target)) {
 
@@ -4604,49 +4607,47 @@ int HouseClass::Expert_AI(void)
 	**	actions tend to greatly affect the lower urgency actions.
 	*/
 	for (UrgencyType u = URGENCY_CRITICAL; u >= URGENCY_LOW; u--) {
-		bool acted = false;
-
 		for (StrategyType strat = STRATEGY_FIRST; strat < STRATEGY_COUNT; strat++) {
 			if (urgency[strat] == u) {
 				switch (strat) {
 					case STRATEGY_BUILD_POWER:
-						acted |= AI_Build_Power(u);
+						AI_Build_Power(u);
 						break;
 
 					case STRATEGY_BUILD_DEFENSE:
-						acted |= AI_Build_Defense(u);
+						AI_Build_Defense(u);
 						break;
 
 					case STRATEGY_BUILD_INCOME:
-						acted |= AI_Build_Income(u);
+						AI_Build_Income(u);
 						break;
 
 					case STRATEGY_FIRE_SALE:
-						acted |= AI_Fire_Sale(u);
+						AI_Fire_Sale(u);
 						break;
 
 					case STRATEGY_BUILD_ENGINEER:
-						acted |= AI_Build_Engineer(u);
+						AI_Build_Engineer(u);
 						break;
 
 					case STRATEGY_BUILD_OFFENSE:
-						acted |= AI_Build_Offense(u);
+						AI_Build_Offense(u);
 						break;
 
 					case STRATEGY_RAISE_MONEY:
-						acted |= AI_Raise_Money(u);
+						AI_Raise_Money(u);
 						break;
 
 					case STRATEGY_RAISE_POWER:
-						acted |= AI_Raise_Power(u);
+						AI_Raise_Power(u);
 						break;
 
 					case STRATEGY_LOWER_POWER:
-						acted |= AI_Lower_Power(u);
+						AI_Lower_Power(u);
 						break;
 
 					case STRATEGY_ATTACK:
-						acted |= AI_Attack(u);
+						AI_Attack(u);
 						break;
 
 					default:

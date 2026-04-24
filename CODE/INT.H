@@ -243,6 +243,11 @@ class Int {
 
 };
 
+template<> int Int<MAX_UNIT_PRECISION>::Error;
+template<> bool Int<MAX_UNIT_PRECISION>::Carry;
+template<> bool Int<MAX_UNIT_PRECISION>::Borrow;
+template<> Int<MAX_UNIT_PRECISION> Int<MAX_UNIT_PRECISION>::Remainder;
+
 
 template<class T>
 T Gcd(const T & a, const T & n)

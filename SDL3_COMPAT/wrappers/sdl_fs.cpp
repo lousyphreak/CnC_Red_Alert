@@ -458,7 +458,7 @@ EM_ASYNC_JS(int, wwfs_emscripten_init_cache_js, (const char* base_dir_c), {
         }
 
         const parts = path.split('/');
-        let current = '';
+        let current = "";
         for (const part of parts) {
             if (!part) {
                 continue;
@@ -504,7 +504,7 @@ EM_ASYNC_JS(int, wwfs_emscripten_fetch_asset_js, (const char* local_path_c, cons
         }
 
         const parts = path.split('/');
-        let current = '';
+        let current = "";
         for (const part of parts) {
             if (!part) {
                 continue;
@@ -595,7 +595,7 @@ EM_JS(void, wwfs_emscripten_init_range_cache_helpers_js, (), {
     };
 
     const parseContentRangeSize = (response) => {
-        const contentRange = response.headers.get('content-range') || response.headers.get('Content-Range') || '';
+        const contentRange = response.headers.get('content-range') || response.headers.get('Content-Range') || "";
         const slash = contentRange.lastIndexOf('/');
         if (slash < 0) {
             return -1;
@@ -1698,9 +1698,8 @@ struct CaseMatchContext {
     bool exact_found;
 };
 
-SDL_EnumerationResult case_match_callback(void* userdata, const char* dirname, const char* fname)
+SDL_EnumerationResult case_match_callback(void* userdata, const char*, const char* fname)
 {
-    (void)dirname;
     auto* ctx = static_cast<CaseMatchContext*>(userdata);
 
     if (SDL_strcmp(fname, ctx->requested_name) == 0) {

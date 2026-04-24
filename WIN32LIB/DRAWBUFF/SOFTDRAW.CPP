@@ -44,10 +44,6 @@ static inline uint8_t *View_Data(GraphicViewPortClass *view) {
   return ((uint8_t *)(uintptr_t)view->Get_Offset());
 }
 
-static inline uint8_t const *View_Data(GraphicViewPortClass const *view) {
-  return ((uint8_t const *)(uintptr_t)view->Get_Offset());
-}
-
 static inline int32_t View_Row_Bytes(GraphicViewPortClass const *view) {
   return (view->Get_Width() + view->Get_XAdd() + view->Get_Pitch());
 }
@@ -913,8 +909,7 @@ void Buffer_Draw_Line(void *thisptr, int32_t sx, int32_t sy,                    
   }
 }
 
-int32_t Is_Icon_Cached(void const *icon_data, int32_t icon) {  (void)icon_data;
-  (void)icon;
+int32_t Is_Icon_Cached(void const *, int32_t) {
   return (-1);
 }
 

@@ -523,9 +523,9 @@ static void Register_Expansion_Scenario_Mix(const char* scenario_name, bool cach
 		scenario_mix_file->Promote();
 	}
 	if (cache_mix) {
-		bool ok = MFCD::Cache(scenario_mix);
-		assert(ok);
-		(void)ok;
+		if (!MFCD::Cache(scenario_mix)) {
+			assert(false);
+		}
 	}
 
 }
@@ -986,8 +986,7 @@ bool Select_Game(bool fade)
 	
 #ifdef FIXIT_CSII	//	checked - ajw 9/28/98
 	int cdcheck = 0;
-	bool cs = Is_Counterstrike_Installed();
-	(void)cs;
+	Is_Counterstrike_Installed();
 #endif
 
 	Show_Mouse();
@@ -1813,11 +1812,11 @@ static void Play_Intro(bool sequenced)
 			init_trace("Play_Intro hi-res result=%d", hires_played ? 1 : 0);
 			if (!hires_played) {
 				init_trace("Play_Intro hi-res intro failed, falling back to %s", VQName[VQ_TITLE]);
-				(void)Try_Play_Movie(VQ_TITLE, THEME_NONE, false);
+				Try_Play_Movie(VQ_TITLE, THEME_NONE, false);
 			}
 		} else {
 			init_trace("Play_Intro hi-res intro unavailable, falling back to %s", VQName[VQ_TITLE]);
-			(void)Try_Play_Movie(VQ_TITLE, THEME_NONE, false);
+			Try_Play_Movie(VQ_TITLE, THEME_NONE, false);
 		}
 	}
 }
@@ -2999,27 +2998,26 @@ static void Init_Bootstrap_Mixfiles(void)
 	CCFileClass file2("EXPAND2.MIX");
 	if (file2.Is_Available()) {
 		new MFCD("EXPAND2.MIX", &FastKey);
-		bool ok = MFCD::Cache("EXPAND2.MIX");
-		assert(ok);
-		(void)ok;
+		if (!MFCD::Cache("EXPAND2.MIX")) {
+			assert(false);
+		}
 	}
 #endif
 
 #ifdef FIXIT_CSII	//	Ok. ajw
-	bool ok1;
 	new MFCD("HIRES1.MIX", &FastKey);
-	ok1 = MFCD::Cache("HIRES1.MIX");
-	assert(ok1);
-	(void)ok1;
+	if (!MFCD::Cache("HIRES1.MIX")) {
+		assert(false);
+	}
 #endif
 
 #ifdef FIXIT_ANTS	//	Ok. ajw
 	CCFileClass file("EXPAND.MIX");
 	if (file.Is_Available()) {
 		new MFCD("EXPAND.MIX", &FastKey);
-		bool ok = MFCD::Cache("EXPAND.MIX");
-		assert(ok);
-		(void)ok;
+		if (!MFCD::Cache("EXPAND.MIX")) {
+			assert(false);
+		}
 	}
 #endif
 
@@ -3030,14 +3028,14 @@ static void Init_Bootstrap_Mixfiles(void)
 	**	be displayed.
 	*/
 	new MFCD("LOCAL.MIX", &FastKey);			// Cached.
-	bool ok = MFCD::Cache("LOCAL.MIX");
-	assert(ok);
-	(void)ok;
+	if (!MFCD::Cache("LOCAL.MIX")) {
+		assert(false);
+	}
 
 	new MFCD("HIRES.MIX", &FastKey);
-	ok = MFCD::Cache("HIRES.MIX");
-	assert(ok);
-	(void)ok;
+	if (!MFCD::Cache("HIRES.MIX")) {
+		assert(false);
+	}
 
 	new MFCD("NCHIRES.MIX", &FastKey);		//Non-cached hires stuff incl VQ palettes
 }

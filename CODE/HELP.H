@@ -65,11 +65,6 @@ class HelpClass: public TabClass
 	private:
 
 		static char const *HelpText;
-		int HelpX;
-		int HelpY;
-		int HelpWidth;
-
-
 		void Set_Text(int text);
 
 		/*

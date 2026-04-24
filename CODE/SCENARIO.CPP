@@ -2283,11 +2283,15 @@ bool Read_Scenario_INI(char * fname, bool )
  *   10/07/1992 JLB : Created.                                                                 *
  *   05/11/1995 JLB : Updates movie data.                                                      *
  *=============================================================================================*/
-void Write_Scenario_INI(char * fname)
-{
-#ifndef CHEAT_KEYS
-	fname = fname;
+void Write_Scenario_INI(
+#ifdef CHEAT_KEYS
+	char *fname
 #else
+	char *
+#endif
+)
+{
+#ifdef CHEAT_KEYS
 //	CCFileClass file(fname);
 
 	CCINIClass ini;

@@ -631,7 +631,7 @@ int WSManagerClass::Service()
 			}
 			uint8_t const *p = pf.payload;
 			MyClientId = Read_U32(p);
-			(void)Read_U32(p); // server_version
+			Read_U32(p); // server_version
 			LoggedIn = true;
 			Push_Ctrl(pf.opcode, pf.payload, int(pf.payload_len));
 			break;

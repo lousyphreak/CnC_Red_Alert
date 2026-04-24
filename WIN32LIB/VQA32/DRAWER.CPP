@@ -692,18 +692,11 @@ static void  UnVQ_Nop(uint8_t *codebook, uint8_t *pointers,
 		uint8_t *buffer, uint32_t blocksperrow,
 		uint32_t numrows, uint32_t bufwidth)
 #else
-static void  UnVQ_Nop(uint8_t *codebook, uint8_t *pointers,
-		char * buffer, uint32_t blocksperrow, uint32_t numrows,
-		uint32_t bufwidth)
+static void  UnVQ_Nop(uint8_t *, uint8_t *,
+		char *, uint32_t, uint32_t,
+		uint32_t)
 #endif
 {
-	/* Suppress compiler warnings */
-	codebook = codebook;
-	pointers = pointers;
-	buffer = buffer;
-	blocksperrow = blocksperrow;
-	numrows = numrows;
-	bufwidth = bufwidth;
 }
 
 
@@ -727,10 +720,8 @@ static void  UnVQ_Nop(uint8_t *codebook, uint8_t *pointers,
 *
 ****************************************************************************/
 
-static int32_t PageFlip_Nop(VQAHandle *vqa)
+static int32_t PageFlip_Nop(VQAHandle *)
 {
-	vqa = vqa;
-
 	return (0);
 }
 

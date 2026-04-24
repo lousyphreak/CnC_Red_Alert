@@ -2897,7 +2897,7 @@ int TechnoClass::Rearm_Delay(bool second, int which) const
  *=============================================================================================*/
 bool TechnoClass::Electric_Zap(TARGET target, int which, COORDINATE source_coord, uint8_t * remap)
 {
-	int x,y,x1,y1;
+	int x = 0, y = 0, x1 = 0, y1 = 0;
 	COORDINATE source;
 
 	if (source_coord != 0) {

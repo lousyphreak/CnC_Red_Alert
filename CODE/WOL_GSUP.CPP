@@ -3397,7 +3397,7 @@ void WOL_GameSetupDialog::TriggerGameStart( char* szGoMessage )
 			}
 			//	Wait for download from game host.
 //debugprint( "Wait for download from game host.\n" );
-			if( !Get_Scenario_File_From_Host( Session.ScenarioFileName, 1 ) )
+			if( !Get_Scenario_File_From_Host( Session.ScenarioFileName ) )
 			{
 //				debugprint( "Get_Scenario_File_From_Host failed!\n" );
 				bExitForGameTrigger = false;
@@ -3473,7 +3473,7 @@ void WOL_GameSetupDialog::TriggerGameStart( char* szGoMessage )
 		{
 			//	Send the scenario to any guests that requested a download.
 //debugprint( "Send the scenario to any guests that requested a download.\n" );
-			Send_Remote_File( Scen.ScenarioName, 1 );
+			Send_Remote_File( Scen.ScenarioName );
 		}
 	}
 

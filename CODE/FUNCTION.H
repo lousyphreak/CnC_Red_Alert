@@ -204,8 +204,8 @@ CELL Coord_Cell(COORDINATE coord);
 #include	"STATBTN.H"
 #include	"SLIDER.H"
 extern GraphicViewPortClass SeenBuff;
-void Fancy_Text_Print(char const *text, unsigned x, unsigned y, RemapControlType * fore, unsigned back, TextPrintType flag, ...);
-void Fancy_Text_Print(int text, unsigned x, unsigned y, RemapControlType * fore, unsigned back, TextPrintType flag, ...);
+void Fancy_Text_Print(char const *text, unsigned x, unsigned y, RemapControlType * fore, unsigned back, int flag, ...);
+void Fancy_Text_Print(int text, unsigned x, unsigned y, RemapControlType * fore, unsigned back, int flag, ...);
 uint16_t Get_Build_Frame_Width(void const *dataptr);
 uint16_t Get_Build_Frame_Height(void const *dataptr);
 #include "LIST.H"
@@ -450,8 +450,8 @@ void Conquer_Clip_Text_Print(char const *, unsigned x, unsigned y, RemapControlT
 void Draw_Box(int x, int y, int w, int h, BoxStyleEnum up, bool filled);
 int  Dialog_Message(char *errormsg, ...);
 void Window_Box(WindowNumberType window, BoxStyleEnum style);
-void Fancy_Text_Print(char const *text, unsigned x, unsigned y, RemapControlType * fore, unsigned back, TextPrintType flag, ...);
-void Fancy_Text_Print(int text, unsigned x, unsigned y, RemapControlType * fore, unsigned back, TextPrintType flag, ...);
+void Fancy_Text_Print(char const *text, unsigned x, unsigned y, RemapControlType * fore, unsigned back, int flag, ...);
+void Fancy_Text_Print(int text, unsigned x, unsigned y, RemapControlType * fore, unsigned back, int flag, ...);
 void Simple_Text_Print(char const *text, unsigned x, unsigned y, RemapControlType * fore, unsigned back, TextPrintType flag);
 void Plain_Text_Print(int text, unsigned x, unsigned y, unsigned fore, unsigned back, TextPrintType flag, ...);
 void Plain_Text_Print(char const *text, unsigned x, unsigned y, unsigned fore, unsigned back, TextPrintType flag, ...);

@@ -105,12 +105,12 @@ int Write_PCX_File(FileClass & file, GraphicBufferClass & pic, PaletteClass * pa
 		(int16_t)(pic.Get_Height()-1),
 		(int16_t)(pic.Get_Width()),
 		(int16_t)(pic.Get_Height()),
-		{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
+		{},
 		0,
 		1,
 		(int16_t)pic.Get_Width(),
 		1,
-		{0}
+		{}
 	};
 
 	/*

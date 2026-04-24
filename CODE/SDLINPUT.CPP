@@ -170,10 +170,15 @@ bool touch_gameplay_gestures_enabled(void)
 	return GameActive && !Debug_Map && !InMovie;
 }
 
-bool is_direct_touch_device(SDL_TouchID touch_id)
+bool is_direct_touch_device(
+#if defined(__EMSCRIPTEN__)
+	SDL_TouchID
+#else
+	SDL_TouchID touch_id
+#endif
+)
 {
 #if defined(__EMSCRIPTEN__)
-	(void)touch_id;
 	return true;
 #else
 	if (touch_id == 0 || touch_id == SDL_MOUSE_TOUCHID) {
@@ -584,7 +589,7 @@ void handle_touch_up(const SDL_TouchFingerEvent& touch_event, bool canceled)
 	}
 
 	TouchPoint point = finger->point;
-	(void)translate_touch_position(touch_event, point);
+	translate_touch_position(touch_event, point);
 	finger->point = point;
 
 	const TouchFingerState released_finger = *finger;
@@ -800,7 +805,7 @@ void apply_mission_mouse_capture(void)
 			SDL_SetWindowRelativeMouseMode(MainWindow->sdl_window, false);
 		}
 		if (should_relative_mode && MainWindow != NULL && MainWindow->sdl_window != NULL) {
-			(void)SDL_SetWindowRelativeMouseMode(MainWindow->sdl_window, true);
+			SDL_SetWindowRelativeMouseMode(MainWindow->sdl_window, true);
 		}
 		g_mission_relative_mouse_mode_applied = should_relative_mode;
 	}
@@ -1515,7 +1520,13 @@ bool SDL_GameInput_Is_AppCallbacks_Mode(void)
 	return (g_app_callbacks_mode.load());
 }
 
-void SDL_GameInput_SetTextInputActive(bool enabled)
+void SDL_GameInput_SetTextInputActive(
+#if defined(__EMSCRIPTEN__)
+	bool enabled
+#else
+	bool
+#endif
+)
 {
 #if defined(__EMSCRIPTEN__)
 	// SDL3's Emscripten backend unconditionally registers a default
@@ -1526,8 +1537,6 @@ void SDL_GameInput_SetTextInputActive(bool enabled)
 	// tablets apart from desktops. The bridge is a no-op on devices with
 	// a real keyboard, so there is never any keystroke duplication.
 	ra_set_web_soft_keyboard_active(enabled ? 1 : 0);
-#else
-	(void)enabled;
 #endif
 }
 

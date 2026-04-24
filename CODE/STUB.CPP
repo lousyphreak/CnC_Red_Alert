@@ -128,7 +128,7 @@ SDL_AppResult SDLCALL SDL_AppIterate(void* appstate)
 	return SDL_APP_CONTINUE;
 }
 
-SDL_AppResult SDLCALL SDL_AppEvent(void* appstate, SDL_Event* event)
+SDL_AppResult SDLCALL SDL_AppEvent(void* appstate, SDL_Event*)
 {
 	CallbackAppState* state = static_cast<CallbackAppState*>(appstate);
 	/*
@@ -136,8 +136,6 @@ SDL_AppResult SDLCALL SDL_AppEvent(void* appstate, SDL_Event* event)
 	** SDLINPUT's callback-mode bridge translates pumped SDL events into that
 	** path, so the SDL callback entrypoint only needs to report shutdown here.
 	*/
-	(void)event;
-
 	if (state != NULL && state->main_finished) {
 		return App_Result_From_Exit_Code(state->exit_code);
 	}

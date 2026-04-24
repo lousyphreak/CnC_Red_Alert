@@ -792,13 +792,12 @@ uint32_t RawFileClass::Get_Date_Time(void)
  *   11/14/1995 DRD : Created.                                                                 *
  *   07/13/1996 JLB : Handles win 32 method                                                    *
  *=============================================================================================*/
-bool RawFileClass::Set_Date_Time(uint32_t datetime)
+bool RawFileClass::Set_Date_Time(uint32_t)
 {
 	/*
 	**	SDL3 does not provide an API to set file modification times.
 	**	Return false to indicate that the operation is not supported.
 	*/
-	(void)datetime;
 	return(false);
 }
 

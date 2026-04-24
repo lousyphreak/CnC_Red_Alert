@@ -304,10 +304,8 @@ int UDPConnClass::Open_Socket(uint16_t socket)
 /***************************************************************************
  * UDPConnClass::Close_Socket -- closes the socket 								*
  *=========================================================================*/
-void UDPConnClass::Close_Socket(uint16_t socket)
+void UDPConnClass::Close_Socket(uint16_t)
 {
-	socket = socket;
-
 	if (Winsock.Get_Connected()) {
 		SocketOpen = 0;
 		return;
@@ -325,10 +323,8 @@ void UDPConnClass::Close_Socket(uint16_t socket)
  * UDPConnClass::Send_To -- sends the packet to the given address				*
  *=========================================================================*/
 int UDPConnClass::Send_To(char *buf, int buflen, UDPAddressClass *address,
-	NetNodeType immed)
+	NetNodeType)
 {
-	immed = immed;
-
 	if (Winsock.Get_Connected()) {
 		Winsock.Write((void*)buf, buflen);
 		return(true);

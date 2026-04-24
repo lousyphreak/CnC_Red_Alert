@@ -54,8 +54,8 @@
 #include	"TCPIP.H"
 #endif	//NETWORK_UDP
 
-bool Receive_Remote_File ( char *file_name, uint32_t file_length, int gametype);
-bool Send_Remote_File ( char *file_name, int gametype );
+static bool Receive_Remote_File(char *file_name, uint32_t file_length);
+bool Send_Remote_File(char *file_name);
 
 #ifdef FIXIT_CSII	//	checked - ajw 9/28/98
 extern bool Is_Mission_Counterstrike (char *file_name);
@@ -74,7 +74,6 @@ extern WolapiObject* pWolapi;
  *                                                                                             *
  *                                                                                             *
  * INPUT:    ptr to buffer to copy file name into                                              *
- *           game type - legacy parameter, ignored by the network-only port                     *
  *                                                                                             *
  * OUTPUT:   true if file sucessfully downloaded                                               *
  *                                                                                             *
@@ -83,9 +82,8 @@ extern WolapiObject* pWolapi;
  * HISTORY:                                                                                    *
  *    8/22/96 3:06PM ST : Created                                                              *
  *=============================================================================================*/
-bool Get_Scenario_File_From_Host(char *return_name, int gametype)
+bool Get_Scenario_File_From_Host(char *return_name)
 {
-	(void)gametype;
 	//WWDebugString ("RA95 - In Get_Scenario_From_Host\n");
 
 	uint32_t file_length = 0;
@@ -148,7 +146,7 @@ bool Get_Scenario_File_From_Host(char *return_name, int gametype)
 	/*
 	** Receive the file from the host
 	*/
-	return (Receive_Remote_File ( return_name, file_length, gametype));
+	return (Receive_Remote_File(return_name, file_length));
 }
 
 
@@ -164,7 +162,6 @@ bool Get_Scenario_File_From_Host(char *return_name, int gametype)
  *                                                                                             *
  * INPUT:    file name to save as                                                              *
  *           length of file to expect                                                          *
- *           game type - legacy parameter, ignored by the network-only port                     *
  *                                                                                             *
  * OUTPUT:   true if file downloaded was completed                                             *
  *                                                                                             *
@@ -173,10 +170,8 @@ bool Get_Scenario_File_From_Host(char *return_name, int gametype)
  * HISTORY:                                                                                    *
  *   8/22/96 3:07PM ST : Created                                                               *
  *=============================================================================================*/
-bool Receive_Remote_File ( char *file_name, uint32_t file_length, int gametype)
+static bool Receive_Remote_File(char *file_name, uint32_t file_length)
 {
-	(void)gametype;
-
 	//WWDebugString ("RA95 - In Receive_Remote_File\n");
 	uint16_t		product_id;
 	UDPAddressClass	sender_address;
@@ -438,16 +433,14 @@ bool Receive_Remote_File ( char *file_name, uint32_t file_length, int gametype)
  * INPUT:    File name                                                                         *
  *                                                                                             *
  * OUTPUT:   true if file transfer was successfully completed                                  *
- *           game type - legacy parameter, ignored by the network-only port                     *
  *                                                                                             *
  * WARNINGS: None                                                                              *
  *                                                                                             *
  * HISTORY:                                                                                    *
  *    8/22/96 3:09PM ST : Created                                                              *
  *=============================================================================================*/
-bool Send_Remote_File ( char *file_name, int gametype )
+bool Send_Remote_File(char *file_name)
 {
-	(void)gametype;
 	//WWDebugString ("RA95 - In Send_Remote_File\n");
 
 	/*

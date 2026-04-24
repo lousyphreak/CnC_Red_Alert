@@ -217,11 +217,28 @@ static void Queue_Playback(void);
 static void Compute_Game_CRC(void);
 void Add_CRC(uint32_t *crc, uint32_t val);
 static void Print_CRCs(EventClass *ev);
-static void Init_Queue_Mono(ConnManClass *net);
-static void Update_Queue_Mono(ConnManClass *net, int flow_index);
-static void Print_Framesync_Values(int32_t curframe, uint32_t max_ahead,
-	int num_connections, uint16_t *their_recv,
-	uint16_t *their_sent, uint16_t my_sent);
+static void Init_Queue_Mono(
+#if(SHOW_MONO)
+	ConnManClass *net
+#else
+	ConnManClass *
+#endif
+);
+static void Update_Queue_Mono(
+#if(SHOW_MONO)
+	ConnManClass *net, int flow_index
+#else
+	ConnManClass *, int
+#endif
+);
+static void Print_Framesync_Values(
+#if(SHOW_MONO)
+	int32_t curframe, uint32_t max_ahead, int num_connections, uint16_t *their_recv,
+	uint16_t *their_sent, uint16_t my_sent
+#else
+	int32_t, uint32_t, int, uint16_t *, uint16_t *, uint16_t
+#endif
+);
 
 extern void Keyboard_Process(KeyNumType &input);
 void Dump_Packet_Too_Late_Stuff(EventClass *event, ConnManClass *net,
@@ -607,24 +624,28 @@ static void Queue_AI_Multiplayer(void)
 	//........................................................................
 	int i;
 	RetcodeType rc;
-	int reconnect_dlg = 0;				// 1 = the reconnect dialog is displayed
-	(void)reconnect_dlg;
 
 	//------------------------------------------------------------------------
 	//	Initialize the packet buffer pointer & its max size
 	//------------------------------------------------------------------------
-	if (Session.Type == GAME_UDP || Session.Type == GAME_INTERNET) {
-		multi_packet_buf = Session.MetaPacket;
-		multi_packet_max = Session.MetaSize;
-		net = &Udp;
-	}
+	switch (Session.Type) {
+		case GAME_UDP:
+		case GAME_INTERNET:
+			multi_packet_buf = Session.MetaPacket;
+			multi_packet_max = Session.MetaSize;
+			net = &Udp;
+			break;
 #if RA_ENABLE_WOL
-	else if (Session.Type == GAME_WOL) {
-		multi_packet_buf = Session.MetaPacket;
-		multi_packet_max = Session.MetaSize;
-		net = &Wol;
-	}
+		case GAME_WOL:
+			multi_packet_buf = Session.MetaPacket;
+			multi_packet_max = Session.MetaSize;
+			net = &Wol;
+			break;
 #endif
+		default:
+			assert(!"Queue_AI_Multiplayer called for unsupported session type");
+			return;
+	}
 
 	//------------------------------------------------------------------------
 	//	Debug stuff
@@ -1918,7 +1939,7 @@ static int Process_Reconnect_Dialog(CDTimerClass<SystemTimerClass> *timeout_time
 {
 	static int displayed_time = 0;	// time value currently displayed
 	int new_time;
-	int oldest_index;						// index of person requiring a reconnect
+	int oldest_index = 0;				// index of person requiring a reconnect
 	int i,j;
 
 	//------------------------------------------------------------------------
@@ -3919,7 +3940,13 @@ static void Print_CRCs(EventClass *ev)
  * HISTORY:                                                                *
  *   11/21/1995 BRR : Created.                                             *
  *=========================================================================*/
-static void Init_Queue_Mono(ConnManClass *net)
+static void Init_Queue_Mono(
+#if(SHOW_MONO)
+	ConnManClass *net
+#else
+	ConnManClass *
+#endif
+)
 {
 #if(SHOW_MONO)
 	//------------------------------------------------------------------------
@@ -3975,8 +4002,6 @@ static void Init_Queue_Mono(ConnManClass *net)
 			}
 		}
 	}
-#else
-	net = net;
 #endif
 }	// end of Init_Queue_Mono
 
@@ -3997,7 +4022,13 @@ static void Init_Queue_Mono(ConnManClass *net)
  * HISTORY:                                                                *
  *   11/21/1995 BRR : Created.                                             *
  *=========================================================================*/
-static void Update_Queue_Mono(ConnManClass *net, int flow_index)
+static void Update_Queue_Mono(
+#if(SHOW_MONO)
+	ConnManClass *net, int flow_index
+#else
+	ConnManClass *, int
+#endif
+)
 {
 #if(SHOW_MONO)
 	static int flowcount[20] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
@@ -4019,9 +4050,6 @@ static void Update_Queue_Mono(ConnManClass *net, int flow_index)
 		net->Mono_Debug_Print (0,0);
 	}
 
-#else
-	flow_index = flow_index;
-	net = net;
 #endif
 
 }	// end of Update_Queue_Mono
@@ -4046,9 +4074,14 @@ static void Update_Queue_Mono(ConnManClass *net, int flow_index)
  * HISTORY:                                                                *
  *   11/21/1995 BRR : Created.                                             *
  *=========================================================================*/
-static void Print_Framesync_Values(int32_t curframe, uint32_t max_ahead,
-	int num_connections, uint16_t *their_recv,
-	uint16_t *their_sent, uint16_t my_sent)
+static void Print_Framesync_Values(
+#if(SHOW_MONO)
+	int32_t curframe, uint32_t max_ahead, int num_connections, uint16_t *their_recv,
+	uint16_t *their_sent, uint16_t my_sent
+#else
+	int32_t, uint32_t, int, uint16_t *, uint16_t *, uint16_t
+#endif
+)
 {
 #if(SHOW_MONO)
 	int i;
@@ -4073,13 +4106,6 @@ static void Print_Framesync_Values(int32_t curframe, uint32_t max_ahead,
 		Mono_Set_Cursor(35,13);
 		Mono_Printf("%4d",(int)my_sent);
 	}
-#else
-	curframe = curframe;
-	max_ahead = max_ahead;
-	num_connections = num_connections;
-	their_recv = their_recv;
-	their_sent = their_sent;
-	my_sent = my_sent;
 #endif
 }	// end of Print_Framesync_Values
 

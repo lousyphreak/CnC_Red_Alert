@@ -2989,9 +2989,8 @@ inline int operator * (FacingType f1, FacingType f2)
 }
 
 template<typename T>
-inline T Post_Increment_Enum(T & value, int count, T first)
+inline T Post_Increment_Enum(T & value, int count)
 {
-	(void)first;
 	T old = value;
 	int next = (int)value + 1;
 	value = (next >= count) ? (T)count : (T)next;
@@ -3000,107 +2999,107 @@ inline T Post_Increment_Enum(T & value, int count, T first)
 
 inline ThemeType operator++(ThemeType & value, int)
 {
-	return(Post_Increment_Enum(value, THEME_COUNT, THEME_FIRST));
+	return(Post_Increment_Enum(value, THEME_COUNT));
 }
 
 inline HousesType operator++(HousesType & value, int)
 {
-	return(Post_Increment_Enum(value, HOUSE_COUNT, HOUSE_FIRST));
+	return(Post_Increment_Enum(value, HOUSE_COUNT));
 }
 
 inline ScenarioPlayerType operator++(ScenarioPlayerType & value, int)
 {
-	return(Post_Increment_Enum(value, SCEN_PLAYER_COUNT, SCEN_PLAYER_FIRST));
+	return(Post_Increment_Enum(value, SCEN_PLAYER_COUNT));
 }
 
 inline ScenarioDirType operator++(ScenarioDirType & value, int)
 {
-	return(Post_Increment_Enum(value, SCEN_DIR_COUNT, SCEN_DIR_FIRST));
+	return(Post_Increment_Enum(value, SCEN_DIR_COUNT));
 }
 
 inline ScenarioVarType operator++(ScenarioVarType & value, int)
 {
-	return(Post_Increment_Enum(value, SCEN_VAR_COUNT, SCEN_VAR_FIRST));
+	return(Post_Increment_Enum(value, SCEN_VAR_COUNT));
 }
 
 inline LayerType operator++(LayerType & value, int)
 {
-	return(Post_Increment_Enum(value, LAYER_COUNT, LAYER_FIRST));
+	return(Post_Increment_Enum(value, LAYER_COUNT));
 }
 
 inline BulletType operator++(BulletType & value, int)
 {
-	return(Post_Increment_Enum(value, BULLET_COUNT, BULLET_FIRST));
+	return(Post_Increment_Enum(value, BULLET_COUNT));
 }
 
 inline StructType operator++(StructType & value, int)
 {
-	return(Post_Increment_Enum(value, STRUCT_COUNT, STRUCT_FIRST));
+	return(Post_Increment_Enum(value, STRUCT_COUNT));
 }
 
 inline OverlayType operator++(OverlayType & value, int)
 {
-	return(Post_Increment_Enum(value, OVERLAY_COUNT, OVERLAY_FIRST));
+	return(Post_Increment_Enum(value, OVERLAY_COUNT));
 }
 
 inline InfantryType operator++(InfantryType & value, int)
 {
-	return(Post_Increment_Enum(value, INFANTRY_COUNT, INFANTRY_FIRST));
+	return(Post_Increment_Enum(value, INFANTRY_COUNT));
 }
 
 inline UnitType operator++(UnitType & value, int)
 {
-	return(Post_Increment_Enum(value, UNIT_COUNT, UNIT_FIRST));
+	return(Post_Increment_Enum(value, UNIT_COUNT));
 }
 
 inline VesselType operator++(VesselType & value, int)
 {
-	return(Post_Increment_Enum(value, VESSEL_COUNT, VESSEL_FIRST));
+	return(Post_Increment_Enum(value, VESSEL_COUNT));
 }
 
 inline AircraftType operator++(AircraftType & value, int)
 {
-	return(Post_Increment_Enum(value, AIRCRAFT_COUNT, AIRCRAFT_FIRST));
+	return(Post_Increment_Enum(value, AIRCRAFT_COUNT));
 }
 
 inline TemplateType operator++(TemplateType & value, int)
 {
-	return(Post_Increment_Enum(value, TEMPLATE_COUNT, TEMPLATE_FIRST));
+	return(Post_Increment_Enum(value, TEMPLATE_COUNT));
 }
 
 inline TerrainType operator++(TerrainType & value, int)
 {
-	return(Post_Increment_Enum(value, TERRAIN_COUNT, TERRAIN_FIRST));
+	return(Post_Increment_Enum(value, TERRAIN_COUNT));
 }
 
 inline SmudgeType operator++(SmudgeType & value, int)
 {
-	return(Post_Increment_Enum(value, SMUDGE_COUNT, SMUDGE_FIRST));
+	return(Post_Increment_Enum(value, SMUDGE_COUNT));
 }
 
 inline AnimType operator++(AnimType & value, int)
 {
-	return(Post_Increment_Enum(value, ANIM_COUNT, ANIM_FIRST));
+	return(Post_Increment_Enum(value, ANIM_COUNT));
 }
 
 inline DoType operator++(DoType & value, int)
 {
-	return(Post_Increment_Enum(value, DO_COUNT, DO_FIRST));
+	return(Post_Increment_Enum(value, DO_COUNT));
 }
 
 inline TheaterType operator++(TheaterType & value, int)
 {
-	return(Post_Increment_Enum(value, THEATER_COUNT, THEATER_FIRST));
+	return(Post_Increment_Enum(value, THEATER_COUNT));
 }
 
 inline BSizeType operator++(BSizeType & value, int)
 {
-	return(Post_Increment_Enum(value, BSIZE_COUNT, (BSizeType)0));
+	return(Post_Increment_Enum(value, BSIZE_COUNT));
 }
 
 inline FacingType operator++(FacingType & value, int)
 {
-	return(Post_Increment_Enum(value, FACING_COUNT, FACING_FIRST));
+	return(Post_Increment_Enum(value, FACING_COUNT));
 }
 
 

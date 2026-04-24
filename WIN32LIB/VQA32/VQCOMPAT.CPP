@@ -348,11 +348,9 @@ int32_t GetVBIBit(void)
 }
 
 
-void  WaitNoVB(int16_t vbibit){
-	(void)vbibit;
+void WaitNoVB(int16_t){
 }
 
 
-void  WaitVB(int16_t vbibit){
-	(void)vbibit;
+void WaitVB(int16_t){
 }

@@ -104,8 +104,8 @@ int main(int argc, char **argv) {
 		}
 		if (last_len == 0) { std::fprintf(stderr, "peer %d never saw GAME_MEMBERS\n", i); return 1; }
 		p = last_members;
-		(void)Read_U32(p); // game_id
-		(void)Read_U32(p); // host_id
+		Read_U32(p); // game_id
+		Read_U32(p); // host_id
 		uint16_t cnt = Read_U16(p);
 		for (int k = 0; k < cnt; ++k) {
 			uint32_t cid = Read_U32(p);

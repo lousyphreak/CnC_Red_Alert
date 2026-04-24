@@ -1591,20 +1591,16 @@ static int Net_Join_Dialog(void)
 		int d_join_y = d_dialog_y + d_dialog_h - d_join_h - 8*RESFACTOR;
 
 		int d_cancel_w = 50 *RESFACTOR;
-		int d_cancel_h = 9 *RESFACTOR;
 		int d_cancel_x = d_dialog_cx - d_cancel_w / 2;
 		int d_cancel_y = d_join_y;
-		(void)d_cancel_h;
 
 #ifdef FRENCH
 		int d_new_w = 60 *RESFACTOR;
 #else
 		int d_new_w = 40 *RESFACTOR;
 #endif
-		int d_new_h = 9 *RESFACTOR;
 		int d_new_x = d_dialog_x + ((d_dialog_w * 5) / 6) - (d_new_w / 2);
 		int d_new_y = d_join_y;
-		(void)d_new_h;
 
 		int d_send_w = d_message1_w;
 		int d_send_h = 9 *RESFACTOR;
@@ -1659,8 +1655,6 @@ static int Net_Join_Dialog(void)
 							d_color_x + (d_color_w * 7),
 							};
 	char housetext[25] = "";				// buffer for house droplist
-	int isdropped = 0;
-	(void)isdropped;
 
 	JoinStateType joinstate = JOIN_NOTHING;	// current "state" of this dialog
 	char namebuf[MPLAYER_NAME_MAX] = {0};		// buffer for player's name
@@ -2698,7 +2692,7 @@ static int Net_Join_Dialog(void)
 							break;
 #endif
 
-						if (!Get_Scenario_File_From_Host(Session.ScenarioFileName, 1)) {
+						if (!Get_Scenario_File_From_Host(Session.ScenarioFileName)) {
 							break;
 						} else {
 							/*
@@ -3671,7 +3665,7 @@ static JoinEventType Wol_Update_Game_Node(ListClass *gamelist, char const *name,
 	gamelist->Add_Item(item);
 	gamelist->Flag_To_Redraw();
 
-	(void)Wol_Remove_Chat_Node(host_cid);
+	Wol_Remove_Chat_Node(host_cid);
 	return(EV_NEW_GAME);
 }
 
@@ -3699,9 +3693,9 @@ static JoinEventType Wol_Reconcile_Game_List(ListClass *gamelist, uint8_t const 
 		}
 
 		uint32_t host_cid = WolProto::Read_U32(p);
-		(void)WolProto::Read_U8(p);
+		WolProto::Read_U8(p);
 		uint8_t started = WolProto::Read_U8(p);
-		(void)WolProto::Read_U16(p);
+		WolProto::Read_U16(p);
 
 		for (int i = 1; i < existing_count; i++) {
 			if (Wol_Game_Id(i) == game_id || !strcmp(Session.Games[i]->Name, game_name)) {
@@ -4559,9 +4553,7 @@ static JoinEventType Get_Join_Responses(JoinStateType *joinstate, ListClass *gam
  *=============================================================================================*/
 static int Net_New_Dialog(void)
 {
-	typedef enum {
-		NUM_MESSAGES = 10
-	} NumMessagesType;
+	int const NUM_MESSAGES = 10;
 
 	//------------------------------------------------------------------------
 	//	Dialog & button dimensions
@@ -4575,9 +4567,6 @@ static int Net_New_Dialog(void)
 	int d_txt6_h = 6*RESFACTOR+1;												// ht of 6-pt text
 	int d_margin1 = 5*RESFACTOR;												// margin width/height
 	int d_margin2 = 2*RESFACTOR;												// margin width/height
-	(void)d_margin2;
-	(void)d_margin2;
-	(void)d_margin2;
 
 //BG	int d_playerlist_w = 118*RESFACTOR;
 	int d_playerlist_w = 124*RESFACTOR;
@@ -5679,7 +5668,7 @@ static int Net_New_Dialog(void)
 					Session.ScenarioRequests[Session.RequestCount++] = i;
 				}
 			}
-			Send_Remote_File (Scen.ScenarioName, 1);
+			Send_Remote_File(Scen.ScenarioName);
 		}
 	}
 
@@ -5776,7 +5765,7 @@ static JoinEventType Get_NewGame_Responses(ColorListClass *playerlist,
 
 #if RA_ENABLE_WOL
 	if (Session.Type == GAME_WOL) {
-		(void)Drain_Wol_Lobby_Control(NULL);
+		Drain_Wol_Lobby_Control(NULL);
 	}
 #endif
 
@@ -6149,12 +6138,12 @@ void Net_Reconnect_Dialog(int reconn, int fresh, int oldest_index,
 					sprintf(buf1,Text_String(TXT_RECONNECTING_TO),
 						NetMgr->Connection_Name(id));
 				} else {
-					sprintf(buf1,Text_String(TXT_WAITING_FOR_CONNECTIONS));
+					snprintf(buf1, sizeof(buf1), "%s", Text_String(TXT_WAITING_FOR_CONNECTIONS));
 				}
 				break;
 
 			default:
-				sprintf(buf1,Text_String(TXT_WAITING_FOR_CONNECTIONS));
+				snprintf(buf1, sizeof(buf1), "%s", Text_String(TXT_WAITING_FOR_CONNECTIONS));
 				break;
 		}
 
@@ -6164,11 +6153,8 @@ void Net_Reconnect_Dialog(int reconn, int fresh, int oldest_index,
 		w = max((int)String_Pixel_Width(buf1), (int)String_Pixel_Width(buf2));
 
 #ifdef FIXIT_VERSION_3
-		bool show_tournament_cancel_warning = false;
-#ifndef WOLAPI_INTEGRATION
-		(void)show_tournament_cancel_warning;
-#endif
 #ifdef WOLAPI_INTEGRATION
+		bool show_tournament_cancel_warning = false;
 		char szNewCancelMessage[300];
 		sprintf(szNewCancelMessage, "%s%s", buf3, TXT_WOL_CANCELMEANSFORFEIT);
 		show_tournament_cancel_warning = Session.Type == GAME_INTERNET && pWolapi && pWolapi->GameInfoCurrent.bTournament;
@@ -6400,8 +6386,6 @@ static int Net_Fake_New_Dialog(void)
 
 	int d_txt6_h = 6*RESFACTOR+1;												// ht of 6-pt text
 	int d_margin1 = 5*RESFACTOR;												// margin width/height
-	int d_margin2 = 2*RESFACTOR;												// margin width/height
-	(void)d_margin2;
 
 	int d_playerlist_w = 118*RESFACTOR;
 	int d_playerlist_h = ((6 * 6) + 3)*RESFACTOR;			// 6 rows high
@@ -6452,8 +6436,6 @@ static int Net_Fake_New_Dialog(void)
 	int i;
 	char *item;
 	int tabs[] = {77};						// tabs for player list box
-	int optiontabs[] = {8};					// tabs for option list box
-	(void)optiontabs;
 
 	NodeNameType *who;						// node to add to Players
 	int32_t ping_timer = 0;						// for sending Ping packets
@@ -6978,7 +6960,7 @@ static int Net_Fake_New_Dialog(void)
 					Session.ScenarioRequests[Session.RequestCount++] = i;
 				}
 			}
-			Send_Remote_File (Scen.ScenarioName, 1);
+			Send_Remote_File(Scen.ScenarioName);
 		}
 
 	}
@@ -7138,9 +7120,7 @@ static int Net_Fake_Join_Dialog(void)
 		int d_dialog_cx = d_dialog_x + (d_dialog_w / 2);		// center x-coord
 
 		int d_txt6_h = 6 *RESFACTOR+1;												// ht of 6-pt text
-		int d_margin1 = 5 *RESFACTOR;												// large margin
 		int d_margin2 = 7 *RESFACTOR;												// small margin
-		(void)d_margin1;
 
 		int d_gamelist_w = 160 *RESFACTOR;
 		int d_gamelist_h = ((6 * 6) + 3) *RESFACTOR;		// 6 rows high
@@ -7188,34 +7168,22 @@ static int Net_Fake_Join_Dialog(void)
 	//------------------------------------------------------------------------
 	//	Dialog variables
 	//------------------------------------------------------------------------
-	RedrawType display = REDRAW_ALL;		// redraw level
-	bool process = true;						// process while true
-	int input;
-	char housetext[25] = "";				// buffer for house droplist
-	int isdropped = 0;
-	(void)housetext;
-	(void)isdropped;
+		RedrawType display = REDRAW_ALL;		// redraw level
+		bool process = true;						// process while true
+		int input;
 
-	JoinStateType joinstate = JOIN_NOTHING;	// current "state" of this dialog
-	char namebuf[MPLAYER_NAME_MAX] = {0};		// buffer for player's name
-	int playertabs[] = {77 *RESFACTOR};				// tabs for player list box
-	int optiontabs[] = {8};					// tabs for player list box
-	int game_index = -1;						// index of currently-selected game
-	int join_index = -1;						// index of game we're joining
-	int rc = 0;									// -1 = user cancelled, 1 = New
-	JoinEventType event;						// event from incoming packet
-	int i;										// loop counter
-	int parms_received = 0;					// 1 = game options received
-	NodeNameType *who;						// node to add to Players
-	RejectType why;							// reason for rejection
-	TTimerClass<SystemTimerClass> lastclick_timer;			// time b/w send periods
-	int lastclick_idx = 0;					// index of item last clicked on
-	RemapControlType * scheme = GadgetClass::Get_Color_Scheme();
-	int ready_to_go = 0;
-	(void)optiontabs;
-	(void)lastclick_idx;
-	(void)ready_to_go;
-	Session.Options.ScenarioDescription[0] = 0;	//Flag that we dont know the scenario name yet
+		JoinStateType joinstate = JOIN_NOTHING;	// current "state" of this dialog
+		char namebuf[MPLAYER_NAME_MAX] = {0};		// buffer for player's name
+		int playertabs[] = {77 *RESFACTOR};				// tabs for player list box
+		int game_index = -1;						// index of currently-selected game
+		int join_index = -1;						// index of game we're joining
+		int rc = 0;									// -1 = user cancelled, 1 = New
+		JoinEventType event;						// event from incoming packet
+		int i;										// loop counter
+		NodeNameType *who;						// node to add to Players
+		RejectType why;							// reason for rejection
+		RemapControlType * scheme = GadgetClass::Get_Color_Scheme();
+		Session.Options.ScenarioDescription[0] = 0;	//Flag that we dont know the scenario name yet
 	int	width;
 	int	height;
 
@@ -7261,10 +7229,7 @@ static int Net_Fake_Join_Dialog(void)
 	Fancy_Text_Print("", 0, 0, scheme, TBLACK,
 		TPF_CENTER | TPF_TEXT);
 
-	lastclick_timer = 0;
-	(void)lastclick_timer;
-
-	//------------------------------------------------------------------------
+		//------------------------------------------------------------------------
 	//	Clear the list of games, players, and the chat list
 	//------------------------------------------------------------------------
 	Clear_Vector(&Session.Games);
@@ -7476,8 +7441,6 @@ static int Net_Fake_Join_Dialog(void)
 					strcpy (Session.Handle,namebuf);
 					//Session.House = (HousesType)housebtn.Current_Index();
 					join_index = gamelist.Current_Index();
-					parms_received = 0;
-					(void)parms_received;
 					if (Request_To_Join (namebuf, join_index, Session.House,
 						Session.ColorIdx)) {
 						joinstate = JOIN_WAIT_CONFIRM;
@@ -7598,7 +7561,7 @@ static int Net_Fake_Join_Dialog(void)
 								break;
 #endif
 
-							if (!Get_Scenario_File_From_Host(Session.ScenarioFileName, 1)) {
+							if (!Get_Scenario_File_From_Host(Session.ScenarioFileName)) {
 								break;
 							} else {
 								/*
@@ -7682,8 +7645,6 @@ static int Net_Fake_Join_Dialog(void)
 
 			Sound_Effect(VOC_OPTIONS_CHANGED);
 
-			parms_received = 1;
-			(void)parms_received;
 			display = REDRAW_PARMS;
 		}
 

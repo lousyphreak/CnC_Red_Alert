@@ -43,6 +43,34 @@
 #include	"NOINIT.H"
 #include	"HEAP.H"
 
+class AircraftClass;
+class AircraftTypeClass;
+class AnimClass;
+class AnimTypeClass;
+class BuildingClass;
+class BuildingTypeClass;
+class BulletClass;
+class BulletTypeClass;
+class FactoryClass;
+class HouseClass;
+class HouseTypeClass;
+class InfantryClass;
+class InfantryTypeClass;
+class OverlayClass;
+class OverlayTypeClass;
+class SmudgeClass;
+class SmudgeTypeClass;
+class TeamClass;
+class TeamTypeClass;
+class TemplateClass;
+class TemplateTypeClass;
+class TerrainClass;
+class TerrainTypeClass;
+class TriggerClass;
+class TriggerTypeClass;
+class UnitTypeClass;
+class VesselTypeClass;
+
 /*
 **	The CCPtr class is designed for a specific purpose. It functions like a pointer except that
 **	it requires no fixups for saving and loading. If pointer fixups are not an issue, than using
@@ -93,6 +121,34 @@ class CCPtr
 		*/
 		int ID;
 };
+
+template<> FixedIHeapClass * CCPtr<AircraftClass>::Heap;
+template<> FixedIHeapClass * CCPtr<AircraftTypeClass>::Heap;
+template<> FixedIHeapClass * CCPtr<AnimClass>::Heap;
+template<> FixedIHeapClass * CCPtr<AnimTypeClass>::Heap;
+template<> FixedIHeapClass * CCPtr<BuildingClass>::Heap;
+template<> FixedIHeapClass * CCPtr<BuildingTypeClass>::Heap;
+template<> FixedIHeapClass * CCPtr<BulletClass>::Heap;
+template<> FixedIHeapClass * CCPtr<BulletTypeClass>::Heap;
+template<> FixedIHeapClass * CCPtr<FactoryClass>::Heap;
+template<> FixedIHeapClass * CCPtr<HouseClass>::Heap;
+template<> FixedIHeapClass * CCPtr<HouseTypeClass>::Heap;
+template<> FixedIHeapClass * CCPtr<InfantryClass>::Heap;
+template<> FixedIHeapClass * CCPtr<InfantryTypeClass>::Heap;
+template<> FixedIHeapClass * CCPtr<OverlayClass>::Heap;
+template<> FixedIHeapClass * CCPtr<OverlayTypeClass>::Heap;
+template<> FixedIHeapClass * CCPtr<SmudgeClass>::Heap;
+template<> FixedIHeapClass * CCPtr<SmudgeTypeClass>::Heap;
+template<> FixedIHeapClass * CCPtr<TeamClass>::Heap;
+template<> FixedIHeapClass * CCPtr<TeamTypeClass>::Heap;
+template<> FixedIHeapClass * CCPtr<TemplateClass>::Heap;
+template<> FixedIHeapClass * CCPtr<TemplateTypeClass>::Heap;
+template<> FixedIHeapClass * CCPtr<TerrainClass>::Heap;
+template<> FixedIHeapClass * CCPtr<TerrainTypeClass>::Heap;
+template<> FixedIHeapClass * CCPtr<TriggerClass>::Heap;
+template<> FixedIHeapClass * CCPtr<TriggerTypeClass>::Heap;
+template<> FixedIHeapClass * CCPtr<UnitTypeClass>::Heap;
+template<> FixedIHeapClass * CCPtr<VesselTypeClass>::Heap;
 
 /*
 **	These template helper functions tell the compiler what to do in the

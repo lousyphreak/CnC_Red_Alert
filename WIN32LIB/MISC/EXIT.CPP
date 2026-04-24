@@ -70,7 +70,7 @@ void  Exit(int32_t errorval, const char *message, ...)
 		va_start (argptr, message);
 		vsprintf ((char *)errstring, (const char *)message, argptr);
 		va_end (argptr);
-		printf(errstring);
+		printf("%s", errstring);
 	}
 
 	::exit(errorval);

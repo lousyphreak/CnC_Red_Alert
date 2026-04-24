@@ -326,17 +326,12 @@ class UDPManagerClass : public ConnManClass
 		.....................................................................*/
 		int NumBufs;								// # packet buffers allocated
 		int PacketLen;								// size of packet without UDP header
-		int FullPacketLen;						// size of packet including UDP header
 
 		/*.....................................................................
 		Selector & Segment of the DOS allocation;
 		Size of the allocation;
 		Ptr to the real-mode assembly data area
 		.....................................................................*/
-		uint16_t Selector;				// selector of DOS allocation pointer
-		uint16_t Segment;					// real-mode segment of DOS allocation
-		int RealMemSize;							// size of real mode memory allocated
-		RealModeDataType *RealModeData;		// assembly routine & its data
 
 		/*.....................................................................
 		This is a real-mode pointer to the address of the real-mode assembly
@@ -359,7 +354,6 @@ class UDPManagerClass : public ConnManClass
 		/*.....................................................................
 		Current packet index & ptrs for parsing packets
 		.....................................................................*/
-		int CurIndex;								// Current packet index, for reading
 		UDPHeaderType *CurHeaderBuf;			// Current packet ptr, for reading
 		char *CurDataBuf;							// Current actual data ptr
 

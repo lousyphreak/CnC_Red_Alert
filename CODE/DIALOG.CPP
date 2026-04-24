@@ -618,7 +618,7 @@ void Simple_Text_Print(char const * text, unsigned x, unsigned y, RemapControlTy
  * HISTORY:                                                                                    *
  *   11/29/1994 JLB : Created                                                                  *
  *=============================================================================================*/
-void Fancy_Text_Print(int text, unsigned x, unsigned y, RemapControlType * fore, unsigned back, TextPrintType flag, ...)
+void Fancy_Text_Print(int text, unsigned x, unsigned y, RemapControlType * fore, unsigned back, int flag, ...)
 {
 	char		buffer[512];		// Working staging buffer.
 	va_list	arg;					// Argument list var.
@@ -637,13 +637,13 @@ void Fancy_Text_Print(int text, unsigned x, unsigned y, RemapControlType * fore,
 		vsprintf(buffer, tptr, arg);
 		va_end(arg);
 
-		Simple_Text_Print(buffer, x, y, fore, back, flag);
+		Simple_Text_Print(buffer, x, y, fore, back, (TextPrintType)flag);
 	} else {
 
 		/*
 		**	Just the flags are to be changed, since the text number is TXT_NONE.
 		*/
-		Simple_Text_Print((char const *)0, x, y, fore, back, flag);
+		Simple_Text_Print((char const *)0, x, y, fore, back, (TextPrintType)flag);
 	}
 }
 
@@ -675,7 +675,7 @@ void Fancy_Text_Print(int text, unsigned x, unsigned y, RemapControlType * fore,
  *   10/26/94   JLB : Handles font X spacing in a more friendly manner.                        *
  *   11/29/1994 JLB : Separated actual draw action.                                            *
  *=============================================================================================*/
-void Fancy_Text_Print(char const * text, unsigned x, unsigned y, RemapControlType * fore, unsigned back, TextPrintType flag, ...)
+void Fancy_Text_Print(char const * text, unsigned x, unsigned y, RemapControlType * fore, unsigned back, int flag, ...)
 {
 	char		buffer[512];		// Working staging buffer.
 	va_list	arg;					// Argument list var.
@@ -694,14 +694,14 @@ void Fancy_Text_Print(char const * text, unsigned x, unsigned y, RemapControlTyp
 		vsprintf(buffer, text, arg);
 		va_end(arg);
 
-		Simple_Text_Print(buffer, x, y, fore, back, flag);
+		Simple_Text_Print(buffer, x, y, fore, back, (TextPrintType)flag);
 	} else {
 
 		/*
 		**	Just the flags are desired to be changed, so call the simple print routine with
 		**	a NULL text pointer.
 		*/
-		Simple_Text_Print((char const *)0, x, y, fore, back, flag);
+		Simple_Text_Print((char const *)0, x, y, fore, back, (TextPrintType)flag);
 	}
 }
 

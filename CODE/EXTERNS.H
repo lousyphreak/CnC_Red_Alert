@@ -437,9 +437,8 @@ extern	int UnitBuildPenalty;
 /*
 ** From SENDFILE.CPP - externs for scenario file transfers
 */
-bool Receive_Remote_File ( char *file_name, uint32_t file_length, uint32_t crc, int gametype);
-bool Send_Remote_File ( char *file_name, int gametype );
-bool Get_Scenario_File_From_Host(char *return_name, int gametype);
+bool Send_Remote_File(char *file_name);
+bool Get_Scenario_File_From_Host(char *return_name);
 bool Find_Local_Scenario (char *description, char *filename, uint32_t length, char *digest, bool official);
 
 #endif

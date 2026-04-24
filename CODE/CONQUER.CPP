@@ -2721,7 +2721,7 @@ bool Try_Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 
 void Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 {
-	(void)Try_Play_Movie(name, theme, clrscrn);
+	Try_Play_Movie(name, theme, clrscrn);
 }
 
 bool Try_Play_Movie(VQType name, ThemeType theme, bool clrscrn)
@@ -2740,7 +2740,7 @@ bool Try_Play_Movie(VQType name, ThemeType theme, bool clrscrn)
 
 void Play_Movie(VQType name, ThemeType theme, bool clrscrn)
 {
-	(void)Try_Play_Movie(name, theme, clrscrn);
+	Try_Play_Movie(name, theme, clrscrn);
 }
 
 /***********************************************************************************************

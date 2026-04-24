@@ -320,7 +320,7 @@ void *  Get_Icon_Set_Trans(void const *iconset)
 int32_t  Get_Icon_Set_Count(void const *iconset)
 {
 	IControl_Type	*icontrol;
-	int32_t				count;
+	int32_t				count = 0;
 
 	icontrol = (IControl_Type *)iconset;
 	if (icontrol) {

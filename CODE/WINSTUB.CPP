@@ -329,7 +329,13 @@ void* DebugFile = nullptr;
  * HISTORY:                                                                                    *
  *    10/28/96 12:48PM ST : Created                                                              *
  *=============================================================================================*/
-void WWDebugString (char const *string)
+void WWDebugString(
+#if (0)
+	char const *string
+#else
+	char const *
+#endif
+)
 {
 #if (0)
 	char outstr[256];
@@ -354,7 +360,6 @@ void WWDebugString (char const *string)
 	OutputDebugString (string);
 #else	//(0)
 
-	string = string;
 //	debugprint( string );
 
 #endif	//(0)
@@ -424,15 +429,15 @@ typedef struct tColourList {
 } ColourList;
 
 ColourList	ColourLookup[9]={
-	0,0,0,
-	63,0,0,
-	0,63,0,
-	0,0,63,
-	63,0,63,
-	63,63,0,
-	0,63,63,
-	32,32,32,
-	63,63,63
+	{0,0,0},
+	{63,0,0},
+	{0,63,0},
+	{0,0,63},
+	{63,0,63},
+	{63,63,0},
+	{0,63,63},
+	{32,32,32},
+	{63,63,63}
 };
 
 

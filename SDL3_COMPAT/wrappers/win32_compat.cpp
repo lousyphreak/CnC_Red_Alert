@@ -37,7 +37,6 @@ constexpr DWORD kFileCurrent = 1U;
 constexpr DWORD kFileEnd = 2U;
 constexpr UINT kDriveNoRootDir = 1U;
 constexpr UINT kDriveFixed = 3U;
-constexpr UINT kDriveCdrom = 5U;
 
 HANDLE invalid_handle_value()
 {

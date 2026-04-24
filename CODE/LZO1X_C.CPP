@@ -44,7 +44,9 @@
 
 #include "LZO1X.H"
 #include <stdint.h>
+#ifndef NDEBUG
 #define NDEBUG
+#endif
 #include <assert.h>
 #include "LZO_CONF.H"
 

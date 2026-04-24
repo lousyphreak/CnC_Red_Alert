@@ -79,12 +79,6 @@ class WWKeyboardClass
 	private:
 
 		/*
-		**	This is a keyboard state array that is used to aid in translating
-		**	KN_ keys into KA_ keys.
-		*/
-		uint8_t KeyState[256];
-
-		/*
 		**	This is the circular keyboard holding buffer. It holds the VK key and
 		**	the current shift state at the time the key was added to the queue.
 		*/

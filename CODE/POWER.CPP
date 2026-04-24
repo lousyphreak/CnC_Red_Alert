@@ -71,7 +71,6 @@ PowerClass::PowerButtonClass PowerClass::PowerButton;
  *=============================================================================================*/
 PowerClass::PowerClass(void) :
 	IsToRedraw(false),
-	IsActive(false),
 	FlashTimer(0),
 	RecordedDrain(-1),
 	RecordedPower(-1),
@@ -262,7 +261,7 @@ void PowerClass::Draw_It(bool complete)
  *=============================================================================================*/
 void PowerClass::AI(KeyNumType &input, int x, int y)
 {
-	if (Map.IsSidebarActive /*IsActive*/) {
+	if (Map.IsSidebarActive) {
 		int olddrain = DrainHeight;
 		int oldpower  = PowerHeight;
 

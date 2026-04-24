@@ -1043,7 +1043,7 @@ int32_t VQA_LoadFrame(VQAHandle *vqa)
 *
 ****************************************************************************/
 
-int32_t VQA_SeekFrame(VQAHandle *vqa, int32_t framenum, int32_t fromwhere)
+int32_t VQA_SeekFrame(VQAHandle *vqa, int32_t framenum, int32_t)
 {
 	VQAHandleP   *vqap;
 	VQAData      *vqabuf;
@@ -1070,8 +1070,6 @@ int32_t VQA_SeekFrame(VQAHandle *vqa, int32_t framenum, int32_t fromwhere)
 	config = &vqap->Config;
 	#endif
 
-	fromwhere = fromwhere;
-	
 	#if(VQAAUDIO_ON)
 	audio = &vqabuf->Audio;
 

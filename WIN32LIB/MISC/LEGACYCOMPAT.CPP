@@ -277,7 +277,6 @@ void  Force_VM_Page_In(void *buffer, int32_t length){
 		sink ^= bytes[offset];
 	}
 	sink ^= bytes[length - 1];
-	(void)sink;
 }
 
 

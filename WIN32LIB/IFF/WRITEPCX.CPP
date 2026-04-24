@@ -70,7 +70,7 @@ int32_t Write_PCX_File (char* name, GraphicViewPortClass& pic, uint8_t* palette 
 	RGB  		  * pal ;
 	GraphicBufferClass	* Graphic_Buffer ;
 	PCX_HEADER   header = { 10 , 5 , 1 , 8 , 0 , 0 , 319 , 199 ,
-									320 , 200 , { 0 } , 0 , 1 , 320 , 1 , {0} } ;
+									320 , 200 , {} , 0 , 1 , 320 , 1 , {} } ;
 
 	// Open file name
 	file_handle = Open_File ( name , WRITE ) ;
@@ -98,8 +98,8 @@ int32_t Write_PCX_File (char* name, GraphicViewPortClass& pic, uint8_t* palette 
 		pal -> blue <<= 2 ;
 		pal ++ ;
 	}
-	i = 0x0c ;
-	Write_File ( file_handle, & i , 1 ) ;
+	uint8_t palette_marker = 0x0c;
+	Write_File ( file_handle, & palette_marker , 1 ) ;
 	Write_File ( file_handle, palcopy , 256 * sizeof (RGB) ) ;
 	Close_File (file_handle) ;
 	return 0 ;
@@ -137,11 +137,11 @@ void Write_Pcx_ScanLine ( int32_t file_handle , int32_t scansize , char * ptr )
 	uint32_t     rle ;
 	uint32_t     color ;
 	uint32_t		last ;
-	char		  * file_ptr ;
-	char		 	pool [ POOL_SIZE ] ;
+	uint8_t	  * file_ptr ;
+	uint8_t	 	pool [ POOL_SIZE ] ;
 
 	file_ptr = pool ;
-	last = * ptr ;
+	last = static_cast<uint8_t>(*ptr);
 	rle = 1 ;
 
 	for ( i = 1 ; i < scansize ; i ++ ) {
@@ -149,7 +149,7 @@ void Write_Pcx_ScanLine ( int32_t file_handle , int32_t scansize , char * ptr )
 		if ( color == last ) {
 			rle ++ ;
 			if ( rle == 63 )	 {
-				WRITE_CHAR ( 255 ) ;
+				WRITE_CHAR ( static_cast<uint8_t>(255) ) ;
 				WRITE_CHAR ( color ) ;
 				rle = 0 ;
 			}

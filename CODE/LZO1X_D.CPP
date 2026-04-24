@@ -43,7 +43,9 @@
 
 
 #include "LZO1X.H"
+#ifndef NDEBUG
 #define NDEBUG
+#endif
 #include <assert.h>
 
 #if !defined(LZO1X) && !defined(LZO1Y)

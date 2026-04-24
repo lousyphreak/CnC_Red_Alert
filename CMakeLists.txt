@@ -310,12 +310,10 @@ if(EMSCRIPTEN)
     if(RA_EMSCRIPTEN_DIAGNOSTIC)
         message(STATUS "Emscripten diagnostic build enabled (ASSERTIONS=2, SAFE_HEAP=1, symbol names)")
         target_compile_options(redalert PRIVATE
-            "-g"
             "-gsource-map"
             "-fno-omit-frame-pointer"
         )
         target_link_options(redalert PRIVATE
-            "-g"
             "-gsource-map"
             "--profiling-funcs"
             "-sASSERTIONS=2"

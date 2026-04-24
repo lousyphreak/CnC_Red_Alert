@@ -8,6 +8,24 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Completed the unused-suppression cleanup pass without re-hiding dead code (2026-04-24):
+  - Root cause: the earlier warning cleanup had left a trail of local `[[maybe_unused]]` fields and statement-style `(void)` suppressors behind as temporary noise reducers. A repo-wide audit showed most of them were not actually required anymore: some were dead members/locals, some were side-effect-only calls that could just be written as normal statements, and some were unused parameters that only needed cleaner signatures.
+  - Fix implemented:
+    - removed dead fields and locals instead of keeping suppressors (`HelpClass`, `PacketClass`, `PowerClass`, `UDPManagerClass`, keyboard/help state, stale dialog temporaries, etc.);
+    - removed dead legacy API parameters where the whole call chain no longer used them (`SENDFILE.CPP` scenario-transfer helpers), and converted callback / compile-time-gated functions to unnamed or conditional parameter names where the signature still had to stay intact;
+    - rewrote side-effect-only casts as direct statements (`Try_Play_Movie(...)`, `Read_U32(...)`, `new TemplateTypeClass(...)`, WOL/control-drain helpers, SDL input helpers, mix caching, and similar cases) so the code now states its intent directly.
+  - Result: project code no longer contains repo-owned `[[maybe_unused]]` suppressors or statement-style `(void)` unused suppressors; the remaining touched sites were either deleted outright or expressed through signatures/normal statements instead.
+  - validation for this checkpoint: `cmake --build build --parallel`, `ctest --test-dir build --output-on-failure`, and `cmake --build build-asan --target redalert --parallel` succeed after the cleanup pass.
+
+- Cleaned the Docker/Emscripten build warning backlog without suppressing diagnostics (2026-04-24):
+  - Root cause: the Docker build's Clang/Emscripten toolchain still surfaced three real warning clusters that the native warning sweep had not fully covered: (1) header-only uses of `CCPtr<>` and `Int<>` static members whose out-of-line specializations existed but were not declared in the headers, which exploded into repeated `-Wundefined-var-template` diagnostics; (2) a long tail of legacy lint-era no-op assignments, partially initialized aggregates, uninitialized locals, and layout-sensitive dead fields across gameplay/support code that GCC had tolerated but Clang still flagged; and (3) the diagnostic Emscripten link path stacked plain `-g` on top of `-gsource-map`, which made `em++` warn that DWARF debug info was forcing limited post-link Binaryen optimizations.
+  - Fix implemented:
+    - `CODE/CCPTR.H` and `CODE/INT.H` now declare the existing specialized static members in the headers so Clang sees those definitions as intentional rather than missing;
+    - the remaining source warnings were fixed at the actual call sites by replacing old `foo = foo;` suppressors with real `(void)`/initialization cleanup, tightening aggregate initialization for the PCX/color tables, bounding or de-formatting string copies that only wanted plain text, and marking a few layout-sensitive legacy fields as `[[maybe_unused]]` instead of deleting them from save/load/network-sensitive class layouts;
+    - `CMakeLists.txt` now keeps the diagnostic Emscripten build on `-gsource-map` plus the existing assertions/safe-heap/profiling flags, but drops the extra plain `-g` that was causing the post-link `-Wlimited-postlink-optimizations` warning.
+  - Result: `docker build --target web-runtime-with-gamedata ...` now completes with zero reproduced warning diagnostics while keeping the diagnostic/source-map path intact.
+  - validation for this checkpoint: the Docker `web-runtime-with-gamedata` build finishes with zero warning lines, `cmake --build build --parallel` succeeds, `ctest --test-dir build --output-on-failure` passes, and `cmake --build build-asan --target redalert --parallel` succeeds after the warning-cleanup pass.
+
 - Improved the Emscripten shell crash/error transcript and mobile copy flow (2026-04-24):
   - Root cause: `web/shell.html` rebuilt the visible fatal-error overlay from scratch on every `reportFatalError(...)` call (`writeErrorLog(..., true)`), so back-to-back JavaScript/runtime failures overwrote the earlier/root-cause message instead of preserving the full sequence. The shell also had no built-in way to copy the captured transcript from a phone or tablet.
   - Fix implemented:

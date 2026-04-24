@@ -503,8 +503,6 @@ void Move_Point(int16_t &x, int16_t &y, DirType dir, uint16_t distance)
 		0x75,0x76,0x77,0x78,0x79,0x7a,0x7b,0x7b,
 		0x7c,0x7d,0x7d,0x7e,0x7e,0x7e,0x7e,0x7e,
 	};
-	distance = distance;		// Keep LINT quiet.
-
 	x += calcx((int8_t)CosTable[index], distance);
 //	asm add [word ptr start],ax
 
@@ -616,8 +614,6 @@ void Normal_Move_Point(int16_t &x, int16_t &y, DirType dir, uint16_t distance)
 		0x75,0x76,0x77,0x78,0x79,0x7a,0x7b,0x7b,
 		0x7c,0x7d,0x7d,0x7e,0x7e,0x7e,0x7e,0x7e,
 	};
-	distance = distance;		// Keep LINT quiet.
-
 	x += calcx((int8_t)CosTable[index], distance);
 
 	y += calcy((int8_t)SinTable[index] / 2, distance);

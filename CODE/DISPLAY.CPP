@@ -129,11 +129,6 @@ BooleanVectorClass DisplayClass::CellRedraw;
 DisplayClass::TacticalClass DisplayClass::TacButton;
 
 
-static int const TEX_X = 0;
-static int const TEX_Y = 6;
-static int const TEX_W = 14;
-
-
 /***********************************************************************************************
  * DisplayClass::DisplayClass -- Default constructor for display class.                        *
  *                                                                                             *
@@ -387,9 +382,9 @@ void DisplayClass::Init_Theater(TheaterType theater)
 		TheaterData = new MFCD(fullname, &FastKey);
 		assert(TheaterData != NULL);
 
-		bool const theaterload = TheaterData->Cache(TheaterBuffer);
-		assert(theaterload);
-		(void)theaterload;
+		if (!TheaterData->Cache(TheaterBuffer)) {
+			assert(false);
+		}
 //		LastTheater = Scen.Theater;
 	}
 

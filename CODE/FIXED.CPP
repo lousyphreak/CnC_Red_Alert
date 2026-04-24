@@ -137,12 +137,10 @@ fixed::fixed(char const * ascii)
 		if (fracpart) {
 			int frac = atoi(fracpart);
 
-			int len = 0;
 			int base = 1;
 			char const * fptr = fracpart;
 			while (isdigit(*fptr)) {
 				fptr++;
-				len++;
 				base *= 10;
 			}
 

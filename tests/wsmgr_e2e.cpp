@@ -121,9 +121,8 @@ int main(int argc, char **argv) {
 	}
 	// Parse GAME_MEMBERS: u32 game_id, u16 count, {u32 cid, str nick} x count
 	p = buf;
-	(void)Read_U32(p); // game_id
-	uint32_t host_id_field = Read_U32(p);
-	(void)host_id_field;
+	Read_U32(p); // game_id
+	Read_U32(p); // host_id
 	uint16_t count = Read_U16(p);
 	std::printf("GUEST: %u members in game\n", count);
 	uint32_t host_cid = 0;
@@ -271,7 +270,6 @@ int main(int argc, char **argv) {
 		std::fprintf(stderr, "guest no second GAME_MEMBERS\n"); return 1;
 	}
 
-	(void)Pump;
 	Socket_Cleanup();
 	std::printf("ok\n");
 	return 0;

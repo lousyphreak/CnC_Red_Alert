@@ -1238,14 +1238,6 @@ int MapClass::Validate(void)
 
 BlubCell = &Array[797];
 
-if (BlubCell->Overlapper[1]) {
-	obj = BlubCell->Overlapper[1];
-	if (obj) {
-		if (obj->IsInLimbo)
-		obj = obj;
-	}
-}
-
 	/*
 	**	Check every cell on the map, even those that aren't displayed,
 	**	in the hopes of detecting a memory trasher.

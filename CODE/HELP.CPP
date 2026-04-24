@@ -76,9 +76,6 @@ char const * HelpClass::HelpText;
  *   11/18/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
 HelpClass::HelpClass(void) :
-	HelpX(0),
-	HelpY(0),
-	HelpWidth(0),
 	IsRight(false),
 	Cost(0),
 	X(0),
@@ -210,7 +207,7 @@ void HelpClass::AI(KeyNumType &key, int x, int y)
  * HISTORY:                                                                                    *
  *   11/18/1994 JLB : Created.                                                                 *
  *=============================================================================================*/
-void HelpClass::Help_Text(int text, int x, int y, int color, bool quick)
+void HelpClass::Help_Text(int text, int x, int y, int, bool quick)
 {
 	if (text != Text) {
 
@@ -242,7 +239,6 @@ void HelpClass::Help_Text(int text, int x, int y, int color, bool quick)
 		** All help text prints in the same color for E3
 		*/
 		//Color = color;
-		color = color;
 		Color = HELP_TEXT_COLOR;
 		Text = text;
 		Cost = 0;

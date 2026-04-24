@@ -92,8 +92,6 @@ class PowerClass : public RadarClass
 	private:
 		int Power_Height(int value);
 
-		unsigned IsActive:1;
-
 		/*
 		**	If the power bar should be rendered with some flash effect then
 		**	this specifies the duration that the flash will occur.

@@ -4,6 +4,9 @@ _Last updated: 2026-04-24_
 
 ## Windows/MSVC build notes
 
+- Temporary unused suppressors are a migration aid, not a final state.
+  - Practical example from this tree: the first warning-cleanup pass used a mix of `[[maybe_unused]]`, `(void)foo;`, and assert-only temporaries to get the Docker/Clang warning set under control quickly. A second audit then removed every repo-owned statement-style `(void)`/`[[maybe_unused]]` suppressor by deleting dead members/locals, turning side-effect-only calls back into plain statements, or using unnamed / conditional parameter names when compile-time branches still needed the signature.
+  - Practical rule: if a new porting fix needs an unused suppressor to land safely, treat it as temporary debt. Circle back and either remove the dead code or express the intent directly once the surrounding warning/build issue is understood.
 - The repo-owned Windows compatibility layer and the real Windows SDK still must not both own the same Win32 surface in one translation unit.
   - Practical example from this tree: pulling `<winsock.h>` into gameplay/network headers collided with `SDL3_COMPAT/wrappers/win32_compat.h` declarations such as `LONG`, `DWORD`, `HRESULT`, `POINT`, `RECT`, `FILETIME`, `CloseHandle`, and `SetFilePointer`, which turned the Windows build into a redefinition festival.
   - Practical rule: keep `CODE/SOCKETS.H` platform-neutral and header-only in the abstraction sense: no platform headers, no repo-owned copies of WinSock structs/constants, just thin declarations over the socket operations the game actually uses.
@@ -225,6 +228,9 @@ _Last updated: 2026-04-24_
 - The browser/WOL one-port image only works if the Zig HTTP layer matches the browser loader's range-fetch contract and the old browser URL layout.
   - Practical example from this tree: the nginx container was replaced by the repo's own Zig WOL server, but the browser WWFS loader still probes file sizes with `Range: bytes=0-0`, fetches `GameData` chunks with `206 Partial Content`, expects the public asset URL to stay under `/GameData/`, and the existing deployment health probe still hits `/healthz`.
   - Practical rule: if the combined Zig server is the public browser runtime, keep `Accept-Ranges`/`Content-Range` support, keep the legacy `/` → `/redalert.html` and `/GameData/...` routing contract, and keep the health endpoint unauthenticated so the container/orchestrator checks still work.
+- The Docker/browser build is also the strictest live Clang warning gate for the Emscripten target, so header declarations and legacy warning suppressors must be valid there too.
+  - Practical example from this tree: the warning-cleanup pass had to add header-side declarations for the already-defined `CCPtr<>` / `Int<>` static specializations, replace old `foo = foo;` lint suppressors with real `(void)` or initialization cleanup, and keep layout-sensitive legacy state such as unused DOS/Win32 bookkeeping fields via `[[maybe_unused]]` instead of deleting them outright from network/save-sensitive classes.
+  - Practical rule: when a Docker/Emscripten Clang build complains about "missing" specialized static members or self-assign/dead-field patterns, fix the declarations or the source sites directly. Do not silence the warning set globally; use header declarations, real initialization, and `[[maybe_unused]]` only where the field truly must stay for structural compatibility.
 - The browser WOL endpoint must be re-derived from `window.location` on every load, not only when the saved config is empty.
   - Practical example from this tree: `Session.WolServer` is persisted in the browser config store, so the first same-host seeding logic was not enough by itself — once a page had saved `ws://localhost:8070/ws` or another old host, reopening the game from `https://ra.example.com` could keep pointing the browser WOL client at that stale host.
   - Practical rule: for Emscripten builds hosted together with the Zig WOL server, always rewrite the runtime WOL URL from the current page origin (`ws://host/ws` or `wss://host/ws`) during settings load so deployments and hostname moves cannot leave a stale cross-host relay target behind.
@@ -237,6 +243,9 @@ _Last updated: 2026-04-24_
 - The top-level `GameData/RED ALERT/` subtree is Windows desktop-theme/shell content, not runtime game data for the SDL3 browser port.
   - Practical example from this tree: `docker/filter_emscripten_gamedata.py` already excluded savegames, installers, DLLs, and other browser-local/non-runtime files, but it still copied the entire `RED ALERT/` subtree until the web-runtime packaging pass explicitly filtered that directory out.
   - Practical rule: keep manifest-driven browser asset packaging focused on actual runtime assets (mix archives, movies, palettes, config, maps, and similar loose game files), and do not ship the `RED ALERT/` shell-theme bundle in browser containers.
+- Diagnostic browser builds can keep source maps without carrying enough DWARF to trigger Emscripten's limited-optimization warning.
+  - Practical example from this tree: `RA_EMSCRIPTEN_DIAGNOSTIC` originally passed both `-g` and `-gsource-map`, which made `em++` print `running limited binaryen optimizations because DWARF info requested`. Keeping `-gsource-map` plus the existing assertion/safe-heap/profiling flags still preserves the `.wasm.map` artifact the Docker image expects, but avoids that post-link warning.
+  - Practical rule: if the hosted/browser build only needs a source map and symbol-friendly JS names, prefer `-gsource-map` over layering plain `-g` onto optimized Emscripten links unless full DWARF is explicitly required.
 
 ## GameData-only asset policy
 
