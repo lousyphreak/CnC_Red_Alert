@@ -28,6 +28,7 @@
         android:allowBackup="true"
         android:hasCode="true"
         android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
         android:label="Red Alert"
         android:theme="@style/AppTheme"
         android:enableOnBackInvokedCallback="false"

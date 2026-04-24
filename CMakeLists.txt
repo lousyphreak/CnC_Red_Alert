@@ -29,6 +29,14 @@ set(RA_ANDROID_PLATFORM_ROOT "" CACHE PATH "Android SDK platform root containing
 set(RA_ANDROID_MIN_SDK_VERSION "26" CACHE STRING "Minimum Android SDK level for the native Android build")
 set(RA_ANDROID_TARGET_SDK_VERSION "34" CACHE STRING "Target Android SDK level for the native Android build")
 
+set(RA_ICON_DIR "${CMAKE_SOURCE_DIR}/resources/icons")
+set(RA_WINDOWS_ICON_FILE "${RA_ICON_DIR}/redalert.ico")
+set(RA_WINDOW_ICON_FILE "${RA_ICON_DIR}/redalert-window-icon.png")
+set(RA_ANDROID_ICON_RES_DIR "${RA_ICON_DIR}/android")
+set(RA_WEB_ICON_DIR "${CMAKE_SOURCE_DIR}/web/icons")
+set(RA_WEB_MANIFEST_FILE "${CMAKE_SOURCE_DIR}/web/site.webmanifest")
+set(RA_WINDOWS_RESOURCE_FILE "${CMAKE_SOURCE_DIR}/resources/windows/redalert.rc")
+
 if(EMSCRIPTEN)
     set(RA_ENABLE_UDP OFF CACHE BOOL "Enable UDP multiplayer transport" FORCE)
     set(RA_ENABLE_TCP OFF CACHE BOOL "Enable TCP multiplayer transport" FORCE)
@@ -184,6 +192,10 @@ list(FILTER RA_GAME_SOURCES EXCLUDE REGEX "/TEMP\\.CPP$")
 list(FILTER RA_GAME_SOURCES EXCLUDE REGEX "/TURRET\\.CPP$")
 
 if(WIN32)
+    list(APPEND RA_GAME_SOURCES "${RA_WINDOWS_RESOURCE_FILE}")
+endif()
+
+if(WIN32)
     list(APPEND RA_GAME_SOURCES "${CMAKE_SOURCE_DIR}/CODE/SOCKETS_WINDOWS.CPP")
 else()
     list(APPEND RA_GAME_SOURCES "${CMAKE_SOURCE_DIR}/CODE/SOCKETS_LINUX.CPP")
@@ -234,6 +246,9 @@ if(EMSCRIPTEN OR (ANDROID AND RA_ANDROID_PACKAGE_GAMEDATA))
             continue()
         endif()
         string(REPLACE "\\" "/" ra_gamedata_entry_normalized "${ra_gamedata_entry}")
+        if(ra_gamedata_entry_normalized MATCHES "^resources/icons/")
+            continue()
+        endif()
         list(APPEND RA_FILTERED_GAMEDATA_FILES "${ra_gamedata_entry_normalized}")
     endforeach()
     list(SORT RA_FILTERED_GAMEDATA_FILES)
@@ -455,6 +470,20 @@ if(EMSCRIPTEN)
             VERBATIM
         )
     endif()
+    add_custom_command(TARGET redalert POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:redalert>/icons"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${RA_WEB_ICON_DIR}/favicon-16.png"
+            "${RA_WEB_ICON_DIR}/favicon-32.png"
+            "${RA_WEB_ICON_DIR}/favicon-256.png"
+            "${RA_WEB_ICON_DIR}/icon-192.png"
+            "${RA_WEB_ICON_DIR}/apple-touch-icon.png"
+            "$<TARGET_FILE_DIR:redalert>/icons"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${RA_WEB_MANIFEST_FILE}"
+            "$<TARGET_FILE_DIR:redalert>"
+        VERBATIM
+    )
 elseif(ANDROID)
     find_package(Java REQUIRED)
     if(NOT TARGET SDL3::Jar OR NOT TARGET SDL3-jar)
@@ -493,8 +522,16 @@ elseif(ANDROID)
         @ONLY
     )
 
+    file(GLOB_RECURSE RA_ANDROID_SDL_RESOURCE_FILES LIST_DIRECTORIES false
+        "${CMAKE_SOURCE_DIR}/extern/SDL3/android-project/app/src/main/res/*"
+    )
+    list(FILTER RA_ANDROID_SDL_RESOURCE_FILES EXCLUDE REGEX "/mipmap-[^/]+/ic_launcher\\.png$")
+    list(SORT RA_ANDROID_SDL_RESOURCE_FILES)
+
     sdl_android_compile_resources(redalert-android-resources
-        RESFOLDER "${CMAKE_SOURCE_DIR}/extern/SDL3/android-project/app/src/main/res"
+        RESFOLDER "${RA_ANDROID_ICON_RES_DIR}"
+        RESOURCES
+            ${RA_ANDROID_SDL_RESOURCE_FILES}
     )
 
     sdl_android_link_resources(redalert-apk-linked
@@ -678,9 +715,17 @@ elseif(ANDROID)
     endif()
 else()
     add_custom_command(TARGET redalert POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:redalert>/resources/icons"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${RA_WINDOW_ICON_FILE}"
+            "$<TARGET_FILE_DIR:redalert>/resources/icons"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:redalert>
             "${CMAKE_SOURCE_DIR}/GameData/${RA_RUNTIME_COPY_NAME}${CMAKE_EXECUTABLE_SUFFIX}"
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_SOURCE_DIR}/GameData/resources/icons"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${RA_WINDOW_ICON_FILE}"
+            "${CMAKE_SOURCE_DIR}/GameData/resources/icons"
         VERBATIM
     )
 endif()

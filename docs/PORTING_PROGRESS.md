@@ -8,6 +8,16 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Added repo-owned application icons across the desktop, Android, and browser targets (2026-04-24):
+  - Root cause: the SDL3 port still had no project-owned icon wiring. Desktop builds had neither a Windows executable icon nor an SDL window icon, Android still inherited SDL's stock launcher mipmaps, and the browser shell shipped without favicon/manifest assets. The best-looking original icon also was not the loose `GameData/RAEDIT.ICO`; the higher-quality full-color launcher art lived inside `GameData/RA95.EXE`.
+  - Fix implemented:
+    - extracted the clean full-color `RA95.EXE` icon family into repo-owned assets under `resources/icons/` and generated the platform-specific derivatives needed for Windows (`redalert.ico`), SDL runtime window icons (`redalert-window-icon.png`), Android launcher mipmaps, and web favicons / touch icons;
+    - `SDL3_COMPAT/wrappers/win32_compat.cpp` now loads `resources/icons/redalert-window-icon.png` from `SDL_GetBasePath()` and applies it with `SDL_SetWindowIcon(...)`, while the native post-build step copies that icon beside the executable in both the build output and the convenience `GameData/` runtime copy;
+    - `CMakeLists.txt` now adds a repo-owned Windows `.rc` file so Windows builds get the same icon embedded in the executable, swaps Android resource compilation over to the repo-owned launcher mipmaps instead of SDL's defaults, and copies the web favicon/manifest files beside the Emscripten output;
+    - `web/shell.html`, `web/site.webmanifest`, and `android/cmake/AndroidManifest.xml.cmake` now advertise the repo-owned icons explicitly, including Android's `roundIcon` metadata.
+  - Result: supported targets now consistently present the Red Alert hammer-and-sickle launcher art from project-owned sources: Windows executables get an embedded icon, desktop SDL windows pick up the same icon at runtime, Android APKs use it as the launcher icon, and the browser build exposes matching favicon / touch / manifest icons.
+  - validation for this checkpoint: `cmake --build build --parallel`, `ctest --test-dir build --output-on-failure`, `source /etc/profile.d/android-ndk.sh && export ANDROID_HOME=/opt/android-sdk ANDROID_SDK_ROOT=/opt/android-sdk SDL_ANDROID_HOME=/opt/android-sdk && cmake --build build-android --target redalert-apk --parallel`, and `cmake --build build-emscripten --parallel` all succeed after the icon integration.
+
 - Added a native Android APK build to the top-level SDL3/CMake project (2026-04-24):
   - Root cause: the port already had Linux, Windows, and browser targets, but no native Android packaging path. The existing top-level build always forced a desktop-style executable plus static SDL linkage, which does not match SDL3's Android entry model (`lib<game>.so` + Java activity + APK packaging). Android packaging also needed to cope with SDK platform roots such as `/opt/android-sdk/platforms/android-37.0` without patching vendored SDL for a local SDK layout quirk.
   - Fix implemented:

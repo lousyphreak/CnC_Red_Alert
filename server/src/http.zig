@@ -173,6 +173,7 @@ pub fn mimeFor(path: []const u8) []const u8 {
         .{ "wasm", "application/wasm" },
         .{ "css", "text/css; charset=utf-8" },
         .{ "json", "application/json; charset=utf-8" },
+        .{ "webmanifest", "application/manifest+json; charset=utf-8" },
         .{ "txt", "text/plain; charset=utf-8" },
         .{ "ico", "image/x-icon" },
         .{ "png", "image/png" },

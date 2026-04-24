@@ -77,6 +77,8 @@ FROM web-runtime-base AS web-runtime
 COPY --from=emscripten-build /tmp/build-emscripten/redalert.html /srv/web/redalert.html
 COPY --from=emscripten-build /tmp/build-emscripten/redalert.js /srv/web/redalert.js
 COPY --from=emscripten-build /tmp/build-emscripten/redalert.wasm /srv/web/redalert.wasm
+COPY --from=emscripten-build /tmp/build-emscripten/site.webmanifest /srv/web/site.webmanifest
+COPY --from=emscripten-build /tmp/build-emscripten/icons /srv/web/icons
 # Source map (present only when RA_EMSCRIPTEN_DIAGNOSTIC=ON; an empty placeholder
 # is produced otherwise so this copy step is stable across build modes).
 COPY --from=emscripten-build /tmp/build-emscripten/redalert.wasm.map /srv/web/redalert.wasm.map
@@ -88,6 +90,8 @@ COPY --from=emscripten-gamedata /tmp/deploy-root/GameData /srv/GameData
 COPY --from=emscripten-build /tmp/build-emscripten/redalert.html /srv/web/redalert.html
 COPY --from=emscripten-build /tmp/build-emscripten/redalert.js /srv/web/redalert.js
 COPY --from=emscripten-build /tmp/build-emscripten/redalert.wasm /srv/web/redalert.wasm
+COPY --from=emscripten-build /tmp/build-emscripten/site.webmanifest /srv/web/site.webmanifest
+COPY --from=emscripten-build /tmp/build-emscripten/icons /srv/web/icons
 COPY --from=emscripten-build /tmp/build-emscripten/redalert.wasm.map /srv/web/redalert.wasm.map
 
 CMD ["--host", "0.0.0.0", "--port", "80", "--gamedata", "/srv/GameData", "--emscripten-dir", "/srv/web"]

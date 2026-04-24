@@ -406,8 +406,11 @@ test "http static hosting supports redirect health and range" {
     defer tmp.cleanup();
 
     try tmp.dir.makePath("web");
+    try tmp.dir.makePath("web/icons");
     try tmp.dir.makePath("GameData");
     try tmp.dir.writeFile(.{ .sub_path = "web/redalert.html", .data = "<html>redalert</html>\n" });
+    try tmp.dir.writeFile(.{ .sub_path = "web/site.webmanifest", .data = "{\"name\":\"Red Alert\"}\n" });
+    try tmp.dir.writeFile(.{ .sub_path = "web/icons/favicon-32.png", .data = "PNGDATA" });
     try tmp.dir.writeFile(.{ .sub_path = "GameData/MAIN1.MIX", .data = "0123456789" });
 
     const tmp_root = try tmp.dir.realpathAlloc(allocator, ".");
@@ -469,6 +472,24 @@ test "http static hosting supports redirect health and range" {
     defer compat_resp.deinit(allocator);
     try std.testing.expectEqual(@as(u16, 206), compat_resp.status);
     try std.testing.expectEqualSlices(u8, "0", compat_resp.body);
+
+    var icon_client = try Client.connect(allocator, HTTP_PORT);
+    defer icon_client.deinit();
+    try icon_client.writeAll("GET /icons/favicon-32.png HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n");
+    var icon_resp = try icon_client.readHttpResponse();
+    defer icon_resp.deinit(allocator);
+    try std.testing.expectEqual(@as(u16, 200), icon_resp.status);
+    try std.testing.expect(std.mem.indexOf(u8, icon_resp.headers, "Content-Type: image/png\r\n") != null);
+    try std.testing.expectEqualSlices(u8, "PNGDATA", icon_resp.body);
+
+    var manifest_client = try Client.connect(allocator, HTTP_PORT);
+    defer manifest_client.deinit();
+    try manifest_client.writeAll("GET /site.webmanifest HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n");
+    var manifest_resp = try manifest_client.readHttpResponse();
+    defer manifest_resp.deinit(allocator);
+    try std.testing.expectEqual(@as(u16, 200), manifest_resp.status);
+    try std.testing.expect(std.mem.indexOf(u8, manifest_resp.headers, "Content-Type: application/manifest+json; charset=utf-8\r\n") != null);
+    try std.testing.expect(std.mem.indexOf(u8, manifest_resp.body, "\"Red Alert\"") != null);
 }
 
 test "http basic auth protects static files and websocket upgrade" {

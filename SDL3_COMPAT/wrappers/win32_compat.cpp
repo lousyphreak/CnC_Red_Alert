@@ -129,6 +129,32 @@ std::string create_file_mode(DWORD desired_access, DWORD creation_disposition)
     }
 }
 
+void set_window_icon(SDL_Window* sdl_window)
+{
+    if (!sdl_window) {
+        return;
+    }
+
+    const char* base_path = SDL_GetBasePath();
+    if (!base_path || base_path[0] == '\0') {
+        return;
+    }
+
+    std::string icon_path = base_path;
+    if (icon_path.back() != '/' && icon_path.back() != '\\') {
+        icon_path.push_back('/');
+    }
+    icon_path += "resources/icons/redalert-window-icon.png";
+
+    SDL_Surface* icon_surface = SDL_LoadPNG(icon_path.c_str());
+    if (!icon_surface) {
+        return;
+    }
+
+    SDL_SetWindowIcon(sdl_window, icon_surface);
+    SDL_DestroySurface(icon_surface);
+}
+
 } // namespace
 
 RAWindow* RA_CreateWindow(const char* title, int width, int height, SDL_WindowFlags flags)
@@ -142,6 +168,7 @@ RAWindow* RA_CreateWindow(const char* title, int width, int height, SDL_WindowFl
         delete window;
         return nullptr;
     }
+    set_window_icon(window->sdl_window);
     return window;
 }
 

@@ -4,6 +4,12 @@ _Last updated: 2026-04-24_
 
 ## Windows/MSVC build notes
 
+- The best launcher icon source in the original assets is the full-color icon group embedded in `GameData/RA95.EXE`, not the loose `GameData/RAEDIT.ICO`.
+  - Practical example from this tree: `RAEDIT.ICO` is a red editor/notepad icon, while `RA95.EXE` resource group `112` contains the actual game launcher art, including a clean full-color 256/48/32/16 family. The repo now vendors derived assets from that embedded icon under `resources/icons/`.
+  - Practical rule: when porting app branding/assets, inspect both loose icon files and PE resource icons before choosing a source; legacy installers/editors often ship separate `.ico` files that are not the main game icon.
+- SDL3's core surface API is enough for desktop window icons; no extra image library is needed.
+  - Practical example from this tree: `SDL3_COMPAT/wrappers/win32_compat.cpp` now loads `resources/icons/redalert-window-icon.png` with `SDL_LoadPNG()` and applies it through `SDL_SetWindowIcon()`, which keeps the runtime icon path inside SDL instead of pulling in SDL_image or platform-specific APIs.
+  - Practical rule: for desktop window/icon surfaces on this port, prefer SDL's built-in PNG/BMP surface loaders first. Only add another image dependency if SDL itself truly cannot consume the asset format you need.
 - Temporary unused suppressors are a migration aid, not a final state.
   - Practical example from this tree: the first warning-cleanup pass used a mix of `[[maybe_unused]]`, `(void)foo;`, and assert-only temporaries to get the Docker/Clang warning set under control quickly. A second audit then removed every repo-owned statement-style `(void)`/`[[maybe_unused]]` suppressor by deleting dead members/locals, turning side-effect-only calls back into plain statements, or using unnamed / conditional parameter names when compile-time branches still needed the signature.
   - Practical rule: if a new porting fix needs an unused suppressor to land safely, treat it as temporary debt. Circle back and either remove the dead code or express the intent directly once the surrounding warning/build issue is understood.
@@ -34,6 +40,9 @@ _Last updated: 2026-04-24_
 
 ## Android build notes
 
+- Custom Android launcher icons should be compiled from a real resource folder, not passed only as ad-hoc absolute resource files.
+  - Practical example from this tree: feeding the repo-owned launcher mipmaps to `sdl_android_compile_resources(...)` only through `RESOURCES` produced `.flat` outputs with absolute-path-derived names, which later broke `aapt2 link`. Switching the custom icons to `RESFOLDER "${CMAKE_SOURCE_DIR}/resources/icons/android"` while still passing SDL's remaining non-icon resources through `RESOURCES` fixed the APK build cleanly.
+  - Practical rule: when replacing SDL's default Android mipmaps with repo-owned art, keep the custom icon tree in a normal `res/mipmap-*`-style folder and pass that tree through the `RESFOLDER` path so `aapt2` preserves standard Android resource names.
 - Arch's packaged Android SDK platforms may use dotted directory names like `android-37.0`, but the compatibility shim should live in repo-owned configure logic rather than vendored SDL.
   - Practical example from this tree: SDL's stock `FindSdlAndroidPlatform.cmake` only matches platform roots ending in `/android-<integer>`, so `/opt/android-sdk/platforms/android-37.0` would be skipped during SDL's own search. The repo now accepts `RA_ANDROID_SDK_ROOT` / `RA_ANDROID_PLATFORM_ROOT` cache variables, detects dotted platform directories in `CMakeLists.txt`, and copies the required `android.jar` into a build-local compatibility directory with an integer-style name before vendored SDL runs, leaving `extern/SDL3` unchanged.
   - Practical rule: when a third-party Android finder cannot cope with local SDK layout quirks, point it at exact paths from repo-owned cache variables instead of patching the dependency.
