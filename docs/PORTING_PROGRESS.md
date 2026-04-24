@@ -8,6 +8,32 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Fixed the first mouse-acceleration regressions in `Game Controls` and SDL relative clicking (2026-04-24):
+  - Root cause: the new `Mouse Acceleration` readout was repainted as variable-width text without clearing its previous pixels first, and SDL relative-mode button events still translated raw SDL click coordinates instead of using the already-accelerated in-game cursor position.
+  - Fix implemented:
+    - `CODE/GAMEDLG.CPP` now clears the right-aligned mouse-acceleration value cell before repainting the multiplier string, so shorter values no longer leave stale digits behind;
+    - `CODE/SDLINPUT.CPP` now routes mouse button down/up events through the tracked game-space cursor position while SDL relative mouse mode is active, keeping click targeting aligned with the accelerated cursor motion path.
+  - Result: the `Mouse Acceleration` slider readout now updates cleanly in the dialog, and relative-mode clicks land at the same accelerated cursor position the player sees on screen.
+  - validation for this checkpoint: `cmake --build build --target redalert --parallel` and `ctest --test-dir build --output-on-failure` succeed after the regression fixes.
+
+- Added a persisted relative-mode mouse-acceleration slider to `Game Controls` (2026-04-24):
+  - Root cause: the SDL3 port already enabled SDL relative mouse mode during mission mouse capture, but there was no user-facing way to tune how fast the in-game cursor moved while that mode was active.
+  - Fix implemented:
+    - `CODE/GAMEDLG.CPP` now adds a `Mouse Acceleration` slider to the `Game Controls` dialog, covering `0.5x` through `10x` with a default `1x` mapping and a live textual multiplier readout;
+    - `CODE/OPTIONS.{H,CPP}` now persist that multiplier in the config INI as `Options.MouseAcceleration`, while storing it in a static option slot so the raw `GameOptionsClass` save/load binary layout does not change;
+    - `CODE/SDLINPUT.CPP` now routes SDL relative mouse motion through the new multiplier before translating it back into game-space cursor movement, while leaving absolute/windowed mouse motion unchanged.
+  - Result: users can now tune cursor speed specifically for SDL relative mouse mode without affecting normal absolute pointer behavior, and the setting survives restarts through the existing options file.
+  - validation for this checkpoint: `cmake --build build --target redalert --parallel` and `ctest --test-dir build --output-on-failure` succeed after the input/options change.
+
+- Added an Options button to the title-screen main menu and wired it to the existing controls dialogs (2026-04-24):
+  - Root cause: the SDL3 port's front-end main menu still exposed only mission/loading/multiplayer/intro/exit actions even though the engine already had working `Game Controls`, `Visual Controls`, and `Sound Controls` dialogs. That left users without any title-screen path to adjust settings before starting a mission.
+  - Fix implemented:
+    - `CODE/MENUS.CPP` now inserts a dedicated `TXT_OPTIONS` button into the main-menu button order for both the `FIXIT_VERSION_3` and non-`FIXIT_VERSION_3` layouts, expands the button table accordingly, and shifts the footer/version placement to leave room for the extra row;
+    - `CODE/INIT.CPP` now treats that new selection as a front-end controls action and returns cleanly to the title loop after the dialog closes;
+    - `CODE/GAMEDLG.{H,CPP}` now let `GameControlsClass` render against `Load_Title_Page()` when it is opened from the main menu, and in that mode it writes game-speed changes straight to `Options` instead of queueing an in-mission `EventClass::GAMESPEED`.
+  - Result: the title screen now includes an `Options` button that opens the existing controls/settings flow before gameplay and returns to the main menu when closed.
+  - validation for this checkpoint: `cmake --build build --target redalert --parallel` succeeds after the menu wiring change.
+
 - Added repo-owned application icons across the desktop, Android, and browser targets (2026-04-24):
   - Root cause: the SDL3 port still had no project-owned icon wiring. Desktop builds had neither a Windows executable icon nor an SDL window icon, Android still inherited SDL's stock launcher mipmaps, and the browser shell shipped without favicon/manifest assets. The best-looking original icon also was not the loose `GameData/RAEDIT.ICO`; the higher-quality full-color launcher art lived inside `GameData/RA95.EXE`.
   - Fix implemented:

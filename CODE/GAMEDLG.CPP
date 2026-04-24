@@ -61,13 +61,13 @@ bool WOL_Options_Dialog( WolapiObject* pWO, bool bCalledFromGame );
  * HISTORY:                                                                                    *
  *   12/31/1994 MML : Created.                                                                 *
  *=============================================================================================*/
-void GameControlsClass::Process(void)
+void GameControlsClass::Process(bool use_title_page)
 {
 	/*
 	**	Dialog & button dimensions
 	*/
 	int	d_dialog_w = 232 * RESFACTOR;											// dialog width
-	int	d_dialog_h = 141 * RESFACTOR;											// dialog height
+	int	d_dialog_h = 164 * RESFACTOR;											// dialog height
 	int	d_dialog_x = ((SeenBuff.Get_Width() - d_dialog_w) / 2);				// dialog x-coord
 	int	d_dialog_y = ((SeenBuff.Get_Height() - d_dialog_h) / 2);				// centered y-coord
 	int	d_dialog_cx = d_dialog_x + (d_dialog_w / 2);		// center x-coord
@@ -94,10 +94,15 @@ void GameControlsClass::Process(void)
 	int	d_scroll_y = d_speed_y + d_speed_h + d_txt6_h + (d_margin1 * 2) + d_txt6_h;
 #endif
 
+	int	d_mouse_w = d_dialog_w - (34 * RESFACTOR);
+	int	d_mouse_h = 6 * RESFACTOR;
+	int	d_mouse_x = d_dialog_x + (17 * RESFACTOR);
+	int	d_mouse_y = d_scroll_y + d_scroll_h + d_txt6_h + (d_margin1 * 2) + d_txt6_h;
+
 	int	d_visual_w = d_dialog_w - (40 * RESFACTOR);
 	int	d_visual_h = 9 * RESFACTOR;
 	int	d_visual_x = d_dialog_x + (20 * RESFACTOR);
-	int	d_visual_y = d_scroll_y + d_scroll_h + d_txt6_h + (d_margin1 * 2);
+	int	d_visual_y = d_mouse_y + d_mouse_h + d_txt6_h + (d_margin1 * 2);
 
 	int	d_sound_w = d_dialog_w - (40 * RESFACTOR);
 	int	d_sound_h = (9 * RESFACTOR);
@@ -133,6 +138,7 @@ void GameControlsClass::Process(void)
 	enum {
 		BUTTON_SPEED = 100,
 		BUTTON_SCROLLRATE,
+		BUTTON_MOUSE_ACCEL,
 		BUTTON_VISUAL,
 		BUTTON_SOUND,
 		BUTTON_WOLAPI,
@@ -144,6 +150,7 @@ void GameControlsClass::Process(void)
 	enum {
 		BUTTON_SPEED = 100,
 		BUTTON_SCROLLRATE,
+		BUTTON_MOUSE_ACCEL,
 		BUTTON_VISUAL,
 		BUTTON_SOUND,
 		BUTTON_OK,
@@ -159,6 +166,7 @@ void GameControlsClass::Process(void)
 
 	int gamespeed = Options.GameSpeed;
 	int scrollrate = Options.ScrollRate;
+	int mouseaccel = (Options.Get_Mouse_Acceleration() * 2) - 1;
 	int selection;
 	bool pressed = false;
 	int curbutton = 0;
@@ -174,6 +182,7 @@ void GameControlsClass::Process(void)
 
 	SliderClass gspeed_btn(BUTTON_SPEED, d_speed_x, d_speed_y, d_speed_w, d_speed_h, true);
 	SliderClass scrate_btn(BUTTON_SCROLLRATE, d_scroll_x, d_scroll_y, d_scroll_w, d_scroll_h, true);
+	SliderClass mouseaccel_btn(BUTTON_MOUSE_ACCEL, d_mouse_x, d_mouse_y, d_mouse_w, d_mouse_h, true);
 	TextButtonClass visual_btn(BUTTON_VISUAL, TXT_VISUAL_CONTROLS, TPF_BUTTON, d_visual_x, d_visual_y, d_visual_w, d_visual_h);
 	TextButtonClass sound_btn(BUTTON_SOUND, TXT_SOUND_CONTROLS, TPF_BUTTON, d_sound_x, d_sound_y, d_sound_w, d_sound_h);
 	TextButtonClass okbtn(BUTTON_OK, TXT_OPTIONS_MENU, TPF_BUTTON, d_ok_x, d_ok_y);
@@ -194,6 +203,7 @@ void GameControlsClass::Process(void)
 	commands = &okbtn;
 	gspeed_btn.Add_Tail(*commands);
 	scrate_btn.Add_Tail(*commands);
+	mouseaccel_btn.Add_Tail(*commands);
 	visual_btn.Add_Tail(*commands);
 	sound_btn.Add_Tail(*commands);
 #ifdef WOLAPI_INTEGRATION
@@ -216,18 +226,29 @@ void GameControlsClass::Process(void)
 	scrate_btn.Set_Thumb_Size(1);
 	scrate_btn.Set_Value((OptionsClass::MAX_SCROLL_SETTING-1) - scrollrate);
 
+	if (mouseaccel < 0) {
+		mouseaccel = 0;
+	}
+	if (mouseaccel >= OptionsClass::MAX_MOUSE_ACCEL_SETTING) {
+		mouseaccel = OptionsClass::MAX_MOUSE_ACCEL_SETTING - 1;
+	}
+	mouseaccel_btn.Set_Maximum(OptionsClass::MAX_MOUSE_ACCEL_SETTING);	// varies from 0 - 19
+	mouseaccel_btn.Set_Thumb_Size(1);
+	mouseaccel_btn.Set_Value(mouseaccel);
+
 	/*
 	**	Fill array of button ptrs.
 	*/
 	buttons[0] = NULL;
 	buttons[1] = NULL;
-	buttons[2] = &visual_btn;
-	buttons[3] = &sound_btn;
+	buttons[2] = NULL;
+	buttons[3] = &visual_btn;
+	buttons[4] = &sound_btn;
 #ifdef WOLAPI_INTEGRATION
-	buttons[4] = &wol_btn;
-	buttons[5] = &okbtn;
+	buttons[5] = &wol_btn;
+	buttons[6] = &okbtn;
 #else
-	buttons[4] = &okbtn;
+	buttons[5] = &okbtn;
 #endif
 	/*
 	**	Processing loop.
@@ -262,8 +283,13 @@ void GameControlsClass::Process(void)
 		if (display) {
 			Hide_Mouse();
 
-			Map.Flag_To_Redraw(true);
-			Map.Render();
+			if (use_title_page) {
+				Load_Title_Page();
+				CCPalette.Set();
+			} else {
+				Map.Flag_To_Redraw(true);
+				Map.Render();
+			}
 
 			Dialog_Box(d_dialog_x, d_dialog_y, d_dialog_w, d_dialog_h);
 			Draw_Caption(TXT_GAME_CONTROLS, d_dialog_x, d_dialog_y, d_dialog_w);
@@ -299,6 +325,28 @@ void GameControlsClass::Process(void)
 			Fancy_Text_Print (TXT_SLOWER, d_scroll_x, d_scroll_y + d_scroll_h + (1 * RESFACTOR), scheme, TBLACK, TPF_TEXT);
 			Fancy_Text_Print (TXT_FASTER, d_scroll_x + d_scroll_w, d_scroll_y + d_scroll_h + (1 * RESFACTOR), scheme, TBLACK, TPF_TEXT|TPF_RIGHT);
 
+			/*
+			**	Label the mouse acceleration slider.
+			*/
+			style = TPF_TEXT;
+			if (curbutton == (BUTTON_MOUSE_ACCEL - BUTTON_FIRST)) {
+				style = (TextPrintType)(style | TPF_BRIGHT_COLOR);
+			}
+			Fancy_Text_Print(TXT_MOUSE_ACCELERATION, d_mouse_x, d_mouse_y - d_txt6_h, scheme, TBLACK, style);
+			Fancy_Text_Print(TXT_SLOWER, d_mouse_x, d_mouse_y + d_mouse_h + (1 * RESFACTOR), scheme, TBLACK, TPF_TEXT);
+			Fancy_Text_Print(TXT_FASTER, d_mouse_x + d_mouse_w, d_mouse_y + d_mouse_h + (1 * RESFACTOR), scheme, TBLACK, TPF_TEXT|TPF_RIGHT);
+			{
+				char mouse_accel_text[32];
+				const int32_t mouse_accel_text_width = String_Pixel_Width("x10");
+				LogicPage->Fill_Rect(d_mouse_x + d_mouse_w - mouse_accel_text_width - (2 * RESFACTOR),
+					d_mouse_y - d_txt6_h,
+					d_mouse_x + d_mouse_w,
+					d_mouse_y - 1,
+					TBLACK);
+				sprintf(mouse_accel_text, "x%s", fixed(mouseaccel_btn.Get_Value() + 1, 2).As_ASCII());
+				Fancy_Text_Print(mouse_accel_text, d_mouse_x + d_mouse_w, d_mouse_y - d_txt6_h, scheme, TBLACK, TPF_TEXT|TPF_RIGHT);
+			}
+
 			commands->Draw_All();
 
 			Show_Mouse();
@@ -321,6 +369,11 @@ void GameControlsClass::Process(void)
 
 			case (BUTTON_SCROLLRATE | KN_BUTTON):
 				curbutton = (BUTTON_SCROLLRATE - BUTTON_FIRST);
+				refresh = true;
+				break;
+
+			case (BUTTON_MOUSE_ACCEL | KN_BUTTON):
+				curbutton = (BUTTON_MOUSE_ACCEL - BUTTON_FIRST);
 				refresh = true;
 				break;
 
@@ -356,7 +409,11 @@ void GameControlsClass::Process(void)
 				} else
 					if (curbutton == (BUTTON_SCROLLRATE - BUTTON_FIRST) ) {
 						scrate_btn.Bump(1);
-					}
+					} else
+						if (curbutton == (BUTTON_MOUSE_ACCEL - BUTTON_FIRST) ) {
+							mouseaccel_btn.Bump(1);
+							refresh = true;
+						}
 				break;
 
 			case (KN_RIGHT):
@@ -365,7 +422,11 @@ void GameControlsClass::Process(void)
 				} else
 					if (curbutton == (BUTTON_SCROLLRATE - BUTTON_FIRST) ) {
 						scrate_btn.Bump(0);
-					}
+					} else
+						if (curbutton == (BUTTON_MOUSE_ACCEL - BUTTON_FIRST) ) {
+							mouseaccel_btn.Bump(0);
+							refresh = true;
+						}
 				break;
 
 			case (KN_UP):
@@ -439,13 +500,19 @@ void GameControlsClass::Process(void)
 			*/
 			if (gamespeed != ((OptionsClass::MAX_SPEED_SETTING-1) - gspeed_btn.Get_Value()) ) {
 				gamespeed = (OptionsClass::MAX_SPEED_SETTING-1) - gspeed_btn.Get_Value();
-				OutList.Add(EventClass(EventClass::GAMESPEED, gamespeed));
+				if (use_title_page) {
+					Options.GameSpeed = gamespeed;
+				} else {
+					OutList.Add(EventClass(EventClass::GAMESPEED, gamespeed));
+				}
 			}
 
 			if (scrollrate != ((OptionsClass::MAX_SCROLL_SETTING-1) - scrate_btn.Get_Value()) ) {
 				scrollrate = (OptionsClass::MAX_SCROLL_SETTING-1) - scrate_btn.Get_Value();
 				Options.ScrollRate = scrollrate;
 			}
+			mouseaccel = mouseaccel_btn.Get_Value();
+			Options.Set_Mouse_Acceleration(fixed(mouseaccel + 1, 2));
 			process = false;
 
 			/*

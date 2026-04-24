@@ -17,7 +17,7 @@ void SDL_GameInput_Pump(void);
 int32_t SDL_GameInput_Wait(void);
 void SDL_GameInput_Maybe_Pump(void);
 void SDL_GameInput_Handle_Key(SDL_Scancode scancode, SDL_Keycode keycode, SDL_Keymod mod_state, bool repeat, bool release);
-void SDL_GameInput_Handle_Mouse_Motion(int x, int y, uint32_t button_state);
+void SDL_GameInput_Handle_Mouse_Motion(int x, int y, int xrel, int yrel, uint32_t button_state);
 void SDL_GameInput_Handle_Mouse_Button(int button, int x, int y, bool release);
 void* SDL_GameInput_SetCursor(void* cursor);
 int SDL_GameInput_ShowCursor(int32_t show);

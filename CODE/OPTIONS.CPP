@@ -64,6 +64,7 @@
 #include	"FUNCTION.H"
 #include	"OPTIONS.H"
 
+fixed OptionsClass::MouseAcceleration(1);
 char const * const OptionsClass::HotkeyName = "WinHotkeys";
 
 
@@ -287,6 +288,53 @@ void OptionsClass::Set_Sound_Volume(fixed volume, bool feedback)
 	if (feedback) {
 		Sound_Effect(VOC_BEEP);
 	}
+}
+
+
+/***********************************************************************************************
+ * OptionsClass::Set_Mouse_Acceleration -- Sets the relative-mode mouse acceleration.           *
+ *                                                                                             *
+ *    This routine clamps and stores the multiplier used only for SDL relative mouse motion.   *
+ *                                                                                             *
+ * INPUT:   acceleration -- Relative-mode mouse multiplier (0.5 .. 10.0).                      *
+ *                                                                                             *
+ * OUTPUT:  none                                                                               *
+ *                                                                                             *
+ * WARNINGS:   none                                                                            *
+ *                                                                                             *
+ * HISTORY:                                                                                    *
+ *   04/24/2026 GPT : Created.                                                                 *
+ *=============================================================================================*/
+void OptionsClass::Set_Mouse_Acceleration(fixed acceleration)
+{
+	const fixed minimum(1, 2);
+	const fixed maximum(10);
+
+	if (acceleration < minimum) {
+		acceleration = minimum;
+	}
+	if (acceleration > maximum) {
+		acceleration = maximum;
+	}
+	MouseAcceleration = acceleration;
+}
+
+
+/***********************************************************************************************
+ * OptionsClass::Get_Mouse_Acceleration -- Fetches the relative-mode mouse acceleration.        *
+ *                                                                                             *
+ * INPUT:   none                                                                               *
+ *                                                                                             *
+ * OUTPUT:  Returns the current relative-mode mouse multiplier.                                *
+ *                                                                                             *
+ * WARNINGS:   none                                                                            *
+ *                                                                                             *
+ * HISTORY:                                                                                    *
+ *   04/24/2026 GPT : Created.                                                                 *
+ *=============================================================================================*/
+fixed OptionsClass::Get_Mouse_Acceleration(void) const
+{
+	return(MouseAcceleration);
 }
 
 
@@ -581,6 +629,7 @@ void OptionsClass::Load_Settings(void)
 	AutoScroll = ini.Get_Bool(OPTIONS, "AutoScroll", AutoScroll);
 	Set_Repeat(ini.Get_Bool(OPTIONS, "IsScoreRepeat", IsScoreRepeat));
 	Set_Shuffle(ini.Get_Bool(OPTIONS, "IsScoreShuffle", IsScoreShuffle));
+	Set_Mouse_Acceleration(ini.Get_Fixed(OPTIONS, "MouseAcceleration", Get_Mouse_Acceleration()));
 	SlowPalette = ini.Get_Bool(OPTIONS, "SlowPalette", SlowPalette);
 	IsPaletteScroll = ini.Get_Bool(OPTIONS, "PaletteScroll", IsPaletteScroll);
 
@@ -741,6 +790,7 @@ void OptionsClass::Save_Settings (void)
 	ini.Put_Bool(OPTIONS, "AutoScroll", AutoScroll);
 	ini.Put_Bool(OPTIONS, "IsScoreRepeat", IsScoreRepeat);
 	ini.Put_Bool(OPTIONS, "IsScoreShuffle", IsScoreShuffle);
+	ini.Put_Fixed(OPTIONS, "MouseAcceleration", Get_Mouse_Acceleration());
 	ini.Put_Bool(OPTIONS, "PaletteScroll", IsPaletteScroll);
 
 	ini.Put_Int(HotkeyName, "KeyForceMove1", KeyForceMove1);

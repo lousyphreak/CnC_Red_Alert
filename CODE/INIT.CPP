@@ -60,6 +60,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include	"FUNCTION.H"
+#include	"GAMEDLG.H"
 #include	"LOADDLG.H"
 #include "SDLINPUT.H"
 #include <SDL3/SDL_time.h>
@@ -948,6 +949,7 @@ bool Select_Game(bool fade)
 		SEL_START_NEW_GAME,			// start a new game
 		SEL_LOAD_MISSION,				// load a saved game
 		SEL_MULTIPLAYER_GAME,		// play a multiplayer game
+		SEL_OPTIONS,					// title-screen options menu
 		SEL_INTRO,						// couch-potato mode
 		SEL_EXIT,						// exit to DOS
 		SEL_FAME,						// view the hall o' fame
@@ -963,6 +965,7 @@ bool Select_Game(bool fade)
 #endif	// !INTERNET_OFF
 		SEL_LOAD_MISSION,				// load a saved game
 		SEL_MULTIPLAYER_GAME,		// play a multiplayer game
+		SEL_OPTIONS,					// title-screen options menu
 		SEL_INTRO,						// couch-potato mode
 		SEL_EXIT,						// exit to DOS
 		SEL_FAME,						// view the hall o' fame
@@ -1542,6 +1545,12 @@ bool Select_Game(bool fade)
 							break;
 
 					}
+					break;
+
+				case SEL_OPTIONS:
+					GameControlsClass().Process(true);
+					display = true;
+					selection = SEL_NONE;
 					break;
 
 				/*

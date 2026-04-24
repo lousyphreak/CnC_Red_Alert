@@ -43,7 +43,8 @@ class OptionsClass {
 	public:
 		enum {
 			MAX_SCROLL_SETTING=7,
-			MAX_SPEED_SETTING=7
+			MAX_SPEED_SETTING=7,
+			MAX_MOUSE_ACCEL_SETTING=20
 		};
 
 		OptionsClass(void);
@@ -56,6 +57,8 @@ class OptionsClass {
 		void Set_Repeat(int on);
 		void Set_Score_Volume(fixed volume, bool feedback);
 		void Set_Sound_Volume(fixed volume, bool feedback);
+		void Set_Mouse_Acceleration(fixed acceleration);
+		fixed Get_Mouse_Acceleration(void) const;
 		void Set_Brightness(fixed brightness);
 		fixed Get_Brightness(void) const;
 		void Set_Saturation(fixed color);
@@ -154,6 +157,7 @@ class OptionsClass {
 
 	private:
 
+		static fixed MouseAcceleration;
 		static char const * const HotkeyName;
 };
 

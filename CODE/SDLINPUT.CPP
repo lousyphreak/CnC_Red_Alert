@@ -1,5 +1,6 @@
 #include "SDLINPUT.H"
 
+#include "FUNCTION.H"
 #include "GBUFFER.H"
 #include "KEY.H"
 #include "../WIN32LIB/INCLUDE/MOUSE.H"
@@ -66,6 +67,7 @@ enum class TouchGestureMode {
 };
 
 void apply_mission_mouse_capture(void);
+bool get_window_point_for_current_game_cursor(float& window_x, float& window_y);
 
 std::mutex g_input_mutex;
 std::array<uint16_t, SDL_SCANCODE_COUNT> g_scancode_down_counts{};
@@ -378,6 +380,29 @@ void handle_translated_mouse_motion(int x, int y, uint32_t button_state_mask)
 	}
 
 	Keyboard_Handle_Mouse_Motion(mouse_x, mouse_y);
+}
+
+int scale_relative_mouse_delta(int delta)
+{
+	if (delta < 0) {
+		return -(Options.Get_Mouse_Acceleration() * -delta);
+	}
+	return(Options.Get_Mouse_Acceleration() * delta);
+}
+
+void handle_relative_mouse_motion(int x, int y, int xrel, int yrel, uint32_t button_state_mask)
+{
+	float window_x = static_cast<float>(x);
+	float window_y = static_cast<float>(y);
+	get_window_point_for_current_game_cursor(window_x, window_y);
+
+	window_x += static_cast<float>(scale_relative_mouse_delta(xrel));
+	window_y += static_cast<float>(scale_relative_mouse_delta(yrel));
+
+	int translated_x = static_cast<int>(window_x);
+	int translated_y = static_cast<int>(window_y);
+	translate_window_mouse_position(translated_x, translated_y);
+	handle_translated_mouse_motion(translated_x, translated_y, button_state_mask);
 }
 
 void handle_translated_mouse_button(int button, int x, int y, bool release)
@@ -1491,6 +1516,7 @@ void handle_sdl_event(const SDL_Event &event)
 		case SDL_EVENT_MOUSE_MOTION:
 			note_mouse_pointer_activity(event.motion.which);
 			SDL_GameInput_Handle_Mouse_Motion(static_cast<int>(event.motion.x), static_cast<int>(event.motion.y),
+				static_cast<int>(event.motion.xrel), static_cast<int>(event.motion.yrel),
 				static_cast<uint32_t>(event.motion.state));
 			break;
 
@@ -1656,14 +1682,34 @@ void SDL_GameInput_Handle_Key(SDL_Scancode scancode, SDL_Keycode keycode, SDL_Ke
 	}
 }
 
-void SDL_GameInput_Handle_Mouse_Motion(int x, int y, uint32_t button_state)
+void SDL_GameInput_Handle_Mouse_Motion(int x, int y, int xrel, int yrel, uint32_t button_state)
 {
+	if (MainWindow != NULL
+		&& MainWindow->sdl_window != NULL
+		&& SDL_GetWindowRelativeMouseMode(MainWindow->sdl_window)) {
+		handle_relative_mouse_motion(x, y, xrel, yrel, translate_mouse_button_state(button_state));
+		return;
+	}
 	translate_window_mouse_position(x, y);
 	handle_translated_mouse_motion(x, y, translate_mouse_button_state(button_state));
 }
 
 void SDL_GameInput_Handle_Mouse_Button(int button, int x, int y, bool release)
 {
+	if (MainWindow != NULL
+		&& MainWindow->sdl_window != NULL
+		&& SDL_GetWindowRelativeMouseMode(MainWindow->sdl_window)) {
+		int translated_x = 0;
+		int translated_y = 0;
+		{
+			std::scoped_lock lock(g_input_mutex);
+			translated_x = g_mouse_x;
+			translated_y = g_mouse_y;
+		}
+		handle_translated_mouse_button(button, translated_x, translated_y, release);
+		return;
+	}
+
 	translate_window_mouse_position(x, y);
 	handle_translated_mouse_button(button, x, y, release);
 }

@@ -433,12 +433,12 @@ int Main_Menu(uint32_t )
 	*/
 	int	d_dialog_w = 152 * RESFACTOR;
 #ifdef FIXIT_VERSION_3
-	int	d_dialog_h = 100 * RESFACTOR;
+	int	d_dialog_h = 112 * RESFACTOR;
 #else
 #ifndef INTERNET_OFF // Denzil 5/1/98 - No internet play
-	int	d_dialog_h = 100 * RESFACTOR;
+	int	d_dialog_h = 112 * RESFACTOR;
 #else
-	int	d_dialog_h = 80 * RESFACTOR;
+	int	d_dialog_h = 92 * RESFACTOR;
 #endif	// !INTERNET_OFF
 #endif	//FIXIT_VERSION_3
 	int	d_dialog_x = 85 * RESFACTOR;
@@ -474,7 +474,7 @@ int Main_Menu(uint32_t )
 	int starty = d_dialog_y + (12 * RESFACTOR);
 
 //#ifndef FIXIT_VERSION_3
-	static int	max_buttons = 7;
+	static int	max_buttons = 8;
 //#else
 //	static int	max_buttons = 6;
 //#endif
@@ -490,6 +490,7 @@ int Main_Menu(uint32_t )
 		BUTTON_START,
 		BUTTON_LOAD,
 		BUTTON_MULTI,
+		BUTTON_OPTIONS,
 		BUTTON_INTRO,
 		BUTTON_EXIT,
 	};
@@ -502,6 +503,7 @@ int Main_Menu(uint32_t )
 #endif	// !INTERNET_OFF
 		BUTTON_LOAD,
 		BUTTON_MULTI,
+		BUTTON_OPTIONS,
 		BUTTON_INTRO,
 		BUTTON_EXIT,
 	};
@@ -523,7 +525,7 @@ int Main_Menu(uint32_t )
 	int input;										// input from user
 	int retval;										// return value
 	int curbutton;
-	TextButtonClass * buttons[7];
+	TextButtonClass * buttons[8];
 
 	/*
 	**	Buttons
@@ -571,6 +573,9 @@ int Main_Menu(uint32_t )
 	TextButtonClass multibtn(BUTTON_MULTI, TXT_MULTIPLAYER_GAME, TPF_BUTTON, d_multi_x, starty, d_multi_w, d_multi_h);
 	starty += ystep;
 
+	TextButtonClass optionsbtn(BUTTON_OPTIONS, TXT_OPTIONS, TPF_BUTTON, d_multi_x, starty, d_multi_w, d_multi_h);
+	starty += ystep;
+
 	TextButtonClass introbtn(BUTTON_INTRO, TXT_INTRO, TPF_BUTTON, d_intro_x, starty, d_intro_w, d_intro_h);
 	starty += ystep;
 
@@ -600,6 +605,7 @@ int Main_Menu(uint32_t )
 #endif
 	loadbtn.Add_Tail(*commands);
 	multibtn.Add_Tail(*commands);
+	optionsbtn.Add_Tail(*commands);
 	introbtn.Add_Tail(*commands);
 	exitbtn.Add_Tail(*commands);
 
@@ -614,8 +620,9 @@ int Main_Menu(uint32_t )
 	buttons[2] = &startbtn;
 	buttons[3] = &loadbtn;
 	buttons[4] = &multibtn;
-	buttons[5] = &introbtn;
-	buttons[6] = &exitbtn;
+	buttons[5] = &optionsbtn;
+	buttons[6] = &introbtn;
+	buttons[7] = &exitbtn;
 #else
 	if (expansions) {
 		curbutton = 0;
@@ -628,8 +635,9 @@ int Main_Menu(uint32_t )
 	buttons[2] = &internetbutton;
 	buttons[3] = &loadbtn;
 	buttons[4] = &multibtn;
-	buttons[5] = &introbtn;
-	buttons[6] = &exitbtn;
+	buttons[5] = &optionsbtn;
+	buttons[6] = &introbtn;
+	buttons[7] = &exitbtn;
 #endif
 
 	buttons[curbutton]->Turn_On();
@@ -776,6 +784,11 @@ int Main_Menu(uint32_t )
 				break;
 
 			case (BUTTON_MULTI | KN_BUTTON):
+				retval = (input & 0x7FFF) - BUTTON_EXPAND;
+				process = false;
+				break;
+
+			case (BUTTON_OPTIONS | KN_BUTTON):
 				retval = (input & 0x7FFF) - BUTTON_EXPAND;
 				process = false;
 				break;

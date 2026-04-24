@@ -43,9 +43,8 @@ class GameControlsClass
 {
 	public:
 		GameControlsClass(void) {};
-		void Process(void);
+		void Process(bool use_title_page = false);
 };
 
 
 #endif
-

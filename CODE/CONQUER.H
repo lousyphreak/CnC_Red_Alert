@@ -568,3 +568,4 @@
 #define TXT_THEME_TRACTION       	552	// Traction
 #define TXT_THEME_WASTELND       	553	// Chaos
 #define TXT_CARRIER              	554	// Hliport Mobile
+#define TXT_MOUSE_ACCELERATION   	555	// Mouse Acceleration

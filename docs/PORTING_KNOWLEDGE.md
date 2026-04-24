@@ -88,6 +88,10 @@ _Last updated: 2026-04-24_
 
 ## Browser / Emscripten input
 
+- SDL relative-mode motion and button events must share the same translated cursor state.
+  - Practical example from this tree: the first mouse-acceleration pass scaled relative motion in `CODE/SDLINPUT.CPP`, but `SDL_GameInput_Handle_Mouse_Button(...)` still translated raw SDL button-event coordinates separately. The visible cursor moved faster, but click hit-testing stayed tied to the unaccelerated position. Reusing `g_mouse_x` / `g_mouse_y` for button events while relative mode is active fixed the mismatch.
+  - Practical rule: whenever relative mouse mode synthesizes or scales cursor motion before it reaches gameplay/UI code, button events must use that same tracked game-space cursor position instead of re-translating the raw SDL event coordinates.
+
 - The browser shell's visible crash area needs to behave like a transcript, not a single-slot banner.
   - Practical example from this tree: `web/shell.html` originally called `writeErrorLog(..., true)` from `reportFatalError(...)`, so a later `window.onerror`, `unhandledrejection`, or `Module.onAbort(...)` could overwrite the first/root-cause message. The maintained shell now appends numbered/timestamped fatal blocks, keeps stderr context sequence-tagged so each fatal report only snapshots new stderr lines, and exposes a `Copy` button for the full transcript.
   - Practical rule: when the browser shell is the only diagnostic surface on a phone/tablet, never replace earlier crash text with later follow-on failures. Preserve an append-only transcript and provide a one-tap clipboard path so testers can export the whole error history.
@@ -799,6 +803,15 @@ _Last updated: 2026-04-24_
 - The main menu entry point is another good audio containment boundary.
   - `CODE/INIT.CPP::Select_Game(...)` is the first front-end step after leaving gameplay.
   - Practical rule: stop EVA speech there as well as during scenario clearing, so no scenario-local voice can leak into the title/menu flow even if a specific exit path forgets to wait correctly.
+- The front-end options path should reuse the existing controls dialogs, but not their in-mission background/event behavior.
+  - `CODE/GAMEDLG.CPP::GameControlsClass::Process(...)` normally redraws the gameplay map behind the dialog and queues `EventClass::GAMESPEED` updates for a live session.
+  - Practical rule: when opening that controls flow from `CODE/INIT.CPP::Select_Game(...)` / `CODE/MENUS.CPP::Main_Menu(...)`, render against `Load_Title_Page()` instead and apply game-speed changes directly to `Options` rather than pushing a gameplay event into `OutList`.
+- The `Options` object is part of raw save/load serialization in this tree, so new persistent UI settings should not blindly grow the instance layout.
+  - `GameOptionsClass` is still written and read as a raw binary block in the save/load paths (`sizeof(GameOptionsClass)`), so adding ordinary data members changes that binary surface immediately.
+  - Practical rule: if you need a new persisted config-only setting such as relative-mode mouse acceleration, prefer a static option slot plus explicit INI save/load hooks unless you are intentionally revving the serialized format too.
+- SDL relative mouse mode in the active port is enabled at the SDL input layer, but the gameplay cursor still lives in game-space coordinates.
+  - `CODE/SDLINPUT.CPP` toggles `SDL_SetWindowRelativeMouseMode(...)` during mission mouse capture, while the rest of the engine continues to consume cursor positions through the legacy game-space mouse path.
+  - Practical rule: apply relative-mode sensitivity or acceleration tuning in the SDL input translation seam, then convert back into game-space cursor motion there; do not let that setting leak into absolute/window-coordinate mouse handling.
 
 ## Integer-width audit findings
 

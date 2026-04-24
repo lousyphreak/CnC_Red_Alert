@@ -1111,3 +1111,5 @@ Wasteland
 H‚litransporter
 # TXT_CARRIER
 
+Mausbeschleunigung
+# TXT_MOUSE_ACCELERATION

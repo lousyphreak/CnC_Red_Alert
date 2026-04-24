@@ -1109,3 +1109,5 @@ Chaos
 H‚liport Mobile
 # TXT_CARRIER
 
+Acceleration souris
+# TXT_MOUSE_ACCELERATION

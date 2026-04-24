@@ -1107,3 +1107,5 @@ Wasteland
 # TXT_THEME_WASTELND
 Helicarrier
 # TXT_CARRIER
+Mouse Acceleration
+# TXT_MOUSE_ACCELERATION
