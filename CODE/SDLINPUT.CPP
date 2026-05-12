@@ -75,6 +75,8 @@ SDL_Keymod g_mod_state = SDL_KMOD_NONE;
 int g_mouse_x = 0;
 int g_mouse_y = 0;
 uint32_t g_mouse_buttons = 0;
+double g_relative_mouse_subpixel_x = 0.0;
+double g_relative_mouse_subpixel_y = 0.0;
 std::atomic<bool> g_main_thread_set{false};
 std::thread::id g_main_thread_id;
 std::atomic<bool> g_is_pumping{false};
@@ -382,26 +384,67 @@ void handle_translated_mouse_motion(int x, int y, uint32_t button_state_mask)
 	Keyboard_Handle_Mouse_Motion(mouse_x, mouse_y);
 }
 
-int scale_relative_mouse_delta(int delta)
+void reset_relative_mouse_motion_locked(void)
+{
+	g_relative_mouse_subpixel_x = 0.0;
+	g_relative_mouse_subpixel_y = 0.0;
+}
+
+int scale_relative_mouse_delta_x2(int delta)
 {
 	if (delta < 0) {
-		return -(Options.Get_Mouse_Acceleration() * -delta);
+		return -((Options.Get_Mouse_Acceleration() * 2) * -delta);
 	}
-	return(Options.Get_Mouse_Acceleration() * delta);
+	return((Options.Get_Mouse_Acceleration() * 2) * delta);
+}
+
+bool get_relative_mouse_game_scale(double &scale_x, double &scale_y)
+{
+	scale_x = 1.0;
+	scale_y = 1.0;
+
+	SDL_FRect presentation{};
+	SDL_FRect source{};
+	if (MainWindow == NULL
+		|| !RA_GetPresentationRect(MainWindow, &presentation)
+		|| !RA_GetRenderSourceRect(MainWindow, &source)
+		|| presentation.w <= 0.0f
+		|| presentation.h <= 0.0f
+		|| source.w <= 0.0f
+		|| source.h <= 0.0f) {
+		return(false);
+	}
+
+	scale_x = static_cast<double>(source.w) / static_cast<double>(presentation.w);
+	scale_y = static_cast<double>(source.h) / static_cast<double>(presentation.h);
+	return(true);
 }
 
 void handle_relative_mouse_motion(int x, int y, int xrel, int yrel, uint32_t button_state_mask)
 {
-	float window_x = static_cast<float>(x);
-	float window_y = static_cast<float>(y);
-	get_window_point_for_current_game_cursor(window_x, window_y);
+	(void)x;
+	(void)y;
 
-	window_x += static_cast<float>(scale_relative_mouse_delta(xrel));
-	window_y += static_cast<float>(scale_relative_mouse_delta(yrel));
+	double scale_x = 1.0;
+	double scale_y = 1.0;
+	get_relative_mouse_game_scale(scale_x, scale_y);
 
-	int translated_x = static_cast<int>(window_x);
-	int translated_y = static_cast<int>(window_y);
-	translate_window_mouse_position(translated_x, translated_y);
+	int translated_x = 0;
+	int translated_y = 0;
+	{
+		std::scoped_lock lock(g_input_mutex);
+		double const delta_x = static_cast<double>(scale_relative_mouse_delta_x2(xrel)) * 0.5 * scale_x;
+		double const delta_y = static_cast<double>(scale_relative_mouse_delta_x2(yrel)) * 0.5 * scale_y;
+		double const total_x = g_relative_mouse_subpixel_x + delta_x;
+		double const total_y = g_relative_mouse_subpixel_y + delta_y;
+		int const whole_dx = static_cast<int>(total_x);
+		int const whole_dy = static_cast<int>(total_y);
+		g_relative_mouse_subpixel_x = total_x - static_cast<double>(whole_dx);
+		g_relative_mouse_subpixel_y = total_y - static_cast<double>(whole_dy);
+		translated_x = g_mouse_x + whole_dx;
+		translated_y = g_mouse_y + whole_dy;
+	}
+
 	handle_translated_mouse_motion(translated_x, translated_y, button_state_mask);
 }
 
@@ -856,6 +899,10 @@ void apply_mission_mouse_capture(void)
 	const bool should_relative_mode = should_capture && should_apply_relative_mouse_mode();
 
 	if (g_mission_relative_mouse_mode_applied != should_relative_mode) {
+		{
+			std::scoped_lock lock(g_input_mutex);
+			reset_relative_mouse_motion_locked();
+		}
 		if (MainWindow != NULL && MainWindow->sdl_window != NULL && SDL_GetWindowRelativeMouseMode(MainWindow->sdl_window)) {
 			if (!g_last_pointer_source_was_direct_touch) {
 				float window_x = 0.0f;
@@ -1387,6 +1434,7 @@ void initialize_mouse_snapshot_locked(void)
 	int mouse_y = static_cast<int>(y);
 	translate_window_mouse_position(mouse_x, mouse_y);
 	update_mouse_position_locked(mouse_x, mouse_y);
+	reset_relative_mouse_motion_locked();
 	g_mouse_buttons = translate_mouse_button_state(buttons);
 }
 
@@ -1442,23 +1490,6 @@ void drain_callback_events(void)
 	for (const SDL_Event& event : pending_events) {
 		handle_sdl_event(event);
 	}
-}
-
-void flush_callback_events_from_sdl_queue(void)
-{
-	SDL_FlushEvent(SDL_EVENT_QUIT);
-	SDL_FlushEvent(SDL_EVENT_WINDOW_CLOSE_REQUESTED);
-	SDL_FlushEvent(SDL_EVENT_WINDOW_FOCUS_GAINED);
-	SDL_FlushEvent(SDL_EVENT_WINDOW_FOCUS_LOST);
-	SDL_FlushEvent(SDL_EVENT_KEY_DOWN);
-	SDL_FlushEvent(SDL_EVENT_KEY_UP);
-	SDL_FlushEvent(SDL_EVENT_MOUSE_MOTION);
-	SDL_FlushEvent(SDL_EVENT_MOUSE_BUTTON_DOWN);
-	SDL_FlushEvent(SDL_EVENT_MOUSE_BUTTON_UP);
-	SDL_FlushEvent(SDL_EVENT_FINGER_DOWN);
-	SDL_FlushEvent(SDL_EVENT_FINGER_UP);
-	SDL_FlushEvent(SDL_EVENT_FINGER_MOTION);
-	SDL_FlushEvent(SDL_EVENT_FINGER_CANCELED);
 }
 
 void set_callback_event_watch(bool enabled)
@@ -1690,6 +1721,10 @@ void SDL_GameInput_Handle_Mouse_Motion(int x, int y, int xrel, int yrel, uint32_
 		handle_relative_mouse_motion(x, y, xrel, yrel, translate_mouse_button_state(button_state));
 		return;
 	}
+	{
+		std::scoped_lock lock(g_input_mutex);
+		reset_relative_mouse_motion_locked();
+	}
 	translate_window_mouse_position(x, y);
 	handle_translated_mouse_motion(x, y, translate_mouse_button_state(button_state));
 }
@@ -1736,12 +1771,14 @@ void SDL_GameInput_Pump(void)
 		/*
 		** Legacy menus, movies, and dialogs still call Call_Back()/Message_Loop()
 		** from inside long-lived loops. In callback mode, gather OS events here,
-		** translate the copied watch events into the legacy input path, and flush
+		** translate the copied watch events into the legacy input path, and drain
 		** the SDL queue entries so SDL_AppEvent doesn't double-handle them later.
 		*/
 		SDL_PumpEvents();
 		drain_callback_events();
-		flush_callback_events_from_sdl_queue();
+		SDL_Event event;
+		while (SDL_PollEvent(&event)) {
+		}
 		g_is_pumping.store(false);
 		return;
 	}
