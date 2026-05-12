@@ -1,12 +1,20 @@
 # Porting Progress
 
-_Last updated: 2026-04-24_
+_Last updated: 2026-05-13_
 
 ## Goal
 
 Port the Red Alert codebase to a reproducible cross-platform build using SDL3 for platform-specific functionality, with working builds on Linux, Windows, and other supported SDL3 platforms.
 
 ## Current status
+
+- Fixed the deployed Emscripten startup alignment fault in the mixfile public-key decrypt path (2026-05-13):
+  - Root cause: `CODE/MP.CPP::XMP_Mod_Mult()` still used the original little-endian Smith reduction fast path, which operates on 16-bit halfword windows inside a 32-bit `digit` array and depends on aliasing patterns that are fragile under Emscripten's strict SAFE_HEAP alignment checks. The first narrow fix removed one confirmed bad `uint16_t*` -> `digit*` correction-path cast, but the deployed diagnostic browser build still trapped inside the same fast path during `PKStraw`/`PKey` modular exponentiation while opening encrypted mixfiles.
+  - Fix implemented:
+    - `CODE/MP.CPP` now routes `__EMSCRIPTEN__` through the existing generic `XMP_Mod_Mult` implementation instead of the little-endian Smith reduction fast path, so the browser build no longer depends on the halfword-oriented reduction logic at all;
+    - the native little-endian fast path remains in place for non-Emscripten builds, and the earlier alignment-safe correction helper is retained there so that path no longer contains the original bad cast either.
+  - Result: the browser/Emscripten build now uses the straightforward aligned modular-multiply implementation for encrypted mixfile startup, eliminating the alignment-sensitive fast path from the wasm bootstrap path while preserving the existing native behavior.
+  - validation for this checkpoint: `cmake --build build --target redalert --parallel`, `ctest --test-dir build --output-on-failure`, `cmake --build build-asan --target redalert --parallel`, `cmake --build build-emscripten --target redalert --parallel`, and `cmake --build build-em-diag --target redalert --parallel` succeed after the Emscripten generic-modmult routing change.
 
 - Fixed the first mouse-acceleration regressions in `Game Controls` and SDL relative clicking (2026-04-24):
   - Root cause: the new `Mouse Acceleration` readout was repainted as variable-width text without clearing its previous pixels first, and SDL relative-mode button events still translated raw SDL click coordinates instead of using the already-accelerated in-game cursor position.

@@ -98,6 +98,7 @@
 #define	min(a, b)	(((a) < (b)) ? (a) : (b))
 #endif
 
+#if RA_BIG_ENDIAN_HOST || defined(__EMSCRIPTEN__)
 static void XMP_Copy_Precision(digit* dest, int dest_precision, const digit* source, int source_precision)
 {
 	XMP_Init(dest, 0, dest_precision);
@@ -128,6 +129,38 @@ static int XMP_Mod_Mult_Generic(digit * prod, const digit * multiplicand, const 
 	XMP_Move(prod, remainder, precision);
 	return 0;
 }
+#endif
+
+#if !RA_BIG_ENDIAN_HOST && !defined(__EMSCRIPTEN__)
+static void XMP_Load_Halfword_Window(digit* dest, const uint16_t* source, int precision)
+{
+	assert(precision <= MAX_UNIT_PRECISION);
+	for (int index = 0; index < precision; ++index) {
+		dest[index] = static_cast<digit>(source[index * 2])
+		            | (static_cast<digit>(source[index * 2 + 1]) << 16);
+	}
+}
+
+static void XMP_Store_Halfword_Window(uint16_t* dest, const digit* source, int precision)
+{
+	assert(precision <= MAX_UNIT_PRECISION);
+	for (int index = 0; index < precision; ++index) {
+		const digit value = source[index];
+		dest[index * 2] = static_cast<uint16_t>(value & 0xffffu);
+		dest[index * 2 + 1] = static_cast<uint16_t>(value >> 16);
+	}
+}
+
+static bool XMP_Sub_Halfword_Window(uint16_t* target, const digit* subtrahend, int precision)
+{
+	digit aligned_target[MAX_UNIT_PRECISION];
+
+	XMP_Load_Halfword_Window(aligned_target, target, precision);
+	const bool borrow = XMP_Sub(aligned_target, aligned_target, subtrahend, false, precision);
+	XMP_Store_Halfword_Window(target, aligned_target, precision);
+	return borrow;
+}
+#endif
 
 
 /***********************************************************************************************
@@ -1853,7 +1886,9 @@ static int _modulus_shift;									// number of bits for recip scaling
 static uint16_t _reciprical_high_digit;		// MSdigit of scaled recip
 static uint16_t _reciprical_low_digit;			// LSdigit of scaled recip
 
+#if !RA_BIG_ENDIAN_HOST && !defined(__EMSCRIPTEN__)
 static int _modulus_sub_precision;						//	length of modulus in MULTUNITs
+#endif
 static int _modulus_bit_count;							//	number of modulus significant bits
 static digit _scratch_modulus[MAX_UNIT_PRECISION];	// modulus
 
@@ -1894,7 +1929,8 @@ int XMP_Prepare_Modulus(const digit * n_modulus, int precision)
 
 #if RA_BIG_ENDIAN_HOST
 	_modulus_bit_count = XMP_Count_Bits(_scratch_modulus, precision);
-	_modulus_sub_precision = (_modulus_bit_count + 16 - 1) / 16;
+	return 0;
+#elif defined(__EMSCRIPTEN__)
 	return 0;
 #else
 
@@ -1960,7 +1996,7 @@ int xmp_stage_modulus(const digit * n_modulus, int precision)
  *=============================================================================================*/
 int XMP_Mod_Mult(digit * prod, const digit * multiplicand, const digit * multiplier, int precision)
 {
-#if RA_BIG_ENDIAN_HOST
+#if RA_BIG_ENDIAN_HOST || defined(__EMSCRIPTEN__)
 	return XMP_Mod_Mult_Generic(prod, multiplicand, multiplier, _scratch_modulus, precision);
 #else
 	XMP_Double_Mul(_double_staging_number, multiplicand, multiplier, precision);
@@ -2017,8 +2053,7 @@ int XMP_Mod_Mult(digit * prod, const digit * multiplicand, const digit * multipl
 				**  This rarely occurs.
 				*/
 				if (!(*dmph & SEMI_UPPER_MOST_BIT)) {
-					uint16_t * dmp = dmpl;
-					if (XMP_Sub((digit *)dmp, (digit *)dmp, _scratch_modulus, false, precision)) {
+					if (XMP_Sub_Halfword_Window(dmpl, _scratch_modulus, precision)) {
 						(*dmph)--;
 					}
 				}
@@ -2061,7 +2096,9 @@ void XMP_Mod_Mult_Clear(int precision)
 	XMP_Init(_mod_divisor, 0, ARRAY_SIZE(_mod_divisor));
 	_modulus_shift = _modulus_bit_count = 0;
 	_reciprical_high_digit = _reciprical_low_digit = 0;
+#if !RA_BIG_ENDIAN_HOST && !defined(__EMSCRIPTEN__)
 	_modulus_sub_precision = /*mutemp =*/ 0;
+#endif
 }
 
 

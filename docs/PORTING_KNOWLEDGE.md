@@ -1,6 +1,6 @@
 # Porting Knowledge
 
-_Last updated: 2026-04-24_
+_Last updated: 2026-05-13_
 
 ## Windows/MSVC build notes
 
@@ -85,6 +85,12 @@ _Last updated: 2026-04-24_
 - Android soft-keyboard support depends on entering SDL text-input mode, not just game-widget focus.
   - Practical example from this tree: the Android dialogs already called `SDL_GameInput_SetTextInputActive(...)` through the legacy gadget focus flow, but `CODE/SDLINPUT.CPP` only implemented that bridge for Emscripten. After adding the Android side to call `SDL_StartTextInput(...)`, `SDL_StopTextInput(...)`, and `SDL_SetTextInputArea(...)` against the active SDL window, Android `dumpsys input_method` switched from `SDLSurface` to `org.libsdl.app.SDLDummyEdit`, the Samsung IME became visible, and committed text reached the in-game `EditClass` field.
   - Practical rule: when Android text-entry screens show focus but no IME, debug the SDL text-input bridge first. If the game already knows which widget wants text, the missing piece is usually `SDL_StartTextInput()`/`SDL_StopTextInput()` on the platform window rather than more UI-side focus work.
+
+## Browser / Emscripten runtime
+
+- On Emscripten, the safest answer for legacy halfword-optimized multiprecision code may be to bypass the fast path entirely.
+  - Practical example from this tree: `CODE/MP.CPP::XMP_Mod_Mult()` originally used the little-endian Smith reduction fast path everywhere except big-endian hosts. The first browser crash investigation found one definite bad `uint16_t*` -> `digit*` correction-path cast and fixed it, but the deployed SAFE_HEAP build still trapped inside the same function during `PKStraw`/`PKey` mixfile-key decryption. The maintained tree now routes `__EMSCRIPTEN__` through the generic modular-multiply implementation and leaves the Smith halfword path enabled only for non-Emscripten native builds.
+  - Practical rule: when an old arithmetic fast path depends on 16-bit subunit views of 32-bit data and a strict-alignment browser build still traps after a narrow local fix, prefer the already-correct generic implementation for that target over further fragile aliasing work. Keep the fast path only where it is clearly safe and worthwhile.
 
 ## Browser / Emscripten input
 
