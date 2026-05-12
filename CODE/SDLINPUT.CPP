@@ -723,6 +723,7 @@ bool should_apply_mission_mouse_capture(void)
 {
 	return g_mission_mouse_capture_requested
 		&& g_mouse_capture_suppression_count == 0
+		&& !InMovie
 		&& MainWindow != NULL
 		&& MainWindow->sdl_window != NULL;
 }
@@ -1877,11 +1878,12 @@ int32_t SDL_GameInput_ClipCursor(const RECT* rect)
 		return (rect == NULL ? TRUE : FALSE);
 	}
 
+	const bool relative_mode = SDL_GetWindowRelativeMouseMode(MainWindow->sdl_window);
 	const bool wayland_windowed = sdl_uses_wayland_video_driver()
 		&& (SDL_GetWindowFlags(MainWindow->sdl_window) & SDL_WINDOW_FULLSCREEN) == 0;
 
 	if (rect == NULL) {
-		if (wayland_windowed) {
+		if (relative_mode || wayland_windowed) {
 			SDL_SetWindowMouseRect(MainWindow->sdl_window, NULL);
 			SDL_GameInput_SetCursorClip(NULL);
 			return (TRUE);
@@ -1912,6 +1914,18 @@ int32_t SDL_GameInput_ClipCursor(const RECT* rect)
 	}
 
 	if (mouse_rect.w <= 0 || mouse_rect.h <= 0) {
+		SDL_SetWindowMouseRect(MainWindow->sdl_window, NULL);
+		SDL_GameInput_SetCursorClip(rect);
+		return (TRUE);
+	}
+
+	if (relative_mode) {
+		/*
+		** Relative mode already owns pointer capture. Applying an SDL window
+		** mouse rect here can stop further relative deltas at the clipped edge
+		** (notably on Emscripten), which breaks border scrolling and creates a
+		** matching dead zone when the player moves back inward.
+		*/
 		SDL_SetWindowMouseRect(MainWindow->sdl_window, NULL);
 		SDL_GameInput_SetCursorClip(rect);
 		return (TRUE);
