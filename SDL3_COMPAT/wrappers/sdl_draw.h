@@ -91,6 +91,7 @@ HRESULT WWDraw_Create(WWDraw** direct_draw);
 void WWDraw_Begin_Present_Batch(void);
 void WWDraw_End_Present_Batch(void);
 void WWDraw_Flush_Present(void);
+void WWDraw_Discard_Pending_Present(void);
 bool WWDraw_Has_Pending_Present(void);
 void WWDraw_Request_Present(void);
 #endif

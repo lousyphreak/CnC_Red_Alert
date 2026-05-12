@@ -1,15 +1,26 @@
 #include "sdl_draw.h"
 #include "FUNCTION.H"
+#include "SDLINPUT.H"
 
+#include <SDL3/SDL_hints.h>
+#include <SDL3/SDL_pixels.h>
 #include <SDL3/SDL_render.h>
+#include <SDL3/SDL_stdinc.h>
 
 #include <algorithm>
-#include <vector>
 
 namespace {
 
+enum class PresentTextureFormat {
+    Indexed8,
+    ARGB8888
+};
+
 SDL_Renderer* g_renderer = nullptr;
-SDL_Texture* g_texture = nullptr;
+constexpr int kTextureRingSize = 16;
+SDL_Texture* g_textures[kTextureRingSize] = {};
+SDL_Palette* g_texture_palette = nullptr;
+int g_texture_ring_index = 0;
 int g_texture_width = 0;
 int g_texture_height = 0;
 WWSurface* g_primary_surface = nullptr;
@@ -17,6 +28,178 @@ WWSurface* g_pending_surface = nullptr;
 RAWindow* g_pending_window = nullptr;
 int g_present_batch_depth = 0;
 bool g_present_pending = false;
+Uint32 g_present_sequence = 0;
+PresentTextureFormat g_present_texture_format = PresentTextureFormat::Indexed8;
+Uint32* g_upload_pixels = nullptr;
+size_t g_upload_pixel_capacity = 0;
+constexpr size_t kUploadPixelAlignment = 64;
+PALETTEENTRY g_present_palette[256] = {};
+bool g_present_palette_valid = false;
+
+const PALETTEENTRY* get_present_palette_entries(const WWSurface* surface)
+{
+    const PALETTEENTRY* palette = surface ? surface->PaletteEntries() : nullptr;
+    if (!palette && g_present_palette_valid) {
+        palette = g_present_palette;
+    }
+    return palette;
+}
+
+SDL_Color present_palette_color(const PALETTEENTRY* entries, int index)
+{
+    if (!entries) {
+        return SDL_Color{ static_cast<Uint8>(index), static_cast<Uint8>(index), static_cast<Uint8>(index), SDL_ALPHA_OPAQUE };
+    }
+
+    const PALETTEENTRY& entry = entries[index];
+    return SDL_Color{ entry.peRed, entry.peGreen, entry.peBlue, SDL_ALPHA_OPAQUE };
+}
+
+void destroy_present_textures()
+{
+    for (SDL_Texture*& texture : g_textures) {
+        if (texture) {
+            SDL_DestroyTexture(texture);
+            texture = nullptr;
+        }
+    }
+    g_texture_ring_index = 0;
+    g_texture_width = 0;
+    g_texture_height = 0;
+}
+
+void free_upload_pixels()
+{
+    if (g_upload_pixels != nullptr) {
+        SDL_aligned_free(g_upload_pixels);
+        g_upload_pixels = nullptr;
+    }
+    g_upload_pixel_capacity = 0;
+}
+
+bool ensure_upload_pixels(size_t pixel_count)
+{
+    if (g_upload_pixel_capacity >= pixel_count) {
+        return true;
+    }
+
+    void* new_pixels = SDL_aligned_alloc(kUploadPixelAlignment, pixel_count * sizeof(Uint32));
+    if (new_pixels == nullptr) {
+        return false;
+    }
+
+    SDL_aligned_free(g_upload_pixels);
+    g_upload_pixels = static_cast<Uint32*>(new_pixels);
+    g_upload_pixel_capacity = pixel_count;
+    return true;
+}
+
+bool ensure_texture_palette()
+{
+    if (g_texture_palette) {
+        return true;
+    }
+
+    g_texture_palette = SDL_CreatePalette(256);
+    if (!g_texture_palette) {
+        return false;
+    }
+
+    SDL_Color colors[256];
+    const PALETTEENTRY* entries = g_present_palette_valid ? g_present_palette : nullptr;
+    for (int i = 0; i < 256; ++i) {
+        colors[i] = present_palette_color(entries, i);
+    }
+
+    if (!SDL_SetPaletteColors(g_texture_palette, colors, 0, 256)) {
+        SDL_DestroyPalette(g_texture_palette);
+        g_texture_palette = nullptr;
+        return false;
+    }
+
+    return true;
+}
+
+bool sync_texture_palette(const PALETTEENTRY* entries)
+{
+    SDL_Color colors[256];
+
+    if (!ensure_texture_palette()) {
+        return false;
+    }
+
+    for (int i = 0; i < 256; ++i) {
+        colors[i] = present_palette_color(entries, i);
+    }
+
+    return SDL_SetPaletteColors(g_texture_palette, colors, 0, 256);
+}
+
+bool create_present_texture(SDL_Texture*& texture, int width, int height, PresentTextureFormat format)
+{
+    const SDL_PixelFormat pixel_format = (format == PresentTextureFormat::Indexed8) ? SDL_PIXELFORMAT_INDEX8 : SDL_PIXELFORMAT_ARGB8888;
+
+    texture = SDL_CreateTexture(g_renderer, pixel_format, SDL_TEXTUREACCESS_STREAMING, width, height);
+    if (!texture) {
+        return false;
+    }
+
+    SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_NONE);
+    if (format == PresentTextureFormat::Indexed8 && !SDL_SetTexturePalette(texture, g_texture_palette)) {
+        SDL_DestroyTexture(texture);
+        texture = nullptr;
+        return false;
+    }
+
+    return true;
+}
+
+bool rebuild_present_textures(int width, int height)
+{
+    PresentTextureFormat format = PresentTextureFormat::ARGB8888;
+
+    destroy_present_textures();
+
+    if (ensure_texture_palette()) {
+        bool indexed_ok = true;
+
+        for (SDL_Texture*& texture : g_textures) {
+            if (!create_present_texture(texture, width, height, PresentTextureFormat::Indexed8)) {
+                indexed_ok = false;
+                break;
+            }
+        }
+
+        if (indexed_ok) {
+            format = PresentTextureFormat::Indexed8;
+        } else {
+            destroy_present_textures();
+        }
+    }
+
+    if (!g_textures[0]) {
+        for (SDL_Texture*& texture : g_textures) {
+            if (!create_present_texture(texture, width, height, PresentTextureFormat::ARGB8888)) {
+                destroy_present_textures();
+                return false;
+            }
+        }
+        format = PresentTextureFormat::ARGB8888;
+    }
+
+    g_present_texture_format = format;
+    g_texture_width = width;
+    g_texture_height = height;
+    if (format == PresentTextureFormat::ARGB8888) {
+        if (!ensure_upload_pixels(static_cast<size_t>(width) * static_cast<size_t>(height))) {
+            destroy_present_textures();
+            return false;
+        }
+    } else {
+        free_upload_pixels();
+    }
+    return true;
+}
 
 RAWindow* ensure_window(RAWindow* window, int width, int height)
 {
@@ -34,6 +217,7 @@ void ensure_renderer(RAWindow* window, int width, int height)
     }
 
     if (!g_renderer) {
+        SDL_SetHint(SDL_HINT_INVALID_PARAM_CHECKS, "1");
         g_renderer = SDL_CreateRenderer(window->sdl_window, nullptr);
         if (g_renderer) {
             SDL_SetRenderVSync(g_renderer, 1);
@@ -44,16 +228,10 @@ void ensure_renderer(RAWindow* window, int width, int height)
         return;
     }
 
-    if (!g_texture || g_texture_width != width || g_texture_height != height) {
-        if (g_texture) {
-            SDL_DestroyTexture(g_texture);
+    if (!g_textures[0] || g_texture_width != width || g_texture_height != height) {
+        if (!rebuild_present_textures(width, height)) {
+            return;
         }
-        g_texture = SDL_CreateTexture(g_renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
-        if (g_texture) {
-            SDL_SetTextureBlendMode(g_texture, SDL_BLENDMODE_NONE);
-        }
-        g_texture_width = width;
-        g_texture_height = height;
     }
 }
 
@@ -63,28 +241,65 @@ void present_surface(WWSurface* surface, RAWindow* window)
         return;
     }
 
-    ensure_renderer(window, surface->Width(), surface->Height());
-    if (!g_renderer || !g_texture) {
+    RAWindow* present_window = window ? window : surface->Window();
+    ensure_renderer(present_window, surface->Width(), surface->Height());
+    SDL_Texture* texture = g_textures[g_texture_ring_index];
+    if (!g_renderer || !texture) {
+        SDL_LogError(SDL_LOG_CATEGORY_RENDER, "WWDraw present failed to acquire SDL renderer path: %s", SDL_GetError());
         return;
     }
 
-    std::vector<uint32_t> rgba(static_cast<size_t>(surface->Width()) * static_cast<size_t>(surface->Height()));
-    const PALETTEENTRY* palette = surface->PaletteEntries();
-    uint8_t* pixels = surface->Pixels();
+    g_texture_ring_index = (g_texture_ring_index + 1) % kTextureRingSize;
 
-    for (int y = 0; y < surface->Height(); ++y) {
-        for (int x = 0; x < surface->Width(); ++x) {
-            const uint8_t index = pixels[y * surface->Width() + x];
+    const PALETTEENTRY* palette = get_present_palette_entries(surface);
+    const uint8_t* pixels = surface->Pixels();
+    const Uint32 present_sequence = ++g_present_sequence;
+    const size_t pixel_count = static_cast<size_t>(surface->Width()) * static_cast<size_t>(surface->Height());
+
+    if (g_present_texture_format == PresentTextureFormat::Indexed8) {
+        if (!sync_texture_palette(palette)) {
+            SDL_LogError(SDL_LOG_CATEGORY_RENDER,
+                         "WWDraw present #%u failed in SDL_SetPaletteColors: %s",
+                         present_sequence,
+                         SDL_GetError());
+            return;
+        }
+        if (!SDL_UpdateTexture(texture, nullptr, pixels, surface->Width())) {
+            SDL_LogError(SDL_LOG_CATEGORY_RENDER,
+                         "WWDraw present #%u failed in SDL_UpdateTexture(INDEX8): %s",
+                         present_sequence,
+                         SDL_GetError());
+            return;
+        }
+    } else {
+        if (!ensure_upload_pixels(pixel_count)) {
+            SDL_LogError(SDL_LOG_CATEGORY_RENDER,
+                         "WWDraw present #%u failed to allocate ARGB upload buffer: %s",
+                         present_sequence,
+                         SDL_GetError());
+            return;
+        }
+        Uint32* upload_pixels = g_upload_pixels;
+        for (size_t i = 0; i < pixel_count; ++i) {
+            const uint8_t index = pixels[i];
             const PALETTEENTRY entry = palette ? palette[index] : PALETTEENTRY{index, index, index, 0};
-            rgba[y * surface->Width() + x] = (0xffu << 24) | (static_cast<uint32_t>(entry.peRed) << 16)
-                | (static_cast<uint32_t>(entry.peGreen) << 8) | static_cast<uint32_t>(entry.peBlue);
+            upload_pixels[i] = (SDL_ALPHA_OPAQUE << 24) |
+                               (static_cast<Uint32>(entry.peRed) << 16) |
+                               (static_cast<Uint32>(entry.peGreen) << 8) |
+                               static_cast<Uint32>(entry.peBlue);
+        }
+
+        if (!SDL_UpdateTexture(texture, nullptr, upload_pixels, surface->Width() * static_cast<int>(sizeof(Uint32)))) {
+            SDL_LogError(SDL_LOG_CATEGORY_RENDER,
+                         "WWDraw present #%u failed in SDL_UpdateTexture(ARGB8888): %s",
+                         present_sequence,
+                         SDL_GetError());
+            return;
         }
     }
 
-    SDL_UpdateTexture(g_texture, nullptr, rgba.data(), surface->Width() * static_cast<int>(sizeof(uint32_t)));
     SDL_FRect source{0.0f, 0.0f, static_cast<float>(surface->Width()), static_cast<float>(surface->Height())};
     SDL_FRect destination{0.0f, 0.0f, static_cast<float>(surface->Width()), static_cast<float>(surface->Height())};
-    RAWindow* present_window = window ? window : surface->Window();
     SDL_FRect source_override{};
     if (RA_GetRenderSourceRect(present_window, &source_override) && source_override.w > 0.0f && source_override.h > 0.0f
         && source_override.x >= 0.0f && source_override.y >= 0.0f
@@ -105,9 +320,27 @@ void present_surface(WWSurface* surface, RAWindow* window)
             destination.y = (static_cast<float>(output_height) - destination.h) * 0.5f;
         }
     }
-    SDL_SetRenderDrawColor(g_renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
-    SDL_RenderClear(g_renderer);
-    SDL_RenderTexture(g_renderer, g_texture, &source, &destination);
+    if (!SDL_SetRenderDrawColor(g_renderer, 0, 0, 0, SDL_ALPHA_OPAQUE)) {
+        SDL_LogError(SDL_LOG_CATEGORY_RENDER,
+                     "WWDraw present #%u failed in SDL_SetRenderDrawColor: %s",
+                     present_sequence,
+                     SDL_GetError());
+        return;
+    }
+    if (!SDL_RenderClear(g_renderer)) {
+        SDL_LogError(SDL_LOG_CATEGORY_RENDER,
+                     "WWDraw present #%u failed in SDL_RenderClear: %s",
+                     present_sequence,
+                     SDL_GetError());
+        return;
+    }
+    if (!SDL_RenderTexture(g_renderer, texture, &source, &destination)) {
+        SDL_LogError(SDL_LOG_CATEGORY_RENDER,
+                     "WWDraw present #%u failed in SDL_RenderTexture: %s",
+                     present_sequence,
+                     SDL_GetError());
+        return;
+    }
     SDL_RenderPresent(g_renderer);
 }
 
@@ -171,6 +404,8 @@ HRESULT WWPalette::SetEntries(DWORD start, DWORD count, const PALETTEENTRY* entr
         return WWDRAW_ERROR_INVALIDPARAMS;
     }
     std::copy(entries, entries + count, entries_ + start);
+    std::copy(entries, entries + count, g_present_palette + start);
+    g_present_palette_valid = true;
     if (g_primary_surface && g_primary_surface->UsesPalette(this)) {
         queue_present(g_primary_surface, nullptr);
     }
@@ -449,6 +684,13 @@ void WWDraw_End_Present_Batch(void){
 
 void WWDraw_Flush_Present(void){
     flush_pending_present();
+}
+
+void WWDraw_Discard_Pending_Present(void)
+{
+    g_pending_surface = nullptr;
+    g_pending_window = nullptr;
+    g_present_pending = false;
 }
 
 bool WWDraw_Has_Pending_Present(void)
