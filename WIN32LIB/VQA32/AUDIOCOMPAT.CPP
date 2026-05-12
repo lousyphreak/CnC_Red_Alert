@@ -19,6 +19,7 @@
 #include <SDL3/SDL_audio.h>
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_timer.h>
+#include "RATRACE.H"
 #include <cstdio>
 #include <cstdlib>
 
@@ -305,19 +306,15 @@ int32_t VQA_OpenAudio(VQAHandleP *vqap)
 	Set_State(&audio->Flags, VQAAUDF_DIGIINIT, VQAAUDB_DIGIINIT, HMI_VQAINIT);
 	Set_State(&AudioFlags, VQAAUDF_DIGIINIT, VQAAUDB_DIGIINIT, HMI_VQAINIT);
 
-	if (getenv("RA_TRACE_STARTUP") != NULL) {
-		fprintf(stderr,
-				"[vqa] audio open audio=%p buffer=%p tempbuf=%p isloaded=%p blocks=%u rate=%u ch=%u bits=%u\n",
-				audio,
-				audio->Buffer,
-				audio->TempBuf,
-				audio->IsLoaded,
-				(unsigned)audio->NumAudBlocks,
-				(unsigned)audio->sSOSInitDriver.wSampleRate,
-				(unsigned)audio->Channels,
-				(unsigned)audio->BitsPerSample);
-		fflush(stderr);
-	}
+	RA_Trace("RA_TRACE_STARTUP", "vqa", "audio open audio=%p buffer=%p tempbuf=%p isloaded=%p blocks=%u rate=%u ch=%u bits=%u",
+		audio,
+		audio->Buffer,
+		audio->TempBuf,
+		audio->IsLoaded,
+		(unsigned)audio->NumAudBlocks,
+		(unsigned)audio->sSOSInitDriver.wSampleRate,
+		(unsigned)audio->Channels,
+		(unsigned)audio->BitsPerSample);
 	return (0);
 }
 

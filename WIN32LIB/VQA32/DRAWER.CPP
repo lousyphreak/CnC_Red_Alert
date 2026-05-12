@@ -61,6 +61,7 @@
 #include <stdlib.h>
 #include <malloc.h>
 #include <string.h>
+#include "RATRACE.H"
 #include <VQ.H>
 #include <VQM32/PALETTE.H>
 #include "UNVQ.H"
@@ -95,15 +96,6 @@ static void Mask_Rect(VQAHandle *vqa, uint32_t x1, uint32_t y1,
 static void Mask_Pointers(VQAData *vqabuf);
 #endif
 
-static int drawer_trace_enabled(void)
-{
-	static int enabled = -1;
-	if (enabled == -1) {
-		enabled = (getenv("RA_TRACE_STARTUP") != NULL) ? 1 : 0;
-	}
-	return (enabled);
-}
-
 static void trace_buffer_frame(VQAHandle *vqa, VQAFrameNode *curframe,
 		uint8_t const *buffer)
 {
@@ -115,7 +107,7 @@ static void trace_buffer_frame(VQAHandle *vqa, VQAFrameNode *curframe,
 	uint32_t sample_count;
 	uint32_t index;
 
-	if (!drawer_trace_enabled() || traced_frames >= 8 || curframe == NULL
+	if (!RA_Trace_Enabled("RA_TRACE_STARTUP") || traced_frames >= 8 || curframe == NULL
 			|| buffer == NULL || curframe->Codebook == NULL
 			|| curframe->Codebook->Buffer == NULL || curframe->Pointers == NULL) {
 		return;
@@ -132,27 +124,33 @@ static void trace_buffer_frame(VQAHandle *vqa, VQAFrameNode *curframe,
 		}
 	}
 
-	fprintf(stderr,
-			"[vqa] draw frame=%d flags=0x%08x pal=%d ptr=%02x%02x%02x%02x cb=%02x%02x%02x%02x pix_nonzero=%u/%u first=",
-			(int)curframe->FrameNum,
-			(unsigned)curframe->Flags,
-			(int)curframe->PaletteSize,
-			(unsigned)curframe->Pointers[0],
-			(unsigned)curframe->Pointers[1],
-			(unsigned)curframe->Pointers[2],
-			(unsigned)curframe->Pointers[3],
-			(unsigned)curframe->Codebook->Buffer[0],
-			(unsigned)curframe->Codebook->Buffer[1],
-			(unsigned)curframe->Codebook->Buffer[2],
-			(unsigned)curframe->Codebook->Buffer[3],
-			(unsigned)nonzero,
-			(unsigned)pixel_count);
+	char message[512];
+	int offset = snprintf(message,
+		sizeof(message),
+		"draw frame=%d flags=0x%08x pal=%d ptr=%02x%02x%02x%02x cb=%02x%02x%02x%02x pix_nonzero=%u/%u first=",
+		(int)curframe->FrameNum,
+		(unsigned)curframe->Flags,
+		(int)curframe->PaletteSize,
+		(unsigned)curframe->Pointers[0],
+		(unsigned)curframe->Pointers[1],
+		(unsigned)curframe->Pointers[2],
+		(unsigned)curframe->Pointers[3],
+		(unsigned)curframe->Codebook->Buffer[0],
+		(unsigned)curframe->Codebook->Buffer[1],
+		(unsigned)curframe->Codebook->Buffer[2],
+		(unsigned)curframe->Codebook->Buffer[3],
+		(unsigned)nonzero,
+		(unsigned)pixel_count);
 	for (index = 0; index < sample_count; ++index) {
-		fprintf(stderr, "%s%02x", (index == 0) ? "" : ",",
+		if (offset > 0 && offset < (int)sizeof(message)) {
+			offset += snprintf(message + offset,
+				sizeof(message) - offset,
+				"%s%02x",
+				(index == 0) ? "" : ",",
 				(unsigned)buffer[index]);
+		}
 	}
-	fprintf(stderr, "\n");
-	fflush(stderr);
+	RA_Trace("RA_TRACE_STARTUP", "vqa", "%s", message);
 	++traced_frames;
 }
 

@@ -17,6 +17,7 @@
 */
 
 #include "MOUSE.H"
+#include "ENDIAN.H"
 #include "IFF.H"
 #include "SHAPE.H"
 #include <stdint.h>
@@ -41,14 +42,15 @@ static uint8_t const *Prepare_Cursor_Data(void const *cursor, uint8_t **storage)
 	Shape_Type const *shape = (Shape_Type const *)cursor;
 	uint8_t *buffer;
 	int32_t header_size;
+	const uint16_t shape_type = RA_ReadUnalignedULE16((char const*)shape + offsetof(Shape_Type, ShapeType));
 
 	*storage = NULL;
 	if (!cursor) {
 		return(NULL);
 	}
 
-	header_size = (shape->ShapeType & MAKESHAPE_COMPACT) ? 26 : 10;
-	if (shape->ShapeType & MAKESHAPE_NOCOMP) {
+	header_size = (shape_type & MAKESHAPE_COMPACT) ? 26 : 10;
+	if (shape_type & MAKESHAPE_NOCOMP) {
 		return((uint8_t const *)cursor);
 	}
 
@@ -58,7 +60,8 @@ static uint8_t const *Prepare_Cursor_Data(void const *cursor, uint8_t **storage)
 	}
 
 	memcpy(buffer, cursor, header_size);
-	((Shape_Type *)buffer)->ShapeType = (uint16_t)(shape->ShapeType | MAKESHAPE_NOCOMP);
+	RA_WriteUnalignedLE16((char*)buffer + offsetof(Shape_Type, ShapeType),
+		static_cast<uint16_t>(shape_type | MAKESHAPE_NOCOMP));
 	LCW_Uncompress((void *)((uint8_t const *)cursor + header_size), buffer + header_size, (uint32_t)Get_Shape_Uncomp_Size(cursor));
 	*storage = buffer;
 	return(buffer);
@@ -213,9 +216,10 @@ void *  ASM_Set_Mouse_Cursor(void *thisptr, int32_t hotspotx, int32_t hotspoty, 
 	}
 
 	shape = (Shape_Type const *)shape_data;
-	cursor_data = shape_data + ((shape->ShapeType & MAKESHAPE_COMPACT) ? 26 : 10);
+	const uint16_t shape_type = RA_ReadUnalignedULE16((char const*)shape + offsetof(Shape_Type, ShapeType));
+	cursor_data = shape_data + ((shape_type & MAKESHAPE_COMPACT) ? 26 : 10);
 	remaining = width * height;
-	if (shape->ShapeType & MAKESHAPE_COMPACT) {
+	if (shape_type & MAKESHAPE_COMPACT) {
 		uint8_t const *lookup = shape->Colortable;
 		uint8_t *dest = (uint8_t *)mouse->MouseCursor;
 

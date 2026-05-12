@@ -63,6 +63,7 @@
 #include	"GAMEDLG.H"
 #include	"LOADDLG.H"
 #include "SDLINPUT.H"
+#include "RATRACE.H"
 #include <SDL3/SDL_time.h>
 #include <cctype>
 #include	<cstdarg>
@@ -91,25 +92,9 @@ extern int32_t BootstrapFocusSeen;
 
 namespace
 {
-bool init_trace_enabled()
+void init_log_text(SDL_LogPriority priority, const char* text)
 {
-	static const bool enabled = std::getenv("RA_TRACE_STARTUP") != NULL;
-	return enabled;
-}
-
-void init_trace(const char* format, ...)
-{
-	if (!init_trace_enabled()) {
-		return;
-	}
-
-	va_list arguments;
-	va_start(arguments, format);
-	std::fputs("[init] ", stderr);
-	std::vfprintf(stderr, format, arguments);
-	std::fputc('\n', stderr);
-	std::fflush(stderr);
-	va_end(arguments);
+	SDL_LogMessage(SDL_LOG_CATEGORY_APPLICATION, priority, "[init] %s", text ? text : "(null)");
 }
 
 const char* const kGameDataBaseMixfiles[] = {
@@ -443,14 +428,14 @@ static bool Has_Required_Game_Data(void)
 
 	for (size_t index = 0; index < ARRAY_SIZE(kGameDataBaseMixfiles); ++index) {
 		const bool present = Is_Local_GameData_File_Available(kGameDataBaseMixfiles[index]);
-		init_trace("Has_Required_Game_Data %s=%d", kGameDataBaseMixfiles[index], present);
+		RA_Trace("RA_TRACE_STARTUP", "init", "Has_Required_Game_Data %s=%d", kGameDataBaseMixfiles[index], present);
 		if (!present) {
 			base_mixfiles_present = false;
 		}
 	}
 
 	if (!redalert_mix || !base_mixfiles_present) {
-		init_trace("Has_Required_Game_Data REDALERT=%d base_mixfiles_present=%d", redalert_mix, base_mixfiles_present);
+		RA_Trace("RA_TRACE_STARTUP", "init", "Has_Required_Game_Data REDALERT=%d base_mixfiles_present=%d", redalert_mix, base_mixfiles_present);
 		return false;
 	}
 
@@ -458,7 +443,7 @@ static bool Has_Required_Game_Data(void)
 
 	const bool conquer_mix = CCFileClass("CONQUER.MIX").Is_Available();
 	const bool general_mix = CCFileClass("GENERAL.MIX").Is_Available();
-	init_trace("Has_Required_Game_Data REDALERT=%d CONQUER=%d GENERAL=%d", redalert_mix, conquer_mix, general_mix);
+	RA_Trace("RA_TRACE_STARTUP", "init", "Has_Required_Game_Data REDALERT=%d CONQUER=%d GENERAL=%d", redalert_mix, conquer_mix, general_mix);
 	return conquer_mix && general_mix;
 }
 
@@ -724,20 +709,20 @@ bool Init_Game(int , char * [])
 	**	handler to function.
 	*/
 	Bootstrap();
-	init_trace("Init_Game bootstrap complete");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game bootstrap complete");
 
 	/*
 	**	Check for an initialize a working mouse pointer. Display error and bail if
 	**	no mouse driver is installed.
 	*/
 	Init_Mouse();
-	init_trace("Init_Game mouse init complete");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game mouse init complete");
 
 	/*
 	**	Initialize access to the required game data.
 	*/
 	Init_Game_Data_Access();
-	init_trace("Init_Game media init complete data_ready=%d", Has_Required_Game_Data());
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game media init complete data_ready=%d", Has_Required_Game_Data());
 
 	if (Special.IsFromInstall) {
 		Load_Prolog_Page();
@@ -747,7 +732,7 @@ bool Init_Game(int , char * [])
 	**	Register and cache any secondary mixfiles.
 	*/
 	Init_Secondary_Mixfiles();
-	init_trace("Init_Game secondary mixfiles ready");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game secondary mixfiles ready");
 
 	/*
 	**	This is a special hack to initialize the heaps that must be in place before the
@@ -767,7 +752,7 @@ bool Init_Game(int , char * [])
 	TerrainTypes.Set_Heap(TERRAIN_COUNT);
 	OverlayTypes.Set_Heap(OVERLAY_COUNT);
 	SmudgeTypes.Set_Heap(SMUDGE_COUNT);
-	init_trace("Init_Game type heaps allocated");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game type heaps allocated");
 
 	HouseTypeClass::Init_Heap();
 	BuildingTypeClass::Init_Heap();
@@ -781,28 +766,28 @@ bool Init_Game(int , char * [])
 	TerrainTypeClass::Init_Heap();
 	OverlayTypeClass::Init_Heap();
 	SmudgeTypeClass::Init_Heap();
-	init_trace("Init_Game type classes initialized");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game type classes initialized");
 
 	/*
 	**	Find and process any rules for this game.
 	*/
 	CCFileClass rules_file("RULES.INI");
-	init_trace("Init_Game RULES.INI load start");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game RULES.INI load start");
 	if (RuleINI.Load(rules_file, false)) {
-		init_trace("Init_Game RULES.INI load complete");
-		init_trace("Init_Game Rule.Process start");
+		RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game RULES.INI load complete");
+		RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game Rule.Process start");
 		Rule.Process(RuleINI);
-		init_trace("Init_Game Rule.Process complete");
+		RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game Rule.Process complete");
 	}
 #ifdef FIXIT_CSII	//	checked - ajw 9/28/98
 	//  Aftermath runtime change 9/29/98
 	//	This is safe to do, as only rules for aftermath units are included in this ini.
 	if (Is_Aftermath_Installed() == true) {
 		CCFileClass aftermath_file("AFTRMATH.INI");
-		init_trace("Init_Game AFTRMATH.INI load start");
+		RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game AFTRMATH.INI load start");
 		if (AftermathINI.Load(aftermath_file, false)) {
-			init_trace("Init_Game AFTRMATH.INI load complete");
-			init_trace("Init_Game Aftermath rule overlay start");
+			RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game AFTRMATH.INI load complete");
+			RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game Aftermath rule overlay start");
 			Rule.General(AftermathINI);
 			Rule.Recharge(AftermathINI);
 			Rule.AI(AftermathINI);
@@ -812,11 +797,11 @@ bool Init_Game(int , char * [])
 			Rule.IQ(AftermathINI);
 			Rule.Objects(AftermathINI);
 			Rule.Difficulty(AftermathINI);
-			init_trace("Init_Game Aftermath rule overlay complete");
+			RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game Aftermath rule overlay complete");
 		}
 	}
 #endif
-	init_trace("Init_Game rules processed");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game rules processed");
 
 	Session.MaxPlayers = Rule.MaxPlayers;
 
@@ -824,13 +809,13 @@ bool Init_Game(int , char * [])
 	**	Initialize the game object heaps as well as other rules-dependant buffer allocations.
 	*/
 	Init_Heaps();
-	init_trace("Init_Game object heaps initialized");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game object heaps initialized");
 
 	/*
 	**	Initialize the animation system.
 	*/
 	Anim_Init();
-	init_trace("Init_Game animation system initialized");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game animation system initialized");
 
 	/*
 	**	Play the startup animation.
@@ -838,9 +823,9 @@ bool Init_Game(int , char * [])
 	if (!Special.IsFromInstall) {
 		VisiblePage.Clear();
 //		Mono_Printf("Playing Intro\n");
-		init_trace("Init_Game Play_Intro start");
+		RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game Play_Intro start");
 		Play_Intro();
-		init_trace("Init_Game Play_Intro complete");
+		RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game Play_Intro complete");
 		memset(CurrentPalette, 0x01, 768);
 		WhitePalette.Set();
 	} else {
@@ -868,17 +853,32 @@ bool Init_Game(int , char * [])
 	**	page while the bulk data is cached.
 	*/
 	if (!Special.IsFromInstall) {
-		init_trace("Init_Game Load_Title_Page start");
+		RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game Load_Title_Page start");
 		Load_Title_Page(true);
-		init_trace("Init_Game Load_Title_Page complete");
+		RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game Load_Title_Page complete");
 
+const char* standby_text = Text_String(TXT_STAND_BY);
+		RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game standby text ptr=%p len=%d text=\"%s\"",
+		           standby_text,
+		           standby_text ? (int)strlen(standby_text) : -1,
+		           standby_text ? standby_text : "<null>");
+		RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game Hide_Mouse start");
 		Hide_Mouse();
+RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game Hide_Mouse complete");
+		RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game Fancy_Text_Print start");
 		Fancy_Text_Print(TXT_STAND_BY, 160*RESFACTOR, 120*RESFACTOR, &ColorRemaps[PCOLOR_DIALOG_BLUE], TBLACK, TPF_CENTER|TPF_TEXT|TPF_DROPSHADOW);
+RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game Fancy_Text_Print complete");
+		RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game Show_Mouse start");
 		Show_Mouse();
+RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game Show_Mouse complete");
 
+RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game CCPalette.Set start");
 		CCPalette.Set(FADE_PALETTE_SLOW);
+RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game CCPalette.Set complete");
+		RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game Call_Back start");
 		Call_Back();
-		init_trace("Init_Game title page shown");
+		RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game Call_Back complete");
+		RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game title page shown");
 	}
 
 	/*
@@ -886,7 +886,7 @@ bool Init_Game(int , char * [])
 	**	before the regular game starts.
 	*/
 	Init_Bulk_Data();
-	init_trace("Init_Game bulk data initialized");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game bulk data initialized");
 
 	/*
 	**	Initialize the multiplayer score values
@@ -1815,16 +1815,16 @@ static void Play_Intro(bool sequenced)
 		char fullname[_MAX_FNAME+_MAX_EXT];
 		WWFS_MakePath(fullname, NULL, NULL, VQName[VQ_REDINTRO], ".VQA");
 		const int hires_available = CCFileClass(fullname).Is_Available();
-		init_trace("Play_Intro selecting hi-res=%d file=%s session=%d", hires_available, fullname, Session.Type);
+		RA_Trace("RA_TRACE_STARTUP", "init", "Play_Intro selecting hi-res=%d file=%s session=%d", hires_available, fullname, Session.Type);
 		if (hires_available) {
 			const bool hires_played = Try_Play_Movie(VQ_REDINTRO, THEME_NONE, false);
-			init_trace("Play_Intro hi-res result=%d", hires_played ? 1 : 0);
+			RA_Trace("RA_TRACE_STARTUP", "init", "Play_Intro hi-res result=%d", hires_played ? 1 : 0);
 			if (!hires_played) {
-				init_trace("Play_Intro hi-res intro failed, falling back to %s", VQName[VQ_TITLE]);
+				RA_Trace("RA_TRACE_STARTUP", "init", "Play_Intro hi-res intro failed, falling back to %s", VQName[VQ_TITLE]);
 				Try_Play_Movie(VQ_TITLE, THEME_NONE, false);
 			}
 		} else {
-			init_trace("Play_Intro hi-res intro unavailable, falling back to %s", VQName[VQ_TITLE]);
+			RA_Trace("RA_TRACE_STARTUP", "init", "Play_Intro hi-res intro unavailable, falling back to %s", VQName[VQ_TITLE]);
 			Try_Play_Movie(VQ_TITLE, THEME_NONE, false);
 		}
 	}
@@ -1935,13 +1935,13 @@ bool Parse_Command_Line(int argc, char * argv[])
 			uint16_t port = PlanetWestwoodPortNumber;
 
 			if (Internet_Has_Command_Line_Connect()) {
-				puts(TEXT_OPTIONS);
+				init_log_text(SDL_LOG_PRIORITY_ERROR, TEXT_OPTIONS);
 				return(false);
 			}
 
 			if (index + 1 < argc && argv[index + 1] != NULL && argv[index + 1][0] != '\0' && argv[index + 1][0] != '-') {
 				if (!Internet_Parse_Port(argv[index + 1], &port)) {
-					puts(TEXT_OPTIONS);
+					init_log_text(SDL_LOG_PRIORITY_ERROR, TEXT_OPTIONS);
 					return(false);
 				}
 				++index;
@@ -1962,7 +1962,7 @@ bool Parse_Command_Line(int argc, char * argv[])
 				argv[index + 2] == NULL ||
 				argv[index + 2][0] == '\0' ||
 				!Internet_Parse_Port(argv[index + 2], &port)) {
-				puts(TEXT_OPTIONS);
+				init_log_text(SDL_LOG_PRIORITY_ERROR, TEXT_OPTIONS);
 				return(false);
 			}
 
@@ -1975,7 +1975,7 @@ bool Parse_Command_Line(int argc, char * argv[])
 		if (argv[index] != NULL && SDL_strcasecmp(argv[index], "-name") == 0) {
 			if (index + 1 >= argc || argv[index + 1] == NULL || argv[index + 1][0] == '\0' ||
 				SDL_strlen(argv[index + 1]) >= sizeof(Session.Handle)) {
-				puts(TEXT_OPTIONS);
+				init_log_text(SDL_LOG_PRIORITY_ERROR, TEXT_OPTIONS);
 				return(false);
 			}
 
@@ -1987,7 +1987,7 @@ bool Parse_Command_Line(int argc, char * argv[])
 		if (argv[index] != NULL && SDL_strcasecmp(argv[index], "-wol-server") == 0) {
 			if (index + 1 >= argc || argv[index + 1] == NULL || argv[index + 1][0] == '\0' ||
 				SDL_strlen(argv[index + 1]) >= sizeof(Session.WolServer)) {
-				puts(TEXT_OPTIONS);
+				init_log_text(SDL_LOG_PRIORITY_ERROR, TEXT_OPTIONS);
 				return(false);
 			}
 			SDL_strlcpy(Session.WolServer, argv[index + 1], sizeof(Session.WolServer));
@@ -2007,7 +2007,7 @@ bool Parse_Command_Line(int argc, char * argv[])
 			**	Unrecognized command line parameter... Display usage
 			**	and then exit.
 			*/
-			puts(TEXT_OPTIONS);
+			init_log_text(SDL_LOG_PRIORITY_INFO, TEXT_OPTIONS);
 			return(false);
 		}
 
@@ -2264,7 +2264,7 @@ bool Parse_Command_Line(int argc, char * argv[])
 						break;
 
 					default:
-						puts(TEXT_INVALID);
+						init_log_text(SDL_LOG_PRIORITY_ERROR, TEXT_INVALID);
 						return(false);
 				}
 
@@ -2844,68 +2844,68 @@ static void Init_Expansion_Files(void)
  *=============================================================================================*/
 static void Init_One_Time_Systems(void)
 {
-	init_trace("Init_One_Time_Systems start");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_One_Time_Systems start");
 	Call_Back();
-	init_trace("Init_One_Time_Systems Map.One_Time");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_One_Time_Systems Map.One_Time");
 	Map.One_Time();
-	init_trace("Init_One_Time_Systems Map.One_Time complete");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_One_Time_Systems Map.One_Time complete");
 	Call_Back();
-	init_trace("Init_One_Time_Systems Logic.One_Time");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_One_Time_Systems Logic.One_Time");
 	Logic.One_Time();
 	Call_Back();
-	init_trace("Init_One_Time_Systems Options.One_Time");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_One_Time_Systems Options.One_Time");
 	Options.One_Time();
 	Call_Back();
-	init_trace("Init_One_Time_Systems Session.One_Time");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_One_Time_Systems Session.One_Time");
 	Session.One_Time();
 #if RA_ENABLE_TCP
 	Internet_Apply_Command_Line_Name();
 #endif
 	Call_Back();
 
-	init_trace("Init_One_Time_Systems ObjectTypeClass::One_Time");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_One_Time_Systems ObjectTypeClass::One_Time");
 	ObjectTypeClass::One_Time();
 	Call_Back();
-	init_trace("Init_One_Time_Systems BuildingTypeClass::One_Time");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_One_Time_Systems BuildingTypeClass::One_Time");
 	BuildingTypeClass::One_Time();
 	Call_Back();
-	init_trace("Init_One_Time_Systems BulletTypeClass::One_Time");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_One_Time_Systems BulletTypeClass::One_Time");
 	BulletTypeClass::One_Time();
 	Call_Back();
-	init_trace("Init_One_Time_Systems HouseTypeClass::One_Time");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_One_Time_Systems HouseTypeClass::One_Time");
 	HouseTypeClass::One_Time();
 	Call_Back();
-	init_trace("Init_One_Time_Systems TemplateTypeClass::One_Time");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_One_Time_Systems TemplateTypeClass::One_Time");
 	TemplateTypeClass::One_Time();
 	Call_Back();
-	init_trace("Init_One_Time_Systems OverlayTypeClass::One_Time");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_One_Time_Systems OverlayTypeClass::One_Time");
 	OverlayTypeClass::One_Time();
 	Call_Back();
-	init_trace("Init_One_Time_Systems SmudgeTypeClass::One_Time");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_One_Time_Systems SmudgeTypeClass::One_Time");
 	SmudgeTypeClass::One_Time();
 	Call_Back();
-	init_trace("Init_One_Time_Systems TerrainTypeClass::One_Time");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_One_Time_Systems TerrainTypeClass::One_Time");
 	TerrainTypeClass::One_Time();
 	Call_Back();
-	init_trace("Init_One_Time_Systems UnitTypeClass::One_Time");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_One_Time_Systems UnitTypeClass::One_Time");
 	UnitTypeClass::One_Time();
 	Call_Back();
-	init_trace("Init_One_Time_Systems VesselTypeClass::One_Time");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_One_Time_Systems VesselTypeClass::One_Time");
 	VesselTypeClass::One_Time();
 	Call_Back();
-	init_trace("Init_One_Time_Systems InfantryTypeClass::One_Time");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_One_Time_Systems InfantryTypeClass::One_Time");
 	InfantryTypeClass::One_Time();
 	Call_Back();
-	init_trace("Init_One_Time_Systems AnimTypeClass::One_Time");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_One_Time_Systems AnimTypeClass::One_Time");
 	AnimTypeClass::One_Time();
 	Call_Back();
-	init_trace("Init_One_Time_Systems AircraftTypeClass::One_Time");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_One_Time_Systems AircraftTypeClass::One_Time");
 	AircraftTypeClass::One_Time();
 	Call_Back();
-	init_trace("Init_One_Time_Systems HouseClass::One_Time");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_One_Time_Systems HouseClass::One_Time");
 	HouseClass::One_Time();
 	Call_Back();
-	init_trace("Init_One_Time_Systems complete");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_One_Time_Systems complete");
 }
 
 /***********************************************************************************************
@@ -2963,7 +2963,7 @@ static void Init_Game_Data_Access(void)
 	const bool data_ready = Has_Required_Game_Data();
 	VisiblePage.Clear();
 	HidPage.Clear();
-	init_trace("Init_Game_Data_Access start data_ready=%d", data_ready);
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Game_Data_Access start data_ready=%d", data_ready);
 
 	if (data_ready) {
 		return;
@@ -3030,31 +3030,31 @@ static void Init_Bootstrap_Mixfiles(void)
 	}
 #endif
 
-	init_trace("Init_Bootstrap_Mixfiles loading REDALERT.MIX");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Bootstrap_Mixfiles loading REDALERT.MIX");
 	new MFCD("REDALERT.MIX", &FastKey);
-	init_trace("Init_Bootstrap_Mixfiles REDALERT.MIX ready");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Bootstrap_Mixfiles REDALERT.MIX ready");
 
 	/*
 	**	Bootstrap enough of the system so that the error dialog box can successfully
 	**	be displayed.
 	*/
-	init_trace("Init_Bootstrap_Mixfiles loading LOCAL.MIX");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Bootstrap_Mixfiles loading LOCAL.MIX");
 	new MFCD("LOCAL.MIX", &FastKey);			// Cached.
 	if (!MFCD::Cache("LOCAL.MIX")) {
 		assert(false);
 	}
-	init_trace("Init_Bootstrap_Mixfiles LOCAL.MIX cached");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Bootstrap_Mixfiles LOCAL.MIX cached");
 
-	init_trace("Init_Bootstrap_Mixfiles loading HIRES.MIX");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Bootstrap_Mixfiles loading HIRES.MIX");
 	new MFCD("HIRES.MIX", &FastKey);
 	if (!MFCD::Cache("HIRES.MIX")) {
 		assert(false);
 	}
-	init_trace("Init_Bootstrap_Mixfiles HIRES.MIX cached");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Bootstrap_Mixfiles HIRES.MIX cached");
 
-	init_trace("Init_Bootstrap_Mixfiles loading NCHIRES.MIX");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Bootstrap_Mixfiles loading NCHIRES.MIX");
 	new MFCD("NCHIRES.MIX", &FastKey);		//Non-cached hires stuff incl VQ palettes
-	init_trace("Init_Bootstrap_Mixfiles NCHIRES.MIX ready");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Bootstrap_Mixfiles NCHIRES.MIX ready");
 }
 
 /***********************************************************************************************
@@ -3080,7 +3080,7 @@ void Extract(char* filename, char* outfile);
 static void Init_Secondary_Mixfiles(void)
 {
 	Register_GameData_Main_Mixfile();
-	init_trace("Init_Secondary_Mixfiles MAIN.MIX ready");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Secondary_Mixfiles MAIN.MIX ready");
 
 	//Denzil extract mixfile
 	#ifdef DENZIL_MIXEXTRACT
@@ -3118,37 +3118,37 @@ static void Init_Secondary_Mixfiles(void)
 	*/
 	ConquerMix = new MFCD("CONQUER.MIX", &FastKey);			// Cached.
 	g_bootstrap_conquer_mix = ConquerMix;
-	init_trace("Init_Secondary_Mixfiles CONQUER.MIX ready");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Secondary_Mixfiles CONQUER.MIX ready");
 //	new MFCD("TRANSIT.MIX", &FastKey);
 
 	if (GeneralMix == NULL) GeneralMix = new MFCD("GENERAL.MIX", &FastKey);			// Never cached.
-	init_trace("Init_Secondary_Mixfiles GENERAL.MIX ready");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Secondary_Mixfiles GENERAL.MIX ready");
 
 	Load_Movie_Mixfiles();
-	init_trace("Init_Secondary_Mixfiles movies mix ready");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Secondary_Mixfiles movies mix ready");
 
 	/*
 	**	Register the score mixfile.
 	*/
 	ScoresPresent = true;
 	ScoreMix = new MFCD("SCORES.MIX", &FastKey);
-	init_trace("Init_Secondary_Mixfiles SCORES.MIX ready");
-	init_trace("Init_Secondary_Mixfiles ThemeClass::Scan start");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Secondary_Mixfiles SCORES.MIX ready");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Secondary_Mixfiles ThemeClass::Scan start");
 	ThemeClass::Scan();
-	init_trace("Init_Secondary_Mixfiles ThemeClass::Scan complete");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Secondary_Mixfiles ThemeClass::Scan complete");
 
 	/*
 	**	These are sound card specific, but the install program would have
 	**	copied the correct versions to the hard drive.
 	*/
 	new MFCD("SPEECH.MIX", &FastKey);			// Never cached.
-	init_trace("Init_Secondary_Mixfiles SPEECH.MIX ready");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Secondary_Mixfiles SPEECH.MIX ready");
 	new MFCD("SOUNDS.MIX", &FastKey);			// Cached.
-	init_trace("Init_Secondary_Mixfiles SOUNDS.MIX ready");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Secondary_Mixfiles SOUNDS.MIX ready");
 	new MFCD("RUSSIAN.MIX", &FastKey);			// Cached.
-	init_trace("Init_Secondary_Mixfiles RUSSIAN.MIX ready");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Secondary_Mixfiles RUSSIAN.MIX ready");
 	new MFCD("ALLIES.MIX", &FastKey);			// Cached.
-	init_trace("Init_Secondary_Mixfiles ALLIES.MIX ready");
+	RA_Trace("RA_TRACE_STARTUP", "init", "Init_Secondary_Mixfiles ALLIES.MIX ready");
 }
 
 /***********************************************************************************************
@@ -3175,14 +3175,14 @@ static void Bootstrap(void)
 	** Process the message loop until we are in focus. We need to be in focus to read pixels from
 	** the screen.
 	*/
-	init_trace("Bootstrap waiting for focus GameInFocus=%d seen=%d", GameInFocus, BootstrapFocusSeen);
+	RA_Trace("RA_TRACE_STARTUP", "init", "Bootstrap waiting for focus GameInFocus=%d seen=%d", GameInFocus, BootstrapFocusSeen);
 	do {
 		Keyboard->Check();
 		if (!GameInFocus && !BootstrapFocusSeen) {
 			SDL_GameInput_Delay(1);
 		}
 	} while (!GameInFocus && !BootstrapFocusSeen);
-	init_trace("Bootstrap focus acquired GameInFocus=%d seen=%d", GameInFocus, BootstrapFocusSeen);
+	RA_Trace("RA_TRACE_STARTUP", "init", "Bootstrap focus acquired GameInFocus=%d seen=%d", GameInFocus, BootstrapFocusSeen);
 	AllSurfaces.SurfacesRestored = false;
 
 	/*

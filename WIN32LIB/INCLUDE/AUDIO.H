@@ -38,6 +38,7 @@
 #define WW_AUDIO_H
 
 #include "WWSTD.H"
+#include "ENDIAN.H"
 #include <stdint.h>
 
 /*=========================================================================*/

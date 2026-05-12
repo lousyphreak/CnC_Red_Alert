@@ -17,20 +17,11 @@
 */
 
 #include "MISC.H"
+#include "PALETTEC.H"
 #include <stdint.h>
 #include <string.h>
 
 uint32_t RandNumb = 0x12349876u;
-
-
-static int32_t Signed_Shift_Right_8(int32_t value)
-{
-if (value >= 0) {
-return(value >> 8);
-}
-
-return(-(((-value) + 0xFF) >> 8));
-}
 
 
 uint8_t  Random(void)
@@ -86,76 +77,61 @@ return((int32_t)mask);
 
 void *  Build_Fading_Table(void const *palette, void const *dest, int32_t color, int32_t frac)
 {
-uint8_t const *source;
-uint8_t *table;
-int32_t target;
-int32_t fraction;
+	uint8_t *table;
+	int32_t target;
+	int32_t fraction;
 
-if (!palette || !dest) {
-return((void *)dest);
-}
+	if (!palette || !dest) {
+		return((void *)dest);
+	}
 
-source = (uint8_t const *)palette;
-table = (uint8_t *)dest;
-target = (int32_t)color;
-fraction = (int32_t)frac;
+	table = (uint8_t *)dest;
+	target = (int32_t)color;
+	fraction = (int32_t)frac;
 
-if (target < 0) {
-target = 0;
-}
-if (target >= 256) {
-target = 255;
-}
-if (fraction < 0) {
-fraction = 0;
-}
-if (fraction > 255) {
-fraction = 255;
-}
+	if (target < 0) {
+		target = 0;
+	}
+	if (target >= 256) {
+		target = 255;
+	}
+	if (fraction < 0) {
+		fraction = 0;
+	}
+	if (fraction > 255) {
+		fraction = 255;
+	}
 
-table[0] = 0;
+	PaletteClass const & working_palette = *reinterpret_cast<PaletteClass const *>(palette);
+	RGBClass const & target_color = working_palette[(unsigned)target];
 
-for (int32_t source_index = 1; source_index < 256; ++source_index) {
-int32_t best_color = target;
-	int32_t best_value = INT32_MAX;
-int32_t base_offset = source_index * 3;
-int32_t target_offset = target * 3;
-int32_t ideal_red = (int32_t)source[base_offset + 0] - Signed_Shift_Right_8(((int32_t)source[base_offset + 0] - (int32_t)source[target_offset + 0]) * fraction);
-int32_t ideal_green = (int32_t)source[base_offset + 1] - Signed_Shift_Right_8(((int32_t)source[base_offset + 1] - (int32_t)source[target_offset + 1]) * fraction);
-int32_t ideal_blue = (int32_t)source[base_offset + 2] - Signed_Shift_Right_8(((int32_t)source[base_offset + 2] - (int32_t)source[target_offset + 2]) * fraction);
+	table[0] = 0;
 
-for (int32_t candidate = 1; candidate < 256; ++candidate) {
-int32_t match_value;
-int32_t candidate_offset;
-int32_t red_diff;
-int32_t green_diff;
-int32_t blue_diff;
+	for (int32_t source_index = 1; source_index < 256; ++source_index) {
+		int32_t best_color = target;
+		int32_t best_value = INT32_MAX;
+		RGBClass ideal = working_palette[(unsigned)source_index];
+		ideal.Adjust(fraction, target_color);
 
-if (candidate == source_index) {
-continue;
-}
+		for (int32_t candidate = 1; candidate < 256; ++candidate) {
+			if (candidate == source_index) {
+				continue;
+			}
 
-candidate_offset = candidate * 3;
-red_diff = (int32_t)source[candidate_offset + 0] - ideal_red;
-green_diff = (int32_t)source[candidate_offset + 1] - ideal_green;
-blue_diff = (int32_t)source[candidate_offset + 2] - ideal_blue;
-match_value = (int32_t)red_diff * red_diff;
-match_value += (int32_t)green_diff * green_diff;
-match_value += (int32_t)blue_diff * blue_diff;
+			int32_t match_value = working_palette[(unsigned)candidate].Difference(ideal);
+			if (match_value <= best_value) {
+				best_value = match_value;
+				best_color = candidate;
+				if (match_value == 0) {
+					break;
+				}
+			}
+		}
 
-if (match_value <= best_value) {
-best_value = match_value;
-best_color = candidate;
-if (match_value == 0) {
-break;
-}
-}
-}
+		table[source_index] = (uint8_t)best_color;
+	}
 
-table[source_index] = (uint8_t)best_color;
-}
-
-return((void *)dest);
+	return((void *)dest);
 }
 
 

@@ -46,6 +46,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include	"FUNCTION.H"
+#include "ENDIAN.H"
 #include "SDLINPUT.H"
 #include <SDL3/SDL_video.h>
 #include	<cstdarg>
@@ -57,6 +58,7 @@
 #include "WSPROTO.H"
 #else	//NETWORK_UDP
 #include "TCPIP.H"
+#include "RATRACE.H"
 #endif	//NETWORK_UDP
 
 void output(int16_t,int16_t)
@@ -71,27 +73,6 @@ extern int32_t BootstrapFocusSeen;
 
 namespace
 {
-bool winstub_trace_enabled()
-{
-	static const bool enabled = std::getenv("RA_TRACE_STARTUP") != NULL;
-	return enabled;
-}
-
-void winstub_trace(const char* format, ...)
-{
-	if (!winstub_trace_enabled()) {
-		return;
-	}
-
-	va_list arguments;
-	va_start(arguments, format);
-	std::fputs("[winstub] ", stderr);
-	std::vfprintf(stderr, format, arguments);
-	std::fputc('\n', stderr);
-	std::fflush(stderr);
-	va_end(arguments);
-}
-
 enum class DisplayMetric {
 	Width,
 	Height,
@@ -243,7 +224,7 @@ extern bool InMovie;
 
 void Main_Window_Handle_Focus_Change(bool focused)
 {
-	winstub_trace("Main window focus change hwnd=%p active=%u", MainWindow, focused ? 1u : 0u);
+	RA_Trace("RA_TRACE_STARTUP", "winstub", "Main window focus change hwnd=%p active=%u", MainWindow, focused ? 1u : 0u);
 	if (focused) {
 		BootstrapFocusSeen = TRUE;
 		GameInFocus = TRUE;
@@ -255,14 +236,14 @@ void Main_Window_Handle_Focus_Change(bool focused)
 		AllSurfaces.Set_Surface_Focus(FALSE);
 		AllSurfaces.Restore_Surfaces();
 	} else {
-		winstub_trace("Ignoring post-bootstrap focus loss");
+		RA_Trace("RA_TRACE_STARTUP", "winstub", "Ignoring post-bootstrap focus loss");
 		GameInFocus = TRUE;
 	}
 }
 
 void Main_Window_Destroy(void)
 {
-	winstub_trace("Main window destroy hwnd=%p ReadyToQuit=%d", MainWindow, ReadyToQuit);
+	RA_Trace("RA_TRACE_STARTUP", "winstub", "Main window destroy hwnd=%p ReadyToQuit=%d", MainWindow, ReadyToQuit);
 	Prog_End();
 	Invalidate_Cached_Icons();
 	VisiblePage.Un_Init();
@@ -302,7 +283,7 @@ void Main_Window_Destroy(void)
 
 void Main_Window_Handle_Close_Request(void)
 {
-	winstub_trace("Main window close request hwnd=%p", MainWindow);
+	RA_Trace("RA_TRACE_STARTUP", "winstub", "Main window close request hwnd=%p", MainWindow);
 	Main_Window_Destroy();
 }
 
@@ -600,14 +581,14 @@ void  SetPalette(uint8_t *palette, int32_t numbytes, uint32_t slowpal)
 	}
 	Increase_Palette_Luminance(movie_palette, 15, 15, 15, 63);
 
-	if (winstub_trace_enabled() && palette != NULL && palette_trace_count < 8) {
+	if (RA_Trace_Enabled("RA_TRACE_STARTUP") && palette != NULL && palette_trace_count < 8) {
 		int nonzero_components = 0;
 		for (int i = 0; i < 256 * 3; ++i) {
 			if (movie_palette[i] != 0) {
 				++nonzero_components;
 			}
 		}
-		winstub_trace("movie palette bytes=%ld slow=%lu first=%u,%u,%u second=%u,%u,%u",
+		RA_Trace("RA_TRACE_STARTUP", "winstub", "movie palette bytes=%ld slow=%lu first=%u,%u,%u second=%u,%u,%u",
 			numbytes,
 			slowpal,
 			(unsigned)movie_palette[0],
@@ -616,7 +597,7 @@ void  SetPalette(uint8_t *palette, int32_t numbytes, uint32_t slowpal)
 			(unsigned)movie_palette[3],
 			(unsigned)movie_palette[4],
 			(unsigned)movie_palette[5]);
-		winstub_trace("movie palette nonzero=%d idx55=%u,%u,%u idx163=%u,%u,%u idx240=%u,%u,%u",
+		RA_Trace("RA_TRACE_STARTUP", "winstub", "movie palette nonzero=%d idx55=%u,%u,%u idx163=%u,%u,%u idx240=%u,%u,%u",
 			nonzero_components,
 			(unsigned)movie_palette[55 * 3 + 0],
 			(unsigned)movie_palette[55 * 3 + 1],
@@ -845,6 +826,15 @@ GraphicBufferClass* Read_PCX_File(char const *name, char* palette, void *Buff, i
 	file_handle.Read (&header, sizeof (PCX_HEADER));
 
 	if (header.id != 10 &&  header.version != 5 && header.pixelsize != 8 ) return NULL ;
+
+	header.x = SDL_Swap16LE((uint16_t)header.x);
+	header.y = SDL_Swap16LE((uint16_t)header.y);
+	header.width = SDL_Swap16LE((uint16_t)header.width);
+	header.height = SDL_Swap16LE((uint16_t)header.height);
+	header.xres = SDL_Swap16LE((uint16_t)header.xres);
+	header.yres = SDL_Swap16LE((uint16_t)header.yres);
+	header.byte_per_line = SDL_Swap16LE((uint16_t)header.byte_per_line);
+	header.palette_type = SDL_Swap16LE((uint16_t)header.palette_type);
 
 	width = header.width - header.x + 1;
 	height = header.height - header.y + 1;

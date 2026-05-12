@@ -36,6 +36,7 @@
  *= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =*/
 
 #include  <WWSTD.H>
+#include "ENDIAN.H"
 #include "FILEPCX.H"
 #include <WWMEM.H>
 static void Write_Pcx_ScanLine ( int32_t file_handle , int32_t scansize , char * ptr );
@@ -80,7 +81,16 @@ int32_t Write_PCX_File (char* name, GraphicViewPortClass& pic, uint8_t* palette 
 	header.width  = pic.Get_Width() - 1 ;
 	header.height = pic.Get_Height() - 1 ;
 	header.byte_per_line = pic.Get_Width() ;
-	Write_File ( file_handle, & header , sizeof (PCX_HEADER)) ;
+	PCX_HEADER disk_header = header;
+	disk_header.x = SDL_Swap16LE((uint16_t)disk_header.x);
+	disk_header.y = SDL_Swap16LE((uint16_t)disk_header.y);
+	disk_header.width = SDL_Swap16LE((uint16_t)disk_header.width);
+	disk_header.height = SDL_Swap16LE((uint16_t)disk_header.height);
+	disk_header.xres = SDL_Swap16LE((uint16_t)disk_header.xres);
+	disk_header.yres = SDL_Swap16LE((uint16_t)disk_header.yres);
+	disk_header.byte_per_line = SDL_Swap16LE((uint16_t)disk_header.byte_per_line);
+	disk_header.palette_type = SDL_Swap16LE((uint16_t)disk_header.palette_type);
+	Write_File ( file_handle, & disk_header , sizeof (PCX_HEADER)) ;
 
 	VP_Scan_Line = pic.Get_Width()	+ pic.Get_XAdd();
 	Graphic_Buffer = pic.Get_Graphic_Buffer() ;

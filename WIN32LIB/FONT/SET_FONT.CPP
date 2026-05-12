@@ -37,8 +37,8 @@
 
 
 #include "FONT.H"
+#include "ENDIAN.H"
 #include <WWSTD.H>
-#include <cstring>
 
 
 
@@ -73,10 +73,8 @@ void *  Set_Font(void const *fontptr)
 		/*
 		**	Inform the system about the new font.
 		*/
-		uint16_t width_block_offset;
-		uint16_t info_block_offset;
-		std::memcpy(&width_block_offset, (char*)fontptr + FONTWIDTHBLOCK, sizeof(width_block_offset));
-		std::memcpy(&info_block_offset, (char*)fontptr + FONTINFOBLOCK, sizeof(info_block_offset));
+		uint16_t width_block_offset = RA_ReadUnalignedULE16((char const*)fontptr + FONTWIDTHBLOCK);
+		uint16_t info_block_offset = RA_ReadUnalignedULE16((char const*)fontptr + FONTINFOBLOCK);
 
 		FontWidthBlockPtr = (char*)fontptr + width_block_offset;
 		blockptr  = (char*)fontptr + info_block_offset;

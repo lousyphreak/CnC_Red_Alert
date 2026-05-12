@@ -226,8 +226,7 @@ void FootClass::Set_Speed(int speed)
 {
 	assert(IsActive);
 
-	speed &= 0xFF;
-	((uint8_t &)Speed) = speed;
+	Speed = speed & 0xFF;
 }
 
 

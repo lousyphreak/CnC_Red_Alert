@@ -61,6 +61,7 @@
 #include "SOUNDINT.H"
 #include "MEMFLAG.H"
 #include "AUDIO.H"
+#include "ENDIAN.H"
 
 extern	char DebugBuffer[];
 
@@ -194,12 +195,15 @@ int32_t Sample_Copy(SampleTrackerType *st, void ** source, int32_t * ssize, void
 					if (s < static_cast<int32_t>(sizeof(fsize))) {
 						return datasize;
 					}
+					fsize = SDL_Swap16LE(fsize);
 					s = Simple_Copy(source, ssize, alternate, altsize, &dptr, sizeof(dsize));
+					dsize = SDL_Swap16LE(dsize);
 					if (s < static_cast<int32_t>(sizeof(dsize)) || size < static_cast<int32_t>(dsize)) {
 						return datasize;
 					}
 
 					s = Simple_Copy(source, ssize, alternate, altsize, &mptr, sizeof(magic));
+					magic = SDL_Swap32LE(magic);
 					if (s < static_cast<int32_t>(sizeof(magic)) || magic != LockedData.MagicNumber) {
 						return datasize;
 					}
@@ -234,6 +238,9 @@ int32_t Sample_Copy(SampleTrackerType *st, void ** source, int32_t * ssize, void
 								sosCODECDecompressData(&st->sosinfo, dsize);
 							} else {
 								General_sosCODECDecompressData(&st->sosinfo, dsize);
+							}
+							if (st->sosinfo.wBitSize == 16) {
+								RA_ConvertHost16BufferToLE(dest, (size_t)dsize / sizeof(uint16_t));
 							}
 						}
 						dest = Audio_Add_Long_To_Pointer(dest, dsize);

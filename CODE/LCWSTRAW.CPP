@@ -40,6 +40,7 @@
 
 #include	"LCWSTRAW.H"
 #include	"LCW.H"
+#include	"ENDIAN.H"
 #include	<string.h>
 #include	<assert.h>
 
@@ -158,8 +159,11 @@ int LCWStraw::Get(void * destbuf, int slen)
 		if (slen == 0) break;
 
 		if (Control == DECOMPRESS) {
-			int incount = Straw::Get(&BlockHeader, sizeof(BlockHeader));
+			decltype(BlockHeader) raw_header;
+			int incount = Straw::Get(&raw_header, sizeof(raw_header));
 			if (incount != sizeof(BlockHeader)) break;
+			BlockHeader.CompCount = SDL_Swap16LE(raw_header.CompCount);
+			BlockHeader.UncompCount = SDL_Swap16LE(raw_header.UncompCount);
 
 			void * ptr = &Buffer[(BlockSize+SafetyMargin) - BlockHeader.CompCount];
 			incount = Straw::Get(ptr, BlockHeader.CompCount);
@@ -171,7 +175,10 @@ int LCWStraw::Get(void * destbuf, int slen)
 			BlockHeader.UncompCount = (uint16_t)Straw::Get(Buffer, BlockSize);
 			if (BlockHeader.UncompCount == 0) break;
 			BlockHeader.CompCount = (uint16_t)LCW_Comp(Buffer, &Buffer2[sizeof(BlockHeader)], BlockHeader.UncompCount);
-			memmove(Buffer2, &BlockHeader, sizeof(BlockHeader));
+			decltype(BlockHeader) raw_header;
+			raw_header.CompCount = SDL_Swap16LE(BlockHeader.CompCount);
+			raw_header.UncompCount = SDL_Swap16LE(BlockHeader.UncompCount);
+			memmove(Buffer2, &raw_header, sizeof(raw_header));
 			Counter = BlockHeader.CompCount+sizeof(BlockHeader);
 		}
 	}

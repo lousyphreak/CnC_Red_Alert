@@ -37,6 +37,7 @@
 
 
 #include "FONT.H"
+#include "ENDIAN.H"
 #include <FILE.H>
 #include <WWMEM.H>
 #include <WWSTD.H>
@@ -91,9 +92,10 @@ void *  Load_Font(char const *name)
 	fh=Open_File(name,READ);
 	if ( fh>=0 ){
 		if ( Read_File(fh, (char *) &size, 2) != 2) return(NULL);
+		size = SDL_Swap16LE(size);
 
 		ptr = (char *) Alloc(size , MEM_NORMAL );
-		*(int16_t *)ptr = size;
+		RA_WriteUnalignedLE16(ptr, size);
 		Read_File(fh, ptr + 2, size - 2);
 		Close_File(fh);
 	} else {
@@ -106,9 +108,10 @@ void *  Load_Font(char const *name)
 	if (Find_File(name)) {
 		fh = Open_File(name, READ);
 		if (Read_File(fh, (char *) &size, 2) != 2) return(NULL);
+		size = SDL_Swap16LE(size);
 
 		ptr = (char *) Alloc(size, MEM_NORMAL);
-		*(int16_t *)ptr = size;
+		RA_WriteUnalignedLE16(ptr, size);
 		Read_File(fh, ptr + 2, size - 2);
 		Close_File(fh);
 	} else {

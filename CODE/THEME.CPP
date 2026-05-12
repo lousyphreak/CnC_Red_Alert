@@ -51,36 +51,11 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include	"FUNCTION.H"
+#include "RATRACE.H"
 #include	"THEME.H"
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
-
-
-static bool Theme_Trace_Enabled(void)
-{
-	static int enabled = -1;
-	if (enabled == -1) {
-		char const* env = std::getenv("RA_TRACE_STARTUP");
-		enabled = (env != NULL && env[0] != '\0') ? 1 : 0;
-	}
-	return(enabled != 0);
-}
-
-static void Theme_Trace(char const* format, ...)
-{
-	if (!Theme_Trace_Enabled()) {
-		return;
-	}
-
-	va_list arguments;
-	va_start(arguments, format);
-	std::fputs("[theme] ", stderr);
-	std::vfprintf(stderr, format, arguments);
-	std::fputc('\n', stderr);
-	std::fflush(stderr);
-	va_end(arguments);
-}
 
 /*
 **	These are the actual filename list for the theme sample files.
@@ -605,15 +580,15 @@ ThemeType ThemeClass::From_Name(char const * name) const
  *=============================================================================================*/
 void ThemeClass::Scan(void)
 {
-	Theme_Trace("Scan start");
+	RA_Trace("RA_TRACE_STARTUP", "theme", "Scan start");
 	for (int index = THEME_FIRST; index < THEME_COUNT; ++index) {
 		ThemeType theme = (ThemeType)index;
 		char const* file_name = Theme_File_Name(theme);
-		Theme_Trace("Scan checking %s", file_name);
+		RA_Trace("RA_TRACE_STARTUP", "theme", "Scan checking %s", file_name);
 		_themes[theme].Available = CCFileClass(file_name).Is_Available();
-		Theme_Trace("Scan checked %s available=%d", file_name, _themes[theme].Available);
+		RA_Trace("RA_TRACE_STARTUP", "theme", "Scan checked %s available=%d", file_name, _themes[theme].Available);
 	}
-	Theme_Trace("Scan complete");
+	RA_Trace("RA_TRACE_STARTUP", "theme", "Scan complete");
 }
 
 

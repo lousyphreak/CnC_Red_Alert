@@ -37,6 +37,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include  <WWSTD.H>
+#include "ENDIAN.H"
 #include "FILEPCX.H"
 /***************************************************************************
  * READ_PCX_FILE -- read a pcx file into a Graphic Buffer                  *
@@ -93,6 +94,15 @@ GraphicBufferClass* Read_PCX_File(char* name, char* Palette, void *Buff, int32_t
   Read_File ( file_handle, & header , sizeof (PCX_HEADER)) ;
   if ( header.id != 10 &&  header.version != 5 &&
 	   header.pixelsize != 8 ) return NULL ;
+
+  header.x = SDL_Swap16LE((uint16_t)header.x);
+  header.y = SDL_Swap16LE((uint16_t)header.y);
+  header.width = SDL_Swap16LE((uint16_t)header.width);
+  header.height = SDL_Swap16LE((uint16_t)header.height);
+  header.xres = SDL_Swap16LE((uint16_t)header.xres);
+  header.yres = SDL_Swap16LE((uint16_t)header.yres);
+  header.byte_per_line = SDL_Swap16LE((uint16_t)header.byte_per_line);
+  header.palette_type = SDL_Swap16LE((uint16_t)header.palette_type);
 
   width = header.width - header.x + 1 ;
   height = header.height - header.y + 1 ;

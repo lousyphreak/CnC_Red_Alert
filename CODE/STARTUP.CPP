@@ -37,6 +37,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include	"FUNCTION.H"
+#include "RATRACE.H"
 #include	"SDLINPUT.H"
 #include <SDL3/SDL.h>
 #include "ra_messagebox.h"
@@ -65,28 +66,14 @@ const char* const kStartupGameDataBaseMixfiles[] = {
 	"MAIN4.MIX"
 };
 
-bool startup_trace_enabled()
+void startup_error(const char* format, ...)
 {
-	static const bool enabled = std::getenv("RA_TRACE_STARTUP") != NULL;
-	return enabled;
-}
-
-void startup_trace(const char* format, ...)
-{
-	if (!startup_trace_enabled()) {
-		return;
-	}
-
 	char message[1024];
 	va_list arguments;
 	va_start(arguments, format);
 	std::vsnprintf(message, sizeof(message), format, arguments);
 	va_end(arguments);
-
-	std::fputs("[startup] ", stderr);
-	std::fputs(message, stderr);
-	std::fputc('\n', stderr);
-	std::fflush(stderr);
+	SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "[startup] %s", message);
 }
 
 bool command_line_contains_forbidden_network_path(int argc, char* argv[])
@@ -257,7 +244,7 @@ std::string resolve_game_data_directory(int argc, char* argv[], const char* exec
 {
 	std::string command_line_directory;
 	if (try_get_command_line_gamedata_directory(argc, argv, &command_line_directory)) {
-		startup_trace("Checking -gamedata directory \"%s\"", command_line_directory.c_str());
+		RA_Trace("RA_TRACE_STARTUP", "startup", "Checking -gamedata directory \"%s\"", command_line_directory.c_str());
 		if (directory_contains_game_data(command_line_directory)) {
 			return command_line_directory;
 		}
@@ -265,14 +252,14 @@ std::string resolve_game_data_directory(int argc, char* argv[], const char* exec
 
 	const std::string current_working_directory = current_working_directory_path();
 	if (!current_working_directory.empty()) {
-		startup_trace("Checking current working directory \"%s\"", current_working_directory.c_str());
+		RA_Trace("RA_TRACE_STARTUP", "startup", "Checking current working directory \"%s\"", current_working_directory.c_str());
 		if (directory_contains_game_data(current_working_directory)) {
 			return current_working_directory;
 		}
 	}
 
 	const std::string executable_directory = executable_directory_path(executable_path);
-	startup_trace("Checking executable directory \"%s\"", executable_directory.c_str());
+	RA_Trace("RA_TRACE_STARTUP", "startup", "Checking executable directory \"%s\"", executable_directory.c_str());
 	if (directory_contains_game_data(executable_directory)) {
 		return executable_directory;
 	}
@@ -287,26 +274,24 @@ void print_missing_game_data_error(int argc, char* argv[], const char* executabl
 	const std::string current_working_directory = current_working_directory_path();
 	const std::string executable_directory = executable_directory_path(executable_path);
 
-	fprintf(stderr, "Required game data was not found.\n");
-	fprintf(stderr, "Checked for REDALERT.MIX and MAIN1.MIX..MAIN4.MIX in this order:\n");
+	startup_error("Required game data was not found.");
+	startup_error("Checked for REDALERT.MIX and MAIN1.MIX..MAIN4.MIX in this order:");
 	if (has_command_line_directory) {
-		fprintf(stderr, "  1. -gamedata %s\n", command_line_directory.c_str());
+		startup_error("  1. -gamedata %s", command_line_directory.c_str());
 	} else {
-		fprintf(stderr, "  1. -gamedata <dir> (not provided)\n");
+		startup_error("  1. -gamedata <dir> (not provided)");
 	}
-	fprintf(stderr,
-		"  2. current working directory: %s\n",
+	startup_error("  2. current working directory: %s",
 		current_working_directory.empty() ? "(unavailable)" : current_working_directory.c_str());
-	fprintf(stderr,
-		"  3. executable directory: %s\n",
+	startup_error("  3. executable directory: %s",
 		executable_directory.empty() ? "(unavailable)" : executable_directory.c_str());
-	fprintf(stderr, "Use -gamedata <dir> or launch the game from a directory that contains those files.\n");
+	startup_error("Use -gamedata <dir> or launch the game from a directory that contains those files.");
 }
 
 void destroy_main_window_for_shutdown(int ready_to_quit, const char* reason)
 {
 	ReadyToQuit = ready_to_quit;
-	startup_trace("Destroying main window for %s shutdown", reason);
+	RA_Trace("RA_TRACE_STARTUP", "startup", "Destroying main window for %s shutdown", reason);
 	Main_Window_Destroy();
 }
 }
@@ -360,10 +345,10 @@ int RedAlert_Main(int argc, char* argv[])
 		argc = 1;
 	}
 
-	startup_trace("RedAlert_Main entered argc=%d argv0=\"%s\"", argc, argv[0] ? argv[0] : "");
+	RA_Trace("RA_TRACE_STARTUP", "startup", "RedAlert_Main entered argc=%d argv0=\"%s\"", argc, argv[0] ? argv[0] : "");
 
 	if (Ram_Free(MEM_NORMAL) < 7000000) {
-		printf (TEXT_NO_RAM);
+		startup_error("%s", TEXT_NO_RAM);
 
 #if (0)
 
@@ -396,16 +381,16 @@ int RedAlert_Main(int argc, char* argv[])
 	*/
 	const std::string game_data_directory = resolve_game_data_directory(argc, argv, argv[0]);
 	if (game_data_directory.empty()) {
-		startup_trace("No GameData directory found");
+		RA_Trace("RA_TRACE_STARTUP", "startup", "No GameData directory found");
 		print_missing_game_data_error(argc, argv, argv[0]);
 		return(EXIT_FAILURE);
 	}
-	startup_trace("Using asset root \"%s\"", game_data_directory.c_str());
+	RA_Trace("RA_TRACE_STARTUP", "startup", "Using asset root \"%s\"", game_data_directory.c_str());
 	if (!WWFS_SetCurrentDirectory(game_data_directory.c_str())) {
-		fprintf(stderr, "Failed to use game data directory: %s\n", game_data_directory.c_str());
+		startup_error("Failed to use game data directory: %s", game_data_directory.c_str());
 		return(EXIT_FAILURE);
 	}
-	startup_trace("WWFS_SetCurrentDirectory complete");
+	RA_Trace("RA_TRACE_STARTUP", "startup", "WWFS_SetCurrentDirectory complete");
 
 #ifdef WOLAPI_INTEGRATION
 	//	Look for special wolapi install program, used after the patch to version 3, to install "Shared Internet Components".
@@ -437,34 +422,34 @@ int RedAlert_Main(int argc, char* argv[])
 
 #endif
 
-	startup_trace("Calling Parse_Command_Line");
+	RA_Trace("RA_TRACE_STARTUP", "startup", "Calling Parse_Command_Line");
 	if (Parse_Command_Line(argc, argv)) {
-		startup_trace("Parse_Command_Line complete");
+		RA_Trace("RA_TRACE_STARTUP", "startup", "Parse_Command_Line complete");
 
 		WindowsTimer = new WinTimerClass(60, FALSE);
-		startup_trace("WinTimerClass created");
+		RA_Trace("RA_TRACE_STARTUP", "startup", "WinTimerClass created");
 
 		uint32_t time_test = WindowsTimer->Get_System_Tick_Count();
 		SDL_GameInput_Delay(1000);
-		startup_trace("Initial timer delay complete");
+		RA_Trace("RA_TRACE_STARTUP", "startup", "Initial timer delay complete");
 		if (WindowsTimer->Get_System_Tick_Count() == time_test){
 			RA_ShowMessageBox(TEXT_ERROR_TIMER, TEXT_SHORT_TITLE, SDL_MESSAGEBOX_ERROR);
 			return(EXIT_FAILURE);
 		}
 		RawFileClass cfile(CONFIG_FILE_NAME);
 		const bool config_available = cfile.Is_Available();
-		startup_trace("Config availability checked available=%d", config_available ? 1 : 0);
+		RA_Trace("RA_TRACE_STARTUP", "startup", "Config availability checked available=%d", config_available ? 1 : 0);
 
 
 		Keyboard = new KeyboardClass();
 		SDL_GameInput_Set_Main_Thread();
-		startup_trace("Keyboard created and main thread registered");
+		RA_Trace("RA_TRACE_STARTUP", "startup", "Keyboard created and main thread registered");
 
 		/*
 		** If there is loads of memory then use uncompressed shapes
 		*/
 		Check_Use_Compressed_Shapes();
-		startup_trace("Check_Use_Compressed_Shapes complete");
+		RA_Trace("RA_TRACE_STARTUP", "startup", "Check_Use_Compressed_Shapes complete");
 
 		/*
 		** If there is not enough disk space free, don't allow the product to run.
@@ -485,29 +470,29 @@ int RedAlert_Main(int argc, char* argv[])
 		}
 
 		if (config_available) {
-			startup_trace("Reading private config struct");
+			RA_Trace("RA_TRACE_STARTUP", "startup", "Reading private config struct");
 			Read_Private_Config_Struct(cfile, &NewConfig);
 
 			/*
 			** Set the options as requested by the ccsetup program
 			*/
-			startup_trace("Reading setup options");
+			RA_Trace("RA_TRACE_STARTUP", "startup", "Reading setup options");
 			Read_Setup_Options( &cfile );
-			startup_trace("Read_Setup_Options complete");
+			RA_Trace("RA_TRACE_STARTUP", "startup", "Read_Setup_Options complete");
 		}
 
-		startup_trace("Calling Main_Window_Create");
+		RA_Trace("RA_TRACE_STARTUP", "startup", "Calling Main_Window_Create");
 		Main_Window_Create();
-		startup_trace("Main_Window_Create complete hwnd=%p size=%dx%d", MainWindow, ScreenWidth, ScreenHeight);
+		RA_Trace("RA_TRACE_STARTUP", "startup", "Main_Window_Create complete hwnd=%p size=%dx%d", MainWindow, ScreenWidth, ScreenHeight);
 		if (!Audio_Init(MainWindow, 16, false, 11025 * 2, 0)) {
-			startup_trace("Audio_Init failed");
+			RA_Trace("RA_TRACE_STARTUP", "startup", "Audio_Init failed");
 			if (MainWindow != NULL) {
 				RA_DestroyWindow(MainWindow);
 				MainWindow = NULL;
 			}
 			return (EXIT_FAILURE);
 		}
-		startup_trace("Audio_Init complete");
+		RA_Trace("RA_TRACE_STARTUP", "startup", "Audio_Init complete");
 
 		int32_t video_success = FALSE;
 		/*
@@ -529,12 +514,13 @@ int RedAlert_Main(int argc, char* argv[])
 		}
 
 		if (!video_success) {
+			startup_error("Set_Video_Mode failed width=%d requested_height=%d", ScreenWidth, ScreenHeight);
 			RA_ShowMessageBox(TEXT_VIDEO_ERROR, TEXT_SHORT_TITLE, SDL_MESSAGEBOX_WARNING);
 			if (WindowsTimer) delete WindowsTimer;
 			//if (Palette) delete Palette;
 			return (EXIT_FAILURE);
 		}
-		startup_trace("Set_Video_Mode complete screen_height=%d", ScreenHeight);
+		RA_Trace("RA_TRACE_STARTUP", "startup", "Set_Video_Mode complete screen_height=%d", ScreenHeight);
 
 		if (ScreenWidth==320) {
 			VisiblePage.Init( ScreenWidth , ScreenHeight , NULL , 0 , (GBC_Enum)0);
@@ -543,6 +529,8 @@ int RedAlert_Main(int argc, char* argv[])
 			HiddenPage.Init (ScreenWidth , ScreenHeight , NULL , 0 , (GBC_Enum)GBC_VIDEOMEM);
 			VisiblePage.Attach_Surface(&HiddenPage);
 		}
+		RA_Trace("RA_TRACE_STARTUP", "startup", "Visible/Hidden pages initialized visible=%dx%d hidden=%dx%d",
+			VisiblePage.Get_Width(), VisiblePage.Get_Height(), HiddenPage.Get_Width(), HiddenPage.Get_Height());
 
 		ScreenHeight = 400;
 
@@ -553,8 +541,11 @@ int RedAlert_Main(int argc, char* argv[])
 			SeenBuff.Attach(&VisiblePage, 0, 0, 640, 400);
 			HidPage.Attach(&HiddenPage, 0, 0, 640, 400);
 		}
+		RA_Trace("RA_TRACE_STARTUP", "startup", "Seen/Hid buffers attached seen=%dx%d hid=%dx%d",
+			SeenBuff.Get_Width(), SeenBuff.Get_Height(), HidPage.Get_Width(), HidPage.Get_Height());
 
 		Options.Adjust_Variables_For_Resolution();
+		RA_Trace("RA_TRACE_STARTUP", "startup", "Options.Adjust_Variables_For_Resolution complete");
 
 		/*
 		** Install the memory error handler
@@ -568,6 +559,7 @@ int RedAlert_Main(int argc, char* argv[])
 
 		WWMouse = new WWMouseClass(&SeenBuff, 48, 48);
 		MouseInstalled = TRUE;
+		RA_Trace("RA_TRACE_STARTUP", "startup", "WWMouse created installed=%d", MouseInstalled);
 
 		/*
 		** See if we should run the intro
@@ -575,6 +567,7 @@ int RedAlert_Main(int argc, char* argv[])
 		INIClass ini;
 		if (config_available) {
 			ini.Load(cfile);
+			RA_Trace("RA_TRACE_STARTUP", "startup", "Config INI loaded");
 		}
 
 		/*
@@ -587,6 +580,8 @@ int RedAlert_Main(int argc, char* argv[])
 		if (config_available) {
 			SlowPalette = ini.Get_Bool("Options", "SlowPalette", false);
 		}
+		RA_Trace("RA_TRACE_STARTUP", "startup", "Intro flags from_install=%d breakout=%d slow_palette=%d",
+			Special.IsFromInstall ? 1 : 0, BreakoutAllowed ? 1 : 0, SlowPalette ? 1 : 0);
 
 		/*
 		** Regardless of whether we should run it or not, here we're
@@ -609,12 +604,15 @@ int RedAlert_Main(int argc, char* argv[])
 			BreakoutAllowed = true;
 //			BreakoutAllowed = false;
 		}
+		RA_Trace("RA_TRACE_STARTUP", "startup", "Intro/breakout state finalized from_install=%d breakout=%d",
+			Special.IsFromInstall ? 1 : 0, BreakoutAllowed ? 1 : 0);
 
 		Memory_Error_Exit = Print_Error_End_Exit;
+		RA_Trace("RA_TRACE_STARTUP", "startup", "Memory_Error_Exit set to Print_Error_End_Exit");
 
-		startup_trace("Entering Main_Game argc=%d", argc);
+		RA_Trace("RA_TRACE_STARTUP", "startup", "Entering Main_Game argc=%d", argc);
 		Main_Game(argc, argv);
-		startup_trace("Main_Game returned ReadyToQuit=%d", ReadyToQuit);
+		RA_Trace("RA_TRACE_STARTUP", "startup", "Main_Game returned ReadyToQuit=%d", ReadyToQuit);
 
 		VisiblePage.Clear();
 		HiddenPage.Clear();
@@ -661,13 +659,13 @@ void  Prog_End(void)
 void Print_Error_End_Exit(char * string)
 {
 	Prog_End();
-	printf( "%s\n", string );
+	SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "[startup] %s", string ? string : "(null)");
 	exit(1);
 }
 
 void Print_Error_Exit(char * string)
 {
-	printf( "%s\n", string );
+	SDL_LogCritical(SDL_LOG_CATEGORY_APPLICATION, "[startup] %s", string ? string : "(null)");
 	exit(1);
 }
 

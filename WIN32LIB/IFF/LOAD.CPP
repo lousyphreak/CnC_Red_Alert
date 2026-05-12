@@ -40,6 +40,7 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "IFF.H"
+#include "ENDIAN.H"
 #include "FILE.H"
 #include <cstddef>
 #include <cstring>
@@ -50,21 +51,17 @@ namespace {
 
 uint16_t Read_Comp_Skip(void const* buffer)
 {
-	uint16_t value;
-	std::memcpy(&value, (char const*)buffer + offsetof(CompHeaderType, Skip), sizeof(value));
-	return value;
+	return RA_ReadUnalignedULE16((char const*)buffer + offsetof(CompHeaderType, Skip));
 }
 
 void Write_Comp_Skip(void* buffer, uint16_t value)
 {
-	std::memcpy((char*)buffer + offsetof(CompHeaderType, Skip), &value, sizeof(value));
+	RA_WriteUnalignedLE16((char*)buffer + offsetof(CompHeaderType, Skip), value);
 }
 
 uint32_t Read_Comp_Size(void const* buffer)
 {
-	uint32_t value;
-	std::memcpy(&value, (char const*)buffer + offsetof(CompHeaderType, Size), sizeof(value));
-	return value;
+	return RA_ReadUnalignedULE32((char const*)buffer + offsetof(CompHeaderType, Size));
 }
 
 CompressionType Read_Comp_Method(void const* buffer)
@@ -215,7 +212,9 @@ uint32_t  Load_Uncompress(char const *file, BufferClass& uncomp_buff, BufferClas
 	/*======================================================================*/
 
 	fd = Open_File(file, READ);					// Open up the file to read from
-	Read_File(fd, (char *) &isize,	2L);		// Read the file size
+	uint8_t packed_size_bytes[2];
+	Read_File(fd, packed_size_bytes, 2L);		// Read the file size
+	isize = RA_ReadUnalignedULE16(packed_size_bytes);
 	Read_File(fd, uncomp_ptr, 			8L);		// Read the header bytes in.
 	isize -= 8; 										// Remaining data in file.
 
@@ -373,13 +372,7 @@ uint32_t  Uncompress_Data(void const *src, void *dst)
 	**	compression method, size, and skip data amount.
 	*/
 	uncomp_size = Read_Comp_Size(src);
-	#if(AMIGA)
-		uncomp_size = Reverse_Long(uncomp_size);
-	#endif
 	skip = Read_Comp_Skip(src);
-	#if(AMIGA)
-		skip = Reverse_Word(skip);
-	#endif
 	method = Read_Comp_Method(src);
 	src = Add_Long_To_Pointer((void *)src, (int32_t)sizeof(CompHeaderType) + (int32_t)skip);
 
@@ -404,4 +397,3 @@ uint32_t  Uncompress_Data(void const *src, void *dst)
 
 	return(uncomp_size);
 }
-

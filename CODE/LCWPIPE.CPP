@@ -42,6 +42,7 @@
 
 #include	"LCWPIPE.H"
 #include	"LCW.H"
+#include	"ENDIAN.H"
 #include	<string.h>
 #include	<assert.h>
 
@@ -154,7 +155,10 @@ int LCWPipe::Put(void const * source, int slen)
 				**	A whole block header has been accumulated. Store it for safekeeping.
 				*/
 				if (Counter == sizeof(BlockHeader)) {
-					memmove(&BlockHeader, Buffer, sizeof(BlockHeader));
+					decltype(BlockHeader) raw_header;
+					memmove(&raw_header, Buffer, sizeof(raw_header));
+					BlockHeader.CompCount = SDL_Swap16LE(raw_header.CompCount);
+					BlockHeader.UncompCount = SDL_Swap16LE(raw_header.UncompCount);
 					Counter = 0;
 				}
 			}
@@ -202,7 +206,10 @@ int LCWPipe::Put(void const * source, int slen)
 
 				BlockHeader.CompCount = (uint16_t)len;
 				BlockHeader.UncompCount = (uint16_t)BlockSize;
-				total += Pipe::Put(&BlockHeader, sizeof(BlockHeader));
+				decltype(BlockHeader) raw_header;
+				raw_header.CompCount = SDL_Swap16LE(BlockHeader.CompCount);
+				raw_header.UncompCount = SDL_Swap16LE(BlockHeader.UncompCount);
+				total += Pipe::Put(&raw_header, sizeof(raw_header));
 				total += Pipe::Put(Buffer2, len);
 				Counter = 0;
 			}
@@ -220,7 +227,10 @@ int LCWPipe::Put(void const * source, int slen)
 
 			BlockHeader.CompCount = (uint16_t)len;
 			BlockHeader.UncompCount = (uint16_t)BlockSize;
-			total += Pipe::Put(&BlockHeader, sizeof(BlockHeader));
+			decltype(BlockHeader) raw_header;
+			raw_header.CompCount = SDL_Swap16LE(BlockHeader.CompCount);
+			raw_header.UncompCount = SDL_Swap16LE(BlockHeader.UncompCount);
+			total += Pipe::Put(&raw_header, sizeof(raw_header));
 			total += Pipe::Put(Buffer2, len);
 		}
 
@@ -286,7 +296,10 @@ int LCWPipe::Flush(void)
 			**	case, dump the data out as if it were already decompressed.
 			*/
 			if (Counter > 0) {
-				total += Pipe::Put(&BlockHeader, sizeof(BlockHeader));
+				decltype(BlockHeader) raw_header;
+				raw_header.CompCount = SDL_Swap16LE(BlockHeader.CompCount);
+				raw_header.UncompCount = SDL_Swap16LE(BlockHeader.UncompCount);
+				total += Pipe::Put(&raw_header, sizeof(raw_header));
 				total += Pipe::Put(Buffer, Counter);
 				Counter = 0;
 				BlockHeader.CompCount = 0xFFFF;
@@ -302,7 +315,10 @@ int LCWPipe::Flush(void)
 
 			BlockHeader.CompCount = (uint16_t)len;
 			BlockHeader.UncompCount = (uint16_t)Counter;
-			total += Pipe::Put(&BlockHeader, sizeof(BlockHeader));
+			decltype(BlockHeader) raw_header;
+			raw_header.CompCount = SDL_Swap16LE(BlockHeader.CompCount);
+			raw_header.UncompCount = SDL_Swap16LE(BlockHeader.UncompCount);
+			total += Pipe::Put(&raw_header, sizeof(raw_header));
 			total += Pipe::Put(Buffer2, len);
 			Counter = 0;
 		}

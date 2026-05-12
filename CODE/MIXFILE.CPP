@@ -49,37 +49,46 @@
 
 #include	"BUFF.H"
 #include	"FUNCTION.H"
+#include "RATRACE.H"
 #include "sdl_fs.h"
 #include	<cstdarg>
 #include	<cstring>
 #include	<cstdio>
 #include	<cstdlib>
 #include	<errno.h>
+#include "ENDIAN.H"
 #include <SDL3/SDL_log.h>
 #include	"MIXFILE.H"
 extern MFCD temp;
 
 namespace
 {
-bool mix_trace_enabled()
+bool mix_trace_lookup_target(const char* filename)
 {
-	static const bool enabled = std::getenv("RA_TRACE_STARTUP") != NULL;
-	return enabled;
+	return filename != NULL
+		&& (SDL_strcasecmp(filename, "TEMPERAT.PAL") == 0 || SDL_strcasecmp(filename, "DEBUG.ENG") == 0);
 }
 
-void mix_trace(const char* format, ...)
+int32_t mix_filename_crc(char const* filename)
 {
-	if (!mix_trace_enabled()) {
-		return;
+	size_t filename_length = std::strlen(filename);
+	char uppercase_filename[512];
+	if (filename_length >= sizeof(uppercase_filename)) {
+		filename_length = sizeof(uppercase_filename) - 1;
 	}
+	std::memcpy(uppercase_filename, filename, filename_length);
+	uppercase_filename[filename_length] = '\0';
+	int32_t crc = static_cast<int32_t>(Calculate_CRC(SDL_strupr(uppercase_filename), filename_length));
+	return crc;
+}
 
-	va_list arguments;
-	va_start(arguments, format);
-	std::fputs("[mixfile] ", stderr);
-	std::vfprintf(stderr, format, arguments);
-	std::fputc('\n', stderr);
-	std::fflush(stderr);
-	va_end(arguments);
+bool mix_trace_raw_header_target(const char* filename)
+{
+	return filename != NULL
+		&& (SDL_strcasecmp(filename, "EXPAND2.MIX") == 0
+			|| SDL_strcasecmp(filename, "REDALERT.MIX") == 0
+			|| SDL_strcasecmp(filename, "LOCAL.MIX") == 0
+			|| SDL_strcasecmp(filename, "HIRES.MIX") == 0);
 }
 }
 
@@ -245,54 +254,148 @@ MixFileClass<T>::MixFileClass(char const * filename, PKey const * key) :
 	struct {
 		int16_t First;		// Always zero for extended mixfile format.
 		int16_t Second;		// Bitfield of extensions to this mixfile.
-	} alternate;
+	} alternate = {};
+	FileHeader raw_fileheader = {};
+	const int32_t mixfile_size = file.Size();
 
 	/*
 	**	Fetch the first bit of the file. From this bit, it is possible to detect
 	**	whether this is an extended mixfile format or the plain format. An
 	**	extended format may have extra options or data layout.
 	*/
-	straw->Get(&alternate, sizeof(alternate));
+	if (straw->Get(&alternate, sizeof(alternate)) != sizeof(alternate)) {
+		RA_Trace("RA_TRACE_STARTUP", "mixfile", "%s failed to read alternate header", filename);
+		return;
+	}
+
+	const int16_t alternate_first = static_cast<int16_t>(SDL_Swap16LE(static_cast<uint16_t>(alternate.First)));
+	const int16_t alternate_second = static_cast<int16_t>(SDL_Swap16LE(static_cast<uint16_t>(alternate.Second)));
 
 	/*
 	**	Detect if this is an extended mixfile. If so, then see if it is encrypted
 	**	and/or has a message digest attached. Otherwise, just retrieve the
 	**	plain mixfile header.
 	*/
-	if (alternate.First == 0) {
-		IsDigest = ((alternate.Second & 0x01) != 0);
-		IsEncrypted = ((alternate.Second & 0x02) != 0);
+	if (alternate_first == 0) {
+		IsDigest = ((alternate_second & 0x01) != 0);
+		IsEncrypted = ((alternate_second & 0x02) != 0);
 
 		if (IsEncrypted) {
 			pstraw.Key(key);
 			pstraw.Get_From(&fstraw);
 			straw = &pstraw;
 		}
-		straw->Get(&fileheader, sizeof(fileheader));
+		if (straw->Get(&raw_fileheader, sizeof(raw_fileheader)) != sizeof(raw_fileheader)) {
+			RA_Trace("RA_TRACE_STARTUP", "mixfile", "%s failed to read file header", filename);
+			return;
+		}
 
 	} else {
-		memmove(&fileheader, &alternate, sizeof(alternate));
-		straw->Get(((char*)&fileheader)+sizeof(alternate), sizeof(fileheader)-sizeof(alternate));
+		memmove(&raw_fileheader, &alternate, sizeof(alternate));
+		if (straw->Get(((char*)&raw_fileheader)+sizeof(alternate), sizeof(raw_fileheader)-sizeof(alternate))
+			!= sizeof(raw_fileheader)-sizeof(alternate)) {
+			RA_Trace("RA_TRACE_STARTUP", "mixfile", "%s failed to read legacy file header tail", filename);
+			return;
+		}
 	}
 
+	if (mix_trace_raw_header_target(filename)) {
+		const uint8_t* raw_header_bytes = reinterpret_cast<const uint8_t*>(&raw_fileheader);
+		RA_Trace("RA_TRACE_STARTUP", "mixfile", "%s raw_fileheader=%02x %02x %02x %02x %02x %02x",
+			filename,
+			raw_header_bytes[0],
+			raw_header_bytes[1],
+			raw_header_bytes[2],
+			raw_header_bytes[3],
+			raw_header_bytes[4],
+			raw_header_bytes[5]);
+	}
+
+	fileheader.count = static_cast<int16_t>(SDL_Swap16LE(static_cast<uint16_t>(raw_fileheader.count)));
+	fileheader.size = static_cast<int32_t>(SDL_Swap32LE(static_cast<uint32_t>(raw_fileheader.size)));
 	Count = fileheader.count;
 	DataSize = fileheader.size;
-	mix_trace("%s alt=(%d,%d) count=%d datasize=%ld fileheader=%zu subblock=%zu encrypted=%d",
+	RA_Trace("RA_TRACE_STARTUP", "mixfile", "%s alt=(%d,%d) count=%d datasize=%ld fileheader=%zu subblock=%zu encrypted=%d",
 		filename,
-		alternate.First,
-		alternate.Second,
+		alternate_first,
+		alternate_second,
 		Count,
 		DataSize,
 		sizeof(fileheader),
 		sizeof(SubBlock),
 		IsEncrypted);
+
+	if (Count < 0 || DataSize < 0 || Count > (mixfile_size / static_cast<int32_t>(sizeof(SubBlock)))) {
+		RA_Trace("RA_TRACE_STARTUP", "mixfile", "%s invalid mix header count=%d datasize=%ld file_size=%ld", filename, Count, DataSize, mixfile_size);
+		Count = 0;
+		DataSize = 0;
+		return;
+	}
 //BGMono_Printf("Mixfileclass %s DataSize: %08x   \n",filename,DataSize);Get_Key();
 	/*
 	**	Load up the offset control array. If RAM is exhausted, then the mixfile is invalid.
 	*/
 	HeaderBuffer = new SubBlock [Count];
 	if (HeaderBuffer == NULL) return;
-	straw->Get(HeaderBuffer, Count * sizeof(SubBlock));
+	const int32_t header_bytes = Count * static_cast<int32_t>(sizeof(SubBlock));
+	if (straw->Get(HeaderBuffer, header_bytes) != header_bytes) {
+		delete [] HeaderBuffer;
+		HeaderBuffer = NULL;
+		Count = 0;
+		DataSize = 0;
+		RA_Trace("RA_TRACE_STARTUP", "mixfile", "%s failed to read %d subblocks", filename, Count);
+		return;
+	}
+
+	if (mix_trace_raw_header_target(filename) && Count > 0) {
+		const uint8_t* raw_subblock_bytes = reinterpret_cast<const uint8_t*>(&HeaderBuffer[0]);
+		RA_Trace("RA_TRACE_STARTUP", "mixfile", "%s raw_subblock0=%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x",
+			filename,
+			raw_subblock_bytes[0],
+			raw_subblock_bytes[1],
+			raw_subblock_bytes[2],
+			raw_subblock_bytes[3],
+			raw_subblock_bytes[4],
+			raw_subblock_bytes[5],
+			raw_subblock_bytes[6],
+			raw_subblock_bytes[7],
+			raw_subblock_bytes[8],
+			raw_subblock_bytes[9],
+			raw_subblock_bytes[10],
+			raw_subblock_bytes[11]);
+	}
+
+	for (int index = 0; index < Count; ++index) {
+		HeaderBuffer[index].CRC = static_cast<int32_t>(SDL_Swap32LE(static_cast<uint32_t>(HeaderBuffer[index].CRC)));
+		HeaderBuffer[index].Offset = static_cast<int32_t>(SDL_Swap32LE(static_cast<uint32_t>(HeaderBuffer[index].Offset)));
+		HeaderBuffer[index].Size = static_cast<int32_t>(SDL_Swap32LE(static_cast<uint32_t>(HeaderBuffer[index].Size)));
+
+		if (HeaderBuffer[index].Offset < 0 || HeaderBuffer[index].Size < 0
+			|| HeaderBuffer[index].Offset > DataSize
+			|| HeaderBuffer[index].Size > (DataSize - HeaderBuffer[index].Offset)) {
+
+			delete [] HeaderBuffer;
+			HeaderBuffer = NULL;
+			Count = 0;
+			DataSize = 0;
+			return;
+		}
+	}
+
+	if (SDL_strcasecmp(filename, "HIRES.MIX") == 0 || SDL_strcasecmp(filename, "LOCAL.MIX") == 0) {
+		const char* probe_name = (SDL_strcasecmp(filename, "HIRES.MIX") == 0) ? "TEMPERAT.PAL" : "DEBUG.ENG";
+		const int32_t probe_crc = mix_filename_crc(probe_name);
+		int probe_matches = 0;
+		int probe_index = -1;
+		for (int index = 0; index < Count; ++index) {
+			if (HeaderBuffer[index].CRC == probe_crc) {
+				++probe_matches;
+				if (probe_index < 0) {
+					probe_index = index;
+				}
+			}
+		}
+	}
 
 	/*
 	**	The start of the embedded mixfile data will be at the current file offset.
@@ -428,6 +531,13 @@ bool MixFileClass<T>::Cache(char const * filename, Buffer const * buffer)
 template<class T>
 bool MixFileClass<T>::Cache(Buffer const * buffer)
 {
+	RA_Trace("RA_TRACE_STARTUP", "mixfile", "Cache begin mix=%s this=%p data=%p allocated=%d size=%d start=%d",
+		Filename ? Filename : "<null>",
+		this,
+		Data,
+		IsAllocated,
+		DataSize,
+		DataStart);
 	/*
 	**	If the mixfile is already cached, then no action needs to be performed.
 	*/
@@ -530,6 +640,7 @@ bool MixFileClass<T>::Cache(Buffer const * buffer)
 template<class T>
 void MixFileClass<T>::Free(void)
 {
+	RA_Trace("RA_TRACE_STARTUP", "mixfile", "Free mix=%s this=%p data=%p allocated=%d", Filename ? Filename : "<null>", this, Data, IsAllocated);
 	if (Data != NULL && IsAllocated) {
 		delete [] static_cast<char *>(Data);
 	}
@@ -589,14 +700,10 @@ assert(filename != NULL);//BG
 	/*
 	**	Create the key block that will be used to binary search for the file.
 	*/
-	size_t filename_length = std::strlen(filename);
-	char* uppercase_filename = new char[filename_length + 1];
-	std::memcpy(uppercase_filename, filename, filename_length + 1);
-	int32_t crc = static_cast<int32_t>(Calculate_CRC(SDL_strupr(uppercase_filename), filename_length));
-	delete [] uppercase_filename;
+	int32_t crc = mix_filename_crc(filename);
 	SubBlock key;
 	key.CRC = crc;
-
+	
 	/*
 	**	Sweep through all registered mixfiles, trying to find the file in question.
 	*/
@@ -608,7 +715,24 @@ assert(filename != NULL);//BG
 		**	Binary search for the file in this mixfile. If it is found, then extract the
 		**	appropriate information and store it in the locations provided and then return.
 		*/
-		block = (SubBlock *)bsearch(&key, ptr->HeaderBuffer, ptr->Count, sizeof(SubBlock), compfunc);
+		block = NULL;
+		if (ptr->HeaderBuffer != NULL && ptr->Count > 0) {
+			SubBlock *blocks = static_cast<SubBlock *>(ptr->HeaderBuffer);
+			int first = 0;
+			int last = ptr->Count - 1;
+			while (first <= last) {
+				int middle = first + ((last - first) / 2);
+				if (key.CRC < blocks[middle].CRC) {
+					last = middle - 1;
+				} else if (key.CRC > blocks[middle].CRC) {
+					first = middle + 1;
+				} else {
+					block = &blocks[middle];
+					break;
+				}
+			}
+		}
+
 		if (block != NULL) {
 			if (mixfile != NULL) *mixfile = ptr;
 			if (size != NULL) *size = block->Size;

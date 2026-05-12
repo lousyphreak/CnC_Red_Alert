@@ -18,6 +18,7 @@
 
 #define SDL_MAIN_USE_CALLBACKS 1
 
+#include <cstdarg>
 #include <cstdlib>
 #include <string>
 #include <vector>
@@ -33,6 +34,10 @@ extern int RedAlert_Main(int argc, char* argv[]);
 
 namespace {
 
+#if defined(SDL_PLATFORM_WIIU)
+constexpr char kWiiUDefaultGameDataPath[] = "/vol/external01/redalert";
+#endif
+
 struct CallbackAppState
 {
 	std::vector<std::string> arguments;
@@ -41,6 +46,14 @@ struct CallbackAppState
 	bool main_finished = false;
 	int exit_code = EXIT_FAILURE;
 };
+
+void Startup_Log(SDL_LogPriority priority, const char* format, ...)
+{
+	va_list arguments;
+	va_start(arguments, format);
+	SDL_LogMessageV(SDL_LOG_CATEGORY_APPLICATION, priority, format, arguments);
+	va_end(arguments);
+}
 
 void Build_Startup_Arguments(CallbackAppState& state, int argc, char* argv[])
 {
@@ -66,6 +79,22 @@ void Build_Startup_Arguments(CallbackAppState& state, int argc, char* argv[])
 		state.arguments.emplace_back(argv[index] != NULL ? argv[index] : "");
 	}
 
+#if defined(SDL_PLATFORM_WIIU)
+	bool has_gamedata_override = false;
+	for (int index = 1; index < argc; ++index) {
+		const char* argument = argv[index];
+		if (argument != NULL && SDL_strcasecmp(argument, "-gamedata") == 0) {
+			has_gamedata_override = true;
+			break;
+		}
+	}
+
+	if (!has_gamedata_override) {
+		state.arguments.emplace_back("-gamedata");
+		state.arguments.emplace_back(kWiiUDefaultGameDataPath);
+	}
+#endif
+
 	state.argv.reserve(state.arguments.size());
 	for (std::string& argument : state.arguments) {
 		state.argv.push_back(argument.data());
@@ -78,9 +107,11 @@ void Run_RedAlert_Main(CallbackAppState* state)
 		return;
 	}
 
+	Startup_Log(SDL_LOG_PRIORITY_INFO, "startup: Run_RedAlert_Main begin argc=%d", static_cast<int>(state->argv.size()));
 	state->main_started = true;
 	state->exit_code = RedAlert_Main(static_cast<int>(state->argv.size()), state->argv.data());
 	state->main_finished = true;
+	Startup_Log(SDL_LOG_PRIORITY_INFO, "startup: Run_RedAlert_Main end exit_code=%d", state->exit_code);
 }
 
 SDL_AppResult App_Result_From_Exit_Code(int exit_code)
@@ -101,6 +132,10 @@ SDL_AppResult SDLCALL SDL_AppInit(void** appstate, int argc, char* argv[])
 	}
 #endif
 	Build_Startup_Arguments(*state, argc, argv);
+	Startup_Log(SDL_LOG_PRIORITY_INFO, "startup: SDL_AppInit argc=%d synthesized_argc=%d", argc, static_cast<int>(state->argv.size()));
+	for (size_t index = 0; index < state->arguments.size(); ++index) {
+		Startup_Log(SDL_LOG_PRIORITY_INFO, "startup: argv[%d]=\"%s\"", static_cast<int>(index), state->arguments[index].c_str());
+	}
 
 	SDL_GameInput_Set_Main_Thread();
 	SDL_GameInput_Set_AppCallbacks_Mode(true);
@@ -118,6 +153,7 @@ SDL_AppResult SDLCALL SDL_AppIterate(void* appstate)
 	}
 
 	if (!state->main_started) {
+		Startup_Log(SDL_LOG_PRIORITY_INFO, "startup: SDL_AppIterate starting main");
 		Run_RedAlert_Main(state);
 	}
 
@@ -146,6 +182,10 @@ SDL_AppResult SDLCALL SDL_AppEvent(void* appstate, SDL_Event*)
 void SDLCALL SDL_AppQuit(void* appstate, SDL_AppResult)
 {
 	CallbackAppState* state = static_cast<CallbackAppState*>(appstate);
+	if (state != NULL) {
+		Startup_Log(SDL_LOG_PRIORITY_INFO, "startup: SDL_AppQuit exit_code=%d main_started=%d main_finished=%d",
+			state->exit_code, state->main_started ? 1 : 0, state->main_finished ? 1 : 0);
+	}
 	SDL_GameInput_Set_AppCallbacks_Mode(false);
 	delete state;
 }

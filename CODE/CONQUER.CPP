@@ -110,6 +110,7 @@ B<A> test;
 #include	<stdio.h>
 #include	<string.h>
 #include "sdl_fs.h"
+#include "RATRACE.H"
 #include	"VORTEX.H"
 
 #ifdef WOLAPI_INTEGRATION
@@ -119,37 +120,9 @@ extern WolapiObject* pWolapi;
 #define PAGE_RESPOND_KEY	KN_RETURN	//KN_COMMA
 #endif
 
-static bool Conquer_Trace_Enabled(void)
-{
-	static int enabled = -1;
-	if (enabled == -1) {
-		enabled = (getenv("RA_TRACE_STARTUP") != NULL) ? 1 : 0;
-	}
-	return(enabled != 0);
-}
-
 static bool Conquer_Callback_Trace_Enabled(void)
 {
-	static int enabled = -1;
-	if (enabled == -1) {
-		enabled = (getenv("RA_TRACE_CALLBACK") != NULL) ? 1 : 0;
-	}
-	return(enabled != 0);
-}
-
-static void Conquer_Trace(char const * format, ...)
-{
-	if (!Conquer_Trace_Enabled()) {
-		return;
-	}
-
-	va_list args;
-	va_start(args, format);
-	fputs("[conquer] ", stderr);
-	vfprintf(stderr, format, args);
-	fputc('\n', stderr);
-	fflush(stderr);
-	va_end(args);
+	return(RA_Trace_Enabled("RA_TRACE_CALLBACK"));
 }
 
 static int32_t Movie_Playback_Volume(void)
@@ -1485,7 +1458,7 @@ void Call_Back(void)
 {
 	const bool trace_callback = Conquer_Callback_Trace_Enabled();
 	if (trace_callback) {
-		Conquer_Trace("Call_Back entry SessionType=%d", Session.Type);
+		RA_Trace("RA_TRACE_STARTUP", "conquer", "Call_Back entry SessionType=%d", Session.Type);
 	}
 
 	SDL_GameInput_Pump();
@@ -1500,15 +1473,15 @@ void Call_Back(void)
 	/*
 	**	Music and speech maintenance
 	*/
-	if (trace_callback) Conquer_Trace("Call_Back Sound_Callback start");
+	if (trace_callback) RA_Trace("RA_TRACE_STARTUP", "conquer", "Call_Back Sound_Callback start");
 	Sound_Callback();
-	if (trace_callback) Conquer_Trace("Call_Back Sound_Callback complete");
-	if (trace_callback) Conquer_Trace("Call_Back Theme.AI start");
+	if (trace_callback) RA_Trace("RA_TRACE_STARTUP", "conquer", "Call_Back Sound_Callback complete");
+	if (trace_callback) RA_Trace("RA_TRACE_STARTUP", "conquer", "Call_Back Theme.AI start");
 	Theme.AI();
-	if (trace_callback) Conquer_Trace("Call_Back Theme.AI complete");
-	if (trace_callback) Conquer_Trace("Call_Back Speak_AI start");
+	if (trace_callback) RA_Trace("RA_TRACE_STARTUP", "conquer", "Call_Back Theme.AI complete");
+	if (trace_callback) RA_Trace("RA_TRACE_STARTUP", "conquer", "Call_Back Speak_AI start");
 	Speak_AI();
-	if (trace_callback) Conquer_Trace("Call_Back Speak_AI complete");
+	if (trace_callback) RA_Trace("RA_TRACE_STARTUP", "conquer", "Call_Back Speak_AI complete");
 
 	/*
 	**	Network maintenance.
@@ -1518,9 +1491,9 @@ void Call_Back(void)
 		|| Session.Type == GAME_WOL
 #endif
 	) {
-		if (trace_callback) Conquer_Trace("Call_Back UDP start");
+		if (trace_callback) RA_Trace("RA_TRACE_STARTUP", "conquer", "Call_Back UDP start");
 		UDP_Call_Back();
-		if (trace_callback) Conquer_Trace("Call_Back UDP complete");
+		if (trace_callback) RA_Trace("RA_TRACE_STARTUP", "conquer", "Call_Back UDP complete");
 	}
 
 	/*
@@ -1564,7 +1537,7 @@ void Call_Back(void)
 #endif
 
 	if (trace_callback) {
-		Conquer_Trace("Call_Back exit");
+		RA_Trace("RA_TRACE_STARTUP", "conquer", "Call_Back exit");
 	}
 
 	WWDraw_Flush_Present();
@@ -2478,6 +2451,9 @@ int Load_Interpolated_Palettes(char const * filename, int32_t add)
 
 	if (!add) {
 		for (i = 0; i < static_cast<int>(ARRAY_SIZE(InterpolatedPalettes)); i++) {
+			if (InterpolatedPalettes[i] != NULL) {
+				free(InterpolatedPalettes[i]);
+			}
 			InterpolatedPalettes[i]=NULL;
 		}
 		start_palette=0;
@@ -2496,21 +2472,47 @@ int Load_Interpolated_Palettes(char const * filename, int32_t add)
 	}
 
 	if (file.Is_Available()) {
+		uint32_t encoded_num_palettes = 0;
+		const int palette_capacity = static_cast<int>(ARRAY_SIZE(InterpolatedPalettes)) - start_palette;
 
 		file.Open(READ);
-		file.Read(&num_palettes , 4);
-
-		for (i=0; i < num_palettes; i++) {
-			InterpolatedPalettes[i+start_palette] = (uint8_t *)malloc (65536);
-			memset (InterpolatedPalettes[i+start_palette], 0, 65536);
-			for (int y = 0; y < 256; y++) {
-				file.Read (InterpolatedPalettes[i+start_palette] + y*256 , y+1);
+		if (file.Read(&encoded_num_palettes, sizeof(encoded_num_palettes)) == static_cast<int32_t>(sizeof(encoded_num_palettes))) {
+			const uint32_t parsed_num_palettes = SDL_Swap32LE(encoded_num_palettes);
+			if (parsed_num_palettes > static_cast<uint32_t>(palette_capacity)) {
+				num_palettes = palette_capacity;
+			} else {
+				num_palettes = static_cast<int>(parsed_num_palettes);
 			}
-
-			Rebuild_Interpolated_Palette(InterpolatedPalettes[i+start_palette]);
 		}
 
-		PalettesRead = TRUE;
+		int loaded_palettes = 0;
+		for (i = 0; i < num_palettes; i++) {
+			uint8_t* palette = static_cast<uint8_t*>(malloc(65536));
+			if (palette == NULL) {
+				break;
+			}
+
+			memset(palette, 0, 65536);
+			bool palette_complete = true;
+			for (int y = 0; y < 256; y++) {
+				if (file.Read(palette + y * 256, y + 1) != y + 1) {
+					palette_complete = false;
+					break;
+				}
+			}
+
+			if (!palette_complete) {
+				free(palette);
+				break;
+			}
+
+			InterpolatedPalettes[start_palette + loaded_palettes] = palette;
+			Rebuild_Interpolated_Palette(palette);
+			++loaded_palettes;
+		}
+		num_palettes = loaded_palettes;
+
+		PalettesRead = (num_palettes > 0);
 		file.Close();
 	}
 	PaletteCounter = 0;
@@ -2576,7 +2578,7 @@ bool Try_Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 
 	if (name) {
 		SDL_GameInput_PushMouseCaptureSuppression();
-		Conquer_Trace("Play_Movie begin name=%s theme=%d clrscrn=%d", name, theme, clrscrn ? 1 : 0);
+		RA_Trace("RA_TRACE_STARTUP", "conquer", "Play_Movie begin name=%s theme=%d clrscrn=%d", name, theme, clrscrn ? 1 : 0);
 		bool played = false;
 		char fullname[_MAX_FNAME+_MAX_EXT];
 		WWFS_MakePath(fullname, NULL, NULL, name, ".VQA");
@@ -2587,7 +2589,7 @@ bool Try_Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 		#endif
 
 		if (!CCFileClass(fullname).Is_Available()){
-			Conquer_Trace("Play_Movie unavailable file=%s", fullname);
+			RA_Trace("RA_TRACE_STARTUP", "conquer", "Play_Movie unavailable file=%s", fullname);
 			#ifdef CHEAT_KEYS
 			//		 Mono_Printf("fullname: %s\n", fullname);
 			#endif	//CHEAT_KEYS
@@ -2638,7 +2640,7 @@ bool Try_Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 			AnimControl.OptionFlags &= ~VQAOPTF_AUDIO;
 		}
 		AnimControl.Volume = Movie_Playback_Volume();
-		Conquer_Trace("Play_Movie prepared file=%s size=%ldx%ld audio=%d volume=%ld", fullname, AnimControl.ImageWidth, AnimControl.ImageHeight,
+		RA_Trace("RA_TRACE_STARTUP", "conquer", "Play_Movie prepared file=%s size=%ldx%ld audio=%d volume=%ld", fullname, AnimControl.ImageWidth, AnimControl.ImageHeight,
 			(AnimControl.OptionFlags & VQAOPTF_AUDIO) ? 1 : 0, AnimControl.Volume);
 
 		if ((vqa = VQA_Alloc()) != NULL) {
@@ -2646,7 +2648,7 @@ bool Try_Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 
 			const int32_t open_result = VQA_Open(vqa, fullname, &AnimControl);
 			if (open_result == 0) {
-				Conquer_Trace("Play_Movie VQA_Open success file=%s", fullname);
+				RA_Trace("RA_TRACE_STARTUP", "conquer", "Play_Movie VQA_Open success file=%s", fullname);
 				played = true;
 				Brokeout = false;
 				#ifdef MOVIE640
@@ -2659,9 +2661,9 @@ bool Try_Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 				//Set_Palette(BlackPalette);
 				SysMemPage.Clear();
 				InMovie = true;
-				Conquer_Trace("Play_Movie VQA_Play start file=%s", fullname);
+				RA_Trace("RA_TRACE_STARTUP", "conquer", "Play_Movie VQA_Play start file=%s", fullname);
 				VQA_Play(vqa, VQAMODE_RUN);
-				Conquer_Trace("Play_Movie VQA_Play complete file=%s brokeout=%d", fullname, Brokeout ? 1 : 0);
+				RA_Trace("RA_TRACE_STARTUP", "conquer", "Play_Movie VQA_Play complete file=%s brokeout=%d", fullname, Brokeout ? 1 : 0);
 				VQA_Close(vqa);
 				InMovie = FALSE;
 				#ifdef MOVIE640
@@ -2684,7 +2686,7 @@ bool Try_Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 					Brokeout = false;
 				}
 			} else {
-				Conquer_Trace("Play_Movie VQA_Open failed file=%s code=%ld", fullname, open_result);
+				RA_Trace("RA_TRACE_STARTUP", "conquer", "Play_Movie VQA_Open failed file=%s code=%ld", fullname, open_result);
 				#ifndef NDEBUG
 				bool error = true;
 				assert(error);
@@ -2693,7 +2695,7 @@ bool Try_Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 
 			VQA_Free(vqa);
 		} else {
-			Conquer_Trace("Play_Movie VQA_Alloc failed file=%s", fullname);
+			RA_Trace("RA_TRACE_STARTUP", "conquer", "Play_Movie VQA_Alloc failed file=%s", fullname);
 			assert(vqa != NULL);
 		}
 		#ifdef CHEAT_KEYS
@@ -2712,7 +2714,7 @@ bool Try_Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 			BlackPalette.Set();
 		}
 		Show_Mouse();
-		Conquer_Trace("Play_Movie end name=%s clrscrn=%d played=%d", name, clrscrn ? 1 : 0, played ? 1 : 0);
+		RA_Trace("RA_TRACE_STARTUP", "conquer", "Play_Movie end name=%s clrscrn=%d played=%d", name, clrscrn ? 1 : 0, played ? 1 : 0);
 		SDL_GameInput_PopMouseCaptureSuppression();
 		return(played);
 	}
@@ -2726,7 +2728,7 @@ void Play_Movie(char const * name, ThemeType theme, bool clrscrn)
 
 bool Try_Play_Movie(VQType name, ThemeType theme, bool clrscrn)
 {
-	Conquer_Trace("Play_Movie enum name=%d theme=%d clrscrn=%d session=%d", name, theme, clrscrn ? 1 : 0, Session.Type);
+	RA_Trace("RA_TRACE_STARTUP", "conquer", "Play_Movie enum name=%d theme=%d clrscrn=%d session=%d", name, theme, clrscrn ? 1 : 0, Session.Type);
 	if (name != VQ_NONE) {
 		if (name == VQ_REDINTRO) {
 			IsVQ640 = true;
@@ -3247,7 +3249,7 @@ int32_t VQ_Call_Back(uint8_t *buffer, int32_t frame)
 		Keyboard->Clear();
 	}
 	Check_VQ_Palette_Set();
-	if (std::getenv("RA_TRACE_STARTUP") != NULL && buffer != NULL && frame_trace_count < 8) {
+	if (RA_Trace_Enabled("RA_TRACE_STARTUP") && buffer != NULL && frame_trace_count < 8) {
 		uint32_t width = IsVQ640 ? 640u : 320u;
 		uint32_t height = IsVQ640 ? 400u : 200u;
 		uint32_t total = width * height;
@@ -3257,7 +3259,7 @@ int32_t VQ_Call_Back(uint8_t *buffer, int32_t frame)
 				++nonzero;
 			}
 		}
-		Conquer_Trace("Play_Movie callback frame=%ld size=%lux%lu pix_nonzero=%lu/%lu first=%u,%u,%u,%u",
+		RA_Trace("RA_TRACE_STARTUP", "conquer", "Play_Movie callback frame=%ld size=%lux%lu pix_nonzero=%lu/%lu first=%u,%u,%u,%u",
 			frame,
 			width,
 			height,
@@ -3279,7 +3281,7 @@ int32_t VQ_Call_Back(uint8_t *buffer, int32_t frame)
 	Interpolate_2X_Scale(&SysMemPage, &SeenBuff, NULL);
 #endif
 	WWDraw_Flush_Present();
-	if (std::getenv("RA_TRACE_STARTUP") != NULL && frame < 8 && SeenBuff.Lock()) {
+	if (RA_Trace_Enabled("RA_TRACE_STARTUP") && frame < 8 && SeenBuff.Lock()) {
 		uint8_t* visible = static_cast<uint8_t*>(SeenBuff.Get_Graphic_Buffer()->Get_Buffer());
 		uint32_t nonzero = 0;
 		uint32_t width = (uint32_t)SeenBuff.Get_Width();
@@ -3297,7 +3299,7 @@ int32_t VQ_Call_Back(uint8_t *buffer, int32_t frame)
 				row += pitch;
 			}
 			row = visible + offset;
-			Conquer_Trace("Play_Movie dest frame=%ld size=%lux%lu pix_nonzero=%lu/%lu first=%u,%u,%u,%u pitch=%d offset=%ld",
+			RA_Trace("RA_TRACE_STARTUP", "conquer", "Play_Movie dest frame=%ld size=%lux%lu pix_nonzero=%lu/%lu first=%u,%u,%u,%u pitch=%d offset=%ld",
 				frame,
 				width,
 				height,
@@ -3315,7 +3317,8 @@ int32_t VQ_Call_Back(uint8_t *buffer, int32_t frame)
 	//Call_Back();
 
 	const int plain_key = key & 0xFF;
-	if ((BreakoutAllowed || Debug_Flag) && (plain_key == KN_ESC || plain_key == KN_RETURN)) {
+	const bool key_release = (key & WWKEY_RLS_BIT) != 0;
+	if ((BreakoutAllowed || Debug_Flag) && !key_release && (plain_key == KN_ESC || plain_key == KN_RETURN)) {
 		Keyboard->Clear();
 		Brokeout = true;
 		return(true);

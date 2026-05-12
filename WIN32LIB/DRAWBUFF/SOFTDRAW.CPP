@@ -17,6 +17,7 @@
 */
 
 #include "DRAWBUFF.H"
+#include "ENDIAN.H"
 #include "FONT.H"
 #include "GBUFFER.H"
 #include "ICONCACH.H"
@@ -49,9 +50,7 @@ static inline int32_t View_Row_Bytes(GraphicViewPortClass const *view) {
 }
 
 static uint16_t Read_Font_Word(uint8_t const *ptr) {
-  uint16_t value;
-  memcpy(&value, ptr, sizeof(value));
-  return (value);
+  return RA_ReadUnalignedULE16(ptr);
 }
 
 static int32_t Clip_Copy_Rect(int32_t src_width, int32_t src_height,

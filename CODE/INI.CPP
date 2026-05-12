@@ -1193,9 +1193,8 @@ PKey INIClass::Get_PKey(bool fast) const
 	**	exponent from the database.
 	*/
 	if (fast) {
-		BigInt exp = PKey::Fast_Exponent();
-		exp.DEREncode((uint8_t *)buffer);
-		key.Decode_Exponent(buffer);
+		static const uint8_t fast_exponent_der[] = {0x02, 0x03, 0x01, 0x00, 0x01};
+		key.Decode_Exponent((void*)fast_exponent_der);
 	} else {
 		Get_UUBlock("PrivateKey", buffer, sizeof(buffer));
 		key.Decode_Exponent(buffer);

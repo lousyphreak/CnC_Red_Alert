@@ -37,6 +37,7 @@
  *= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =*/
 
 #include	"FUNCTION.H"
+#include "ENDIAN.H"
 #include "FILEPCX.H"
 
 
@@ -123,7 +124,16 @@ int Write_PCX_File(FileClass & file, GraphicBufferClass & pic, PaletteClass * pa
 		file.Open(WRITE);
 		open = true;
 	}
-	file.Write(&header, sizeof(header));
+	PCX_HEADER disk_header = header;
+	disk_header.x = SDL_Swap16LE((uint16_t)disk_header.x);
+	disk_header.y = SDL_Swap16LE((uint16_t)disk_header.y);
+	disk_header.width = SDL_Swap16LE((uint16_t)disk_header.width);
+	disk_header.height = SDL_Swap16LE((uint16_t)disk_header.height);
+	disk_header.xres = SDL_Swap16LE((uint16_t)disk_header.xres);
+	disk_header.yres = SDL_Swap16LE((uint16_t)disk_header.yres);
+	disk_header.byte_per_line = SDL_Swap16LE((uint16_t)disk_header.byte_per_line);
+	disk_header.palette_type = SDL_Swap16LE((uint16_t)disk_header.palette_type);
+	file.Write(&disk_header, sizeof(disk_header));
 
 	/*
 	**	Write out the picture, line by line.

@@ -68,16 +68,20 @@
 ****************************************************************************/
 
 #include <stdint.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <malloc.h>
 #include <string.h>
+#include "ENDIAN.H"
+#include "RATRACE.H"
 #include <VQ.H>
 #include <VQM32/MEM.H>
 #include <VQM32/PALETTE.H>
 #include "VQAPLAYP.H"
 #include "sdl_fs.h"
 #include <VQM32/COMPRESS.H>
+#include <SDL3/SDL_log.h>
 
 /*---------------------------------------------------------------------------
  * PRIVATE DECLARATIONS
@@ -108,6 +112,35 @@ static void Load_AudFrame(VQAHandleP *vqap);
 #endif /* VQAVOC_ON */
 
 #endif /* VQAAUDIO_ON */
+
+namespace {
+
+int32_t Read_VQA_ChunkHeader(VQAHandle *vqa, VQAHandleP *vqap, ChunkHeader *chunk)
+{
+	ChunkHeader raw_chunk;
+
+	if (vqap->IOHandler(vqa, VQACMD_READ, &raw_chunk, sizeof(raw_chunk))) {
+		return 1;
+	}
+
+	chunk->id = SDL_Swap32LE(raw_chunk.id);
+	chunk->size = SDL_Swap32BE(raw_chunk.size);
+	return 0;
+}
+
+int32_t Read_VQA_Tag(VQAHandle *vqa, VQAHandleP *vqap, uint32_t *tag)
+{
+	uint32_t raw_tag;
+
+	if (vqap->IOHandler(vqa, VQACMD_READ, &raw_tag, sizeof(raw_tag))) {
+		return 1;
+	}
+
+	*tag = SDL_Swap32LE(raw_tag);
+	return 0;
+}
+
+}
 
 
 /****************************************************************************
@@ -169,7 +202,7 @@ int32_t VQA_Open(VQAHandle *vqa, char const *filename, VQAConfig *config)
 	}
 
 	/* Read the file ID & Size */
-	if (vqap->IOHandler(vqa, VQACMD_READ, &chunk, 8)) {
+	if (Read_VQA_ChunkHeader(vqa, vqap, &chunk)) {
 		VQA_Close(vqa);
 		return (VQAERR_READ);
 	}
@@ -181,13 +214,14 @@ int32_t VQA_Open(VQAHandle *vqa, char const *filename, VQAConfig *config)
 	}
 
 	/* Read in WVQA ID */
-	if (vqap->IOHandler(vqa, VQACMD_READ, &chunk, 4)) {
+	uint32_t form_type;
+	if (Read_VQA_Tag(vqa, vqap, &form_type)) {
 		VQA_Close(vqa);
 		return (VQAERR_READ);
 	}
 
 	/* Verify VQA */
-	if (chunk.id != ID_WVQA) {
+	if (form_type != ID_WVQA) {
 		VQA_Close(vqa);
 		return (VQAERR_NOTVQA);
 	}
@@ -213,12 +247,10 @@ int32_t VQA_Open(VQAHandle *vqa, char const *filename, VQAConfig *config)
 	done = 0;
 
 	while (!done) {
-		if (vqap->IOHandler(vqa, VQACMD_READ, &chunk, 8)) {
+		if (Read_VQA_ChunkHeader(vqa, vqap, &chunk)) {
 			VQA_Close(vqa);
 			return (VQAERR_READ);
 		}
-
-		chunk.size = REVERSE_LONG(chunk.size);
 
 		switch (chunk.id) {
 
@@ -236,29 +268,39 @@ int32_t VQA_Open(VQAHandle *vqa, char const *filename, VQAConfig *config)
 					VQA_Close(vqa);
 					return (VQAERR_READ);
 				}
-
-				if (getenv("RA_TRACE_STARTUP") != NULL) {
-					fprintf(stderr,
-							"[vqa] header version=%u flags=0x%04x image=%ux%u block=%ux%u fps=%u frames=%u group=%u cb=%u one=%u audio=%u/%u/%u alt=%u/%u/%u\n",
-							(unsigned)header->Version,
-							(unsigned)header->Flags,
-							(unsigned)header->ImageWidth,
-							(unsigned)header->ImageHeight,
-							(unsigned)header->BlockWidth,
-							(unsigned)header->BlockHeight,
-							(unsigned)header->FPS,
-							(unsigned)header->Frames,
-							(unsigned)header->Groupsize,
-							(unsigned)header->CBentries,
-							(unsigned)header->Num1Colors,
-							(unsigned)header->SampleRate,
-							(unsigned)header->Channels,
-							(unsigned)header->BitsPerSample,
-							(unsigned)header->AltSampleRate,
-							(unsigned)header->AltChannels,
-							(unsigned)header->AltBitsPerSample);
-					fflush(stderr);
+				header->Version = SDL_Swap16LE(header->Version);
+				header->Flags = SDL_Swap16LE(header->Flags);
+				header->Frames = SDL_Swap16LE(header->Frames);
+				header->ImageWidth = SDL_Swap16LE(header->ImageWidth);
+				header->ImageHeight = SDL_Swap16LE(header->ImageHeight);
+				header->Num1Colors = SDL_Swap16LE(header->Num1Colors);
+				header->CBentries = SDL_Swap16LE(header->CBentries);
+				header->Xpos = SDL_Swap16LE(header->Xpos);
+				header->Ypos = SDL_Swap16LE(header->Ypos);
+				header->MaxFramesize = SDL_Swap16LE(header->MaxFramesize);
+				header->SampleRate = SDL_Swap16LE(header->SampleRate);
+				header->AltSampleRate = SDL_Swap16LE(header->AltSampleRate);
+				for (unsigned int index = 0; index < (sizeof(header->FutureUse) / sizeof(header->FutureUse[0])); ++index) {
+					header->FutureUse[index] = SDL_Swap16LE(header->FutureUse[index]);
 				}
+				RA_Trace("RA_TRACE_STARTUP", "vqa", "header version=%u flags=0x%04x image=%ux%u block=%ux%u fps=%u frames=%u group=%u cb=%u one=%u audio=%u/%u/%u alt=%u/%u/%u",
+					(unsigned)header->Version,
+					(unsigned)header->Flags,
+					(unsigned)header->ImageWidth,
+					(unsigned)header->ImageHeight,
+					(unsigned)header->BlockWidth,
+					(unsigned)header->BlockHeight,
+					(unsigned)header->FPS,
+					(unsigned)header->Frames,
+					(unsigned)header->Groupsize,
+					(unsigned)header->CBentries,
+					(unsigned)header->Num1Colors,
+					(unsigned)header->SampleRate,
+					(unsigned)header->Channels,
+					(unsigned)header->BitsPerSample,
+					(unsigned)header->AltSampleRate,
+					(unsigned)header->AltChannels,
+					(unsigned)header->AltBitsPerSample);
 
 				/*-------------------------------------------------------------------
 				 * SETUP THE CONFIGURATION FROM THE HEADER.
@@ -325,6 +367,7 @@ int32_t VQA_Open(VQAHandle *vqa, char const *filename, VQAConfig *config)
 						VQA_Close(vqa);
 						return (VQAERR_READ);
 					}
+					size = SDL_Swap16LE(size);
 
 					/* Allocate buffer for captions. */
 					i = size + 50;
@@ -375,6 +418,7 @@ int32_t VQA_Open(VQAHandle *vqa, char const *filename, VQAConfig *config)
 						VQA_Close(vqa);
 						return (VQAERR_READ);
 					}
+					size = SDL_Swap16LE(size);
 
 					/* Allocate buffer for captions. */
 					i = size + 50;
@@ -717,11 +761,11 @@ int32_t VQA_LoadFrame(VQAHandle *vqa)
 		if (!(vqabuf->Flags & VQADATF_LSLEEP)) {
 
 			/* Read chunk ID */
-			if (vqap->IOHandler(vqa, VQACMD_READ, chunk, 8)) {
+			if (Read_VQA_ChunkHeader(vqa, vqap, chunk)) {
 				return (VQAERR_EOF);
 			}
 
-			iffsize = REVERSE_LONG(chunk->size);
+			iffsize = chunk->size;
 			loader->FrameSize += iffsize;
 		}
 
@@ -1528,14 +1572,10 @@ static VQAData *AllocBuffers(VQAHeader *header, VQAConfig *config)
 				audio->Buffer = config->AudioBuf;
 			}
 
-			if (getenv("RA_TRACE_STARTUP") != NULL) {
-				fprintf(stderr,
-						"[vqa] audio alloc buffer=%p size=%d configbuf=%p\n",
-						audio->Buffer,
-						(int)config->AudioBufSize,
-						config->AudioBuf);
-				fflush(stderr);
-			}
+			RA_Trace("RA_TRACE_STARTUP", "vqa", "audio alloc buffer=%p size=%d configbuf=%p",
+				audio->Buffer,
+				(int)config->AudioBufSize,
+				config->AudioBuf);
 
 			/* Allocate IsLoaded flags */
 			audio->NumAudBlocks = (config->AudioBufSize / config->HMIBufSize);
@@ -1571,16 +1611,12 @@ static VQAData *AllocBuffers(VQAHeader *header, VQAConfig *config)
 			/* Add temporary buffer size to memory usage. */
 			vqa->MemUsed += audio->TempBufSize;
 
-			if (getenv("RA_TRACE_STARTUP") != NULL) {
-				fprintf(stderr,
-						"[vqa] audio tempbuf=%p size=%u isloaded=%p blocks=%u bytespersec=%u\n",
-						audio->TempBuf,
-						(unsigned)audio->TempBufSize,
-						audio->IsLoaded,
-						(unsigned)audio->NumAudBlocks,
-						(unsigned)audio->BytesPerSec);
-				fflush(stderr);
-			}
+			RA_Trace("RA_TRACE_STARTUP", "vqa", "audio tempbuf=%p size=%u isloaded=%p blocks=%u bytespersec=%u",
+				audio->TempBuf,
+				(unsigned)audio->TempBufSize,
+				audio->IsLoaded,
+				(unsigned)audio->NumAudBlocks,
+				(unsigned)audio->BytesPerSec);
 		}
 	}
 	#endif /* VQAAUDIO_ON */
@@ -1808,11 +1844,11 @@ static int32_t Load_VQF(VQAHandleP *vqap, uint32_t frame_iffsize)
 	while (bytes_loaded < framesize) {
 
 		/* Read chunk ID */
-		if (vqap->IOHandler((VQAHandle *)vqap, VQACMD_READ, chunk, 8)) {
+		if (Read_VQA_ChunkHeader((VQAHandle *)vqap, vqap, chunk)) {
 			return (VQAERR_EOF);
 		}
 
-		iffsize = REVERSE_LONG(chunk->size);
+		iffsize = chunk->size;
 		bytes_loaded += 8;
 		bytes_loaded += PADSIZE(iffsize);
 
@@ -1940,6 +1976,10 @@ static int32_t Load_FINF(VQAHandleP *vqap, uint32_t iffsize)
 
 			return (VQAERR_READ);
 		}
+
+		for (uint32_t index = 0; index < (iffsize / sizeof(uint32_t)); ++index) {
+			vqabuf->Foff[index] = SDL_Swap32LE(vqabuf->Foff[index]);
+		}
 	} else {
 		if (vqap->IOHandler((VQAHandle *)vqap, VQACMD_SEEK, (void *)SEEK_CUR,
 				PADSIZE(iffsize))) {
@@ -1979,6 +2019,22 @@ int32_t Load_VQHD(VQAHandleP *vqap, uint32_t iffsize)
 			PADSIZE(iffsize))) {
 
 		return (VQAERR_READ);
+	}
+
+	vqap->Header.Version = SDL_Swap16LE(vqap->Header.Version);
+	vqap->Header.Flags = SDL_Swap16LE(vqap->Header.Flags);
+	vqap->Header.Frames = SDL_Swap16LE(vqap->Header.Frames);
+	vqap->Header.ImageWidth = SDL_Swap16LE(vqap->Header.ImageWidth);
+	vqap->Header.ImageHeight = SDL_Swap16LE(vqap->Header.ImageHeight);
+	vqap->Header.Num1Colors = SDL_Swap16LE(vqap->Header.Num1Colors);
+	vqap->Header.CBentries = SDL_Swap16LE(vqap->Header.CBentries);
+	vqap->Header.Xpos = SDL_Swap16LE(vqap->Header.Xpos);
+	vqap->Header.Ypos = SDL_Swap16LE(vqap->Header.Ypos);
+	vqap->Header.MaxFramesize = SDL_Swap16LE(vqap->Header.MaxFramesize);
+	vqap->Header.SampleRate = SDL_Swap16LE(vqap->Header.SampleRate);
+	vqap->Header.AltSampleRate = SDL_Swap16LE(vqap->Header.AltSampleRate);
+	for (unsigned int index = 0; index < (sizeof(vqap->Header.FutureUse) / sizeof(vqap->Header.FutureUse[0])); ++index) {
+		vqap->Header.FutureUse[index] = SDL_Swap16LE(vqap->Header.FutureUse[index]);
 	}
 
 	/* Reconfigure the Drawer for the new settings */
@@ -2591,6 +2647,8 @@ static int32_t Load_SND1(VQAHandleP *vqap, uint32_t iffsize)
 
 		return (VQAERR_READ);
 	}
+	zap.UnCompSize = SDL_Swap16LE(zap.UnCompSize);
+	zap.CompSize = SDL_Swap16LE(zap.CompSize);
 
 	/* Adjust chunk size */
 	padsize -= sizeof(ZAPHeader);
@@ -2734,6 +2792,9 @@ static int32_t Load_SND2(VQAHandleP *vqap, uint32_t iffsize)
 		audio->ADPCM_Info.lpSource = (char *)loadbuf;
 		audio->ADPCM_Info.lpDest = (char *)audio->Buffer;
 		sosCODECDecompressData(&audio->ADPCM_Info, uncomp_size);
+		if (audio->BitsPerSample == 16) {
+			RA_ConvertHost16BufferToLE(audio->Buffer, (size_t)uncomp_size / sizeof(uint16_t));
+		}
 
 		/* Set buffer positions & flags */
 		audio->AudBufPos += uncomp_size;
@@ -2756,6 +2817,9 @@ static int32_t Load_SND2(VQAHandleP *vqap, uint32_t iffsize)
 	audio->ADPCM_Info.lpSource = (char *)loadbuf;
 	audio->ADPCM_Info.lpDest = (char *)audio->TempBuf;
 	sosCODECDecompressData(&audio->ADPCM_Info, uncomp_size);
+	if (audio->BitsPerSample == 16) {
+		RA_ConvertHost16BufferToLE(audio->TempBuf, (size_t)uncomp_size / sizeof(uint16_t));
+	}
 
 	/* Set the TempBufLen */
 	audio->TempBufLen = uncomp_size;

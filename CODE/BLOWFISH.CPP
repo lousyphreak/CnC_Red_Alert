@@ -43,26 +43,21 @@
 
 
 #include "BLOWFISH.H"
+#include "ENDIAN.H"
 #include	<string.h>
 #include	<assert.h>
 
 
 #include <stdint.h>
-/*
-**	Byte order controlled long integer. This integer is constructed
-**	so that character 0 (C0) is the most significant byte of the
-**	integer. This is biased toward big endian architecture, but that
-**	just happens to be how the Blowfish algorithm was designed.
-*/
-typedef union {
-	uint32_t Long;
-	struct {
-		uint8_t C3;
-		uint8_t C2;
-		uint8_t C1;
-		uint8_t C0;
-	} Char;
-} Int;
+
+namespace
+{
+inline uint32_t Blowfish_F(uint32_t value, uint32_t const (*sboxes)[UCHAR_MAX + 1])
+{
+	return ((sboxes[0][(value >> 24) & 0xff] + sboxes[1][(value >> 16) & 0xff])
+		^ sboxes[2][(value >> 8) & 0xff]) + sboxes[3][value & 0xff];
+}
+}
 
 
 /***********************************************************************************************
@@ -348,25 +343,9 @@ int BlowfishEngine::Decrypt(void const * cyphertext, int length, void * plaintex
  *=============================================================================================*/
 void BlowfishEngine::Process_Block(void const * plaintext, void * cyphertext, uint32_t const * ptable)
 {
-	/*
-	**	Input the left and right halves of the source block such that
-	**	the byte order is constant regardless of the endian
-	**	persuasion of the current processor. The blowfish algorithm is
-	**	biased toward "big endian" architecture and some optimizations
-	**	could be done for big endian processors in that case.
-	*/
 	uint8_t const * source = (uint8_t const *)plaintext;
-	Int left;
-	left.Char.C0 = *source++;
-	left.Char.C1 = *source++;
-	left.Char.C2 = *source++;
-	left.Char.C3 = *source++;
-
-	Int right;
-	right.Char.C0 = *source++;
-	right.Char.C1 = *source++;
-	right.Char.C2 = *source++;
-	right.Char.C3 = *source;
+	uint32_t left = RA_ReadUnalignedUBE32(source);
+	uint32_t right = RA_ReadUnalignedUBE32(source + sizeof(left));
 
 	/*
 	**	Perform all Feistal rounds on the block. This is the encryption/decryption
@@ -374,10 +353,10 @@ void BlowfishEngine::Process_Block(void const * plaintext, void * cyphertext, ui
 	**	rounds are combined in this loop to avoid unnecessary exchanging.
 	*/
 	for (int index = 0; index < ROUNDS/2; index++) {
-		left.Long ^= *ptable++;
-		right.Long ^= ((( bf_S[0][left.Char.C0] + bf_S[1][left.Char.C1]) ^ bf_S[2][left.Char.C2]) + bf_S[3][left.Char.C3]);
-		right.Long ^= *ptable++;
-		left.Long ^= ((( bf_S[0][right.Char.C0] + bf_S[1][right.Char.C1]) ^ bf_S[2][right.Char.C2]) + bf_S[3][right.Char.C3]);
+		left ^= *ptable++;
+		right ^= Blowfish_F(left, bf_S);
+		right ^= *ptable++;
+		left ^= Blowfish_F(right, bf_S);
 	}
 
 	/*
@@ -385,8 +364,8 @@ void BlowfishEngine::Process_Block(void const * plaintext, void * cyphertext, ui
 	**	The left and right halves are still reversed as a side effect of the last
 	**	round.
 	*/
-	left.Long ^= *ptable++;
-	right.Long ^= *ptable;
+	left ^= *ptable++;
+	right ^= *ptable;
 
 	/*
 	**	The final block data is output in endian architecture
@@ -396,15 +375,8 @@ void BlowfishEngine::Process_Block(void const * plaintext, void * cyphertext, ui
 	**	encryption rounds.
 	*/
 	uint8_t * out = (uint8_t *)cyphertext;
-	*out++ = right.Char.C0;
-	*out++ = right.Char.C1;
-	*out++ = right.Char.C2;
-	*out++ = right.Char.C3;
-
-	*out++ = left.Char.C0;
-	*out++ = left.Char.C1;
-	*out++ = left.Char.C2;
-	*out = left.Char.C3;
+	RA_WriteUnalignedBE32(out, right);
+	RA_WriteUnalignedBE32(out + sizeof(right), left);
 }
 
 
@@ -431,20 +403,17 @@ void BlowfishEngine::Process_Block(void const * plaintext, void * cyphertext, ui
  *=============================================================================================*/
 void BlowfishEngine::Sub_Key_Encrypt(uint32_t & left, uint32_t & right)
 {
-	Int l;
-	l.Long = left;
-
-	Int r;
-	r.Long = right;
+	uint32_t l = left;
+	uint32_t r = right;
 
 	for (int index = 0; index < ROUNDS; index += 2) {
-		l.Long ^= P_Encrypt[index];
-		r.Long ^= ((( bf_S[0][l.Char.C0] + bf_S[1][l.Char.C1]) ^ bf_S[2][l.Char.C2]) + bf_S[3][l.Char.C3]);
-		r.Long ^= P_Encrypt[index+1];
-		l.Long ^= ((( bf_S[0][r.Char.C0] + bf_S[1][r.Char.C1]) ^ bf_S[2][r.Char.C2]) + bf_S[3][r.Char.C3]);
+		l ^= P_Encrypt[index];
+		r ^= Blowfish_F(l, bf_S);
+		r ^= P_Encrypt[index+1];
+		l ^= Blowfish_F(r, bf_S);
 	}
-	left = r.Long ^ P_Encrypt[ROUNDS+1];
-	right = l.Long ^ P_Encrypt[ROUNDS];
+	left = r ^ P_Encrypt[ROUNDS+1];
+	right = l ^ P_Encrypt[ROUNDS];
 }
 
 

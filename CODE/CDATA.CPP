@@ -49,6 +49,88 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include	"FUNCTION.H"
+#include	"ENDIAN.H"
+
+static void Normalize_Template_Iconset_Header(void * data)
+{
+#if RA_BIG_ENDIAN_HOST
+	if (!data) return;
+
+	IControl_Type * control = (IControl_Type *)data;
+	int width = (int)(uint16_t)control->Width;
+	int height = (int)(uint16_t)control->Height;
+	int count = (int)(uint16_t)control->Count;
+	int map_width = (int)(uint16_t)control->MapWidth;
+	int map_height = (int)(uint16_t)control->MapHeight;
+	int size = (int)(uint32_t)control->Size;
+	int icons = (int)(uint32_t)control->Icons;
+	int map = (int)(uint32_t)control->Map;
+	bool looks_native =
+		width > 0 && width <= 64 &&
+		height > 0 && height <= 64 &&
+		count >= 0 && count <= 256 &&
+		map_width > 0 && map_height > 0 &&
+		(map_width * map_height) == count &&
+		size > 0 && size <= (16 * 1024 * 1024) &&
+		icons >= (int)sizeof(IControl_Type) && icons < size &&
+		map >= icons && map < size;
+
+	if (looks_native) return;
+
+	control->Width = (int16_t)SDL_Swap16LE((uint16_t)control->Width);
+	control->Height = (int16_t)SDL_Swap16LE((uint16_t)control->Height);
+	control->Count = (int16_t)SDL_Swap16LE((uint16_t)control->Count);
+	control->Allocated = (int16_t)SDL_Swap16LE((uint16_t)control->Allocated);
+	control->MapWidth = (int16_t)SDL_Swap16LE((uint16_t)control->MapWidth);
+	control->MapHeight = (int16_t)SDL_Swap16LE((uint16_t)control->MapHeight);
+	control->Size = (int32_t)SDL_Swap32LE((uint32_t)control->Size);
+	control->Icons = (int32_t)SDL_Swap32LE((uint32_t)control->Icons);
+	control->Palettes = (int32_t)SDL_Swap32LE((uint32_t)control->Palettes);
+	control->Remaps = (int32_t)SDL_Swap32LE((uint32_t)control->Remaps);
+	control->TransFlag = (int32_t)SDL_Swap32LE((uint32_t)control->TransFlag);
+	control->ColorMap = (int32_t)SDL_Swap32LE((uint32_t)control->ColorMap);
+	control->Map = (int32_t)SDL_Swap32LE((uint32_t)control->Map);
+#else
+	(void)data;
+#endif
+}
+
+static bool Template_Type_In_Range(TemplateType type, TemplateType first, TemplateType last)
+{
+	return(type >= first && type <= last);
+}
+
+static LandType Template_Default_Land_Type(TemplateType type)
+{
+	if (type == TEMPLATE_NONE || type == 255 || type >= TEMPLATE_COUNT) return(LAND_CLEAR);
+	if (type == TEMPLATE_WATER || type == TEMPLATE_WATER2) return(LAND_WATER);
+	if (Template_Type_In_Range(type, TEMPLATE_SHORE01, TEMPLATE_SHORE56)) return(LAND_BEACH);
+	if (Template_Type_In_Range(type, TEMPLATE_RIVER01, TEMPLATE_RIVER15)
+		|| type == TEMPLATE_FALLS1 || type == TEMPLATE_FALLS1A
+		|| type == TEMPLATE_FALLS2 || type == TEMPLATE_FALLS2A
+		|| type == TEMPLATE_BRIDGE1D || type == TEMPLATE_BRIDGE2D
+		|| type == TEMPLATE_BRIDGE1X || type == TEMPLATE_BRIDGE2X) {
+		return(LAND_RIVER);
+	}
+	if (type == TEMPLATE_FORD1 || type == TEMPLATE_FORD2) return(LAND_BEACH);
+	if (type == TEMPLATE_BRIDGE1 || type == TEMPLATE_BRIDGE2
+		|| type == TEMPLATE_BRIDGE1H || type == TEMPLATE_BRIDGE2H
+		|| type == TEMPLATE_BRIDGE_1AX || type == TEMPLATE_BRIDGE_2AX
+		|| Template_Type_In_Range(type, TEMPLATE_BRIDGE_1A, TEMPLATE_BRIDGE_3F)
+		|| Template_Type_In_Range(type, TEMPLATE_ROAD01, TEMPLATE_ROAD45)
+		|| Template_Type_In_Range(type, TEMPLATE_STRP0001, TEMPLATE_STRP0011)) {
+		return(LAND_ROAD);
+	}
+	if (Template_Type_In_Range(type, TEMPLATE_ROUGH01, TEMPLATE_ROUGH11)) return(LAND_ROUGH);
+	if (Template_Type_In_Range(type, TEMPLATE_BOULDER1, TEMPLATE_BOULDER6)
+		|| Template_Type_In_Range(type, TEMPLATE_RIVERCLIFF01, TEMPLATE_RIVERCLIFF04)
+		|| Template_Type_In_Range(type, TEMPLATE_SLOPE01, TEMPLATE_SLOPE38)
+		|| Template_Type_In_Range(type, TEMPLATE_LWAL0001, TEMPLATE_LWAL0027)
+		|| Template_Type_In_Range(type, TEMPLATE_WALL0001, TEMPLATE_WALL0049)) {
+		return(LAND_ROCK);
+	}
+	return(LAND_CLEAR);
+}
 
 static TemplateTypeClass const Empty(
 	TEMPLATE_CLEAR1,
@@ -3003,8 +3085,9 @@ LandType TemplateTypeClass::Land_Type(int icon) const
 	IconsetClass const * icontrol = (IconsetClass const *)Get_Image_Data();
 
 	if (icontrol != NULL) {
+		int const map_cell_count = icontrol->Map_Width() * icontrol->Map_Height();
 		uint8_t const * map = icontrol->Control_Map();
-		if (map != NULL) {
+		if (map != NULL && map_cell_count > 0) {
 			static LandType _land[16] = {
 				LAND_CLEAR,
 				LAND_CLEAR,
@@ -3017,17 +3100,19 @@ LandType TemplateTypeClass::Land_Type(int icon) const
 				LAND_ROCK,			// Rock
 				LAND_ROAD,			// Road
 				LAND_WATER,			// Water
-				LAND_RIVER,			//	River
+				LAND_RIVER,			// River
 				LAND_CLEAR,
 				LAND_CLEAR,
 				LAND_ROUGH,			// Rough
 				LAND_CLEAR,
 			};
-
-			return(_land[map[icon % (icontrol->Map_Width() * icontrol->Map_Height())]]);
+			unsigned const control = map[icon % map_cell_count];
+			if (control < (sizeof(_land) / sizeof(_land[0]))) {
+				return(_land[control]);
+			}
 		}
 	}
-	return(LAND_CLEAR);
+	return(Template_Default_Land_Type(Type));
 }
 
 
@@ -3132,6 +3217,7 @@ void TemplateTypeClass::Init(TheaterType theater)
 		if (tplate.Theater & (1<<theater)) {
 			WWFS_MakePath(fullname, NULL, NULL, tplate.IniName, Theaters[theater].Suffix);
 			ptr = MFCD::Retrieve(fullname);
+			Normalize_Template_Iconset_Header((void *)ptr);
 			((void const *&)tplate.ImageData) = ptr;
 
 			Register_Icon_Set((void*)ptr, TRUE);		//Register icon set for video memory caching

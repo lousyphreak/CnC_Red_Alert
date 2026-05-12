@@ -53,35 +53,11 @@
 
 
 #include	"FUNCTION.H"
+#include "RATRACE.H"
 #include	"VORTEX.H"
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
-
-static bool Rules_Trace_Enabled(void)
-{
-	static int enabled = -1;
-	if (enabled == -1) {
-		char const* env = std::getenv("RA_TRACE_STARTUP");
-		enabled = (env != NULL && env[0] != '\0') ? 1 : 0;
-	}
-	return(enabled != 0);
-}
-
-static void Rules_Trace(char const* format, ...)
-{
-	if (!Rules_Trace_Enabled()) {
-		return;
-	}
-
-	va_list arguments;
-	va_start(arguments, format);
-	std::fputs("[rules] ", stderr);
-	std::vfprintf(stderr, format, arguments);
-	std::fputc('\n', stderr);
-	std::fflush(stderr);
-	va_end(arguments);
-}
 
 
 /***********************************************************************************************
@@ -375,39 +351,39 @@ bool RulesClass::Process(CCINIClass & ini)
 {
 	BStart(BENCH_RULES);
 
-	Rules_Trace("Process General start");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Process General start");
 	General(ini);
-	Rules_Trace("Process General complete");
-	Rules_Trace("Process MPlayer start");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Process General complete");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Process MPlayer start");
 	MPlayer(ini);
-	Rules_Trace("Process MPlayer complete");
-	Rules_Trace("Process Recharge start");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Process MPlayer complete");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Process Recharge start");
 	Recharge(ini);
-	Rules_Trace("Process Recharge complete");
-	Rules_Trace("Process Heap_Maximums start");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Process Recharge complete");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Process Heap_Maximums start");
 	Heap_Maximums(ini);
-	Rules_Trace("Process Heap_Maximums complete");
-	Rules_Trace("Process AI start");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Process Heap_Maximums complete");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Process AI start");
 	AI(ini);
-	Rules_Trace("Process AI complete");
-	Rules_Trace("Process Powerups start");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Process AI complete");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Process Powerups start");
 	Powerups(ini);
-	Rules_Trace("Process Powerups complete");
-	Rules_Trace("Process Land_Types start");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Process Powerups complete");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Process Land_Types start");
 	Land_Types(ini);
-	Rules_Trace("Process Land_Types complete");
-	Rules_Trace("Process Themes start");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Process Land_Types complete");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Process Themes start");
 	Themes(ini);
-	Rules_Trace("Process Themes complete");
-	Rules_Trace("Process IQ start");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Process Themes complete");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Process IQ start");
 	IQ(ini);
-	Rules_Trace("Process IQ complete");
-	Rules_Trace("Process Objects start");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Process IQ complete");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Process Objects start");
 	Objects(ini);
-	Rules_Trace("Process Objects complete");
-	Rules_Trace("Process Difficulty start");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Process Objects complete");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Process Difficulty start");
 	Difficulty(ini);
-	Rules_Trace("Process Difficulty complete");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Process Difficulty complete");
 
 	BEnd(BENCH_RULES);
 
@@ -1027,75 +1003,75 @@ bool RulesClass::Objects(CCINIClass & ini)
 	/*
 	**	Fetch the game object values from the rules file.
 	*/
-	Rules_Trace("Objects warheads start");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Objects warheads start");
 	for (int index = 0; index < Warheads.Count(); index++) {
 		Warheads.Ptr(index)->Read_INI(ini);
 	}
-	Rules_Trace("Objects warheads complete");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Objects warheads complete");
 
-	Rules_Trace("Objects bullets start");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Objects bullets start");
 	for (int proj = 0; proj < BulletTypes.Count(); proj++) {
 		BulletTypes.Ptr(proj)->Read_INI(ini);
 	}
-	Rules_Trace("Objects bullets complete");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Objects bullets complete");
 
-	Rules_Trace("Objects weapons start");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Objects weapons start");
 	for (int windex = 0; windex < Weapons.Count(); windex++) {
 		Weapons.Ptr(windex)->Read_INI(ini);
 	}
-	Rules_Trace("Objects weapons complete");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Objects weapons complete");
 
-	Rules_Trace("Objects units start");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Objects units start");
 	for (int uindex = 0; uindex < UnitTypes.Count(); uindex++) {
 		UnitTypes.Ptr(uindex)->Read_INI(ini);
 	}
-	Rules_Trace("Objects units complete");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Objects units complete");
 
-	Rules_Trace("Objects infantry start");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Objects infantry start");
 	for (int iindex = 0; iindex < InfantryTypes.Count(); iindex++) {
 		InfantryTypes.Ptr(iindex)->Read_INI(ini);
 	}
-	Rules_Trace("Objects infantry complete");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Objects infantry complete");
 
-	Rules_Trace("Objects vessels start");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Objects vessels start");
 	for (int vindex = 0; vindex < VesselTypes.Count(); vindex++) {
 		VesselTypes.Ptr(vindex)->Read_INI(ini);
 	}
-	Rules_Trace("Objects vessels complete");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Objects vessels complete");
 
-	Rules_Trace("Objects aircraft start");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Objects aircraft start");
 	for (int aindex = 0; aindex < AircraftTypes.Count(); aindex++) {
 		AircraftTypes.Ptr(aindex)->Read_INI(ini);
 	}
-	Rules_Trace("Objects aircraft complete");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Objects aircraft complete");
 
-	Rules_Trace("Objects buildings start");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Objects buildings start");
 	for (int bindex = 0; bindex < BuildingTypes.Count(); bindex++) {
 		BuildingTypes.Ptr(bindex)->Read_INI(ini);
 	}
-	Rules_Trace("Objects buildings complete");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Objects buildings complete");
 
 	/*
 	**	Fetch the house attribute override values.
 	*/
-	Rules_Trace("Objects houses start");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Objects houses start");
 	for (int index = HOUSE_FIRST; index < HOUSE_COUNT; ++index) {
 		HousesType house = (HousesType)index;
 		HouseTypeClass::As_Reference(house).Read_INI(ini);
 	}
-	Rules_Trace("Objects houses complete");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Objects houses complete");
 
 	/*
 	**	Fetch the mission control values.
 	*/
-	Rules_Trace("Objects missions start");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Objects missions start");
 	for (int index = MISSION_FIRST; index < MISSION_COUNT; ++index) {
 		MissionType mission = (MissionType)index;
 		MissionControlClass * miss = &MissionControl[mission];
 		miss->Mission = mission;
 		miss->Read_INI(ini);
 	}
-	Rules_Trace("Objects missions complete");
+	RA_Trace("RA_TRACE_STARTUP", "rules", "Objects missions complete");
 
 	return(true);
 }

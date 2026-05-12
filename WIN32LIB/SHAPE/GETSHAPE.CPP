@@ -49,6 +49,7 @@
 #include <cstring>
 
 #include <WWSTD.H>
+#include "ENDIAN.H"
 #include	<SHAPE.H>
 namespace {
 
@@ -108,7 +109,7 @@ int32_t  Get_Shape_Size(void const *shape)
 	/*
 	-------------------------- Returns shape's size --------------------------
 	*/
-	return Read_Unaligned<uint16_t>((char const*)shape + offsetof(Shape_Type, ShapeSize));
+	return RA_ReadUnalignedULE16((char const*)shape + offsetof(Shape_Type, ShapeSize));
 
 }	/* end of Get_Shape_Size */
 
@@ -132,7 +133,7 @@ int32_t  Get_Shape_Size(void const *shape)
  *=========================================================================*/
 int32_t Get_Shape_Uncomp_Size(void const *shape)
 {
-	return Read_Unaligned<uint16_t>((char const*)shape + offsetof(Shape_Type, DataLength));
+	return RA_ReadUnalignedULE16((char const*)shape + offsetof(Shape_Type, DataLength));
 
 }	/* end of Get_Shape_Uncomp_Size */
 
@@ -165,7 +166,7 @@ int16_t  Get_Shape_Data(void const *shape, int16_t data)
 {
 	int16_t retval;
 
-	retval = Read_Unaligned<int16_t>((char const*)shape - ((data+1) * sizeof(int16_t)));
+	retval = RA_ReadUnalignedLE16((char const*)shape - ((data+1) * sizeof(int16_t)));
 
 	return (retval);
 
@@ -194,7 +195,7 @@ int16_t  Get_Shape_Data(void const *shape, int16_t data)
  *=========================================================================*/
 int32_t  Extract_Shape_Count(void const *buffer)
 {
-	return Read_Unaligned<uint16_t>(buffer);
+	return RA_ReadUnalignedULE16(buffer);
 
 }	/* end of Extract_Shape_Count */
 
@@ -229,11 +230,11 @@ void *  Extract_Shape(void const *buffer, int32_t shape)
 	if (!buffer)
 		return(NULL);
 
-	numshapes = Read_Unaligned<uint16_t>(buffer);
+	numshapes = RA_ReadUnalignedULE16(buffer);
 	if (shape < 0 || shape >= numshapes)
 		return(NULL);
 
-	offset = Read_Unaligned<int32_t>(bytebuf + offsetof(ShapeBlock_Type, Offsets) + (shape * sizeof(int32_t)));
+	offset = RA_ReadUnalignedLE32(bytebuf + offsetof(ShapeBlock_Type, Offsets) + (shape * sizeof(int32_t)));
 
 	return(bytebuf + 2 + offset);
 
@@ -259,7 +260,7 @@ void *  Extract_Shape(void const *buffer, int32_t shape)
  *=========================================================================*/
 int32_t Get_Shape_Width(void const *shape)
 {
-	return Read_Unaligned<uint16_t>((char const*)shape + offsetof(Shape_Type, Width));
+	return RA_ReadUnalignedULE16((char const*)shape + offsetof(Shape_Type, Width));
 
 }	/* end of Get_Shape_Width */
 

@@ -41,6 +41,7 @@
 
 #include	<stdlib.h>
 #include	<cstring>
+#include	"ENDIAN.H"
 #include	"SHA.H"
 
 
@@ -48,7 +49,6 @@
 #ifndef min
 #define	min(a, b)		((a)<(b))?(a):(b)
 #endif
-
 
 /***********************************************************************************************
  * SHAEngine::Process_Partial -- Helper routine to process any partially accumulated data bloc *
@@ -147,11 +147,11 @@ void SHAEngine::Hash(void const * data, int32_t length)
 	**	First process all the whole blocks available in the source data.
 	*/
 	int32_t blocks = (length / SRC_BLOCK_SIZE);
-	uint32_t const * source = (uint32_t const *)data;
+	uint8_t const * source = static_cast<uint8_t const *>(data);
 	for (int bcount = 0; bcount < blocks; bcount++) {
 		Process_Block(source, Acc);
 		Length += SRC_BLOCK_SIZE;
-		source += SRC_BLOCK_SIZE/sizeof(uint32_t);
+		source += SRC_BLOCK_SIZE;
 		length -= SRC_BLOCK_SIZE;
 	}
 
@@ -162,9 +162,6 @@ void SHAEngine::Hash(void const * data, int32_t length)
 	data = source;
 	Process_Partial(data, length);
 }
-
-
-#define	Reverse_LONG(a)	((((a) >> 24) & UINT32_C(0x000000FF)) | (((a) >> 8) & UINT32_C(0x0000FF00)) | (((a) << 8) & UINT32_C(0x00FF0000)) | (((a) << 24) & UINT32_C(0xFF000000)))
 
 
 /***********************************************************************************************
@@ -226,15 +223,15 @@ int SHAEngine::Result(void * result) const
 	**	last 8 bytes of the pseudo-source data.
 	*/
 	memset(&partial[partialcount], '\0', SRC_BLOCK_SIZE - partialcount);
-	uint32_t bit_length = Reverse_LONG(length * 8u);
-	memcpy(&partial[SRC_BLOCK_SIZE-4], &bit_length, sizeof(bit_length));
+	const uint64_t bit_length = static_cast<uint64_t>(length) * 8u;
+	for (int index = 0; index < 8; ++index) {
+		partial[SRC_BLOCK_SIZE - 1 - index] = static_cast<char>((bit_length >> (index * 8)) & 0xffu);
+	}
 	Process_Block(&partial[0], acc);
 
 	SHADigest & final_result = const_cast<SHADigest &>(FinalResult);
-	memcpy((char *)&final_result, &acc, sizeof(acc));
 	for (int index = 0; index < static_cast<int>(sizeof(FinalResult)/sizeof(uint32_t)); index++) {
-//	for (int index = 0; index < SRC_BLOCK_SIZE/sizeof(uint32_t); index++) {
-		final_result.Long[index] = Reverse_LONG(final_result.Long[index]);
+		RA_WriteUnalignedBE32(&final_result.Char[index * sizeof(uint32_t)], acc.Long[index]);
 	}
 	(bool&)IsCached = true;
 	memcpy(result, &FinalResult, sizeof(FinalResult));
@@ -285,9 +282,7 @@ void SHAEngine::Process_Block(void const * source, SHADigest & acc) const
 	*/
 	int index;
 	for (index = 0; index < static_cast<int>(SRC_BLOCK_SIZE/sizeof(uint32_t)); index++) {
-		uint32_t value;
-		std::memcpy(&value, (char const *)source + (index * sizeof(uint32_t)), sizeof(value));
-		block[index] = Reverse_LONG(value);
+		block[index] = RA_ReadUnalignedUBE32(reinterpret_cast<uint8_t const *>(source) + (index * sizeof(uint32_t)));
 	}
 
 	for (index = static_cast<int>(SRC_BLOCK_SIZE/sizeof(uint32_t)); index < static_cast<int>(PROC_BLOCK_SIZE/sizeof(uint32_t)); index++) {

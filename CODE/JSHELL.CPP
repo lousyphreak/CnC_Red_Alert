@@ -46,6 +46,22 @@
 #include	"FUNCTION.H"
 #include	"WWFILE.H"
 
+namespace {
+
+__attribute__((noinline)) void Build_Translucent_Row(PaletteClass const &palette, uint8_t *buffer, uint8_t *table, int index, TLucentType const &entry)
+{
+	buffer[entry.SourceColor] = index;
+	Make_Fading_Table(palette, table, (int)entry.DestColor, (int)entry.Fading);
+}
+
+__attribute__((noinline)) void Build_Conquer_Translucent_Row(PaletteClass const &palette, uint8_t *buffer, uint8_t *table, int index, TLucentType const &entry)
+{
+	buffer[entry.SourceColor] = index;
+	Conquer_Build_Fading_Table(palette, table, (int)entry.DestColor, (int)entry.Fading);
+}
+
+}
+
 /***********************************************************************************************
  * Small_Icon -- Create a small icon from a big one.                                           *
  *                                                                                             *
@@ -345,7 +361,7 @@ int32_t Translucent_Table_Size(int count)
  *=============================================================================================*/
 void * Build_Translucent_Table(PaletteClass const & palette, TLucentType const * control, int count, void * buffer)
 {
-	uint8_t	const *table;		// Remap table pointer.
+	uint8_t *table;		// Remap table pointer.
 	int			index;		// Working color index.
 
 	if (count && control && palette) {
@@ -361,9 +377,8 @@ void * Build_Translucent_Table(PaletteClass const & palette, TLucentType const *
 			**	Build the individual remap tables for each translucent color.
 			*/
 			for (index = 0; index < count; index++) {
-				((uint8_t*)buffer)[control[index].SourceColor] = index;
-				Build_Fading_Table(palette, (void*)table, control[index].DestColor, control[index].Fading);
-				table = (uint8_t*)table + 256;
+				Build_Translucent_Row((PaletteClass const &)palette, (uint8_t*)buffer, table, index, control[index]);
+				table += 256;
 			}
 		}
 	}
@@ -399,7 +414,7 @@ void * Build_Translucent_Table(PaletteClass const & palette, TLucentType const *
  *=============================================================================================*/
 void * Conquer_Build_Translucent_Table(PaletteClass const & palette, TLucentType const * control, int count, void * buffer)
 {
-	uint8_t	const *table;		// Remap table pointer.
+	uint8_t *table;		// Remap table pointer.
 
 	if (count && control) {
 		if (!buffer) {
@@ -414,9 +429,8 @@ void * Conquer_Build_Translucent_Table(PaletteClass const & palette, TLucentType
 			**	Build the individual remap tables for each translucent color.
 			*/
 			for (int index = 0; index < count; index++) {
-				((uint8_t*)buffer)[control[index].SourceColor] = index;
-				Conquer_Build_Fading_Table(palette, (void*)table, control[index].DestColor, control[index].Fading);
-				table = (uint8_t*)table + 256;
+				Build_Conquer_Translucent_Row((PaletteClass const &)palette, (uint8_t*)buffer, table, index, control[index]);
+				table += 256;
 			}
 		}
 	}
@@ -440,8 +454,8 @@ void * Make_Fading_Table(PaletteClass const & palette, void * dest, int color, i
 			**	Find the color that, ideally, the working color should be remapped
 			**	to in the special remap range.
 			*/
-			RGBClass trycolor = palette[index];
-			trycolor.Adjust(frac, palette[color]);			// Try to match this color.
+			RGBClass trycolor = palette[(unsigned)index];
+			trycolor.Adjust(frac, palette[(unsigned)color]);			// Try to match this color.
 
 			/*
 			**	Search through the remap range to find the color that should be remapped
@@ -480,8 +494,8 @@ void * Conquer_Build_Fading_Table(PaletteClass const & palette, void * dest, int
 				**	Find the color that, ideally, the working color should be remapped
 				**	to in the special remap range.
 				*/
-				RGBClass trycolor = palette[index];
-				trycolor.Adjust(frac, palette[color]);			// Try to match this color.
+				RGBClass trycolor = palette[(unsigned)index];
+				trycolor.Adjust(frac, palette[(unsigned)color]);			// Try to match this color.
 
 				/*
 				**	Search through the remap range to find the color that should be remapped
@@ -491,7 +505,7 @@ void * Conquer_Build_Fading_Table(PaletteClass const & palette, void * dest, int
 				int best = -1;
 				int bvalue = 0;
 				for (int id = PaletteClass::COLOR_COUNT-16; id < PaletteClass::COLOR_COUNT-1; id++) {
-					int diff = palette[id].Difference(trycolor);
+					int diff = palette[(unsigned)id].Difference(trycolor);
 					if (best == -1 || diff < bvalue) {
 						best = id;
 						bvalue = diff;
@@ -503,5 +517,3 @@ void * Conquer_Build_Fading_Table(PaletteClass const & palette, void * dest, int
 	}
 	return(dest);
 }
-
-

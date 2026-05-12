@@ -107,6 +107,7 @@
 //	Warning - Most disgusting cpp file of all time. ajw
 
 #include "FUNCTION.H"
+#include "RATRACE.H"
 #include "SDLINPUT.H"
 #include "sdl_fs.h"
 #include "INTERNET.H"
@@ -237,31 +238,6 @@ static bool Internet_Using_Direct_Guest_Lobby(void)
 	return(Session.Type == GAME_INTERNET &&
 		!PlanetWestwoodIsHost &&
 		!Internet_Has_Command_Line_Connect());
-}
-
-static bool Network_Trace_Enabled(void)
-{
-	static int enabled = -1;
-	if (enabled == -1) {
-		enabled = (getenv("RA_TRACE_NETWORK") != NULL) ? 1 : 0;
-	}
-	return(enabled != 0);
-}
-
-static void Network_Trace(char const* format, ...)
-{
-	va_list arguments;
-
-	if (!Network_Trace_Enabled()) {
-		return;
-	}
-
-	va_start(arguments, format);
-	fprintf(stderr, "[net] ");
-	vfprintf(stderr, format, arguments);
-	fprintf(stderr, "\n");
-	fflush(stderr);
-	va_end(arguments);
 }
 
 static char const* Join_State_Name(JoinStateType state)
@@ -1202,7 +1178,7 @@ bool Process_Global_Packet(GlobalPacketType *packet, UDPAddressClass *address)
 {
 	GlobalPacketType mypacket;
 
-	Network_Trace("Process_Global_Packet cmd=%s packet_name=%s game_name=%s net_open=%d players=%d",
+	RA_Trace("RA_TRACE_NETWORK", "net", "Process_Global_Packet cmd=%s packet_name=%s game_name=%s net_open=%d players=%d",
 		Network_Command_Name(packet->Command), packet->Name, Session.GameName, Session.NetOpen, Session.Players.Count());
 
 	//------------------------------------------------------------------------
@@ -1232,7 +1208,7 @@ bool Process_Global_Packet(GlobalPacketType *packet, UDPAddressClass *address)
 			mypacket.Command = NET_ANSWER_GAME;
 			strcpy(mypacket.Name, Session.GameName);
 			mypacket.GameInfo.IsOpen = Session.NetOpen;
-			Network_Trace("Sending NET_ANSWER_GAME game=%s open=%d", Session.GameName, Session.NetOpen);
+			RA_Trace("RA_TRACE_NETWORK", "net", "Sending NET_ANSWER_GAME game=%s open=%d", Session.GameName, Session.NetOpen);
 
 			NetMgr->Send_Global_Message (&mypacket, sizeof(GlobalPacketType), 1,
 				address);
@@ -1254,7 +1230,7 @@ bool Process_Global_Packet(GlobalPacketType *packet, UDPAddressClass *address)
 		mypacket.PlayerInfo.House = Session.House;
 		mypacket.PlayerInfo.Color = Session.ColorIdx;
 		mypacket.PlayerInfo.NameCRC = Compute_Name_CRC(Session.GameName);
-		Network_Trace("Sending NET_ANSWER_PLAYER player=%s game=%s", Session.Players[0]->Name, Session.GameName);
+		RA_Trace("RA_TRACE_NETWORK", "net", "Sending NET_ANSWER_PLAYER player=%s game=%s", Session.Players[0]->Name, Session.GameName);
 
 		NetMgr->Send_Global_Message (&mypacket, sizeof(GlobalPacketType), 1, address);
 		return(true);
@@ -1290,7 +1266,7 @@ void Destroy_Connection(int id, int error)
 	char txt[80];
 
 	if (Debug_Print_Events) {
-		printf("Destroying connection for house %d (%s)\n",
+		SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "[net] Destroying connection for house %d (%s)",
 			id,HouseClass::As_Pointer((HousesType)id)->IniName);
 	}
 
@@ -3379,7 +3355,7 @@ static void Send_Join_Queries(int curgame, JoinStateType joinstate,
 		memset (&Session.GPacket, 0, sizeof(GlobalPacketType));
 
 		Session.GPacket.Command = NET_QUERY_GAME;
-		Network_Trace("Join send cmd=%s state=%s", Network_Command_Name(Session.GPacket.Command), Join_State_Name(joinstate));
+		RA_Trace("RA_TRACE_NETWORK", "net", "Join send cmd=%s state=%s", Network_Command_Name(Session.GPacket.Command), Join_State_Name(joinstate));
 
 		NetMgr->Send_Global_Message (&Session.GPacket,
 			sizeof(GlobalPacketType), 0, NULL);
@@ -3409,7 +3385,7 @@ static void Send_Join_Queries(int curgame, JoinStateType joinstate,
 
 		Session.GPacket.Command = NET_QUERY_PLAYER;
 		strcpy (Session.GPacket.Name, Session.Games[curgame]->Name);
-		Network_Trace("Join send cmd=%s game=%s state=%s", Network_Command_Name(Session.GPacket.Command),
+		RA_Trace("RA_TRACE_NETWORK", "net", "Join send cmd=%s game=%s state=%s", Network_Command_Name(Session.GPacket.Command),
 			Session.GPacket.Name, Join_State_Name(joinstate));
 
 		NetMgr->Send_Global_Message (&Session.GPacket,
@@ -3438,7 +3414,7 @@ static void Send_Join_Queries(int curgame, JoinStateType joinstate,
 		strcpy (Session.GPacket.Name, myname);
 		Session.GPacket.Chat.ID = Session.UniqueID;
 		Session.GPacket.Chat.Color = Session.ColorIdx;
-		Network_Trace("Join send cmd=%s name=%s state=%s", Network_Command_Name(Session.GPacket.Command),
+		RA_Trace("RA_TRACE_NETWORK", "net", "Join send cmd=%s name=%s state=%s", Network_Command_Name(Session.GPacket.Command),
 			Session.GPacket.Name, Join_State_Name(joinstate));
 
 		NetMgr->Send_Global_Message (&Session.GPacket,
@@ -3535,13 +3511,13 @@ static bool Wol_Join_Server_Game(int game_index)
 {
 	uint32_t game_id = Wol_Game_Id(game_index);
 	if (game_id == 0) {
-		Network_Trace("WOL join missing game id index=%d name=%s", game_index,
+		RA_Trace("RA_TRACE_NETWORK", "net", "WOL join missing game id index=%d name=%s", game_index,
 			(game_index >= 0 && game_index < Session.Games.Count()) ? Session.Games[game_index]->Name : "");
 		return(false);
 	}
 
 	if (!Wol.Send_Game_Join(game_id)) {
-		Network_Trace("WOL game join failed game_id=%u index=%d", game_id, game_index);
+		RA_Trace("RA_TRACE_NETWORK", "net", "WOL game join failed game_id=%u index=%d", game_id, game_index);
 		return(false);
 	}
 
@@ -3879,7 +3855,7 @@ static JoinEventType Get_Join_Responses(JoinStateType *joinstate, ListClass *gam
 	if (!rc || Session.GProductID != UDPGlobalConnClass::COMMAND_AND_CONQUER0)
 		return(EV_NONE);
 
-	Network_Trace("Join recv state=%s cmd=%s name=%s", Join_State_Name(*joinstate),
+	RA_Trace("RA_TRACE_NETWORK", "net", "Join recv state=%s cmd=%s name=%s", Join_State_Name(*joinstate),
 		Network_Command_Name(Session.GPacket.Command), Session.GPacket.Name);
 
 	//------------------------------------------------------------------------
@@ -4122,7 +4098,7 @@ static JoinEventType Get_Join_Responses(JoinStateType *joinstate, ListClass *gam
 			Session.ColorIdx = Session.GPacket.PlayerInfo.Color;
 
 			(*joinstate) = JOIN_CONFIRMED;
-			Network_Trace("Join state -> %s game=%s house=%d color=%d", Join_State_Name(*joinstate),
+			RA_Trace("RA_TRACE_NETWORK", "net", "Join state -> %s game=%s house=%d color=%d", Join_State_Name(*joinstate),
 				Session.GameName, Session.House, Session.ColorIdx);
 			retcode = EV_STATE_CHANGE;
 		}
@@ -4194,7 +4170,7 @@ static JoinEventType Get_Join_Responses(JoinStateType *joinstate, ListClass *gam
 #endif
 			(*why) = (RejectType)Session.GPacket.Reject.Why;
 			(*joinstate) = JOIN_REJECTED;
-			Network_Trace("Join state -> %s why=%d", Join_State_Name(*joinstate), *why);
+			RA_Trace("RA_TRACE_NETWORK", "net", "Join state -> %s why=%d", Join_State_Name(*joinstate), *why);
 			retcode = EV_STATE_CHANGE;
 		}
 	}
@@ -4213,7 +4189,7 @@ static JoinEventType Get_Join_Responses(JoinStateType *joinstate, ListClass *gam
 			Session.Options.AIPlayers = Session.GPacket.ScenarioInfo.AIPlayers;
 			BuildLevel = Session.GPacket.ScenarioInfo.BuildLevel;
 			Session.Options.UnitCount = Session.GPacket.ScenarioInfo.UnitCount;
-			Network_Trace("Join received NET_GAME_OPTIONS scenario=%d bases=%d credits=%d", Session.Options.ScenarioIndex,
+			RA_Trace("RA_TRACE_NETWORK", "net", "Join received NET_GAME_OPTIONS scenario=%d bases=%d credits=%d", Session.Options.ScenarioIndex,
 				Session.Options.Bases, Session.Options.Credits);
 			Seed = Session.GPacket.ScenarioInfo.Seed;
 			Special = Session.GPacket.ScenarioInfo.Special;
@@ -4390,7 +4366,7 @@ static JoinEventType Get_Join_Responses(JoinStateType *joinstate, ListClass *gam
 		if ( (*joinstate)==JOIN_CONFIRMED) {
 			Session.MaxAhead = Session.GPacket.ResponseTime.OneWay;
 			(*joinstate) = JOIN_GAME_START;
-			Network_Trace("Join state -> %s maxahead=%d", Join_State_Name(*joinstate), Session.MaxAhead);
+			RA_Trace("RA_TRACE_NETWORK", "net", "Join state -> %s maxahead=%d", Join_State_Name(*joinstate), Session.MaxAhead);
 			retcode = EV_STATE_CHANGE;
 			Session.HostAddress = Session.GAddress;
 		}
@@ -4403,7 +4379,7 @@ static JoinEventType Get_Join_Responses(JoinStateType *joinstate, ListClass *gam
 		if ( (*joinstate)==JOIN_CONFIRMED) {
 			Session.MaxAhead = Session.GPacket.ResponseTime.OneWay;
 			(*joinstate) = JOIN_GAME_START_LOAD;
-			Network_Trace("Join state -> %s maxahead=%d", Join_State_Name(*joinstate), Session.MaxAhead);
+			RA_Trace("RA_TRACE_NETWORK", "net", "Join state -> %s maxahead=%d", Join_State_Name(*joinstate), Session.MaxAhead);
 			retcode = EV_STATE_CHANGE;
 			Session.HostAddress = Session.GAddress;
 		}
@@ -4888,7 +4864,7 @@ static int Net_New_Dialog(void)
 		Wol.Send_Game_Leave();
 		uint8_t max_players = (Session.MaxPlayers > 255) ? 255 : (uint8_t)Session.MaxPlayers;
 		if (!Wol.Send_Game_Create(Session.GameName, max_players)) {
-			Network_Trace("WOL game registration failed game=%s", Session.GameName);
+			RA_Trace("RA_TRACE_NETWORK", "net", "WOL game registration failed game=%s", Session.GameName);
 		}
 	}
 #endif
@@ -5779,7 +5755,7 @@ static JoinEventType Get_NewGame_Responses(ColorListClass *playerlist,
 		return(EV_NONE);
 	}
 
-	Network_Trace("Host recv cmd=%s name=%s players=%d net_open=%d", Network_Command_Name(Session.GPacket.Command),
+	RA_Trace("RA_TRACE_NETWORK", "net", "Host recv cmd=%s name=%s players=%d net_open=%d", Network_Command_Name(Session.GPacket.Command),
 		Session.GPacket.Name, Session.Players.Count(), Session.NetOpen);
 
 	//------------------------------------------------------------------------
@@ -5823,7 +5799,7 @@ static JoinEventType Get_NewGame_Responses(ColorListClass *playerlist,
 		//	Reject if name is a duplicate
 		//.....................................................................
 		if (found) {
-			Network_Trace("Host rejecting duplicate name=%s", Session.GPacket.Name);
+			RA_Trace("RA_TRACE_NETWORK", "net", "Host rejecting duplicate name=%s", Session.GPacket.Name);
 			memset (&Session.GPacket, 0, sizeof(GlobalPacketType));
 			Session.GPacket.Command = NET_REJECT_JOIN;
 			Session.GPacket.Reject.Why = (int)REJECT_DUPLICATE_NAME;
@@ -5836,7 +5812,7 @@ static JoinEventType Get_NewGame_Responses(ColorListClass *playerlist,
 		//	Reject if there are too many players
 		//.....................................................................
 		else if ( (Session.Players.Count() >= Session.MaxPlayers) && !resend) {
-			Network_Trace("Host rejecting full game name=%s", Session.GPacket.Name);
+			RA_Trace("RA_TRACE_NETWORK", "net", "Host rejecting full game name=%s", Session.GPacket.Name);
 			memset (&Session.GPacket, 0, sizeof(GlobalPacketType));
 			Session.GPacket.Command = NET_REJECT_JOIN;
 			Session.GPacket.Reject.Why = (int)REJECT_GAME_FULL;
@@ -5849,7 +5825,7 @@ static JoinEventType Get_NewGame_Responses(ColorListClass *playerlist,
 		**	Don't allow joining if the rules.ini file doesn't appear to match.
 		*/
 		else if (Session.GPacket.PlayerInfo.CheatCheck != RuleINI.Get_Unique_ID() && !resend) {
-			Network_Trace("Host rejecting rules mismatch name=%s", Session.GPacket.Name);
+			RA_Trace("RA_TRACE_NETWORK", "net", "Host rejecting rules mismatch name=%s", Session.GPacket.Name);
 			memset (&Session.GPacket, 0, sizeof(GlobalPacketType));
 			Session.GPacket.Command = NET_REJECT_JOIN;
 			Session.GPacket.Reject.Why = (int)REJECT_MISMATCH;
@@ -5897,7 +5873,7 @@ static JoinEventType Get_NewGame_Responses(ColorListClass *playerlist,
 			// Reject player if his version is too old
 			//..................................................................
 			if (version == 0) {
-				Network_Trace("Host rejecting old version name=%s", Session.GPacket.Name);
+				RA_Trace("RA_TRACE_NETWORK", "net", "Host rejecting old version name=%s", Session.GPacket.Name);
 				memset (&Session.GPacket, 0, sizeof(GlobalPacketType));
 				Session.GPacket.Command = NET_REJECT_JOIN;
 				Session.GPacket.Reject.Why = (int)REJECT_VERSION_TOO_OLD;
@@ -5910,7 +5886,7 @@ static JoinEventType Get_NewGame_Responses(ColorListClass *playerlist,
 			// Reject player if his version is too new
 			//..................................................................
 			else if (version == 0xffffffff) {
-				Network_Trace("Host rejecting new version name=%s", Session.GPacket.Name);
+				RA_Trace("RA_TRACE_NETWORK", "net", "Host rejecting new version name=%s", Session.GPacket.Name);
 				memset (&Session.GPacket, 0, sizeof(GlobalPacketType));
 				Session.GPacket.Command = NET_REJECT_JOIN;
 				Session.GPacket.Reject.Why = (int)REJECT_VERSION_TOO_NEW;
@@ -5971,7 +5947,7 @@ static JoinEventType Get_NewGame_Responses(ColorListClass *playerlist,
 			strcpy(Session.GPacket.Name,Session.Handle);
 			Session.GPacket.PlayerInfo.House = who->Player.House;
 			Session.GPacket.PlayerInfo.Color = who->Player.Color;
-			Network_Trace("Host confirming join guest=%s host=%s house=%d color=%d", who->Name, Session.Handle,
+			RA_Trace("RA_TRACE_NETWORK", "net", "Host confirming join guest=%s host=%s house=%d color=%d", who->Name, Session.Handle,
 				Session.GPacket.PlayerInfo.House, Session.GPacket.PlayerInfo.Color);
 
 			NetMgr->Send_Global_Message (&Session.GPacket, sizeof (GlobalPacketType),
@@ -7868,7 +7844,7 @@ static bool Internet_Wait_For_TCP_Connection(bool hosting);
 
 static bool Internet_Start_Remote_Connect(bool hosting, char const* address, uint16_t port)
 {
-	Network_Trace("TCP launch hosting=%d handle=%s address=%s port=%u", hosting ? 1 : 0, Session.Handle,
+	RA_Trace("RA_TRACE_NETWORK", "net", "TCP launch hosting=%d handle=%s address=%s port=%u", hosting ? 1 : 0, Session.Handle,
 		(hosting || address == NULL) ? "" : address, (unsigned int)port);
 
 	Winsock.Close();
@@ -7882,21 +7858,21 @@ static bool Internet_Start_Remote_Connect(bool hosting, char const* address, uin
 	}
 
 	if (!Internet_Wait_For_TCP_Connection(hosting)) {
-		Network_Trace("TCP connect failed hosting=%d", hosting ? 1 : 0);
+		RA_Trace("RA_TRACE_NETWORK", "net", "TCP connect failed hosting=%d", hosting ? 1 : 0);
 		Winsock.Close();
 		return(false);
 	}
 
-	Network_Trace("TCP connected hosting=%d", hosting ? 1 : 0);
+	RA_Trace("RA_TRACE_NETWORK", "net", "TCP connected hosting=%d", hosting ? 1 : 0);
 
 	if (!Init_Network()) {
-		Network_Trace("Init_Network failed after TCP connect");
+		RA_Trace("RA_TRACE_NETWORK", "net", "Init_Network failed after TCP connect");
 		Winsock.Close();
 		return(false);
 	}
 
 	bool rc = hosting ? Server_Remote_Connect() : Client_Remote_Connect();
-	Network_Trace("TCP remote connect result hosting=%d rc=%d", hosting ? 1 : 0, rc ? 1 : 0);
+	RA_Trace("RA_TRACE_NETWORK", "net", "TCP remote connect result hosting=%d rc=%d", hosting ? 1 : 0, rc ? 1 : 0);
 	if (!rc) {
 		Winsock.Close();
 	}
@@ -8164,7 +8140,7 @@ bool Server_Remote_Connect(void)
 	//	stamp the game's advertised name before entering the real host lobby.
 	//------------------------------------------------------------------------
 	SDL_strlcpy(Session.GameName, Session.Handle, sizeof(Session.GameName));
-	Network_Trace("Server_Remote_Connect handle=%s game=%s", Session.Handle, Session.GameName);
+	RA_Trace("RA_TRACE_NETWORK", "net", "Server_Remote_Connect handle=%s game=%s", Session.Handle, Session.GameName);
 
 	//------------------------------------------------------------------------
 	//	The game is now "open" for joining.  Close it as soon as we exit this
@@ -8189,7 +8165,7 @@ bool Server_Remote_Connect(void)
 	}
 
 	if (!(command_line_launch ? Net_Fake_New_Dialog() : Net_New_Dialog())) {
-		Network_Trace("Server_Remote_Connect %s dialog cancelled",
+		RA_Trace("RA_TRACE_NETWORK", "net", "Server_Remote_Connect %s dialog cancelled",
 			command_line_launch ? "fake new" : "new");
 		Session.NetOpen = 0;
 		Session.NetStealth = stealth;
@@ -8200,7 +8176,7 @@ bool Server_Remote_Connect(void)
 	Session.NetOpen = 0;
 	Session.NetStealth = stealth;
 	Session.Write_MultiPlayer_Settings ();
-	Network_Trace("Server_Remote_Connect complete players=%d", Session.Players.Count());
+	RA_Trace("RA_TRACE_NETWORK", "net", "Server_Remote_Connect complete players=%d", Session.Players.Count());
 	return (true);
 
 }	/* end of Server_Remote_Connect */
@@ -8231,7 +8207,7 @@ bool Client_Remote_Connect(void)
 	//	game yet, so clear any stale game name before entering the join dialog.
 	//------------------------------------------------------------------------
 	Session.GameName[0] = 0;
-	Network_Trace("Client_Remote_Connect handle=%s", Session.Handle);
+	RA_Trace("RA_TRACE_NETWORK", "net", "Client_Remote_Connect handle=%s", Session.Handle);
 
 	//------------------------------------------------------------------------
 	//	The game is now "open" for joining.  Close it as soon as we exit this
@@ -8243,7 +8219,7 @@ bool Client_Remote_Connect(void)
 	//	Read in last multiplayer game settings from the .INI file
 	//------------------------------------------------------------------------
 	rc = command_line_launch ? Net_Fake_Join_Dialog() : Net_Join_Dialog();
-	Network_Trace("Client_Remote_Connect %s rc=%d game=%s players=%d",
+	RA_Trace("RA_TRACE_NETWORK", "net", "Client_Remote_Connect %s rc=%d game=%s players=%d",
 		command_line_launch ? "fake join" : "join", rc, Session.GameName, Session.Players.Count());
 	Session.Write_MultiPlayer_Settings ();
 

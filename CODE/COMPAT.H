@@ -109,7 +109,7 @@ class IconsetClass;
 inline int Get_IconSet_MapWidth(void const * data)
 {
 	if (data) {
-		return(((IControl_Type *)data)->MapWidth);
+		return(((IControl_Type const *)data)->MapWidth);
 	}
 	return(0);
 }
@@ -117,7 +117,7 @@ inline int Get_IconSet_MapWidth(void const * data)
 inline int Get_IconSet_MapHeight(void const * data)
 {
 	if (data) {
-		return(((IControl_Type *)data)->MapHeight);
+		return(((IControl_Type const *)data)->MapHeight);
 	}
 	return(0);
 }
@@ -125,7 +125,7 @@ inline int Get_IconSet_MapHeight(void const * data)
 inline uint8_t const * Get_IconSet_ControlMap(void const * data)
 {
 	if (data) {
-		return((uint8_t const *)((char *)data + ((IControl_Type *)data)->ColorMap));
+		return((uint8_t const *)((char const *)data + ((IControl_Type const *)data)->ColorMap));
 	}
 	return(0);
 }

@@ -17,6 +17,7 @@
 */
 
 /* $Header: g:/library/source/rcs/./dipthong.c 1.15 1994/05/20 15:35:17 joe_bostic Exp $ */
+#include "ENDIAN.H"
 /***************************************************************************
  **   C O N F I D E N T I A L --- W E S T W O O D   A S S O C I A T E S   **
  ***************************************************************************
@@ -323,5 +324,5 @@ char *Extract_String(void const *data, int32_t string)
 	if (string >= 4567) return (InternetTxt[string-4567]);
 
 	ptr = (uint16_t const *)data;
-	return (((char*)data) + ptr[string]);
+	return (((char*)data) + SDL_Swap16LE(ptr[string]));
 }

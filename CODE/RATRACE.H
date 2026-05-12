@@ -16,27 +16,10 @@
 **	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifndef RATRACE_H
+#define RATRACE_H
 
-/*
-    Implementation of Win95 tracing facility to mimic that of NT
-*/
+bool RA_Trace_Enabled(char const* env_name);
+void RA_Trace(char const* env_name, char const* tag, char const* format, ...);
 
-#include "win32_compat.h"
-#include "sdl_fs.h"
-#include <SDL3/SDL_log.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include "W95TRACE.H"
-
-
-void OutputDebugStringW95( LPCTSTR lpOutputString, ...)
-{
-	va_list arguments;
-	char message[1024];
-
-	va_start(arguments, lpOutputString);
-	vsnprintf(message, sizeof(message), lpOutputString != NULL ? lpOutputString : "", arguments);
-	va_end(arguments);
-
-	SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "[trace] %s", message);
-}
+#endif

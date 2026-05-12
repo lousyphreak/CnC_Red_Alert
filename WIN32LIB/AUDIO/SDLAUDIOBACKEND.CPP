@@ -1,6 +1,8 @@
 #include <SDL3/SDL_audio.h>
 #include <SDL3/SDL_init.h>
 
+#include "ENDIAN.H"
+#include "RATRACE.H"
 #include "SDLAUDIOBACKEND.H"
 
 #include <algorithm>
@@ -11,31 +13,6 @@
 #include <cstdlib>
 
 namespace {
-
-bool audio_trace_enabled(void)
-{
-	static int32_t enabled = -1;
-	if (enabled == -1) {
-		char const *env = std::getenv("RA_TRACE_STARTUP");
-		enabled = (env != NULL && env[0] != '\0') ? 1 : 0;
-	}
-	return (enabled != 0);
-}
-
-void audio_trace(char const *format, ...)
-{
-	if (!audio_trace_enabled()) {
-		return;
-	}
-
-	va_list arguments;
-	va_start(arguments, format);
-	std::fputs("[sdl-audio] ", stderr);
-	std::vfprintf(stderr, format, arguments);
-	std::fputc('\n', stderr);
-	std::fflush(stderr);
-	va_end(arguments);
-}
 
 int32_t normalized_channels(const AudioBufferFormat &format)
 {
@@ -453,18 +430,20 @@ void AudioBackendDevice::FeedAudio(SDL_AudioStream *stream, int32_t additional_a
 	}
 
 	if (output_format == SDL_AUDIO_S16LE) {
-		std::vector<int16_t> pcm((size_t)output_frames * (size_t)output_channels);
-		for (size_t index = 0; index < pcm.size(); ++index) {
+		std::vector<uint8_t> pcm((size_t)output_frames * (size_t)output_channels * sizeof(uint16_t));
+		for (size_t index = 0; index < ((size_t)output_frames * (size_t)output_channels); ++index) {
+			int16_t value;
 			const float sample = mix[index];
 			if (sample <= -1.0f) {
-				pcm[index] = INT16_MIN;
+				value = INT16_MIN;
 			} else if (sample >= 1.0f) {
-				pcm[index] = INT16_MAX;
+				value = INT16_MAX;
 			} else {
-				pcm[index] = (int16_t)std::lround(sample * 32767.0f);
+				value = (int16_t)std::lround(sample * 32767.0f);
 			}
+			RA_WriteUnalignedLE16(pcm.data() + (index * sizeof(uint16_t)), (uint16_t)value);
 		}
-		SDL_PutAudioStreamData(stream, pcm.data(), (int32_t)(pcm.size() * sizeof(int16_t)));
+		SDL_PutAudioStreamData(stream, pcm.data(), (int32_t)pcm.size());
 		return;
 	}
 
@@ -549,11 +528,11 @@ bool AudioBackendDevice::EnsureAudioStreamLocked(void)
 		return (false);
 	}
 
-	if (audio_trace_enabled()) {
+	if (RA_Trace_Enabled("RA_TRACE_STARTUP")) {
 		SDL_AudioSpec src_spec;
 		SDL_AudioSpec dst_spec;
 		if (SDL_GetAudioStreamFormat(Stream, &src_spec, &dst_spec)) {
-			audio_trace("OpenStream src=%dHz/%dch/0x%x dst=%dHz/%dch/0x%x",
+			RA_Trace("RA_TRACE_STARTUP", "sdl-audio", "OpenStream src=%dHz/%dch/0x%x dst=%dHz/%dch/0x%x",
 				src_spec.freq,
 				src_spec.channels,
 				(uint32_t)src_spec.format,

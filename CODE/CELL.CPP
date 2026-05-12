@@ -80,18 +80,10 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include	"FUNCTION.H"
+#include "RATRACE.H"
 #include	"VORTEX.H"
 #include <stdio.h>
 #include <stdlib.h>
-
-static bool Cell_Trace_Enabled(void)
-{
-	static int enabled = -1;
-	if (enabled == -1) {
-		enabled = (getenv("RA_TRACE_STARTUP") != NULL) ? 1 : 0;
-	}
-	return(enabled != 0);
-}
 
 /***********************************************************************************************
  * CellClass::CellClass -- Constructor for cell objects.                                       *
@@ -134,9 +126,8 @@ CellClass::CellClass(void) :
 {
 	static unsigned constructed = 0;
 	++constructed;
-	if (Cell_Trace_Enabled() && (constructed == 1 || (constructed % 2048) == 0)) {
-		fprintf(stderr, "[cell] constructed=%u\n", constructed);
-		fflush(stderr);
+	if (RA_Trace_Enabled("RA_TRACE_STARTUP") && (constructed == 1 || (constructed % 2048) == 0)) {
+		RA_Trace("RA_TRACE_STARTUP", "cell", "constructed=%u", constructed);
 	}
 
 	for (int zone = MZONE_FIRST; zone < MZONE_COUNT; zone++) {

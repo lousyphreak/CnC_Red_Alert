@@ -89,12 +89,45 @@
 #include	<ctype.h>
 #include	<assert.h>
 #include	<limits.h>
+#include 	"ENDIAN.H"
 #include	"MP.H"
 
 #include <stdint.h>
+
 #ifndef min
 #define	min(a, b)	(((a) < (b)) ? (a) : (b))
 #endif
+
+static void XMP_Copy_Precision(digit* dest, int dest_precision, const digit* source, int source_precision)
+{
+	XMP_Init(dest, 0, dest_precision);
+	const int copy_precision = min(dest_precision, source_precision);
+	for (int index = 0; index < copy_precision; ++index) {
+		dest[index] = source[index];
+	}
+}
+
+static int XMP_Mod_Mult_Generic(digit * prod, const digit * multiplicand, const digit * multiplier, const digit * modulus, int precision)
+{
+	const int double_precision = precision * 2;
+	assert(double_precision <= (int)(MAX_UNIT_PRECISION * 2));
+
+	digit lhs[MAX_UNIT_PRECISION * 2];
+	digit rhs[MAX_UNIT_PRECISION * 2];
+	digit staged_modulus[MAX_UNIT_PRECISION * 2];
+	digit product[MAX_UNIT_PRECISION * 2];
+	digit quotient[MAX_UNIT_PRECISION * 2];
+	digit remainder[MAX_UNIT_PRECISION * 2];
+
+	XMP_Copy_Precision(lhs, double_precision, multiplicand, precision);
+	XMP_Copy_Precision(rhs, double_precision, multiplier, precision);
+	XMP_Copy_Precision(staged_modulus, double_precision, modulus, precision);
+
+	XMP_Unsigned_Mult(product, lhs, rhs, double_precision);
+	XMP_Unsigned_Div(remainder, quotient, product, staged_modulus, double_precision);
+	XMP_Move(prod, remainder, precision);
+	return 0;
+}
 
 
 /***********************************************************************************************
@@ -1087,17 +1120,14 @@ bool XMP_Add_Int(digit * result, const digit * left_number, digit right_number, 
  *=============================================================================================*/
 bool XMP_Sub(digit * result, const digit * left_number, const digit * right_number, bool borrow, int precision)
 {
-	const uint16_t * left_number_ptr = (const uint16_t *)left_number;
-	const uint16_t * right_number_ptr = (const uint16_t *)right_number;
-	uint16_t * result_ptr = (uint16_t *)result;
-
-	precision *= 2;
 	while (precision--) {
-		digit x = (digit) *left_number_ptr - (digit) *right_number_ptr - (digit) borrow;
-		right_number_ptr++;
-		left_number_ptr++;
-		*result_ptr++ = (uint16_t)x;
-		borrow = (((1L << 16) & x) != 0L);
+		const digit term = *left_number - *right_number;
+		const digit final = term - static_cast<digit>(borrow);
+		borrow = (*left_number < *right_number) || (borrow && term == 0);
+
+		right_number++;
+		left_number++;
+		*result++ = final;
 	}
 	return (borrow);
 }
@@ -1130,16 +1160,14 @@ bool XMP_Sub(digit * result, const digit * left_number, const digit * right_numb
  *=============================================================================================*/
 bool XMP_Sub_Int(digit * result, const digit * left_number, uint16_t right_number, bool borrow, int precision)
 {
-	const uint16_t * left_number_ptr = (const uint16_t *)left_number;
-	uint16_t * result_ptr = (uint16_t *)result;
-
-	precision *= 2;
 	while (precision--) {
-		digit x = (digit) *left_number_ptr - right_number - borrow;
-		left_number_ptr++;
-		*result_ptr++ = (uint16_t)x;
-		borrow = (((1L << 16) & x) != 0L);
+		const digit subtrahend = static_cast<digit>(right_number);
+		const digit term = *left_number - subtrahend;
+		const digit final = term - static_cast<digit>(borrow);
+		borrow = (*left_number < subtrahend) || (borrow && term == 0);
 
+		left_number++;
+		*result++ = final;
 		right_number = 0;
 	}
 	return (borrow);
@@ -1864,6 +1892,12 @@ int XMP_Prepare_Modulus(const digit * n_modulus, int precision)
 {
 	XMP_Move(_scratch_modulus, n_modulus, precision);
 
+#if RA_BIG_ENDIAN_HOST
+	_modulus_bit_count = XMP_Count_Bits(_scratch_modulus, precision);
+	_modulus_sub_precision = (_modulus_bit_count + 16 - 1) / 16;
+	return 0;
+#else
+
 	_modulus_bit_count = XMP_Count_Bits(_scratch_modulus, precision);
 	_modulus_sub_precision = (_modulus_bit_count + 16 - 1) / 16;
 
@@ -1893,6 +1927,12 @@ int XMP_Prepare_Modulus(const digit * n_modulus, int precision)
 	_reciprical_high_digit = *mpm;
 
 	return 0;
+#endif
+}
+
+int xmp_stage_modulus(const digit * n_modulus, int precision)
+{
+	return XMP_Prepare_Modulus(n_modulus, precision);
 }
 
 
@@ -1920,6 +1960,9 @@ int XMP_Prepare_Modulus(const digit * n_modulus, int precision)
  *=============================================================================================*/
 int XMP_Mod_Mult(digit * prod, const digit * multiplicand, const digit * multiplier, int precision)
 {
+#if RA_BIG_ENDIAN_HOST
+	return XMP_Mod_Mult_Generic(prod, multiplicand, multiplier, _scratch_modulus, precision);
+#else
 	XMP_Double_Mul(_double_staging_number, multiplicand, multiplier, precision);
 
 	int double_precision = precision * 2 + 1;
@@ -1989,6 +2032,7 @@ int XMP_Mod_Mult(digit * prod, const digit * multiplicand, const digit * multipl
 
 	XMP_Move(prod, _double_staging_number, precision);
 	return (0);
+#endif
 }
 
 

@@ -18,6 +18,7 @@
 
 /* $Id: soundio.cpp 1.41 1994/06/20 15:01:39 joe_bostic Exp $ */
 #include <cstdint>
+#include "RATRACE.H"
 /***********************************************************************************************
  **             C O N F I D E N T I A L --- W E S T W O O D   A S S O C I A T E S             **
  ***********************************************************************************************
@@ -62,6 +63,7 @@ extern	void Colour_Debug (int32_t call_number);
 
 #include "ra_messagebox.h"
 #include "win32_compat.h"
+#include "ENDIAN.H"
 #include	"SDLAUDIOBACKEND.H"
 
 #include	<cstdarg>
@@ -147,33 +149,27 @@ static void Pump_Sound_Service(void);
 volatile int32_t AudioDone = FALSE;
 /*= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =*/
 
-static bool Sound_Trace_Enabled(void)
+static AUDHeaderType Read_AUD_Header(void const* buffer)
 {
-	static int32_t enabled = -1;
-	if (enabled == -1) {
-		char const* env = getenv("RA_TRACE_STARTUP");
-		enabled = (env != NULL && env[0] != '\0') ? 1 : 0;
-	}
-	return(enabled != 0);
+	AUDHeaderType header;
+	char const* bytes = static_cast<char const*>(buffer);
+	header.Rate = RA_ReadUnalignedULE16(bytes + offsetof(AUDHeaderType, Rate));
+	header.Size = RA_ReadUnalignedLE32(bytes + offsetof(AUDHeaderType, Size));
+	header.UncompSize = RA_ReadUnalignedLE32(bytes + offsetof(AUDHeaderType, UncompSize));
+	header.Flags = *(bytes + offsetof(AUDHeaderType, Flags));
+	header.Compression = *(bytes + offsetof(AUDHeaderType, Compression));
+	return header;
 }
 
-
-static void Sound_Trace(char const* format, ...)
+static void Write_AUD_Header(void* buffer, AUDHeaderType const& header)
 {
-	if (!Sound_Trace_Enabled()) {
-		return;
-	}
-
-	va_list arguments;
-	va_start(arguments, format);
-	fprintf(stderr, "[sound] ");
-	vfprintf(stderr, format, arguments);
-	fputc('\n', stderr);
-	fflush(stderr);
-	va_end(arguments);
+	char* bytes = static_cast<char*>(buffer);
+	RA_WriteUnalignedLE16(bytes + offsetof(AUDHeaderType, Rate), header.Rate);
+	RA_WriteUnalignedLE32(bytes + offsetof(AUDHeaderType, Size), static_cast<uint32_t>(header.Size));
+	RA_WriteUnalignedLE32(bytes + offsetof(AUDHeaderType, UncompSize), static_cast<uint32_t>(header.UncompSize));
+	*(bytes + offsetof(AUDHeaderType, Flags)) = header.Flags;
+	*(bytes + offsetof(AUDHeaderType, Compression)) = header.Compression;
 }
-
-
 
 // This callback is called whenever the queue buffer playback has begun
 // and another buffer is needed for queuing up.  Returns TRUE if there
@@ -312,7 +308,7 @@ static int32_t  Stream_Sample_Vol(void *buffer, int32_t size, int32_t (*callback
 	int32_t							oldsize;                // Copy of original sound size.
 	AUDHeaderType                   header;
 
-	Sound_Trace("Stream_Sample_Vol start size=%ld volume=%d handle=%d audio_done=%d digi=%d callback=%p",
+	RA_Trace("RA_TRACE_STARTUP", "sound", "Stream_Sample_Vol start size=%ld volume=%d handle=%d audio_done=%d digi=%d callback=%p",
 		size,
 		volume,
 		handle,
@@ -322,16 +318,16 @@ static int32_t  Stream_Sample_Vol(void *buffer, int32_t size, int32_t (*callback
 
 	if (!AudioDone && buffer && size && LockedData.DigiHandle != -1) {
 
-		/*
+	 	/*
 	 	** Start the first section of the sound playing.
 	 	*/
-	 	Mem_Copy(buffer, &header, sizeof(header));
+	 	header = Read_AUD_Header(buffer);
 	 	oldsize = header.Size;
 	 	header.Size = size-sizeof(header);
-	 	Mem_Copy(&header, buffer, sizeof(header));
+	 	Write_AUD_Header(buffer, header);
 	 	playid = Play_Sample_Handle(buffer, 0xFF, volume, 0x0, handle);
 	 	header.Size = oldsize;
-	 	Mem_Copy(&header, buffer, sizeof(header));
+	 	Write_AUD_Header(buffer, header);
 
 	 	/*
 	 	** If the sample actually started playing, then flag this
@@ -346,7 +342,7 @@ static int32_t  Stream_Sample_Vol(void *buffer, int32_t size, int32_t (*callback
 //             ServiceSomething = TRUE;
     	}
 	}
-	Sound_Trace("Stream_Sample_Vol result playid=%d", playid);
+	RA_Trace("RA_TRACE_STARTUP", "sound", "Stream_Sample_Vol result playid=%d", playid);
 		  return (playid);
 }
 
@@ -556,7 +552,7 @@ int32_t File_Stream_Sample_Vol(char const *filename, int32_t volume, int32_t rea
 		found = Find_File(filename);
 	}
 
-	Sound_Trace("File_Stream_Sample_Vol start file=%s volume=%d real_time=%d audio_done=%d digi=%d found=%d",
+	RA_Trace("RA_TRACE_STARTUP", "sound", "File_Stream_Sample_Vol start file=%s volume=%d real_time=%d audio_done=%d digi=%d found=%d",
 		filename ? filename : "<null>",
 		volume,
 		real_time_start ? 1 : 0,
@@ -620,7 +616,7 @@ int32_t File_Stream_Sample_Vol(char const *filename, int32_t volume, int32_t rea
 		File_Stream_Preload(handle);
 	}
 
-	Sound_Trace("File_Stream_Sample_Vol result file=%s handle=%d loading=%d pending=%d file_handle=%d",
+	RA_Trace("RA_TRACE_STARTUP", "sound", "File_Stream_Sample_Vol result file=%s handle=%d loading=%d pending=%d file_handle=%d",
 		filename ? filename : "<null>",
 		handle,
 		(handle >= 0) ? (st->Loading ? 1 : 0) : -1,
@@ -845,7 +841,8 @@ int32_t Sample_Read(int32_t fh, void *buffer, int32_t size)
 	size -= sizeof(RawHeader);
 	outbuffer = Add_Long_To_Pointer(buffer, sizeof(RawHeader));
   	actual_bytes_read = Read_File(fh, &RawHeader, sizeof(RawHeader));
-	actual_bytes_read +=Read_File(fh, outbuffer, MIN(size, (int32_t)RawHeader.Size));
+	AUDHeaderType decoded_header = Read_AUD_Header(&RawHeader);
+	actual_bytes_read +=Read_File(fh, outbuffer, MIN(size, decoded_header.Size));
 	Mem_Copy(&RawHeader, buffer, sizeof(RawHeader));
 	return(actual_bytes_read);
 }
@@ -1571,7 +1568,7 @@ int32_t Play_Sample_Handle(void const *sample, int32_t priority, int32_t volume,
 	/*
 	**      Fetch the control bytes from the start of the sample data.
 	*/
-	Mem_Copy((void *)sample, (void *)&RawHeader, sizeof(RawHeader));
+	RawHeader = Read_AUD_Header(sample);
 
 	/*
 	** Fudge the sample rate to 22k
@@ -1779,7 +1776,7 @@ int32_t Play_Sample_Handle(void const *sample, int32_t priority, int32_t volume,
 	** Make sure the primary sound buffer is playing
 	*/
 	if (!Start_Primary_Sound_Buffer(FALSE)){
-		Sound_Trace("Play_Sample_Handle primary start failed id=%d focus=%d", id, GameInFocus ? 1 : 0);
+		RA_Trace("RA_TRACE_STARTUP", "sound", "Play_Sample_Handle primary start failed id=%d focus=%d", id, GameInFocus ? 1 : 0);
 		return(-1);
 	}
 
@@ -1972,7 +1969,7 @@ int32_t Sample_Length(void const *sample)
 
 	if (!sample) return(0);
 
-	Mem_Copy((void *)sample, (void *)&RawHeader, sizeof(RawHeader));
+	RawHeader = Read_AUD_Header(sample);
 
 	int32_t time = RawHeader.UncompSize;
 

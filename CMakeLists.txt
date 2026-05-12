@@ -24,10 +24,12 @@ option(RA_EMSCRIPTEN_PACKAGE_GAMEDATA "Package the GameData directory into the e
 option(RA_EMSCRIPTEN_LAZY_FETCH_GAMEDATA "Load GameData over HTTP on demand in the emscripten build" ON)
 option(RA_EMSCRIPTEN_DIAGNOSTIC "Enable Emscripten diagnostic build (ASSERTIONS, SAFE_HEAP, stack checks, symbol names)" OFF)
 option(RA_ANDROID_PACKAGE_GAMEDATA "Package the GameData directory into the Android APK assets" ON)
+option(RA_WIIU_BUILD_WUHB "Build a Wii U WUHB bundle alongside the RPX when wuhbtool is available" ON)
 set(RA_ANDROID_SDK_ROOT "" CACHE PATH "Android SDK root used for Android packaging helper discovery")
 set(RA_ANDROID_PLATFORM_ROOT "" CACHE PATH "Android SDK platform root containing android.jar for Android packaging")
 set(RA_ANDROID_MIN_SDK_VERSION "26" CACHE STRING "Minimum Android SDK level for the native Android build")
 set(RA_ANDROID_TARGET_SDK_VERSION "34" CACHE STRING "Target Android SDK level for the native Android build")
+set(RA_WIIU_SDL_PREFIX "" CACHE PATH "Installed Wii U SDL3 prefix used when configuring the CafeOS/Wii U target")
 
 set(RA_ICON_DIR "${CMAKE_SOURCE_DIR}/resources/icons")
 set(RA_WINDOWS_ICON_FILE "${RA_ICON_DIR}/redalert.ico")
@@ -36,6 +38,15 @@ set(RA_ANDROID_ICON_RES_DIR "${RA_ICON_DIR}/android")
 set(RA_WEB_ICON_DIR "${CMAKE_SOURCE_DIR}/web/icons")
 set(RA_WEB_MANIFEST_FILE "${CMAKE_SOURCE_DIR}/web/site.webmanifest")
 set(RA_WINDOWS_RESOURCE_FILE "${CMAKE_SOURCE_DIR}/resources/windows/redalert.rc")
+
+set(RA_WIIU FALSE)
+if(CMAKE_SYSTEM_NAME STREQUAL "CafeOS" OR WIIU)
+    set(RA_WIIU TRUE)
+endif()
+
+if(RA_WIIU AND NOT "${RA_WIIU_SDL_PREFIX}" STREQUAL "")
+    list(PREPEND CMAKE_PREFIX_PATH "${RA_WIIU_SDL_PREFIX}")
+endif()
 
 if(EMSCRIPTEN)
     set(RA_ENABLE_UDP OFF CACHE BOOL "Enable UDP multiplayer transport" FORCE)
@@ -102,21 +113,25 @@ if(ANDROID)
     endif()
 endif()
 
-if(ANDROID)
-    set(SDL_SHARED ON CACHE BOOL "" FORCE)
-    set(SDL_STATIC OFF CACHE BOOL "" FORCE)
-    set(SDL_ANDROID_JAR ON CACHE BOOL "" FORCE)
+if(RA_WIIU)
+    find_package(SDL3 REQUIRED CONFIG)
 else()
-    set(SDL_SHARED OFF CACHE BOOL "" FORCE)
-    set(SDL_STATIC ON CACHE BOOL "" FORCE)
-endif()
-set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
-set(SDL_TESTS OFF CACHE BOOL "" FORCE)
-set(SDL_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(SDL_INSTALL OFF CACHE BOOL "" FORCE)
-set(SDL_DISABLE_INSTALL OFF CACHE BOOL "" FORCE)
+    if(ANDROID)
+        set(SDL_SHARED ON CACHE BOOL "" FORCE)
+        set(SDL_STATIC OFF CACHE BOOL "" FORCE)
+        set(SDL_ANDROID_JAR ON CACHE BOOL "" FORCE)
+    else()
+        set(SDL_SHARED OFF CACHE BOOL "" FORCE)
+        set(SDL_STATIC ON CACHE BOOL "" FORCE)
+    endif()
+    set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
+    set(SDL_TESTS OFF CACHE BOOL "" FORCE)
+    set(SDL_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(SDL_INSTALL OFF CACHE BOOL "" FORCE)
+    set(SDL_DISABLE_INSTALL OFF CACHE BOOL "" FORCE)
 
-add_subdirectory(extern/SDL3 EXCLUDE_FROM_ALL)
+    add_subdirectory(extern/SDL3 EXCLUDE_FROM_ALL)
+endif()
 
 find_package(Threads REQUIRED)
 
@@ -712,6 +727,19 @@ elseif(ANDROID)
             DEPENDS redalert-apk
             VERBATIM
         )
+    endif()
+elseif(RA_WIIU)
+    wut_create_rpx(redalert)
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/redalert.rpx" DESTINATION ".")
+
+    if(RA_WIIU_BUILD_WUHB AND WUT_WUHBTOOL_EXE)
+        wut_create_wuhb(redalert
+            NAME "Command & Conquer: Red Alert"
+            SHORTNAME "Red Alert"
+            AUTHOR "Electronic Arts"
+            ICON "${RA_ICON_DIR}/redalert-icon-256.png"
+        )
+        install(FILES "${CMAKE_CURRENT_BINARY_DIR}/redalert.wuhb" DESTINATION ".")
     endif()
 else()
     add_custom_command(TARGET redalert POST_BUILD

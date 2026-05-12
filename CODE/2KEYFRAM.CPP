@@ -64,7 +64,14 @@ static KeyFrameHeaderType Load_KeyFrame_Header(void const* dataptr)
 {
 	KeyFrameHeaderType header = {};
 	if (dataptr != NULL) {
-		memcpy(&header, dataptr, sizeof(header));
+		char const* bytes = static_cast<char const*>(dataptr);
+		header.frames = RA_ReadUnalignedULE16(bytes + offsetof(KeyFrameHeaderType, frames));
+		header.x = RA_ReadUnalignedULE16(bytes + offsetof(KeyFrameHeaderType, x));
+		header.y = RA_ReadUnalignedULE16(bytes + offsetof(KeyFrameHeaderType, y));
+		header.width = RA_ReadUnalignedULE16(bytes + offsetof(KeyFrameHeaderType, width));
+		header.height = RA_ReadUnalignedULE16(bytes + offsetof(KeyFrameHeaderType, height));
+		header.largest_frame_size = RA_ReadUnalignedULE16(bytes + offsetof(KeyFrameHeaderType, largest_frame_size));
+		header.flags = RA_ReadUnalignedLE16(bytes + offsetof(KeyFrameHeaderType, flags));
 	}
 	return header;
 }
@@ -76,8 +83,20 @@ static void Store_KeyFrame_Header_XY(void const* dataptr, uint16_t x, uint16_t y
 	}
 
 	char* bytes = (char*)const_cast<void*>(dataptr);
-	memcpy(bytes + offsetof(KeyFrameHeaderType, x), &x, sizeof(x));
-	memcpy(bytes + offsetof(KeyFrameHeaderType, y), &y, sizeof(y));
+	RA_WriteUnalignedLE16(bytes + offsetof(KeyFrameHeaderType, x), x);
+	RA_WriteUnalignedLE16(bytes + offsetof(KeyFrameHeaderType, y), y);
+}
+
+static void Load_KeyFrame_Offsets(void const* dataptr, uint32_t* offsets, size_t count)
+{
+	if (dataptr == NULL || offsets == NULL) {
+		return;
+	}
+
+	char const* bytes = static_cast<char const*>(dataptr);
+	for (size_t i = 0; i < count; ++i) {
+		offsets[i] = RA_ReadUnalignedULE32(bytes + (i * sizeof(uint32_t)));
+	}
 }
 
 #define	INITIAL_BIG_SHAPE_BUFFER_SIZE	8000000
@@ -338,7 +357,7 @@ void * Build_Frame(void const *dataptr, uint16_t framenumber, void *buffptr)
 
 	// get offset into data
 	ptr = (char *)Add_Long_To_Pointer( dataptr, (((uint32_t)framenumber << 3) + sizeof(KeyFrameHeaderType)) );
-	Mem_Copy( ptr, &offset[0], 12L );
+	Load_KeyFrame_Offsets(ptr, &offset[0], 3);
 	frameflags = (char)(offset[0] >> 24);
 
 
@@ -356,7 +375,7 @@ void * Build_Frame(void const *dataptr, uint16_t framenumber, void *buffptr)
 			currframe = (uint16_t)offset[1];
 
 			ptr = (char *)Add_Long_To_Pointer( dataptr, (((uint32_t)currframe << 3) + sizeof(KeyFrameHeaderType)) );
-			Mem_Copy( ptr, &offset[0], (int32_t)(SUBFRAMEOFFS * sizeof(uint32_t)) );
+			Load_KeyFrame_Offsets(ptr, &offset[0], SUBFRAMEOFFS);
 		}
 
 		// key frame
@@ -423,10 +442,10 @@ void * Build_Frame(void const *dataptr, uint16_t framenumber, void *buffptr)
 
 				if ( subframe >= (SUBFRAMEOFFS - 1) &&
 					currframe <= framenumber ) {
-					Mem_Copy( Add_Long_To_Pointer( dataptr,
+					Load_KeyFrame_Offsets(Add_Long_To_Pointer(dataptr,
 									(((uint32_t)currframe << 3) +
-									sizeof(KeyFrameHeaderType)) ),
-						&offset[0], (int32_t)(SUBFRAMEOFFS * sizeof(uint32_t)) );
+									sizeof(KeyFrameHeaderType))),
+						&offset[0], SUBFRAMEOFFS);
 					subframe = 0;
 				}
 			}

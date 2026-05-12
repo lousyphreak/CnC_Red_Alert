@@ -46,10 +46,177 @@
 #include <cstring>
 
 #include	"PK.H"
+#include "RATRACE.H"
 #include	"RNDSTRAW.H"
 
+#include <SDL3/SDL_log.h>
 
 #include <stdint.h>
+
+namespace
+{
+constexpr unsigned kBigIntBytes = MAX_UNIT_PRECISION * sizeof(digit);
+
+void ClearBigInt(BigInt& value)
+{
+	digit* digits = value;
+	for (unsigned index = 0; index < MAX_UNIT_PRECISION; ++index) {
+		digits[index] = 0;
+	}
+}
+
+uint8_t GetBigIntByteLE(BigInt const& value, unsigned byte_index)
+{
+	const digit* digits = value;
+	const unsigned digit_index = byte_index / sizeof(digit);
+	const unsigned shift = (byte_index % sizeof(digit)) * 8;
+	return static_cast<uint8_t>((digits[digit_index] >> shift) & 0xffu);
+}
+
+void SetBigIntByteLE(BigInt& value, unsigned byte_index, uint8_t byte)
+{
+	digit* digits = value;
+	const unsigned digit_index = byte_index / sizeof(digit);
+	const unsigned shift = (byte_index % sizeof(digit)) * 8;
+	digits[digit_index] &= ~(static_cast<digit>(0xffu) << shift);
+	digits[digit_index] |= static_cast<digit>(byte) << shift;
+}
+
+void DecodeUnsignedBE(BigInt& value, uint8_t const* input, unsigned input_bytes)
+{
+	ClearBigInt(value);
+
+	const unsigned bytes_to_copy = (input_bytes < kBigIntBytes) ? input_bytes : kBigIntBytes;
+	const unsigned source_offset = input_bytes - bytes_to_copy;
+	for (unsigned index = 0; index < bytes_to_copy; ++index) {
+		SetBigIntByteLE(value, bytes_to_copy - 1 - index, input[source_offset + index]);
+	}
+}
+
+void DecodeBlockLE(BigInt& value, void const* input, unsigned input_bytes)
+{
+	ClearBigInt(value);
+
+	const uint8_t* bytes = static_cast<const uint8_t*>(input);
+	const unsigned bytes_to_copy = (input_bytes < kBigIntBytes) ? input_bytes : kBigIntBytes;
+	for (unsigned index = 0; index < bytes_to_copy; ++index) {
+		SetBigIntByteLE(value, index, bytes[index]);
+	}
+}
+
+void EncodeBlockLE(void* output, unsigned output_bytes, BigInt const& value)
+{
+	uint8_t* bytes = static_cast<uint8_t*>(output);
+	for (unsigned index = 0; index < output_bytes; ++index) {
+		bytes[index] = GetBigIntByteLE(value, index);
+	}
+}
+
+unsigned CountUnsignedBytes(BigInt const& value)
+{
+	for (unsigned index = kBigIntBytes; index > 0; --index) {
+		if (GetBigIntByteLE(value, index - 1) != 0) {
+			return index;
+		}
+	}
+	return 1;
+}
+
+unsigned EncodeUnsignedBE(BigInt const& value, uint8_t* output, unsigned output_bytes)
+{
+	const unsigned bytes_to_copy = (output_bytes < kBigIntBytes) ? output_bytes : kBigIntBytes;
+	for (unsigned index = 0; index < bytes_to_copy; ++index) {
+		output[index] = GetBigIntByteLE(value, bytes_to_copy - 1 - index);
+	}
+	return bytes_to_copy;
+}
+
+void TraceBigInt(const char* label, BigInt const& value)
+{
+	if (!RA_Trace_Enabled("RA_TRACE_STARTUP")) {
+		return;
+	}
+
+	uint8_t encoded[kBigIntBytes];
+	const unsigned encoded_bytes = CountUnsignedBytes(value);
+	const unsigned head_bytes = (encoded_bytes < 8) ? encoded_bytes : 8;
+	const unsigned tail_bytes = (encoded_bytes < 8) ? encoded_bytes : 8;
+	EncodeUnsignedBE(value, encoded, encoded_bytes);
+
+	uint32_t fingerprint = 2166136261u;
+	for (unsigned index = 0; index < encoded_bytes; ++index) {
+		fingerprint ^= encoded[index];
+		fingerprint *= 16777619u;
+	}
+
+	char message[256];
+	int offset = SDL_snprintf(message, sizeof(message), "%s bytes=%u fnv=%08x head", label, encoded_bytes, fingerprint);
+	for (unsigned index = 0; index < head_bytes && offset > 0 && offset < (int)sizeof(message); ++index) {
+		offset += SDL_snprintf(message + offset, sizeof(message) - offset, "%s%02x", (index == 0) ? "=" : " ", encoded[index]);
+	}
+	if (tail_bytes > 0 && offset > 0 && offset < (int)sizeof(message)) {
+		offset += SDL_snprintf(message + offset, sizeof(message) - offset, " tail");
+		for (unsigned index = encoded_bytes - tail_bytes; index < encoded_bytes && offset > 0 && offset < (int)sizeof(message); ++index) {
+			offset += SDL_snprintf(message + offset, sizeof(message) - offset, "%s%02x", (index == encoded_bytes - tail_bytes) ? "=" : " ", encoded[index]);
+		}
+	}
+	RA_Trace("RA_TRACE_STARTUP", "pkey", "%s", message);
+}
+
+int EncodeDERPositive(BigInt const& value, uint8_t* output)
+{
+	uint8_t encoded[kBigIntBytes + 1];
+	unsigned encoded_bytes = CountUnsignedBytes(value);
+	EncodeUnsignedBE(value, encoded, encoded_bytes);
+
+	if (encoded[0] & 0x80) {
+		memmove(encoded + 1, encoded, encoded_bytes);
+		encoded[0] = 0;
+		++encoded_bytes;
+	}
+
+	int header_count = 0;
+	output[header_count++] = 0x02;
+	header_count += XMP_DER_Length_Encode(encoded_bytes, &output[header_count]);
+	memmove(&output[header_count], encoded, encoded_bytes);
+	return header_count + encoded_bytes;
+}
+
+void DecodeDERPositive(BigInt& value, uint8_t const* input)
+{
+	ClearBigInt(value);
+
+	if (*input++ != 0x02) {
+		return;
+	}
+
+	unsigned byte_count;
+	if ((*input & 0x80) == 0) {
+		byte_count = *input++;
+	} else {
+		int length = *input++ & 0x7f;
+		if (length > 2) {
+			return;
+		}
+		byte_count = *input++;
+		if (length > 1) {
+			byte_count = (byte_count << 8) | *input++;
+		}
+	}
+
+	if (byte_count == 0) {
+		return;
+	}
+
+	if (*input == 0) {
+		++input;
+		--byte_count;
+	}
+
+	DecodeUnsignedBE(value, input, byte_count);
+}
+}
+
 /***********************************************************************************************
  * PKey::PKey -- Construct a key using encoded strings.                                        *
  *                                                                                             *
@@ -68,8 +235,8 @@
  *=============================================================================================*/
 PKey::PKey(void const * exponent, void const * modulus)
 {
-	Modulus.DERDecode((uint8_t *)modulus);
-	Exponent.DERDecode((uint8_t *)exponent);
+	DecodeDERPositive(Modulus, static_cast<const uint8_t*>(modulus));
+	DecodeDERPositive(Exponent, static_cast<const uint8_t*>(exponent));
 	BitPrecision = Modulus.BitCount()-1;
 }
 
@@ -95,7 +262,7 @@ int PKey::Encode_Modulus(void * buffer) const
 	if (buffer == NULL) {
 		return(0);
 	}
-	return(Modulus.DEREncode((uint8_t *)buffer));
+	return EncodeDERPositive(Modulus, static_cast<uint8_t*>(buffer));
 }
 
 
@@ -120,7 +287,7 @@ int PKey::Encode_Exponent(void * buffer) const
 	if (buffer == NULL) {
 		return(0);
 	}
-	return(Exponent.DEREncode((uint8_t *)buffer));
+	return EncodeDERPositive(Exponent, static_cast<uint8_t*>(buffer));
 }
 
 
@@ -141,8 +308,10 @@ int PKey::Encode_Exponent(void * buffer) const
  *=============================================================================================*/
 void PKey::Decode_Modulus(void * buffer)
 {
-	Modulus.DERDecode((uint8_t *)buffer);
+	DecodeDERPositive(Modulus, static_cast<const uint8_t*>(buffer));
 	BitPrecision = Modulus.BitCount()-1;
+	TraceBigInt("modulus", Modulus);
+	TraceBigInt("pow2", BigInt(2).exp_b_mod_c(Exponent, Modulus));
 }
 
 
@@ -163,7 +332,8 @@ void PKey::Decode_Modulus(void * buffer)
  *=============================================================================================*/
 void PKey::Decode_Exponent(void * buffer)
 {
-	Exponent.DERDecode((uint8_t *)buffer);
+	DecodeDERPositive(Exponent, static_cast<const uint8_t*>(buffer));
+	TraceBigInt("exponent", Exponent);
 }
 
 
@@ -292,13 +462,13 @@ int PKey::Encrypt(void const * source, int slen, void * dest) const
 		**	Perform the encryption of the block.
 		*/
 		BigInt temp = 0;
-		memmove(&temp, source, Plain_Block_Size());
+		DecodeBlockLE(temp, source, Plain_Block_Size());
 		temp = temp.exp_b_mod_c(Exponent, Modulus);
 
 		/*
 		**	Move the cypher block to the destination.
 		*/
-		memmove(dest, &temp, Crypt_Block_Size());
+		EncodeBlockLE(dest, Crypt_Block_Size(), temp);
 		slen -= Plain_Block_Size();
 		source = (char *)source + Plain_Block_Size();
 		dest = (char *)dest + Crypt_Block_Size();
@@ -344,13 +514,13 @@ int PKey::Decrypt(void const * source, int slen, void * dest) const
 		**	Perform the encryption.
 		*/
 		temp = 0;
-		memmove(&temp, source, Crypt_Block_Size());
+		DecodeBlockLE(temp, source, Crypt_Block_Size());
 		temp = temp.exp_b_mod_c(Exponent, Modulus);
 
 		/*
 		**	Move the cypher block to the destination.
 		*/
-		memmove(dest, &temp, Plain_Block_Size());
+		EncodeBlockLE(dest, Plain_Block_Size(), temp);
 		slen -= Crypt_Block_Size();
 		source = (char *)source + Crypt_Block_Size();
 		dest = (char *)dest + Plain_Block_Size();

@@ -63,34 +63,11 @@
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 #include "FUNCTION.H"
+#include "RATRACE.H"
 #include <stdint.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-static bool Map_Trace_Enabled(void)
-{
-	static int enabled = -1;
-	if (enabled == -1) {
-		enabled = (getenv("RA_TRACE_STARTUP") != NULL) ? 1 : 0;
-	}
-	return(enabled != 0);
-}
-
-static void Map_Trace(char const * format, ...)
-{
-	if (!Map_Trace_Enabled()) {
-		return;
-	}
-
-	va_list args;
-	va_start(args, format);
-	fputs("[map] ", stderr);
-	vfprintf(stderr, format, args);
-	fputc('\n', stderr);
-	fflush(stderr);
-	va_end(args);
-}
 
 #define	MCW	MAP_CELL_W
 int const MapClass::RadiusOffset[] = {
@@ -142,7 +119,7 @@ void MapClass::One_Time(void)
 	**	Allocate the cell array.
 	*/
 	Alloc_Cells();
-	Map_Trace("One_Time complete size=%d", Size);
+	RA_Trace("RA_TRACE_STARTUP", "map", "One_Time complete size=%d", Size);
 }
 
 
@@ -201,13 +178,13 @@ void MapClass::Alloc_Cells(void)
 	**	(it may have been loaded from a save-game file), so zero it out first.
 	*/
 	new (&Array) VectorClass<CellClass>;
-	Map_Trace("Alloc_Cells resize start size=%d", Size);
+	RA_Trace("RA_TRACE_STARTUP", "map", "Alloc_Cells resize start size=%d", Size);
 	Array.Resize(Size);
-	Map_Trace("Alloc_Cells resize complete size=%d", Size);
+	RA_Trace("RA_TRACE_STARTUP", "map", "Alloc_Cells resize complete size=%d", Size);
 	for (int index = 0; index < Size; ++index) {
 		Array[index].ID = index;
 	}
-	Map_Trace("Alloc_Cells ids assigned size=%d", Size);
+	RA_Trace("RA_TRACE_STARTUP", "map", "Alloc_Cells ids assigned size=%d", Size);
 }
 
 
@@ -882,7 +859,8 @@ int MapClass::Write_Binary(Pipe & pipe)
 
 	CellClass * cellptr = &Array[0];
 	for (int i = 0; i < MAP_CELL_TOTAL; i++) {
-		total += comp.Put(&cellptr->TType, sizeof(cellptr->TType));
+		uint16_t encoded_ttype = SDL_Swap16LE(static_cast<uint16_t>(cellptr->TType));
+		total += comp.Put(&encoded_ttype, sizeof(encoded_ttype));
 		cellptr++;
 	}
 
@@ -917,17 +895,52 @@ bool MapClass::Read_Binary(Straw & straw)
 
 	CELL cell;
 	CellClass * cellptr;
+	int invalid_template_count = 0;
+	int template_hist[TEMPLATE_COUNT] = {0};
+	int land_hist[LAND_COUNT] = {0};
+	struct {
+		int cell;
+		unsigned type;
+		unsigned icon;
+	} samples[16];
+	int sample_count = 0;
 	switch (NewINIFormat) {
 		default:
 			cellptr = &Array[0];
 			for (cell = 0; cell < MAP_CELL_TOTAL; cell++) {
-				decomp.Get(&cellptr->TType, sizeof(cellptr->TType));
+				uint16_t encoded_ttype = 0;
+				decomp.Get(&encoded_ttype, sizeof(encoded_ttype));
+				cellptr->TType = static_cast<TemplateType>(SDL_Swap16LE(encoded_ttype));
 				cellptr++;
 			}
 			cellptr = &Array[0];
 			for (cell = 0; cell < MAP_CELL_TOTAL; cell++) {
 				decomp.Get(&cellptr->TIcon, sizeof(cellptr->TIcon));
+				if (cellptr->TType != TEMPLATE_NONE && cellptr->TType != 255 && cellptr->TType >= TEMPLATE_COUNT) {
+					if (invalid_template_count < 16) {
+						RA_Trace("RA_TRACE_STARTUP", "map", "Read_Binary invalid template cell=%d type=%u icon=%u format=%d",
+							(int)cell,
+							(unsigned)cellptr->TType,
+							(unsigned)cellptr->TIcon,
+							NewINIFormat);
+					}
+					invalid_template_count++;
+					cellptr->TType = TEMPLATE_NONE;
+					cellptr->TIcon = 0;
+				}
+				if (cellptr->TType != TEMPLATE_NONE && cellptr->TType != 255 && cellptr->TType < TEMPLATE_COUNT) {
+					template_hist[cellptr->TType]++;
+					if (sample_count < (int)(sizeof(samples) / sizeof(samples[0]))) {
+						samples[sample_count].cell = (int)cell;
+						samples[sample_count].type = (unsigned)cellptr->TType;
+						samples[sample_count].icon = (unsigned)cellptr->TIcon;
+						sample_count++;
+					}
+				}
 				cellptr->Recalc_Attributes();
+				if (cellptr->Land_Type() >= LAND_CLEAR && cellptr->Land_Type() < LAND_COUNT) {
+					land_hist[cellptr->Land_Type()]++;
+				}
 				cellptr++;
 			}
 			break;
@@ -937,12 +950,71 @@ bool MapClass::Read_Binary(Straw & straw)
 		case 2:
 			cellptr = &Array[0];
 			for (cell = 0; cell < MAP_CELL_TOTAL; cell++) {
-				decomp.Get(&cellptr->TType, sizeof(cellptr->TType));
+				uint16_t encoded_ttype = 0;
+				decomp.Get(&encoded_ttype, sizeof(encoded_ttype));
+				cellptr->TType = static_cast<TemplateType>(SDL_Swap16LE(encoded_ttype));
 				decomp.Get(&cellptr->TIcon, sizeof(cellptr->TIcon));
+				if (cellptr->TType != TEMPLATE_NONE && cellptr->TType != 255 && cellptr->TType >= TEMPLATE_COUNT) {
+					if (invalid_template_count < 16) {
+						RA_Trace("RA_TRACE_STARTUP", "map", "Read_Binary invalid template cell=%d type=%u icon=%u format=%d",
+							(int)cell,
+							(unsigned)cellptr->TType,
+							(unsigned)cellptr->TIcon,
+							NewINIFormat);
+					}
+					invalid_template_count++;
+					cellptr->TType = TEMPLATE_NONE;
+					cellptr->TIcon = 0;
+				}
+				if (cellptr->TType != TEMPLATE_NONE && cellptr->TType != 255 && cellptr->TType < TEMPLATE_COUNT) {
+					template_hist[cellptr->TType]++;
+					if (sample_count < (int)(sizeof(samples) / sizeof(samples[0]))) {
+						samples[sample_count].cell = (int)cell;
+						samples[sample_count].type = (unsigned)cellptr->TType;
+						samples[sample_count].icon = (unsigned)cellptr->TIcon;
+						sample_count++;
+					}
+				}
 				cellptr->Recalc_Attributes();
+				if (cellptr->Land_Type() >= LAND_CLEAR && cellptr->Land_Type() < LAND_COUNT) {
+					land_hist[cellptr->Land_Type()]++;
+				}
 				cellptr++;
 			}
 			break;
+	}
+	if (invalid_template_count > 0) {
+		RA_Trace("RA_TRACE_STARTUP", "map", "Read_Binary normalized invalid templates count=%d format=%d", invalid_template_count, NewINIFormat);
+	}
+	for (int i = 0; i < sample_count; ++i) {
+		RA_Trace("RA_TRACE_STARTUP", "map", "Read_Binary sample[%d] cell=%d type=%u icon=%u format=%d",
+			i,
+			samples[i].cell,
+			samples[i].type,
+			samples[i].icon,
+			NewINIFormat);
+	}
+	for (int rank = 0; rank < 8; ++rank) {
+		int best_type = -1;
+		int best_count = 0;
+		for (int type = TEMPLATE_FIRST; type < TEMPLATE_COUNT; ++type) {
+			if (template_hist[type] > best_count) {
+				best_type = type;
+				best_count = template_hist[type];
+			}
+		}
+		if (best_type < 0 || best_count == 0) break;
+		RA_Trace("RA_TRACE_STARTUP", "map", "Read_Binary top[%d] type=%d count=%d format=%d",
+			rank,
+			best_type,
+			best_count,
+			NewINIFormat);
+		template_hist[best_type] = 0;
+	}
+	for (int land = LAND_CLEAR; land < LAND_COUNT; ++land) {
+		if (land_hist[land] > 0) {
+			RA_Trace("RA_TRACE_STARTUP", "map", "Read_Binary land[%d]=%d format=%d", land, land_hist[land], NewINIFormat);
+		}
 	}
 	return(true);
 }
