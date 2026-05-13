@@ -85,6 +85,9 @@ _Last updated: 2026-05-13_
 - Android soft-keyboard support depends on entering SDL text-input mode, not just game-widget focus.
   - Practical example from this tree: the Android dialogs already called `SDL_GameInput_SetTextInputActive(...)` through the legacy gadget focus flow, but `CODE/SDLINPUT.CPP` only implemented that bridge for Emscripten. After adding the Android side to call `SDL_StartTextInput(...)`, `SDL_StopTextInput(...)`, and `SDL_SetTextInputArea(...)` against the active SDL window, Android `dumpsys input_method` switched from `SDLSurface` to `org.libsdl.app.SDLDummyEdit`, the Samsung IME became visible, and committed text reached the in-game `EditClass` field.
   - Practical rule: when Android text-entry screens show focus but no IME, debug the SDL text-input bridge first. If the game already knows which widget wants text, the missing piece is usually `SDL_StartTextInput()`/`SDL_StopTextInput()` on the platform window rather than more UI-side focus work.
+- Once the game has a working native SDL text-input bridge, keep it generic for all non-Emscripten targets instead of pinning it to one mobile platform.
+  - Practical example from this tree: `GadgetClass::Set_Focus()` / `Clear_Focus()` and the manual text-entry screens already converged on `SDL_GameInput_SetTextInputActive(...)`, but `CODE/SDLINPUT.CPP` still limited the SDL path to `__ANDROID__`, so Wii U and any other non-browser SDL backend silently did nothing. Widening that helper to all non-Emscripten targets immediately reused the existing focus lifecycle for Wii U without touching higher-level dialogs.
+  - Practical rule: treat Emscripten as the special case because its browser backend needs the repo-owned DOM bridge; for every other SDL platform, prefer one shared `SDL_StartTextInput()` / `SDL_StopTextInput()` / `SDL_SetTextInputArea()` path driven by the common widget focus system.
 
 ## Browser / Emscripten runtime
 

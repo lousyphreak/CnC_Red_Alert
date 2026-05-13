@@ -769,7 +769,7 @@ bool get_window_point_for_current_game_cursor(float& window_x, float& window_y)
 	return true;
 }
 
-#if defined(__ANDROID__)
+#if !defined(__EMSCRIPTEN__)
 bool get_window_rect_for_text_input(SDL_Rect& window_rect)
 {
 	if (MainWindow == NULL || MainWindow->sdl_window == NULL) {
@@ -1615,13 +1615,7 @@ bool SDL_GameInput_Is_AppCallbacks_Mode(void)
 	return (g_app_callbacks_mode.load());
 }
 
-void SDL_GameInput_SetTextInputActive(
-#if defined(__EMSCRIPTEN__)
-	bool enabled
-#else
-	bool enabled
-#endif
-)
+void SDL_GameInput_SetTextInputActive(bool enabled)
 {
 #if defined(__EMSCRIPTEN__)
 	// SDL3's Emscripten backend unconditionally registers a default
@@ -1632,7 +1626,7 @@ void SDL_GameInput_SetTextInputActive(
 	// tablets apart from desktops. The bridge is a no-op on devices with
 	// a real keyboard, so there is never any keystroke duplication.
 	ra_set_web_soft_keyboard_active(enabled ? 1 : 0);
-#elif defined(__ANDROID__)
+#else
 	if (MainWindow == NULL || MainWindow->sdl_window == NULL) {
 		return;
 	}

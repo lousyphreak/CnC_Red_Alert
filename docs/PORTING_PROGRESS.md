@@ -8,6 +8,14 @@ Port the Red Alert codebase to a reproducible cross-platform build using SDL3 fo
 
 ## Current status
 
+- Generalized the native SDL soft-keyboard path so non-browser targets such as Wii U now follow the same text-input activation flow as Android (2026-05-13):
+  - Root cause: the shared UI focus path was already centralized through `GadgetClass::Set_Focus()` / `Clear_Focus()` and the manual callers all funneled through `SDL_GameInput_SetTextInputActive(...)`, but `CODE/SDLINPUT.CPP` only did real SDL work for Android while Emscripten used its separate DOM bridge. Every other SDL backend therefore fell through that helper as a no-op, so text-entry widgets on targets like Wii U never requested SDL's native on-screen keyboard.
+  - Fix implemented:
+    - `CODE/SDLINPUT.CPP` now keeps the Emscripten DOM soft-keyboard bridge as the only browser-specific exception, but runs the SDL native text-input path for every other target instead of gating it to `__ANDROID__` only;
+    - the text-input rectangle helper that derives a window-space area from the current viewport/window is now shared by all non-Emscripten SDL targets, so backends that care about placement receive the same geometry data without adding more per-platform branches.
+  - Result: any non-Emscripten SDL backend that supports screen-keyboard/text-input activation now follows the existing focus/manual text-entry calls automatically, which restores the intended behavior on Wii U without changing the browser bridge or requiring dialog-specific hacks.
+  - validation for this checkpoint: `cmake --build build --target redalert --parallel`, `ctest --test-dir build --output-on-failure`, and `cmake --build build-emscripten --target redalert --parallel` succeed after the shared native text-input change; the current Wii U compile command from `build-copilot-wiiu/compile_commands.json` also compiles `CODE/SDLINPUT.CPP` successfully, while the full `cmake --build build-copilot-wiiu --parallel` remains blocked by a pre-existing unrelated `_Countof`/`SDL_arraysize` failure in `SDL3_COMPAT/wrappers/sdl_fs.cpp`.
+
 - Fixed the deployed Emscripten startup alignment fault in the mixfile public-key decrypt path (2026-05-13):
   - Root cause: `CODE/MP.CPP::XMP_Mod_Mult()` still used the original little-endian Smith reduction fast path, which operates on 16-bit halfword windows inside a 32-bit `digit` array and depends on aliasing patterns that are fragile under Emscripten's strict SAFE_HEAP alignment checks. The first narrow fix removed one confirmed bad `uint16_t*` -> `digit*` correction-path cast, but the deployed diagnostic browser build still trapped inside the same fast path during `PKStraw`/`PKey` modular exponentiation while opening encrypted mixfiles.
   - Fix implemented:
