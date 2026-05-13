@@ -167,6 +167,33 @@ The SDL3 port includes direct touch handling on touchscreen devices instead of r
 
 On Android, focused edit fields now open the platform IME directly. In browser/mobile builds, text-entry screens open the repo's visible soft-keyboard tray when an edit field has focus.
 
+## Controller mapping
+
+Controller support is optional and routes through the same legacy mouse/keyboard input layer as the rest of the SDL3 port. Keyboard, mouse, and touch behavior are unchanged when no controller is connected.
+
+| Control | Mapping |
+| --- | --- |
+| Left stick | Virtual mouse cursor |
+| South / A | Left click |
+| East / B | Right click |
+| D-pad in menus/dialogs | Arrow-key navigation |
+| D-pad in gameplay | Sidebar up/down and previous/next selection |
+| Right stick | Tactical map scroll |
+| Start | Options |
+| Back / Select | `Esc` in menus, `Scatter` in gameplay |
+| West / X | `Stop` |
+| North / Y | `Guard` |
+| Left shoulder (hold) | Force-move modifier |
+| Right shoulder (hold) | Force-attack modifier |
+| Left trigger | `Repair` |
+| Right trigger | `Sell` |
+| Left stick click | Center on base |
+| Right stick click | Map / zoom |
+| Misc button (if exposed by SDL) | `Formation` |
+| Touchpad / extra pad button (if exposed by SDL) | `Select View` |
+
+The controller virtual cursor is intentionally tuned a bit slower than the original first-pass mapping so menu selection and in-game click targeting are easier to control.
+
 ## Direct-IP TCP multiplayer
 
 The SDL3 port keeps the original UDP path and also adds a direct-IP TCP path for internet-style multiplayer without Westwood Online.

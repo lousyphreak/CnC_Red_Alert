@@ -78,6 +78,7 @@
  *   Check_Mirror -- Checks mirror memory                                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 #include	"FUNCTION.H"
+#include	"SDLINPUT.H"
 #include "SDLINPUT.H"
 #include "sdl_fs.h"
 #ifdef RA_ENABLE_WOL
@@ -1166,6 +1167,7 @@ static RetcodeType Wait_For_Players(int first_time, ConnManClass *net,
 			Map.Input(input, x, y);
 			if (input)
 				Keyboard_Process(input);
+			Process_Cursor_Key_Scroll();
 			Map.Render();
 		}
 
@@ -3381,6 +3383,10 @@ static void Queue_Playback(void)
 	//------------------------------------------------------------------------
 	if (Session.Attract && Frame > 0 &&
 		(mx != Get_Mouse_X() || my != Get_Mouse_Y())) {
+		GameActive = 0;
+		return;
+	}
+	if (Session.Attract && SDL_GameInput_ConsumeGamepadActivity()) {
 		GameActive = 0;
 		return;
 	}

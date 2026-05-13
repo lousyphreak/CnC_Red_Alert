@@ -35,6 +35,7 @@ bool SDL_GameInput_IsModifierToggled(SDL_Keymod mod_mask);
 bool SDL_GameInput_IsScancodePressed(SDL_Scancode scancode);
 bool SDL_GameInput_IsMouseButtonPressed(uint8_t button);
 bool SDL_GameInput_IsLegacyKeyPressed(uint16_t key);
+bool SDL_GameInput_ConsumeGamepadActivity(void);
 char SDL_GameInput_KeyToASCII(uint16_t key);
 int16_t SDL_GameInput_AsciiToLegacyKey(uint8_t ch);
 

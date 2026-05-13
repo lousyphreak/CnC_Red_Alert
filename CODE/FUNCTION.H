@@ -652,6 +652,7 @@ bool Queue_Mission(TargetClass whom, MissionType mission, TARGET target, TARGET 
 bool Queue_Options(void);
 bool Queue_Exit(void);
 void Queue_AI(void);
+void Process_Cursor_Key_Scroll(void);
 void Add_CRC(uint32_t *crc, uint32_t val);
 
 /*

@@ -131,7 +131,7 @@ static int32_t Movie_Playback_Volume(void)
 	return(louder * 256);
 }
 
-static void Process_Cursor_Key_Scroll(void)
+void Process_Cursor_Key_Scroll(void)
 {
 	if (Session.Messages.Has_Edit_Focus()) {
 		return;
@@ -2209,6 +2209,7 @@ bool Map_Edit_Loop(void)
 	if (input) {
 		Keyboard_Process(input);
 	}
+	Process_Cursor_Key_Scroll();
 
 	Call_Back();								// maintains Theme.AI() for music
 	Color_Cycle();

@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <cmath>
 #include <deque>
 #include <mutex>
 #include <thread>
@@ -28,6 +29,8 @@ extern int32_t BootstrapFocusSeen;
 extern bool Debug_Map;
 extern bool GameActive;
 extern bool InMovie;
+extern KeyboardClass* Keyboard;
+extern SpecialDialogType SpecialDialog;
 extern GraphicViewPortClass SeenBuff;
 extern WWMouseClass* WWMouse;
 extern void WWDraw_Request_Present(void);
@@ -45,6 +48,11 @@ constexpr uint16_t LEGACY_DECIMAL = 0x6E;
 constexpr int TOUCH_DRAG_SLOP_PIXELS = 6;
 constexpr int TOUCH_TAP_SLOP_PIXELS = 18;
 constexpr uint64_t TOUCH_DOUBLE_TAP_INTERVAL_MS = 350u;
+constexpr int GAMEPAD_STICK_DEADZONE = 8192;
+constexpr int GAMEPAD_TRIGGER_THRESHOLD = 16384;
+constexpr double GAMEPAD_CURSOR_SPEED_PIXELS_PER_SECOND = 600.0;
+constexpr uint64_t GAMEPAD_REPEAT_INITIAL_NS = 250000000ULL;
+constexpr uint64_t GAMEPAD_REPEAT_INTERVAL_NS = 85000000ULL;
 
 struct TouchPoint {
 	int x = 0;
@@ -68,6 +76,51 @@ enum class TouchGestureMode {
 
 void apply_mission_mouse_capture(void);
 bool get_window_point_for_current_game_cursor(float& window_x, float& window_y);
+void handle_translated_mouse_motion(int x, int y, uint32_t button_state_mask);
+void handle_translated_mouse_button(int button, int x, int y, bool release);
+void open_first_available_controller(void);
+void reset_controller_runtime_state(bool release_mouse_buttons);
+
+constexpr size_t RAW_JOYSTICK_BUTTON_SNAPSHOT_COUNT = 64u;
+
+enum RawJoystickDpadDirection {
+	RAW_JOYSTICK_DPAD_UP = 0,
+	RAW_JOYSTICK_DPAD_DOWN,
+	RAW_JOYSTICK_DPAD_LEFT,
+	RAW_JOYSTICK_DPAD_RIGHT,
+	RAW_JOYSTICK_DPAD_COUNT
+};
+
+struct RawJoystickProfile {
+	int axis_count = 0;
+	int button_count = 0;
+	int hat_count = 0;
+	int left_x_axis = -1;
+	int left_y_axis = -1;
+	int right_x_axis = -1;
+	int right_y_axis = -1;
+	int left_trigger_axis = -1;
+	int right_trigger_axis = -1;
+	int dpad_hat = -1;
+	int south_button = -1;
+	int east_button = -1;
+	int west_button = -1;
+	int north_button = -1;
+	int back_button = -1;
+	int start_button = -1;
+	int left_shoulder_button = -1;
+	int right_shoulder_button = -1;
+	int left_stick_button = -1;
+	int right_stick_button = -1;
+	int left_trigger_button = -1;
+	int right_trigger_button = -1;
+	int misc1_button = -1;
+	int touchpad_button = -1;
+	int dpad_up_button = -1;
+	int dpad_down_button = -1;
+	int dpad_left_button = -1;
+	int dpad_right_button = -1;
+};
 
 std::mutex g_input_mutex;
 std::array<uint16_t, SDL_SCANCODE_COUNT> g_scancode_down_counts{};
@@ -75,8 +128,26 @@ SDL_Keymod g_mod_state = SDL_KMOD_NONE;
 int g_mouse_x = 0;
 int g_mouse_y = 0;
 uint32_t g_mouse_buttons = 0;
+std::array<bool, 256> g_virtual_legacy_down{};
 double g_relative_mouse_subpixel_x = 0.0;
 double g_relative_mouse_subpixel_y = 0.0;
+double g_gamepad_cursor_subpixel_x = 0.0;
+double g_gamepad_cursor_subpixel_y = 0.0;
+bool g_controller_subsystems_initialized = false;
+SDL_Gamepad* g_active_gamepad = NULL;
+SDL_JoystickID g_active_gamepad_id = 0;
+SDL_Joystick* g_active_joystick = NULL;
+SDL_JoystickID g_active_joystick_id = 0;
+RawJoystickProfile g_active_joystick_profile{};
+uint64_t g_last_gamepad_poll_ns = 0;
+std::array<bool, SDL_GAMEPAD_BUTTON_COUNT> g_gamepad_button_down{};
+std::array<uint64_t, SDL_GAMEPAD_BUTTON_COUNT> g_gamepad_button_repeat_ns{};
+std::array<bool, RAW_JOYSTICK_BUTTON_SNAPSHOT_COUNT> g_raw_joystick_button_down{};
+std::array<bool, RAW_JOYSTICK_DPAD_COUNT> g_raw_joystick_dpad_down{};
+std::array<uint64_t, RAW_JOYSTICK_DPAD_COUNT> g_raw_joystick_dpad_repeat_ns{};
+bool g_gamepad_left_trigger_down = false;
+bool g_gamepad_right_trigger_down = false;
+std::atomic<bool> g_gamepad_activity{false};
 std::atomic<bool> g_main_thread_set{false};
 std::thread::id g_main_thread_id;
 std::atomic<bool> g_is_pumping{false};
@@ -172,6 +243,943 @@ uint16_t mouse_button_to_legacy_key(int button)
 bool touch_gameplay_gestures_enabled(void)
 {
 	return GameActive && !Debug_Map && !InMovie;
+}
+
+bool gameplay_controller_actions_enabled(void)
+{
+	return GameActive && SpecialDialog == SDLG_NONE && !Debug_Map && !InMovie;
+}
+
+bool virtual_legacy_key_down_locked(uint16_t key)
+{
+	return g_virtual_legacy_down[key & 0xFFu];
+}
+
+void set_virtual_legacy_key_locked(uint16_t key, bool down)
+{
+	key &= 0xFFu;
+	if (key == 0) {
+		return;
+	}
+	g_virtual_legacy_down[key] = down;
+}
+
+void clear_virtual_legacy_keys_locked(void)
+{
+	g_virtual_legacy_down.fill(false);
+}
+
+double normalized_gamepad_axis(Sint16 value)
+{
+	const int axis = static_cast<int>(value);
+	const int magnitude = std::abs(axis);
+	if (magnitude <= GAMEPAD_STICK_DEADZONE) {
+		return 0.0;
+	}
+
+	double normalized = static_cast<double>(magnitude - GAMEPAD_STICK_DEADZONE)
+		/ static_cast<double>(SDL_JOYSTICK_AXIS_MAX - GAMEPAD_STICK_DEADZONE);
+	normalized = std::clamp(normalized, 0.0, 1.0);
+	normalized *= normalized;
+	return (axis < 0) ? -normalized : normalized;
+}
+
+bool initialize_controller_subsystems(void)
+{
+	if (g_controller_subsystems_initialized) {
+		return true;
+	}
+
+	if (!SDL_InitSubSystem(SDL_INIT_GAMEPAD) && !SDL_InitSubSystem(SDL_INIT_JOYSTICK)) {
+		return false;
+	}
+
+	g_controller_subsystems_initialized = true;
+	return true;
+}
+
+void queue_gamepad_key_press(uint16_t legacy_key)
+{
+	legacy_key &= 0xFFu;
+	if (legacy_key == 0 || Keyboard == NULL) {
+		return;
+	}
+	Keyboard->Put(legacy_key);
+}
+
+void send_gamepad_mouse_button(int button, bool release)
+{
+	int mouse_x = 0;
+	int mouse_y = 0;
+	{
+		std::scoped_lock lock(g_input_mutex);
+		mouse_x = g_mouse_x;
+		mouse_y = g_mouse_y;
+	}
+	handle_translated_mouse_button(button, mouse_x, mouse_y, release);
+}
+
+bool raw_joystick_profile_usable(const RawJoystickProfile& profile)
+{
+	return profile.left_x_axis >= 0 && profile.left_y_axis >= 0
+		&& (profile.south_button >= 0 || profile.east_button >= 0 || profile.start_button >= 0
+			|| profile.dpad_hat >= 0 || profile.dpad_up_button >= 0);
+}
+
+RawJoystickProfile make_generic_raw_joystick_profile(SDL_Joystick* joystick)
+{
+	RawJoystickProfile profile{};
+	if (joystick == NULL) {
+		return profile;
+	}
+
+	profile.axis_count = SDL_GetNumJoystickAxes(joystick);
+	profile.button_count = SDL_GetNumJoystickButtons(joystick);
+	profile.hat_count = SDL_GetNumJoystickHats(joystick);
+
+	if (profile.axis_count >= 2) {
+		profile.left_x_axis = 0;
+		profile.left_y_axis = 1;
+	}
+	if (profile.axis_count >= 4) {
+		profile.right_x_axis = 2;
+		profile.right_y_axis = 3;
+	}
+	if (profile.hat_count > 0) {
+		profile.dpad_hat = 0;
+	} else if (profile.button_count >= 15) {
+		profile.dpad_up_button = 11;
+		profile.dpad_down_button = 12;
+		profile.dpad_left_button = 13;
+		profile.dpad_right_button = 14;
+	}
+	if (profile.button_count >= 4) {
+		profile.south_button = 0;
+		profile.east_button = 1;
+		profile.west_button = 2;
+		profile.north_button = 3;
+	}
+	if (profile.button_count >= 6) {
+		profile.left_shoulder_button = 4;
+		profile.right_shoulder_button = 5;
+	}
+	if (profile.button_count >= 8) {
+		profile.left_trigger_button = 6;
+		profile.right_trigger_button = 7;
+	}
+	if (profile.button_count >= 10) {
+		profile.back_button = 8;
+		profile.start_button = 9;
+	}
+	if (profile.button_count >= 12) {
+		profile.left_stick_button = 10;
+		profile.right_stick_button = 11;
+	}
+	return profile;
+}
+
+RawJoystickProfile select_raw_joystick_profile(SDL_JoystickID instance_id, SDL_Joystick* joystick)
+{
+	RawJoystickProfile profile = make_generic_raw_joystick_profile(joystick);
+	if (joystick == NULL) {
+		return profile;
+	}
+
+	const char* joystick_name = SDL_GetJoystickName(joystick);
+	if (joystick_name == NULL) {
+		joystick_name = SDL_GetJoystickNameForID(instance_id);
+	}
+
+	if (joystick_name != NULL && SDL_strstr(joystick_name, "Wii U Pro Controller") != NULL) {
+		profile.axis_count = SDL_GetNumJoystickAxes(joystick);
+		profile.button_count = SDL_GetNumJoystickButtons(joystick);
+		profile.hat_count = SDL_GetNumJoystickHats(joystick);
+		profile.left_x_axis = 0;
+		profile.left_y_axis = 1;
+		profile.right_x_axis = 2;
+		profile.right_y_axis = 3;
+		profile.start_button = 6;
+		profile.back_button = 7;
+		profile.dpad_up_button = 11;
+		profile.dpad_down_button = 12;
+		profile.dpad_left_button = 13;
+		profile.dpad_right_button = 14;
+		profile.east_button = 15;
+		profile.south_button = 16;
+		profile.north_button = 17;
+		profile.west_button = 18;
+		profile.left_shoulder_button = 19;
+		profile.right_shoulder_button = 20;
+		profile.left_trigger_button = 21;
+		profile.right_trigger_button = 22;
+		profile.left_stick_button = 23;
+		profile.right_stick_button = 24;
+		profile.dpad_hat = -1;
+	}
+
+	return profile;
+}
+
+bool raw_joystick_button_pressed(SDL_Joystick* joystick, const RawJoystickProfile& profile, int button)
+{
+	return joystick != NULL && button >= 0 && button < profile.button_count && SDL_GetJoystickButton(joystick, button);
+}
+
+bool raw_joystick_button_was_pressed(int button)
+{
+	return button >= 0 && button < static_cast<int>(RAW_JOYSTICK_BUTTON_SNAPSHOT_COUNT)
+		&& g_raw_joystick_button_down[button];
+}
+
+Sint16 raw_joystick_axis_value(SDL_Joystick* joystick, const RawJoystickProfile& profile, int axis)
+{
+	if (joystick == NULL || axis < 0 || axis >= profile.axis_count) {
+		return 0;
+	}
+	return SDL_GetJoystickAxis(joystick, axis);
+}
+
+bool raw_joystick_hat_pressed(SDL_Joystick* joystick, const RawJoystickProfile& profile, uint8_t mask)
+{
+	return joystick != NULL && profile.dpad_hat >= 0 && profile.dpad_hat < profile.hat_count
+		&& (SDL_GetJoystickHat(joystick, profile.dpad_hat) & mask) != 0;
+}
+
+bool raw_joystick_dpad_pressed(SDL_Joystick* joystick, const RawJoystickProfile& profile, RawJoystickDpadDirection direction)
+{
+	switch (direction) {
+		case RAW_JOYSTICK_DPAD_UP:
+			return raw_joystick_hat_pressed(joystick, profile, SDL_HAT_UP)
+				|| raw_joystick_button_pressed(joystick, profile, profile.dpad_up_button);
+		case RAW_JOYSTICK_DPAD_DOWN:
+			return raw_joystick_hat_pressed(joystick, profile, SDL_HAT_DOWN)
+				|| raw_joystick_button_pressed(joystick, profile, profile.dpad_down_button);
+		case RAW_JOYSTICK_DPAD_LEFT:
+			return raw_joystick_hat_pressed(joystick, profile, SDL_HAT_LEFT)
+				|| raw_joystick_button_pressed(joystick, profile, profile.dpad_left_button);
+		case RAW_JOYSTICK_DPAD_RIGHT:
+			return raw_joystick_hat_pressed(joystick, profile, SDL_HAT_RIGHT)
+				|| raw_joystick_button_pressed(joystick, profile, profile.dpad_right_button);
+		default:
+			return false;
+	}
+}
+
+bool raw_joystick_trigger_pressed(SDL_Joystick* joystick, const RawJoystickProfile& profile, bool left_trigger)
+{
+	const int button = left_trigger ? profile.left_trigger_button : profile.right_trigger_button;
+	if (raw_joystick_button_pressed(joystick, profile, button)) {
+		return true;
+	}
+
+	const int axis = left_trigger ? profile.left_trigger_axis : profile.right_trigger_axis;
+	return axis >= 0 && raw_joystick_axis_value(joystick, profile, axis) >= GAMEPAD_TRIGGER_THRESHOLD;
+}
+
+void move_gamepad_cursor(double delta_seconds, Sint16 axis_x, Sint16 axis_y)
+{
+	if (delta_seconds <= 0.0) {
+		return;
+	}
+
+	const double normalized_x = normalized_gamepad_axis(axis_x);
+	const double normalized_y = normalized_gamepad_axis(axis_y);
+	if (normalized_x == 0.0 && normalized_y == 0.0) {
+		return;
+	}
+
+	int next_x = 0;
+	int next_y = 0;
+	uint32_t button_state = 0;
+	{
+		std::scoped_lock lock(g_input_mutex);
+		const double delta_x = normalized_x * GAMEPAD_CURSOR_SPEED_PIXELS_PER_SECOND * delta_seconds;
+		const double delta_y = normalized_y * GAMEPAD_CURSOR_SPEED_PIXELS_PER_SECOND * delta_seconds;
+		const double total_x = g_gamepad_cursor_subpixel_x + delta_x;
+		const double total_y = g_gamepad_cursor_subpixel_y + delta_y;
+		const int whole_dx = static_cast<int>(total_x);
+		const int whole_dy = static_cast<int>(total_y);
+		g_gamepad_cursor_subpixel_x = total_x - static_cast<double>(whole_dx);
+		g_gamepad_cursor_subpixel_y = total_y - static_cast<double>(whole_dy);
+		if (whole_dx == 0 && whole_dy == 0) {
+			return;
+		}
+
+		next_x = g_mouse_x + whole_dx;
+		next_y = g_mouse_y + whole_dy;
+		button_state = g_mouse_buttons;
+	}
+
+	handle_translated_mouse_motion(next_x, next_y, button_state);
+}
+
+void update_gamepad_scroll_state(Sint16 axis_x, Sint16 axis_y)
+{
+	const bool enable_scroll = gameplay_controller_actions_enabled();
+	const bool scroll_left = enable_scroll && axis_x <= -GAMEPAD_STICK_DEADZONE;
+	const bool scroll_right = enable_scroll && axis_x >= GAMEPAD_STICK_DEADZONE;
+	const bool scroll_up = enable_scroll && axis_y <= -GAMEPAD_STICK_DEADZONE;
+	const bool scroll_down = enable_scroll && axis_y >= GAMEPAD_STICK_DEADZONE;
+
+	std::scoped_lock lock(g_input_mutex);
+	set_virtual_legacy_key_locked(KN_LEFT, scroll_left);
+	set_virtual_legacy_key_locked(KN_RIGHT, scroll_right);
+	set_virtual_legacy_key_locked(KN_UP, scroll_up);
+	set_virtual_legacy_key_locked(KN_DOWN, scroll_down);
+}
+
+uint16_t gamepad_dpad_action(SDL_GamepadButton button)
+{
+	if (gameplay_controller_actions_enabled()) {
+		switch (button) {
+			case SDL_GAMEPAD_BUTTON_DPAD_UP:
+				return Options.KeySidebarUp;
+			case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
+				return Options.KeySidebarDown;
+			case SDL_GAMEPAD_BUTTON_DPAD_LEFT:
+				return Options.KeyPrevious;
+			case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
+				return Options.KeyNext;
+			default:
+				return 0;
+		}
+	}
+
+	switch (button) {
+		case SDL_GAMEPAD_BUTTON_DPAD_UP:
+			return KN_UP;
+		case SDL_GAMEPAD_BUTTON_DPAD_DOWN:
+			return KN_DOWN;
+		case SDL_GAMEPAD_BUTTON_DPAD_LEFT:
+			return KN_LEFT;
+		case SDL_GAMEPAD_BUTTON_DPAD_RIGHT:
+			return KN_RIGHT;
+		default:
+			return 0;
+	}
+}
+
+uint16_t raw_joystick_dpad_action(RawJoystickDpadDirection direction)
+{
+	if (gameplay_controller_actions_enabled()) {
+		switch (direction) {
+			case RAW_JOYSTICK_DPAD_UP:
+				return Options.KeySidebarUp;
+			case RAW_JOYSTICK_DPAD_DOWN:
+				return Options.KeySidebarDown;
+			case RAW_JOYSTICK_DPAD_LEFT:
+				return Options.KeyPrevious;
+			case RAW_JOYSTICK_DPAD_RIGHT:
+				return Options.KeyNext;
+			default:
+				return 0;
+		}
+	}
+
+	switch (direction) {
+		case RAW_JOYSTICK_DPAD_UP:
+			return KN_UP;
+		case RAW_JOYSTICK_DPAD_DOWN:
+			return KN_DOWN;
+		case RAW_JOYSTICK_DPAD_LEFT:
+			return KN_LEFT;
+		case RAW_JOYSTICK_DPAD_RIGHT:
+			return KN_RIGHT;
+		default:
+			return 0;
+	}
+}
+
+void repeat_gamepad_button_action(SDL_GamepadButton button, bool current_down, uint64_t now_ns)
+{
+	if (!current_down) {
+		g_gamepad_button_repeat_ns[button] = 0;
+		return;
+	}
+
+	const bool was_down = g_gamepad_button_down[button];
+	if (!was_down) {
+		queue_gamepad_key_press(gamepad_dpad_action(button));
+		g_gamepad_button_repeat_ns[button] = now_ns + GAMEPAD_REPEAT_INITIAL_NS;
+		return;
+	}
+
+	if (g_gamepad_button_repeat_ns[button] == 0 || now_ns < g_gamepad_button_repeat_ns[button]) {
+		return;
+	}
+
+	queue_gamepad_key_press(gamepad_dpad_action(button));
+	g_gamepad_button_repeat_ns[button] += GAMEPAD_REPEAT_INTERVAL_NS;
+	if (g_gamepad_button_repeat_ns[button] < now_ns) {
+		g_gamepad_button_repeat_ns[button] = now_ns + GAMEPAD_REPEAT_INTERVAL_NS;
+	}
+}
+
+void repeat_raw_joystick_dpad_action(RawJoystickDpadDirection direction, bool current_down, uint64_t now_ns)
+{
+	const size_t index = static_cast<size_t>(direction);
+	if (!current_down) {
+		g_raw_joystick_dpad_repeat_ns[index] = 0;
+		return;
+	}
+
+	if (!g_raw_joystick_dpad_down[index]) {
+		queue_gamepad_key_press(raw_joystick_dpad_action(direction));
+		g_raw_joystick_dpad_repeat_ns[index] = now_ns + GAMEPAD_REPEAT_INITIAL_NS;
+		return;
+	}
+
+	if (g_raw_joystick_dpad_repeat_ns[index] == 0 || now_ns < g_raw_joystick_dpad_repeat_ns[index]) {
+		return;
+	}
+
+	queue_gamepad_key_press(raw_joystick_dpad_action(direction));
+	g_raw_joystick_dpad_repeat_ns[index] += GAMEPAD_REPEAT_INTERVAL_NS;
+	if (g_raw_joystick_dpad_repeat_ns[index] < now_ns) {
+		g_raw_joystick_dpad_repeat_ns[index] = now_ns + GAMEPAD_REPEAT_INTERVAL_NS;
+	}
+}
+
+void prime_gamepad_button_snapshot(SDL_Gamepad* gamepad)
+{
+	g_gamepad_button_down.fill(false);
+	g_gamepad_button_repeat_ns.fill(0);
+	g_gamepad_left_trigger_down = false;
+	g_gamepad_right_trigger_down = false;
+	g_last_gamepad_poll_ns = SDL_GetTicksNS();
+	g_gamepad_cursor_subpixel_x = 0.0;
+	g_gamepad_cursor_subpixel_y = 0.0;
+
+	if (gamepad == NULL) {
+		return;
+	}
+
+	for (int index = 0; index < SDL_GAMEPAD_BUTTON_COUNT; ++index) {
+		g_gamepad_button_down[index] = SDL_GetGamepadButton(gamepad, static_cast<SDL_GamepadButton>(index));
+	}
+	g_gamepad_left_trigger_down = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFT_TRIGGER) >= GAMEPAD_TRIGGER_THRESHOLD;
+	g_gamepad_right_trigger_down = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) >= GAMEPAD_TRIGGER_THRESHOLD;
+}
+
+void prime_raw_joystick_snapshot(SDL_Joystick* joystick)
+{
+	g_raw_joystick_button_down.fill(false);
+	g_raw_joystick_dpad_down.fill(false);
+	g_raw_joystick_dpad_repeat_ns.fill(0);
+	g_gamepad_left_trigger_down = false;
+	g_gamepad_right_trigger_down = false;
+	g_last_gamepad_poll_ns = SDL_GetTicksNS();
+	g_gamepad_cursor_subpixel_x = 0.0;
+	g_gamepad_cursor_subpixel_y = 0.0;
+
+	if (joystick == NULL) {
+		return;
+	}
+
+	const int button_limit = std::min(g_active_joystick_profile.button_count,
+		static_cast<int>(RAW_JOYSTICK_BUTTON_SNAPSHOT_COUNT));
+	for (int index = 0; index < button_limit; ++index) {
+		g_raw_joystick_button_down[index] = SDL_GetJoystickButton(joystick, index);
+	}
+	g_raw_joystick_dpad_down[RAW_JOYSTICK_DPAD_UP] =
+		raw_joystick_dpad_pressed(joystick, g_active_joystick_profile, RAW_JOYSTICK_DPAD_UP);
+	g_raw_joystick_dpad_down[RAW_JOYSTICK_DPAD_DOWN] =
+		raw_joystick_dpad_pressed(joystick, g_active_joystick_profile, RAW_JOYSTICK_DPAD_DOWN);
+	g_raw_joystick_dpad_down[RAW_JOYSTICK_DPAD_LEFT] =
+		raw_joystick_dpad_pressed(joystick, g_active_joystick_profile, RAW_JOYSTICK_DPAD_LEFT);
+	g_raw_joystick_dpad_down[RAW_JOYSTICK_DPAD_RIGHT] =
+		raw_joystick_dpad_pressed(joystick, g_active_joystick_profile, RAW_JOYSTICK_DPAD_RIGHT);
+	g_gamepad_left_trigger_down = raw_joystick_trigger_pressed(joystick, g_active_joystick_profile, true);
+	g_gamepad_right_trigger_down = raw_joystick_trigger_pressed(joystick, g_active_joystick_profile, false);
+}
+
+void handle_gamepad_added(SDL_JoystickID instance_id)
+{
+	if (!SDL_IsGamepad(instance_id)) {
+		return;
+	}
+	if (g_active_gamepad != NULL) {
+		return;
+	}
+	if (g_active_joystick != NULL) {
+		reset_controller_runtime_state(true);
+		SDL_CloseJoystick(g_active_joystick);
+		g_active_joystick = NULL;
+		g_active_joystick_id = 0;
+		g_active_joystick_profile = RawJoystickProfile{};
+	}
+
+	SDL_Gamepad* gamepad = SDL_OpenGamepad(instance_id);
+	if (gamepad == NULL) {
+		return;
+	}
+
+	g_active_gamepad = gamepad;
+	g_active_gamepad_id = instance_id;
+	prime_gamepad_button_snapshot(gamepad);
+}
+
+void handle_joystick_added(SDL_JoystickID instance_id)
+{
+	if (g_active_gamepad != NULL || g_active_joystick != NULL || SDL_IsGamepad(instance_id)) {
+		return;
+	}
+
+	SDL_Joystick* joystick = SDL_OpenJoystick(instance_id);
+	if (joystick == NULL) {
+		return;
+	}
+
+	RawJoystickProfile profile = select_raw_joystick_profile(instance_id, joystick);
+	if (!raw_joystick_profile_usable(profile)) {
+		SDL_CloseJoystick(joystick);
+		return;
+	}
+
+	g_active_joystick = joystick;
+	g_active_joystick_id = instance_id;
+	g_active_joystick_profile = profile;
+	prime_raw_joystick_snapshot(joystick);
+}
+
+void close_active_gamepad(void)
+{
+	if (g_active_gamepad == NULL) {
+		return;
+	}
+
+	SDL_CloseGamepad(g_active_gamepad);
+	g_active_gamepad = NULL;
+	g_active_gamepad_id = 0;
+}
+
+void close_active_joystick(void)
+{
+	if (g_active_joystick == NULL) {
+		return;
+	}
+
+	SDL_CloseJoystick(g_active_joystick);
+	g_active_joystick = NULL;
+	g_active_joystick_id = 0;
+	g_active_joystick_profile = RawJoystickProfile{};
+}
+
+void reset_controller_runtime_state(bool release_mouse_buttons)
+{
+	if (release_mouse_buttons) {
+		if (g_gamepad_button_down[SDL_GAMEPAD_BUTTON_SOUTH]) {
+			send_gamepad_mouse_button(SDL_BUTTON_LEFT, true);
+		}
+		if (g_gamepad_button_down[SDL_GAMEPAD_BUTTON_EAST]) {
+			send_gamepad_mouse_button(SDL_BUTTON_RIGHT, true);
+		}
+		if (raw_joystick_button_was_pressed(g_active_joystick_profile.south_button)) {
+			send_gamepad_mouse_button(SDL_BUTTON_LEFT, true);
+		}
+		if (raw_joystick_button_was_pressed(g_active_joystick_profile.east_button)) {
+			send_gamepad_mouse_button(SDL_BUTTON_RIGHT, true);
+		}
+	}
+
+	{
+		std::scoped_lock lock(g_input_mutex);
+		clear_virtual_legacy_keys_locked();
+	}
+	g_gamepad_button_down.fill(false);
+	g_gamepad_button_repeat_ns.fill(0);
+	g_raw_joystick_button_down.fill(false);
+	g_raw_joystick_dpad_down.fill(false);
+	g_raw_joystick_dpad_repeat_ns.fill(0);
+	g_gamepad_left_trigger_down = false;
+	g_gamepad_right_trigger_down = false;
+	g_gamepad_activity.store(false);
+	g_last_gamepad_poll_ns = SDL_GetTicksNS();
+	g_gamepad_cursor_subpixel_x = 0.0;
+	g_gamepad_cursor_subpixel_y = 0.0;
+}
+
+void handle_gamepad_removed(SDL_JoystickID instance_id)
+{
+	if (g_active_gamepad == NULL || g_active_gamepad_id != instance_id) {
+		return;
+	}
+
+	reset_controller_runtime_state(true);
+	close_active_gamepad();
+	open_first_available_controller();
+}
+
+void handle_joystick_removed(SDL_JoystickID instance_id)
+{
+	if (g_active_joystick == NULL || g_active_joystick_id != instance_id) {
+		return;
+	}
+
+	reset_controller_runtime_state(true);
+	close_active_joystick();
+	open_first_available_controller();
+}
+
+void open_first_available_controller(void)
+{
+	if (g_active_gamepad != NULL || g_active_joystick != NULL || !initialize_controller_subsystems()) {
+		return;
+	}
+
+	int count = 0;
+	SDL_JoystickID* ids = SDL_GetGamepads(&count);
+	if (ids != NULL) {
+		for (int index = 0; index < count; ++index) {
+			if (SDL_IsGamepad(ids[index])) {
+				handle_gamepad_added(ids[index]);
+				if (g_active_gamepad != NULL) {
+					break;
+				}
+			}
+		}
+		SDL_free(ids);
+	}
+
+	if (g_active_gamepad != NULL) {
+		return;
+	}
+
+	ids = SDL_GetJoysticks(&count);
+	if (ids == NULL) {
+		return;
+	}
+
+	for (int index = 0; index < count; ++index) {
+		if (!SDL_IsGamepad(ids[index])) {
+			handle_joystick_added(ids[index]);
+			if (g_active_joystick != NULL) {
+				break;
+			}
+		}
+	}
+	SDL_free(ids);
+}
+
+void update_active_controller(void)
+{
+	if (g_active_gamepad == NULL && g_active_joystick == NULL) {
+		open_first_available_controller();
+		if (g_active_gamepad == NULL && g_active_joystick == NULL) {
+			return;
+		}
+	}
+
+	if (g_active_gamepad != NULL && !SDL_GamepadConnected(g_active_gamepad)) {
+		reset_controller_runtime_state(true);
+		close_active_gamepad();
+		open_first_available_controller();
+		if (g_active_gamepad == NULL && g_active_joystick == NULL) {
+			return;
+		}
+	}
+
+	if (g_active_joystick != NULL && !SDL_JoystickConnected(g_active_joystick)) {
+		reset_controller_runtime_state(true);
+		close_active_joystick();
+		open_first_available_controller();
+		if (g_active_gamepad == NULL && g_active_joystick == NULL) {
+			return;
+		}
+	}
+
+	const uint64_t now_ns = SDL_GetTicksNS();
+	const uint64_t previous_ns = g_last_gamepad_poll_ns;
+	g_last_gamepad_poll_ns = now_ns;
+	const double delta_seconds = (previous_ns != 0 && now_ns >= previous_ns)
+		? (static_cast<double>(now_ns - previous_ns) / 1000000000.0)
+		: 0.0;
+
+	if (g_active_gamepad == NULL && g_active_joystick != NULL) {
+		const Sint16 left_x = raw_joystick_axis_value(g_active_joystick, g_active_joystick_profile,
+			g_active_joystick_profile.left_x_axis);
+		const Sint16 left_y = raw_joystick_axis_value(g_active_joystick, g_active_joystick_profile,
+			g_active_joystick_profile.left_y_axis);
+		const Sint16 right_x = raw_joystick_axis_value(g_active_joystick, g_active_joystick_profile,
+			g_active_joystick_profile.right_x_axis);
+		const Sint16 right_y = raw_joystick_axis_value(g_active_joystick, g_active_joystick_profile,
+			g_active_joystick_profile.right_y_axis);
+
+		move_gamepad_cursor(delta_seconds, left_x, left_y);
+		update_gamepad_scroll_state(right_x, right_y);
+
+		const bool south_down = raw_joystick_button_pressed(g_active_joystick, g_active_joystick_profile,
+			g_active_joystick_profile.south_button);
+		const bool east_down = raw_joystick_button_pressed(g_active_joystick, g_active_joystick_profile,
+			g_active_joystick_profile.east_button);
+		if (south_down != raw_joystick_button_was_pressed(g_active_joystick_profile.south_button)) {
+			send_gamepad_mouse_button(SDL_BUTTON_LEFT, !south_down);
+		}
+		if (east_down != raw_joystick_button_was_pressed(g_active_joystick_profile.east_button)) {
+			send_gamepad_mouse_button(SDL_BUTTON_RIGHT, !east_down);
+		}
+
+		const bool gameplay_actions = gameplay_controller_actions_enabled();
+		const bool left_shoulder_down = raw_joystick_button_pressed(g_active_joystick, g_active_joystick_profile,
+			g_active_joystick_profile.left_shoulder_button);
+		const bool right_shoulder_down = raw_joystick_button_pressed(g_active_joystick, g_active_joystick_profile,
+			g_active_joystick_profile.right_shoulder_button);
+		{
+			std::scoped_lock lock(g_input_mutex);
+			set_virtual_legacy_key_locked(Options.KeyForceMove1, gameplay_actions && left_shoulder_down);
+			set_virtual_legacy_key_locked(Options.KeyForceAttack1, gameplay_actions && right_shoulder_down);
+		}
+
+		const bool dpad_up_down = raw_joystick_dpad_pressed(g_active_joystick, g_active_joystick_profile,
+			RAW_JOYSTICK_DPAD_UP);
+		const bool dpad_down_down = raw_joystick_dpad_pressed(g_active_joystick, g_active_joystick_profile,
+			RAW_JOYSTICK_DPAD_DOWN);
+		const bool dpad_left_down = raw_joystick_dpad_pressed(g_active_joystick, g_active_joystick_profile,
+			RAW_JOYSTICK_DPAD_LEFT);
+		const bool dpad_right_down = raw_joystick_dpad_pressed(g_active_joystick, g_active_joystick_profile,
+			RAW_JOYSTICK_DPAD_RIGHT);
+		repeat_raw_joystick_dpad_action(RAW_JOYSTICK_DPAD_UP, dpad_up_down, now_ns);
+		repeat_raw_joystick_dpad_action(RAW_JOYSTICK_DPAD_DOWN, dpad_down_down, now_ns);
+		repeat_raw_joystick_dpad_action(RAW_JOYSTICK_DPAD_LEFT, dpad_left_down, now_ns);
+		repeat_raw_joystick_dpad_action(RAW_JOYSTICK_DPAD_RIGHT, dpad_right_down, now_ns);
+
+		const bool start_down = raw_joystick_button_pressed(g_active_joystick, g_active_joystick_profile,
+			g_active_joystick_profile.start_button);
+		if (start_down && !raw_joystick_button_was_pressed(g_active_joystick_profile.start_button)) {
+			queue_gamepad_key_press(Options.KeyOption1);
+		}
+
+		const bool back_down = raw_joystick_button_pressed(g_active_joystick, g_active_joystick_profile,
+			g_active_joystick_profile.back_button);
+		if (back_down && !raw_joystick_button_was_pressed(g_active_joystick_profile.back_button)) {
+			queue_gamepad_key_press(gameplay_actions ? Options.KeyScatter : KN_ESC);
+		}
+
+		const bool west_down = raw_joystick_button_pressed(g_active_joystick, g_active_joystick_profile,
+			g_active_joystick_profile.west_button);
+		if (gameplay_actions && west_down && !raw_joystick_button_was_pressed(g_active_joystick_profile.west_button)) {
+			queue_gamepad_key_press(Options.KeyStop);
+		}
+
+		const bool north_down = raw_joystick_button_pressed(g_active_joystick, g_active_joystick_profile,
+			g_active_joystick_profile.north_button);
+		if (gameplay_actions && north_down && !raw_joystick_button_was_pressed(g_active_joystick_profile.north_button)) {
+			queue_gamepad_key_press(Options.KeyGuard);
+		}
+
+		const bool left_stick_down = raw_joystick_button_pressed(g_active_joystick, g_active_joystick_profile,
+			g_active_joystick_profile.left_stick_button);
+		if (gameplay_actions && left_stick_down
+			&& !raw_joystick_button_was_pressed(g_active_joystick_profile.left_stick_button)) {
+			queue_gamepad_key_press(Options.KeyBase);
+		}
+
+		const bool right_stick_down = raw_joystick_button_pressed(g_active_joystick, g_active_joystick_profile,
+			g_active_joystick_profile.right_stick_button);
+		if (gameplay_actions && right_stick_down
+			&& !raw_joystick_button_was_pressed(g_active_joystick_profile.right_stick_button)) {
+			queue_gamepad_key_press(Options.KeyMap);
+		}
+
+		const bool misc1_down = raw_joystick_button_pressed(g_active_joystick, g_active_joystick_profile,
+			g_active_joystick_profile.misc1_button);
+		if (gameplay_actions && misc1_down && !raw_joystick_button_was_pressed(g_active_joystick_profile.misc1_button)) {
+			queue_gamepad_key_press(Options.KeyFormation);
+		}
+
+		const bool touchpad_down = raw_joystick_button_pressed(g_active_joystick, g_active_joystick_profile,
+			g_active_joystick_profile.touchpad_button);
+		if (gameplay_actions && touchpad_down
+			&& !raw_joystick_button_was_pressed(g_active_joystick_profile.touchpad_button)) {
+			queue_gamepad_key_press(Options.KeySelectView);
+		}
+
+		const bool left_trigger_down = raw_joystick_trigger_pressed(g_active_joystick, g_active_joystick_profile, true);
+		if (gameplay_actions && left_trigger_down && !g_gamepad_left_trigger_down) {
+			queue_gamepad_key_press(Options.KeyRepair);
+		}
+
+		const bool right_trigger_down = raw_joystick_trigger_pressed(g_active_joystick, g_active_joystick_profile, false);
+		if (gameplay_actions && right_trigger_down && !g_gamepad_right_trigger_down) {
+			queue_gamepad_key_press(Options.KeySell);
+		}
+
+		g_gamepad_left_trigger_down = left_trigger_down;
+		g_gamepad_right_trigger_down = right_trigger_down;
+		if (std::abs(static_cast<int>(left_x)) >= GAMEPAD_STICK_DEADZONE
+			|| std::abs(static_cast<int>(left_y)) >= GAMEPAD_STICK_DEADZONE
+			|| std::abs(static_cast<int>(right_x)) >= GAMEPAD_STICK_DEADZONE
+			|| std::abs(static_cast<int>(right_y)) >= GAMEPAD_STICK_DEADZONE
+			|| south_down
+			|| east_down
+			|| west_down
+			|| north_down
+			|| back_down
+			|| start_down
+			|| left_stick_down
+			|| right_stick_down
+			|| left_trigger_down
+			|| right_trigger_down
+			|| dpad_up_down
+			|| dpad_down_down
+			|| dpad_left_down
+			|| dpad_right_down
+			|| misc1_down
+			|| touchpad_down
+			|| left_shoulder_down
+			|| right_shoulder_down) {
+			g_gamepad_activity.store(true);
+		}
+
+		const int button_limit = std::min(g_active_joystick_profile.button_count,
+			static_cast<int>(RAW_JOYSTICK_BUTTON_SNAPSHOT_COUNT));
+		g_raw_joystick_button_down.fill(false);
+		for (int index = 0; index < button_limit; ++index) {
+			g_raw_joystick_button_down[index] = SDL_GetJoystickButton(g_active_joystick, index);
+		}
+		g_raw_joystick_dpad_down[RAW_JOYSTICK_DPAD_UP] = dpad_up_down;
+		g_raw_joystick_dpad_down[RAW_JOYSTICK_DPAD_DOWN] = dpad_down_down;
+		g_raw_joystick_dpad_down[RAW_JOYSTICK_DPAD_LEFT] = dpad_left_down;
+		g_raw_joystick_dpad_down[RAW_JOYSTICK_DPAD_RIGHT] = dpad_right_down;
+		return;
+	}
+
+	const Sint16 left_x = SDL_GetGamepadAxis(g_active_gamepad, SDL_GAMEPAD_AXIS_LEFTX);
+	const Sint16 left_y = SDL_GetGamepadAxis(g_active_gamepad, SDL_GAMEPAD_AXIS_LEFTY);
+	const Sint16 right_x = SDL_GetGamepadAxis(g_active_gamepad, SDL_GAMEPAD_AXIS_RIGHTX);
+	const Sint16 right_y = SDL_GetGamepadAxis(g_active_gamepad, SDL_GAMEPAD_AXIS_RIGHTY);
+
+	move_gamepad_cursor(delta_seconds, left_x, left_y);
+	update_gamepad_scroll_state(right_x, right_y);
+
+	const bool south_down = SDL_GetGamepadButton(g_active_gamepad, SDL_GAMEPAD_BUTTON_SOUTH);
+	const bool east_down = SDL_GetGamepadButton(g_active_gamepad, SDL_GAMEPAD_BUTTON_EAST);
+	if (south_down != g_gamepad_button_down[SDL_GAMEPAD_BUTTON_SOUTH]) {
+		send_gamepad_mouse_button(SDL_BUTTON_LEFT, !south_down);
+	}
+	if (east_down != g_gamepad_button_down[SDL_GAMEPAD_BUTTON_EAST]) {
+		send_gamepad_mouse_button(SDL_BUTTON_RIGHT, !east_down);
+	}
+
+	const bool gameplay_actions = gameplay_controller_actions_enabled();
+	{
+		std::scoped_lock lock(g_input_mutex);
+		set_virtual_legacy_key_locked(Options.KeyForceMove1,
+			gameplay_actions && SDL_GetGamepadButton(g_active_gamepad, SDL_GAMEPAD_BUTTON_LEFT_SHOULDER));
+		set_virtual_legacy_key_locked(Options.KeyForceAttack1,
+			gameplay_actions && SDL_GetGamepadButton(g_active_gamepad, SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER));
+	}
+
+	repeat_gamepad_button_action(SDL_GAMEPAD_BUTTON_DPAD_UP,
+		SDL_GetGamepadButton(g_active_gamepad, SDL_GAMEPAD_BUTTON_DPAD_UP), now_ns);
+	repeat_gamepad_button_action(SDL_GAMEPAD_BUTTON_DPAD_DOWN,
+		SDL_GetGamepadButton(g_active_gamepad, SDL_GAMEPAD_BUTTON_DPAD_DOWN), now_ns);
+	repeat_gamepad_button_action(SDL_GAMEPAD_BUTTON_DPAD_LEFT,
+		SDL_GetGamepadButton(g_active_gamepad, SDL_GAMEPAD_BUTTON_DPAD_LEFT), now_ns);
+	repeat_gamepad_button_action(SDL_GAMEPAD_BUTTON_DPAD_RIGHT,
+		SDL_GetGamepadButton(g_active_gamepad, SDL_GAMEPAD_BUTTON_DPAD_RIGHT), now_ns);
+
+	const bool start_down = SDL_GetGamepadButton(g_active_gamepad, SDL_GAMEPAD_BUTTON_START);
+	if (start_down && !g_gamepad_button_down[SDL_GAMEPAD_BUTTON_START]) {
+		queue_gamepad_key_press(Options.KeyOption1);
+	}
+
+	const bool back_down = SDL_GetGamepadButton(g_active_gamepad, SDL_GAMEPAD_BUTTON_BACK);
+	if (back_down && !g_gamepad_button_down[SDL_GAMEPAD_BUTTON_BACK]) {
+		queue_gamepad_key_press(gameplay_actions ? Options.KeyScatter : KN_ESC);
+	}
+
+	const bool west_down = SDL_GetGamepadButton(g_active_gamepad, SDL_GAMEPAD_BUTTON_WEST);
+	if (gameplay_actions && west_down && !g_gamepad_button_down[SDL_GAMEPAD_BUTTON_WEST]) {
+		queue_gamepad_key_press(Options.KeyStop);
+	}
+
+	const bool north_down = SDL_GetGamepadButton(g_active_gamepad, SDL_GAMEPAD_BUTTON_NORTH);
+	if (gameplay_actions && north_down && !g_gamepad_button_down[SDL_GAMEPAD_BUTTON_NORTH]) {
+		queue_gamepad_key_press(Options.KeyGuard);
+	}
+
+	const bool left_stick_down = SDL_GetGamepadButton(g_active_gamepad, SDL_GAMEPAD_BUTTON_LEFT_STICK);
+	if (gameplay_actions && left_stick_down && !g_gamepad_button_down[SDL_GAMEPAD_BUTTON_LEFT_STICK]) {
+		queue_gamepad_key_press(Options.KeyBase);
+	}
+
+	const bool right_stick_down = SDL_GetGamepadButton(g_active_gamepad, SDL_GAMEPAD_BUTTON_RIGHT_STICK);
+	if (gameplay_actions && right_stick_down && !g_gamepad_button_down[SDL_GAMEPAD_BUTTON_RIGHT_STICK]) {
+		queue_gamepad_key_press(Options.KeyMap);
+	}
+
+	const bool misc1_down = SDL_GetGamepadButton(g_active_gamepad, SDL_GAMEPAD_BUTTON_MISC1);
+	if (gameplay_actions && misc1_down && !g_gamepad_button_down[SDL_GAMEPAD_BUTTON_MISC1]) {
+		queue_gamepad_key_press(Options.KeyFormation);
+	}
+
+	const bool touchpad_down = SDL_GetGamepadButton(g_active_gamepad, SDL_GAMEPAD_BUTTON_TOUCHPAD);
+	if (gameplay_actions && touchpad_down && !g_gamepad_button_down[SDL_GAMEPAD_BUTTON_TOUCHPAD]) {
+		queue_gamepad_key_press(Options.KeySelectView);
+	}
+
+	const bool left_trigger_down =
+		SDL_GetGamepadAxis(g_active_gamepad, SDL_GAMEPAD_AXIS_LEFT_TRIGGER) >= GAMEPAD_TRIGGER_THRESHOLD;
+	if (gameplay_actions && left_trigger_down && !g_gamepad_left_trigger_down) {
+		queue_gamepad_key_press(Options.KeyRepair);
+	}
+
+	const bool right_trigger_down =
+		SDL_GetGamepadAxis(g_active_gamepad, SDL_GAMEPAD_AXIS_RIGHT_TRIGGER) >= GAMEPAD_TRIGGER_THRESHOLD;
+	if (gameplay_actions && right_trigger_down && !g_gamepad_right_trigger_down) {
+		queue_gamepad_key_press(Options.KeySell);
+	}
+
+	g_gamepad_left_trigger_down = left_trigger_down;
+	g_gamepad_right_trigger_down = right_trigger_down;
+	if (std::abs(static_cast<int>(left_x)) >= GAMEPAD_STICK_DEADZONE
+		|| std::abs(static_cast<int>(left_y)) >= GAMEPAD_STICK_DEADZONE
+		|| std::abs(static_cast<int>(right_x)) >= GAMEPAD_STICK_DEADZONE
+		|| std::abs(static_cast<int>(right_y)) >= GAMEPAD_STICK_DEADZONE
+		|| south_down
+		|| east_down
+		|| west_down
+		|| north_down
+		|| back_down
+		|| start_down
+		|| left_stick_down
+		|| right_stick_down
+		|| left_trigger_down
+		|| right_trigger_down
+		|| g_gamepad_button_down[SDL_GAMEPAD_BUTTON_DPAD_UP]
+		|| g_gamepad_button_down[SDL_GAMEPAD_BUTTON_DPAD_DOWN]
+		|| g_gamepad_button_down[SDL_GAMEPAD_BUTTON_DPAD_LEFT]
+		|| g_gamepad_button_down[SDL_GAMEPAD_BUTTON_DPAD_RIGHT]
+		|| misc1_down
+		|| touchpad_down
+		|| SDL_GetGamepadButton(g_active_gamepad, SDL_GAMEPAD_BUTTON_LEFT_SHOULDER)
+		|| SDL_GetGamepadButton(g_active_gamepad, SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER)) {
+		g_gamepad_activity.store(true);
+	}
+
+	g_gamepad_button_down[SDL_GAMEPAD_BUTTON_SOUTH] = south_down;
+	g_gamepad_button_down[SDL_GAMEPAD_BUTTON_EAST] = east_down;
+	g_gamepad_button_down[SDL_GAMEPAD_BUTTON_WEST] = west_down;
+	g_gamepad_button_down[SDL_GAMEPAD_BUTTON_NORTH] = north_down;
+	g_gamepad_button_down[SDL_GAMEPAD_BUTTON_BACK] = back_down;
+	g_gamepad_button_down[SDL_GAMEPAD_BUTTON_START] = start_down;
+	g_gamepad_button_down[SDL_GAMEPAD_BUTTON_LEFT_STICK] = left_stick_down;
+	g_gamepad_button_down[SDL_GAMEPAD_BUTTON_RIGHT_STICK] = right_stick_down;
+	g_gamepad_button_down[SDL_GAMEPAD_BUTTON_LEFT_SHOULDER] =
+		SDL_GetGamepadButton(g_active_gamepad, SDL_GAMEPAD_BUTTON_LEFT_SHOULDER);
+	g_gamepad_button_down[SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER] =
+		SDL_GetGamepadButton(g_active_gamepad, SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER);
+	g_gamepad_button_down[SDL_GAMEPAD_BUTTON_DPAD_UP] =
+		SDL_GetGamepadButton(g_active_gamepad, SDL_GAMEPAD_BUTTON_DPAD_UP);
+	g_gamepad_button_down[SDL_GAMEPAD_BUTTON_DPAD_DOWN] =
+		SDL_GetGamepadButton(g_active_gamepad, SDL_GAMEPAD_BUTTON_DPAD_DOWN);
+	g_gamepad_button_down[SDL_GAMEPAD_BUTTON_DPAD_LEFT] =
+		SDL_GetGamepadButton(g_active_gamepad, SDL_GAMEPAD_BUTTON_DPAD_LEFT);
+	g_gamepad_button_down[SDL_GAMEPAD_BUTTON_DPAD_RIGHT] =
+		SDL_GetGamepadButton(g_active_gamepad, SDL_GAMEPAD_BUTTON_DPAD_RIGHT);
+	g_gamepad_button_down[SDL_GAMEPAD_BUTTON_MISC1] = misc1_down;
+	g_gamepad_button_down[SDL_GAMEPAD_BUTTON_TOUCHPAD] = touchpad_down;
 }
 
 bool is_direct_touch_device(
@@ -1166,6 +2174,7 @@ void clear_held_input_locked(void)
 	g_scancode_down_counts.fill(0);
 	g_mod_state = static_cast<SDL_Keymod>(g_mod_state & (SDL_KMOD_CAPS | SDL_KMOD_NUM | SDL_KMOD_SCROLL));
 	g_mouse_buttons = 0;
+	clear_virtual_legacy_keys_locked();
 }
 
 bool scancode_down_locked(SDL_Scancode scancode)
@@ -1222,6 +2231,10 @@ SDL_Scancode scancode_from_legacy_key(uint16_t key)
 
 bool legacy_key_down_locked(uint16_t key)
 {
+	if (virtual_legacy_key_down_locked(key)) {
+		return true;
+	}
+
 	const SDL_Scancode direct_scancode = scancode_from_legacy_key(key);
 	if (direct_scancode != SDL_SCANCODE_UNKNOWN) {
 		return scancode_down_locked(direct_scancode);
@@ -1392,6 +2405,11 @@ void handle_focus_event(bool focused)
 	}
 	if (!focused) {
 		reset_touch_state();
+		reset_controller_runtime_state(false);
+	} else if (g_active_gamepad != NULL) {
+		prime_gamepad_button_snapshot(g_active_gamepad);
+	} else if (g_active_joystick != NULL) {
+		prime_raw_joystick_snapshot(g_active_joystick);
 	}
 
 	const bool first_focus_gain = focused && !BootstrapFocusSeen;
@@ -1448,6 +2466,10 @@ bool should_capture_callback_event(const SDL_Event& event)
 		case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
 		case SDL_EVENT_WINDOW_FOCUS_GAINED:
 		case SDL_EVENT_WINDOW_FOCUS_LOST:
+		case SDL_EVENT_GAMEPAD_ADDED:
+		case SDL_EVENT_GAMEPAD_REMOVED:
+		case SDL_EVENT_JOYSTICK_ADDED:
+		case SDL_EVENT_JOYSTICK_REMOVED:
 		case SDL_EVENT_KEY_DOWN:
 		case SDL_EVENT_KEY_UP:
 		case SDL_EVENT_MOUSE_MOTION:
@@ -1531,6 +2553,22 @@ void handle_sdl_event(const SDL_Event &event)
 			handle_focus_event(false);
 			break;
 
+		case SDL_EVENT_GAMEPAD_ADDED:
+			handle_gamepad_added(event.gdevice.which);
+			break;
+
+		case SDL_EVENT_GAMEPAD_REMOVED:
+			handle_gamepad_removed(event.gdevice.which);
+			break;
+
+		case SDL_EVENT_JOYSTICK_ADDED:
+			handle_joystick_added(event.jdevice.which);
+			break;
+
+		case SDL_EVENT_JOYSTICK_REMOVED:
+			handle_joystick_removed(event.jdevice.which);
+			break;
+
 		case SDL_EVENT_KEY_DOWN:
 		{
 			SDL_GameInput_Handle_Key(event.key.scancode, event.key.key, static_cast<SDL_Keymod>(event.key.mod),
@@ -1592,6 +2630,8 @@ void SDL_GameInput_Set_Main_Thread(void)
 	g_main_thread_id = std::this_thread::get_id();
 	SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
 	reset_touch_state();
+	initialize_controller_subsystems();
+	open_first_available_controller();
 
 	std::scoped_lock lock(g_input_mutex);
 	initialize_mouse_snapshot_locked();
@@ -1774,6 +2814,7 @@ void SDL_GameInput_Pump(void)
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
 		}
+		update_active_controller();
 		g_is_pumping.store(false);
 		return;
 	}
@@ -1782,6 +2823,7 @@ void SDL_GameInput_Pump(void)
 	while (SDL_PollEvent(&event)) {
 		handle_sdl_event(event);
 	}
+	update_active_controller();
 
 #if defined(__EMSCRIPTEN__)
 	drain_web_soft_keyboard_bridge();
@@ -1818,6 +2860,7 @@ int32_t SDL_GameInput_Wait(void)
 	while (SDL_PollEvent(&event)) {
 		handle_sdl_event(event);
 	}
+	update_active_controller();
 
 #if defined(__EMSCRIPTEN__)
 	drain_web_soft_keyboard_bridge();
@@ -2022,6 +3065,12 @@ bool SDL_GameInput_IsLegacyKeyPressed(uint16_t key)
 	SDL_GameInput_Maybe_Pump();
 	std::scoped_lock lock(g_input_mutex);
 	return legacy_key_down_locked(key);
+}
+
+bool SDL_GameInput_ConsumeGamepadActivity(void)
+{
+	SDL_GameInput_Maybe_Pump();
+	return g_gamepad_activity.exchange(false);
 }
 
 char SDL_GameInput_KeyToASCII(uint16_t key)
